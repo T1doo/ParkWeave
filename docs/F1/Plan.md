@@ -86,3 +86,7 @@ F1仍IN_PROGRESS，残余并非全部外部验证：native验证后生产dispatc
 ## 第十二有界增量ENG012：仅本地Windows云CI准备
 
 LOCAL_ONLY/NEEDS_REVIEW：窄push workflow、标准Server2025/Python3.12x64/原生PG17 fresh loopback PowerShell准备与停止、原有生命周期/实际APIworker/本地浏览器/回归、独立Server文件候选工程harness。当前Actions读取Forbidden，按用户最新指示只做本地Linux/静态验证，不重试/换路线、不推送workflow或启动runner，不改权限。错误原文与缺失HTTP数值状态已记录，Server/Win11实际全NOT_RUN，R4关闭；详见WindowsServerCI.md。
+
+## 第十三有界增量ENG013：有限清理故障与CI凭据边界
+
+仅ENG013-Mapping.md冻结范围：PG start失败/自有state篡改/browser超时，合成command doubles与实际原API/worker启动循环的mock环境捕获；收窄CI辅助命令owner/admin暴露面。不重试Actions/gh、不换身份路线、不读隐藏凭据、不push workflow、不启动runner、不改权限。全部本地commit待复核，WindowsServerCI.md只列恢复授权后一次标准mock job的最小计划；原Win11/R4/LIVE/E1—E3与完整AT/EX门不变。本轮结束不扩新F1产品范围或F2。

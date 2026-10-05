@@ -33,7 +33,7 @@ def main():
     workflow=ROOT/'.github/workflows/windows-server-engineering.yml'
     document=yaml.load(workflow.read_text(),Loader=yaml.BaseLoader);policy(document)
     private=ROOT/'.runtime/ci-static';private.mkdir(parents=True,exist_ok=True)
-    paths=sorted((ROOT/'scripts/windows').glob('*.ps1'))+sorted((ROOT/'scripts/windows_ci').glob('*.ps1'))
+    paths=sorted((ROOT/'scripts/windows').glob('*.ps1'))+sorted(p for p in (ROOT/'scripts/windows_ci').iterdir() if p.suffix in ('.ps1','.psm1'))
     script=private/'parse.ps1'
     script.write_text('$rows=@();foreach($path in '+('@('+','.join("'"+str(p).replace("'","''")+"'" for p in paths)+')')+'){$tokens=$null;$errs=$null;$null=[System.Management.Automation.Language.Parser]::ParseFile($path,[ref]$tokens,[ref]$errs);$rows+=@{name=[IO.Path]::GetFileName($path);errors=@($errs|ForEach-Object{$_.Message})}};@{version=$PSVersionTable.PSVersion.ToString();scripts=$rows}|ConvertTo-Json -Depth 5;if(@($rows|Where-Object{$_.errors.Count -gt 0}).Count -gt 0){exit 1}',encoding='utf-8')
     # OS plumbing only, workspace XDG dirs; no HOME/credential/profile mutation.

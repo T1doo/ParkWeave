@@ -67,7 +67,7 @@ def main():
     report=summarize(rows,junit,code)
     report.update(environment=sys.platform,model_calls=0,native_windows='NOT_RUN: native manual gates not auto-graded',
                   full_regression=not bool(args.ids),private_log=str(log.relative_to(ROOT)),private_junit=str(junit.relative_to(ROOT)))
-    source_files=sorted(p for folder in ('src/parkweave','tests','scripts') for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix in ('.py','.ps1','.sql','.html'))
+    source_files=sorted(p for folder in ('src/parkweave','tests','scripts') for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix in ('.py','.ps1','.psm1','.sql','.html'))
     report['tested_source_sha256']={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_files}
     args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps({'whole_AT_EX':'NOT_RUN','engineering_exit_code':code,'report':str(args.report),'native_windows':'NOT_RUN','model_calls':0},ensure_ascii=False))

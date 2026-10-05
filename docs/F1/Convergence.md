@@ -50,3 +50,5 @@ F3首次AT21—27、31—34：完整三值资格/规则版本/材料/事件/变�
 本轮唯一代码交付R3，最终Linux证据及失败记录见ENG011与[CandidateReview](CandidateReview.md)；交付push后结束，R4未操作/未启用。R2历史交付见ENG010与AccountRate。ENG009历史失败JSON与源规格不变，31st回归现在拒绝；R1历史交付保留。不再追加没有新来源/具体失败断言的“完整oracle”任务；新的业务属于原阶段，新的基础缺口必须明确原断言、复现与有限范围，不能靠标签新增范围。
 
 ENG012接续状态：仅本地Server工程CI候选/PowerShell及明确Server harness（WindowsServerCI.md）。Actions读取拒绝未恢复，本轮未重试/未push/未run，不用Sim2Act证据继承Park权限。Linux静态/guard/编排mock不替代Server/Win11；E1仍未签收，R4未操作/未启用。源阶段与whole AT/EX不变，未新增功能任务。
+
+ENG013补充：ENG012候选CI的PG启动失败、owned state篡改、browser超时/清理失败已加入有限合成oracle，CI helper只接其阶段需要的DSN。原API/worker未发现owner继承路径；捕获原start循环两次Popen环境确认app-only。该证据为Linux/static/SYNTHETIC，不解除E1—E3/Win11、R4生产关闭、whole AT/EX NOT_RUN；Actions Forbidden原通道未重试，workflow/runner未发布运行。

@@ -224,3 +224,17 @@ Forbidden记录只来自前轮已捕获输出：gh run list仓库Actions列表ta
 最终冻结命令.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng012-acceptance-summary.json：**329 PASS /1 Windows SKIP /2既有WARN，103.527秒**（原317+新增12）。77个code/test/script hash与最终文件一致，workflow单独sha与static报告一致。全量Linux临时PG/API/CLI已回归，全部provider模型mock/真实API预算0；YAML/AST/guard/mock PASS绝非Server/Win11 PASS，whole36AT6EX NOT_RUN、R4仍DISABLED。没有新Windows/Server/浏览器native实测，standalone未来协议仅候选。
 
 暂存无秘密/真实个人数据/忽略runtime日志检查，保存本地commit，**不push**（该commit含待审查workflow）；未查询远端/Actions最新状态，最后已核实remote基线仍按此前5185cf4记录。F1 IN_PROGRESS，E1/E2/E3原门保留，本轮结束供父任务复核。WindowsServerCI.md列下一可独立优先项：PG init/start失败、owned cluster state篡改、浏览器超时/清理失败的故障oracle，不新增产品任务/F2/真实调用。
+
+## ENG013：有限清理故障oracle与CI凭据边界（2026-10-05）
+
+基线本地b9bc4dba0bac17b266004683ea72600e7f3f1e4c，独立dev/f1-foundation/origin T1doo/ParkWeave。依父任务新指示，开头直接提供前轮目标API及完整非敏感Forbidden：`failed to get runs: Get "https://api.github.com/repos/T1doo/ParkWeave/actions/runs?per_page=1&exclude_pull_requests=true&branch=dev%2Ff1-foundation": Forbidden`，CLI exit1。数值HTTP状态/headers/body/requestID/拒绝层仍未知；前轮repo metadata同为Get .../repos/T1doo/ParkWeave: Forbidden。原记录eng012-actions-blocker.json逐字不变；本轮未重试gh/Actions/远端查询、无身份/路线/权限变更、无凭据读取，无push/runner/真实模型/预算/部署/Sim2Act/用户电脑操作。
+
+冻结范围见ENG013-Mapping。审计没有将Sim风险直接归因Park：原lifecycle.start一个循环生成实际API/worker两次Popen，app_environment已经最小OS+低权限app/local；静态、捕获原启动函数两次合成Popen以及实际Linux子进程环境oracle确认无owner/test-owner/PGPASSWORD/token。发现CI辅助包装器此前统一获owner/test-owner/app三个配置，有不必要admin暴露面；修为phase最小环境（Setup owner+app、Doctor/Start/Status app、regression test-owner、Stop/probes/browser OSonly）。app binding user/db/loopback校验，service/options/owner/远端等拒绝；Fake Mapping证明未读取源环境隐藏凭据及无关配置。
+
+新增ClusterControl纯PS helper，严格UUID直接子目录/state字段与路径/端口类型范围/reparse，操作前读取绑定。17个明确SYNTHETIC命令替身oracle，正向start先过；start失败状态3不盲停、0只停自身、unknown拒绝；stop失败不fallback；字段/路径/extra/port/已start后篡改拒绝且无多余命令。真实PG命令0，这些不是Server/Windows原生实测。Browser按会话→自有driver→新profile顺序清理，超时及DELETE/wait/profile清理失败保留主异常与安全错误分类；Popen失败仅清自身profile，已退出driver不终止。mock suite browser TimeoutExpired后Stop自有服务，独立回归/Win11守卫/Server probe仍执行。
+
+真实失败及修复：首定向1 FAIL/30 PASS，测试错误假定两处Popen文本，而实际是共用循环，修正确断言并加实际函数双Popen捕获；static系统Python入口在native guard前加载psycopg，缺依赖导致未正确NOT_RUN；中间延迟sibling import使mock loader search path撤除后2 FAIL/31 PASS，再2 FAIL/34 PASS。最终保留dependency-free sibling import，只把conninfo parser推迟到guard后的app binding执行，准确平台拒绝恢复，未装系统包或绕guard。失败/修复与SYNTHETIC审计摘要eng013-fault-audit.json保留，不预填PASS。
+
+最终定向36 PASS/1既有WARN/0.88秒（原12+新24），YAML policy、PowerShell7.6.6 AST11份零错误、四入口拒Linux，compileall/diffcheck通过。冻结全量 `.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng013-acceptance-summary.json`：**353 PASS/0 FAIL/1 Windows SKIP/2既有WARN，103.399秒**，80个code/test/script hash复核一致（新增.psm1纳入）；不重跑无依据的全量任务。两Library原档manifest的字节/行/hash仍一致；原files.py/lifecycle/Win11 probe/workflow及ENG012原错误/最终报告逐字不变。
+
+Server/Win11/browser原生NOT_RUN或BLOCKED、production R4 DISABLED、whole36AT6EX NOT_RUN、LIVE/真实共享部署/真实数据外门不解除。WindowsServerCI.md仅列恢复原通道访问与发布授权后一次标准mock job的最小验证计划，本轮不执行。变更文件secret-pattern/人工SYNTHETIC范围及ignored runtime检查通过，仅本地commit不push（包含待审workflow的历史祖先）。未重查远端，最后已核实push仍5185cf4b0a3973f1b7b486bc6adf43f478742db2。F1 IN_PROGRESS，本轮结束供父任务复核，不新扩F1/F2。

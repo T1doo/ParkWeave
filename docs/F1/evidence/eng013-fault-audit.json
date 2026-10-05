@@ -1,0 +1,89 @@
+{
+  "scope": "ENG013_LOCAL_SYNTHETIC_ONLY",
+  "prior_failures": [
+    {
+      "phase": "targeted",
+      "result": "1 FAIL /30 PASS",
+      "cause": "test assumed two textual launch sites; product uses one loop for API and worker",
+      "fix": "assert actual loop and capture both Popen environments"
+    },
+    {
+      "phase": "static",
+      "result": "FAIL",
+      "cause": "system Python guard loaded psycopg before platform refusal",
+      "fix": "conninfo import deferred inside application_dsn, after native guard"
+    },
+    {
+      "phase": "targeted interim",
+      "result": "2 FAIL /31 PASS then 2 FAIL /34 PASS",
+      "cause": "interim delayed sibling import was outside test loader search path",
+      "fix": "keep dependency-free sibling module import at top; parser dependency remains deferred"
+    }
+  ],
+  "final_targeted": {
+    "PASS": 36,
+    "WARN": 1,
+    "seconds": 0.88
+  },
+  "cluster_oracles": {
+    "scope": "SYNTHETIC_LOCAL_COMMAND_DOUBLE",
+    "oracles": 17,
+    "real_postgres_commands": 0,
+    "startup_positive": true,
+    "startup_failed_not_running": true,
+    "startup_failed_running_cleanup": true,
+    "startup_unknown_status_refused": true,
+    "stop_failure_no_fallback": true,
+    "state_tamper_before_command": true,
+    "state_tamper_after_start": true,
+    "port_type_range": true
+  },
+  "credential_audit": {
+    "actual_api_worker_launches": "mock Popen capture of original start loop: two launches",
+    "owner_in_API_worker": "not found in static or synthetic tests",
+    "prior_unnecessary_admin_exposure": "CI helper commands inherited owner/test-owner DSNs",
+    "repair": "phase-specific minimal environments; misbound application DSN rejected",
+    "real_credentials_read": false
+  },
+  "archives": [
+    {
+      "name": "平台产品设计 (2).md",
+      "size": 44220,
+      "lines": 454,
+      "sha256": "48ff72723678546500973b6ad45ae841320cda69f08f9ca24013137ae5e7b02b",
+      "unchanged": true
+    },
+    {
+      "name": "分阶段开发计划 (2).md",
+      "size": 31271,
+      "lines": 410,
+      "sha256": "4437dac3b86c12bd1ffc57cf7c4e66c154eea5ec2a5d8562d0ddfc1f6cfb5989",
+      "unchanged": true
+    }
+  ],
+  "protected_files_unchanged": [
+    "scripts/windows/lifecycle.py",
+    "scripts/windows/file_candidate_probe.py",
+    "src/parkweave/files.py",
+    ".github/workflows/windows-server-engineering.yml",
+    "docs/F1/evidence/eng012-actions-blocker.json",
+    "docs/F1/evidence/eng012-acceptance-summary.json"
+  ],
+  "native_Server": "NOT_RUN",
+  "native_Win11": "BLOCKED_NOT_RUN",
+  "Actions": "BLOCKED_NOT_RETESTED",
+  "push": false,
+  "runner_runs": 0,
+  "real_model_calls": 0,
+  "real_budget": 0,
+  "whole_AT_EX": "NOT_RUN",
+  "production_R4": "DISABLED",
+  "final_full_regression": {
+    "PASS": 353,
+    "FAIL": 0,
+    "SKIP": 1,
+    "WARN": 2,
+    "seconds": 103.399,
+    "source_hashes_verified": 80
+  }
+}

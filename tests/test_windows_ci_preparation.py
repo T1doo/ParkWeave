@@ -41,7 +41,7 @@ def test_ci_workflow_scope_is_narrow_read_only_and_unpublished():
         assert prohibited not in text
 
 def test_ci_scripts_only_new_cluster_no_service_uac_policy_mutation():
-    text=(DIRECTORY/'Engineering.ps1').read_text()
+    text=(DIRECTORY/'Engineering.ps1').read_text()+(DIRECTORY/'ClusterControl.psm1').read_text()
     assert "'--auth-host=trust'" in text and '-h 127.0.0.1' in text and 'parkweave-server-ci-' in text
     assert 'Get-OwnedState' in text and 'Get-ItemProperty' in text and 'EnableLUA' in text
     for prohibited in ('Set-ExecutionPolicy','Set-ItemProperty','Start-Service','Stop-Service','Remove-Item','netsh','Invoke-Expression','PGPASSWORD','root password'):
@@ -76,7 +76,7 @@ def test_suite_keeps_independent_checks_after_setup_failure(tmp_path,monkeypatch
     m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
     monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'))
     monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'summary.json')])
-    monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'SYNTHETIC','PARKWEAVE_DSN':'SYNTHETIC','PARKWEAVE_TEST_OWNER_DSN':'SYNTHETIC'})
+    monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner'})
     commands=[]
     def run(command,**kwargs):
         commands.append(command)

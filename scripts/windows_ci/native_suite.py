@@ -15,7 +15,7 @@ from server_candidate_probe import require_server
 
 REPO=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(REPO/'src'))
-from parkweave.process_env import minimal_environment
+from child_environment import command_environment
 
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--report',required=True,type=Path);args=parser.parse_args()
@@ -23,11 +23,12 @@ def main():
     except RuntimeError as exc:print(str(exc));return 2
     # Only names of explicitly created temporary cluster config. No model env access.
     config={key:os.environ[key] for key in ('PARKWEAVE_OWNER_DSN','PARKWEAVE_DSN','PARKWEAVE_TEST_OWNER_DSN')}
-    env=minimal_environment(os.environ,**config)
     managed=REPO/'.venv-windows/Scripts/python.exe'
     if Path(sys.executable).resolve()!=managed.resolve():raise RuntimeError('prepared managed Python required')
     rows=[];started=False
     def script(label,path,*extra,expected=0,timeout=120,required_error=None):
+        phase='file_probe' if path.name=='ServerFileTest.ps1' else path.stem.lower()
+        env=command_environment(os.environ,config,phase)
         proc=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-File',str(path),'-Python',str(managed),*extra],cwd=REPO,env=env,capture_output=True,text=True,timeout=timeout)
         ok=proc.returncode==expected and (required_error is None or required_error in proc.stderr)
         rows.append({'case':label,'status':'PASS' if ok else 'FAIL','exit_code':proc.returncode})
@@ -82,7 +83,7 @@ def main():
     # Failures in one independent phase do not suppress the others.
     try:
         report=REPO/'.runtime/server-regression.json';report.parent.mkdir(exist_ok=True)
-        proc=subprocess.run([str(managed),'scripts/run_acceptance.py','--report',str(report)],cwd=REPO,env=env,capture_output=True,text=True,timeout=600)
+        proc=subprocess.run([str(managed),'scripts/run_acceptance.py','--report',str(report)],cwd=REPO,env=command_environment(os.environ,config,'regression'),capture_output=True,text=True,timeout=600)
         rows.append({'case':'full_engineering_regression','status':'PASS' if proc.returncode==0 else 'FAIL','exit_code':proc.returncode})
         if report.exists():
             parsed=json.loads(report.read_text());rows[-1]['counts']=parsed['engineering_total_counts']
@@ -90,7 +91,7 @@ def main():
     except Exception as exc:rows.append({'case':'full_engineering_regression','status':'FAIL','category':type(exc).__name__})
     try:
         # Verify original Win11 entry guard really refuses Server before any mutation.
-        guard=subprocess.run([str(managed),'scripts/windows/file_candidate_probe.py','--fixture-dir',str(REPO/'.runtime/nonexistent-win11-guard-fixture')],cwd=REPO,env=env,capture_output=True,text=True,timeout=15)
+        guard=subprocess.run([str(managed),'scripts/windows/file_candidate_probe.py','--fixture-dir',str(REPO/'.runtime/nonexistent-win11-guard-fixture')],cwd=REPO,env=command_environment(os.environ,config,'guard'),capture_output=True,text=True,timeout=15)
         guard_ok=guard.returncode==1 and 'NOT_RUN: explicit native Windows11' in guard.stdout
         rows.append({'case':'Win11_guard_refuses_Server','status':'PASS' if guard_ok else 'FAIL','exit_code':guard.returncode})
         assert not (REPO/'.runtime/nonexistent-win11-guard-fixture').exists()

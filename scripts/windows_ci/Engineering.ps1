@@ -11,6 +11,7 @@ if ($OS.Caption -notmatch 'Windows Server 2025' -or $OS.ProductType -eq 1) {
 }
 $Repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $BasePython=(Get-Command $Python -CommandType Application -ErrorAction Stop).Source
+Import-Module (Join-Path $PSScriptRoot 'ClusterControl.psm1') -Force
 function Invoke-Checked([string]$Exe,[string[]]$Arguments) {
     & $Exe @Arguments
     if ($LASTEXITCODE -ne 0) { throw 'Native engineering command failed; preserve fixture, no fallback or policy change.' }
@@ -24,15 +25,7 @@ function Protect-NewDirectory([string]$Path) {
 }
 function Get-OwnedState {
     if (!$env:PARKWEAVE_CI_ROOT) { throw 'No owned cluster state; do not discover or stop other PostgreSQL instances.' }
-    $root=[IO.Path]::GetFullPath($env:PARKWEAVE_CI_ROOT)
-    $temp=[IO.Path]::GetFullPath($env:RUNNER_TEMP).TrimEnd('\')+'\'
-    if (!$root.StartsWith($temp,[StringComparison]::OrdinalIgnoreCase) -or (Split-Path $root -Leaf) -notmatch '^parkweave-server-ci-[0-9a-f-]{36}$') {
-        throw 'Owned temporary cluster root refused.'
-    }
-    $state=Get-Content -LiteralPath (Join-Path $root 'cluster-state.json') -Raw | ConvertFrom-Json
-    if ($state.project -ne 'ParkWeave' -or $state.scope -ne 'SYNTHETIC_SERVER_ENGINEERING' -or
-        $state.data -ne (Join-Path $root 'data') -or $state.bin -ne $env:PGBIN) { throw 'Owned cluster binding refused.' }
-    return $state
+    return Get-OwnedCluster -Root $env:PARKWEAVE_CI_ROOT -RunnerTemp $env:RUNNER_TEMP -Bin $env:PGBIN
 }
 Push-Location $Repo
 try {
@@ -61,7 +54,8 @@ try {
         "PARKWEAVE_OWNER_DSN=$ownerDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
         "PARKWEAVE_DSN=$appDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
         Invoke-Checked (Join-Path $env:PGBIN 'initdb.exe') @('-D',$state.data,'-U','park_ci_owner','--auth-local=trust','--auth-host=trust','--encoding=UTF8','--locale=C')
-        Invoke-Checked (Join-Path $env:PGBIN 'pg_ctl.exe') @('-D',$state.data,'-l',(Join-Path $root 'postgres.log'),'-o',"-h 127.0.0.1 -p $port",'-w','-t','30','start')
+        $started=Start-OwnedCluster -Root $root -RunnerTemp $env:RUNNER_TEMP -Bin $env:PGBIN
+        if ($started.status -ne 'STARTED') { $started | ConvertTo-Json -Depth 4; throw 'Owned PG start failed; primary failure preserved.' }
         $psql=Join-Path $env:PGBIN 'psql.exe'
         Invoke-Checked $psql @('-h','127.0.0.1','-p',"$port",'-U','park_ci_owner','-d','postgres','-v','ON_ERROR_STOP=1','-c','CREATE ROLE parkweave_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE')
         Invoke-Checked $psql @('-h','127.0.0.1','-p',"$port",'-U','park_ci_owner','-d','postgres','-v','ON_ERROR_STOP=1','-c','CREATE DATABASE parkweave')
@@ -82,10 +76,6 @@ try {
     } else {
         if (!$env:PARKWEAVE_CI_ROOT) { Write-Output 'NOT_RUN: no published owned cluster; no service touched.'; exit 0 }
         $state=Get-OwnedState
-        $ctl=Join-Path $state.bin 'pg_ctl.exe'
-        & $ctl -D $state.data status | Out-Null
-        if ($LASTEXITCODE -eq 3) { Write-Output 'Owned temporary cluster already stopped/not started.'; exit 0 }
-        if ($LASTEXITCODE -ne 0) { throw 'Cannot verify owned temporary cluster; do not stop unknown service.' }
-        Invoke-Checked $ctl @('-D',$state.data,'-m','fast','-w','-t','30','stop')
+        Stop-OwnedCluster -Root $env:PARKWEAVE_CI_ROOT -RunnerTemp $env:RUNNER_TEMP -Bin $env:PGBIN | ConvertTo-Json
     }
 } finally { Pop-Location }

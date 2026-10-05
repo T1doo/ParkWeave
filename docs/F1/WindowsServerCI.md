@@ -35,3 +35,11 @@ ServerFileTest.ps1只新建server-file-engineering-UUID合成根/marker及自身
 已安装系统PyYAML及缓存PowerShell作Linux YAML/policy/AST/拒Linux守卫；测试wire及故障编排只用明确mock。证据eng012-static-ci.json/eng012-acceptance-summary.json仅LOCAL_ENGINEERING，不称Server或Win11 PASS。初次PowerShell启动默认cache写/home只读导致exit134；仅对该子进程使用工作区XDG目录后恢复，无HOME/用户profile/全局配置修改。
 
 权限恢复前仍可独立推进的最高优先项：对这一CI harness补充PG init/start失败、owned cluster状态篡改、浏览器超时/清理失败的独立故障oracle，确认保留失败/只清理自己对象/其它独立阶段仍运行。这是现有F1测试基础的审查，不新增R5/F2产品功能；随后再按授权恢复Actions并实测Server。R4仍等原生条件，真实API/预算始终0。
+
+## ENG013本地有限加固（未发布）
+
+CI辅助进程按阶段构建环境：Setup只接owner+app，Doctor/Start/Status只接校验为loopback/parkweave/parkweave_app的app DSN，回归协调器只接显式test-owner；Stop/文件probe/Win11守卫/浏览器只有OS白名单。service/options/owner角色/其它数据库或远端app绑定拒绝。原API/worker共用循环中的app_environment已过滤owner/test-owner/PGPASSWORD/token；本轮静态与合成Popen捕获及真实Linux子进程环境oracle确认此边界，没有读取真实凭据，也不将另项目风险直接归因本项目。
+
+ClusterControl纯PS helper先验证UUID直接子目录、精确state字段/范围/路径/无reparse，再执行自身data的pg_ctl。start失败重新验证+status：未运行不stop、已运行只stop自己、未知状态拒绝，保留原start退出码；清理失败明确REFUSED_OR_FAILED，不猜成功。浏览器会话/自有driver退出先于profile清理；主超时不会被清理异常覆盖，清理错误保留分类注释。全部故障由明确SYNTHETIC命令替身/配置/临时目录验证，原生PG/Chrome/Server仍NOT_RUN。
+
+访问恢复后的唯一最小验证计划：在原身份/原通道获准恢复后，先做一次只读Actions状态/日志访问验证；确认可读及workflow发布授权、复核checkout不可变SHA后，才推当前独立分支并运行一次标准windows-2025 mock任务，核对安全版本/低权限app身份、生命周期和故障检查/最终Stop摘要。失败按原输出记录，不自动换身份、改权限或反复启动job。Windows11门仍独立BLOCKED；现在不执行该计划。

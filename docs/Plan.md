@@ -30,3 +30,5 @@ ENG-008 READY_FOR_REVIEW：Windows原生只读文件候选代码/69 Linux policy
 
 
 ENG-009：按F1原任务/12AT断言收敛为Convergence有限清单，单项R1计划修订artifact与独立oracle已实现；原阶段不改、真实模型/预算0、Windows候选不动。残余固定R2账号速率/LIVE接入、R3有限候选/集中澄清、R4实机后通路集成，外门E1—E3；具体失败和退出断言均已列明，不泛称还有“完整”欠项，不扩F2。
+
+ENG013：对ENG012候选CI作有限PG失败/state篡改/browser超时oracle与owner/admin环境审计；原应用子进程白名单边界保留，辅助命令按phase收窄。仅本地提交，Actions访问不重试、workflow不push、runner0；Linux/static/synthetic证据不能替代Server/Win11实测，生产R4关闭/真实模型预算0。供父任务复核后另派。
