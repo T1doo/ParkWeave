@@ -62,3 +62,21 @@ Schema2为独立owner原子迁移，保留历史Run/Case/Receipt，版本健康�
 剩余：完整V1契约、事实冲突、字段级Grant及其他角色、长等待心跳、outbox撤权/消息完整语义与固定AT全执行器尚未实现。Windows/LIVE/真实园区条件保持BLOCKED，完整AT/EX NOT_RUN，F1未通过。未修改Sim2Act、未共用其数据库、未配置持续凭据、未读取隐藏密钥；提交前秘密/个人数据及原件hash检查，测试数据/会话/截图/访问日志不提交。实际代码SHA本条随工程提交，通过Git历史和交付链接关联。
 
 最终回归54 PASS / 2 WARN（20.12秒），包括原40与新增14条实际API/worker/PG路径测试。当前仅该明确工程范围有PASS；完整AT/EX未改状态。本轮没有意外FAIL；所有注入失联和负例均保留断言与日志，不删用例。浏览器及连续worker HTTP证据各自单独保存，不覆盖ENG-001/002历史。
+
+## 2026-10-05 ENG-004（心跳、V1最小结构、事实/字段Grant）
+
+基线eb8b38bb7d538400fad6a2c143f6c9a1d6cc7fb5，dev/f1-foundation干净，远端T1doo/ParkWeave。范围限定当前事实闭环与长等待租约，不开展F2组合服务。用户新确认电脑Windows11；这是自报系统家族，精确构建/架构/原生实测/安装条件仍BLOCKED。
+
+实现：Schema3源事实断言与字段Grant/心跳计数；V1ServiceSpec/Plan/ActionSpec当前可信能力的全部V1必备最小结构，实际鉴权HTTP结构校验但不发布/执行；facts.assess经正常worker/Gateway读取当前READ Grant，在事务内保存来源/时点/证据/hash与冲突/缺证据UNKNOWN（资格NOT_EVALUATED，无Case）。字段READ/WRITE分开，Grant管理员CLI按同一principal授权锁撤回；app只SELECT Grant，seed不恢复撤销状态，Run结果读取重验，旧已送达输出无法本地收回。
+
+独立LeaseKeeper线程/连接在主worker模拟模型等待期间以租约1/3（最大5秒）续租，不持长事务；DB时钟与fence/current授权始终检查。过期、取消或撤权停止续租及派发，kill后接管，旧heartbeat拒绝。模拟等待0—10秒，模型网络调用0，不能声称真实模型长请求/Windows验证。
+
+安全配置命名协调：rg检查仓库此前没有INTERN/API_TOKEN读取器，本次新增resolve_intern_token显式Mapping助手：PARKWEAVE_INTERN_API_TOKEN优先，INTERN_API_TOKEN fallback，SecretStr不打印。只用虚构值测试，不读取真实.env/模型凭据；当前API/worker未调用该助手或真实适配器。用户安全注入与预算仍未完成，不从聊天/别任务复制密钥。
+
+失败与修复保留：初始2 FAIL /52 PASS（旧迁移oracle仍期待Schema2）；更新Schema3/未来版本4，继续保留历史不变/未来版本拒绝断言。随后一个编辑脚本SyntaxError导致该改动与Grant seed未生效，新增测试12 FAIL /57 PASS（无Grant时API安全拒绝403，而非默认允许）；修正脚本并将合成owner seed显式初始化Grant，兼容旧schema无Grant表，已撤回Grant ON CONFLICT不恢复。修复后专项15 PASS。加入V1结构测试后全量78 PASS；最后补回执各证据有效期/适用标记并重跑78 PASS /2 WARN，44.68秒。没有放宽拒绝断言，没有隐藏失败。原有Starlette/httpx与pgserver runtime fallback两个WARN保留。
+
+命令与实际路径：python -m pytest -q --tb=short；新tests/test_facts_heartbeat.py与test_v1_contracts.py使用实际uvicorn HTTP+独立CLI worker+临时PG最小应用角色，不用旁路执行器；长等待3.3秒/lease1秒，heartbeat>=2/当前租约有效，第二worker不能抢占；真实HTTP取消/owner CLI revoke-field及时返回；kill与旧heartbeat拒绝；跨企业/园区403和app Grant UPDATE InsufficientPrivilege。model_config只虚构Mapping，无真实key。初始失败输出在本轮日志列示，未保存带随机会话的pytest traceback进Git。
+
+连续工程检查：python scripts/linux_fixture_server.py（LOCAL，PG16.2，Python3.12.14，127.0.0.1:8765）；python scripts/browser_smoke.py --report docs/F1/evidence/eng004-browser-smoke.json；python scripts/facts_smoke.py。重启服务以运行最终回执代码后browser PASS、实际两来源事实201→worker事实核对SUCCEEDED/FACT_EVIDENCE_ASSESSED，region冲突UNKNOWN、employees缺证据UNKNOWN、qualification NOT_EVALUATED、Case=null；跨园区读Fact 403。时点、输入hash、Fact/Evidence/Run/Operation ID、历史PID见eng004-facts-smoke.json，源码hash见eng004-engineering-manifest.json。
+
+完整AT/EX仍NOT_RUN，新增24检查+原54是工程范围，不是完整验收成绩。剩余多角色/获派步骤Grant、审计、outbox当前授权/消息、文件边界、原生脚本/完整AT执行器尚未完成；LIVE/Windows/真实园区效果BLOCKED。不修改Sim2Act、不共用其数据、未持续配置凭据，原始Library文档不改；提交前代码与原件hash/秘密扫描，.runtime会话、数据库、日志、截图不提交。实际commit随本记录，通过Git历史与最终链接关联。

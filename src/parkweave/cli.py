@@ -9,8 +9,10 @@ from .store import Store
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("command", choices=["migrate", "seed-synthetic", "revoke"])
+    p.add_argument("command", choices=["migrate", "seed-synthetic", "revoke", "revoke-field"])
     p.add_argument("--principal")
+    p.add_argument("--field", choices=['region','employees','service_need'])
+    p.add_argument("--capability", choices=['READ','WRITE'])
     args = p.parse_args()
     dsn = os.environ.get("PARKWEAVE_DSN")
     if not dsn:
@@ -33,7 +35,10 @@ def main():
     else:
         if not args.principal:
             p.error("--principal required")
-        store.revoke(args.principal)
+        if args.command=='revoke-field':
+            if not args.field or not args.capability:p.error("--field and --capability required")
+            store.revoke_field(args.principal,args.field,args.capability)
+        else:store.revoke(args.principal)
 
 
 if __name__ == "__main__":

@@ -3,9 +3,9 @@ import re
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
-from fastapi import FastAPI, Header, HTTPException, Request
+from fastapi import FastAPI, Header, HTTPException, Request, Query
 from fastapi.responses import HTMLResponse, JSONResponse
-from .domain import Intake
+from .domain import Intake, FactInput, V1ServiceSpec, V1ServicePlan, FieldName
 from .store import Store, Denied, Conflict
 
 
@@ -69,6 +69,30 @@ def create_app(store: Store) -> FastAPI:
                 authorization: str | None = Header(default=None)):
         store.control(token(authorization), run_id, intent)
         return {"intent": intent, "external_reversal": False}
+
+    @app.post('/api/facts',status_code=201)
+    def save_fact(data: FactInput, authorization: str | None=Header(default=None), idempotency_key: str=Header()):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
+        return {'fact_id':store.save_fact(token(authorization),idempotency_key,data),'source':'USER_ASSERTED_SYNTHETIC'}
+
+    @app.get('/api/facts')
+    def facts(fields: list[FieldName]=Query(), authorization: str | None=Header(default=None)):
+        if not 1<=len(fields)<=3 or len(set(fields))!=len(fields):raise HTTPException(422,'explicit unique fields required')
+        return {'facts':store.read_facts(token(authorization),fields)}
+
+    @app.get('/api/facts/{fact_id}')
+    def fact(fact_id: UUID, authorization: str | None=Header(default=None)):
+        return {'facts':store.read_facts(token(authorization),[],fact_id=fact_id)}
+
+    @app.post('/api/contracts/service')
+    def service_contract(data: V1ServiceSpec, authorization: str | None=Header(default=None)):
+        with store.connect() as c:store.auth(c,token(authorization),lock=True)
+        return {'schema_version':data.schema_version,'validation_scope':'STRUCTURE_ONLY','published':False}
+
+    @app.post('/api/contracts/plan')
+    def plan_contract(data: V1ServicePlan, authorization: str | None=Header(default=None)):
+        with store.connect() as c:store.auth(c,token(authorization),lock=True)
+        return {'schema_version':data.schema_version,'validation_scope':'STRUCTURE_ONLY','executed':False}
 
     return app
 

@@ -25,3 +25,13 @@ READY_FOR_REVIEW：显式FAULT_INJECTION持久账本，独立模拟效果事务�
 READY_FOR_REVIEW：正常API/独立worker共用ExecutionGateway，持久DISPATCHED/OUTCOME_UNKNOWN、核对、撤权/控制与旧fence路径；Schema2保留历史；明确测试适配器默认关闭。实际HTTP/worker/PG工程回归和浏览器证据见ENG-003。F1整体IN_PROGRESS，完整AT/EX状态不变。
 
 本轮不补完整V1最小契约/事实冲突/字段级Grant，以避免散开；这些是下一有界增量的独立工程缺口。仍未实现长任务心跳、outbox当前授权/消息撤回完整语义、逐AT全范围执行器。仅未知结果账本的正常worker接入从“未实现”改为“已有合成工程证据”，不声称真实外部连接已验证。
+
+## 第四有界增量ENG-004
+
+READY_FOR_REVIEW：当前闭环所需V1最小完整结构（校验不发布）、带来源事实冲突/缺证据、单企业经办角色字段READ/WRITE Grant、正常worker独立心跳及实际等待/撤权/取消/失联路径。78工程pytest PASS，browser与事实HTTP/worker证据见ENG-004。
+
+配置命名：新增项目优先PARKWEAVE_INTERN_API_TOKEN、通用INTERN_API_TOKEN fallback的只读兼容助手，SecretStr不打印，仅虚构值单测；仓库原来无token读取实现，LIVE仍关闭，安全注入/预算尚未确认。
+
+用户确认电脑Windows11系统家族；精确构建/架构/硬件/原生权限和测试仍BLOCKED，不能把自报系统视为AT-01/34通过。F1整体IN_PROGRESS，未进入F2，完整AT/EX NOT_RUN。
+
+剩余独立F1工作：多角色/获派步骤权限与全部交集及审计、outbox当前授权/消息撤回、文件类型/路径/渲染边界执行器、原生生命周期脚本及固定AT全范围落地；当前仅三字段/一用途事实闭环、模型等待只mock。真实模型/Windows/真实园区资料依赖另列BLOCKED，不掩盖未实现部分。

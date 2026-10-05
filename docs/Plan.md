@@ -15,3 +15,5 @@ C0规则核查从F1并行：模板正文、跨赛道关联作品政策、2026-11
 ENG-002 READY_FOR_REVIEW：40工程pytest回归（含原21），FAULT_INJECTION未知结果账本原型及严格计划边界。未知不盲重发；与正常worker的集成未完成。完整AT/EX状态未改变；F1后续独立缺口与外部阻塞见F1/Plan。
 
 ENG-003 READY_FOR_REVIEW：正常API/worker已通过统一网关执行本地动作和显式故障适配器，支持未知结果核对、旧worker拒写及取消/撤权副作用边界的合成工程路径。完整F1仍IN_PROGRESS；完整V1契约、事实/字段Grant等继续待实现，Windows/LIVE/园区效果仍BLOCKED；完整AT/EX NOT_RUN。
+
+ENG-004 READY_FOR_REVIEW：78工程回归、V1最小结构实际API校验、事实冲突与字段Grant实际API/worker、独立心跳和等待控制。Windows11仅用户自报确认，原生门仍BLOCKED；真实模型注入与预算仍待确认。事实核对成功不代表资格满足或服务履约，未进入F2。下一独立F1缺口见F1/Plan。

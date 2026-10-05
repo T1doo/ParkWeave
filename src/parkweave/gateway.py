@@ -48,6 +48,8 @@ class ExecutionGateway:
     def prepare_dispatch(self, claim):
         with self.store.connect() as c:
             p,r,op=self.store.locked_execution(c,claim)
+            if op['action']=='facts.assess':
+                return 'ASSESS', None
             if op['action']=='case.create':
                 return 'LOCAL', None
             if op['action']!='fault.record' or self.store.mode!='FAULT_INJECTION':
@@ -64,7 +66,7 @@ class ExecutionGateway:
                 self.store.event(c,r['id'])
                 return 'STOP', None
             data=Intake.model_validate(r['input'])
-            if data.action!=op['action'] or digest(json.dumps(data.model_dump(),sort_keys=True,ensure_ascii=False))!=r['fingerprint']:
+            if data.action!=op['action'] or digest(json.dumps(r['input'],sort_keys=True,ensure_ascii=False))!=r['fingerprint']:
                 raise Conflict('persisted intent changed')
             c.execute("UPDATE operations SET state='DISPATCHED' WHERE id=%s",(op['id'],))
             return 'SEND', envelope
@@ -93,7 +95,9 @@ class ExecutionGateway:
 
     def execute(self, claim, crash_at=None):
         phase,envelope=self.prepare_dispatch(claim)
-        if phase=='LOCAL':
+        if phase=='ASSESS':
+            self.store.assess_facts(claim)
+        elif phase=='LOCAL':
             self.store.finish(claim)
         elif phase=='SEND':
             if crash_at=='after-dispatch':raise InjectedCrash('FAULT_INJECTION: after dispatch commit')

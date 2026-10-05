@@ -68,3 +68,27 @@ FAULT账本是测试驱动的持久工程原型，尚未与正常Run/worker/outb
 普通迁移002创建隔离的fixture_effects记录表，但正常roles.sql不给写权限，默认LOCAL模式同时在API及worker拒绝/跳过故障能力；测试harness必须--fault-fixtures显式授予权限并设置双方模式。ENG-002侧表fault_operations没有进入普通迁移，保留独立历史测试，不计运行器集成通过证据。
 
 完整AT-01—36/EX仍NOT_RUN；以上工程映射不代表全条验收通过，特别是文件、字段Grant、缓存与真实消息、完整准备度、长任务、Windows和真实模型范围尚未验证。
+
+## ENG-004 当前闭环：V1最小结构、事实/字段Grant、独立心跳
+
+本轮新增24个检查：14事实/心跳实际路径、9契约实际HTTP校验、1无真实值token兼容。原54继续回归。Schema3保留前两版历史，增加事实断言、来源/证据、字段Grant及心跳观测。旧0.1投影作为历史测试类型保留；V1ServiceSpec/V1ServicePlan/V1ActionSpec明确使用parkweave-domain/1.0-draft，所有产品§6.2/6.3必备最小字段均存在。结构完整不代表完整PR0语义或发布/审批权已验证。
+
+| 新增工程检查 | 实际路径及独立oracle | AT子范围 |
+| --- | --- | --- |
+| 长等待续租 | 真实CLI worker lease=1秒、MODEL_MOCK等待3.3秒；独立线程/连接续租≥2次、DB时点租约有效；第二CLI worker不能抢占，最终唯一Operation | 17、30工程局部 |
+| 等待撤权/取消 | API受理→worker等待→owner CLI撤READ或真实HTTP取消，2秒内控制完成（无长事务）；等待提前结束，无事实结果/Case副作用 | 18、19 |
+| 失联旧心跳 | 真正kill等待worker，按DB时钟过期；旧heartbeat Conflict，第二CLI worker接管，旧token不能复活 | 17 |
+| 事实冲突 | HTTP保存两个不同来源断言→正常worker facts.assess；保留双方Evidence ID/源引用/值/单位/有效期/hash，结果UNKNOWN/CONFLICTING_EVIDENCE；缺字段UNKNOWN/MISSING_EVIDENCE | 06、21基础局部 |
+| 来源与时间 | 只接纳USER_ASSERTED_SYNTHETIC，有效期必须有时区且递增；过期保留UNKNOWN，回执明确assessed_at及各证据applicable_at_assessment；KNOWN只代表一致性 | 06、22基础局部 |
+| 字段Grant当前有效 | own park/org/principal+字段+SERVICE_PREPARATION+READ/WRITE交集；真实API入口/worker/已生成回执再次读取都重验；READ与WRITE分别撤回，seed不恢复；app不能UPDATE Grant | 04、19 |
+| 跨企业/园区 | 其他两个身份猜Fact ID与Run ID拒绝403，各自列表为空；请求体伪造org拒绝422 | 04 |
+| V1最小结构 | 真实契约API拒绝必备字段缺失、无来源SLA、无时区、危险动作/额外script、过深规则、陈旧服务依赖锁；完整有效样例STRUCTURE_ONLY且不创建Run/Case、不发布 | 03、06结构局部 |
+| token名字兼容 | 虚构Mapping：PARKWEAVE_INTERN_API_TOKEN优先，INTERN_API_TOKEN fallback，空值None，SecretStr repr/str不含值；不读取真实.env/环境值、不调用LIVE | 02/30准备，不计真实模型通过 |
+
+事实接口限region/employees/service_need、每字段16断言、3请求字段、16KiB请求。员工数须非负整数+people，文本须非空有界+text。事实来源是经办人的合成自述，不是已独立验证的真实证据；一致性KNOWN不变成资格TRUE，qualification_decision始终NOT_EVALUATED，Case不创建。矛盾/缺证据/过期均UNKNOWN，不按文件名或日期替用户选一方。
+
+字段Grant是当前单一企业经办角色的最小闭环；没有实现服务执行者分派、多角色委托、全部CaseStep交集、全权限审计或真实消息撤回。查询/回执现入口无缓存且重验，已交给用户的历史输出不能靠撤回本地收回。标准服务/计划契约只校验结构与受控引用类型，不验证所声明审核人真实身份，不发布正式服务、执行规则资格或F2计划。
+
+LeaseKeeper是独立线程和短连接，不是另一个独立服务；MODEL_MOCK长等待无网络，不证明真实托管模型、平台限流/非流式/截断/usage或Windows心跳已通过。心跳异常关闭派发权，过期fence不续租；实际数据库断网/复杂负载/所有停止边界仍需后续覆盖。
+
+用户确认Windows11仅作为环境自报记录；精确版本、架构、原生进程、权限和干净复现仍BLOCKED。完整AT/EX保持NOT_RUN，真实模型预算/注入与真实园区来源门未通过。

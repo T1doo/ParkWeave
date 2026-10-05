@@ -1,6 +1,6 @@
 {
-  "version": "parkweave-domain/0.1",
-  "origin": "NEW bounded projections; explicit fault.record Intake requires separate runtime opt-in; not full V1 contract",
+  "version": "parkweave-domain/1.0-draft",
+  "origin": "V1 minimum required shapes plus legacy0.1 projections; bounded trusted capabilities only; structural validation is not publication/approval",
   "schemas": {
     "Intake": {
       "additionalProperties": false,
@@ -15,7 +15,8 @@
           "default": "case.create",
           "enum": [
             "case.create",
-            "fault.record"
+            "fault.record",
+            "facts.assess"
           ],
           "title": "Action",
           "type": "string"
@@ -31,6 +32,19 @@
           "default": "SYNTHETIC",
           "title": "Source",
           "type": "string"
+        },
+        "fact_fields": {
+          "items": {
+            "enum": [
+              "region",
+              "employees",
+              "service_need"
+            ],
+            "type": "string"
+          },
+          "maxItems": 3,
+          "title": "Fact Fields",
+          "type": "array"
         }
       },
       "required": [
@@ -431,6 +445,1266 @@
         }
       },
       "title": "ActionSpec",
+      "type": "object"
+    },
+    "V1ServiceSpec": {
+      "$defs": {
+        "ActionLimits": {
+          "additionalProperties": false,
+          "properties": {
+            "max_steps": {
+              "const": 1,
+              "title": "Max Steps",
+              "type": "integer"
+            },
+            "max_payload_bytes": {
+              "maximum": 16384,
+              "minimum": 1,
+              "title": "Max Payload Bytes",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "max_steps",
+            "max_payload_bytes"
+          ],
+          "title": "ActionLimits",
+          "type": "object"
+        },
+        "HandlingPolicy": {
+          "additionalProperties": false,
+          "properties": {
+            "accepting_org_id": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "title": "Accepting Org Id",
+              "type": "string"
+            },
+            "calendar_ref": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Calendar Ref"
+            },
+            "target_seconds": {
+              "anyOf": [
+                {
+                  "maximum": 31536000,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Seconds"
+            },
+            "target_source_ref": {
+              "anyOf": [
+                {
+                  "maxLength": 100,
+                  "minLength": 1,
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Target Source Ref"
+            },
+            "pause_reasons": {
+              "items": {
+                "const": "AWAITING_USER",
+                "type": "string"
+              },
+              "maxItems": 1,
+              "title": "Pause Reasons",
+              "type": "array"
+            }
+          },
+          "required": [
+            "accepting_org_id",
+            "calendar_ref",
+            "target_seconds",
+            "target_source_ref",
+            "pause_reasons"
+          ],
+          "title": "HandlingPolicy",
+          "type": "object"
+        },
+        "MaterialRequirement": {
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "enum": [
+                "region",
+                "employees",
+                "service_need"
+              ],
+              "title": "Field",
+              "type": "string"
+            },
+            "purpose": {
+              "const": "SERVICE_PREPARATION",
+              "title": "Purpose",
+              "type": "string"
+            },
+            "evidence_required": {
+              "title": "Evidence Required",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "field",
+            "purpose",
+            "evidence_required"
+          ],
+          "title": "MaterialRequirement",
+          "type": "object"
+        },
+        "ResourceRequirement": {
+          "additionalProperties": false,
+          "properties": {
+            "resource_ref": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "title": "Resource Ref",
+              "type": "string"
+            },
+            "revision": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "title": "Revision",
+              "type": "string"
+            },
+            "quantity": {
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Quantity",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "resource_ref",
+            "revision",
+            "quantity"
+          ],
+          "title": "ResourceRequirement",
+          "type": "object"
+        },
+        "Rule": {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "EXISTS",
+                "EQ",
+                "AND",
+                "OR",
+                "MANUAL"
+              ],
+              "title": "Kind",
+              "type": "string"
+            },
+            "field": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "region",
+                    "employees",
+                    "service_need"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Field"
+            },
+            "expected": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected"
+            },
+            "children": {
+              "items": {
+                "$ref": "#/$defs/Rule"
+              },
+              "maxItems": 8,
+              "title": "Children",
+              "type": "array"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "title": "Rule",
+          "type": "object"
+        },
+        "SourceRef": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "maxLength": 120,
+              "minLength": 1,
+              "title": "Id",
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "SYNTHETIC",
+                "PUBLIC",
+                "AUTHORIZED_REAL"
+              ],
+              "title": "Kind",
+              "type": "string"
+            },
+            "revision": {
+              "maxLength": 120,
+              "minLength": 1,
+              "title": "Revision",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "revision"
+          ],
+          "title": "SourceRef",
+          "type": "object"
+        },
+        "V1ActionSpec": {
+          "additionalProperties": false,
+          "properties": {
+            "action_id": {
+              "const": "case.create",
+              "default": "case.create",
+              "title": "Action Id",
+              "type": "string"
+            },
+            "revision": {
+              "const": "1",
+              "default": "1",
+              "title": "Revision",
+              "type": "string"
+            },
+            "permission": {
+              "const": "case:create",
+              "default": "case:create",
+              "title": "Permission",
+              "type": "string"
+            },
+            "executor": {
+              "const": "TRUSTED_LOCAL",
+              "default": "TRUSTED_LOCAL",
+              "title": "Executor",
+              "type": "string"
+            },
+            "effect": {
+              "const": "LOCAL_RECORD",
+              "default": "LOCAL_RECORD",
+              "title": "Effect",
+              "type": "string"
+            },
+            "idempotency": {
+              "const": "SCOPED_KEY_AND_FINGERPRINT",
+              "default": "SCOPED_KEY_AND_FINGERPRINT",
+              "title": "Idempotency",
+              "type": "string"
+            },
+            "success_scope": {
+              "const": "LOCAL_CASE_CREATED",
+              "default": "LOCAL_CASE_CREATED",
+              "title": "Success Scope",
+              "type": "string"
+            },
+            "input_schema_ref": {
+              "const": "Intake/0.1",
+              "title": "Input Schema Ref",
+              "type": "string"
+            },
+            "output_schema_ref": {
+              "const": "LocalCaseReceipt/1",
+              "title": "Output Schema Ref",
+              "type": "string"
+            },
+            "dependencies": {
+              "items": {
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Dependencies",
+              "type": "array"
+            },
+            "limits": {
+              "$ref": "#/$defs/ActionLimits"
+            },
+            "prechecks": {
+              "items": {
+                "const": "CURRENT_AUTHORIZATION",
+                "type": "string"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "title": "Prechecks",
+              "type": "array"
+            },
+            "postchecks": {
+              "items": {
+                "const": "LOCAL_RECORD_EXISTS",
+                "type": "string"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "title": "Postchecks",
+              "type": "array"
+            },
+            "reconciliation": {
+              "const": "LOCAL_TRANSACTION_ATOMIC",
+              "title": "Reconciliation",
+              "type": "string"
+            }
+          },
+          "required": [
+            "input_schema_ref",
+            "output_schema_ref",
+            "dependencies",
+            "limits",
+            "prechecks",
+            "postchecks",
+            "reconciliation"
+          ],
+          "title": "V1ActionSpec",
+          "type": "object"
+        },
+        "Validity": {
+          "additionalProperties": false,
+          "properties": {
+            "valid_from": {
+              "maxLength": 40,
+              "minLength": 20,
+              "title": "Valid From",
+              "type": "string"
+            },
+            "valid_until": {
+              "maxLength": 40,
+              "minLength": 20,
+              "title": "Valid Until",
+              "type": "string"
+            },
+            "timezone": {
+              "const": "UTC",
+              "default": "UTC",
+              "title": "Timezone",
+              "type": "string"
+            }
+          },
+          "required": [
+            "valid_from",
+            "valid_until"
+          ],
+          "title": "Validity",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "parkweave-domain/1.0-draft",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "service_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Service Id",
+          "type": "string"
+        },
+        "revision": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Revision",
+          "type": "string"
+        },
+        "owner_org_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Owner Org Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "service_kind": {
+          "const": "LOCAL_INTAKE",
+          "title": "Service Kind",
+          "type": "string"
+        },
+        "validity": {
+          "$ref": "#/$defs/Validity"
+        },
+        "eligibility": {
+          "anyOf": [
+            {
+              "const": "NOT_REQUIRED",
+              "type": "string"
+            },
+            {
+              "$ref": "#/$defs/Rule"
+            }
+          ],
+          "title": "Eligibility"
+        },
+        "material_requirements": {
+          "items": {
+            "$ref": "#/$defs/MaterialRequirement"
+          },
+          "maxItems": 3,
+          "title": "Material Requirements",
+          "type": "array"
+        },
+        "resource_requirements": {
+          "items": {
+            "$ref": "#/$defs/ResourceRequirement"
+          },
+          "maxItems": 8,
+          "title": "Resource Requirements",
+          "type": "array"
+        },
+        "action_bindings": {
+          "items": {
+            "$ref": "#/$defs/V1ActionSpec"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "title": "Action Bindings",
+          "type": "array"
+        },
+        "completion_checks": {
+          "items": {
+            "const": "LOCAL_RECORD_EXISTS",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "title": "Completion Checks",
+          "type": "array"
+        },
+        "visibility": {
+          "const": "OWN_ORGANIZATION",
+          "title": "Visibility",
+          "type": "string"
+        },
+        "handling_policy": {
+          "$ref": "#/$defs/HandlingPolicy"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "reviewer_id": {
+          "anyOf": [
+            {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Reviewer Id"
+        },
+        "publication": {
+          "enum": [
+            "DRAFT",
+            "REVIEWED_SYNTHETIC"
+          ],
+          "title": "Publication",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "service_id",
+        "revision",
+        "owner_org_id",
+        "title",
+        "service_kind",
+        "validity",
+        "eligibility",
+        "material_requirements",
+        "resource_requirements",
+        "action_bindings",
+        "completion_checks",
+        "visibility",
+        "handling_policy",
+        "source_refs",
+        "reviewer_id",
+        "publication"
+      ],
+      "title": "V1ServiceSpec",
+      "type": "object"
+    },
+    "V1ServicePlan": {
+      "$defs": {
+        "ActionLimits": {
+          "additionalProperties": false,
+          "properties": {
+            "max_steps": {
+              "const": 1,
+              "title": "Max Steps",
+              "type": "integer"
+            },
+            "max_payload_bytes": {
+              "maximum": 16384,
+              "minimum": 1,
+              "title": "Max Payload Bytes",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "max_steps",
+            "max_payload_bytes"
+          ],
+          "title": "ActionLimits",
+          "type": "object"
+        },
+        "ResourceRequirement": {
+          "additionalProperties": false,
+          "properties": {
+            "resource_ref": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "title": "Resource Ref",
+              "type": "string"
+            },
+            "revision": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "title": "Revision",
+              "type": "string"
+            },
+            "quantity": {
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Quantity",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "resource_ref",
+            "revision",
+            "quantity"
+          ],
+          "title": "ResourceRequirement",
+          "type": "object"
+        },
+        "Rule": {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "EXISTS",
+                "EQ",
+                "AND",
+                "OR",
+                "MANUAL"
+              ],
+              "title": "Kind",
+              "type": "string"
+            },
+            "field": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "region",
+                    "employees",
+                    "service_need"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Field"
+            },
+            "expected": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "default": null,
+              "title": "Expected"
+            },
+            "children": {
+              "items": {
+                "$ref": "#/$defs/Rule"
+              },
+              "maxItems": 8,
+              "title": "Children",
+              "type": "array"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "title": "Rule",
+          "type": "object"
+        },
+        "V1ActionSpec": {
+          "additionalProperties": false,
+          "properties": {
+            "action_id": {
+              "const": "case.create",
+              "default": "case.create",
+              "title": "Action Id",
+              "type": "string"
+            },
+            "revision": {
+              "const": "1",
+              "default": "1",
+              "title": "Revision",
+              "type": "string"
+            },
+            "permission": {
+              "const": "case:create",
+              "default": "case:create",
+              "title": "Permission",
+              "type": "string"
+            },
+            "executor": {
+              "const": "TRUSTED_LOCAL",
+              "default": "TRUSTED_LOCAL",
+              "title": "Executor",
+              "type": "string"
+            },
+            "effect": {
+              "const": "LOCAL_RECORD",
+              "default": "LOCAL_RECORD",
+              "title": "Effect",
+              "type": "string"
+            },
+            "idempotency": {
+              "const": "SCOPED_KEY_AND_FINGERPRINT",
+              "default": "SCOPED_KEY_AND_FINGERPRINT",
+              "title": "Idempotency",
+              "type": "string"
+            },
+            "success_scope": {
+              "const": "LOCAL_CASE_CREATED",
+              "default": "LOCAL_CASE_CREATED",
+              "title": "Success Scope",
+              "type": "string"
+            },
+            "input_schema_ref": {
+              "const": "Intake/0.1",
+              "title": "Input Schema Ref",
+              "type": "string"
+            },
+            "output_schema_ref": {
+              "const": "LocalCaseReceipt/1",
+              "title": "Output Schema Ref",
+              "type": "string"
+            },
+            "dependencies": {
+              "items": {
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Dependencies",
+              "type": "array"
+            },
+            "limits": {
+              "$ref": "#/$defs/ActionLimits"
+            },
+            "prechecks": {
+              "items": {
+                "const": "CURRENT_AUTHORIZATION",
+                "type": "string"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "title": "Prechecks",
+              "type": "array"
+            },
+            "postchecks": {
+              "items": {
+                "const": "LOCAL_RECORD_EXISTS",
+                "type": "string"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "title": "Postchecks",
+              "type": "array"
+            },
+            "reconciliation": {
+              "const": "LOCAL_TRANSACTION_ATOMIC",
+              "title": "Reconciliation",
+              "type": "string"
+            }
+          },
+          "required": [
+            "input_schema_ref",
+            "output_schema_ref",
+            "dependencies",
+            "limits",
+            "prechecks",
+            "postchecks",
+            "reconciliation"
+          ],
+          "title": "V1ActionSpec",
+          "type": "object"
+        },
+        "V1Step": {
+          "additionalProperties": false,
+          "properties": {
+            "step_id": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "title": "Step Id",
+              "type": "string"
+            },
+            "service_ref": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "title": "Service Ref",
+              "type": "string"
+            },
+            "revision": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Revision",
+              "type": "string"
+            },
+            "action": {
+              "$ref": "#/$defs/V1ActionSpec"
+            },
+            "depends_on": {
+              "items": {
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Depends On",
+              "type": "array"
+            },
+            "responsible_role": {
+              "const": "enterprise_operator",
+              "title": "Responsible Role",
+              "type": "string"
+            },
+            "delivery": {
+              "const": "LOCAL_CASE_RECORD",
+              "title": "Delivery",
+              "type": "string"
+            },
+            "input_mapping": {
+              "maxProperties": 3,
+              "patternProperties": {
+                "^[A-Za-z0-9][A-Za-z0-9_.:-]*$": {
+                  "enum": [
+                    "region",
+                    "employees",
+                    "service_need"
+                  ],
+                  "type": "string"
+                }
+              },
+              "propertyNames": {
+                "maxLength": 100,
+                "minLength": 1
+              },
+              "title": "Input Mapping",
+              "type": "object"
+            },
+            "preconditions": {
+              "items": {
+                "$ref": "#/$defs/Rule"
+              },
+              "maxItems": 8,
+              "title": "Preconditions",
+              "type": "array"
+            },
+            "completion_checks": {
+              "items": {
+                "const": "LOCAL_RECORD_EXISTS",
+                "type": "string"
+              },
+              "maxItems": 1,
+              "minItems": 1,
+              "title": "Completion Checks",
+              "type": "array"
+            }
+          },
+          "required": [
+            "step_id",
+            "service_ref",
+            "revision",
+            "action",
+            "depends_on",
+            "responsible_role",
+            "delivery",
+            "input_mapping",
+            "preconditions",
+            "completion_checks"
+          ],
+          "title": "V1Step",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "parkweave-domain/1.0-draft",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "required_goals": {
+          "items": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Required Goals",
+          "type": "array"
+        },
+        "goal_coverage": {
+          "additionalProperties": {
+            "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            },
+            "maxItems": 16,
+            "minItems": 1,
+            "type": "array"
+          },
+          "propertyNames": {
+            "maxLength": 2000,
+            "minLength": 1
+          },
+          "title": "Goal Coverage",
+          "type": "object"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/V1Step"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        },
+        "request_ref": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Request Ref",
+          "type": "string"
+        },
+        "plan_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Plan Id",
+          "type": "string"
+        },
+        "revision": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Revision",
+          "type": "string"
+        },
+        "dependency_lock": {
+          "maxProperties": 32,
+          "patternProperties": {
+            "^[A-Za-z0-9][A-Za-z0-9_.:-]*$": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+              "type": "string"
+            }
+          },
+          "propertyNames": {
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "title": "Dependency Lock",
+          "type": "object"
+        },
+        "unknowns": {
+          "items": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Unknowns",
+          "type": "array"
+        },
+        "resource_proposals": {
+          "items": {
+            "$ref": "#/$defs/ResourceRequirement"
+          },
+          "maxItems": 8,
+          "title": "Resource Proposals",
+          "type": "array"
+        },
+        "approval_requirements": {
+          "items": {
+            "const": "CURRENT_AUTHORITY",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "title": "Approval Requirements",
+          "type": "array"
+        },
+        "validation_suite_ref": {
+          "maxLength": 100,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+          "title": "Validation Suite Ref",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "required_goals",
+        "goal_coverage",
+        "steps",
+        "request_ref",
+        "plan_id",
+        "revision",
+        "dependency_lock",
+        "unknowns",
+        "resource_proposals",
+        "approval_requirements",
+        "validation_suite_ref"
+      ],
+      "title": "V1ServicePlan",
+      "type": "object"
+    },
+    "V1ActionSpec": {
+      "$defs": {
+        "ActionLimits": {
+          "additionalProperties": false,
+          "properties": {
+            "max_steps": {
+              "const": 1,
+              "title": "Max Steps",
+              "type": "integer"
+            },
+            "max_payload_bytes": {
+              "maximum": 16384,
+              "minimum": 1,
+              "title": "Max Payload Bytes",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "max_steps",
+            "max_payload_bytes"
+          ],
+          "title": "ActionLimits",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "const": "case.create",
+          "default": "case.create",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "revision": {
+          "const": "1",
+          "default": "1",
+          "title": "Revision",
+          "type": "string"
+        },
+        "permission": {
+          "const": "case:create",
+          "default": "case:create",
+          "title": "Permission",
+          "type": "string"
+        },
+        "executor": {
+          "const": "TRUSTED_LOCAL",
+          "default": "TRUSTED_LOCAL",
+          "title": "Executor",
+          "type": "string"
+        },
+        "effect": {
+          "const": "LOCAL_RECORD",
+          "default": "LOCAL_RECORD",
+          "title": "Effect",
+          "type": "string"
+        },
+        "idempotency": {
+          "const": "SCOPED_KEY_AND_FINGERPRINT",
+          "default": "SCOPED_KEY_AND_FINGERPRINT",
+          "title": "Idempotency",
+          "type": "string"
+        },
+        "success_scope": {
+          "const": "LOCAL_CASE_CREATED",
+          "default": "LOCAL_CASE_CREATED",
+          "title": "Success Scope",
+          "type": "string"
+        },
+        "input_schema_ref": {
+          "const": "Intake/0.1",
+          "title": "Input Schema Ref",
+          "type": "string"
+        },
+        "output_schema_ref": {
+          "const": "LocalCaseReceipt/1",
+          "title": "Output Schema Ref",
+          "type": "string"
+        },
+        "dependencies": {
+          "items": {
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
+            "type": "string"
+          },
+          "maxItems": 16,
+          "title": "Dependencies",
+          "type": "array"
+        },
+        "limits": {
+          "$ref": "#/$defs/ActionLimits"
+        },
+        "prechecks": {
+          "items": {
+            "const": "CURRENT_AUTHORIZATION",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "title": "Prechecks",
+          "type": "array"
+        },
+        "postchecks": {
+          "items": {
+            "const": "LOCAL_RECORD_EXISTS",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "title": "Postchecks",
+          "type": "array"
+        },
+        "reconciliation": {
+          "const": "LOCAL_TRANSACTION_ATOMIC",
+          "title": "Reconciliation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "input_schema_ref",
+        "output_schema_ref",
+        "dependencies",
+        "limits",
+        "prechecks",
+        "postchecks",
+        "reconciliation"
+      ],
+      "title": "V1ActionSpec",
+      "type": "object"
+    },
+    "FactInput": {
+      "$defs": {
+        "SourceRef": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "maxLength": 120,
+              "minLength": 1,
+              "title": "Id",
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "SYNTHETIC",
+                "PUBLIC",
+                "AUTHORIZED_REAL"
+              ],
+              "title": "Kind",
+              "type": "string"
+            },
+            "revision": {
+              "maxLength": 120,
+              "minLength": 1,
+              "title": "Revision",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "revision"
+          ],
+          "title": "SourceRef",
+          "type": "object"
+        },
+        "Validity": {
+          "additionalProperties": false,
+          "properties": {
+            "valid_from": {
+              "maxLength": 40,
+              "minLength": 20,
+              "title": "Valid From",
+              "type": "string"
+            },
+            "valid_until": {
+              "maxLength": 40,
+              "minLength": 20,
+              "title": "Valid Until",
+              "type": "string"
+            },
+            "timezone": {
+              "const": "UTC",
+              "default": "UTC",
+              "title": "Timezone",
+              "type": "string"
+            }
+          },
+          "required": [
+            "valid_from",
+            "valid_until"
+          ],
+          "title": "Validity",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "parkweave-domain/1.0-draft",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "field": {
+          "enum": [
+            "region",
+            "employees",
+            "service_need"
+          ],
+          "title": "Field",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Value"
+        },
+        "unit": {
+          "maxLength": 20,
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/SourceRef"
+        },
+        "source_excerpt": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Source Excerpt",
+          "type": "string"
+        },
+        "validity": {
+          "$ref": "#/$defs/Validity"
+        },
+        "purpose": {
+          "const": "SERVICE_PREPARATION",
+          "default": "SERVICE_PREPARATION",
+          "title": "Purpose",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "field",
+        "value",
+        "unit",
+        "source_ref",
+        "source_excerpt",
+        "validity"
+      ],
+      "title": "FactInput",
       "type": "object"
     }
   }

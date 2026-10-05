@@ -6,7 +6,7 @@ from pathlib import Path
 import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
-from .domain import Intake
+from .domain import Intake, FactInput
 
 
 class Denied(Exception):
@@ -28,17 +28,19 @@ class Store:
         self.dsn, self.mode = dsn, mode
 
     def connect(self):
-        return psycopg.connect(self.dsn, row_factory=dict_row)
+        return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
 
     def migrate(self):
         with self.connect() as c:
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
             c.execute(Path(__file__).with_name("schema.sql").read_text())
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
-            if version > 2:
+            if version > 3:
                 raise Conflict("database version newer than this code")
             if version < 2:
                 c.execute(Path(__file__).with_name("migration-002.sql").read_text())
+            if version < 3:
+                c.execute(Path(__file__).with_name("migration-003.sql").read_text())
 
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""
@@ -49,6 +51,8 @@ class Store:
                 park, org = scopes[user]
                 c.execute("INSERT INTO principals VALUES(%s,%s,%s,%s,'enterprise_operator',true) "
                           "ON CONFLICT(id) DO NOTHING", (user, digest(token), park, org))
+                if c.execute("SELECT to_regclass('field_grants') t").fetchone()['t'] is not None:
+                    self.seed_field_grants(c,user,park,org)
 
     def auth(self, c, token: str, lock=False):
         sql = "SELECT * FROM principals WHERE token_hash=%s AND active"
@@ -86,9 +90,10 @@ class Store:
     def submit(self, token: str, key: str, data: Intake):
         if data.action == "fault.record" and self.mode != "FAULT_INJECTION":
             raise Denied("fixture adapter disabled")
-        fingerprint = digest(json.dumps(data.model_dump(), sort_keys=True, ensure_ascii=False))
+        fingerprint = digest(json.dumps(data.snapshot(), sort_keys=True, ensure_ascii=False))
         with self.connect() as c:
             p = self.auth(c, token, lock=True)
+            if data.action=='facts.assess':self.check_fields(c,p,data.fact_fields,'READ')
             # Serializes request-key lookup/create. Scope derives exclusively from DB identity.
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", (p["id"] + ':' + key,))
             old = c.execute("SELECT id,fingerprint FROM runs WHERE principal_id=%s AND request_key=%s",
@@ -100,7 +105,7 @@ class Store:
             run_id = uuid.uuid4()
             c.execute("INSERT INTO runs(id,principal_id,park_id,org_id,namespace,request_key,"
                       "fingerprint,input,state) VALUES(%s,%s,%s,%s,'SYNTHETIC',%s,%s,%s,'QUEUED')",
-                      (run_id, p["id"], p["park_id"], p["org_id"], key, fingerprint, Jsonb(data.model_dump())))
+                      (run_id, p["id"], p["park_id"], p["org_id"], key, fingerprint, Jsonb(data.snapshot())))
             c.execute("INSERT INTO operations(id,run_id,action,state) VALUES(%s,%s,%s,'PREPARED')",
                       (uuid.uuid4(), run_id, data.action))
             self.event(c, run_id)
@@ -110,6 +115,7 @@ class Store:
         with self.connect() as c:
             p = self.auth(c, token, lock=True)
             r = self.scoped_run(c, p, run_id)
+            if r['input'].get('action')=='facts.assess':self.check_fields(c,p,r['input']['fact_fields'],'READ')
             case = c.execute("SELECT id,state,goal,source,external_acceptance,offline_fulfillment "
                              "FROM cases WHERE run_id=%s", (run_id,)).fetchone()
             op = c.execute("SELECT id,state,receipt FROM operations WHERE run_id=%s", (run_id,)).fetchone()
@@ -152,7 +158,7 @@ class Store:
             raise ValueError("lease must be 1..300 seconds")
         with self.connect() as c:
             r = c.execute("SELECT r.* FROM runs r JOIN operations o ON o.run_id=r.id WHERE "
-                          "(o.action='case.create' OR %s='FAULT_INJECTION') AND "
+                          "(o.action IN ('case.create','facts.assess') OR %s='FAULT_INJECTION') AND "
                           "(r.state='QUEUED' OR (r.state IN ('RUNNING','RECONCILING') AND "
                           "(r.lease_until IS NULL OR r.lease_until < clock_timestamp()))) "
                           "AND r.next_attempt_at <= clock_timestamp() "
@@ -188,7 +194,7 @@ class Store:
                 return
             # Revalidate persisted input, even if an unsafe tool attempted to change it.
             data = Intake.model_validate(r["input"])
-            if data.action != op["action"] or digest(json.dumps(data.model_dump(), sort_keys=True, ensure_ascii=False)) != r["fingerprint"]:
+            if data.action != op["action"] or digest(json.dumps(r["input"], sort_keys=True, ensure_ascii=False)) != r["fingerprint"]:
                 raise Conflict("persisted intent changed")
             case_id = uuid.uuid4()
             c.execute("INSERT INTO cases VALUES(%s,%s,%s,%s,%s,'NEEDS_INPUT','SYNTHETIC',"
@@ -202,6 +208,118 @@ class Store:
             c.execute("UPDATE runs SET state='SUCCEEDED',success_scope='LOCAL_CASE_CREATED',"
                       "lease_until=NULL,revision=revision+1 WHERE id=%s", (r["id"],))
             self.event(c,r["id"])
+
+    def seed_field_grants(self, c, user, park, org):
+        # Owner-only setup, never reactivates an existing withdrawn grant.
+        for field in ('region','employees','service_need'):
+            for capability in ('READ','WRITE'):
+                c.execute("INSERT INTO field_grants(principal_id,park_id,org_id,field_name,purpose,capability,source) "
+                          "VALUES(%s,%s,%s,%s,'SERVICE_PREPARATION',%s,'SYNTHETIC_SETUP') ON CONFLICT DO NOTHING",
+                          (user,park,org,field,capability))
+
+    def check_fields(self, c, p, fields, capability):
+        if not p['active']:raise Denied('current authorization required')
+        rows=c.execute("SELECT field_name FROM field_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s "
+                       "AND purpose='SERVICE_PREPARATION' AND capability=%s AND active "
+                       "AND (valid_until IS NULL OR valid_until>clock_timestamp()) AND field_name=ANY(%s)",
+                       (p['id'],p['park_id'],p['org_id'],capability,fields)).fetchall()
+        if set(fields)!={row['field_name'] for row in rows}:raise Denied('current field grant required')
+
+    def revoke_field(self, principal_id, field, capability):
+        if field not in ('region','employees','service_need') or capability not in ('READ','WRITE'):
+            raise ValueError('unknown field/capability')
+        with self.connect() as c:
+            self.lock_principal(c,principal_id,exclusive=True)
+            c.execute("UPDATE field_grants SET active=false,revision=revision+1 WHERE principal_id=%s AND field_name=%s AND capability=%s",
+                      (principal_id,field,capability))
+
+    def save_fact(self, token, key, data: FactInput):
+        fingerprint=digest(json.dumps(data.model_dump(),sort_keys=True,ensure_ascii=False))
+        with self.connect() as c:
+            p=self.auth(c,token,lock=True);self.check_fields(c,p,[data.field],'WRITE')
+            c.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",('fact:'+p['id']+':'+key,))
+            old=c.execute('SELECT id,fingerprint FROM fact_assertions WHERE principal_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+            if old:
+                if old['fingerprint']!=fingerprint:raise Conflict('fact key fingerprint mismatch')
+                return str(old['id'])
+            c.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",('field:'+p['id']+':'+data.field,))
+            count=c.execute('SELECT count(*) n FROM fact_assertions WHERE principal_id=%s AND field_name=%s',(p['id'],data.field)).fetchone()['n']
+            if count>=16:raise Conflict('field evidence limit 16 reached')
+            fact_id,evidence_id=uuid.uuid4(),uuid.uuid4()
+            c.execute("INSERT INTO fact_assertions(id,evidence_id,principal_id,park_id,org_id,field_name,value,unit,source_ref,source_kind,"
+                      "source_excerpt,valid_from,valid_until,request_key,fingerprint,confirmed_by) "
+                      "VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,'USER_ASSERTED_SYNTHETIC',%s,%s,%s,%s,%s,%s)",
+                      (fact_id,evidence_id,p['id'],p['park_id'],p['org_id'],data.field,Jsonb(data.value),data.unit,
+                       Jsonb(data.source_ref.model_dump()),data.source_excerpt,data.validity.valid_from,data.validity.valid_until,key,fingerprint,p['id']))
+            return str(fact_id)
+
+    def facts_query(self, c, p, fields):
+        return c.execute('SELECT id,evidence_id,field_name,value,unit,source_ref,source_kind,source_excerpt,valid_from,valid_until,'
+                         'revision,fingerprint,confirmed_by FROM fact_assertions WHERE principal_id=%s AND park_id=%s AND org_id=%s '
+                         'AND field_name=ANY(%s) ORDER BY id',(p['id'],p['park_id'],p['org_id'],fields)).fetchall()
+
+    def read_facts(self, token, fields, fact_id=None):
+        with self.connect() as c:
+            p=self.auth(c,token,lock=True)
+            if fact_id:
+                row=c.execute('SELECT field_name FROM fact_assertions WHERE id=%s AND principal_id=%s AND park_id=%s AND org_id=%s',
+                              (fact_id,p['id'],p['park_id'],p['org_id'])).fetchone()
+                if not row:raise Denied('fact unavailable')
+                fields=[row['field_name']]
+            self.check_fields(c,p,fields,'READ')
+            rows=self.facts_query(c,p,fields)
+            return [r for r in rows if fact_id is None or str(r['id'])==str(fact_id)]
+
+    def safe_failure(self,c,r,op,reason):
+        c.execute("UPDATE operations SET state='FAILED_SAFE',receipt=%s WHERE id=%s",
+                  (Jsonb({'source':'LOCAL_GATEWAY','reason':reason}),op['id']))
+        c.execute("UPDATE runs SET state='FAILED',lease_until=NULL,fence=fence+1,revision=revision+1 WHERE id=%s",(r['id'],))
+        self.event(c,r['id'])
+
+    def assess_facts(self, claim):
+        with self.connect() as c:
+            p,r,op=self.locked_execution(c,claim)
+            if op['action']!='facts.assess' or op['state']!='PREPARED':raise Conflict('not a prepared assessment')
+            data=Intake.model_validate(r['input'])
+            if digest(json.dumps(r['input'],sort_keys=True,ensure_ascii=False))!=r['fingerprint'] or data.action!=op['action']:
+                self.safe_failure(c,r,op,'INVALID_INTENT');return
+            try:self.check_fields(c,p,data.fact_fields,'READ')
+            except Denied:self.safe_failure(c,r,op,'AUTHORIZATION_REVOKED');return
+            rows=self.facts_query(c,p,data.fact_fields)
+            now=c.execute('SELECT clock_timestamp() now').fetchone()['now']
+            results=[]
+            for field in data.fact_fields:
+                all_rows=[row for row in rows if row['field_name']==field]
+                valid=[row for row in all_rows if row['valid_from']<=now<row['valid_until']]
+                values={json.dumps([row['value'],row['unit']],ensure_ascii=False) for row in valid}
+                reason='MISSING_EVIDENCE' if not all_rows else 'EXPIRED_OR_NOT_YET_VALID' if not valid else 'CONFLICTING_EVIDENCE' if len(values)>1 else 'CONSISTENT_EVIDENCE'
+                results.append({'field':field,'state':'KNOWN' if reason=='CONSISTENT_EVIDENCE' else 'UNKNOWN','reason':reason,
+                                'evidence':[{'id':str(row['evidence_id']),'fact_id':str(row['id']),'source_ref':row['source_ref'],
+                                             'value':row['value'],'unit':row['unit'],'valid_from':row['valid_from'].isoformat(),
+                                             'valid_until':row['valid_until'].isoformat(),'applicable_at_assessment':row in valid,
+                                             'revision':row['revision'],'fingerprint':row['fingerprint'],
+                                             'source_kind':row['source_kind']} for row in all_rows]})
+            receipt={'source':'LOCAL_FACT_ASSESSMENT','assessed_at':now.isoformat(),'purpose':'SERVICE_PREPARATION',
+                     'results':results,'qualification_decision':'NOT_EVALUATED'}
+            c.execute("UPDATE operations SET state='VERIFIED',receipt=%s WHERE id=%s",(Jsonb(receipt),op['id']))
+            c.execute("UPDATE runs SET state='SUCCEEDED',success_scope='FACT_EVIDENCE_ASSESSED',lease_until=NULL,revision=revision+1 WHERE id=%s",(r['id'],))
+            self.event(c,r['id'])
+
+    def heartbeat(self, claim, lease_seconds):
+        if not 1<=lease_seconds<=300:raise ValueError('lease must be 1..300 seconds')
+        with self.connect() as c:
+            c.execute("SET LOCAL lock_timeout='500ms'")
+            c.execute("SET LOCAL statement_timeout='1000ms'")
+            p,r,op=self.locked_execution(c,claim)
+            try:
+                if not p['active']:raise Denied('withdrawn')
+                if op['action']=='facts.assess':self.check_fields(c,p,r['input']['fact_fields'],'READ')
+            except Denied:
+                if op['state']=='PREPARED':self.safe_failure(c,r,op,'AUTHORIZATION_REVOKED')
+                return False
+            c.execute("UPDATE runs SET lease_until=clock_timestamp()+%s*interval '1 second',heartbeat_count=heartbeat_count+1,"
+                      'last_heartbeat_at=clock_timestamp() WHERE id=%s',(lease_seconds,r['id']))
+            return True
 
     def consume(self, fail_before_ack=False):
         with self.connect() as c:

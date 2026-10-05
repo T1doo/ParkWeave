@@ -34,6 +34,7 @@ def main():
     env=dict(os.environ,PARKWEAVE_DSN=owner.dsn,PARKWEAVE_MODE=mode)
     if not (root/'synthetic-sessions.json').exists():
         subprocess.run([sys.executable,'-m','parkweave.cli','seed-synthetic'],env=env,check=True)
+    owner.seed(json.loads((root/'synthetic-sessions.json').read_text()))
     env['PARKWEAVE_DSN']=make_conninfo(owner.dsn,user='parkweave_app')
     log=(root/'server.log').open('a')
     api=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
