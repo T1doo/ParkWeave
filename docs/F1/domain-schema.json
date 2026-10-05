@@ -1,0 +1,418 @@
+{
+  "version": "parkweave-domain/0.1",
+  "origin": "NEW bounded projections, not the full V1 contract",
+  "schemas": {
+    "Intake": {
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "parkweave-domain/0.1",
+          "default": "parkweave-domain/0.1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "action": {
+          "const": "case.create",
+          "default": "case.create",
+          "title": "Action",
+          "type": "string"
+        },
+        "goal": {
+          "maxLength": 2000,
+          "minLength": 1,
+          "title": "Goal",
+          "type": "string"
+        },
+        "source": {
+          "const": "SYNTHETIC",
+          "default": "SYNTHETIC",
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "goal"
+      ],
+      "title": "Intake",
+      "type": "object"
+    },
+    "ServiceSpec": {
+      "$defs": {
+        "ActionSpec": {
+          "additionalProperties": false,
+          "properties": {
+            "action_id": {
+              "const": "case.create",
+              "default": "case.create",
+              "title": "Action Id",
+              "type": "string"
+            },
+            "revision": {
+              "const": "1",
+              "default": "1",
+              "title": "Revision",
+              "type": "string"
+            },
+            "permission": {
+              "const": "case:create",
+              "default": "case:create",
+              "title": "Permission",
+              "type": "string"
+            },
+            "executor": {
+              "const": "TRUSTED_LOCAL",
+              "default": "TRUSTED_LOCAL",
+              "title": "Executor",
+              "type": "string"
+            },
+            "effect": {
+              "const": "LOCAL_RECORD",
+              "default": "LOCAL_RECORD",
+              "title": "Effect",
+              "type": "string"
+            },
+            "idempotency": {
+              "const": "SCOPED_KEY_AND_FINGERPRINT",
+              "default": "SCOPED_KEY_AND_FINGERPRINT",
+              "title": "Idempotency",
+              "type": "string"
+            },
+            "success_scope": {
+              "const": "LOCAL_CASE_CREATED",
+              "default": "LOCAL_CASE_CREATED",
+              "title": "Success Scope",
+              "type": "string"
+            }
+          },
+          "title": "ActionSpec",
+          "type": "object"
+        },
+        "SourceRef": {
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "maxLength": 120,
+              "minLength": 1,
+              "title": "Id",
+              "type": "string"
+            },
+            "kind": {
+              "enum": [
+                "SYNTHETIC",
+                "PUBLIC",
+                "AUTHORIZED_REAL"
+              ],
+              "title": "Kind",
+              "type": "string"
+            },
+            "revision": {
+              "maxLength": 120,
+              "minLength": 1,
+              "title": "Revision",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id",
+            "kind",
+            "revision"
+          ],
+          "title": "SourceRef",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "parkweave-domain/0.1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "service_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Service Id",
+          "type": "string"
+        },
+        "revision": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Revision",
+          "type": "string"
+        },
+        "owner_org_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Owner Org Id",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "service_kind": {
+          "const": "LOCAL_INTAKE",
+          "title": "Service Kind",
+          "type": "string"
+        },
+        "eligibility": {
+          "const": "NOT_REQUIRED",
+          "title": "Eligibility",
+          "type": "string"
+        },
+        "source_refs": {
+          "items": {
+            "$ref": "#/$defs/SourceRef"
+          },
+          "maxItems": 10,
+          "minItems": 1,
+          "title": "Source Refs",
+          "type": "array"
+        },
+        "reviewer_id": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Reviewer Id",
+          "type": "string"
+        },
+        "publication": {
+          "const": "REVIEWED_SYNTHETIC",
+          "title": "Publication",
+          "type": "string"
+        },
+        "action": {
+          "$ref": "#/$defs/ActionSpec"
+        },
+        "completion_checks": {
+          "items": {
+            "const": "LOCAL_RECORD_EXISTS",
+            "type": "string"
+          },
+          "maxItems": 1,
+          "minItems": 1,
+          "title": "Completion Checks",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "service_id",
+        "revision",
+        "owner_org_id",
+        "title",
+        "service_kind",
+        "eligibility",
+        "source_refs",
+        "reviewer_id",
+        "publication",
+        "action",
+        "completion_checks"
+      ],
+      "title": "ServiceSpec",
+      "type": "object"
+    },
+    "ServicePlan": {
+      "$defs": {
+        "ActionSpec": {
+          "additionalProperties": false,
+          "properties": {
+            "action_id": {
+              "const": "case.create",
+              "default": "case.create",
+              "title": "Action Id",
+              "type": "string"
+            },
+            "revision": {
+              "const": "1",
+              "default": "1",
+              "title": "Revision",
+              "type": "string"
+            },
+            "permission": {
+              "const": "case:create",
+              "default": "case:create",
+              "title": "Permission",
+              "type": "string"
+            },
+            "executor": {
+              "const": "TRUSTED_LOCAL",
+              "default": "TRUSTED_LOCAL",
+              "title": "Executor",
+              "type": "string"
+            },
+            "effect": {
+              "const": "LOCAL_RECORD",
+              "default": "LOCAL_RECORD",
+              "title": "Effect",
+              "type": "string"
+            },
+            "idempotency": {
+              "const": "SCOPED_KEY_AND_FINGERPRINT",
+              "default": "SCOPED_KEY_AND_FINGERPRINT",
+              "title": "Idempotency",
+              "type": "string"
+            },
+            "success_scope": {
+              "const": "LOCAL_CASE_CREATED",
+              "default": "LOCAL_CASE_CREATED",
+              "title": "Success Scope",
+              "type": "string"
+            }
+          },
+          "title": "ActionSpec",
+          "type": "object"
+        },
+        "Step": {
+          "additionalProperties": false,
+          "properties": {
+            "step_id": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Step Id",
+              "type": "string"
+            },
+            "service_ref": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Service Ref",
+              "type": "string"
+            },
+            "revision": {
+              "maxLength": 100,
+              "minLength": 1,
+              "title": "Revision",
+              "type": "string"
+            },
+            "action": {
+              "$ref": "#/$defs/ActionSpec"
+            },
+            "depends_on": {
+              "items": {
+                "type": "string"
+              },
+              "maxItems": 16,
+              "title": "Depends On",
+              "type": "array"
+            },
+            "responsible_role": {
+              "const": "enterprise_operator",
+              "title": "Responsible Role",
+              "type": "string"
+            },
+            "delivery": {
+              "const": "LOCAL_CASE_RECORD",
+              "title": "Delivery",
+              "type": "string"
+            }
+          },
+          "required": [
+            "step_id",
+            "service_ref",
+            "revision",
+            "action",
+            "depends_on",
+            "responsible_role",
+            "delivery"
+          ],
+          "title": "Step",
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "properties": {
+        "schema_version": {
+          "const": "parkweave-domain/0.1",
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "required_goals": {
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Required Goals",
+          "type": "array"
+        },
+        "goal_coverage": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": "Goal Coverage",
+          "type": "object"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "maxItems": 16,
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "schema_version",
+        "required_goals",
+        "goal_coverage",
+        "steps"
+      ],
+      "title": "ServicePlan",
+      "type": "object"
+    },
+    "ActionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "action_id": {
+          "const": "case.create",
+          "default": "case.create",
+          "title": "Action Id",
+          "type": "string"
+        },
+        "revision": {
+          "const": "1",
+          "default": "1",
+          "title": "Revision",
+          "type": "string"
+        },
+        "permission": {
+          "const": "case:create",
+          "default": "case:create",
+          "title": "Permission",
+          "type": "string"
+        },
+        "executor": {
+          "const": "TRUSTED_LOCAL",
+          "default": "TRUSTED_LOCAL",
+          "title": "Executor",
+          "type": "string"
+        },
+        "effect": {
+          "const": "LOCAL_RECORD",
+          "default": "LOCAL_RECORD",
+          "title": "Effect",
+          "type": "string"
+        },
+        "idempotency": {
+          "const": "SCOPED_KEY_AND_FINGERPRINT",
+          "default": "SCOPED_KEY_AND_FINGERPRINT",
+          "title": "Idempotency",
+          "type": "string"
+        },
+        "success_scope": {
+          "const": "LOCAL_CASE_CREATED",
+          "default": "LOCAL_CASE_CREATED",
+          "title": "Success Scope",
+          "type": "string"
+        }
+      },
+      "title": "ActionSpec",
+      "type": "object"
+    }
+  }
+}

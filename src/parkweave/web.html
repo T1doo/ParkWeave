@@ -1,0 +1,18 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>园合 ParkWeave · 合成工程验证</title>
+<style>body{max-width:850px;margin:40px auto;padding:0 20px;font:16px system-ui;color:#20332d;background:#f4f6f3}nav{display:flex;gap:24px;padding:18px 0;border-bottom:1px solid #ccc}section{padding:24px;background:white;margin:16px 0;border-radius:10px}input,textarea{box-sizing:border-box;width:100%;padding:12px;margin:8px 0}button{padding:10px 20px;background:#245944;color:white;border:0;border-radius:6px;cursor:pointer}pre{white-space:pre-wrap;overflow-wrap:anywhere}small{color:#526157}</style>
+<h1>园合 ParkWeave</h1><p>企业说目标，园区交付服务。</p><strong>合成工程验证 · 未接入真实园区或模型</strong>
+<nav><button data-tab="service">服务</button><button data-tab="collaboration">协同</button><button data-tab="resource">资源</button></nav>
+<section><label>合成身份会话<input id="token" type="password" autocomplete="off"></label><small>仅用于本机合成测试；会话只保存在当前页面内存。</small></section>
+<section id="service"><h2>提出服务诉求</h2><form id="intake"><textarea id="goal" maxlength="2000" required placeholder="描述本次测试目标"></textarea><button>创建本地办理记录</button></form><p>本增量仅建立待补件记录，不代表外部受理或线下履约。</p></section>
+<section id="collaboration" hidden><h2>协同</h2><label>运行编号<input id="run"></label><button id="refresh">查看持久状态</button><button data-control="pause">暂停</button><button data-control="resume">继续</button><button data-control="cancel">取消</button></section>
+<section id="resource" hidden><h2>资源</h2><p>当前可信目录：合成本地诉求受理 case.create/1；资格无需判断。预约、材料上传、外部系统和真实政策目录尚未启用。</p></section>
+<section><h2>记录</h2><pre id="result" aria-live="polite">暂无记录</pre></section>
+<script>
+const $=id=>document.getElementById(id);const show=x=>$('result').textContent=JSON.stringify(x,null,2);
+async function apiCall(path,method='GET',body,key){const headers={'Authorization':'Bearer '+$('token').value};if(body)headers['Content-Type']='application/json';if(key)headers['Idempotency-Key']=key;const r=await fetch(path,{method,headers,body:body?JSON.stringify(body):undefined});const x=await r.json();show(x);if(!r.ok)throw Error('请求未完成');return x;}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>['service','collaboration','resource'].forEach(id=>$(id).hidden=id!==b.dataset.tab));
+$('intake').onsubmit=async e=>{e.preventDefault();try{const x=await apiCall('/api/runs','POST',{goal:$('goal').value},crypto.randomUUID());$('run').value=x.run_id;}catch(e){show({error:e.message});}};
+$('refresh').onclick=()=>apiCall('/api/runs/'+encodeURIComponent($('run').value)).catch(e=>show({error:e.message}));
+document.querySelectorAll('[data-control]').forEach(b=>b.onclick=()=>apiCall('/api/runs/'+encodeURIComponent($('run').value)+'/'+b.dataset.control,'POST').catch(e=>show({error:e.message})));
+</script></html>
