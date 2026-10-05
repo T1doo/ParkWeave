@@ -1,5 +1,13 @@
 # F2并行工程日志
 
+## ENG017：两个本地增量的独立只读收尾（文档only）
+
+固定审查6ff160a..3aa99e4，保留c285竞态修复与3aa待办、本地/远端历史，不扩功能。用户明确授权同工作区独立reviewer，按指定6.1 sol / medium由 /root/local_f2_review只读审查case/session响应与草稿、个人待办role/tenant/owner/assignment、重复/跨case导航和未授权材料。结论未发现所审两增量的实质finding；Python AST/JS语法/diffcheck、ENG016六源码hash匹配。reviewer没有改源码、安装、外网、API/项目模型、私有会话、复制/导出/上传或新测试执行。
+
+既有最终成绩保留419 PASS/0 FAIL/1 Windows SKIP/2 WARN、新19 PG/API PASS、23/23合成排序checks与真实本地双角色browser PASS，不冒充本轮重新执行。CloseoutReview.md记录功能/用例矩阵、未测同org第二enterprise owner专属用例、非全时序/非生产审计、100件/64限制和完整F2未实现范围。当前无新实现finding需修复，但正式F1/F2门不转PASS。
+
+立即等待run37324704568失败cases/计数；允许元数据不足以细分native_suite exit1。正式F1另保留E1 Win11原生、E2安全模型配置/核实额度与预算、E3真实来源/许可；R4有条件集成代码仍未完成，不把它伪装成纯外部问题。收到JSON先核对run/source、按命中子项有界定位/修复/本地验证，再依据届时授权比较远端、普通push实质变化并统一一次CI监测到终态；不取被拒日志/无证据重复CI。此收尾只有必要项目内文档提交，未push/merge/deploy/上传/恢复包，项目真实provider请求与预算0。
+
 ## ENG016：个人资料准备待办（2026-10-05，本地开发与验证）
 
 用户在Windows失败子项待补期间明确允许独立F2切片；本轮同时明确禁止恢复包/源码外发/Library/第三方/上传。基线 c285da8 正确恢复副本 dev/f1-foundation，先冻结 docs/F2/ENG016-PersonalTasks.md 与 Plan/TestSpecification，再实施V1产品§3/§5.5、F2-T04/T07的最小“本人需补交/确认、获派核对”子集。不处理未证实Windows失败，不扩大到跨服务规划/资源/真实资格或履约；原阶段门保持。
