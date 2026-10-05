@@ -270,12 +270,14 @@
             "step_id": {
               "maxLength": 100,
               "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
               "title": "Step Id",
               "type": "string"
             },
             "service_ref": {
               "maxLength": 100,
               "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
               "title": "Service Ref",
               "type": "string"
             },
@@ -290,6 +292,9 @@
             },
             "depends_on": {
               "items": {
+                "maxLength": 100,
+                "minLength": 1,
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
                 "type": "string"
               },
               "maxItems": 16,
@@ -329,6 +334,8 @@
         },
         "required_goals": {
           "items": {
+            "maxLength": 2000,
+            "minLength": 1,
             "type": "string"
           },
           "maxItems": 16,
@@ -339,9 +346,18 @@
         "goal_coverage": {
           "additionalProperties": {
             "items": {
+              "maxLength": 100,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]*$",
               "type": "string"
             },
+            "maxItems": 16,
+            "minItems": 1,
             "type": "array"
+          },
+          "propertyNames": {
+            "maxLength": 2000,
+            "minLength": 1
           },
           "title": "Goal Coverage",
           "type": "object"

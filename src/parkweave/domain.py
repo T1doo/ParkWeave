@@ -1,6 +1,6 @@
 """Strict versioned contracts for this bounded increment, not all V1 features."""
 from enum import StrEnum
-from typing import Literal
+from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -57,24 +57,37 @@ class ServiceSpec(Contract):
     completion_checks: list[Literal["LOCAL_RECORD_EXISTS"]] = Field(min_length=1, max_length=1)
 
 
+PlanID = Annotated[str, Field(min_length=1, max_length=100, pattern=r"^[A-Za-z0-9][A-Za-z0-9_.:-]*$")]
+Goal = Annotated[str, Field(min_length=1, max_length=2000)]
+Coverage = Annotated[list[PlanID], Field(min_length=1, max_length=16)]
+
+
 class Step(Contract):
-    step_id: str = Field(min_length=1, max_length=100)
-    service_ref: str = Field(min_length=1, max_length=100)
+    step_id: PlanID
+    service_ref: PlanID
     revision: str = Field(min_length=1, max_length=100)
     action: ActionSpec
-    depends_on: list[str] = Field(max_length=16)
+    depends_on: list[PlanID] = Field(max_length=16)
     responsible_role: Literal["enterprise_operator"]
     delivery: Literal["LOCAL_CASE_RECORD"]
 
 
 class ServicePlan(Contract):
     schema_version: Literal["parkweave-domain/0.1"]
-    required_goals: list[str] = Field(min_length=1, max_length=16)
-    goal_coverage: dict[str, list[str]]
+    required_goals: list[Goal] = Field(min_length=1, max_length=16)
+    goal_coverage: dict[Goal, Coverage]
     steps: list[Step] = Field(min_length=1, max_length=16)
 
     @model_validator(mode="after")
     def graph(self):
+        if len(set(self.required_goals)) != len(self.required_goals):
+            raise ValueError("duplicate required goal")
+        if any(not g.strip() for g in self.required_goals):
+            raise ValueError("blank required goal")
+        if any(len(set(s.depends_on)) != len(s.depends_on) for s in self.steps):
+            raise ValueError("duplicate dependency")
+        if any(len(set(refs)) != len(refs) for refs in self.goal_coverage.values()):
+            raise ValueError("duplicate goal coverage reference")
         ids = {s.step_id for s in self.steps}
         if len(ids) != len(self.steps) or set(self.goal_coverage) != set(self.required_goals):
             raise ValueError("duplicate step or missing required goal")

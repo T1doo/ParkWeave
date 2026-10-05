@@ -44,3 +44,5 @@ python -m uvicorn parkweave.api:configured_app --factory --host 127.0.0.1 --port
 API默认本机8765，与Sim2Act端口不得重用。数据/会话/日志位于独立.runtime，禁止生产数据；本增量没有模型账号、调用预算或共享配额协调器，所以真实调用始终禁用。关闭网页不影响存活worker；停止进程/关机后本地执行停止。无公开部署。
 
 限制及测试范围：[docs/F1/TestSpecification.md](docs/F1/TestSpecification.md)。Windows Doctor/Setup/Start/Status/Stop/Test.ps1、多角色授权、事实冲突、真实模型预算、外部结果不明、长任务心跳和资源事务将在后续独立增量实现；不得把当前子集通过外推为完整AT PASS。
+
+F1 ENG-002增加了测试专用FAULT_INJECTION持久账本及计划重复/规模/引用边界。它不注册API动作，Store.migrate不会安装fault-schema.sql；只有隔离测试库显式安装。模拟远端与操作账本分事务，回执丢失后按操作ID核对，未知不重发；不是外部系统集成或线上效果。新增映射与限制见F1/TestSpecification.md，完整AT仍NOT_RUN。

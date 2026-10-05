@@ -11,3 +11,5 @@ C0规则核查从F1并行：模板正文、跨赛道关联作品政策、2026-11
 目标Windows 11 x64原生浏览器+Python API/worker+PostgreSQL；本云Linux测试不能替代Windows。无真实园区数据，全部工程fixture为明确合成。
 
 首个工程增量ENG-001 READY_FOR_REVIEW：持久本地建单与安全/可靠执行子集可重跑；21工程pytest及Linux HTTP/Chromium流程有证据。F1整体仍未验收，完整AT/EX NOT_RUN，Windows/真实模型BLOCKED。详见[F1日志](F1/Log.md)及[工程测试范围](F1/TestSpecification.md)。
+
+ENG-002 READY_FOR_REVIEW：40工程pytest回归（含原21），FAULT_INJECTION未知结果账本原型及严格计划边界。未知不盲重发；与正常worker的集成未完成。完整AT/EX状态未改变；F1后续独立缺口与外部阻塞见F1/Plan。

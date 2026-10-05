@@ -26,3 +26,22 @@
 租约30秒，本地动作只在短事务执行；回执与业务一起提交，因此过期接管可核对为无部分提交再执行。本轮不支持非原子外部适配器、OUTCOME_UNKNOWN、远端撤销、模型长等待心跳；这些完整AT-17—20/30仍NOT_RUN。当前pause/cancel直接fence本地待提交动作，不能外推为远端取消语义。
 
 API身份表只读，以共享授权advisory锁和owner撤权独占锁串行化；所有支持路径同一锁顺序。字段级授权、服务执行者、运营人员、材料/导出/缓存授权尚未实现。无真实园区目录、规则许可、用户观察或业务收益。
+
+## ENG-002 新增工程子集
+
+本轮新增13个FAULT_INJECTION测试与6个契约边界测试；全量40 PASS，原21仍在回归内。tests/test_fault_ledger.py只有在独立临时测试数据库显式安装fault-schema.sql后才可运行；Store.migrate、正常roles.sql、API动作注册与worker均不启用它。没有真实网络、外部账号、真实园区系统或业务履约。
+
+| 新增检查 | 明确初态/操作与oracle | AT子范围 |
+| --- | --- | --- |
+| 丢响应后的核对 | PREPARED→持久DISPATCHED→模拟效果单独提交→丢响应→OUTCOME_UNKNOWN；新claim仅query，VERIFIED；dispatch_count恒为1，无Case | 20；16/17局部 |
+| 失联与撤权 | 派发后效果已提交、未记回执；过期接管，撤权后内核仍能记历史效果，旧token拒写，用户读拒绝；不重发 | 17、19、20局部 |
+| 暂停取消未知 | 已派发后PAUSE/CANCEL令旧token失效；未查到效果保持UNKNOWN，不推断未生效；在途模拟效果随后出现，核对保留原意图与事实，不声称撤销 | 18、20局部 |
+| 派发前控制/撤权/过期 | 取消或撤权→无效果；暂停不领取、继续后只执行一次；过期worker不可dispatch | 17—19局部 |
+| 跨企业/园区账本隔离 | fixture-b/c猜操作ID读/控制均拒绝；相同key按principal分离；同key改输入冲突 | 04、19局部 |
+| 回执真实性 | 园区/企业/操作ID/指纹/来源/效果类型精确匹配；串企业回执EFFECT_KNOWN_INVALID，不能VERIFIED | 20局部 |
+| 默认关闭 | 普通数据库没有fault表；API请求fault.record仍422 | 03局部 |
+| 计划契约边界 | 重复目标/覆盖/依赖、空白目标、超长目标/覆盖和越界引用ID拒绝；有效DAG保留 | 03局部 |
+
+模拟远端fault_effects与fault_operations故意分事务。查不到记录只是未观察到，不是权威“未执行”；DISPATCHED/UNKNOWN禁止第二次dispatch。模拟器记录dispatch_count作为独立oracle，并不据此宣称上游接口幂等。核对函数只记先前派发的效果，撤权后不新发动作、不恢复用户读权限。未知仍未知，不能自动跳到FAILED_SAFE。
+
+FAULT账本是测试驱动的持久工程原型，尚未与正常Run/worker/outbox集成，不代表完整AT-16—20通过。正常产品仍只有原子本地case.create/1。测试重置仍为每测试临时库创建/删除，数据与身份来源全部自建合成。故障schema不随普通安装迁移生效，应用角色仅在临时测试库获得fault_operations表权限；模拟器owner独立写fault_effects。

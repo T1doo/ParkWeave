@@ -4,6 +4,7 @@ import json
 import os
 import subprocess
 import time
+import argparse
 
 root=Path.cwd()
 env=dict(os.environ,npm_config_cache=str(root/'.cache/npm'),XDG_RUNTIME_DIR=str(root/'.runtime/sockets'))
@@ -14,6 +15,9 @@ def browser(*args,stdin=None):
     if result.returncode:raise RuntimeError(result.stderr)
     return result.stdout.strip()
 
+parser=argparse.ArgumentParser()
+parser.add_argument('--report', type=Path, default=root/'docs/F1/evidence/browser-smoke.json')
+args=parser.parse_args()
 report={}
 try:
     report['open']=browser('open','http://127.0.0.1:8765')
@@ -47,7 +51,7 @@ try:
     assert not report['errors'],report['errors']
     browser('screenshot',str(root/'.runtime/page.png'))
     report['status']='PASS';report['environment']='Linux Chromium only';report['windows']='BLOCKED'
-    (root/'docs/F1/evidence/browser-smoke.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+    args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
     print(json.dumps(report,ensure_ascii=False,indent=2))
 finally:
     browser('close')

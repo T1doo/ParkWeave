@@ -28,3 +28,19 @@
 所有依赖为安装的上游包，不复制依赖源码/二进制进仓库；Linux测试包pgserver不作Windows运行依赖。当前未开展开源许可证发布选择，不宣称整个仓库已有开源许可。提交前排除.venv/.cache/.runtime/egg-info；审查差异及高置信秘密模式，原件hash重验。合成会话、数据库文件、访问日志与截图不提交。
 
 下一步候选：补V1完整领域契约与事实冲突；增加作用域Grant与各角色；独立FAULT_INJECTION外部未知结果账本。Windows及模型条件未满足前保持对应门BLOCKED，不自动进入F2真实办理。
+
+## 2026-10-05 ENG-002（第二有界F1增量）
+
+基线05625e07db8d8b633843b40b92abfeb398c4ec9e，dev/f1-foundation干净，远端仍T1doo/ParkWeave；没有新增可读AGENTS/技能规则。复核Plan/AT后选择独立基础缺口：结果不明的持久核对与计划契约边界，不进入F2。
+
+新增FAULT_INJECTION账本原型：测试单独安装fault-schema，模拟远端效果独立事务；DISPATCHED持久化后才发送；OUTCOME_UNKNOWN只核对，不重发；暂停取消令旧worker回报失效、未知不会变“无影响”；撤权后不新发，但可记已派发历史效果且用户不可再读；回执按企业/园区/ID/指纹/来源精确核对。常规迁移/角色/API/worker不注册故障能力，正常库缺表，HTTP任意故障动作422。没有使用真实账号或聊天密钥。
+
+发现并修复：基线领域契约错误接受重复必需目标、重复覆盖引用和17项重复覆盖。用固定基线源码在临时.runtime重现，证据eng002-contract-defect.json；新约束拒绝空白/重复/过长/非ID引用及重复依赖。当前0.1投影仍不是完整V1资格/材料/有效期契约。
+
+测试命令：python -m pytest -q --tb=short；第一轮31 PASS，补契约后37 PASS，补派发前控制/过期后最终40 PASS（2 WARN，沿用httpx deprecation和pgserver runtime目录fallback）。13新故障断言+6契约边界+原21。最终输出eng002-pytest-final.txt，代码hash及环境eng002-engineering-manifest.json。没有将任何完整AT预填PASS。普通API/worker浏览器回归由scripts/linux_fixture_server.py及scripts/browser_smoke.py --report docs/F1/evidence/eng002-browser-smoke.json完成，实测结果以该文件为准；Linux不能替代Windows。
+
+失败记录：本轮pytest无FAIL；先前契约输入错误接受有固定提交复现，不隐藏该缺陷。修复仅严格化未发布0.1契约。故障账本还未接入正常Run/worker/outbox，这是NOT_IMPLEMENTED，不当作已通过。Windows/LIVE/真实园区主张仍BLOCKED，全部完整AT/EX仍NOT_RUN。
+
+没有修改Sim2Act、共用数据库、持续凭据或预算；全为自建合成。提交前将审查秘密/个人数据和原件hash；原件不修改。代码提交本条随ENG-002提交，准确SHA通过Git历史与最终交付链接关联。下一轮最合适独立工作：字段级Grant及事实冲突契约；另由具备条件的执行者办理Windows/真实模型门。
+
+证据工具记录：一次误用系统python导入项目时ModuleNotFoundError；改用项目.venv/bin/python后schema和manifest生成成功，原件hash再次核对一致。此错误不隐藏，未当产品测试FAIL或PASS。ENG-002 Linux Chromium回归PASS（202建单、持久读取、三入口、浏览器错误为空）；原ENG-001证据保持不变，新证据单独归档。

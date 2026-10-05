@@ -11,3 +11,11 @@ Windows AT-01/34 BLOCKED；AT其余完整门NOT_RUN，工程子集另记证据�
 ## 首个增量复核状态
 
 增量ENG-001 READY_FOR_REVIEW：21项工程pytest、实际Linux HTTP与Chromium三工作区流程通过，见evidence。阶段F1仍IN_PROGRESS，六任务仅部分实现，完整AT与Windows/模型门未通过；下一轮由父任务复核后派发。本輪不继续F2—F6。
+
+## 第二有界增量ENG-002
+
+READY_FOR_REVIEW：显式FAULT_INJECTION持久账本，独立模拟效果事务，丢响应/无结果查询/失联/旧worker/暂停取消/撤权/跨企业核对；补计划目标与引用边界。全量40工程测试PASS；完整AT仍NOT_RUN，F1整体IN_PROGRESS。
+
+下一独立缺口（非外部阻塞）：V1完整ServiceSpec/Plan及事实冲突；字段级Grant、多角色作用域；正常worker长任务心跳和未知结果账本集成；outbox当前授权/消息撤回与并发回归；逐AT初态和oracle执行器。不要把这些未实现项写成环境BLOCKED。
+
+真正外部阻塞：Windows11 x64实机/安装权限/精确依赖验证；真实书生安全配置、预算及跨产品总配额；真实园区目录/许可/用户流程证据。C0模板/规则/准确截止仍待核实。此次不进入F2业务实现。
