@@ -5,6 +5,7 @@ from typing import Literal
 from uuid import UUID
 from fastapi import FastAPI, Header, HTTPException, Request, Query
 from fastapi.responses import HTMLResponse, JSONResponse, Response
+from psycopg.errors import LockNotAvailable
 from .domain import Intake, FactInput, ClarificationInput, V1ServiceSpec, V1ServicePlan, FieldName
 from .store import Store, Denied, Conflict
 
@@ -198,6 +199,28 @@ def create_app(store: Store) -> FastAPI:
     @app.post('/api/resource-combinations/{combination_id}/cancel')
     def resource_combination_cancel(combination_id: UUID,data: resources.Release,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return combinations.cancel(store,token(authorization),combination_id,resource_key(idempotency_key))
+
+    from . import executor_receipts as executor_receipts
+    @app.get('/api/executor-receipts/catalog')
+    def executor_receipt_catalog(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return executor_receipts.catalog(store,token(authorization),preparation_id)
+
+    @app.get('/api/executor-receipts')
+    def executor_receipt_list(authorization: str | None=Header(default=None)):
+        return executor_receipts.list_steps(store,token(authorization))
+
+    @app.post('/api/executor-receipts',status_code=201)
+    def executor_receipt_create(data: executor_receipts.Create,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return executor_receipts.create(store,token(authorization),resource_key(idempotency_key),data)
+
+    @app.get('/api/executor-receipts/{step_id}')
+    def executor_receipt_read(step_id: UUID,authorization: str | None=Header(default=None)):
+        return executor_receipts.read(store,token(authorization),step_id)
+
+    @app.post('/api/executor-receipts/{step_id}/commands')
+    def executor_receipt_command(step_id: UUID,data: executor_receipts.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        try:return executor_receipts.command(store,token(authorization),step_id,resource_key(idempotency_key),data)
+        except LockNotAvailable as e:raise Conflict('receipt authorization or record busy; retry same key') from e
 
     return app
 

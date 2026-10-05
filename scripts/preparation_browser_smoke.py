@@ -8,7 +8,8 @@ import time
 import uuid
 from parkweave.process_env import minimal_environment
 
-root=Path.cwd();p=argparse.ArgumentParser();p.add_argument('--report',required=True,type=Path);args=p.parse_args()
+root=Path.cwd();p=argparse.ArgumentParser();p.add_argument('--report',required=True,type=Path);p.add_argument('--screenshots',type=Path);args=p.parse_args()
+shots=args.screenshots or root/'.runtime'/('preparation-ui-'+uuid.uuid4().hex[:8]);shots.mkdir(parents=True,exist_ok=True)
 if os.name=='nt':raise RuntimeError('NOT_RUN: Linux browser harness is not Windows verification')
 env=minimal_environment(os.environ,npm_config_cache=str(root/'.cache/npm'),XDG_RUNTIME_DIR=str(root/'.runtime/sockets'))
 candidates=[p for p in (root/'.cache/npm/_npx').glob('*/node_modules/agent-browser/package.json') if json.loads(p.read_text()).get('version')=='0.38.2']
@@ -56,7 +57,7 @@ def material(slot,text,label):
 
 try:
     browser('open','http://127.0.0.1:8765');browser('snapshot','-i')
-    browser('screenshot',str(root/'.runtime/f2-before.png'))
+    browser('screenshot',str(shots/'f2-before.png'))
     enterprise=json.loads((root/'.runtime/synthetic-sessions.json').read_text())['fixture-a']
     specialist=json.loads((root/'.runtime/preparation-sessions.json').read_text())['prep-specialist-fixture-a']
     goal='SYNTHETIC browser material preparation '+uuid.uuid4().hex[:8]
@@ -75,7 +76,7 @@ try:
     assert value("document.querySelector('#prep-materials').textContent").find('DOCUMENT_EXCERPT')>=0
     switch(enterprise);list_select(goal)
     confirmed=act('#prep-confirm','SYNTHETIC 企业确认本地资料准备');assert confirmed['preparation']['state']=='LOCAL_CONFIRMED'
-    browser('screenshot',str(root/'.runtime/f2-confirmed.png'))
+    browser('screenshot',str(shots/'f2-confirmed.png'))
     browser('reload');browser('snapshot','-i');switch(enterprise);browser('click','[data-tab=collaboration]');browser('snapshot','-i');list_select(goal)
     assert value('preparationView.preparation.state')=='LOCAL_CONFIRMED'
     reopened=act('#prep-reopen','SYNTHETIC 新材料需要重新核对');assert reopened['preparation']['state']=='IN_PREPARATION'
@@ -91,8 +92,8 @@ try:
     for width in (320,390):
         browser('set','viewport',str(width),'844');browser('snapshot','-i')
         metric=value('({width:innerWidth,scroll:document.documentElement.scrollWidth})');assert metric['scroll']<=metric['width'];narrow.append(metric)
-    browser('set','viewport','1200','900');browser('screenshot',str(root/'.runtime/f2-final.png'))
+    browser('set','viewport','1200','900');browser('screenshot',str(shots/'f2-final.png'))
     errors=browser('errors');assert not errors,errors
-    report={'scope':'F2_PARALLEL_SYNTHETIC_ENGINEERING_ONLY','environment':'Linux Chromium/local API/independent worker/PG16.2 Python3.12.14','preparation_id':id,'run_id':run,'case_id':initial['preparation']['case_id'],'material_versions':3,'review_snapshot_sha256':reviewed['snapshot_sha256'],'confirmed_then_reopened':True,'history_retained':True,'reload_reads_persistent_state':True,'source_and_unverified_visible':True,'two_roles_via_real_UI':True,'stale_confirmation_rejected':True,'script_text_only':True,'identity_change_clears_material_UI':True,'narrow_viewports':narrow,'browser_errors':0,'model_calls':0,'real_budget':0,'native_Windows':'NOT_RUN','whole_AT_EX':'NOT_RUN','F1':'IN_PROGRESS','production_R4':'DISABLED','F2_admission':'NOT_PASSED'}
+    report={'scope':'F2_PARALLEL_SYNTHETIC_ENGINEERING_ONLY','environment':'Linux Chromium/local API/independent worker/PG16.2 Python3.12.14','preparation_id':id,'run_id':run,'case_id':initial['preparation']['case_id'],'material_versions':3,'review_snapshot_sha256':reviewed['snapshot_sha256'],'confirmed_then_reopened':True,'history_retained':True,'reload_reads_persistent_state':True,'source_and_unverified_visible':True,'two_roles_via_real_UI':True,'stale_confirmation_rejected':True,'script_text_only':True,'identity_change_clears_material_UI':True,'narrow_viewports':narrow,'browser_errors':0,'screenshots_directory':str(shots),'model_calls':0,'real_budget':0,'native_Windows':'NOT_RUN','whole_AT_EX':'NOT_RUN','F1':'IN_PROGRESS','production_R4':'DISABLED','F2_admission':'NOT_PASSED'}
     args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n');print(json.dumps(report,ensure_ascii=False))
 finally:browser('close')

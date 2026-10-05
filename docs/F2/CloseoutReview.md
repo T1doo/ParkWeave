@@ -1,5 +1,11 @@
 # F2 本地两个增量的有界收尾
 
+## ENG023 独立本地收尾
+
+本轮范围为c2f3465之后的获派执行者SYNTHETIC回执切片，并先整理[V1Status.md](V1Status.md)；原文未修改。独立只读6.1sol medium reviewer executor_receipt_review两次检查公开代码/测试/文档、fixture/browser/oracle，无实质finding。未运行任何API/DB/browser/测试，不将实现者555PASS或36新用例当独立复跑。授权先于重放、父锁先于步骤、当前READ/assignment/owner与owner EXECUTE、父绑定/CAS/hash、不可变表历史和本地有限事务均检查；UI token/id/generation、草稿和迟到响应检查。详情见[ENG023范围与结果](ENG023-ExecutorReceipts.md)与[运行证据](evidence/eng023-acceptance-summary.json)。
+
+实现者冻结回归555PASS/0FAIL/1WindowsSKIP/2WARN，111源码hash一致；真实API/worker/PG三角色和旧资料双角色browser、18新/23旧资料/31旧资源页面排序检查PASS。图像已实际查看，用户视觉签收未替代。旧阶段22命名图hash未变，但旧通用固定名f2-*.png首次复跑覆盖且无法恢复其上次字节；唯一目录修复已运行验证，保留此交付限制。无push/新CI/备份/export/upload/LIVE；完整阶段、真实许可/履约/身份/通知、原生Windows和wholeAT门保留，本片提交后停止。
+
 审查范围固定：已发布基线 `6ff160abe979f9d1c28d0e7804fda668daf72cf5` 到本地 `c285da844fcf86f397e052826743e4fe7360a9e8`（ENG015 请求/草稿竞态修复）、`3aa99e45e82517a80a5197d140a92ebce8c92ff2`（ENG016 个人待办）。没有扩大功能、修改原阶段门、推送或重跑Windows CI。本文件收敛既有证据，不产生新测试成绩。
 
 ## 独立只读审查

@@ -1,5 +1,17 @@
 # F2并行工程日志
 
+## ENG023 获派执行者合成回执完成（仅本地有界切片）
+
+基线c2f3465，先按原V1 F2-T01—T07逐项整理V1Status的一页已完成子集/未完成/依赖，不改原计划。现有执行者仅Run READ，没有办理回执。新增schema13三张业务表和步骤有限状态：只有已LOCAL_CONFIRMED合成资料整理事项的本人企业创建，执行者必须当前合法run_assignments获派；执行者追加SYNTHETIC来源/版本/hash，企业当前hash核对、要求纠正或有理由重开，三版本与历史保留。核心角色上限/先前roles SQL prefix未改，新表只授权特定状态/版本/current receipt列，历史/绑定不可修改；不导入真实材料、身份或通知，不关闭Case。父资料state/revision/hash改变只保留历史并阻止新写，显式重规划仍待实现。
+
+独立6.1sol medium reviewer executor_receipt_review两次同工作区只读，无实质finding，未跑API/DB/browser/测试或读私有runtime。初轮普通沙箱PG64ERROR（Operation not permitted）；正式授权本地测试调用后64相关用例PASS。补充首轮35PASS/1FAIL为owner故障fixture更改父state未清旧hash违反既有CHECK，修正显式fixture；保留失败日志，不计通过。最终冻结全聚合 **555 passed, 1 skipped, 2 warnings in 176.33s (0:02:56)**，555PASS/0FAIL/1WindowsSKIP，新增回执36PG/API均PASS；111个src/test/script含JS hash匹配，compileall/diffcheck通过。当前撤权先于重放、跨role/tenant/未获派、角色不能代另一方、父绑定/CAS/hash、并发同/不同key、失败全回滚、精确12→13和重复标记历史、最小权限/FK均有运行证据。
+
+真实低权限本地API/独立worker/PG/Chromium三角色链PASS：新资料双槽→获派专员人工核对→企业本地确认→测试owner明确分配新SYN Run（非应用分派UI）→企业建步骤→执行者v1→企业纠错→执行者v2→企业本地核对→有理由重开→执行者v3→reload；7事件/3回执，来源/hash/作者可见、Case仍NEEDS_INPUT、外部NOT_SUBMITTED/线下NO_EVIDENCE/资格NOT_EVALUATED。执行者企业决定403、另一企业看不到、身份换清旧材料、脚本文字纯文本、320/390无横滚。新增18/18排序守卫与旧资料23/23、资源/组合31/31PASS；mock-response是页面时序证据，不代替PG授权。旧资料双角色实际UI也PASS，截图路径修改后再验证指定新目录。自有harness全部正常退出，仅停止自身children。
+
+真实持久详情桌面/320/390和全页图已查看，保存.runtime/eng023-ui（10图）及.runtime/eng023-preparation-ui（3图），未导出/上传。旧ENG020/021命名截图22张hash一致。既有固定名.runtime/f2-*.png在首次旧资料复跑被覆盖，上次字节未保全；已如实记录限制并修改browser可选--screenshots/默认唯一目录，不能声称全部历史截图均保留。33个原V1/Windows/R4/角色保护文件逐字不变。详细证据evidence/eng023-acceptance-summary.json，限定范围与R01—R06后记见ENG023-ExecutorReceipts。
+
+本片结束，不展开下片；还缺通用CaseStep/运营分派与接单完整语义、通知送达已读、真实证明/签名/履约、父资料变化后的显式重规划、业务Outbox全链、注册服务DAG目标覆盖、模板/冷会话和完整F2端到端。F1未签收/F2NOT_PASSED/R4DISABLED/Win11及36AT6EXNOT_RUN，Windows37324704568失败明细仍待用户，收到优先F1。provider/预算0，无push/新CI/备份/Library/导出/上传或真实外部办理。安全本地提交后停止本轮。
+
 ## ENG021 两资源同事务合成组合确认完成（仅本地有界切片）
 
 基线3e146a5/干净工作树，对照原V1产品§5.4/7.4和F2-T03/AT09—11，在实施前ENG021规格冻结两条本人不同资源占位、不强加相同时间、无替代/优先级/外部业务。schema12新增组/成员/不可变回执；principal→actor请求key→resource UUID排序锁→记录锁，所有锁后一次DB clock_timestamp、当前授权/固定及登记版本/容量/开放重验。全部检查先于写入；两条CONFIRMED+组/成员/回执同事务，取消两条RELEASED+组CANCELLED+取消回执同事务。单成员禁止拆开确认/释放；失败保留原占位，仍依原TTL自然过期。单/组共享actor/key指纹与原回执回放+当前状态，取消后旧CONFIRM不恢复占用。

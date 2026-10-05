@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--preparation-fixtures', action='store_true')
     parser.add_argument('--resource-fixtures', action='store_true')
     parser.add_argument('--combination-fixtures', action='store_true')
+    parser.add_argument('--receipt-fixtures', action='store_true')
     args=parser.parse_args()
     root=Path('.runtime');root.mkdir(mode=0o700,exist_ok=True)
     server=pgserver.get_server(root/'smoke-pg',cleanup_mode='stop')
@@ -47,6 +48,19 @@ def main():
             sessions.write_text(json.dumps({'prep-specialist-'+id:secrets.token_urlsafe(32) for id in ('fixture-a','fixture-b','fixture-c')}))
             sessions.chmod(0o600)
         seed_synthetic(owner,json.loads(sessions.read_text()))
+    if args.receipt_fixtures:
+        # Explicit synthetic fixture owner setup; never repair a revoked identity/grant.
+        import secrets
+        from parkweave.store import digest
+        sessions=root/'receipt-sessions.json'
+        if not sessions.exists():
+            sessions.write_text(json.dumps({'receipt-executor-'+id:secrets.token_urlsafe(32) for id in ('fixture-a','fixture-b','fixture-c')}))
+            sessions.chmod(0o600)
+        with owner.connect() as c:
+            for id,token in json.loads(sessions.read_text()).items():
+                parent=c.execute('SELECT park_id,org_id FROM principals WHERE id=%s',(id.removeprefix('receipt-executor-'),)).fetchone()
+                c.execute('INSERT INTO principals VALUES(%s,%s,%s,%s,%s,true) ON CONFLICT DO NOTHING',(id,digest(token),parent['park_id'],parent['org_id'],'service_executor'))
+                c.execute('INSERT INTO capability_grants(principal_id,capability,park_id,org_id) VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING',(id,'READ',parent['park_id'],parent['org_id']))
     if args.resource_fixtures:
         from parkweave.resource_holds import seed_synthetic
         seed_synthetic(owner)

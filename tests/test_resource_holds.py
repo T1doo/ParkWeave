@@ -230,10 +230,10 @@ def test_upgrade_from_9_and_repeat_migration_preserve_older_preparation_history(
     for id in ('fixture-a','fixture-b','fixture-c'):f[2]['prep-specialist-'+id]=secrets.token_urlsafe(32)
     preparation.seed_synthetic(f[1],f[2]);row=filled(f);before=read_preparation(f,row).json()
     with f[1].connect() as c:
-        c.execute('DROP TABLE synthetic_resource_combination_receipts,synthetic_resource_combination_members,synthetic_resource_combinations,synthetic_resource_receipts,synthetic_resource_holds,synthetic_resource_grants,synthetic_resources')
+        c.execute('DROP TABLE service_receipt_events,service_step_receipts,service_receipt_steps CASCADE; DROP TABLE synthetic_resource_combination_receipts,synthetic_resource_combination_members,synthetic_resource_combinations,synthetic_resource_receipts,synthetic_resource_holds,synthetic_resource_grants,synthetic_resources')
         c.execute('DELETE FROM schema_version WHERE version>=10')
     f[1].migrate();f[1].migrate();assert read_preparation(f,row).json()==before
-    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==12
+    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==13
 
 
 def test_same_request_key_cannot_cross_registered_resource(resource_fixture):

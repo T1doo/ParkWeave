@@ -1,5 +1,9 @@
 # ParkWeave 动态计划
 
+## ENG023 本地执行者回执子集
+
+在c2f3465基础先完成[F2原V1逐项对照](F2/V1Status.md)，再推进[F2-T04最小合成回执](F2/ENG023-ExecutorReceipts.md)：合法获派执行者记有来源/版本/hash的回执，企业核对/纠错/重开，保持角色上限、当前授权、父版本/幂等/事务边界。不是通用办理编排或真实履约；本地切片完成后停止，不push/新CI/备份/导出/上传/LIVE。F1未签收、F2NOT_PASSED、R4关闭、Win11与36AT6EXNOT_RUN；Windows失败明细收到优先F1。
+
 基线：ParkWeave V1；来源见 [DocumentReview.md](DocumentReview.md)。35阶段任务、36 AT、6 EX为待实现定义，不是通过成绩。
 
 F1 IN_PROGRESS：先严格契约/可信本地动作、数据库隔离、持久Run/Operation/outbox、API与worker骨架及合成测试；真实模型链与Windows门BLOCKED。F2—F6 PLANNED；不在本轮展开全部阶段。
