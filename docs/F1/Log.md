@@ -1,6 +1,31 @@
 # F1 真实日志
 
-## 2026-10-05 DOC-001
+## 当前状态入口（2026-10-05）
+
+唯一CI当前状态见[WindowsServerCI当前权威状态](WindowsServerCI.md#current-status)。最新代码9a8cbc5/run37324704568：Prepare/受绑定PG启停通过，native_suite退出1/无超时，Server整体未通过；正在等待最新run JSON的FAIL/NOT_RUN cases及回归counts（如有）。原Win11guard/R4关闭不变，Win11NOT_RUN、F1IN_PROGRESS、F2正式准入NOT_PASSED、LIVE/预算0。下面迁移记录和旧日志是已发生事件，不是新的测试声明。
+
+## 2026-10-05 迁移与Server CI接续真实记录
+
+上传恢复ZIP的SHA256匹配d6e17408f0ba2c53a877e3c4dd6d19543e7ef75a83f5533ff3a22abe31d4da96；新目录独立恢复HEAD51734906、完整17提交/4未推顺序、182文件字节及执行权限/fsck/干净状态通过。原仓库和私有备份保留。此前Library两次支持流程下载均失败download failed；用户上传包解除了恢复阻塞。
+
+默认网络根入口HEAD曾返回200，后续默认沙箱socket operation not permitted；支持的require_escalated正式审批后同一原origin读取/固定依赖安装/普通push/Actions元数据读取成功，未改代理、身份或系统策略。不能把默认沙箱拒绝归为已证实的平台故障。旧签名日志下载在正式审批后仍Forbidden，数值HTTP状态/拒绝层缺失；停止该路线，不换接口读取同一被拒日志。
+
+真实本地失败保留：首次缺pytest/指定浏览器缓存、固定依赖默认安装No matching distribution；审批后相同版本安装成功。默认socket回归162 PASS/225 ERROR/2 SKIP；批准socket后未完成editable安装的运行314 PASS/11 FAIL/62 ERROR/2 SKIP。补齐项目安装后最终387 PASS/0 FAIL/2 SKIP/2 WARN（116.68s，第二SKIP为当时缺便携PowerShell），原双角色Chromium合成闭环通过；没有把这些失败改作通过。
+
+普通push精确51734906触发37314450132：Prepare失败/Test跳过/Stop成功。用户截图确认Python两候选路径拼成一个程序名，3.12.10实际存在。82ddaab的官方固定SHA setup-python显式3.12/x64是独立配置修复；5a0987f共享resolver解决拼接、别名及空格路径，原版本/身份守卫保持。新增夹具首次5 FAIL/37 PASS，修正JSON单元素解包和数组Source替身后定向42 PASS；全量394 PASS/1 Windows SKIP/2 WARN，AST12/4CI守卫/原6Windows Linux守卫通过。普通push5a0987f触发37318040507，约25m10s超时取消，注释明确上限25m0s；Prepare cancelled/Test skipped/Stop failure。具体挂起命令和旧Stop失败根因仍UNKNOWN，不以输出继承假设替代事实。
+
+9a8cbc5增加独立参数/DEVNULL stdin/私有普通输出文件/直接子进程时限与固定安全阶段注释，超时124仅终止自身直接命令；原cluster UUID/state/bin/data/reparse、未知status拒绝及原lifecycle PID/cwd/命令/时间核验不放宽。定向48 PASS/1既有WARN，AST13/4CI Linux拒绝守卫通过。第一全量400 PASS/1 SKIP已保留；其启动后做了等价stdlib os导入整理，所以再对最终冻结源全量验证：400 PASS/0 FAIL/1 Windows SKIP/2 WARN，124.68s。所有成绩仅Linux合成，真实模型0。
+
+普通push9a8cbc5的一次有实质变化run37324704568用时约1m56s，completed/failure。允许注释：python_guard0/no timeout、postgres_version0、initdb0/2.172s、pg_start0/0.172s；Prepare通过。native_suite1/78.094s/timeoutFalse，Test失败。pg_status0/0.015s、pg_stop0/0.125s/no timeout，Stop通过。本次PG停止成功不追认旧run清理成功，也不能补造本次API/worker/文件/browser子项通过。旧挂起原因未证实。job111812341430的结构化check输出读取成功，但title/summary/text全null、注释数19；已取得阶段/通用退出信息与Node告警，无FAIL/NOT_RUN子项或原生回归计数。
+
+当前等待最新run页面Windows Server engineering JSON中FAIL/NOT_RUN cases的case/status、已有exit_code/category/reason和full_engineering_regression.counts（如有）；缺字段不猜。原首轮截图已足够，不再作为待输入；完整私有日志不是当前最小输入。此后仅收敛三份F1文档，不取新日志、不改代码、不运行失败动作、不原样重跑CI；文档only普通push不命中workflow路径过滤。所有既有失败/历史计数保留，未补造新测试成绩。
+
+## 历史日志（原始事件与当轮范围保留）
+
+以下“本轮”“当前”“未发布”“NOT_RUN/不push”等均对应其记录时点，不覆盖顶部权威当前状态。
+
+
+### 2026-10-05 DOC-001
 
 仓库 origin=https://github.com/T1doo/ParkWeave.git；初始31e7acb7e53bb1ab6465b9daae59de28757f7583，work干净；新分支dev/f1-foundation。仓库与工作区没有可读AGENTS.md或相关技能文件。没有访问Sim2Act或用户电脑。
 
@@ -8,7 +33,7 @@
 
 新增验收规格由全文转录，未收到原JSON/DocumentReview等原包附件；初态与执行器待实现，全部NOT_RUN。文档完整性核对PASS，仅为文档检查；产品测试NOT_RUN。模型/Windows/真实园区主张BLOCKED。代码提交：本记录随文档提交，实际SHA在下一日志记录。
 
-## 2026-10-05 ENG-001（首个有界工程增量）
+### 2026-10-05 ENG-001（首个有界工程增量）
 
 文档基线提交00f1d8a317e6676c9139cb8d9f6702ee504617a5，已push并用git ls-remote核对一致。本记录随首个工程提交；实际提交SHA通过Git历史/交付链接关联，执行代码逐文件hash见evidence/engineering-manifest.json。
 
@@ -29,7 +54,7 @@
 
 下一步候选：补V1完整领域契约与事实冲突；增加作用域Grant与各角色；独立FAULT_INJECTION外部未知结果账本。Windows及模型条件未满足前保持对应门BLOCKED，不自动进入F2真实办理。
 
-## 2026-10-05 ENG-002（第二有界F1增量）
+### 2026-10-05 ENG-002（第二有界F1增量）
 
 基线05625e07db8d8b633843b40b92abfeb398c4ec9e，dev/f1-foundation干净，远端仍T1doo/ParkWeave；没有新增可读AGENTS/技能规则。复核Plan/AT后选择独立基础缺口：结果不明的持久核对与计划契约边界，不进入F2。
 
@@ -45,7 +70,7 @@
 
 证据工具记录：一次误用系统python导入项目时ModuleNotFoundError；改用项目.venv/bin/python后schema和manifest生成成功，原件hash再次核对一致。此错误不隐藏，未当产品测试FAIL或PASS。ENG-002 Linux Chromium回归PASS（202建单、持久读取、三入口、浏览器错误为空）；原ENG-001证据保持不变，新证据单独归档。
 
-## 2026-10-05 ENG-003（正常worker网关与未知结果）
+### 2026-10-05 ENG-003（正常worker网关与未知结果）
 
 基线a1858b16846dfc981cad4a5aa23f8ea9abf96324，dev/f1-foundation干净，origin仍T1doo/ParkWeave。按父任务选定唯一主范围：把ENG-002核对语义接入正常runs/operations和真实API/worker，非只增旁路测试；完整V1契约/事实冲突/字段级Grant本轮不散开。
 
@@ -63,7 +88,7 @@ Schema2为独立owner原子迁移，保留历史Run/Case/Receipt，版本健康�
 
 最终回归54 PASS / 2 WARN（20.12秒），包括原40与新增14条实际API/worker/PG路径测试。当前仅该明确工程范围有PASS；完整AT/EX未改状态。本轮没有意外FAIL；所有注入失联和负例均保留断言与日志，不删用例。浏览器及连续worker HTTP证据各自单独保存，不覆盖ENG-001/002历史。
 
-## 2026-10-05 ENG-004（心跳、V1最小结构、事实/字段Grant）
+### 2026-10-05 ENG-004（心跳、V1最小结构、事实/字段Grant）
 
 基线eb8b38bb7d538400fad6a2c143f6c9a1d6cc7fb5，dev/f1-foundation干净，远端T1doo/ParkWeave。范围限定当前事实闭环与长等待租约，不开展F2组合服务。用户新确认电脑Windows11；这是自报系统家族，精确构建/架构/原生实测/安装条件仍BLOCKED。
 
@@ -82,7 +107,7 @@ Schema2为独立owner原子迁移，保留历史Run/Case/Receipt，版本健康�
 完整AT/EX仍NOT_RUN，新增24检查+原54是工程范围，不是完整验收成绩。剩余多角色/获派步骤Grant、审计、outbox当前授权/消息、文件边界、原生脚本/完整AT执行器尚未完成；LIVE/Windows/真实园区效果BLOCKED。不修改Sim2Act、不共用其数据、未持续配置凭据，原始Library文档不改；提交前代码与原件hash/秘密扫描，.runtime会话、数据库、日志、截图不提交。实际commit随本记录，通过Git历史与最终链接关联。
 
 
-## 2026-10-05 ENG-005（权限交集、outbox、逻辑文件边界）
+### 2026-10-05 ENG-005（权限交集、outbox、逻辑文件边界）
 
 基线8abf48f276a0b991f215cde996eba7593884dfad，独立dev/f1-foundation/https://github.com/T1doo/ParkWeave.git，工作区干净；扫描未发现AGENTS.md或.agents/skills。本轮先新增ENG005-Mapping冻结任务/AT子范围，再改实现与测试。无子任务、无Sim2Act修改、不共用数据、不查看凭据/配置持续凭据、不调用真实模型或公网部署。
 
@@ -105,7 +130,7 @@ Schema4/5新增capability_grants/action_grants/run_assignments/deliveries/file_r
 最终发布候选完整回归107 PASS/1 SKIP/2 WARN，71.87秒（原78+新增29 PASS、1原生Windows跳过），同样保留既有WARN。schema5迁移后的最终连续LOCAL服务API51815/worker51816重新加载最新代码，browser_smoke PASS，Run19431b07-e07f-455f-9547-b4196b82b692、Caseaa64cbc0-5e7f-4003-94c1-4cd54487f315、Operation484d45d7-fd61-41dc-9f3a-0b0fb0976698。最终覆盖表/源码hash与此版本一致；完整AT/EX NOT_RUN，原件未改，交付后关闭本地服务。
 
 
-## 2026-10-05 ENG-006（F1收尾候选与审查安全小修）
+### 2026-10-05 ENG-006（F1收尾候选与审查安全小修）
 
 基线3387aa2f5a2315440cf8d169f4391863bb4601ab，dev/f1-foundation/https://github.com/T1doo/ParkWeave.git；先冻结ENG006-Mapping。只收尾生命周期/固定AT/离线模型边界，不启动F2。没有子任务、高成本委派、真实模型探测、隐藏凭据读取、持续凭据设置或公开部署。原Library来源不变。
 
@@ -127,7 +152,7 @@ Schema4/5新增capability_grants/action_grants/run_assignments/deliveries/file_r
 
 交接界限：F1仍IN_PROGRESS。T01原生安全文件backend、T05真实传输/持久usage/共享额度/worker规划链绑定独立未做；Windows实机/服务安装/精确版本、Park安全配置与预算、真实园区资料许可/收益、C0模板/跨赛道/准确截止另列外门。源原件hash检查和秘密扫描后提交push、核对远端，关闭测试服务，本轮停止新增供复核，不进入F2。实际commit由Git历史与交付链接关联。
 
-## ENG-007：T05模型链有界基础（2026-10-05）
+### ENG-007：T05模型链有界基础（2026-10-05）
 
 基线384028bc00a3f7d38c54fa71ecf80eee0de768b7，dev/f1-foundation/https://github.com/T1doo/ParkWeave.git；先读Checklist并冻结ENG007-Mapping。未发现仓库AGENTS/.agents指令，未创建子任务。不改Sim2Act，不进F2或Windows backend，不读取模型真实环境值/隐藏凭据、不调用provider、不部署公网/合并main。原Library档案字节/行数/hash复核不变。
 
@@ -143,7 +168,7 @@ schema6 additive model_steps持久PLAN/FEEDBACK；正常CLI worker --model-fixtu
 
 最终source archive完整性、git diff --check、暂存无秘密/个人真实数据/忽略配置与日志检查后commit/push，远端SHA以Git核实交付。F1仍IN_PROGRESS，本轮结束停待复核。独立下一候选Windows安全文件backend；LIVE安全注入/批准共享部署与实际计费门BLOCKED，固定窗口滚动/金额账单核对另需有界规格；完整业务oracle后续阶段，不扩F2。所有子进程由fixture finally关闭，无持续服务。
 
-## ENG-008：Windows最小只读文件候选（2026-10-05）
+### ENG-008：Windows最小只读文件候选（2026-10-05）
 
 基线d997ba9ea1aa059b2a30eb8bd89fa5d1abee8d37，dev/f1-foundation；先冻结ENG008-Mapping并查Microsoft官方NtCreateFile/OBJECT_ATTRIBUTES/CreateFileW/handle file info/volume/GUID/security/DACL/token/SID文档。不凭Linux模拟称Windows通过，不修改Sim2Act、原入口或用户既有ACL，不进入F2，无子任务/真实provider/模型env读取或持续凭据。官方接口能提供可信候选路径，但平台行为和完整安全保证只能原生实测，不开放unsafe fallback。
 
@@ -159,7 +184,7 @@ schema6 additive model_steps持久PLAN/FEEDBACK；正常CLI worker --model-fixtu
 
 两份Library原档字节/行数/hash复核通过；暂存秘密/个人真实数据/忽略配置日志扫描、git diff检查后commit/push并核实远端SHA，完成本有界增量即停止供父任务复核。本轮没有持续测试服务。
 
-## ENG-009：收敛有限F1断言与单项R1（2026-10-05）
+### ENG-009：收敛有限F1断言与单项R1（2026-10-05）
 
 基线4ac2d2e3767491d997356f0eaf1e5613a1f35cc7，dev/f1-foundation；先按原Library §3/§10及固定表读取F1-T01—06、首次12个F1 AT具体断言。Convergence不改阶段/不降标准，区分现有代码外验证、有限代码R1—R4、原F2/F3等；31/32在F1只有规格与来源准备，不挪完整B0-B2/效果评测到F1。只选R1实施，不同时写其它项目/高级计费平台/Windows后端；没有子任务、真实model/env密钥读取、provider调用或持续凭据。
 
@@ -175,7 +200,7 @@ R1新增schema7 model_plans及typed local revision contract。正常worker PLAN�
 
 提交前无秘密/真实个人数据/忽略配置与私有logs、Git diff/branch/remote/hash检查；正常CLI/API fixture finally关闭，无持续服务。远端SHA以实际Git核实交付。
 
-## ENG-010：仅R2账号发送门（2026-10-05）
+### ENG-010：仅R2账号发送门（2026-10-05）
 
 基线cc3458bd18704bcde1d96868d7346b8fe323f7fd，dev/f1-foundation/https://github.com/T1doo/ParkWeave.git；核对remote与已有修改，未发现AGENTS/.agents指令；先冻结ENG010-Mapping，只修R2。R3/R4/Windows候选/原files.py/native probes不改，Sim2Act不操作，无子任务、真实model env/隐藏凭据读取、provider请求或网络配置修改，授权真实预算0。
 
@@ -189,7 +214,7 @@ rate拒绝未发可持久next_attempt_at延后且fence递增，无sleep/请求�
 
 两份Library原档44220/31271字节、454/410行、SHA256与manifest一致，原native/files.py及ENG009 gap共6文件逐字HEAD不变。Git diff/暂存秘密与真实个人数据/忽略配置日志检查后commitpush核实远端，测试fixture finally关闭。F1 IN_PROGRESS；真实Windows E1、真实模型安全注入/实际共享协调与预算 E2、真实资料/C0 E3 BLOCKED/NOT_RUN。只交付R2，R3/R4不推进，push后本轮结束供父任务复核。
 
-## ENG-011：仅R3三字段候选/集中澄清（2026-10-05）
+### ENG-011：仅R3三字段候选/集中澄清（2026-10-05）
 
 基线d395fc1856b350fa1d4256563f0731a6b27b3687，dev/f1-foundation/https://github.com/T1doo/ParkWeave.git；核对branch/remote与clean基线，未发现AGENTS/.agents。冻结ENG011-Mapping，仅R3，不新增业务字段/服务场景、不进F2/F3，不改Sim2Act/Windows候选/backend/probe，不启用R4；无子任务、真实model env/隐藏凭据读取、provider调用、外网部署或持续凭据配置。真实授权预算/模型API请求0。
 
@@ -207,7 +232,7 @@ Schema8增量immutable fact_reviews(document/hash)/fact_followups；review/recei
 
 用户中途接续指示仅记录到Plan：下一轮优先云端免费公共仓库windows-2025 CI、Python3.12x64、PG17 PGBIN freshcluster/显式test-owner DSN/parkweave_app，mockonly；Windows Server不能替代Win11，不绕file_candidate_probe release11 guard，独立Server harness保持生产关闭。本轮未创建CI、未开启付费runner或修改权限/持续凭据，具体版本/runner条件留下一轮核实。
 
-## ENG012：Windows云CI本地准备/访问阻塞留档（2026-10-05）
+### ENG012：Windows云CI本地准备/访问阻塞留档（2026-10-05）
 
 基线5185cf4b0a3973f1b7b486bc6adf43f478742db2，dev/f1-foundation；核对本地仓库/clean基线，既有origin为https://github.com/T1doo/ParkWeave.git，无AGENTS/.agents新指令。用户最新指示继续独立本地准备但不重试gh/换身份路线/推送workflow/启动runner/修改权限。本轮Actions API访问0、git push0、runner0，无subagent/付费资源/真实模型/预算/部署，不操作Sim2Act/用户电脑。不把另项目成功继承为Park权限。
 
@@ -225,7 +250,7 @@ Forbidden记录只来自前轮已捕获输出：gh run list仓库Actions列表ta
 
 暂存无秘密/真实个人数据/忽略runtime日志检查，保存本地commit，**不push**（该commit含待审查workflow）；未查询远端/Actions最新状态，最后已核实remote基线仍按此前5185cf4记录。F1 IN_PROGRESS，E1/E2/E3原门保留，本轮结束供父任务复核。WindowsServerCI.md列下一可独立优先项：PG init/start失败、owned cluster state篡改、浏览器超时/清理失败的故障oracle，不新增产品任务/F2/真实调用。
 
-## ENG013：有限清理故障oracle与CI凭据边界（2026-10-05）
+### ENG013：有限清理故障oracle与CI凭据边界（2026-10-05）
 
 基线本地b9bc4dba0bac17b266004683ea72600e7f3f1e4c，独立dev/f1-foundation/origin T1doo/ParkWeave。依父任务新指示，开头直接提供前轮目标API及完整非敏感Forbidden：`failed to get runs: Get "https://api.github.com/repos/T1doo/ParkWeave/actions/runs?per_page=1&exclude_pull_requests=true&branch=dev%2Ff1-foundation": Forbidden`，CLI exit1。数值HTTP状态/headers/body/requestID/拒绝层仍未知；前轮repo metadata同为Get .../repos/T1doo/ParkWeave: Forbidden。原记录eng012-actions-blocker.json逐字不变；本轮未重试gh/Actions/远端查询、无身份/路线/权限变更、无凭据读取，无push/runner/真实模型/预算/部署/Sim2Act/用户电脑操作。
 

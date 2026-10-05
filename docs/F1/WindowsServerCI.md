@@ -1,6 +1,40 @@
-# Windows Server CI本地候选（ENG012）
+# Windows Server CI
 
-## Server超时后的有界诊断（首次挂起命令仍UNKNOWN）
+<a id="current-status"></a>
+## 当前权威状态（2026-10-05，等待用户提供失败子项）
+
+本节是 F1 Windows Server CI 的唯一当前状态入口；F1 Plan/Log 的当前摘要引用本节。下面历史记录中的“本轮”“当前”“未发布”“NOT_RUN”和待执行计划只描述其记录时点，不覆盖本节。
+
+最近代码提交 `9a8cbc527503ab55978a4b50612207d3bf72de26`，已普通 push 到 `dev/f1-foundation`。最新 [run 37324704568](https://github.com/T1doo/ParkWeave/actions/runs/37324704568) 已 completed/failure，job 111812341430 用时约 1m56s：
+
+- Checkout、显式 Python 3.12 x64 选择、Prepare：**通过**。原生 python_guard exit0/no timeout；postgres_version exit0；initdb exit0/2.172s；pg_start exit0/0.172s。
+- Test：**失败**。native_suite exit1，78.094s，timeout=False。尚无具体 FAIL/NOT_RUN 子项及原生回归计数，不能推断生命周期、浏览器或 Server 文件 oracle 哪项通过/失败。
+- Stop：**通过**。pg_status exit0/0.015s、pg_stop exit0/0.125s，无超时。这确认本次受绑定的 PG 停止步骤成功，不追认旧 run 清理成功，也不补造本次 API/worker 子项结果。
+- **Server 整体未通过；F1 IN_PROGRESS/未签收。Windows Server 不是 Win11 验收；Win11 NOT_RUN，原 Win11 guard 未改，production R4 DISABLED；真实模型请求/预算0。** 完整36AT/6EX仍NOT_RUN；F2仅并行合成工程，正式准入NOT_PASSED；无资格自动判定或外部履约主张。
+
+旧 [run 37318040507](https://github.com/T1doo/ParkWeave/actions/runs/37318040507) 的25分钟超时由允许注释确认，Prepare cancelled/Test skipped/Stop failure；**具体挂起命令及旧 Stop 失败根因仍UNKNOWN**。输出句柄继承只是待验证假设，不能因新 Prepare/Stop 通过就反推为旧根因。更早首轮 `37314450132` 的 Python 两路径拼接错误已由用户截图确认并修复；其截图不再是待输入项。
+
+允许的 run/job/check 元数据与安全注释可读；此前标准日志下载跟随的签名存储地址返回Forbidden，数值HTTP状态/拒绝层未知，已停止该读取，没有重试或替代身份/镜像/日志路径。本次 check 输出的 title/summary/text 均null，注释数19；已取得信息为阶段/通用退出信息与Node版本告警，无法定位具体测试子项。native_suite 已设计写出页面上的 `Windows Server engineering (not Win11 acceptance)` JSON汇总，**现在只等待该汇总中的失败子项，不把旧超时日志作为必需输入**。
+
+最小待输入字段：最新run页面 JSON 的 `cases` 中 `status=FAIL` 或 `NOT_RUN` 的记录（`case/status`，及已有 `exit_code/category/reason`），加 `full_engineering_regression.counts`（如有）。缺失字段保留缺失，不猜值；无需完整私有日志/会话/DSN/签名链接。收到后只针对命中子项定位修复；等待期间不取被拒日志、不执行原失败动作、不原样重跑CI。
+
+已有安全产物能确认 Prepare/PG启停成功、native_suite非超时退出1及旧超时；不能再细分失败子项。静态源码能列出执行阶段/边界，不能把任一候选原因当真实诊断。当前文档收敛只改docs，普通push不命中此workflow的代码/测试路径过滤，不产生新CI或新测试成绩。
+
+## 各轮可追溯结果
+
+| 代码/run | 已观察的真实结果 | 后续处理/边界 |
+| --- | --- | --- |
+| 恢复51734906 / 37314450132 | Prepare失败、Test跳过、Stop成功 | 截图确认多个Python候选Source被拼成一个程序名；3.12.10实际存在。setup-python配置缺口与本次根因分开记录。 |
+| 82ddaab、5a0987f / 37318040507 | 约25m10s超时取消；Prepare取消、Test跳过、Stop失败 | 多路径共享resolver和显式3.12/x64选择已发布；旧挂起命令UNKNOWN。 |
+| 9a8cbc5 / 37324704568 | Prepare/PG启停通过；native_suite退出1；总结果failure | 有界等待/私有输出文件/阶段注释已发布；等待cases失败子项。 |
+
+本地历史成绩均为Linux合成工程，不能替代Server/Win11：恢复后最终387 PASS/2 SKIP/2 WARN（便携PowerShell当时缺失）；Python解析修复定向42 PASS、全量394 PASS/1 Windows SKIP/2 WARN；有界诊断定向48 PASS、最终冻结源全量400 PASS/0 FAIL/1 Windows SKIP/2 WARN，AST13脚本零错误/4个CI Linux拒绝守卫。Python解析新增夹具首轮5 FAIL/37 PASS，修正夹具后通过，失败记录保留。原ENG012/ENG013/ENG014旧成绩与原始证据不改；所有本地计数不补作本次原生回归计数。
+
+## 历史工程说明（按当时状态保留）
+
+以下保留各轮真实计划、失败与实现说明；包括待审查、未发布、等待截图等当轮描述，均不作为当前待办。当前状态只以顶部为准。
+
+### 历史：Server超时后的有界诊断（首次挂起命令仍UNKNOWN）
 
 run37318040507/source5a0987f于约25m10s completed/cancelled；watch允许的注释明确maximum execution25m0s，Prepare cancelled/Test skipped/Stop failure。该证据确认任务超时与清理失败，不能确认是哪一条原生命令挂起。旧日志下载拒绝路线未重试、未换身份或接口读取同一日志。
 
@@ -10,21 +44,21 @@ run37318040507/source5a0987f于约25m10s completed/cancelled；watch允许的注
 
 公开notice/error只含闭集阶段名、START/END、deadline、exit、elapsed、timeout和直接子进程清理状态，不含参数/DSN/原始stdout/stderr。原始输出与JSON记录留本轮新私有trace，无artifact/cache上传。真实命令替身验证stdin EOF、空格参数、非零退出、超时不影响其它进程、私有输出不泄露、父退出后后代持有文件句柄仍及时返回、PowerShell桥接、原17个ownedcluster故障oracle；定向48 PASS。这些是Linux合成工程，不宣称Windows运行通过；用于下一次有实质变化的诊断run，不重复原样CI。
 
-## 迁移后显式Python配置与多路径解析修复
+### 历史：迁移后显式Python配置与多路径解析修复
 
 用户已提供首轮Prepare截图：Engineering.ps1行16调用的程序名包含hostedtoolcache的Python3.12.10路径及WindowsApps别名路径，两者被拼成一个字符串，exit1。这是已观察根因；Python3.12.10已存在，不能把此前显式setup-python配置缺口称此次根因。最小修复将Get-Command的多候选枚举逐个处理，只返回一个实际存在、非WindowsApps执行别名、非零长度的文件路径，保留完整空格且用调用运算符传独立参数；Prepare原3.12/x64/win32验证保持。Common.ps1相同解析缺陷同步使用该共享resolver。无硬编码runner个人路径、无空格删除/数组拼接、无版本守卫放宽。
 
 本地PowerShell实测覆盖两个实际ApplicationInfo候选、WindowsApps别名优先/仅别名、带空格的可执行路径与独立参数、数组Source拒绝、缺失/零字节候选和错误版本拒绝；相关CI回归42 PASS。首轮测试夹具把单元素JSON数组解包成字符串后索引首字符，以及错误展开数组Source替身，导致5 FAIL/37 PASS；只修这两处夹具，未放宽产品断言。官方PowerShell7.6.6归档hash匹配，AST12脚本零错误/4个CI Linux拒绝守卫及原六Windows守卫PASS。这仍是Linux工程验证，原生Server需新run结果；Win11仍NOT_RUN。命令枚举语义参考[Microsoft Get-Command](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/get-command?view=powershell-7.5)。
 
-恢复并普通push的精确51734906已触发首次Server run 37314450132，Prepare失败/Test跳过/Stop成功；详细日志下载在正式审批后仍Forbidden，数值HTTP状态及拒绝层未知，停止该下载且不换路线。已有步骤metadata没有错误注释，具体根因仍UNKNOWN。原发布提交和旧证据不修改。
+恢复并普通push的精确51734906已触发首次Server run 37314450132，Prepare失败/Test跳过/Stop成功；详细日志下载在正式审批后仍Forbidden，数值HTTP状态及拒绝层未知，停止该下载且不换路线。当时步骤metadata没有错误注释，根因按UNKNOWN记录；后续截图已确认上述多路径拼接问题。原发布提交和旧证据不修改。
 
 独立静态核查发现workflow原来依赖runner默认PATH的python，而Prepare明确要求3.12 x64。按新授权仅补官方setup-python显式选择3.12/x64，在Prepare之前设置PATH；v5官方ref于本任务只读核对为a26af69be951a213d495a4c3e4e4022e16d87065，workflow使用不可变SHA。3.12版本范围与pyproject的>=3.12,<3.13约束及既定Windows候选依赖一致，不宣称固定Python补丁版本或已有原生通过。未配置cache、artifact、secrets或新权限；单windows-2025/contents:read/25分钟/always Stop保持。
 
-该修复只解决明确的版本选择配置缺口，不等于已解决首次Prepare失败。同步现有静态policy/范围检查；本地保存，不push、不重跑CI，等待用户提供首次Prepare错误段后再联合核对。Win11 guard/R4保持原字节及关闭状态，LIVE/预算0，F1未签收。
+82ddaab当时只解决版本选择配置缺口，不称已解决首次Prepare失败；当时本地保存、不push并等待截图。后续截图、共享resolver修复及已发布运行结果见顶部当前状态。Win11 guard/R4保持原字节及关闭状态，LIVE/预算0，F1未签收。
 
-**LOCAL_ONLY / ACTIONS_BLOCKED / SERVER_NOT_RUN / WIN11_NOT_RUN。** 本轮没有访问Actions、推送workflow、启动runner或更改账号权限。Sim2Act的Windows CI结果不证明本项目执行环境有相同GitHub访问权限。完整AT/EX仍NOT_RUN，R4生产文件入口未启用。
+**ENG012当时状态：LOCAL_ONLY / ACTIONS_BLOCKED / SERVER_NOT_RUN / WIN11_NOT_RUN（历史，非当前状态）。** 本轮没有访问Actions、推送workflow、启动runner或更改账号权限。Sim2Act的Windows CI结果不证明本项目执行环境有相同GitHub访问权限。完整AT/EX仍NOT_RUN，R4生产文件入口未启用。
 
-## 待审查配置和调用
+### 历史：待审查配置和调用
 
 `.github/workflows/windows-server-engineering.yml`只有dev/f1-foundation的窄push/代码及测试路径触发，单个标准windows-2025 job、25分钟上限、contents:read、单分支concurrency、checkout不持久化凭据；无larger runner、cache action、artifact上传、部署、repository secrets引用、workflow_dispatch-only对main的依赖。checkout使用v4版本tag，发布前仍应复核并锁定官方不可变SHA；本轮没有为此访问Park权限拒绝的API或切换路线。
 
@@ -44,13 +78,13 @@ Prepare只读CIM OS/product、Python位宽/版本、PG binary version、admin及
 
 生命周期失败会记FAIL/后续依赖NOT_RUN，独立回归/Win11 guard/Server候选检查仍执行。服务仅由原有可信PID/命令/时间/cwd识别的Stop关闭；PG Stop只接受本轮UUID root/状态数据/PGBIN binding，pg_ctl仅该data目录，失败保留不误停其它服务/进程，不宽泛删除路径。未来实际超时、权限、admin默认owner、NTFS/共享行为仍需Server运行证据；Linux不能确认这些语义。
 
-## 独立Server文件工程边界
+### 历史：独立Server文件工程边界
 
 ServerFileTest.ps1只新建server-file-engineering-UUID合成根/marker及自身ACL，server_candidate_probe.py以实际sys.getwindowsversion.product_type/build、Python3.12x64守卫，不spoof。复用仓库已发布的file_candidate_probe.run_probe**测试oracle helpers**，从不调用/修改其Win11 main；原文件release11 guard字节保持。先positive同handle读取成功才做坏ACL/ADS/硬链接/junction/共享拒绝等，失败/权限不足明确FAIL/NOT_RUN，不把全拒绝当PASS。独立Server summary明确NOT_WIN11、production R4 DISABLED；原API/files.py不调用candidate。未来即使Server全部PASS，Win11产品安装/ACL/reparse/竞态与完整AT仍未签收。
 
-没有artifact上传，未来runner只输出安全步骤/计数/版本摘要与GITHUB_STEP_SUMMARY；private pytest/PG日志、合成session/token/profile不公开，临时cluster最后stop。当前无runner，所有native步骤NOT_RUN。
+没有artifact上传，未来runner只输出安全步骤/计数/版本摘要与GITHUB_STEP_SUMMARY；private pytest/PG日志、合成session/token/profile不公开，临时cluster最后stop。ENG012记录时无runner，所有native步骤NOT_RUN；当前已有实际Server运行，见顶部。
 
-## 本地验证及准确阻塞
+### 历史：本地验证及准确阻塞
 
 已有错误原文、目标API和CLI退出码保存在[evidence/eng012-actions-blocker.json](evidence/eng012-actions-blocker.json)，来源是上一轮已捕获输出，本轮未重新访问。CLI显示Forbidden；**数值HTTP状态、响应header/body/request ID和拒绝由GitHub还是执行访问层产生均缺失**，不凭文字声称HTTP403。workflow写入权限从未测试。当前需要原执行通道恢复/复核Actions状态与日志读取能力；本轮不尝试身份/令牌/路由更换或权限调整。
 
@@ -58,7 +92,7 @@ ServerFileTest.ps1只新建server-file-engineering-UUID合成根/marker及自身
 
 权限恢复前仍可独立推进的最高优先项：对这一CI harness补充PG init/start失败、owned cluster状态篡改、浏览器超时/清理失败的独立故障oracle，确认保留失败/只清理自己对象/其它独立阶段仍运行。这是现有F1测试基础的审查，不新增R5/F2产品功能；随后再按授权恢复Actions并实测Server。R4仍等原生条件，真实API/预算始终0。
 
-## ENG013本地有限加固（未发布）
+### 历史：ENG013本地有限加固（未发布）
 
 CI辅助进程按阶段构建环境：Setup只接owner+app，Doctor/Start/Status只接校验为loopback/parkweave/parkweave_app的app DSN，回归协调器只接显式test-owner；Stop/文件probe/Win11守卫/浏览器只有OS白名单。service/options/owner角色/其它数据库或远端app绑定拒绝。原API/worker共用循环中的app_environment已过滤owner/test-owner/PGPASSWORD/token；本轮静态与合成Popen捕获及真实Linux子进程环境oracle确认此边界，没有读取真实凭据，也不将另项目风险直接归因本项目。
 
