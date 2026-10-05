@@ -126,3 +126,19 @@ Schema4/5新增capability_grants/action_grants/run_assignments/deliveries/file_r
 实际命令：python scripts/run_acceptance.py --report docs/F1/evidence/eng006-acceptance-summary.json；python scripts/check_powershell.py --pwsh .cache/powershell/bin/pwsh；python scripts/linux_fixture_server.py；python scripts/browser_smoke.py --report docs/F1/evidence/eng006-browser-smoke.json。完整错误/JUnit/会话/截图/数据库在私有忽略.runtime，公开结果只计数/分类/hash。完整AT/EX没有PASS。
 
 交接界限：F1仍IN_PROGRESS。T01原生安全文件backend、T05真实传输/持久usage/共享额度/worker规划链绑定独立未做；Windows实机/服务安装/精确版本、Park安全配置与预算、真实园区资料许可/收益、C0模板/跨赛道/准确截止另列外门。源原件hash检查和秘密扫描后提交push、核对远端，关闭测试服务，本轮停止新增供复核，不进入F2。实际commit由Git历史与交付链接关联。
+
+## ENG-007：T05模型链有界基础（2026-10-05）
+
+基线384028bc00a3f7d38c54fa71ecf80eee0de768b7，dev/f1-foundation/https://github.com/T1doo/ParkWeave.git；先读Checklist并冻结ENG007-Mapping。未发现仓库AGENTS/.agents指令，未创建子任务。不改Sim2Act，不进F2或Windows backend，不读取模型真实环境值/隐藏凭据、不调用provider、不部署公网/合并main。原Library档案字节/行数/hash复核不变。
+
+T05已实现固定官方端点的stream HTTP传输代码，显式SecretStr、trust_env=False、无重试/redirect、读取解码响应≤64KiB；只用MockTransport覆盖同一请求代码。已知token明文/JSON转义回显拒绝，wrongmodel/截断/缺参数/错误usage拒绝，输入不带token。真正socket路径须PersistentBudget LIVE且共享owner批准的有效窗口/审批证据引用/产品DB角色绑定/总额与产品额度预留，当前没有LIVE配置/注入/CLI启用。真实授权预算0/调用0；没有从env取模型token，既有resolver仍仅虚构Mapping测试。
+
+独立shared_model_quota schema/owner安装SQL；account+固定窗口总额、产品上限、session_user身份强绑定、账号行锁串行预留8192/1call、product/work幂等、发送标记竞争单胜者、严格usage结算。应用无表权限/不能提高预算，函数search_path固定且表全限定、PUBLIC撤权。SYNTHETIC第二产品与独立role在临时库竞争同一账号总额，无修改/接入实际Sim2Act；不是实际共享部署证据。未知收费保守预留，确认未发送才释放；已发或已结算work恢复不重发，重复同结算幂等/冲突拒绝。超预留usage完整收费记入且拒绝输出/下一请求。只有窗口基础，不提供滚动/重置/真实价格/账单校准；owner不能在未决调用中重置计数。
+
+schema6 additive model_steps持久PLAN/FEEDBACK；正常CLI worker --model-fixture明确离线/owner合成预算，缺预算失败关闭。PLAN goal与当前持久Intake逐字一致，经gateway当前角色/Grant/control/hash/fence校验建本地Case并VERIFIED回执；保持Run RUNNING后真实Case状态/回执回填，FEEDBACK仅stop，第二tool拒绝。feedback失效Run FAILED但Case/VERIFIED/LOCAL_CASE_CREATED保存，仍NEEDS_INPUT/NOT_SUBMITTED/NO_EVIDENCE，不推断资格/外部受理/线下履约。PLAN已持久/Case已知恢复仅反馈；发送失联结果未持久时不重发而有界失败；默认worker不得绕过已有模型阶段。LeaseKeeper覆盖真实链的离线HTTP等待，旧fence响应只历史费用，不能保存计划/动作。模型请求没有业务库长事务；本地授权与远端send无法一个分布式原子事务，撤权后已发成本保留/新增动作阻断。
+
+真实失败与修复：初回归2 FAIL/68 PASS/1 SKIP；其一旧HTML含fake token预期INVALID_RESPONSE，新增secret echo优先拒绝后更正为SECRET_OUTPUT_REJECTED；其二health schema仍预期5，添加schema6迁移后更正6，未来schema测试移到7。没有删除旧断言，旧迁移/历史Case/撤权Grant保留测试仍在。专项17 PASS，再46 PASS（含模型既有边界），恢复/旧fence/第二tool补充25 PASS，等待独立续租1 PASS；自查invalid checksum必须先核对再赋usage，避免错误usage被当结算，新增持久UNKNOWN及LIVE审批证据测试。
+
+冻结最终代码后的完整命令：.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng007-acceptance-summary.json。最终174 PASS/1 Windows SKIP/2既有WARN，82.06秒（前146+新增28）。42 whole AT/EX全NOT_RUN，不从工程子集PASS推断真实AT。实际临时PG/本地API/CLIworker工程继续在全量回归；新模型响应全部自建离线HTTP，测试拦截真实HTTPTransport，本轮provider network0。最终报告源hash与提交前源码逐个一致；早期探索回归不冒充最终冻结版本。Windows/LinuxPowerShell/浏览器本轮无新增验收（沿用ENG006历史不改写），尤其不能把Linux当Windows。
+
+最终source archive完整性、git diff --check、暂存无秘密/个人真实数据/忽略配置与日志检查后commit/push，远端SHA以Git核实交付。F1仍IN_PROGRESS，本轮结束停待复核。独立下一候选Windows安全文件backend；LIVE安全注入/批准共享部署与实际计费门BLOCKED，固定窗口滚动/金额账单核对另需有界规格；完整业务oracle后续阶段，不扩F2。所有子进程由fixture finally关闭，无持续服务。

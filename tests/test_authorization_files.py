@@ -300,13 +300,13 @@ def test_additive_unreleased_grant_scope_migration_preserves_withdrawal(fixture)
     with owner.connect() as c:
         c.execute('ALTER TABLE capability_grants DROP COLUMN park_id,DROP COLUMN org_id')
         c.execute('ALTER TABLE action_grants DROP COLUMN park_id,DROP COLUMN org_id')
-        c.execute('DELETE FROM schema_version WHERE version=5')
+        c.execute('DELETE FROM schema_version WHERE version>=5')
     owner.migrate();owner.migrate()
     assert store.read(tokens['fixture-a'],run)==before
     with owner.connect() as c:
         grant=c.execute("SELECT active,park_id,org_id FROM capability_grants WHERE principal_id='fixture-a' AND capability='EXECUTE'").fetchone()
         assert grant=={'active':False,'park_id':'park-a','org_id':'org-a'}
-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==5
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==6
     store.finish(store.claim('current-worker'))
     assert store.read(tokens['fixture-a'],run)['operation']['state']=='FAILED_SAFE'
     assert counts(owner)['cases']==0

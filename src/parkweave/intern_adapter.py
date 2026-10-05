@@ -1,5 +1,5 @@
 """Official HTTP wire boundary, exercised only through explicit offline transport.
-No provider transport, environment lookup, tool execution or runtime activation.
+No environment lookup or tool execution; live dispatch needs explicit persistent authorization.
 """
 from dataclasses import dataclass, field
 import json
@@ -116,11 +116,20 @@ def validated_messages(messages):
 
 
 class InternChatAdapter:
-    def __init__(self,*,transport:httpx.MockTransport,token:SecretStr,budget=None,timeout=30):
-        if type(transport) is not httpx.MockTransport:raise ModelBoundaryError('LIVE_TRANSPORT_DISABLED')
+    def __init__(self,*,transport,token:SecretStr,budget=None,timeout=30,before_dispatch=None):
+        from .http_transport import InternHTTPTransport
+        if type(transport) is httpx.MockTransport:
+            transport=InternHTTPTransport(transport)
+        elif type(transport) is not InternHTTPTransport:
+            raise ModelBoundaryError('LIVE_TRANSPORT_DISABLED')
+        if transport.transport is None:
+            from .quota import PersistentBudget
+            if type(budget) is not PersistentBudget or budget.kind!='LIVE':
+                raise ModelBoundaryError('LIVE_BLOCKED_NO_AUTHORIZED_PARK_BUDGET')
         if not isinstance(token,SecretStr) or not token.get_secret_value().strip():raise ModelBoundaryError('TOKEN_REQUIRED')
         if type(timeout) not in (int,float) or not 0<timeout<=120:raise ModelBoundaryError('TIMEOUT_LIMIT')
         self.transport,self.token,self.budget,self.timeout=transport,token,budget or OfflineBudget(),timeout
+        self.before_dispatch=before_dispatch
 
     def live_complete(self,*args,**kwargs):
         raise ModelBoundaryError('LIVE_BLOCKED_NO_AUTHORIZED_PARK_BUDGET')
@@ -129,23 +138,29 @@ class InternChatAdapter:
         if type(max_tokens) is not int or not 1<=max_tokens<=1024:raise ModelBoundaryError('OUTPUT_LIMIT')
         payload={'model':MODEL,'messages':validated_messages(messages),'tools':[TOOL],'stream':False,
                  'n':1,'max_tokens':max_tokens,'thinking_mode':True}
+        if self.token.get_secret_value() in json.dumps(payload,ensure_ascii=False):raise ModelBoundaryError('SECRET_INPUT_REJECTED')
         record=self.budget.reserve();usage=None
         try:
-            with httpx.Client(transport=self.transport,timeout=self.timeout,follow_redirects=False,trust_env=False) as client:
-                # Official endpoint captured by MockTransport: never an actual socket.
-                response=client.post(ENDPOINT,json=payload,headers={'Authorization':'Bearer '+self.token.get_secret_value()})
-            if response.status_code==429:raise ModelBoundaryError('RATE_LIMIT_NO_RETRY')
-            if response.status_code in (401,403):raise ModelBoundaryError('AUTHORIZATION_FAILED')
-            if response.status_code!=200:raise ModelBoundaryError('HTTP_ERROR_NO_RETRY')
-            if len(response.content)>65536:raise ModelBoundaryError('RESPONSE_LIMIT')
-            body=strict_json(response.content)
+            if self.before_dispatch:self.before_dispatch()
+        except Exception:
+            if hasattr(self.budget,'release'):self.budget.release(record)
+            raise ModelBoundaryError('DISPATCH_AUTHORIZATION_CHANGED') from None
+        if hasattr(self.budget,'dispatch'):self.budget.dispatch(record)
+        try:
+            status,raw=self.transport.post(payload,self.token.get_secret_value(),self.timeout)
+            if status==429:raise ModelBoundaryError('RATE_LIMIT_NO_RETRY')
+            if status in (401,403):raise ModelBoundaryError('AUTHORIZATION_FAILED')
+            if status!=200:raise ModelBoundaryError('HTTP_ERROR_NO_RETRY')
+            body=strict_json(raw)
+            if self.token.get_secret_value() in json.dumps(body,ensure_ascii=False):raise ModelBoundaryError('SECRET_OUTPUT_REJECTED')
             raw_usage=body.get('usage')
             if raw_usage is not None:
                 keys=('prompt_tokens','completion_tokens','total_tokens')
-                if not isinstance(raw_usage,dict) or any(type(raw_usage.get(k)) is not int or raw_usage[k]<0 for k in keys):
+                if not isinstance(raw_usage,dict) or any(type(raw_usage.get(k)) is not int or not 0<=raw_usage[k]<=2**63-1 for k in keys):
                     raise ModelBoundaryError('INVALID_USAGE')
-                usage={k:raw_usage[k] for k in keys}
-                if usage['prompt_tokens']+usage['completion_tokens']!=usage['total_tokens']:raise ModelBoundaryError('INVALID_USAGE')
+                candidate={k:raw_usage[k] for k in keys}
+                if candidate['prompt_tokens']+candidate['completion_tokens']!=candidate['total_tokens']:raise ModelBoundaryError('INVALID_USAGE')
+                usage=candidate
             if not isinstance(body.get('model'),str) or not body['model'].isascii() or body['model'].casefold()!=MODEL:
                 raise ModelBoundaryError('MODEL_IDENTITY_MISMATCH')
             call_id=safe_id(body.get('id'));choices=body.get('choices')
@@ -166,7 +181,7 @@ class InternChatAdapter:
                 proposal=None
             result={'call_id':call_id,'model':MODEL,'returned_model':body['model'],'finish_reason':reason,
                     'content':content,'tool_proposal':proposal,'usage':usage if usage is not None else 'UNKNOWN',
-                    'mode':'OFFLINE_HTTP_FIXTURE','executed':False}
+                    'mode':'OFFLINE_HTTP_FIXTURE' if self.transport.transport is not None else 'LIVE_HTTP','executed':False}
             if usage and usage['total_tokens']>self.budget.reserve_per_call:raise ModelBoundaryError('USAGE_RESERVATION_EXCEEDED')
             self.budget.finish(record,'VALIDATED',usage);return result
         except httpx.TimeoutException:

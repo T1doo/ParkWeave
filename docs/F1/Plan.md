@@ -51,3 +51,10 @@ READY_FOR_REVIEW：按执行前ENG005-Mapping冻结F1-T01/T02/T03/T04中AT-03/04
 READY_FOR_REVIEW：六Windows候选生命周期脚本/安全配置/首次体验、42固定AT/EX绑定及独立汇总、正式HTTP模型离线边界；附独立审查目录0777缺口修复和子进程最小环境。完整146 PASS/1 Windows SKIP/2 WARN；Linux PowerShell7.6.6 AST零错误、六guard拒Linux原生流程。Windows实际运行/ACL/filebackend/真实模型仍未通过，完整AT/EX NOT_RUN。
 
 本轮交付即停止新增，不进入F2。准确逐任务实现/独立缺口/外部门槛见Checklist：Windows文件backend仍关闭；真实传输、持久调用usage、共享额度协调和worker真实规划链绑定尚未做，不把它们混为仅外部验收。预算授权0，不因其他项目回包成功探测Park。候选安装不覆盖数据/配置或改既有ACL/全局策略。
+
+
+## 第七有界增量ENG-007：T05模型链基础
+
+先冻结ENG007-Mapping并按Checklist只补T05，不做Windows backend或F2。HTTP传输代码、账号级共享持久usage/配额、正常worker显式离线两阶段链及持久恢复已实现；最终全量174 PASS/1 Windows SKIP/2既有WARN（82.06秒）。独立的provider account总额保护，产品额度与身份/业务库仍独立，第二产品仅合成模拟，不改Sim2Act。wrong model/secret echo/不完整参数/未知收费/无预算失败关闭；反馈失败不抹去已知Case。
+
+真实安全注入、账户审批、两真实产品同协调点配置、实际HTTP/usage/计费/AT02/30仍BLOCKED，真实调用与授权预算0。Windows安全文件backend单独下一候选；Windows实机/版本/ACL门NOT_RUN。未来窗口滚动/货币账单校准及完整业务oracle另列工作；不把本轮称完整成本系统。交付后停止新增供复核。

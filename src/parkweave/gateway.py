@@ -93,12 +93,12 @@ class ExecutionGateway:
                       'WHERE id=%s',(state,scope,state,attempts,r['id']))
             self.store.event(c,r['id'])
 
-    def execute(self, claim, crash_at=None):
+    def execute(self, claim, crash_at=None, defer_completion=False):
         phase,envelope=self.prepare_dispatch(claim)
         if phase=='ASSESS':
             self.store.assess_facts(claim)
         elif phase=='LOCAL':
-            self.store.finish(claim)
+            self.store.finish(claim,defer_completion=defer_completion)
         elif phase=='SEND':
             if crash_at=='after-dispatch':raise InjectedCrash('FAULT_INJECTION: after dispatch commit')
             receipt=FixtureAdapter(self.store).send(envelope)

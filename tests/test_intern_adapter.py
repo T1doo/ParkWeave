@@ -59,7 +59,7 @@ def test_invalid_proposal_is_rejected_before_any_execution(change):
 
 @pytest.mark.parametrize('case,expected',[('429','RATE_LIMIT_NO_RETRY'),('auth','AUTHORIZATION_FAILED'),('server','HTTP_ERROR_NO_RETRY'),
  ('redirect','HTTP_ERROR_NO_RETRY'),('timeout','TIMEOUT_OUTCOME_UNKNOWN'),('transport','TRANSPORT_OUTCOME_UNKNOWN'),
- ('length','TRUNCATED_NO_TOOL_EXECUTION'),('unfinished','INCOMPLETE_RESPONSE'),('bad_usage','INVALID_USAGE'),('html','INVALID_RESPONSE'),('overrun','USAGE_RESERVATION_EXCEEDED')])
+ ('length','TRUNCATED_NO_TOOL_EXECUTION'),('unfinished','INCOMPLETE_RESPONSE'),('bad_usage','INVALID_USAGE'),('html','SECRET_OUTPUT_REJECTED'),('overrun','USAGE_RESERVATION_EXCEEDED')])
 def test_errors_timeout_truncation_usage_and_no_automatic_retry(case,expected):
     attempts=[]
     def handler(request):

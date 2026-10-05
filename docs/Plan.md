@@ -21,3 +21,6 @@ ENG-004 READY_FOR_REVIEW：78工程回归、V1最小结构实际API校验、事�
 ENG-005 READY_FOR_REVIEW：四角色最小权限交集、当前outbox授权与本地交付撤回、逻辑文件ID及Linux路径边界工程子集；107 PASS/1 SKIP，浏览器桌面及320/390模拟PASS。完整AT/EX仍NOT_RUN，F1剩余工程与外部门槛见F1/Plan。跨平台网页目标保留Windows主门，不承诺手机本地后端或公网部署。
 
 ENG-006 READY_FOR_REVIEW：F1收尾候选生命周期/固定AT汇总/离线模型边界与审查安全修复，146工程PASS/1 WindowsSKIP；完整阶段未签收。逐条清单见F1/Checklist、首次使用说明见首次体验。本轮交付停止新增；T01原生文件backend及T05真实传输/持久usage/共享配额/运行链绑定独立未做，外部Windows/LIVE/真实园区/C0门另列，不进入F2。
+
+
+ENG-007 T05基础增量：固定HTTPS传输代码、共享账号持久预留/usage与产品上限、正常worker显式离线规划/可信动作/已提交Case回执反馈/恢复。仅合成MockTransport验证，LIVE安全注入与真实预算/共享部署/真实计费仍BLOCKED、实际调用0。Windows文件backend仍独立未做；本轮不扩F2，交付后停待复核。

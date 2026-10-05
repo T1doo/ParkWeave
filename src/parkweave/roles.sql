@@ -10,3 +10,5 @@ GRANT SELECT ON capability_grants,run_assignments,file_resources TO parkweave_ap
 GRANT SELECT,INSERT,UPDATE ON deliveries TO parkweave_app;
 GRANT SELECT ON action_grants TO parkweave_app;
 GRANT INSERT ON authorization_audit TO parkweave_app;
+
+GRANT SELECT,INSERT,UPDATE ON model_steps TO parkweave_app;

@@ -37,7 +37,7 @@ class Store:
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
             c.execute(Path(__file__).with_name("schema.sql").read_text())
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
-            if version > 5:
+            if version > 6:
                 raise Conflict("database version newer than this code")
             if version < 2:
                 c.execute(Path(__file__).with_name("migration-002.sql").read_text())
@@ -47,6 +47,9 @@ class Store:
                 c.execute(Path(__file__).with_name("migration-004.sql").read_text())
             if version < 5:
                 c.execute(Path(__file__).with_name("migration-005.sql").read_text())
+
+            if version < 6:
+                c.execute(Path(__file__).with_name("migration-006.sql").read_text())
 
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""
@@ -177,8 +180,10 @@ class Store:
             case = c.execute("SELECT id,state,goal,source,external_acceptance,offline_fulfillment "
                              "FROM cases WHERE run_id=%s", (run_id,)).fetchone()
             op = c.execute("SELECT id,state,receipt FROM operations WHERE run_id=%s", (run_id,)).fetchone()
+            model_step=c.execute("SELECT result FROM model_steps WHERE run_id=%s ORDER BY phase DESC LIMIT 1",(r['id'],)).fetchone()
+            model_mode='MODEL_MOCK' if not model_step else (model_step['result'] or {}).get('mode','MODEL_CHAIN_ATTEMPTED')
             return {"run_id": str(r["id"]), "state": r["state"], "success_scope": r["success_scope"],
-                    "namespace": r["namespace"], "case": case, "operation": op, "model_mode": "MODEL_MOCK",
+                    "namespace": r["namespace"], "case": case, "operation": op, "model_mode": model_mode,
                     "control_intent": r["control_intent"], "execution_mode": self.mode}
 
     def control(self, token, run_id, intent):
@@ -241,7 +246,7 @@ class Store:
         op = c.execute("SELECT * FROM operations WHERE run_id=%s", (r["id"],)).fetchone()
         return p, r, op
 
-    def finish(self, claim, fail_after_effect=False):
+    def finish(self, claim, fail_after_effect=False, defer_completion=False):
         with self.connect() as c:
             p, r, op = self.locked_execution(c, claim)
             if op["action"] != "case.create" or op["state"] != "PREPARED":
@@ -262,8 +267,9 @@ class Store:
                        "success_scope": "LOCAL_CASE_CREATED"}
             c.execute("UPDATE operations SET state='VERIFIED',receipt=%s WHERE run_id=%s",
                       (Jsonb(receipt),r["id"]))
-            c.execute("UPDATE runs SET state='SUCCEEDED',success_scope='LOCAL_CASE_CREATED',"
-                      "lease_until=NULL,revision=revision+1 WHERE id=%s", (r["id"],))
+            c.execute("UPDATE runs SET state=%s,success_scope='LOCAL_CASE_CREATED',"
+                      "lease_until=CASE WHEN %s THEN lease_until ELSE NULL END,revision=revision+1 WHERE id=%s",
+                      ('RUNNING' if defer_completion else 'SUCCEEDED',defer_completion,r['id']))
             self.event(c,r["id"])
 
     def seed_field_grants(self, c, user, park, org):

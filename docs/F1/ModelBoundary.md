@@ -13,3 +13,8 @@
 这些是离线控制与解析证据，不证明真实HTTP超时取消、模型限流、上游实际计费或全成本。预算计数是进程内fixture，不是持久跨产品总配额协调器；无真实tokenizer/价目，因此不能把保守预留称作精确财务成本。仍需独立工程：经授权启用的真实传输/持久调用usage账本/共享配额协调及worker规划链绑定；后续获安全配置/预算才可做真实AT-02/30，本轮不为此建新调度框架。
 
 模型token命名仍PARKWEAVE_INTERN_API_TOKEN优先、INTERN_API_TOKEN回退。只有未来批准的注入路径才可取值，当前不用；密钥不进入配置、源包、记录或聊天。其他项目已验证模型不能继承为Park通过。
+
+
+## ENG-007后续状态（历史ENG006证据不改写）
+
+上文内存预算/仅边界未绑定worker描述为ENG006历史。ENG007已实现固定HTTP传输代码、持久共享account额度/usage、worker显式离线规划与真实本地动作回执反馈；完整说明见ModelChain.md。默认真实socket路径须PersistentBudget LIVE且owner批准、有证据引用、额度预留后才可发送；本轮仅MockTransport、没有真实配置/调用/授权预算，live_complete旧兼容入口仍拒绝。当前CLI只接SYNTHETIC，安全注入/实际LIVE激活仍BLOCKED，未读取真实模型环境值。

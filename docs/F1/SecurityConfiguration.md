@@ -1,6 +1,6 @@
 # F1安全配置与已知边界
 
-本轮默认LOCAL + SYNTHETIC + MODEL_MOCK，localhost单产品数据库/身份/端口/日志。普通应用角色无DDL/身份或Grant UPDATE；迁移owner只用于明确setup。LIVE为代码拒绝，不通过设置一个env布尔值启用；不保存模型/数据库持续凭据。
+本轮默认LOCAL + SYNTHETIC + MODEL_MOCK，localhost单产品数据库/身份/端口/日志。普通应用角色无DDL/身份或Grant UPDATE；迁移owner只用于明确setup。运行CLI的LIVE激活关闭；HTTP代码须显式LIVE持久预算与owner授权证据，不通过env布尔值启用；不保存模型/数据库持续凭据。
 
 ## 文件私有根
 
@@ -15,3 +15,6 @@ process_env.py只读取/转发白名单OS执行必需项：PATH、Windows系统�
 官方PowerShell工具只安装在忽略的工作区缓存作LinuxAST检查，使用显式XDG缓存/配置/数据目录，不改HOME/全局策略。Windows脚本仅支持原生平台；签名/执行策略由既有授权流程处理，不用Bypass/Set-ExecutionPolicy。Stop核对稳定PID身份和可信命令，AccessDenied不会被误报“进程不存在”，不强杀/停止数据库服务。
 
 固定AT汇总只输出分类/计数/源hash，完整pytest错误/JUnit留私有.runtime；不要提交含会话或配置的原始诊断日志。真实园区资料/来源许可/实际效果没有授权，本轮全部合成，未知资格不得默认通过。
+
+
+ENG007 shared_model_quota由独立协调库owner显式安装及授权两函数；应用不可自行授权/增额/DDL。真实两个产品需同协调库、同provider account标识、各自DB角色与产品额度；本轮仅临时库第二合成产品，不改Sim2Act。只保存预留/usage/分类，不共享业务正文/密钥。未知计费不退额，只有已确认未发送可释放。窗口冻结，不允许在未决调用中重置计数；真实计费/滚动窗口尚需规格。具体状态与恢复见ModelChain.md。

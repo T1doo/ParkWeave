@@ -1,5 +1,5 @@
 {
-  "origin": "NEW: full V1 definitions + executed ENG001-005 + ENG006 frozen subset; not supplied acceptance package",
+  "origin": "NEW: V1 definitions + ENG001-007 executed engineering subsets; not supplied acceptance package",
   "cases": [
     {
       "id": "AT-01",
@@ -17,7 +17,9 @@
       "stage": "F1",
       "whole_status": "NOT_RUN",
       "engineering_selectors": [
-        "tests/test_intern_adapter.py::test_offline_tool_feedback_and_known_model_case_identity"
+        "tests/test_intern_adapter.py::test_offline_tool_feedback_and_known_model_case_identity",
+        "tests/test_model_chain.py::test_actual_worker_plan_tool_feedback_and_failures",
+        "tests/test_model_chain.py::test_feedback_resume_keeps_known_effect_and_does_not_repeat_plan"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
       "gate": "LIVE_BLOCKED: Park has no authorized real budget/config/shared quota; offline transport only"
@@ -304,7 +306,10 @@
       "whole_status": "NOT_RUN",
       "engineering_selectors": [
         "tests/test_intern_adapter.py::test_atomic_offline_attempt_budget_and_unknown_usage",
-        "tests/test_intern_adapter.py::test_errors_timeout_truncation_usage_and_no_automatic_retry"
+        "tests/test_intern_adapter.py::test_errors_timeout_truncation_usage_and_no_automatic_retry",
+        "tests/test_model_chain.py::test_two_products_coordinate_same_account_atomically",
+        "tests/test_model_chain.py::test_unknown_sent_work_survives_restart_no_refund_or_resend",
+        "tests/test_model_chain.py::test_real_transport_gate_zero_network_without_live_budget"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
       "gate": "LIVE_BLOCKED: Park has no authorized real budget/config/shared quota; offline transport only"

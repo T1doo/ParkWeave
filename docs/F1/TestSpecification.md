@@ -133,3 +133,10 @@ LOCAL_INBOX交付与消费在同一授权锁+数据库事务。发给浏览器�
 剩余独立实现与外部门槛逐条见Checklist。本轮交付后停止新增；完整AT/EX没有PASS，不进入F2。
 
 最终浏览器缓存CLI修复后桌面及320/390模拟PASS、无页面错误；该脚本是全回归后唯一源变动，实际浏览器单独验证，acceptance-summary保留原pytest源快照并记录post_regression_verification，未伪造覆盖全回归hash。
+
+
+## ENG007新增T05工程子集（新建来源，非原验收包）
+
+固定AT02/30绑定新增test_model_chain.py：实际CLIworker两次离线请求+真实PG Case回执；wrongmodel/缺args/length/secret/timeout/反馈错误零不可信效果，已知效果保留。临时共享协调库双合成产品/角色并发只获一个账号预算，产品上限/账号绑定/owner-only/授权证据/过期拒发、确认未发释放、usage冲突重放/未知收费保留/超额真实计入及阻断后续。
+
+发送标记竞争仅一胜者，崩溃恢复不重发；已知Case恢复只feedback，默认worker不能绕过已有模型阶段；撤权/旧fence返回只历史费用、零新增动作；等待1.4秒独立续租与竞争claim拒绝。strict usage校验后才可结算，错误usage保持UNKNOWN预留。所有provider响应自建MockTransport；测试进程拦截真实httpx.HTTPTransport，实际CLI代码固定MockTransport。真实API/原生Windows/完整业务AT EX仍NOT_RUN/BLOCKED。
