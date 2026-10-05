@@ -80,3 +80,26 @@ Schema2为独立owner原子迁移，保留历史Run/Case/Receipt，版本健康�
 连续工程检查：python scripts/linux_fixture_server.py（LOCAL，PG16.2，Python3.12.14，127.0.0.1:8765）；python scripts/browser_smoke.py --report docs/F1/evidence/eng004-browser-smoke.json；python scripts/facts_smoke.py。重启服务以运行最终回执代码后browser PASS、实际两来源事实201→worker事实核对SUCCEEDED/FACT_EVIDENCE_ASSESSED，region冲突UNKNOWN、employees缺证据UNKNOWN、qualification NOT_EVALUATED、Case=null；跨园区读Fact 403。时点、输入hash、Fact/Evidence/Run/Operation ID、历史PID见eng004-facts-smoke.json，源码hash见eng004-engineering-manifest.json。
 
 完整AT/EX仍NOT_RUN，新增24检查+原54是工程范围，不是完整验收成绩。剩余多角色/获派步骤Grant、审计、outbox当前授权/消息、文件边界、原生脚本/完整AT执行器尚未完成；LIVE/Windows/真实园区效果BLOCKED。不修改Sim2Act、不共用其数据、未持续配置凭据，原始Library文档不改；提交前代码与原件hash/秘密扫描，.runtime会话、数据库、日志、截图不提交。实际commit随本记录，通过Git历史与最终链接关联。
+
+
+## 2026-10-05 ENG-005（权限交集、outbox、逻辑文件边界）
+
+基线8abf48f276a0b991f215cde996eba7593884dfad，独立dev/f1-foundation/https://github.com/T1doo/ParkWeave.git，工作区干净；扫描未发现AGENTS.md或.agents/skills。本轮先新增ENG005-Mapping冻结任务/AT子范围，再改实现与测试。无子任务、无Sim2Act修改、不共用数据、不查看凭据/配置持续凭据、不调用真实模型或公网部署。
+
+Schema4/5新增capability_grants/action_grants/run_assignments/deliveries/file_resources/authorization_audit，保留历史ID/回执/状态；seed ON CONFLICT不恢复撤销Grant。四角色可信角色上限与当前Grant交集、园区/企业owner或单Run状态指派、运行身份/租约/fence与可信动作/字段约束重验。其他三角色只见被明确分派Run的ID/state/revision/visibility；不给receipt/Case目标/企业事实/文件/执行/控制。旧owner改为非企业角色也不继承全量读。owner配置按principal独占锁，app只SELECT授权表，不能自行赋权或修改文件登记。当前还没有CaseStep/正式Service发布执行，不宣称F2多人协同通过。
+
+正常worker处理现有case.create/facts.assess/显式fault.record，排队后撤EXECUTE或对应动作Grant→FAILED_SAFE，0Case/0fixture_effect。outbox与本地交付用同一当前授权锁+数据库事务；read/字段撤权后未交付SUPPRESSED，已有READY立即API403、worker下一消费清空payload并RETRACTED。同事件去重、投影版本单调、ack前故障全部回滚。站内状态LOCAL_INBOX，不使用外部通知账号；已发给客户端的副本不能收回。最小审计只合成principal ID/分类/结果/DB时点，不含body/token/source片段；拒绝有安全审计元数据，业务/效果计数仍零变化。
+
+文件默认关闭，显式私有root+管理员合成setup；只接纳UTF8 text/plain≤16KiB，按UUID取资源。API currentFILE_READ/READ/owner范围及关联字段授权先检查，才读文件；attachment/nosniff/sandbox不执行动态HTML。Linux目录descriptor逐组件O_NOFOLLOW，拒绝symlink/hardlink/目录/篡改size/hash；setup也用同目录descriptor，symlink根拒绝前不写目标。没有宿主文件导入或公开上传入口，没有通用文件/DB成果提交协议；Windows backend未验证则关闭，原生ADS/重解析点/ACL NOT_RUN。
+
+实际测试：首轮原78回归PASS（44.36秒）；新增固定子集初轮23 PASS/1 Windows SKIP（22.91秒），补动作Grant/脱敏审计、descriptor写入及角色降级后专项23 PASS/1 SKIP（23.10秒）；再加入4个独立oracle（当前动作/旧身份、字段消息撤回、拒绝不触碰文件backend、fixture写入symlink拒绝）后首个全量105 PASS/1 SKIP/2 WARN，71.23秒。命令python -m pytest -q；tests/test_authorization_files.py大部分经真实uvicorn HTTP/CLIworker/临时PostgreSQL应用角色，不用旁路故障账本；rollback/replay与文件backend探针用确定性DB/调用oracle。两个既有WARN保留。此轮pytest没有意外FAIL，授权403/非法ID422/404/原生Windows SKIP都是固定负例，没有删掉测试凑PASS。
+
+真实浏览器失败保留：连续LOCAL harness（LinuxPython3.12.14/PG16.2，API38897、worker38898，127.0.0.1:8765）首次browser_smoke原CSS点击未发POST；空Run ID刷新307→405，assert失败，没有PASS产物。修复snapshot后语义button定位，并加入Run ID拿到后才刷新断言；重跑PASS，Run5744f914-3b79-4e57-a7a1-7e1963fd2c93、Case8554d286-cec6-4796-9d17-bd405b142e19、Operation26990e0a-c2d8-48e6-adaf-8918937184c0，本地NEEDS_INPUT/NOT_SUBMITTED/NO_EVIDENCE不变。Linux Chromium桌面与320/390像素视口模拟无水平溢出、可见按钮高44px、文字script未执行。实际命令scripts/linux_fixture_server.py与scripts/browser_smoke.py --report docs/F1/evidence/eng005-browser-smoke.json；截图/原访问日志/会话/数据库留忽略目录，不提交。
+
+用户新偏好记录：跨平台响应式网页保留Windows11 x64本地后端主门，Mac本地后端独立验证，Android/iOS仅浏览器访问已运行获授权后端；没有手机数据库/原生App承诺。当前无Windows/Mac/iOS/Android实机测试，不把视口模拟说成实机；localhost绑定/防火墙不变。另有Sim环境官方返回Intern-S2与请求intern-s2大小写差异，只作为未来已知型号身份兼容约束，不放开其他型号/删除校验，不读取其配置或继承其安全验证。Park预算0，无真实模型调用。
+
+工程子集覆盖/源码hash/最终结果见ENG005-Coverage及eng005-engineering-manifest，原始Library两原件与hash不变。完整36AT/6EX保持NOT_RUN；Windows/模型/真实园区/C0外部门槛保持BLOCKED。F1还有原生生命周期脚本与完整固定AT初态/oracle执行绑定独立工程，不声称只剩外部条件；本轮不继续扩范围，提交push并核实远端SHA后停供复核。实际commit由Git历史/交付链接关联，不预填自commitSHA。
+
+提交前交集审查修正：给能力和动作Grant显式绑定park/org，防止身份改属后旧Grant跟随；追加独立oracle后106 PASS/1 SKIP（71.56秒）。本轮已运行的未发布schema4缺这两个scope列，因此新增migration005按当前合成setup范围增量补齐、保留active/业务历史，未修改已发布migration001—003。新迁移oracle只构造旧schema元数据，Run状态不手改；原新回归107 PASS/1 SKIP（71.12秒）。审查同时明确本地inbox只限当前企业经办recipient；非企业角色即使获派Run状态仍不能沿旧消息通道扩大读范围，撤回独立断言随最终完整回归验证。此处修正属于原冻结权限交集，不增加新业务或F2。
+
+最终发布候选完整回归107 PASS/1 SKIP/2 WARN，71.87秒（原78+新增29 PASS、1原生Windows跳过），同样保留既有WARN。schema5迁移后的最终连续LOCAL服务API51815/worker51816重新加载最新代码，browser_smoke PASS，Run19431b07-e07f-455f-9547-b4196b82b692、Caseaa64cbc0-5e7f-4003-94c1-4cd54487f315、Operation484d45d7-fd61-41dc-9f3a-0b0fb0976698。最终覆盖表/源码hash与此版本一致；完整AT/EX NOT_RUN，原件未改，交付后关闭本地服务。

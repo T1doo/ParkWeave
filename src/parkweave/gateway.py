@@ -2,7 +2,7 @@
 import json
 from psycopg.types.json import Jsonb
 from .domain import Intake
-from .store import Conflict, digest
+from .store import Conflict, Denied, digest
 
 
 class InjectedCrash(Exception):
@@ -60,10 +60,10 @@ class ExecutionGateway:
                 return 'RECONCILE', envelope
             if op['state']!='PREPARED':
                 raise Conflict('operation is terminal')
-            if not p['active'] or r['control_intent']!='CONTINUE':
-                c.execute("UPDATE operations SET state='FAILED_SAFE' WHERE id=%s",(op['id'],))
-                c.execute("UPDATE runs SET state='FAILED',lease_until=NULL,revision=revision+1 WHERE id=%s",(r['id'],))
-                self.store.event(c,r['id'])
+            try:self.store.check_execution(c,p,r);allowed=True
+            except Denied:allowed=False
+            if not allowed or r['control_intent']!='CONTINUE':
+                self.store.safe_failure(c,r,op,'AUTHORIZATION_REVOKED' if not allowed else 'CONTROL_CHANGED')
                 return 'STOP', None
             data=Intake.model_validate(r['input'])
             if data.action!=op['action'] or digest(json.dumps(r['input'],sort_keys=True,ensure_ascii=False))!=r['fingerprint']:

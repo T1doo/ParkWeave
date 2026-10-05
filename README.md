@@ -21,7 +21,7 @@ python3 -m venv .venv
 
 测试依赖pgserver只提供临时Linux PostgreSQL，不能当作Windows安装器。测试创建临时数据库并删除；harness使用独立`.runtime/smoke-pg`保留合成状态，Ctrl+C停止API/worker/测试数据库。不连接用户电脑或Sim2Act。
 
-访问http://127.0.0.1:8765，在页面输入`.runtime/synthetic-sessions.json`里的一个合成会话。该文件由显式setup生成，随机token不打印、不提交；三个身份属于两个园区、三个企业。刷新页面需重新输入会话。新会话不是园区真实登录；当前仅支持企业经办合成角色；已有region/employees/service_need的READ/WRITE字段Grant（SERVICE_PREPARATION用途），其他角色与办理步骤授权仍待实现。
+访问http://127.0.0.1:8765，在页面输入`.runtime/synthetic-sessions.json`里的一个合成会话。该文件由显式setup生成，随机token不打印、不提交；三个身份属于两个园区、三个企业。刷新页面需重新输入会话。新会话不是园区真实登录；默认seed为企业经办合成角色；测试另有服务专员、资源管理员、服务执行者。其他角色需显式同企业/园区单Run授权，且只见最小状态，不见回执/全企业材料。已有region/employees/service_need的READ/WRITE字段Grant（SERVICE_PREPARATION用途）；CaseStep办理授权仍属F2未启用。
 
 浏览器测试需agent-browser 0.38.2及Linux `/usr/bin/chromium`；运行`python scripts/browser_smoke.py`前需harness存活。截图仅留在忽略的.runtime目录，非交付要求。
 
@@ -39,7 +39,7 @@ python -m uvicorn parkweave.api:configured_app --factory --host 127.0.0.1 --port
 另一个进程：python -m parkweave.worker
 ```
 
-应用角色仅SELECT身份表及SELECT/INSERT/UPDATE业务表，无DDL、身份UPDATE或DELETE权限。CLI撤权需owner执行`python -m parkweave.cli revoke --principal fixture-a`。授权锁协调只支持该CLI撤权路径；未来身份管理必须遵守同一事务锁协议，禁止绕过它直接修改身份表。
+应用角色仅SELECT身份表及SELECT/INSERT/UPDATE业务表，无DDL、身份UPDATE或DELETE权限。CLI撤权需owner执行`python -m parkweave.cli revoke --principal fixture-a`。身份、能力、字段、指派的owner变更必须遵守同一principal独占锁；当前API/worker用共享锁复核，禁止绕过锁直接修改身份或Grant。测试中的owner配置用于合成初态，不是开放给客户端的管理API。
 
 API默认本机8765，与Sim2Act端口不得重用。数据/会话/日志位于独立.runtime，禁止生产数据；本增量没有模型账号、调用预算或共享配额协调器，所以真实调用始终禁用。关闭网页不影响存活worker；停止进程/关机后本地执行停止。无公开部署。
 
@@ -74,3 +74,16 @@ worker对每个claim运行独立LeaseKeeper线程，使用独立短事务连接�
 ## 模型token变量名称兼容（LIVE禁用）
 
 读取助手resolve_intern_token显式接收环境Mapping：非空PARKWEAVE_INTERN_API_TOKEN优先，INTERN_API_TOKEN作fallback，返回SecretStr或None。仓库此前没有项目专用token读取器，本次首定义该项目名；通用名按父任务协调。测试只用虚构值，不打印真实值、不读取任何.env。当前API/worker没有调用此助手或真实模型；配置名称兼容不等于安全注入完成，不能越过预算/总配额门。
+
+
+## ENG-005 授权、outbox和逻辑文件边界
+
+Schema4/5非破坏迁移增加绑定park/org的当前能力/动作Grant、单Run状态指派、LOCAL_INBOX交付记录、逻辑文件资源与最小脱敏拒绝/消息审计。有效权限交集：当前身份+服务端角色上限+当前能力Grant+园区/企业及owner/获派Run范围；执行再交集可信动作/当前动作Grant/运行身份（fence与租约）及所需字段Grant。没有CaseStep或正式服务发布执行，不把Run状态指派当成F2完整协同。
+
+正常worker消费outbox时复核当前READ/字段授权，无权事件SUPPRESSED，不生成可读交付；已READY交付撤权后API立即403，worker后续清空payload并RETRACTED。同事件去重、投影单调版本、ack前回滚。`GET /api/messages/{event_id}`仅本地站内状态记录，不连接邮件/短信/Slack；历史已传给客户端的副本无法收回，不能据撤回宣称外部发送已撤销。
+
+文件默认禁用。显式PARKWEAVE_FILE_ROOT需绝对私有根，owner仅可用register_synthetic_file登记≤16KiB的UTF8纯文本合成fixture；无用户上传/任意路径/原始宿主导入入口。`GET /api/files/{UUID}`重验当前FILE_READ、READ、own scope及相关字段Grant，下载attachment+text/plain+nosniff+sandbox，不渲染动态HTML；内容/大小/hash核对，Linux目录descriptor逐组件O_NOFOLLOW，拒绝symlink/hardlink/非普通文件。未验证的平台文件backend关闭；Windows重解析点/ADS/ACL原生测试NOT_RUN，不以Linux拒绝字符串代替。文件/数据库写入是合成setup，不是已验收的通用文件产物提交协议。
+
+跨平台目标：响应式网页用于Windows/Mac/Android/iOS浏览器；后端仍以Windows11 x64原生为主验收。Mac本地Python/PG兼容需独立验证，手机连接已运行且获授权的后端，不承诺手机运行数据库或原生App。本轮仅Linux Chromium桌面和320/390像素视口模拟，无手机/Mac/Windows实机证据；按钮≥44px、无水平溢出。保持127.0.0.1，不启动公网或更改防火墙。
+
+模型LIVE仍关闭，预算0；其他项目的模型成功不证明Park成功。将来模型身份仅兼容已知同型号intern-s2/Intern-S2大小写，其他型号仍须拒绝，不能删除身份校验。详见F1/ENG005-Mapping.md及TestSpecification.md。

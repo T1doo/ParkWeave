@@ -30,6 +30,10 @@ def fixture(pg):
         c.execute('GRANT USAGE ON SCHEMA public TO parkweave_app')
         c.execute('GRANT SELECT ON schema_version,principals,field_grants TO parkweave_app')
         c.execute('GRANT SELECT,INSERT ON fact_assertions TO parkweave_app')
+        c.execute('GRANT SELECT ON capability_grants,run_assignments,file_resources TO parkweave_app')
+        c.execute('GRANT SELECT,INSERT,UPDATE ON deliveries TO parkweave_app')
+        c.execute('GRANT SELECT ON action_grants TO parkweave_app')
+        c.execute('GRANT INSERT ON authorization_audit TO parkweave_app')
         c.execute('GRANT SELECT,INSERT,UPDATE ON runs,operations,cases,outbox,run_projection TO parkweave_app')
     store = Store(make_conninfo(owner.dsn, user='parkweave_app'))
     with TestClient(create_app(store)) as client:

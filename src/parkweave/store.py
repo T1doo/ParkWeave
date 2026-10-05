@@ -7,6 +7,7 @@ import psycopg
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 from .domain import Intake, FactInput
+from .permissions import ROLE_CAPABILITIES, TRUSTED_ACTIONS
 
 
 class Denied(Exception):
@@ -22,10 +23,11 @@ def digest(value: str) -> str:
 
 
 class Store:
-    def __init__(self, dsn: str, mode="LOCAL"):
+    def __init__(self, dsn: str, mode="LOCAL", file_root=None):
         if mode not in ("LOCAL", "FAULT_INJECTION"):
             raise ValueError("unsupported execution mode")
         self.dsn, self.mode = dsn, mode
+        self.file_root = file_root
 
     def connect(self):
         return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
@@ -35,12 +37,16 @@ class Store:
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
             c.execute(Path(__file__).with_name("schema.sql").read_text())
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
-            if version > 3:
+            if version > 5:
                 raise Conflict("database version newer than this code")
             if version < 2:
                 c.execute(Path(__file__).with_name("migration-002.sql").read_text())
             if version < 3:
                 c.execute(Path(__file__).with_name("migration-003.sql").read_text())
+            if version < 4:
+                c.execute(Path(__file__).with_name("migration-004.sql").read_text())
+            if version < 5:
+                c.execute(Path(__file__).with_name("migration-005.sql").read_text())
 
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""
@@ -53,6 +59,11 @@ class Store:
                           "ON CONFLICT(id) DO NOTHING", (user, digest(token), park, org))
                 if c.execute("SELECT to_regclass('field_grants') t").fetchone()['t'] is not None:
                     self.seed_field_grants(c,user,park,org)
+                if c.execute("SELECT to_regclass('capability_grants') t").fetchone()['t'] is not None:
+                    for cap in ROLE_CAPABILITIES['enterprise_operator']:
+                        c.execute("INSERT INTO capability_grants(principal_id,capability,park_id,org_id) VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING",(user,cap,park,org))
+                    for action in TRUSTED_ACTIONS:
+                        c.execute("INSERT INTO action_grants(principal_id,action,park_id,org_id) VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING",(user,action,park,org))
 
     def auth(self, c, token: str, lock=False):
         sql = "SELECT * FROM principals WHERE token_hash=%s AND active"
@@ -73,14 +84,57 @@ class Store:
         function = "pg_advisory_xact_lock" if exclusive else "pg_advisory_xact_lock_shared"
         c.execute(f"SELECT {function}(hashtextextended(%s,0))", ("principal:"+principal_id,))
 
-    def scoped_run(self, c, p, run_id, lock=False):
-        sql = "SELECT * FROM runs WHERE id=%s AND park_id=%s AND org_id=%s AND principal_id=%s"
-        if lock:
-            sql += " FOR UPDATE"
-        r = c.execute(sql, (run_id, p["park_id"], p["org_id"], p["id"])).fetchone()
-        if r is None:
-            raise Denied("record unavailable")
+    def check_capability(self, c, p, capability):
+        if not p['active'] or capability not in ROLE_CAPABILITIES.get(p['role'],()):
+            raise Denied('role capability denied')
+        grant=c.execute('SELECT 1 FROM capability_grants WHERE principal_id=%s AND capability=%s AND park_id=%s AND org_id=%s AND active',
+                        (p['id'],capability,p['park_id'],p['org_id'])).fetchone()
+        if not grant:raise Denied('current capability grant required')
+
+    def scoped_run(self, c, p, run_id, lock=False, capability='READ'):
+        self.check_capability(c,p,capability)
+        sql = 'SELECT * FROM runs WHERE id=%s AND park_id=%s AND org_id=%s'
+        if lock:sql += ' FOR UPDATE'
+        r=c.execute(sql,(run_id,p['park_id'],p['org_id'])).fetchone()
+        if r is None:raise Denied('record unavailable')
+        if p['role'] != 'enterprise_operator':
+            assignment=c.execute('SELECT 1 FROM run_assignments WHERE principal_id=%s AND run_id=%s '
+                                 'AND park_id=%s AND org_id=%s AND active',
+                                 (p['id'],run_id,p['park_id'],p['org_id'])).fetchone()
+            if capability!='READ' or not assignment:
+                raise Denied('assigned scope required')
+        elif r['principal_id'] != p['id']:
+            raise Denied('owner scope required')
         return r
+
+    def check_execution(self,c,p,r):
+        self.check_capability(c,p,'EXECUTE')
+        if p['id']!=r['principal_id'] or p['park_id']!=r['park_id'] or p['org_id']!=r['org_id']:
+            raise Denied('execution scope changed')
+        action=r['input'].get('action','case.create')
+        if action not in TRUSTED_ACTIONS or (action=='fault.record' and self.mode!='FAULT_INJECTION'):
+            raise Denied('trusted action required')
+        if not c.execute('SELECT 1 FROM action_grants WHERE principal_id=%s AND action=%s AND park_id=%s AND org_id=%s AND active',(p['id'],action,p['park_id'],p['org_id'])).fetchone():
+            raise Denied('current action capability required')
+        if action=='facts.assess':self.check_fields(c,p,r['input']['fact_fields'],'READ')
+
+    def revoke_capability(self,principal_id,capability):
+        if capability not in ROLE_CAPABILITIES['enterprise_operator']:raise ValueError('unknown capability')
+        with self.connect() as c:
+            self.lock_principal(c,principal_id,exclusive=True)
+            c.execute('UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id=%s AND capability=%s',
+                      (principal_id,capability))
+
+    def assign_status(self,principal_id,run_id,active=True):
+        """Owner-only synthetic setup; cannot assign cross-org or mutate role grants."""
+        with self.connect() as c:
+            self.lock_principal(c,principal_id,exclusive=True)
+            p=c.execute('SELECT * FROM principals WHERE id=%s',(principal_id,)).fetchone()
+            r=c.execute('SELECT * FROM runs WHERE id=%s',(run_id,)).fetchone()
+            if not p or not r or p['role']=='enterprise_operator' or (p['park_id'],p['org_id'])!=(r['park_id'],r['org_id']):
+                raise Denied('invalid assignment scope')
+            c.execute('INSERT INTO run_assignments VALUES(%s,%s,%s,%s,%s) ON CONFLICT(principal_id,run_id) '
+                      'DO UPDATE SET active=excluded.active',(principal_id,run_id,p['park_id'],p['org_id'],active))
 
     def event(self, c, run_id):
         r = c.execute("SELECT state,revision,success_scope FROM runs WHERE id=%s", (run_id,)).fetchone()
@@ -93,6 +147,8 @@ class Store:
         fingerprint = digest(json.dumps(data.snapshot(), sort_keys=True, ensure_ascii=False))
         with self.connect() as c:
             p = self.auth(c, token, lock=True)
+            self.check_capability(c,p,'EXECUTE')
+            if not c.execute('SELECT 1 FROM action_grants WHERE principal_id=%s AND action=%s AND park_id=%s AND org_id=%s AND active',(p['id'],data.action,p['park_id'],p['org_id'])).fetchone():raise Denied('current action grant required')
             if data.action=='facts.assess':self.check_fields(c,p,data.fact_fields,'READ')
             # Serializes request-key lookup/create. Scope derives exclusively from DB identity.
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", (p["id"] + ':' + key,))
@@ -115,6 +171,8 @@ class Store:
         with self.connect() as c:
             p = self.auth(c, token, lock=True)
             r = self.scoped_run(c, p, run_id)
+            if p['role']!='enterprise_operator':
+                return {'run_id':str(r['id']),'state':r['state'],'revision':r['revision'],'visibility':'ASSIGNED_STATUS_ONLY'}
             if r['input'].get('action')=='facts.assess':self.check_fields(c,p,r['input']['fact_fields'],'READ')
             case = c.execute("SELECT id,state,goal,source,external_acceptance,offline_fulfillment "
                              "FROM cases WHERE run_id=%s", (run_id,)).fetchone()
@@ -126,7 +184,8 @@ class Store:
     def control(self, token, run_id, intent):
         with self.connect() as c:
             p = self.auth(c, token, lock=True)
-            r = self.scoped_run(c, p, run_id, lock=True)
+            r = self.scoped_run(c, p, run_id, lock=True,capability='CONTROL')
+            if r['input'].get('action')=='facts.assess':self.check_fields(c,p,r['input']['fact_fields'],'READ')
             op = c.execute("SELECT * FROM operations WHERE run_id=%s", (run_id,)).fetchone()
             pending = op["state"] in ("DISPATCHED", "OUTCOME_UNKNOWN")
             if op["state"] not in ("PREPARED", "DISPATCHED", "OUTCOME_UNKNOWN"):
@@ -187,11 +246,9 @@ class Store:
             p, r, op = self.locked_execution(c, claim)
             if op["action"] != "case.create" or op["state"] != "PREPARED":
                 raise Conflict("local finish only accepts a prepared local action")
-            if not p["active"]:
-                c.execute("UPDATE runs SET state='FAILED',revision=revision+1 WHERE id=%s", (r["id"],))
-                c.execute("UPDATE operations SET state='FAILED_SAFE' WHERE run_id=%s", (r["id"],))
-                self.event(c, r["id"])
-                return
+            try:self.check_execution(c,p,r)
+            except Denied:
+                self.safe_failure(c,r,op,'AUTHORIZATION_REVOKED');return
             # Revalidate persisted input, even if an unsafe tool attempted to change it.
             data = Intake.model_validate(r["input"])
             if data.action != op["action"] or digest(json.dumps(r["input"], sort_keys=True, ensure_ascii=False)) != r["fingerprint"]:
@@ -218,7 +275,8 @@ class Store:
                           (user,park,org,field,capability))
 
     def check_fields(self, c, p, fields, capability):
-        if not p['active']:raise Denied('current authorization required')
+        if not p['active'] or p['role']!='enterprise_operator':raise Denied('current enterprise field authorization required')
+        self.check_capability(c,p,'READ' if capability=='READ' else 'EXECUTE')
         rows=c.execute("SELECT field_name FROM field_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s "
                        "AND purpose='SERVICE_PREPARATION' AND capability=%s AND active "
                        "AND (valid_until IS NULL OR valid_until>clock_timestamp()) AND field_name=ANY(%s)",
@@ -271,6 +329,7 @@ class Store:
             return [r for r in rows if fact_id is None or str(r['id'])==str(fact_id)]
 
     def safe_failure(self,c,r,op,reason):
+        if reason=='AUTHORIZATION_REVOKED':self.audit(c,r['principal_id'],'WORKER_AUTHORIZATION','DENIED')
         c.execute("UPDATE operations SET state='FAILED_SAFE',receipt=%s WHERE id=%s",
                   (Jsonb({'source':'LOCAL_GATEWAY','reason':reason}),op['id']))
         c.execute("UPDATE runs SET state='FAILED',lease_until=NULL,fence=fence+1,revision=revision+1 WHERE id=%s",(r['id'],))
@@ -283,7 +342,7 @@ class Store:
             data=Intake.model_validate(r['input'])
             if digest(json.dumps(r['input'],sort_keys=True,ensure_ascii=False))!=r['fingerprint'] or data.action!=op['action']:
                 self.safe_failure(c,r,op,'INVALID_INTENT');return
-            try:self.check_fields(c,p,data.fact_fields,'READ')
+            try:self.check_execution(c,p,r)
             except Denied:self.safe_failure(c,r,op,'AUTHORIZATION_REVOKED');return
             rows=self.facts_query(c,p,data.fact_fields)
             now=c.execute('SELECT clock_timestamp() now').fetchone()['now']
@@ -312,8 +371,7 @@ class Store:
             c.execute("SET LOCAL statement_timeout='1000ms'")
             p,r,op=self.locked_execution(c,claim)
             try:
-                if not p['active']:raise Denied('withdrawn')
-                if op['action']=='facts.assess':self.check_fields(c,p,r['input']['fact_fields'],'READ')
+                self.check_execution(c,p,r)
             except Denied:
                 if op['state']=='PREPARED':self.safe_failure(c,r,op,'AUTHORIZATION_REVOKED')
                 return False
@@ -321,16 +379,112 @@ class Store:
                       'last_heartbeat_at=clock_timestamp() WHERE id=%s',(lease_seconds,r['id']))
             return True
 
+    def current_delivery_authority(self,c,p,r):
+        if p['role']!='enterprise_operator':raise Denied('inbox recipient role changed')
+        self.scoped_run(c,p,r['id'])
+        if r['input'].get('action')=='facts.assess':self.check_fields(c,p,r['input']['fact_fields'],'READ')
+
     def consume(self, fail_before_ack=False):
         with self.connect() as c:
-            e = c.execute("SELECT * FROM outbox WHERE consumed_at IS NULL ORDER BY revision DESC "
-                          "FOR UPDATE SKIP LOCKED LIMIT 1").fetchone()
-            if not e:
-                return False
-            c.execute("INSERT INTO run_projection VALUES(%s,%s,%s) ON CONFLICT(run_id) DO UPDATE "
-                      "SET revision=excluded.revision,payload=excluded.payload "
-                      "WHERE run_projection.revision < excluded.revision", (e["run_id"],e["revision"],Jsonb(e["payload"])))
-            if fail_before_ack:
-                raise RuntimeError("FAULT_INJECTION: consumer interruption")
-            c.execute("UPDATE outbox SET consumed_at=clock_timestamp() WHERE id=%s", (e["id"],))
+            initial=c.execute('SELECT o.id,r.principal_id FROM outbox o JOIN runs r ON r.id=o.run_id '
+                              'WHERE o.consumed_at IS NULL ORDER BY o.revision DESC,o.id LIMIT 1').fetchone()
+            if not initial:return self.retract_delivery(c)
+            self.lock_principal(c,initial['principal_id'])
+            e=c.execute('SELECT * FROM outbox WHERE id=%s AND consumed_at IS NULL FOR UPDATE SKIP LOCKED',
+                        (initial['id'],)).fetchone()
+            if not e:return False
+            p=c.execute('SELECT * FROM principals WHERE id=%s',(initial['principal_id'],)).fetchone()
+            r=c.execute('SELECT * FROM runs WHERE id=%s',(e['run_id'],)).fetchone()
+            try:self.current_delivery_authority(c,p,r);allowed=True
+            except Denied:allowed=False
+            # Kernel projection is non-user status, not an authorization cache.
+            c.execute('INSERT INTO run_projection VALUES(%s,%s,%s) ON CONFLICT(run_id) DO UPDATE '
+                      'SET revision=excluded.revision,payload=excluded.payload '
+                      'WHERE run_projection.revision < excluded.revision',(e['run_id'],e['revision'],Jsonb(e['payload'])))
+            c.execute('INSERT INTO deliveries VALUES(%s,%s,%s,%s,%s,%s) ON CONFLICT(event_id) DO NOTHING',
+                      (e['id'],e['run_id'],p['id'],e['revision'],'READY' if allowed else 'SUPPRESSED',
+                       Jsonb(e['payload'] if allowed else {})))
+            self.audit(c,p['id'],'OUTBOX_LOCAL_DELIVERY','ALLOWED' if allowed else 'SUPPRESSED')
+            if fail_before_ack:raise RuntimeError('FAULT_INJECTION: consumer interruption')
+            c.execute('UPDATE outbox SET consumed_at=clock_timestamp() WHERE id=%s',(e['id'],))
             return True
+
+    def retract_delivery(self,c):
+        # Lock order matches owner revocation: principal -> delivery. One bounded
+        # pass per drain; current reads independently recheck even before this pass.
+        rows=c.execute("SELECT d.event_id,d.principal_id,d.run_id FROM deliveries d JOIN runs r ON r.id=d.run_id "
+                       "JOIN principals p ON p.id=d.principal_id WHERE d.state='READY' AND "
+                       "(NOT p.active OR p.role<>'enterprise_operator' OR p.org_id<>r.org_id OR p.park_id<>r.park_id OR "
+                       "NOT EXISTS(SELECT 1 FROM capability_grants g WHERE g.principal_id=p.id AND g.capability='READ' AND g.park_id=p.park_id AND g.org_id=p.org_id AND g.active) OR "
+                       "(r.input->>'action'='facts.assess' AND EXISTS(SELECT 1 FROM jsonb_array_elements_text(r.input->'fact_fields') f "
+                       "WHERE NOT EXISTS(SELECT 1 FROM field_grants g WHERE g.principal_id=p.id AND g.park_id=p.park_id AND g.org_id=p.org_id "
+                       "AND g.field_name=f AND g.purpose='SERVICE_PREPARATION' AND g.capability='READ' AND g.active "
+                       "AND (g.valid_until IS NULL OR g.valid_until>clock_timestamp()))))) ORDER BY d.event_id LIMIT 1").fetchall()
+        for row in rows:
+            self.lock_principal(c,row['principal_id'])
+            p=c.execute('SELECT * FROM principals WHERE id=%s',(row['principal_id'],)).fetchone()
+            r=c.execute('SELECT * FROM runs WHERE id=%s',(row['run_id'],)).fetchone()
+            try:self.current_delivery_authority(c,p,r)
+            except Denied:
+                c.execute("UPDATE deliveries SET state='RETRACTED',payload='{}' WHERE event_id=%s AND state='READY'",(row['event_id'],))
+                self.audit(c,p['id'],'OUTBOX_LOCAL_DELIVERY','RETRACTED')
+                return True
+        return False
+
+    def read_delivery(self,token,event_id):
+        with self.connect() as c:
+            p=self.auth(c,token,lock=True)
+            row=c.execute('SELECT * FROM deliveries WHERE event_id=%s AND principal_id=%s',(event_id,p['id'])).fetchone()
+            if not row:raise Denied('delivery unavailable')
+            r=self.scoped_run(c,p,row['run_id']);self.current_delivery_authority(c,p,r)
+            if row['state']!='READY':raise Denied('delivery withdrawn')
+            return {'event_id':str(row['event_id']),'run_id':str(row['run_id']),'revision':row['revision'],'payload':row['payload'],
+                    'channel':'LOCAL_INBOX','external_send':False}
+
+    def register_synthetic_file(self,principal_id,run_id,content:bytes):
+        """Owner/test setup only, not an upload API. Immutable synthetic plain text."""
+        if self.file_root is None or len(content)>16384:raise ValueError('configured root and <=16KiB required')
+        content.decode('utf-8',errors='strict')
+        from .files import read_text_resource
+        with self.connect() as c:
+            self.lock_principal(c,principal_id)
+            p=c.execute('SELECT * FROM principals WHERE id=%s',(principal_id,)).fetchone()
+            r=self.scoped_run(c,p,run_id,capability='FILE_READ')
+            if r['principal_id']!=p['id']:raise Denied('owner file only')
+            from .files import resource_directory
+            file_id=uuid.uuid4()
+            resource={'id':file_id,'size':len(content),'sha256':hashlib.sha256(content).hexdigest()}
+            import os
+            with resource_directory(self.file_root,create=True) as directory:
+                name=str(file_id)+'.txt'
+                fd=os.open(name,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600,dir_fd=directory)
+                try:
+                    with os.fdopen(fd,'wb') as f:f.write(content);f.flush();os.fsync(f.fileno())
+                    read_text_resource(self.file_root,resource)
+                    c.execute("INSERT INTO file_resources VALUES(%s,%s,%s,%s,%s,'text/plain',%s,%s,'SYNTHETIC_FIXTURE')",
+                              (file_id,principal_id,run_id,p['park_id'],p['org_id'],len(content),resource['sha256']))
+                except Exception:
+                    os.unlink(name,dir_fd=directory);raise
+            return str(file_id)
+
+    def read_file(self,token,file_id):
+        from .files import read_text_resource
+        with self.connect() as c:
+            p=self.auth(c,token,lock=True)
+            self.check_capability(c,p,'FILE_READ')
+            row=c.execute('SELECT * FROM file_resources WHERE id=%s AND principal_id=%s AND park_id=%s AND org_id=%s',
+                          (file_id,p['id'],p['park_id'],p['org_id'])).fetchone()
+            if not row:raise Denied('file unavailable')
+            r=self.scoped_run(c,p,row['run_id'])
+            self.current_delivery_authority(c,p,r)
+            return read_text_resource(self.file_root,row)
+
+    def audit(self,c,principal_id,category,outcome):
+        c.execute('INSERT INTO authorization_audit(id,principal_id,category,outcome) VALUES(%s,%s,%s,%s)',
+                  (uuid.uuid4(),principal_id,category,outcome))
+
+    def audit_denial(self,token):
+        # Called after API transaction rollback; no body, token or source text logged.
+        with self.connect() as c:
+            p=c.execute('SELECT id FROM principals WHERE token_hash=%s',(digest(token),)).fetchone()
+            if p:self.audit(c,p['id'],'API_AUTHORIZATION','DENIED')

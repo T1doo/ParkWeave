@@ -17,3 +17,5 @@ ENG-002 READY_FOR_REVIEW：40工程pytest回归（含原21），FAULT_INJECTION�
 ENG-003 READY_FOR_REVIEW：正常API/worker已通过统一网关执行本地动作和显式故障适配器，支持未知结果核对、旧worker拒写及取消/撤权副作用边界的合成工程路径。完整F1仍IN_PROGRESS；完整V1契约、事实/字段Grant等继续待实现，Windows/LIVE/园区效果仍BLOCKED；完整AT/EX NOT_RUN。
 
 ENG-004 READY_FOR_REVIEW：78工程回归、V1最小结构实际API校验、事实冲突与字段Grant实际API/worker、独立心跳和等待控制。Windows11仅用户自报确认，原生门仍BLOCKED；真实模型注入与预算仍待确认。事实核对成功不代表资格满足或服务履约，未进入F2。下一独立F1缺口见F1/Plan。
+
+ENG-005 READY_FOR_REVIEW：四角色最小权限交集、当前outbox授权与本地交付撤回、逻辑文件ID及Linux路径边界工程子集；107 PASS/1 SKIP，浏览器桌面及320/390模拟PASS。完整AT/EX仍NOT_RUN，F1剩余工程与外部门槛见F1/Plan。跨平台网页目标保留Windows主门，不承诺手机本地后端或公网部署。

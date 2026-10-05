@@ -35,3 +35,12 @@ READY_FOR_REVIEW：当前闭环所需V1最小完整结构（校验不发布）�
 用户确认电脑Windows11系统家族；精确构建/架构/硬件/原生权限和测试仍BLOCKED，不能把自报系统视为AT-01/34通过。F1整体IN_PROGRESS，未进入F2，完整AT/EX NOT_RUN。
 
 剩余独立F1工作：多角色/获派步骤权限与全部交集及审计、outbox当前授权/消息撤回、文件类型/路径/渲染边界执行器、原生生命周期脚本及固定AT全范围落地；当前仅三字段/一用途事实闭环、模型等待只mock。真实模型/Windows/真实园区资料依赖另列BLOCKED，不掩盖未实现部分。
+
+
+## 第五有界增量ENG-005
+
+READY_FOR_REVIEW：按执行前ENG005-Mapping冻结F1-T01/T02/T03/T04中AT-03/04/05/16/19工程子集；四角色可信上限/当前能力动作Grant/own或同scope单Run状态指派/执行身份/字段交集；正常worker outbox消费重验、LOCAL_INBOX抑制及撤回；逻辑UUID纯文本合成文件下载与Linux descriptor边界；107 PASS/1 Windows SKIP/2 WARN，浏览器桌面+320/390模拟PASS。Scope不进入F2 CaseStep/办理，不增加外部消息或真实文件导入。
+
+模型0调用/预算0；intern-s2与官方Intern-S2已知同型号大小写兼容只登记后续真实链要求，不放行其他型号。跨平台目标用响应式网页，Windows本地后端主验收保留；Mac本地后端及手机浏览器实机独立验证，手机不承诺运行数据库。本轮仅Linux Chromium模拟，不部署公网。
+
+剩余独立F1工程：Windows Doctor/Setup/Start/Status/Stop/Test脚本及完整固定AT初态/oracle执行绑定；完整生命周期、模型故障/限流/usage仍需对应实现与证据，不能把全量AT状态仅改成外部BLOCKED。CaseStep/正式服务执行权限、真实消息适配器、通用文件产物协议属尚未开放范围，不借本轮扩平台。外部门槛：Park模型安全配置/预算及共享总限流确认（其他项目验证不继承）、Windows11 x64原生机器/安装权限/精确版本、真实园区来源/许可与试点评测、C0模板/跨赛道/准确截止核实。F1仍IN_PROGRESS，完整AT/EX NOT_RUN，本轮交付后停待复核。

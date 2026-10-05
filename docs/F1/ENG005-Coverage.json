@@ -1,0 +1,84 @@
+{
+  "origin": "NEW: V1 requirements / ENG005-Mapping frozen subset; not original acceptance package",
+  "full_36_AT_6_EX": "NOT_RUN",
+  "engineering_result": "107 PASS / 1 SKIP / 2 WARN",
+  "new_result": "29 PASS / 1 native Windows SKIP",
+  "reset": "per-test isolated PG DB + synthetic grants + temp private root; no production reset",
+  "execution_types": [
+    "real HTTP / independent CLI worker / PostgreSQL16.2",
+    "deterministic DB transaction and denied-I/O probes"
+  ],
+  "groups": [
+    {
+      "id": "AT-03",
+      "engineering_subset": "PASS",
+      "whole_AT": "NOT_RUN",
+      "selectors": [
+        "tests/test_authorization_files.py::test_roles_assigned_status_only_no_self_elevation",
+        "tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids"
+      ]
+    },
+    {
+      "id": "AT-04",
+      "engineering_subset": "PASS",
+      "whole_AT": "NOT_RUN",
+      "selectors": [
+        "tests/test_authorization_files.py::test_roles_assigned_status_only_no_self_elevation",
+        "tests/test_authorization_files.py::test_cross_scope_even_with_misconfigured_assignment_zero_effect",
+        "tests/test_authorization_files.py::test_logical_file_actual_http_attachment_scope_and_revoked_cache",
+        "tests/test_authorization_files.py::test_application_cannot_self_grant_or_register_resource",
+        "tests/test_authorization_files.py::test_identity_scope_change_does_not_carry_old_grants"
+      ]
+    },
+    {
+      "id": "AT-05",
+      "engineering_subset": "PASS",
+      "whole_AT": "NOT_RUN",
+      "selectors": [
+        "tests/test_authorization_files.py::test_logical_file_actual_http_attachment_scope_and_revoked_cache",
+        "tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids",
+        "tests/test_authorization_files.py::test_file_integrity_and_descriptor_boundary",
+        "tests/test_authorization_files.py::test_denied_file_authorization_never_opens_backend",
+        "tests/test_authorization_files.py::test_fixture_writer_cannot_follow_configured_root_symlink"
+      ]
+    },
+    {
+      "id": "AT-16",
+      "engineering_subset": "PASS",
+      "whole_AT": "NOT_RUN",
+      "selectors": [
+        "tests/test_authorization_files.py::test_outbox_ack_fault_rolls_back_delivery_monotonic_replay",
+        "tests/test_authorization_files.py::test_outbox_revoked_before_consume_suppressed_after_delivery_retracted"
+      ]
+    },
+    {
+      "id": "AT-19",
+      "engineering_subset": "PASS",
+      "whole_AT": "NOT_RUN",
+      "selectors": [
+        "tests/test_authorization_files.py::test_queued_execution_rechecks_current_capability",
+        "tests/test_authorization_files.py::test_outbox_field_grant_revoked_before_consume",
+        "tests/test_authorization_files.py::test_outbox_revoked_before_consume_suppressed_after_delivery_retracted",
+        "tests/test_authorization_files.py::test_action_grant_and_role_change_cannot_reuse_queued_identity",
+        "tests/test_authorization_files.py::test_field_delivery_after_withdrawal_retracted",
+        "tests/test_authorization_files.py::test_logical_file_actual_http_attachment_scope_and_revoked_cache"
+      ]
+    },
+    {
+      "id": "AT-27",
+      "engineering_subset": "PASS",
+      "whole_AT": "NOT_RUN",
+      "selectors": [
+        "tests/test_authorization_files.py::test_additive_unreleased_grant_scope_migration_preserves_withdrawal",
+        "tests/test_worker_gateway.py::test_upgrade_legacy_database_preserves_business_history"
+      ]
+    }
+  ],
+  "windows_native": {
+    "status": "NOT_RUN",
+    "selector": "tests/test_authorization_files.py::test_native_windows_file_backend_gate",
+    "reason": "Linux cannot prove Windows reparse points/ADS/ACL; unverified backend disabled"
+  },
+  "devices": "Linux Chromium desktop and320/390 simulated viewports PASS; real Windows/Mac/Android/iOS NOT_RUN",
+  "model_calls": 0
+}

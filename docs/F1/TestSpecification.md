@@ -92,3 +92,27 @@ FAULT账本是测试驱动的持久工程原型，尚未与正常Run/worker/outb
 LeaseKeeper是独立线程和短连接，不是另一个独立服务；MODEL_MOCK长等待无网络，不证明真实托管模型、平台限流/非流式/截断/usage或Windows心跳已通过。心跳异常关闭派发权，过期fence不续租；实际数据库断网/复杂负载/所有停止边界仍需后续覆盖。
 
 用户确认Windows11仅作为环境自报记录；精确版本、架构、原生进程、权限和干净复现仍BLOCKED。完整AT/EX保持NOT_RUN，真实模型预算/注入与真实园区来源门未通过。
+
+
+## ENG-005 冻结权限/outbox/文件工程子集
+
+执行前映射见[ENG005-Mapping.md](ENG005-Mapping.md)，逐测试覆盖见[ENG005-Coverage.json](ENG005-Coverage.json)。新增29 PASS+1 Windows SKIP，原78回归，共107 PASS/1 SKIP/2 WARN（71.87秒）。新增实际HTTP沿既有runtime（uvicorn+独立CLIworker+临时PG最小应用角色，显式FAULT_INJECTION支持单个故障分支），文件API额外进程设置独立临时根。默认LOCAL连续worker与浏览器也单独通过。未使用ENG-002侧账本替代正常网关。
+
+| 固定子集 | 已执行oracle | AT子范围 |
+| --- | --- | --- |
+| 四角色交集 | 企业owner原路径；其他三角色无指派403，有同scope指派仅4项状态数据；控制/建单/事实/文件拒绝；撤指派立刻403；role降级不能沿旧owner身份读receipt | 04、19；不计F2 AT-12 |
+| 错配范围/队列 | 跨企业/园区即使人为错配assignment仍403、Run/Operation/Case/fixture效果/文件数量不变；撤EXECUTE或动作Grant后worker FAILED_SAFE、Case/fixture效果0；seed/重复key不恢复 | 04、19 |
+| outbox消费交付 | ack前中断回滚delivery/投影；同事件重放不重复delivery、倒序不回退投影；撤READ/字段后SUPPRESSED；已有READY即时读取403，worker清空payload为RETRACTED | 16、19 |
+| 文件范围/渲染 | owner合成纯文本fixture按UUID实际HTTP attachment；其他企业/园区/已获派执行者403；FILE_READ撤回后旧ID403；后端调用探针证明授权拒绝前不读文件；文本脚本不执行 | 03、04、05、19 |
+| 路径/完整性 | 盘符/UNC/ADS/反斜线/穿越不被当ID；Linux descriptor拒根symlink、文件symlink/hardlink/directory、大小/hash改动；setup root symlink不写宿主目标 | 05 Linux工程 |
+| 原生Windows | 本机重解析点、ADS、ACL、原生Python/PG与启动停止未执行；文件backend未验证平台fail closed | 05 Windows NOT_RUN、01/34 BLOCKED |
+
+权限细则为当前单Run范围：企业字段仍三字段/一用途；非企业角色只有明确同scope Run状态指派，无材料/回执/企业事实/控制/执行权，即使数据库错误授予额外能力也受可信角色上限约束。正式服务发布/CaseStep交集属后续业务范围，未开放。当前最小审计仅API拒绝、worker撤权失败、本地消息交付/抑制/撤回；元数据包含合成principal ID/分类/时点，不含会话token、请求体、资料片段；不声称完整生产审计。
+
+LOCAL_INBOX交付与消费在同一授权锁+数据库事务。发给浏览器的副本无法收回；投影只供内核状态，不是授权缓存，当前API不从投影跳过权限。SUPPRESSED/RETRACTED事件即使重放也不重新READY。当前没有外部消息适配器，外部在途发送/撤回语义NOT_RUN。文件仅管理员合成setup，读取端≤16KiB；不声称通用导入、PDF解析、成果原子文件落位、备份恢复已经验收。
+
+浏览器首尝试FAIL：原CSS定位点击未提交表单，空Run ID刷新307→405；没有POST建单。修复为snapshot后语义button定位，并断言获得真实Run ID再刷新。重测桌面及320/390视口PASS，无横向溢出、可见按钮≥44px、textContent危险字符串不执行。它们全部Linux Chromium模拟，Android/iOS/Mac/Windows实机NOT_RUN。
+
+完整36AT/6EX状态维持NOT_RUN；当前工程子集PASS不改整条验收状态。仍有原生生命周期脚本及固定AT完整执行绑定独立工程缺口；LIVE预算/安全注入/限流、Windows实机、真实园区/来源许可及C0赛方资料另属外部门槛。
+
+提交前完成范围绑定后最终107 PASS/1 SKIP/2 WARN（71.87秒）。增量schema5修复本轮未发布schema4的Grant scope，保持active及所有业务历史，重复迁移稳定；身份改属不带走旧Grant，非企业角色即使获派Run状态也不能读旧inbox。对应AT-27迁移工程子集，不表示整条AT-27通过。
