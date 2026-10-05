@@ -82,3 +82,7 @@ F1仍IN_PROGRESS，残余并非全部外部验证：native验证后生产dispatc
 正常facts.assess请求/worker接入三字段合成候选projection、明确MockCandidateModel、USER_STATEMENT/DOCUMENT_EVIDENCE/MODEL_CANDIDATE来源及版本，统一UNKNOWN/必要问题、immutable review/hash/append-only澄清子Run。权限/源绑定/冲突缺失/取消/重试/恢复oracle及Linux浏览器证据；真实provider请求/预算0、资格NOT_EVALUATED。R4未操作/仍关闭，Windows实机/LIVE/真实来源外门保持，完整AT/EX NOT_RUN。回归及commitpush后停待复核。
 
 下一轮接续候选（用户优先云端，不依赖用户电脑）：标准免费公共仓库GitHub windows-2025 CI，Python3.12 x64、runner原生PG17 PGBIN fresh cluster、显式PARKWEAVE_TEST_OWNER_DSN及parkweave_app role，全部mock。Windows Server不是Windows11；现有file_candidate_probe的严格release11 guard不绕过，后续独立Server工程harness仍保留生产候选未启用和Win11门。本轮只记录，不创建CI/付费runner、不调整仓库权限/网络或持续凭据；具体CI下一轮独立核实和实施。
+
+## 第十二有界增量ENG012：仅本地Windows云CI准备
+
+LOCAL_ONLY/NEEDS_REVIEW：窄push workflow、标准Server2025/Python3.12x64/原生PG17 fresh loopback PowerShell准备与停止、原有生命周期/实际APIworker/本地浏览器/回归、独立Server文件候选工程harness。当前Actions读取Forbidden，按用户最新指示只做本地Linux/静态验证，不重试/换路线、不推送workflow或启动runner，不改权限。错误原文与缺失HTTP数值状态已记录，Server/Win11实际全NOT_RUN，R4关闭；详见WindowsServerCI.md。

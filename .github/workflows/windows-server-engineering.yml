@@ -1,0 +1,45 @@
+name: ParkWeave Windows Server engineering (mock only)
+
+on:
+  push:
+    branches: [dev/f1-foundation]
+    paths:
+      - '.github/workflows/windows-server-engineering.yml'
+      - 'scripts/windows_ci/**'
+      - 'scripts/windows/**'
+      - 'scripts/run_acceptance.py'
+      - 'src/parkweave/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements-windows-candidate.txt'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-server-engineering-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  server-engineering:
+    name: Server 2025 / Python 3.12 x64 / native PG17 (not Win11 acceptance)
+    runs-on: windows-2025
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Checkout without persisted credentials
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Prepare fresh native loopback PostgreSQL and Python
+        run: ./scripts/windows_ci/Engineering.ps1 -Action Prepare
+      - name: Native lifecycle, mock regression, browser and Server candidate
+        run: ./scripts/windows_ci/Engineering.ps1 -Action Test
+      - name: Stop only the owned temporary cluster
+        if: always()
+        run: ./scripts/windows_ci/Engineering.ps1 -Action Stop
+# LOCAL REVIEW ONLY. Do not push until Park Actions access is restored/reviewed.
+# No workflow_dispatch-only dependency on main, paid runner, cache or artifact upload.

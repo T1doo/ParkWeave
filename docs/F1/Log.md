@@ -206,3 +206,21 @@ Schema8增量immutable fact_reviews(document/hash)/fact_followups；review/recei
 两份Library原档44220/31271字节、454/410行、hash与manifest一致；原files.py/Windows候选/native probes与ENG009失败/ENG010最终证据共7文件HEAD逐字不变。Git diff/暂存秘密/真实个人数据/忽略配置日志检查后commitpush验证远端SHA，R3交付后即停。F1仍IN_PROGRESS；R4继续未启用，E1 Windows11原生、E2真实模型/安全注入/共享部署预算、E3真实来源/C0仍BLOCKED/NOT_RUN。
 
 用户中途接续指示仅记录到Plan：下一轮优先云端免费公共仓库windows-2025 CI、Python3.12x64、PG17 PGBIN freshcluster/显式test-owner DSN/parkweave_app，mockonly；Windows Server不能替代Win11，不绕file_candidate_probe release11 guard，独立Server harness保持生产关闭。本轮未创建CI、未开启付费runner或修改权限/持续凭据，具体版本/runner条件留下一轮核实。
+
+## ENG012：Windows云CI本地准备/访问阻塞留档（2026-10-05）
+
+基线5185cf4b0a3973f1b7b486bc6adf43f478742db2，dev/f1-foundation；核对本地仓库/clean基线，既有origin为https://github.com/T1doo/ParkWeave.git，无AGENTS/.agents新指令。用户最新指示继续独立本地准备但不重试gh/换身份路线/推送workflow/启动runner/修改权限。本轮Actions API访问0、git push0、runner0，无subagent/付费资源/真实模型/预算/部署，不操作Sim2Act/用户电脑。不把另项目成功继承为Park权限。
+
+新增LOCAL_ONLY窄push workflow（dev/f1-foundation+代码/CI/test路径），单标准windows-2025/25分钟/contents:read/concurrency，checkout无持久凭据，无cache action/artifact上传/部署/repository secret引用；当前checkout v4 tag须发布前复核不可变SHA，未认为真实执行通过。PowerShell候选Engineering Prepare/Test/Stop只新建RUNNER_TEMP UUID合成cluster，原生PGBIN17/initdb/pg_ctl及loopback/临时owner与parkweave_app，不用PG service/既有PGDATA/密码/WSL/Linuxpgserver容器。OS/版本/admin/UAC只读记录，实际Server环境NOT_RUN，不修改UAC或系统策略；新fixture私有ACL仅新对象，不修现有ACL。
+
+Native suite复用原六PowerShell lifecycle，重复Setup必须匹配config保护错误及原hash，实际API/独立worker本地Case/stop再启读回/本地Chrome预装driver/newprofile/W3C loopback、必要澄清仍UNKNOWN；独立全量回归/原Win11拒Server guard/独立Server候选测试阶段不因生命周期失败跳过。服务通过既有可信PID规则Stop；PG只受控new data/state绑定停止，失败保留不误杀/宽删。阶段超时120秒、回归600秒、Server候选180秒，job总上限25分钟；浏览器child用OS白名单环境，不继承DSN/model/GitHub token，不关sandbox/websecurity。错误/依赖未运行保持FAIL/NOT_RUN，无fallback。
+
+ServerFileTest/server_candidate_probe严格实际product_type/build/Python x64，复用发布的file_candidate_probe.run_probe oracle helpers，从不调用/更改其Win11 main release11 guard，不spoof、不接产品R4。positive先过才测ACL/ADS/hardlink/junction/share等，原oracle失败或缺能力不改PASS。原files.py/Windows候选/native probes/lifecycle及ENG011最终报告7文件HEAD逐字不变，两Library原档44220/31271字节、454/410行/hash与manifest一致。
+
+Forbidden记录只来自前轮已捕获输出：gh run list仓库Actions列表target和完整stderr/CLI exit1见eng012-actions-blocker.json。文字Forbidden，未返回数值HTTP status/header/body/requestID，拒绝层未知，明确null/缺失，未猜403或具体OAuth权限；workflow写权限NOT_TESTED。需要原通道恢复/复核Actions状态/日志读取能力。本轮未重新访问，不用其它身份/路径绕过。
+
+真实失败/修复：首次缓存pwsh启动exit134，System.Management.Automation初始化试写/home/agent/.cache/powershell遇只读；改该子进程XDG目录到工作区后恢复，无HOME/全局profile/策略变动。Linux已安装PyYAML6.0.3 YAML/policy通过、PowerShell7.6.6 AST10脚本零错误、4新入口拒Linux，compileall通过；12项独立guard/wire/安全策略/Setup失败仍执行其它阶段mock通过。单独源码强化timeouts/配置拒绝具体原因、浏览器白名单后重跑冻结版本，不把探索版本证据移作当前结果；前两轮329 PASS/1 SKIP/2既有WARN（101.325秒/102.644秒）另存pre-review/interim报告，无pytest unexpected FAIL或删旧oracle。
+
+最终冻结命令.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng012-acceptance-summary.json：**329 PASS /1 Windows SKIP /2既有WARN，103.527秒**（原317+新增12）。77个code/test/script hash与最终文件一致，workflow单独sha与static报告一致。全量Linux临时PG/API/CLI已回归，全部provider模型mock/真实API预算0；YAML/AST/guard/mock PASS绝非Server/Win11 PASS，whole36AT6EX NOT_RUN、R4仍DISABLED。没有新Windows/Server/浏览器native实测，standalone未来协议仅候选。
+
+暂存无秘密/真实个人数据/忽略runtime日志检查，保存本地commit，**不push**（该commit含待审查workflow）；未查询远端/Actions最新状态，最后已核实remote基线仍按此前5185cf4记录。F1 IN_PROGRESS，E1/E2/E3原门保留，本轮结束供父任务复核。WindowsServerCI.md列下一可独立优先项：PG init/start失败、owned cluster state篡改、浏览器超时/清理失败的故障oracle，不新增产品任务/F2/真实调用。

@@ -1,0 +1,81 @@
+{
+  "status": "PARTIAL_LOCAL_STATIC_ENGINEERING_PASS",
+  "environment": "Linux; not Windows native execution",
+  "yaml_parser": "PyYAML 6.0.3",
+  "workflow_sha256": "1c606e2035965527dd1cc0669c6edb154ff2e902dc1bf2d882343a6c3677cf87",
+  "workflow_policy": "PASS",
+  "powershell": {
+    "version": "7.6.6",
+    "scripts": [
+      {
+        "errors": [],
+        "name": "Common.ps1"
+      },
+      {
+        "errors": [],
+        "name": "Doctor.ps1"
+      },
+      {
+        "errors": [],
+        "name": "FileCandidateTest.ps1"
+      },
+      {
+        "errors": [],
+        "name": "Setup.ps1"
+      },
+      {
+        "errors": [],
+        "name": "Start.ps1"
+      },
+      {
+        "errors": [],
+        "name": "Status.ps1"
+      },
+      {
+        "errors": [],
+        "name": "Stop.ps1"
+      },
+      {
+        "errors": [],
+        "name": "Test.ps1"
+      },
+      {
+        "errors": [],
+        "name": "Engineering.ps1"
+      },
+      {
+        "errors": [],
+        "name": "ServerFileTest.ps1"
+      }
+    ]
+  },
+  "linux_guards": [
+    {
+      "script": "Engineering.ps1",
+      "exit_code": 1,
+      "refused_linux": true
+    },
+    {
+      "script": "ServerFileTest.ps1",
+      "exit_code": 1,
+      "refused_linux": true
+    },
+    {
+      "script": "server_candidate_probe.py",
+      "exit_code": 2,
+      "refused_linux": true
+    },
+    {
+      "script": "native_suite.py",
+      "exit_code": 2,
+      "refused_linux": true
+    }
+  ],
+  "Actions": "BLOCKED_NOT_RETESTED",
+  "workflow_push": "NOT_DONE",
+  "runner": "NOT_RUN",
+  "Win11": "NOT_RUN",
+  "Server_native": "NOT_RUN",
+  "real_model_calls": 0,
+  "real_budget": 0
+}

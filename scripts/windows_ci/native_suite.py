@@ -1,0 +1,108 @@
+"""Prepared Server runner only: native lifecycle, full engineering, local browser.
+Never configures UAC, enables LIVE/file production dispatch or uploads artifacts.
+"""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import subprocess
+import sys
+import time
+import urllib.request
+import uuid
+from server_candidate_probe import require_server
+
+REPO=Path(__file__).resolve().parents[2]
+sys.path.insert(0,str(REPO/'src'))
+from parkweave.process_env import minimal_environment
+
+def main():
+    parser=argparse.ArgumentParser();parser.add_argument('--report',required=True,type=Path);args=parser.parse_args()
+    try:require_server()
+    except RuntimeError as exc:print(str(exc));return 2
+    # Only names of explicitly created temporary cluster config. No model env access.
+    config={key:os.environ[key] for key in ('PARKWEAVE_OWNER_DSN','PARKWEAVE_DSN','PARKWEAVE_TEST_OWNER_DSN')}
+    env=minimal_environment(os.environ,**config)
+    managed=REPO/'.venv-windows/Scripts/python.exe'
+    if Path(sys.executable).resolve()!=managed.resolve():raise RuntimeError('prepared managed Python required')
+    rows=[];started=False
+    def script(label,path,*extra,expected=0,timeout=120,required_error=None):
+        proc=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-File',str(path),'-Python',str(managed),*extra],cwd=REPO,env=env,capture_output=True,text=True,timeout=timeout)
+        ok=proc.returncode==expected and (required_error is None or required_error in proc.stderr)
+        rows.append({'case':label,'status':'PASS' if ok else 'FAIL','exit_code':proc.returncode})
+        # Persist no raw subprocess logs in public summary; Doctor output has safe versions.
+        if not ok:return False
+        return True
+    def local(path,method='GET',body=None,token=None,key=None):
+        url='http://127.0.0.1:8765'+path
+        headers={'Content-Type':'application/json'}
+        if token:headers['Authorization']='Bearer '+token
+        if key:headers['Idempotency-Key']=key
+        data=json.dumps(body).encode() if body is not None else None
+        opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with opener.open(urllib.request.Request(url,data=data,headers=headers,method=method),timeout=3) as r:return json.load(r)
+    wrappers=REPO/'scripts/windows'
+    try:
+        setup=script('Setup_native',wrappers/'Setup.ps1')
+        if setup:
+            sessions=REPO/'.runtime/synthetic-sessions.json';configuration=REPO/'.runtime/windows-config.json'
+            original=[hashlib.sha256(p.read_bytes()).hexdigest() for p in (sessions,configuration)]
+            script('Setup_refuses_existing_config',wrappers/'Setup.ps1',expected=1,required_error='existing configuration protected')
+            assert original==[hashlib.sha256(p.read_bytes()).hexdigest() for p in (sessions,configuration)]
+            rows.append({'case':'config_sessions_preserved','status':'PASS'})
+            script('Doctor_native',wrappers/'Doctor.ps1')
+            started=script('Start_native',wrappers/'Start.ps1')
+            if started:
+                script('Status_native',wrappers/'Status.ps1')
+                token=json.loads(sessions.read_text(encoding='utf-8'))['fixture-a']
+                run=local('/api/runs','POST',{'goal':'SYNTHETIC Server persistence case'},token,uuid.uuid4().hex)['run_id']
+                for _ in range(100):
+                    record=local('/api/runs/'+run,token=token)
+                    if record['state']=='SUCCEEDED':break
+                    time.sleep(.1)
+                assert record['state']=='SUCCEEDED' and record['case']['state']=='NEEDS_INPUT'
+                assert record['case']['external_acceptance']=='NOT_SUBMITTED' and record['case']['offline_fulfillment']=='NO_EVIDENCE'
+                case_id=record['case']['id'];rows.append({'case':'actual_API_worker_local_case','status':'PASS'})
+                assert script('Stop_native',wrappers/'Stop.ps1');started=False
+                assert not (REPO/'.runtime/windows-processes.json').exists()
+                assert script('Restart_native',wrappers/'Start.ps1');started=True
+                assert local('/api/runs/'+run,token=token)['case']['id']==case_id
+                rows.append({'case':'data_read_after_restart','status':'PASS'})
+                from browser_smoke import run_browser
+                browser=run_browser(REPO,token)
+                rows.append({'case':'native_local_browser','status':'PASS','summary':browser})
+            else:rows.append({'case':'API_browser_restart','status':'NOT_RUN','reason':'START_FAILED'})
+        else:rows.append({'case':'lifecycle_API_browser','status':'NOT_RUN','reason':'SETUP_FAILED'})
+    except Exception as exc:rows.append({'case':'lifecycle_exception','status':'FAIL','category':type(exc).__name__})
+    finally:
+        if started or (REPO/'.runtime/windows-processes.json').exists():
+            try:script('final_Stop_owned_services',wrappers/'Stop.ps1',timeout=60)
+            except Exception as exc:rows.append({'case':'final_Stop_owned_services','status':'FAIL','category':type(exc).__name__})
+    # Failures in one independent phase do not suppress the others.
+    try:
+        report=REPO/'.runtime/server-regression.json';report.parent.mkdir(exist_ok=True)
+        proc=subprocess.run([str(managed),'scripts/run_acceptance.py','--report',str(report)],cwd=REPO,env=env,capture_output=True,text=True,timeout=600)
+        rows.append({'case':'full_engineering_regression','status':'PASS' if proc.returncode==0 else 'FAIL','exit_code':proc.returncode})
+        if report.exists():
+            parsed=json.loads(report.read_text());rows[-1]['counts']=parsed['engineering_total_counts']
+            rows[-1]['whole_AT_EX']=parsed['whole_AT_EX']
+    except Exception as exc:rows.append({'case':'full_engineering_regression','status':'FAIL','category':type(exc).__name__})
+    try:
+        # Verify original Win11 entry guard really refuses Server before any mutation.
+        guard=subprocess.run([str(managed),'scripts/windows/file_candidate_probe.py','--fixture-dir',str(REPO/'.runtime/nonexistent-win11-guard-fixture')],cwd=REPO,env=env,capture_output=True,text=True,timeout=15)
+        guard_ok=guard.returncode==1 and 'NOT_RUN: explicit native Windows11' in guard.stdout
+        rows.append({'case':'Win11_guard_refuses_Server','status':'PASS' if guard_ok else 'FAIL','exit_code':guard.returncode})
+        assert not (REPO/'.runtime/nonexistent-win11-guard-fixture').exists()
+    except Exception as exc:rows.append({'case':'Win11_guard_refuses_Server','status':'FAIL','category':type(exc).__name__})
+    try:script('separate_Server_candidate_oracles',REPO/'scripts/windows_ci/ServerFileTest.ps1',timeout=180)
+    except Exception as exc:rows.append({'case':'separate_Server_candidate_oracles','status':'FAIL','category':type(exc).__name__})
+    summary={'scope':'WINDOWS_SERVER_ENGINEERING_NOT_WIN11','cases':rows,'real_model_calls':0,'real_budget':0,'production_R4':'DISABLED','whole_AT_EX':'NOT_RUN','Win11':'NOT_RUN'}
+    args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(summary,indent=2)+'\n')
+    print(json.dumps(summary))
+    # GitHub job summary only; no cache/artifact upload or repository writes.
+    if 'GITHUB_STEP_SUMMARY' in os.environ:
+        with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a',encoding='utf-8') as f:f.write('Windows Server engineering (not Win11 acceptance)\n\n```json\n'+json.dumps(summary,indent=2)+'\n```\n')
+    return 0 if rows and all(r['status']=='PASS' for r in rows) else 1
+
+if __name__=='__main__':raise SystemExit(main())
