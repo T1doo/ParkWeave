@@ -19,3 +19,9 @@ READY_FOR_REVIEW：显式FAULT_INJECTION持久账本，独立模拟效果事务�
 下一独立缺口（非外部阻塞）：V1完整ServiceSpec/Plan及事实冲突；字段级Grant、多角色作用域；正常worker长任务心跳和未知结果账本集成；outbox当前授权/消息撤回与并发回归；逐AT初态和oracle执行器。不要把这些未实现项写成环境BLOCKED。
 
 真正外部阻塞：Windows11 x64实机/安装权限/精确依赖验证；真实书生安全配置、预算及跨产品总配额；真实园区目录/许可/用户流程证据。C0模板/规则/准确截止仍待核实。此次不进入F2业务实现。
+
+## 第三有界增量ENG-003
+
+READY_FOR_REVIEW：正常API/独立worker共用ExecutionGateway，持久DISPATCHED/OUTCOME_UNKNOWN、核对、撤权/控制与旧fence路径；Schema2保留历史；明确测试适配器默认关闭。实际HTTP/worker/PG工程回归和浏览器证据见ENG-003。F1整体IN_PROGRESS，完整AT/EX状态不变。
+
+本轮不补完整V1最小契约/事实冲突/字段级Grant，以避免散开；这些是下一有界增量的独立工程缺口。仍未实现长任务心跳、outbox当前授权/消息撤回完整语义、逐AT全范围执行器。仅未知结果账本的正常worker接入从“未实现”改为“已有合成工程证据”，不声称真实外部连接已验证。

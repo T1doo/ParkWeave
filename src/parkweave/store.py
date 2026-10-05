@@ -22,15 +22,23 @@ def digest(value: str) -> str:
 
 
 class Store:
-    def __init__(self, dsn: str):
-        self.dsn = dsn
+    def __init__(self, dsn: str, mode="LOCAL"):
+        if mode not in ("LOCAL", "FAULT_INJECTION"):
+            raise ValueError("unsupported execution mode")
+        self.dsn, self.mode = dsn, mode
 
     def connect(self):
         return psycopg.connect(self.dsn, row_factory=dict_row)
 
     def migrate(self):
         with self.connect() as c:
+            c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
             c.execute(Path(__file__).with_name("schema.sql").read_text())
+            version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
+            if version > 2:
+                raise Conflict("database version newer than this code")
+            if version < 2:
+                c.execute(Path(__file__).with_name("migration-002.sql").read_text())
 
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""
@@ -76,6 +84,8 @@ class Store:
                   (uuid.uuid4(), run_id, r["revision"], Jsonb(r)))
 
     def submit(self, token: str, key: str, data: Intake):
+        if data.action == "fault.record" and self.mode != "FAULT_INJECTION":
+            raise Denied("fixture adapter disabled")
         fingerprint = digest(json.dumps(data.model_dump(), sort_keys=True, ensure_ascii=False))
         with self.connect() as c:
             p = self.auth(c, token, lock=True)
@@ -91,8 +101,8 @@ class Store:
             c.execute("INSERT INTO runs(id,principal_id,park_id,org_id,namespace,request_key,"
                       "fingerprint,input,state) VALUES(%s,%s,%s,%s,'SYNTHETIC',%s,%s,%s,'QUEUED')",
                       (run_id, p["id"], p["park_id"], p["org_id"], key, fingerprint, Jsonb(data.model_dump())))
-            c.execute("INSERT INTO operations VALUES(%s,%s,'case.create','PREPARED',NULL)",
-                      (uuid.uuid4(), run_id))
+            c.execute("INSERT INTO operations(id,run_id,action,state) VALUES(%s,%s,%s,'PREPARED')",
+                      (uuid.uuid4(), run_id, data.action))
             self.event(c, run_id)
             return str(run_id)
 
@@ -104,20 +114,31 @@ class Store:
                              "FROM cases WHERE run_id=%s", (run_id,)).fetchone()
             op = c.execute("SELECT id,state,receipt FROM operations WHERE run_id=%s", (run_id,)).fetchone()
             return {"run_id": str(r["id"]), "state": r["state"], "success_scope": r["success_scope"],
-                    "namespace": r["namespace"], "case": case, "operation": op, "model_mode": "MODEL_MOCK"}
+                    "namespace": r["namespace"], "case": case, "operation": op, "model_mode": "MODEL_MOCK",
+                    "control_intent": r["control_intent"], "execution_mode": self.mode}
 
     def control(self, token, run_id, intent):
         with self.connect() as c:
             p = self.auth(c, token, lock=True)
             r = self.scoped_run(c, p, run_id, lock=True)
-            if r["state"] not in ("QUEUED", "RUNNING", "PAUSED"):
+            op = c.execute("SELECT * FROM operations WHERE run_id=%s", (run_id,)).fetchone()
+            pending = op["state"] in ("DISPATCHED", "OUTCOME_UNKNOWN")
+            if op["state"] not in ("PREPARED", "DISPATCHED", "OUTCOME_UNKNOWN"):
+                raise Conflict("known operation outcome cannot be resumed or reversed")
+            if r["state"] not in ("QUEUED", "RUNNING", "PAUSED", "RECONCILING"):
                 raise Conflict("terminal run cannot be controlled; effects are not reversed")
-            if intent == "resume" and r["state"] != "PAUSED":
-                raise Conflict("only paused runs can resume")
-            state = {"pause": "PAUSED", "cancel": "CANCELLED", "resume": "QUEUED"}[intent]
-            # This increment has only a single short atomic local action; no remote in-flight effect.
-            c.execute("UPDATE runs SET state=%s,fence=fence+1,lease_until=NULL,revision=revision+1 "
-                      "WHERE id=%s", (state, run_id))
+            if intent == "reconcile":
+                if not pending:
+                    raise Conflict("no unknown dispatched outcome")
+                state, control = "RECONCILING", r["control_intent"]
+                c.execute("UPDATE operations SET reconcile_attempts=0 WHERE run_id=%s", (run_id,))
+            else:
+                if intent == "resume" and (r["state"] != "PAUSED" or pending):
+                    raise Conflict("only undispatched paused runs can resume")
+                state = "RECONCILING" if pending else {"pause": "PAUSED", "cancel": "CANCELLED", "resume": "QUEUED"}[intent]
+                control = {"pause": "PAUSE", "cancel": "CANCEL", "resume": "CONTINUE"}[intent]
+            c.execute("UPDATE runs SET state=%s,control_intent=%s,fence=fence+1,lease_until=NULL,"
+                      "next_attempt_at=clock_timestamp(),revision=revision+1 WHERE id=%s", (state,control,run_id))
             self.event(c, run_id)
 
     def revoke(self, principal_id):
@@ -127,29 +148,39 @@ class Store:
             c.execute("UPDATE principals SET active=false WHERE id=%s", (principal_id,))
 
     def claim(self, worker_id, lease_seconds=30):
+        if not 1 <= lease_seconds <= 300:
+            raise ValueError("lease must be 1..300 seconds")
         with self.connect() as c:
-            r = c.execute("SELECT * FROM runs WHERE state='QUEUED' OR "
-                          "(state='RUNNING' AND lease_until < clock_timestamp()) "
-                          "ORDER BY created_at,id FOR UPDATE SKIP LOCKED LIMIT 1").fetchone()
+            r = c.execute("SELECT r.* FROM runs r JOIN operations o ON o.run_id=r.id WHERE "
+                          "(o.action='case.create' OR %s='FAULT_INJECTION') AND "
+                          "(r.state='QUEUED' OR (r.state IN ('RUNNING','RECONCILING') AND "
+                          "(r.lease_until IS NULL OR r.lease_until < clock_timestamp()))) "
+                          "AND r.next_attempt_at <= clock_timestamp() "
+                          "ORDER BY r.created_at,r.id FOR UPDATE OF r SKIP LOCKED LIMIT 1", (self.mode,)).fetchone()
             if not r:
                 return None
-            return c.execute("UPDATE runs SET state='RUNNING',worker_id=%s,fence=fence+1,"
-                             "lease_until=clock_timestamp()+%s*interval '1 second' "
-                             "WHERE id=%s RETURNING id,fence", (worker_id, lease_seconds, r["id"])).fetchone()
+            return c.execute("UPDATE runs SET state=CASE WHEN state='RECONCILING' THEN state ELSE 'RUNNING' END,"
+                             "worker_id=%s,fence=fence+1,lease_until=clock_timestamp()+%s*interval '1 second' "
+                             "WHERE id=%s RETURNING id,fence", (worker_id,lease_seconds,r["id"])).fetchone()
+
+    def locked_execution(self, c, claim):
+        initial = c.execute("SELECT principal_id FROM runs WHERE id=%s", (claim["id"],)).fetchone()
+        if not initial:
+            raise Conflict("run missing")
+        self.lock_principal(c, initial["principal_id"])
+        p = c.execute("SELECT * FROM principals WHERE id=%s", (initial["principal_id"],)).fetchone()
+        r = c.execute("SELECT *,lease_until>clock_timestamp() AS lease_valid FROM runs WHERE id=%s FOR UPDATE",
+                      (claim["id"],)).fetchone()
+        if r["state"] not in ("RUNNING", "RECONCILING") or r["fence"] != claim["fence"] or not r["lease_valid"]:
+            raise Conflict("stale worker or expired lease")
+        op = c.execute("SELECT * FROM operations WHERE run_id=%s", (r["id"],)).fetchone()
+        return p, r, op
 
     def finish(self, claim, fail_after_effect=False):
         with self.connect() as c:
-            # Lock identity first, matching API lock order and serializing authorization withdrawal.
-            initial = c.execute("SELECT principal_id FROM runs WHERE id=%s", (claim["id"],)).fetchone()
-            if not initial:
-                raise Conflict("run missing")
-            self.lock_principal(c, initial["principal_id"])
-            p = c.execute("SELECT * FROM principals WHERE id=%s",
-                          (initial["principal_id"],)).fetchone()
-            r = c.execute("SELECT *,lease_until>clock_timestamp() AS lease_valid FROM runs "
-                          "WHERE id=%s FOR UPDATE", (claim["id"],)).fetchone()
-            if r["state"] != "RUNNING" or r["fence"] != claim["fence"] or not r["lease_valid"]:
-                raise Conflict("stale worker or expired lease")
+            p, r, op = self.locked_execution(c, claim)
+            if op["action"] != "case.create" or op["state"] != "PREPARED":
+                raise Conflict("local finish only accepts a prepared local action")
             if not p["active"]:
                 c.execute("UPDATE runs SET state='FAILED',revision=revision+1 WHERE id=%s", (r["id"],))
                 c.execute("UPDATE operations SET state='FAILED_SAFE' WHERE run_id=%s", (r["id"],))
@@ -157,6 +188,8 @@ class Store:
                 return
             # Revalidate persisted input, even if an unsafe tool attempted to change it.
             data = Intake.model_validate(r["input"])
+            if data.action != op["action"] or digest(json.dumps(data.model_dump(), sort_keys=True, ensure_ascii=False)) != r["fingerprint"]:
+                raise Conflict("persisted intent changed")
             case_id = uuid.uuid4()
             c.execute("INSERT INTO cases VALUES(%s,%s,%s,%s,%s,'NEEDS_INPUT','SYNTHETIC',"
                       "'NOT_SUBMITTED','NO_EVIDENCE')", (case_id,r["id"],r["park_id"],r["org_id"],data.goal))

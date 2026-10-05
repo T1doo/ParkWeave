@@ -45,3 +45,26 @@ API身份表只读，以共享授权advisory锁和owner撤权独占锁串行化�
 模拟远端fault_effects与fault_operations故意分事务。查不到记录只是未观察到，不是权威“未执行”；DISPATCHED/UNKNOWN禁止第二次dispatch。模拟器记录dispatch_count作为独立oracle，并不据此宣称上游接口幂等。核对函数只记先前派发的效果，撤权后不新发动作、不恢复用户读权限。未知仍未知，不能自动跳到FAILED_SAFE。
 
 FAULT账本是测试驱动的持久工程原型，尚未与正常Run/worker/outbox集成，不代表完整AT-16—20通过。正常产品仍只有原子本地case.create/1。测试重置仍为每测试临时库创建/删除，数据与身份来源全部自建合成。故障schema不随普通安装迁移生效，应用角色仅在临时测试库获得fault_operations表权限；模拟器owner独立写fault_effects。
+
+## ENG-003 正常API/worker路径（本轮当前能力）
+
+此前ENG-002“未接入正常worker”的限制已由本轮工程接入解决；其余未实现项保留。本轮范围仅运行器网关、Schema2非破坏迁移、可信本地动作与显式故障适配器。完整V1契约、事实冲突与字段级Grant未散开实现，不进入F2。
+
+新增tests/test_worker_gateway.py为14个工程测试，每个临时PG库启动真实uvicorn API子进程，使用真实HTTP受理/控制/读取，再启动独立CLI worker子进程。这里不使用TestClient替代新增API验证、不手改Run状态恢复；租约过期按数据库时钟真实等待1.1秒。模拟器fixture_effects通过第二事务记录效果，独立SQL oracle检查唯一效果/dispatch_count=1/没有Case。owner只在无效回执用例改变模拟远端输入，不伪造运行器终态。
+
+| 工程检查 | 新增实际路径与oracle | AT覆盖仍为子集 |
+| --- | --- | --- |
+| 持久未知结果 | HTTP202→worker派发丢响应→OUTCOME_UNKNOWN；授权HTTP核对→独立worker VERIFIED；outbox投影与最终状态一致，重复worker不重发 | 16、20 |
+| 实际进程失联/旧回报 | worker在派发或效果提交后退出75；DB时钟租约过期或授权控制后接管；旧fence提交被同一网关拒绝 | 17 |
+| 取消/暂停与在途效果 | 实际HTTP控制，RECONCILING期间不宣称无效果；查询后保留VERIFIED回执、CANCELLED/PAUSED及意图；不能重复resume已知单步效果 | 18 |
+| 撤权 | owner CLI走同授权锁撤权；派发前FAILED_SAFE/零效果；效果提交后由worker核对历史但原用户读/控制/新请求403 | 19 |
+| 未观察到结果 | after-dispatch失联后无远端结果，三次自动未知观测后停止自动领取，RECONCILING保留；手动核对只重启查询、不派发 | 20、30工程步数局部 |
+| 跨企业/园区 | 实际HTTP其他两身份猜ID读/取消/核对403；回执org错则EFFECT_KNOWN_INVALID且不成功 | 04、20 |
+| 共用网关与默认关闭 | 同CLI worker处理case.create（Case仍NEEDS_INPUT）与fault.record；默认LOCAL worker即使有测试权限仍不派发故障任务，默认API仍422 | 03、13、17 |
+| 非破坏迁移 | 从精确migration001合成历史库升级，Run/Case/Receipt ID及事实原样保留；重复迁移稳定；未来版本拒绝，不删历史 | 27工程迁移局部 |
+
+真实worker领取仍短租约，未实现长模型等待心跳；撤权后的历史核对只是内核记录之前派发结果，不授权新外发。fixture不是外部连接器；真实接口的幂等、授权、凭证与回执合同均未验证。只支持一个动作/Run，未开放服务组合、资源预约或政府自动申报。模型调用0，全部SYNTHETIC/FAULT_INJECTION，Windows/LIVE BLOCKED。
+
+普通迁移002创建隔离的fixture_effects记录表，但正常roles.sql不给写权限，默认LOCAL模式同时在API及worker拒绝/跳过故障能力；测试harness必须--fault-fixtures显式授予权限并设置双方模式。ENG-002侧表fault_operations没有进入普通迁移，保留独立历史测试，不计运行器集成通过证据。
+
+完整AT-01—36/EX仍NOT_RUN；以上工程映射不代表全条验收通过，特别是文件、字段Grant、缓存与真实消息、完整准备度、长任务、Windows和真实模型范围尚未验证。

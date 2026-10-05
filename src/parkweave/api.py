@@ -48,14 +48,16 @@ def create_app(store: Store) -> FastAPI:
     @app.get("/health")
     def health():
         with store.connect() as c:
-            version = c.execute("SELECT version FROM schema_version").fetchone()["version"]
-        return {"status": "ok", "schema": version, "model": "MODEL_MOCK", "data": "SYNTHETIC"}
+            version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
+        return {"status": "ok", "schema": version, "model": "MODEL_MOCK", "data": "SYNTHETIC", "execution_mode": store.mode}
 
     @app.post("/api/runs", status_code=202)
     def submit(data: Intake, authorization: str | None = Header(default=None),
                idempotency_key: str = Header()):
         if not re.fullmatch(r"[A-Za-z0-9_-]{1,100}", idempotency_key):
             raise HTTPException(422, "invalid request key")
+        if data.action == "fault.record" and store.mode != "FAULT_INJECTION":
+            raise HTTPException(422, "fixture adapter disabled")
         return {"run_id": store.submit(token(authorization), idempotency_key, data)}
 
     @app.get("/api/runs/{run_id}")
@@ -63,7 +65,7 @@ def create_app(store: Store) -> FastAPI:
         return store.read(token(authorization), run_id)
 
     @app.post("/api/runs/{run_id}/{intent}")
-    def control(run_id: UUID, intent: Literal["pause", "cancel", "resume"],
+    def control(run_id: UUID, intent: Literal["pause", "cancel", "resume", "reconcile"],
                 authorization: str | None = Header(default=None)):
         store.control(token(authorization), run_id, intent)
         return {"intent": intent, "external_reversal": False}
@@ -75,4 +77,4 @@ def configured_app():
     dsn = os.environ.get("PARKWEAVE_DSN")
     if not dsn:
         raise RuntimeError("PARKWEAVE_DSN required; no credential discovery")
-    return create_app(Store(dsn))
+    return create_app(Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL")))

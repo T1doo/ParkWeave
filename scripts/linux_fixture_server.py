@@ -1,6 +1,7 @@
 """Opt-in Linux test harness; never a Windows installer or production launcher."""
 from pathlib import Path
 import json
+import argparse
 import os
 import signal
 import subprocess
@@ -13,6 +14,9 @@ from parkweave.store import Store
 
 
 def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--fault-fixtures', action='store_true')
+    args=parser.parse_args()
     root=Path('.runtime');root.mkdir(mode=0o700,exist_ok=True)
     server=pgserver.get_server(root/'smoke-pg',cleanup_mode='stop')
     with psycopg.connect(server.get_uri(),autocommit=True) as c:
@@ -23,8 +27,11 @@ def main():
     owner=Store(make_conninfo(server.get_uri(),dbname='parkweave'));owner.migrate()
     with owner.connect() as c:
         c.execute(Path('src/parkweave/roles.sql').read_text())
+        if args.fault_fixtures:
+            c.execute(Path('src/parkweave/roles-fault-fixture.sql').read_text())
         version=c.execute('SELECT version()').fetchone()['version']
-    env=dict(os.environ,PARKWEAVE_DSN=owner.dsn)
+    mode='FAULT_INJECTION' if args.fault_fixtures else 'LOCAL'
+    env=dict(os.environ,PARKWEAVE_DSN=owner.dsn,PARKWEAVE_MODE=mode)
     if not (root/'synthetic-sessions.json').exists():
         subprocess.run([sys.executable,'-m','parkweave.cli','seed-synthetic'],env=env,check=True)
     env['PARKWEAVE_DSN']=make_conninfo(owner.dsn,user='parkweave_app')
@@ -34,7 +41,7 @@ def main():
     worker=subprocess.Popen([sys.executable,'-m','parkweave.worker'],env=env,stdout=log,stderr=log)
     evidence={'environment':'Linux cloud only','python':sys.version.split()[0],
               'postgresql':version,'api_pid':api.pid,'worker_pid':worker.pid,'port':8765,
-              'data':'SYNTHETIC','live_model':'DISABLED'}
+              'data':'SYNTHETIC','live_model':'DISABLED','execution_mode':mode}
     (root/'smoke-environment.json').write_text(json.dumps(evidence,indent=2)+'\n')
     print(json.dumps(evidence),flush=True)
     def stop(signum, frame):raise KeyboardInterrupt

@@ -44,3 +44,21 @@
 没有修改Sim2Act、共用数据库、持续凭据或预算；全为自建合成。提交前将审查秘密/个人数据和原件hash；原件不修改。代码提交本条随ENG-002提交，准确SHA通过Git历史与最终交付链接关联。下一轮最合适独立工作：字段级Grant及事实冲突契约；另由具备条件的执行者办理Windows/真实模型门。
 
 证据工具记录：一次误用系统python导入项目时ModuleNotFoundError；改用项目.venv/bin/python后schema和manifest生成成功，原件hash再次核对一致。此错误不隐藏，未当产品测试FAIL或PASS。ENG-002 Linux Chromium回归PASS（202建单、持久读取、三入口、浏览器错误为空）；原ENG-001证据保持不变，新证据单独归档。
+
+## 2026-10-05 ENG-003（正常worker网关与未知结果）
+
+基线a1858b16846dfc981cad4a5aa23f8ea9abf96324，dev/f1-foundation干净，origin仍T1doo/ParkWeave。按父任务选定唯一主范围：把ENG-002核对语义接入正常runs/operations和真实API/worker，非只增旁路测试；完整V1契约/事实冲突/字段级Grant本轮不散开。
+
+变更：ExecutionGateway连接正常worker；本地case.create和显式fault.record共用Store.locked_execution的当前身份、事务锁、租约/fencing；持久派发意图后才模拟效果，恢复只查不重发；未知自动观测最多3次（未知派发响应也计），之后保留RECONCILING，由当前授权手动核对重新启用查询；取消/暂停未知操作只记录意图并fence旧worker，已知效果不冒充撤销。已派发后撤权仍允许内核记录历史结果，不允许新发或原用户读。
+
+Schema2为独立owner原子迁移，保留历史Run/Case/Receipt，版本健康检查改max(version)。显式fault模式需要API/worker双方配置及合成库fixture_effects权限；默认API422、LOCAL worker跳过故障任务。旧fault_operations旁路原型保留对照测试，但正常worker不使用它。没有新外部接口或真实调用。
+
+真实路径：新增tests/test_worker_gateway.py启动uvicorn、HTTP客户端与独立CLI worker，使用最小应用角色及临时PG16.2库；崩溃注入after-dispatch/after-effect退出75，恢复按真实DB时钟到期（非手写Run终态），旧callback在同网关拒绝。迁移从原001历史库重建后检查ID和事实保留；无效回执只改变模拟远端输入，真实worker拒绝成功。已有40测试继续回归，完整AT没有预填PASS。
+
+实际命令：python -m pytest -q --tb=short：初始40 PASS，新API/worker测试后51 PASS，追加迁移/无效回执后53 PASS，最终补默认模式拒绝派发测试的结果见eng003-pytest-final.txt（14新增+原40）。本轮pytest无FAIL；预期负例是旧fence Conflict、撤权403、非法回执EFFECT_KNOWN_INVALID、未来DB版本Conflict，并未当意外失败删除。两个既有WARN保留：Starlette/httpx弃用和pgserver runtime目录fallback。
+
+实际连续运行：python scripts/linux_fixture_server.py --fault-fixtures（Linux云、独立API/worker、PG16.2、127.0.0.1:8765），python scripts/browser_smoke.py --report docs/F1/evidence/eng003-browser-smoke.json，python scripts/gateway_smoke.py。浏览器PASS；实际HTTP轨迹QUEUED/PREPARED→RECONCILING/OUTCOME_UNKNOWN→SUCCEEDED/VERIFIED，success_scope=FAULT_INJECTION_EFFECT_KNOWN，Case=null，跨园区403。输入hash、run/operation ID与历史PID见eng003-gateway-smoke.json，源码hash见eng003-engineering-manifest.json。模型0次调用，全部明确合成或FAULT_INJECTION，不代表真实外部受理/线下履约/模型链或Windows通过。
+
+剩余：完整V1契约、事实冲突、字段级Grant及其他角色、长等待心跳、outbox撤权/消息完整语义与固定AT全执行器尚未实现。Windows/LIVE/真实园区条件保持BLOCKED，完整AT/EX NOT_RUN，F1未通过。未修改Sim2Act、未共用其数据库、未配置持续凭据、未读取隐藏密钥；提交前秘密/个人数据及原件hash检查，测试数据/会话/截图/访问日志不提交。实际代码SHA本条随工程提交，通过Git历史和交付链接关联。
+
+最终回归54 PASS / 2 WARN（20.12秒），包括原40与新增14条实际API/worker/PG路径测试。当前仅该明确工程范围有PASS；完整AT/EX未改状态。本轮没有意外FAIL；所有注入失联和负例均保留断言与日志，不删用例。浏览器及连续worker HTTP证据各自单独保存，不覆盖ENG-001/002历史。

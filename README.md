@@ -4,7 +4,7 @@
 
 浏览器有“服务/协同/资源”三个入口。创建诉求返回202+run_id；独立worker在PostgreSQL短事务内创建Case、核验本地回执并写outbox。Run可SUCCEEDED（LOCAL_CASE_CREATED），Case仍NEEDS_INPUT，外部受理NOT_SUBMITTED、线下履约NO_EVIDENCE。不能把本地建单称作办成全部诉求。
 
-所有数据为SYNTHETIC；模型没有启用，不存在真实模型调用或开发模型兜底。唯一动作case.create/1，无资格裁决、预约、文件导入、Shell/SQL/生成代码执行或外部动作。普通目标文字仅作为数据保存并通过textContent显示。
+所有数据为SYNTHETIC；模型没有启用，不存在真实模型调用或开发模型兜底。默认业务动作仅case.create/1；显式测试模式可使用fault.record。无资格裁决、预约、文件导入、Shell/SQL/生成代码执行或外部动作。普通目标文字仅作为数据保存并通过textContent显示。
 
 ## 已测试的Linux工程路径
 
@@ -43,6 +43,17 @@ python -m uvicorn parkweave.api:configured_app --factory --host 127.0.0.1 --port
 
 API默认本机8765，与Sim2Act端口不得重用。数据/会话/日志位于独立.runtime，禁止生产数据；本增量没有模型账号、调用预算或共享配额协调器，所以真实调用始终禁用。关闭网页不影响存活worker；停止进程/关机后本地执行停止。无公开部署。
 
-限制及测试范围：[docs/F1/TestSpecification.md](docs/F1/TestSpecification.md)。Windows Doctor/Setup/Start/Status/Stop/Test.ps1、多角色授权、事实冲突、真实模型预算、外部结果不明、长任务心跳和资源事务将在后续独立增量实现；不得把当前子集通过外推为完整AT PASS。
+限制及测试范围：[docs/F1/TestSpecification.md](docs/F1/TestSpecification.md)。Windows Doctor/Setup/Start/Status/Stop/Test.ps1、多角色授权、事实冲突、真实模型预算、真实外部连接、长任务心跳和资源事务将在后续独立增量实现；不得把当前子集通过外推为完整AT PASS。
 
 F1 ENG-002增加了测试专用FAULT_INJECTION持久账本及计划重复/规模/引用边界。它不注册API动作，Store.migrate不会安装fault-schema.sql；只有隔离测试库显式安装。模拟远端与操作账本分事务，回执丢失后按操作ID核对，未知不重发；不是外部系统集成或线上效果。新增映射与限制见F1/TestSpecification.md，完整AT仍NOT_RUN。
+
+
+## ENG-003 正常worker中的故障核对（合成工程）
+
+正常worker现使用ExecutionGateway。迁移002保留历史数据，版本2新增DISPATCHED/OUTCOME_UNKNOWN/RECONCILING及控制意图；未知操作只能核对，不能重派发。取消/暂停在途动作后仍核对，回执保留已知模拟效果，不宣称撤销；单步已核对操作不能再次resume。三次自动未知观测后停止自动查询，当前有权用户可用“核对结果”按钮或POST /api/runs/{id}/reconcile再次查询，仍不重发。派发响应未知也计入三次观测。
+
+显式开启合成故障测试：`python scripts/linux_fixture_server.py --fault-fixtures`，它仅在独立合成数据库授予fixture_effects权限，并对API和worker设置PARKWEAVE_MODE=FAULT_INJECTION。默认LOCAL模式拒绝API fault.record并跳过故障任务，即使数据库已有测试权限。正常roles.sql不授予该表写入；勿在真实业务数据库启用roles-fault-fixture.sql。
+
+`python scripts/gateway_smoke.py`通过实际HTTP与连续独立worker验证响应丢失后持久核对，产出ENG-003证据。worker的--fault-stage after-dispatch/after-effect仅在FAULT_INJECTION模式允许，用来在确定的事务窗口退出75，模拟失联；无网络或真实外部效果。目标Windows仍未实测。
+
+旧fault_ledger.py是ENG-002独立对照原型，不是当前执行路径；当前路径为API→runs/operations→worker→ExecutionGateway。本地建单和故障核对共用当前身份、租约、fencing与账本网关。fault.record成功范围仅FAULT_INJECTION_EFFECT_KNOWN，不创建Case或代表服务履约。

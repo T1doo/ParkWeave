@@ -103,7 +103,7 @@ class ServicePlan(Contract):
 
 class Intake(Contract):
     schema_version: Literal["parkweave-domain/0.1"] = "parkweave-domain/0.1"
-    action: Literal["case.create"] = "case.create"
+    action: Literal["case.create", "fault.record"] = "case.create"
     goal: str = Field(min_length=1, max_length=2000)
     source: Literal["SYNTHETIC"] = "SYNTHETIC"
 

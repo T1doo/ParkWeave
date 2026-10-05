@@ -1,0 +1,57 @@
+{
+  "baseline_commit": "a1858b16846dfc981cad4a5aa23f8ea9abf96324",
+  "environment": "Linux cloud / Python 3.12.14 / PostgreSQL16.2 test distribution",
+  "schema": 2,
+  "scope": "normal API+worker ExecutionGateway, local action plus explicitly enabled synthetic fixture adapter",
+  "regular_worker_fault_integration": "IMPLEMENTED_AND_ENGINEERING_TESTED",
+  "test_type": [
+    "DETERMINISTIC_SYNTHETIC",
+    "FAULT_INJECTION"
+  ],
+  "model_calls": 0,
+  "new_tests": 14,
+  "prior_tests": 40,
+  "full_AT": "NOT_RUN",
+  "windows": "BLOCKED",
+  "live_model": "BLOCKED",
+  "source_sha256": {
+    "src/parkweave/domain.py": "6a778dd69bd88568bc2d6ff8bc609e6098ac4e371284deb00c5403c3e59334e6",
+    "src/parkweave/store.py": "711d88ac11e39f411e1deaaf49733af7b5133c810eadfb92a9d0d40bf35889e2",
+    "src/parkweave/web.html": "19f9039cd804fd5ecf154276a0401ebb74fa482c9fb78609be585a11765970ae",
+    "src/parkweave/migration-002.sql": "6095eaa0e1349c73d17e470f0907cc13fa30aca2002ecf14fff481252772be81",
+    "src/parkweave/fault_ledger.py": "cb94695218415a0b7f4d8ed0db0a04ef6a1b1234f92089506ad476a38bf0ab3c",
+    "src/parkweave/roles-fault-fixture.sql": "f472caee551ce691d08bc953b91f3d620df651eedb1f122620f893f49b7a47db",
+    "src/parkweave/worker.py": "1d8db2812ea4830316b79af8410b0c8d7b10f25a981148596808ee075cfcac26",
+    "src/parkweave/roles.sql": "00e5ad6896c9d8d7167dabdda158187dac73c51d657ce1b4d0070071c915ac1c",
+    "src/parkweave/schema.sql": "474a2502c27cc969744919a5dc16cb7f746df2e49ce8196eb2d1c3b3f9829652",
+    "src/parkweave/api.py": "3e9f087d689a17bfb62fc5858c35d8c02e6fcfcaa585e22a88e904e3280469b2",
+    "src/parkweave/gateway.py": "bedce58992e5179c606492720b2f2ba6e0aaa42788f097aea7295b2909a7b8a5",
+    "src/parkweave/__init__.py": "29234a2883ca112ca1c3bdac0f2891b0f132ac1ef56930107dfb73ce778b621c",
+    "src/parkweave/cli.py": "be2cece7505d175e9e9f1cb3afd646385321b63de86f5057570200e3eeb6fda7",
+    "src/parkweave/fault-schema.sql": "ac073ee098b54a80c3acb645ab943bc72d44fa6ea1297e6f635fe3dc1ea40d68",
+    "tests/test_domain_bounds.py": "4ac7992b1012a91abbc070fc32a820b9524240df24ffc54c3082756f8e7e4fae",
+    "tests/test_foundation.py": "188a5e8de9646c95c4bd36a239a915bf9b1574fc1c833977117a4b5a65905feb",
+    "tests/conftest.py": "908ec1cf764bc606cb30bcdb6d53c5d9bdd3dba6713f87f5387e47b48cb7d42d",
+    "tests/test_worker_gateway.py": "1f9e4080f90bc094c05bd900ba6228c37148101be9915ee03acb06b932681a76",
+    "tests/test_fault_ledger.py": "d5c3491c2ee20d696364f8be8da57613e47969544134b7abb898f5bcd24d13e2",
+    "scripts/gateway_smoke.py": "47da017d3a01fc226d240823f1ebfa52c6b6c959765e6ff7d082cf0fe2416d6f",
+    "scripts/linux_fixture_server.py": "fb67270cfd05857293f8431e58d4d4d5c474e687c15b7ab4fc33a9308d68567f",
+    "scripts/browser_smoke.py": "6bbf9b9ac8ac9e6bc7077dd4abe8c3c9b3f1452340841c3ea4fd2ea41dc26e5a",
+    "pyproject.toml": "537613ce6236c96b712b95c7e7f85b67d7e584435fc30a654aa6a10c0e9e6543"
+  },
+  "unknown_budget": "three automatic unknown observations (unknown send response counts); current authorized manual reconcile re-enables queries only",
+  "limitations": [
+    "no real connector or model",
+    "single trusted action per Run",
+    "no field-level Grant or complete V1 source/fact contract",
+    "no long-wait heartbeat",
+    "prototype fault_ledger tests remain historical independent comparators; actual worker uses gateway.py/operations/runs"
+  ],
+  "warnings": [
+    "Starlette TestClient/httpx deprecation",
+    "pgserver XDG_RUNTIME_DIR fallback"
+  ],
+  "final_tests": "54 passed, 2 warnings",
+  "browser_regression": "PASS: eng003-browser-smoke.json",
+  "actual_continuous_worker_http": "PASS: eng003-gateway-smoke.json"
+}

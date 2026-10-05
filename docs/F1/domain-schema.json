@@ -1,6 +1,6 @@
 {
   "version": "parkweave-domain/0.1",
-  "origin": "NEW bounded projections, not the full V1 contract",
+  "origin": "NEW bounded projections; explicit fault.record Intake requires separate runtime opt-in; not full V1 contract",
   "schemas": {
     "Intake": {
       "additionalProperties": false,
@@ -12,8 +12,11 @@
           "type": "string"
         },
         "action": {
-          "const": "case.create",
           "default": "case.create",
+          "enum": [
+            "case.create",
+            "fault.record"
+          ],
           "title": "Action",
           "type": "string"
         },
