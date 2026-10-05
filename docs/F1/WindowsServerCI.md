@@ -1,5 +1,13 @@
 # Windows Server CI本地候选（ENG012）
 
+## 迁移后显式Python配置修复（仅本地，待本次Prepare错误）
+
+恢复并普通push的精确51734906已触发首次Server run 37314450132，Prepare失败/Test跳过/Stop成功；详细日志下载在正式审批后仍Forbidden，数值HTTP状态及拒绝层未知，停止该下载且不换路线。已有步骤metadata没有错误注释，具体根因仍UNKNOWN。原发布提交和旧证据不修改。
+
+独立静态核查发现workflow原来依赖runner默认PATH的python，而Prepare明确要求3.12 x64。按新授权仅补官方setup-python显式选择3.12/x64，在Prepare之前设置PATH；v5官方ref于本任务只读核对为a26af69be951a213d495a4c3e4e4022e16d87065，workflow使用不可变SHA。3.12版本范围与pyproject的>=3.12,<3.13约束及既定Windows候选依赖一致，不宣称固定Python补丁版本或已有原生通过。未配置cache、artifact、secrets或新权限；单windows-2025/contents:read/25分钟/always Stop保持。
+
+该修复只解决明确的版本选择配置缺口，不等于已解决首次Prepare失败。同步现有静态policy/范围检查；本地保存，不push、不重跑CI，等待用户提供首次Prepare错误段后再联合核对。Win11 guard/R4保持原字节及关闭状态，LIVE/预算0，F1未签收。
+
 **LOCAL_ONLY / ACTIONS_BLOCKED / SERVER_NOT_RUN / WIN11_NOT_RUN。** 本轮没有访问Actions、推送workflow、启动runner或更改账号权限。Sim2Act的Windows CI结果不证明本项目执行环境有相同GitHub访问权限。完整AT/EX仍NOT_RUN，R4生产文件入口未启用。
 
 ## 待审查配置和调用

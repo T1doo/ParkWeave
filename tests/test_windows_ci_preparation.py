@@ -37,6 +37,9 @@ def test_ci_workflow_scope_is_narrow_read_only_and_unpublished():
     text=(ROOT/'.github/workflows/windows-server-engineering.yml').read_text()
     assert 'branches: [dev/f1-foundation]' in text and 'contents: read' in text and 'runs-on: windows-2025' in text
     assert 'persist-credentials: false' in text and 'timeout-minutes: 25' in text and 'if: always()' in text
+    assert 'actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065' in text
+    assert "python-version: '3.12'" in text and "architecture: 'x64'" in text
+    assert text.index('Select Python 3.12 x64') < text.index('Prepare fresh native loopback PostgreSQL and Python')
     for prohibited in ('secrets.','actions/cache','upload-artifact','pull_request_target','workflow_dispatch:'):
         assert prohibited not in text
 

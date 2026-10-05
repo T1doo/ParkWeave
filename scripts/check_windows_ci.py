@@ -22,8 +22,11 @@ def policy(document):
     job=document['jobs']['server-engineering'];assert job['runs-on']=='windows-2025' and int(job['timeout-minutes'])<=25
     assert job['defaults']['run']['shell']=='pwsh'
     actions=[step for step in job['steps'] if 'uses' in step]
-    assert len(actions)==1 and actions[0]['uses']=='actions/checkout@v4'
+    assert len(actions)==2 and actions[0]['uses']=='actions/checkout@v4'
     assert actions[0]['with']=={'persist-credentials':'false','fetch-depth':'1'}
+    assert actions[1]['uses']=='actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065'
+    assert actions[1]['with']=={'python-version':'3.12','architecture':'x64'}
+    assert job['steps'].index(actions[1]) < next(i for i, step in enumerate(job['steps']) if step.get('run')=='./scripts/windows_ci/Engineering.ps1 -Action Prepare')
     assert job['steps'][-1]['if']=='always()'
     serialized=json.dumps(document)
     assert not any(x in serialized for x in ('secrets.','upload-artifact','actions/cache','larger','workflow_dispatch','pull_request_target'))
