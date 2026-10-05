@@ -1,0 +1,144 @@
+{
+  "scope": "F2_PARALLEL_SYNTHETIC_UI_ENGINEERING_ONLY",
+  "baseline_commit": "6ff160abe979f9d1c28d0e7804fda668daf72cf5",
+  "reproduction": {
+    "old_case_overwrites_selection": true,
+    "wrong_case_write": true,
+    "old_identity_restored": true,
+    "cross_case_draft_carried": true,
+    "checks": {
+      "selection_and_write_target": false,
+      "identity_clears_pending": false,
+      "late_write_preserves_new_draft": false,
+      "late_write_preserves_same_case_edit": false,
+      "failure_preserves_draft": true,
+      "retry_key": true,
+      "normal_success": true,
+      "stale_failure_ignored": false,
+      "return_generation": false
+    },
+    "synthetic_writes": [
+      {
+        "path": "/api/preparations/A/commands",
+        "body": {
+          "action": "ADD_EVIDENCE",
+          "expected_revision": 1,
+          "slot": "need_summary",
+          "text": "B draft",
+          "source_kind": "USER_STATEMENT",
+          "source_label": "SYNTHETIC v1"
+        }
+      }
+    ],
+    "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+    "model_calls": 0,
+    "business_API_calls": 0,
+    "backend_authorization_tested": false
+  },
+  "final_response_order_oracle": {
+    "old_case_overwrites_selection": false,
+    "wrong_case_write": false,
+    "old_identity_restored": false,
+    "checks": {
+      "selection_and_write_target": true,
+      "identity_clears_pending": true,
+      "late_write_preserves_new_draft": true,
+      "late_write_preserves_same_case_edit": true,
+      "failure_preserves_draft": true,
+      "retry_key": true,
+      "normal_success": true,
+      "stale_failure_ignored": true,
+      "return_generation": true,
+      "cross_case_drafts_cleared": true,
+      "refresh_preserves_current_draft": true,
+      "submit_id_guard": true,
+      "submit_revision_guard": true,
+      "submit_case_guard": true,
+      "submit_snapshot_revision_guard": true,
+      "stale_catalog_ignored": true,
+      "stale_list_ignored": true,
+      "cancel_navigation": true,
+      "new_navigation": true,
+      "cancelled_create_no_followup": true
+    },
+    "synthetic_writes": [
+      {
+        "path": "/api/preparations/B/commands",
+        "body": {
+          "action": "ADD_EVIDENCE",
+          "expected_revision": 1,
+          "slot": "need_summary",
+          "text": "B draft",
+          "source_kind": "USER_STATEMENT",
+          "source_label": "SYNTHETIC v1"
+        }
+      }
+    ],
+    "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+    "model_calls": 0,
+    "business_API_calls": 0,
+    "backend_authorization_tested": false
+  },
+  "existing_actual_synthetic_API_browser": {
+    "scope": "F2_PARALLEL_SYNTHETIC_ENGINEERING_ONLY",
+    "environment": "Linux Chromium/local API/independent worker/PG16.2 Python3.12.14",
+    "preparation_id": "f7491cd4-6f0a-43a0-8e48-6214b50fc1cf",
+    "run_id": "539a87fe-a1ef-4176-89d2-d73f40d6b5e5",
+    "case_id": "e8881d09-d76d-4b4b-8772-75ddf350cb87",
+    "material_versions": 3,
+    "review_snapshot_sha256": "aeaf91f17181afa78465d6f0dbacac13015c7484dfde4df0620753c1124e09b0",
+    "confirmed_then_reopened": true,
+    "history_retained": true,
+    "reload_reads_persistent_state": true,
+    "source_and_unverified_visible": true,
+    "two_roles_via_real_UI": true,
+    "stale_confirmation_rejected": true,
+    "script_text_only": true,
+    "identity_change_clears_material_UI": true,
+    "narrow_viewports": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "browser_errors": 0,
+    "model_calls": 0,
+    "real_budget": 0,
+    "native_Windows": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN",
+    "F1": "IN_PROGRESS",
+    "production_R4": "DISABLED",
+    "F2_admission": "NOT_PASSED"
+  },
+  "final_regression": {
+    "counts": {
+      "PASS": 400,
+      "FAIL": 0,
+      "SKIP": 1
+    },
+    "execution_exit_code": 0,
+    "summary": "400 passed, 1 skipped, 2 warnings in 126.65s (0:02:06)",
+    "whole_AT_EX": "NOT_RUN",
+    "native_windows": "NOT_RUN"
+  },
+  "source_sha256": {
+    "src/parkweave/web.html": "cf9375e1fa619dd4c4704b4fc061e9d5689daa25c485c230572ceb706df3b5cb",
+    "scripts/preparation_race_browser.py": "c2d2694cb48dd7239d69a212572c66f3d9b7d8868be776e4f08cec57dd8d8fd8",
+    "scripts/preparation_race_oracle.js": "00f426d28a79b8b70344b587086fab79b83e1fee4c1413a80e799026f2cf55df"
+  },
+  "preserved_boundaries": {
+    "F1": "IN_PROGRESS_UNACCEPTED",
+    "F2_admission": "NOT_PASSED",
+    "R4": "DISABLED",
+    "real_model_calls": 0,
+    "real_budget": 0,
+    "production_data_leak_observed": false,
+    "backend_code_changed": false,
+    "Windows_CI_rerun": false,
+    "push": "NOT_PERFORMED"
+  }
+}

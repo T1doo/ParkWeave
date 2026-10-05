@@ -1,5 +1,15 @@
 # F2并行工程日志
 
+## ENG015：资料准备 UI 延迟响应与草稿串事项修复（本地，待独立复核）
+
+基线 `6ff160abe979f9d1c28d0e7804fda668daf72cf5`，正确恢复目录与 dev/f1-foundation 分支，不回退初始 work 树。合成 Chromium oracle 只读提供该 commit 原页面并控制 fetch 响应顺序，实际复现同身份 A 迟到 GET 覆盖 B、B draft 发往 A 的 commands（有效 revision 1）、切角色后旧响应恢复事项，以及跨 case 保留材料/来源/说明草稿。原页面还在迟到写响应后清空新编辑。这是合成响应证据，不宣称发生真实数据泄露；它也不替代后端 tenant/角色验收。
+
+修复限于 preparation UI：请求冻结身份 token、代次与选择 id；成功/失败/JSON 完成后均检查是否仍为当前请求，旧错误不能清空新选择。载入保存 case/id/revision 快照，提交前核对；请求发送后导航不会撤销已发出的事务，但响应不再推进别的事项。切 case 清空材料、来源、人工说明，同 case 刷新保留草稿；成功写后仅当草稿未被修改才清空内容/说明。目录、列表、New、导航和 token 变更均使旧链失效，离开后不继续建单轮询或 preparation 创建。保留相同输入失败重试的幂等 key；后端权限、授权锁、CAS 和不可变历史无改动。
+
+首轮 oracle 因 ABA 测试队列选错请求而 CDP evaluate timeout（harness FAIL，非产品计数）；修正队列从末尾选择新请求，保留原失败事实。原页面复现 PASS（即确认四项缺陷）；修复后冻结浏览器响应顺序 **20/20 checks PASS**：延迟 GET/写、身份、A→B→A、跨事项全部草稿、同事项编辑/刷新、409 草稿与幂等重试、提交 case/id/revision、旧目录/列表、导航/New、取消建单链。原有真实本地合成 API/独立 worker/PG 的双角色表单流程也通过，包括补正→补件→核对→确认→reload→重开、历史、失败确认拒绝、纯文本脚本和 320/390 无溢出。自有 fixture harness 正常停止，退出 0。首轮全量 **400 PASS/0 FAIL/1 Windows SKIP/2 既有 WARN**；补齐 case/revision 快照守卫后再对最终源码回归，最终冻结全量同样 **400 PASS/0 FAIL/1 Windows SKIP/2 既有 WARN**（详情见 evidence/eng015-ui-race.json）。没有用浏览器 checks 增加 pytest 数。
+
+复现命令（依赖已批准缓存 agent-browser 0.38.2 和本地 Chromium）：`.venv/bin/python scripts/preparation_race_browser.py --expect-vulnerable --report .runtime/prep-race-before.json`；最终 oracle 去掉 `--expect-vulnerable`；全量 `.venv/bin/python scripts/run_acceptance.py --report .runtime/prep-race-acceptance.json`。原页面使用 git show，当前源码不回退。报告不含 token、DSN 或真实数据。保留既有 ENG014 与迁移失败记录，不触碰被拒日志、不单独 push、不触发 Windows CI。Server native_suite 具体失败仍 UNKNOWN，等待用户失败子项；F1 IN_PROGRESS/未签收，F2 NOT_PASSED，whole36AT6EX NOT_RUN，R4 DISABLED，真实模型调用/预算 0。
+
 ## ENG014进行中checkpoint（2026-10-05）
 
 用户明确授权GitHub/Windows阻塞期间继续一个有界用户功能，不改F1准入/F1PASS。原F2前置真实模型/Windows与完整基础门仍未通过，切片对应F2-T01/T04/T05/T07工程子集，完整F2/36AT6EX NOT_RUN，R4关闭。基线1828653，dev/f1-foundation；无AGENTS/.agents新指令，无子agent/Sim修改/隐藏凭据读取/真实模型/预算/付费服务。
