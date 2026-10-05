@@ -25,13 +25,14 @@ def test_confirm_keeps_capacity_beyond_hold_ttl_and_cancel_replay_history(resour
     assert x['hold']['local_confirmation']=='CONFIRMED' and x['reservation']=='NOT_CONFIRMED'
     assert x['external_acceptance']=='NOT_SUBMITTED' and x['offline_fulfillment']=='NO_EVIDENCE'
     assert x['hold']['expires_at']==h['expires_at'] and counts(f)==(1,2)
+    assert x['hold']['resource_name']==h['resource_name']=='合成协作空间'
     expire(f,id)
     assert rh.read(Store(f[0].dsn),f[2]['fixture-a'],UUID(id))['hold']['state']=='CONFIRMED'
     assert preview(f,data,'fixture-b').json()['occupied_peak']==2
     assert hold(f,data,'fixture-b').status_code==409
     assert confirm(f,id,key=key).json()['receipt']==x['receipt']
     assert confirm(f,id).status_code==409
-    assert release(f,id).json()['hold']['state']=='RELEASED'
+    released=release(f,id).json()['hold'];assert released['state']=='RELEASED' and released['resource_name']==h['resource_name']
     replay=confirm(f,id,key=key).json();assert replay['receipt']==x['receipt'] and replay['hold']['state']=='RELEASED'
     assert preview(f,data,'fixture-b').json()['occupied_peak']==0
     assert hold(f,data,'fixture-b').status_code==201
@@ -100,12 +101,17 @@ def test_receipt_failure_rolls_back_confirmation_and_upgrade_keeps_history(resou
     assert read(f,id).json()['hold']['state']=='HELD' and counts(f)==(1,1)
     with f[1].connect() as c:
         c.execute('GRANT INSERT ON synthetic_resource_receipts TO parkweave_app')
-        c.execute('DELETE FROM schema_version WHERE version=11')
+        c.execute('DELETE FROM schema_version WHERE version>=11')
+        c.execute('DROP TABLE synthetic_resource_combination_receipts,synthetic_resource_combination_members,synthetic_resource_combinations')
         c.execute('ALTER TABLE synthetic_resource_holds DROP CONSTRAINT synthetic_resource_holds_state_check')
         c.execute("ALTER TABLE synthetic_resource_holds ADD CONSTRAINT synthetic_resource_holds_state_check CHECK(state IN ('HELD','RELEASED'))")
         c.execute('ALTER TABLE synthetic_resource_receipts DROP CONSTRAINT synthetic_resource_receipts_action_check')
         c.execute("ALTER TABLE synthetic_resource_receipts ADD CONSTRAINT synthetic_resource_receipts_action_check CHECK(action IN ('HOLD','RELEASE'))")
-    f[1].migrate();f[1].migrate();assert counts(f)==(1,1)
+    f[1].migrate();f[1].migrate()
+    with f[1].connect() as c:
+        c.execute('GRANT SELECT,INSERT ON synthetic_resource_combinations,synthetic_resource_combination_members,synthetic_resource_combination_receipts TO parkweave_app')
+        c.execute('GRANT UPDATE(state) ON synthetic_resource_combinations TO parkweave_app')
+    assert counts(f)==(1,1)
     assert confirm(f,id).status_code==200
 
 

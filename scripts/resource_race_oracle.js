@@ -58,5 +58,20 @@ const lostConfirm=document.querySelector('#resource-hold-items [data-resource-ac
 const cancelledReplay=document.querySelector('#resource-hold-items [data-resource-action=confirm]').onclick();const cancelledReplayQ=take('/api/resource-holds/cancelled-replay/confirm');checks.cancelled_confirm_retry_same_key=cancelledReplayQ.options.headers['Idempotency-Key']===lostKey;
 answer(cancelledReplayQ,{hold:hold('cancelled-replay','A','RELEASED'),receipt:{action:'CONFIRM',observed_state:'CONFIRMED'}});await cancelledReplay;
 checks.cancelled_confirm_replay_uses_current_state=$('resource-hold-items').textContent.includes('占位已释放')&&$('resource-preview-result').textContent.includes('已释放')&&!$('resource-preview-result').textContent.includes('已核对本地合成确认');
+
+const pairHolds=()=>[hold('pair-A','A'),hold('pair-B','B')];
+const pairGroup=(state='CONFIRMED')=>({id:'pair-group',state,members:pairHolds().map(h=>({...h,state:state==='CONFIRMED'?'CONFIRMED':'RELEASED',combination_id:'pair-group'}))});
+const pickPair=async()=>{await catalog();const p=$('resource-mine').onclick();answer(take('/api/resource-holds'),{items:pairHolds(),has_older_records:false});await p;for(const check of document.querySelectorAll('[data-combination-hold]'))check.click();};
+await pickPair();const latePair=$('combination-confirm').onclick();const latePairQ=take('/api/resource-combinations');const pairInput=JSON.parse(latePairQ.options.body);$('resource-purpose').value='new pair draft';answer(latePairQ,{combination:pairGroup()});await latePair;
+checks.combo_body_binds_two_hold_versions=pairInput.members.length===2&&pairInput.members.every(m=>m.expected_revision===1);
+checks.late_combo_preserves_new_draft=$('resource-purpose').value==='new pair draft'&&$('combination-items').textContent==='';
+await pickPair();const lostPair=$('combination-confirm').onclick();const lostPairQ=take('/api/resource-combinations');const pairKey=lostPairQ.options.headers['Idempotency-Key'];answer(lostPairQ,{},500);await lostPair;checks.combo_ambiguous_preserves_unknown=$('combination-feedback').textContent.includes('可能已确认')&&$('combination-feedback').dataset.tone==='warning';
+const replayPair=$('combination-confirm').onclick();const replayPairQ=take('/api/resource-combinations');checks.combo_ambiguous_retry_same_key=replayPairQ.options.headers['Idempotency-Key']===pairKey;answer(replayPairQ,{combination:pairGroup('CANCELLED'),receipt:{observed_state:'CONFIRMED'}});await replayPair;
+checks.combo_cancelled_replay_current_state=$('combination-feedback').textContent.includes('已整组取消')&&$('combination-feedback').textContent.includes('历史记录')&&!$('combination-items').querySelector('[data-combination-cancel]');
+await pickPair();const deniedPair=$('combination-confirm').onclick();answer(take('/api/resource-combinations'),{detail:'combination requires two valid unconfirmed holds'},409);await deniedPair;
+checks.combo_failure_label_is_error=$('combination-feedback').dataset.tone==='error';
+checks.combo_failure_keeps_unconfirmed_cards=Array.from(document.querySelectorAll('#resource-hold-items article')).every(card=>card.dataset.state==='HELD')&&$('resource-error').textContent.includes('不会部分确认');
+await pickPair();const navigatePair=$('combination-confirm').onclick();const navigatePairQ=take('/api/resource-combinations');document.querySelector('[data-tab=service]').click();answer(navigatePairQ,{combination:pairGroup()});await navigatePair;
+checks.combo_navigation_clears_late_result=$('combination-items').textContent===''&&combinationSelection.size===0;
 return JSON.stringify({checks,scope:'SYNTHETIC_RESOURCE_UI_RESPONSE_ORDER_ONLY'});
 })()

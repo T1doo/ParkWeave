@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--fault-fixtures', action='store_true')
     parser.add_argument('--preparation-fixtures', action='store_true')
     parser.add_argument('--resource-fixtures', action='store_true')
+    parser.add_argument('--combination-fixtures', action='store_true')
     args=parser.parse_args()
     root=Path('.runtime');root.mkdir(mode=0o700,exist_ok=True)
     server=pgserver.get_server(root/'smoke-pg',cleanup_mode='stop')
@@ -48,6 +49,9 @@ def main():
         seed_synthetic(owner,json.loads(sessions.read_text()))
     if args.resource_fixtures:
         from parkweave.resource_holds import seed_synthetic
+        seed_synthetic(owner)
+    if args.combination_fixtures:
+        from parkweave.resource_combinations import seed_synthetic
         seed_synthetic(owner)
     env['PARKWEAVE_DSN']=make_conninfo(owner.dsn,user='parkweave_app')
     log=(root/'server.log').open('a')

@@ -1,5 +1,17 @@
 # F2并行工程日志
 
+## ENG021 两资源同事务合成组合确认完成（仅本地有界切片）
+
+基线3e146a5/干净工作树，对照原V1产品§5.4/7.4和F2-T03/AT09—11，在实施前ENG021规格冻结两条本人不同资源占位、不强加相同时间、无替代/优先级/外部业务。schema12新增组/成员/不可变回执；principal→actor请求key→resource UUID排序锁→记录锁，所有锁后一次DB clock_timestamp、当前授权/固定及登记版本/容量/开放重验。全部检查先于写入；两条CONFIRMED+组/成员/回执同事务，取消两条RELEASED+组CANCELLED+取消回执同事务。单成员禁止拆开确认/释放；失败保留原占位，仍依原TTL自然过期。单/组共享actor/key指纹与原回执回放+当前状态，取消后旧CONFIRM不恢复占用。
+
+/root/combination_review（6.1sol medium）workingtree独立只读审查，无实质事务/越权finding；未跑API/模型/外网/私有runtime。提出取消故障/单条确认竞争/新表权限/精确11→12证据缺口后均补；资源名称JOIN再次只读复核未越权，轻微单条UPDATE返回名称缺失已修复并加断言。首轮资源93 PASS/1 FAIL是旧迁移夹具重建新表漏授app权限，修正显式setup后100 PASS；后续首轮全量518 PASS/1 FAIL/1 Windows SKIP为版本标记回放重复建组合表，改IF NOT EXISTS并验证既有组历史保留。失败输出和初轮报告留.runtime，不计PASS，不隐藏回归失败。
+
+冻结最终全量 **519 passed, 1 skipped, 2 warnings in 154.36s (0:02:34)**，519 PASS/0 FAIL/1 Windows SKIP；33新增组合PG/API用例均通过。最终定向101 PASS含100资源用例+原授权迁移回归；双资源第二更新/确认回执及取消第二释放/组state/回执故障均全回滚，倒序同key/不同key双确认、跨企业竞争满容量、单条确认/释放竞争、锁等待后过期、当前任一撤权/跨园区、单/组key冲突、新表不可改历史、11→12及重复标记迁移保留历史均验证。所有聚合source hash与冻结字节一致；24个Windows/R4/角色保护文件逐字不变，roles原prefix字节/hash不变，只追加新业务表最小权限；原V1字节保留。
+
+真正低权限本地API/独立worker/PG/Chromium双企业组合流程PASS：显式两资源占位选取→一起确认→整组取消两边容量恢复、另一企业看不到组/占位ID、TTL5真实过期时未部分确认（原HELD/EXPIRED）、禁用重复click无重复、返回清选择与迟到响应守卫。资源/组合排序31/31 checks与旧资料23/23 PASS，涵盖结果不明可能已确认、同key重试、回放已取消当前状态、失败错误色/不造部分成功；旧资料双角色browser也PASS。自有fixture清理exit0；页面错误0。保持ENG020视觉，组合成功/取消/过期失败桌面/320/390实际截图可视检查，5张最终图片.runtime/eng021-ui-verified，旧ENG020及本片初轮/final截图均保留，ENG020 17张hash相同。证据evidence/eng021-acceptance-summary.json；截图未导出/上传，原生picker/真实设备/Win11未测。
+
+本片到此停止扩展。仅两个同库SYNTHETIC LOCAL_AUTHORITY资源，不含任意数量、部分替代、ServicePlan/Approval通用编排、执行者回执通知或完整模板/新企业端到端；剩余范围见Plan。全部AT/EX原规格仍NOT_RUN，F1未签收/F2NOT_PASSED/R4DISABLED，Windows37324704568失败明细待用户，收到优先F1。真实provider/预算0，无push/新CI/备份/Library导出/上传或真实外部预约。
+
 ## ENG020 确认审查修复与前端可审阅版本完成（仅本地）
 
 起始50f7c4b/干净工作树。同工作区独立6.1 sol medium reviewer固定da69..50f7发现1项P2：CONFIRM响应丢失、另一页取消、原key重试时后端历史回执+当前RELEASED正确，但旧UI提示已确认。真实Chromium合成响应先复现22/23 true/1 false（.runtime/eng020-review-repro.json），最小修复按当前hold.state反馈，回执与状态不一致则标历史回执；后端、不可变回执、锁/授权不变。review未独立重跑API，不将已有成绩冒充审查执行；范围与未测见ENG020-UIReview/CloseoutReview。

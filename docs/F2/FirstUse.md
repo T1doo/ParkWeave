@@ -41,3 +41,14 @@ fixture-a与fixture-b可共享同一资源容量，彼此只能读自己的占�
 三个工作区顶栏显示当前位置；服务填写本次目标，协同查看本人待办，资源按预检→占位→本地确认操作。事实候选及必要澄清在“补充企业事实与必要澄清”中展开；本地JSON工程记录默认收起，错误和当前状态反馈直接可见。资源卡片的区间和历史确认截止均显示UTC可读时间，不改变数据库原始时间或期限。确认重试若返回已取消记录，显示当前已释放，并说明原操作回执是历史记录。
 
 实际桌面/320/390截图在项目.runtime/eng020-ui-final/。服务入口service-desktop.png/service-mobile.png，资源普通合成确认resource-confirmed-readable.png/resource-confirmed-readable-mobile.png，其余含待占位/已取消/过期/空态/容量警告/权限错误及协同和资料状态。均为本地合成，不含真实企业数据或明文会话；未上传/导出。仍待用户审阅视觉效果，原生手机/Win11和日期picker手势未测。
+
+
+## ENG021 两资源本地合成组合
+
+显式运行 `.venv/bin/python scripts/linux_fixture_server.py --preparation-fixtures --resource-fixtures --combination-fixtures` 才登记第二个合成资源，owner迁移schema12及roles SQL中新表最小权限；原resource-fixtures仍只初始化原资源，不修复撤权。
+
+分别选择合成协作空间/合成研讨设备，按各自区间预检并创建占位；刷新本人记录，勾选两条不同资源的本人有效HELD，再“确认这两个合成资源”。各自区间保留，没有强加同窗要求。两条都通过当前授权/版本/容量/期限才整组确认，失败无部分确认，原占位仍可能有效或已自然过期，可刷新/显式释放后重新预检。响应丢失可能已生效，必须同选择重试或刷新组合记录，不把未取得结果当没有作用。
+
+本人组合记录展示两条当前状态。成功组只用“整组取消并释放两条容量”，单资源路径拒绝拆开释放；任一当前资源授权被撤销时，整组操作拒绝，不偷偷释放另一条。原确认回执保留，取消后旧key重试显示CANCELLED而不恢复占用。真实预约未确认、外部未受理、无线下履约，服务请求取消不自动等于资源释放。
+
+本片最终截图保留项目.runtime/eng021-ui-verified（先前ENG020、ENG021初轮及ui-final目录仍保留），不上传/导出；原生日期picker/Win11/真实手机未验证。组合仅两个同库LOCAL_AUTHORITY的SYNTHETIC资源，不支持任意数量、部分替代、外部原子性、硬件控制或ServicePlan自动编排。

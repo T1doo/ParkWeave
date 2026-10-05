@@ -101,6 +101,8 @@ def _public(h,now):
     result={k:h[k] for k in ('id','resource_id','resource_revision','starts_at','ends_at','quantity','purpose','created_at','expires_at')}
     result['state']=h['state'] if h['state'] in ('RELEASED','CONFIRMED') else 'EXPIRED' if h['expires_at']<=now else 'HELD'
     result['local_confirmation']='CONFIRMED' if h['state']=='CONFIRMED' else 'NOT_CONFIRMED'
+    result['combination_id']=h.get('combination_id')
+    result['resource_name']=h.get('resource_name','合成资源')
     return result
 
 
@@ -134,7 +136,7 @@ def _fingerprint(action,id,data):
 
 
 def _replay(c,p,key,fp):
-    row=c.execute('SELECT payload,fingerprint FROM synthetic_resource_receipts WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+    row=c.execute('SELECT payload,fingerprint FROM synthetic_resource_receipts WHERE actor_id=%s AND request_key=%s UNION ALL SELECT payload,fingerprint FROM synthetic_resource_combination_receipts WHERE actor_id=%s AND request_key=%s',(p['id'],key,p['id'],key)).fetchone()
     if row:
         if row['fingerprint']!=fp:raise Conflict('request key fingerprint mismatch')
         return row['payload']
@@ -148,7 +150,7 @@ def _receipt(c,p,h,key,fp,action,now):
 
 
 def _own(c,p,id,lock=False):
-    row=c.execute('SELECT * FROM synthetic_resource_holds WHERE id=%s AND principal_id=%s AND park_id=%s AND org_id=%s'+(' FOR UPDATE' if lock else ''),(id,p['id'],p['park_id'],p['org_id'])).fetchone()
+    row=c.execute('SELECT h.*,m.combination_id,r.name AS resource_name FROM synthetic_resource_holds h JOIN synthetic_resources r ON r.id=h.resource_id LEFT JOIN synthetic_resource_combination_members m ON m.hold_id=h.id WHERE h.id=%s AND h.principal_id=%s AND h.park_id=%s AND h.org_id=%s'+(' FOR UPDATE OF h' if lock else ''),(id,p['id'],p['park_id'],p['org_id'])).fetchone()
     if not row:raise Denied('hold unavailable')
     return row
 
@@ -170,6 +172,7 @@ def create(store,token,id,key,data):
                 (uuid4(),id,p['id'],p['park_id'],p['org_id'],r['revision'],data.starts_at,data.ends_at,
                  data.quantity,r['buffer_seconds'],data.purpose,now,now+timedelta(seconds=data.ttl_seconds))).fetchone()
             receipt=_receipt(c,p,h,key,fp,'HOLD',now)
+        h['resource_name']=r['name']
         return _boundary(receipt=receipt,hold=_public(h,now),server_time=now)
 
 
@@ -182,7 +185,8 @@ def read(store,token,id):
 def list_holds(store,token):
     with store.connect() as c:
         p=_auth(store,c,token);now=_now(c)
-        rows=c.execute("""SELECT h.* FROM synthetic_resource_holds h
+        rows=c.execute("""SELECT h.*,m.combination_id,r.name AS resource_name FROM synthetic_resource_holds h
+            LEFT JOIN synthetic_resource_combination_members m ON m.hold_id=h.id
             JOIN synthetic_resources r ON r.id=h.resource_id AND r.park_id=h.park_id
             JOIN synthetic_resource_grants g ON g.resource_id=h.resource_id AND g.principal_id=h.principal_id
             AND g.park_id=h.park_id AND g.org_id=h.org_id AND g.capability='READ' AND g.active
@@ -194,12 +198,14 @@ def release(store,token,id,key):
     fp=_fingerprint('RELEASE',id,Release())
     with store.connect() as c:
         p=_auth(store,c,token,write=True);h=_own(c,p,id);_scope(c,p,h['resource_id'],write=True)
-        _key(c,p,key);_lock(c,h['resource_id']);_scope(c,p,h['resource_id'],write=True)
+        _key(c,p,key);_lock(c,h['resource_id']);r=_scope(c,p,h['resource_id'],write=True)
         h=_own(c,p,id,lock=True);now=_now(c);receipt=_replay(c,p,key,fp)
         if not receipt:
+            if h.get('combination_id'):raise Conflict('release the complete combination')
             if h['state']=='CONFIRMED' or (h['state']=='HELD' and h['expires_at']>now):
                 h=c.execute("UPDATE synthetic_resource_holds SET state='RELEASED' WHERE id=%s RETURNING *",(id,)).fetchone()
             receipt=_receipt(c,p,h,key,fp,'RELEASE',now)
+        h['resource_name']=r['name']
         return _boundary(receipt=receipt,hold=_public(h,now),server_time=now)
 
 
@@ -210,6 +216,7 @@ def confirm(store,token,id,key,data):
         _key(c,p,key);_lock(c,h['resource_id']);r=_scope(c,p,h['resource_id'],write=True)
         h=_own(c,p,id,lock=True);now=_now(c);receipt=_replay(c,p,key,fp)
         if not receipt:
+            if h.get('combination_id'):raise Conflict('hold belongs to a complete combination')
             if h['state']!='HELD' or h['expires_at']<=now:raise Conflict('valid unconfirmed hold required')
             if data.expected_revision!=h['resource_revision'] or data.expected_revision!=r['revision']:
                 raise Conflict('resource revision changed; release and preview again')
@@ -219,6 +226,7 @@ def confirm(store,token,id,key,data):
                 raise Conflict('synthetic resource capacity conflict')
             h=c.execute("UPDATE synthetic_resource_holds SET state='CONFIRMED' WHERE id=%s RETURNING *",(id,)).fetchone()
             receipt=_receipt(c,p,h,key,fp,'CONFIRM',now)
+        h['resource_name']=r['name']
         return _boundary(receipt=receipt,hold=_public(h,now),server_time=now,
                          confirmation_scope='LOCAL_SYNTHETIC_SINGLE_RESOURCE_ONLY')
 

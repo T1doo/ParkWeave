@@ -182,6 +182,23 @@ def create_app(store: Store) -> FastAPI:
     def resource_hold_release(hold_id: UUID,data: resources.Release,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return resources.release(store,token(authorization),hold_id,resource_key(idempotency_key))
 
+    from . import resource_combinations as combinations
+    @app.post('/api/resource-combinations',status_code=201)
+    def resource_combination_confirm(data: combinations.Combination,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return combinations.confirm(store,token(authorization),resource_key(idempotency_key),data)
+
+    @app.get('/api/resource-combinations')
+    def resource_combination_list(authorization: str | None=Header(default=None)):
+        return combinations.list_combinations(store,token(authorization))
+
+    @app.get('/api/resource-combinations/{combination_id}')
+    def resource_combination_read(combination_id: UUID,authorization: str | None=Header(default=None)):
+        return combinations.read(store,token(authorization),combination_id)
+
+    @app.post('/api/resource-combinations/{combination_id}/cancel')
+    def resource_combination_cancel(combination_id: UUID,data: resources.Release,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return combinations.cancel(store,token(authorization),combination_id,resource_key(idempotency_key))
+
     return app
 
 

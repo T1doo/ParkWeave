@@ -52,3 +52,12 @@ owner登记规则更新/撤权遵循同资源锁/principal排他锁协议；日�
 固定da69ea6..50f7c4b，由/root/confirm_review（6.1 sol medium）只读检查；未跑API/模型、外网或私有runtime。1项P2：原key CONFIRM回放在另一页取消后返回历史回执+当前RELEASED，旧UI按action提示已确认，与卡片矛盾。Chromium合成响应确实复现，eng020-review-repro的该check false；现按当前hold.state反馈，并标明原回执历史，不改后端或回执。后续23/23资源排序检查通过，新增实际PG不同key双确认和锁等待撤权测试补覆盖。
 
 未发现有证据的后端并发/权限/版本/tenant漏洞，不声称完整时序审计。原生picker、Windows/真实设备、park身份迁移等未验证。完整验证与截图目录/hash见ENG020-UIReview、Log及evidence/eng020-acceptance-summary.json。界面可审阅版本不代表用户美观签收、F1/F2阶段通过或R4启用。
+
+
+## ENG021 两资源事务与隔离独立审查
+
+在3e146a5基线上由/root/combination_review（用户默认6.1sol medium）只读workingtree后端增量：未发现阻断/实质事务或跨企业缺陷。确认全部授权/期限/版本/窗口/容量检查先于写入，两条状态/成员/组/回执同一psycopg事务；principal→共享actor/key→resource UUID排序锁→记录锁，全部资源锁后DB时间。单条和组合回执共用key语义，旧key不重新占用；组成员禁止单条拆分释放。后续资源名称JOIN复核仍绑定本人/park/org和当前READ资源Grant，不引入越权；单条UPDATE返回名丢失的轻微显示问题由主代理补齐并加断言。
+
+reviewer指出取消中途失败/单条confirm竞争/新表权限/精确11→12测试缺口，主代理已补实际PG验证；reviewer未独立跑API或写入测试、未读私有runtime/外网/模型。最后全量发现重复标记迁移重复建表，主代理改新增表IF NOT EXISTS，验证既有组合历史保留并冻结重跑；不把审查无finding当代码已完整通过。验收与失败/修复在ENG021 Log/evidence。
+
+范围仍只有同库SYNTHETIC LOCAL_AUTHORITY的两条不同资源占位；不含任意数量、部分替代、ServicePlan/Approval通用编排、外部预约/履约、真实资源规则、管理员任意SQL并发/park迁移或Windows真实设备。本地成果不签收F1/F2，R4关闭。

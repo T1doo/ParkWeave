@@ -1,0 +1,271 @@
+{
+  "scope": "ENG021_LOCAL_TWO_RESOURCE_COMBINATION_ONLY",
+  "baseline": "3e146a56e596d9c07e36c6ca49138be468fb5cad",
+  "source_contract": "V1 product 5.4/7.4, F2-T03, AT09-11 engineering subset; original documents unchanged",
+  "independent_review": {
+    "agent": "combination_review",
+    "model": "6.1sol medium",
+    "read_only_workingtree": true,
+    "substantive_findings": 0,
+    "test_evidence_gaps_addressed": [
+      "cancel second-release/group-state/receipt rollback",
+      "single-confirm competition",
+      "new table permissions",
+      "exact 11-to-12 repeat/history migration"
+    ],
+    "minor_display_issue_fixed": "single UPDATE response retains resource_name",
+    "tests_independently_rerun": false
+  },
+  "final_regression": {
+    "counts": {
+      "PASS": 519,
+      "FAIL": 0,
+      "SKIP": 1
+    },
+    "summary": "519 passed, 1 skipped, 2 warnings in 154.36s (0:02:34)",
+    "exit_code": 0,
+    "frozen_source_bytes_match": true
+  },
+  "new_combination_tests": {
+    "PASS": 33,
+    "FAIL": 0
+  },
+  "targeted_final": {
+    "PASS": 101,
+    "FAIL": 0,
+    "note": "100 resource PG/API tests plus existing additive migration regression"
+  },
+  "initial_failures": [
+    {
+      "scope": "initial resource PG/API",
+      "PASS": 93,
+      "FAIL": 1,
+      "reason": "test fixture dropped new tables and missed application grants after recreating; corrected explicit setup"
+    },
+    {
+      "scope": "initial full aggregate",
+      "PASS": 518,
+      "FAIL": 1,
+      "SKIP": 1,
+      "reason": "new tables duplicate creation after version marker replay; fixed migration IF NOT EXISTS and verified existing combination history survives"
+    }
+  ],
+  "resource_response_order": {
+    "checks": {
+      "old_identity_catalog_ignored": true,
+      "old_resource_preview_ignored": true,
+      "programmatic_window_change_ignored": true,
+      "latest_preview_wins": true,
+      "write_target_captured": true,
+      "late_write_keeps_new_selection": true,
+      "old_identity_write_ignored": true,
+      "late_list_cannot_clear_new_hold": true,
+      "script_purpose_is_text": true,
+      "navigation_ignores_late_release": true,
+      "current_failure_keeps_draft": true,
+      "conflict_invalidates_preview": true,
+      "ambiguous_retry_same_key": true,
+      "current_success": true,
+      "new_intent_after_ack_has_new_key": true,
+      "old_forbidden_does_not_clear_new_preview": true,
+      "latest_own_list_wins": true,
+      "confirm_frozen_revision": true,
+      "late_confirm_preserves_new_draft": true,
+      "ambiguous_confirm_retry_same_key": true,
+      "confirmed_has_cancel_no_confirm": true,
+      "cancelled_confirm_retry_same_key": true,
+      "cancelled_confirm_replay_uses_current_state": true,
+      "combo_body_binds_two_hold_versions": true,
+      "late_combo_preserves_new_draft": true,
+      "combo_ambiguous_preserves_unknown": true,
+      "combo_ambiguous_retry_same_key": true,
+      "combo_cancelled_replay_current_state": true,
+      "combo_failure_label_is_error": true,
+      "combo_failure_keeps_unconfirmed_cards": true,
+      "combo_navigation_clears_late_result": true
+    },
+    "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+    "model_calls": 0,
+    "business_API_calls": 0,
+    "backend_authorization_tested": false
+  },
+  "preparation_response_order": {
+    "old_case_overwrites_selection": false,
+    "wrong_case_write": false,
+    "old_identity_restored": false,
+    "checks": {
+      "selection_and_write_target": true,
+      "identity_clears_pending": true,
+      "late_write_preserves_new_draft": true,
+      "late_write_preserves_same_case_edit": true,
+      "failure_preserves_draft": true,
+      "retry_key": true,
+      "normal_success": true,
+      "stale_failure_ignored": true,
+      "return_generation": true,
+      "cross_case_drafts_cleared": true,
+      "refresh_preserves_current_draft": true,
+      "submit_id_guard": true,
+      "submit_revision_guard": true,
+      "submit_case_guard": true,
+      "submit_snapshot_revision_guard": true,
+      "stale_catalog_ignored": true,
+      "stale_list_ignored": true,
+      "cancel_navigation": true,
+      "new_navigation": true,
+      "cancelled_create_no_followup": true,
+      "stale_tasks_keep_new_selection": true,
+      "old_identity_tasks_ignored": true,
+      "task_scope_limit_visible": true
+    },
+    "synthetic_writes": [
+      {
+        "path": "/api/preparations/B/commands",
+        "body": {
+          "action": "ADD_EVIDENCE",
+          "expected_revision": 1,
+          "slot": "need_summary",
+          "text": "B draft",
+          "source_kind": "USER_STATEMENT",
+          "source_label": "SYNTHETIC v1"
+        }
+      }
+    ],
+    "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+    "model_calls": 0,
+    "business_API_calls": 0,
+    "backend_authorization_tested": false
+  },
+  "actual_combination_browser": {
+    "scope": "LOCAL_SYNTHETIC_TWO_RESOURCE_COMBINATION_ONLY",
+    "actual_PG_API_UI": true,
+    "two_enterprises": true,
+    "both_confirm_or_no_confirm": true,
+    "whole_cancel_releases_both": true,
+    "expiry_failure_keeps_original_hold_states": [
+      "HELD",
+      "EXPIRED"
+    ],
+    "other_enterprise_group_and_hold_ids_hidden": true,
+    "disabled_repeat_click": true,
+    "return_clears_selection_and_group": true,
+    "screenshots": [
+      ".runtime/eng021-ui-verified/combination-confirmed-desktop.png",
+      ".runtime/eng021-ui-verified/combination-confirmed-320.png",
+      ".runtime/eng021-ui-verified/combination-confirmed-390.png",
+      ".runtime/eng021-ui-verified/combination-cancelled.png",
+      ".runtime/eng021-ui-verified/combination-expired-failure.png"
+    ],
+    "narrow_viewports": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "browser_errors": 0,
+    "native_datetime_picker_gestures": "NOT_RUN; native values and input events",
+    "reservation": "NOT_CONFIRMED",
+    "external_acceptance": "NOT_SUBMITTED",
+    "offline_fulfillment": "NO_EVIDENCE",
+    "LIVE": 0,
+    "budget": 0,
+    "Win11": "NOT_RUN",
+    "F1": "UNACCEPTED",
+    "F2": "NOT_PASSED",
+    "R4": "DISABLED",
+    "whole_AT_EX": "NOT_RUN"
+  },
+  "existing_two_role_browser": {
+    "scope": "F2_PARALLEL_SYNTHETIC_PERSONAL_TASKS_ONLY",
+    "two_roles_real_UI": true,
+    "screenshots": [],
+    "two_case_ids": [
+      "02f0d8c3-f52f-4ac7-a233-75a9207edb1d",
+      "479f298c-1a6d-4e61-bcf7-5a71e21e0467"
+    ],
+    "missing_materials_and_correction_visible": true,
+    "material_bodies_not_in_task_list": true,
+    "review_then_owner_confirm_then_disappear": true,
+    "reopen_returns_reviewer_task": true,
+    "reload_reads_persisted_tasks": true,
+    "repeated_reads_leave_history_unchanged": true,
+    "task_opens_current_detail": true,
+    "invalid_identity_clears_tasks": true,
+    "invalid_confirmation_rejected": true,
+    "script_text_only": true,
+    "narrow_viewports": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "browser_errors": 0,
+    "model_calls": 0,
+    "real_budget": 0,
+    "native_Windows": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN",
+    "F1": "IN_PROGRESS",
+    "F2_admission": "NOT_PASSED",
+    "R4": "DISABLED"
+  },
+  "screenshots_sha256": {
+    ".runtime/eng021-ui-verified/combination-cancelled.png": "f63a3f9883fb84c13fdcee94170eb04c68fbfd5d639f30fa0a12570ba1fa29e0",
+    ".runtime/eng021-ui-verified/combination-confirmed-320.png": "0ea273c1662c6586eced9c5bbc9d4d833196ae9bc837f18c4241e63e88574334",
+    ".runtime/eng021-ui-verified/combination-confirmed-390.png": "6fb03ed87075e2065d5b95d5029913c84babbd55d5879dd5aa0d2914807cace6",
+    ".runtime/eng021-ui-verified/combination-confirmed-desktop.png": "a4afb64144aba748f103e769eff96a216c5e23ee2b83905764b22f4fdcf350ec",
+    ".runtime/eng021-ui-verified/combination-expired-failure.png": "b0a002c5f9a9bc8a9e7d717d35fca73609a489bcf9d14d92351fbf85f8946037"
+  },
+  "previous_ENG020_screenshot_hashes_unchanged": true,
+  "visual_review": "Viewed real Chromium desktop and 320/390 combination success, cancellation and expiry failure screenshots; error red/unknown warning, synthetic/external labels visible, no tested horizontal overflow. User visual acceptance pending.",
+  "tested_source_sha256": {
+    "scripts/linux_fixture_server.py": "dad18f0d9d3af4e624a28e432ef0627cb45810cfa0dc368a48e10dc8d81c1db7",
+    "scripts/resource_combinations_browser_smoke.py": "398679056453454ee315406fcdfd5581eb6cba8120fd0f96823ca05351fa38b9",
+    "scripts/resource_race_oracle.js": "4164318ba58d66187b9b25a329de0bd52b2e03e6565aea5a7d7b56eb7f68d6cf",
+    "src/parkweave/api.py": "59eca210fe5cb419d981ee17002a7c00d55da00a106075ddf6f0477e95616d8f",
+    "src/parkweave/migration-012.sql": "45f06331ac1f6e6ebb894068b49879c24ebb8e0ecc33a665a93c2b743010a37f",
+    "src/parkweave/resource_combinations.py": "acd0060d92531318eb49aca40bf5c9144918cdca55cff2d9c6e0d1be7fad2dff",
+    "src/parkweave/resource_holds.py": "b2e40e9f79678fada39b24b62c1a682fc210c0fe8aecfb69e9134588f18b8405",
+    "src/parkweave/roles.sql": "c23cd76e6289e69ca3dc3c19e566795194b61534e63525132cbf96267c760d04",
+    "src/parkweave/store.py": "2da2214b27f11b6d124e46f59e03c8ccdfd367f4aaaf16bae3c41f041bcdf099",
+    "src/parkweave/web.html": "8d3d9532c23bf6cf55d872f010d3de9e13847bdbf0a4034ec38ed1a3e6d34e22",
+    "tests/conftest.py": "c6d38caa037f7ca2b0b17754a1d13272d15dfe1de77b3dce7a35a0d78caf5f54",
+    "tests/test_authorization_files.py": "5375d8fce37c893a66efa33e2a9bdf50d1cf57841054e57944dcb7f5221e6903",
+    "tests/test_resource_combinations.py": "f65c74289962bb9908da4caca1f8d40196e432ca6a4b7d269bd141433df9792a",
+    "tests/test_resource_confirm.py": "860e57424916b9602c34806f9b491ed622c6448d4da2b6efd19311a56b2f38dd",
+    "tests/test_resource_holds.py": "5fe1c1e1e492ab25a311a602e9d4792f10d4e43f8e63d744b4d13cfa9028b385",
+    "tests/test_worker_gateway.py": "abd85845b263a1192cfd9f24af6c318dbdc451bd3b5612ce1e231fcc2665bb61"
+  },
+  "protected_Windows_R4_role_files_unchanged": 24,
+  "roles_SQL_original_prefix_sha256": "f37b2bba9d303393b8fbe8cb1290f6b8f40c15dcab7a03157c05986137553817",
+  "roles_change": "append minimal privileges on new combination business tables only; existing grants/role ceilings unchanged",
+  "remaining_F2": [
+    "arbitrary-size combinations/approved alternatives/general Approval-ServicePlan binding",
+    "complete registered service DAG and goal coverage",
+    "executor receipts/notifications and broader reliable outbox workflow",
+    "approved templates/new enterprise cold-session samples",
+    "complete end-to-end F2/AT acceptance"
+  ],
+  "gates": {
+    "F1": "UNACCEPTED",
+    "F2": "NOT_PASSED",
+    "R4": "DISABLED",
+    "Win11": "NOT_RUN",
+    "native_picker": "NOT_RUN",
+    "real_devices": "NOT_RUN",
+    "whole36AT6EX": "NOT_RUN",
+    "LIVE": 0,
+    "budget": 0
+  },
+  "push": false,
+  "new_CI": false,
+  "backup_upload_export": false,
+  "real_external_reservation": false
+}
