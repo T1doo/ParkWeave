@@ -127,6 +127,10 @@ def create_app(store: Store) -> FastAPI:
     def preparation_catalog(authorization: str | None=Header(default=None)):
         return preparation.catalog(store,token(authorization))
 
+    @app.get('/api/preparation-tasks')
+    def preparation_tasks(authorization: str | None=Header(default=None)):
+        return preparation.personal_tasks(store,token(authorization))
+
     @app.get('/api/preparations')
     def preparations(authorization: str | None=Header(default=None)):
         return preparation.list_items(store,token(authorization))

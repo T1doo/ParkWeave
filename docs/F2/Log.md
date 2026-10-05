@@ -1,5 +1,15 @@
 # F2并行工程日志
 
+## ENG016：个人资料准备待办（2026-10-05，本地开发与验证）
+
+用户在Windows失败子项待补期间明确允许独立F2切片；本轮同时明确禁止恢复包/源码外发/Library/第三方/上传。基线 c285da8 正确恢复副本 dev/f1-foundation，先冻结 docs/F2/ENG016-PersonalTasks.md 与 Plan/TestSpecification，再实施V1产品§3/§5.5、F2-T04/T07的最小“本人需补交/确认、获派核对”子集。不处理未证实Windows失败，不扩大到跨服务规划/资源/真实资格或履约；原阶段门保持。
+
+新增只读 /api/preparation-tasks，从同一PG语句快照读取当前state、资料槽存在性、补正理由；复用当前身份、READ/准备Grant、精确owner或reviewer与园区企业交集。无Schema/Grant/后台任务/通知/outbox修改。100件未本地确认事项的检查边界和更早记录提示可见；revision64显示既有写上限阻塞。待办只含必要目标/引用/状态/下一步，不含材料正文。企业缺材料/补正/确认，专员材料齐全后核对；确认从双方待办退出，重开返回专员待办。点击待办读取当前详情再执行原有CAS命令；队列既有revision不替代重新授权。界面复用ENG015代次/身份守卫，迟到待办不会恢复旧身份或覆盖新case草稿。
+
+新增真实PG/API测试首轮 **19 PASS/0 FAIL/2 既有 WARN，3.54秒**：状态链/双case/缺少槽/说明/无材料正文、跨企业园区/未获派与错误角色/伪造角色、撤权、重复读/Store重建、并发提交快照、64上限和101有权记录的100件读取提示。实际Linux Chromium + 自有低权限本地API/独立worker/PG首次浏览器 **PASS**：双case企业与专员的补交→补正→核对→确认→reload→重开、待办打开当前详情、重复读无新历史、错误身份清UI/错误确认拒绝、脚本字面文本、320/390无横滚、页面错误0。自有harness正常停止退出0；不重置既有smoke记录，未读取/输出真实凭据。独立响应顺序浏览器 **23/23 checks PASS**（ENG015原20项保留，增加迟到待办、旧身份待办、范围限制）。各产物留本项目内，最终冻结全量 **419 PASS/0 FAIL/1 Windows SKIP/2 既有 WARN**（125.71s (0:02:05)），全部回归源码hash与当前文件匹配；详情见 evidence/eng016-acceptance-summary.json；不把checks增加到pytest数。
+
+原V1两个原件 bytes/hash与manifest一致；R4/Win11 guard、Windows脚本/workflow、角色SQL、迁移不改。Windows37324704568仍native_suite具体FAIL子项UNKNOWN，F1 IN_PROGRESS未签收、F2正式准入NOT_PASSED、whole36AT6EX NOT_RUN、R4 DISABLED、真实模型与预算0。没有push、CI重跑、恢复包、上传或新外部连接。当前并行切片停止于独立本地结果，不宣称完整F2或真实业务效果。
+
 ## ENG015：资料准备 UI 延迟响应与草稿串事项修复（本地，待独立复核）
 
 基线 `6ff160abe979f9d1c28d0e7804fda668daf72cf5`，正确恢复目录与 dev/f1-foundation 分支，不回退初始 work 树。合成 Chromium oracle 只读提供该 commit 原页面并控制 fetch 响应顺序，实际复现同身份 A 迟到 GET 覆盖 B、B draft 发往 A 的 commands（有效 revision 1）、切角色后旧响应恢复事项，以及跨 case 保留材料/来源/说明草稿。原页面还在迟到写响应后清空新编辑。这是合成响应证据，不宣称发生真实数据泄露；它也不替代后端 tenant/角色验收。

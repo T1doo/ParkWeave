@@ -156,6 +156,44 @@ def list_items(store,token):
         rows=c.execute(f'SELECT id,case_id,goal,state,revision FROM preparations WHERE {column}=%s AND park_id=%s AND org_id=%s ORDER BY created_at DESC LIMIT 100',(p['id'],p['park_id'],p['org_id'])).fetchall()
         return {'items':rows,'role':p['role'],'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY'}
 
+def personal_tasks(store,token):
+    """Read-only current work, not notices, eligibility, or a write authorization."""
+    with store.connect() as c:
+        p=store.auth(c,token,lock=True)
+        owner=p['role']=='enterprise_operator'
+        grant(store,c,p,'PREPARE' if owner else 'REVIEW_ASSIGNED')
+        column='owner_id' if owner else 'reviewer_id'
+        # One statement snapshot covers state, material presence and correction.
+        # Fetch one extra scoped row to report truncation, never claim completeness.
+        rows=c.execute(f"""SELECT p.id,p.case_id,p.goal,p.state,p.revision,
+            p.service_id,p.service_version,
+            ARRAY(SELECT DISTINCT e.slot FROM preparation_evidence e
+                  WHERE e.preparation_id=p.id) AS present_slots,
+            (SELECT e.payload->>'reason' FROM preparation_events e
+             WHERE e.preparation_id=p.id AND e.action='REQUEST_CHANGES'
+             ORDER BY e.revision DESC LIMIT 1) AS correction_reason
+            FROM preparations p WHERE p.{column}=%s AND p.park_id=%s AND p.org_id=%s
+            AND p.state<>'LOCAL_CONFIRMED' ORDER BY p.created_at DESC,p.id DESC LIMIT 101
+            """,(p['id'],p['park_id'],p['org_id'])).fetchall()
+        tasks=[]
+        for row in rows[:100]:
+            missing=[slot for slot in SLOTS if slot not in row['present_slots']]
+            kind=None
+            if owner:
+                if row['state']=='CHANGES_REQUESTED':kind='RESPOND_TO_CORRECTION'
+                elif row['state']=='IN_PREPARATION' and missing:kind='SUPPLY_MATERIALS'
+                elif row['state']=='REVIEWED':kind='CONFIRM_PREPARATION'
+            elif row['state']=='IN_PREPARATION' and not missing:kind='REVIEW_MATERIALS'
+            if kind:
+                tasks.append({key:row[key] for key in ('id','case_id','goal','state','revision','service_id','service_version')})
+                tasks[-1].update(kind=kind,missing_slots=missing,
+                    correction_reason=row['correction_reason'] if row['state']=='CHANGES_REQUESTED' else None,
+                    blocked_reason='HISTORY_LIMIT_REACHED' if row['revision']>=64 else None)
+        return {'items':tasks,'role':p['role'],'checked_count':min(len(rows),100),
+                'check_limit':100,'has_older_records':len(rows)>100,
+                'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY','qualification':'NOT_EVALUATED',
+                'external_acceptance':'NOT_SUBMITTED','offline_fulfillment':'NO_EVIDENCE'}
+
 def seed_synthetic(owner,tokens):
     """Explicit fixture owner setup; never production identity/automatic Grant repair."""
     with owner.connect() as c:

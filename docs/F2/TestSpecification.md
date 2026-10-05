@@ -1,5 +1,7 @@
 # ENG014独立工程规格
 
+ENG016独立只读个人待办的实施前规格见 [ENG016-PersonalTasks.md](ENG016-PersonalTasks.md) T01—T06；初态/权限沿用下方ENG014规格，后端写链不扩大。
+
 依据V1全文中的F2协同语义新建；并非原附件包，整项AT-12/13/15/35与F2门仍NOT_RUN。测试仅SYNTHETIC。
 
 PG初态：独立UUID fixture数据库，迁移9，parkweave_app无DDL与identity/Grant历史修改权，三企业两园区、显式合成服务及每企业专员。API和独立worker用最小环境；无provider请求。
