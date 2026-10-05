@@ -15,3 +15,7 @@ GRANT SELECT,INSERT,UPDATE ON model_steps TO parkweave_app;
 
 GRANT SELECT,INSERT ON model_plans TO parkweave_app;
 GRANT SELECT,INSERT ON fact_reviews,fact_followups TO parkweave_app;
+
+GRANT SELECT ON preparation_catalog,preparation_grants TO parkweave_app;
+GRANT SELECT,INSERT,UPDATE ON preparations TO parkweave_app;
+GRANT SELECT,INSERT ON preparation_evidence,preparation_events TO parkweave_app;

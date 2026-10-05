@@ -122,6 +122,29 @@ def create_app(store: Store) -> FastAPI:
             'Content-Disposition':f'attachment; filename="{file_id}.txt"',
             'Content-Security-Policy':"default-src 'none'; sandbox"})
 
+    from . import preparation
+    @app.get('/api/preparation-catalog')
+    def preparation_catalog(authorization: str | None=Header(default=None)):
+        return preparation.catalog(store,token(authorization))
+
+    @app.get('/api/preparations')
+    def preparations(authorization: str | None=Header(default=None)):
+        return preparation.list_items(store,token(authorization))
+
+    @app.post('/api/preparations',status_code=201)
+    def create_preparation(data: preparation.CreatePreparation,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
+        return preparation.create(store,token(authorization),idempotency_key,data)
+
+    @app.get('/api/preparations/{preparation_id}')
+    def preparation_record(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return preparation.read(store,token(authorization),preparation_id)
+
+    @app.post('/api/preparations/{preparation_id}/commands')
+    def preparation_command(preparation_id: UUID,data: preparation.PreparationCommand,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
+        return preparation.command(store,token(authorization),preparation_id,idempotency_key,data)
+
     return app
 
 

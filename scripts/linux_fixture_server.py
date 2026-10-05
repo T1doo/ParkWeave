@@ -17,6 +17,7 @@ from parkweave.store import Store
 def main():
     parser=argparse.ArgumentParser()
     parser.add_argument('--fault-fixtures', action='store_true')
+    parser.add_argument('--preparation-fixtures', action='store_true')
     args=parser.parse_args()
     root=Path('.runtime');root.mkdir(mode=0o700,exist_ok=True)
     server=pgserver.get_server(root/'smoke-pg',cleanup_mode='stop')
@@ -36,6 +37,14 @@ def main():
     if not (root/'synthetic-sessions.json').exists():
         subprocess.run([sys.executable,'-m','parkweave.cli','seed-synthetic'],env=env,check=True)
     owner.seed(json.loads((root/'synthetic-sessions.json').read_text()))
+    if args.preparation_fixtures:
+        import secrets
+        from parkweave.preparation import seed_synthetic
+        sessions=root/'preparation-sessions.json'
+        if not sessions.exists():
+            sessions.write_text(json.dumps({'prep-specialist-'+id:secrets.token_urlsafe(32) for id in ('fixture-a','fixture-b','fixture-c')}))
+            sessions.chmod(0o600)
+        seed_synthetic(owner,json.loads(sessions.read_text()))
     env['PARKWEAVE_DSN']=make_conninfo(owner.dsn,user='parkweave_app')
     log=(root/'server.log').open('a')
     api=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
