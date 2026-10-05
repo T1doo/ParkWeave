@@ -140,3 +140,10 @@ LOCAL_INBOX交付与消费在同一授权锁+数据库事务。发给浏览器�
 固定AT02/30绑定新增test_model_chain.py：实际CLIworker两次离线请求+真实PG Case回执；wrongmodel/缺args/length/secret/timeout/反馈错误零不可信效果，已知效果保留。临时共享协调库双合成产品/角色并发只获一个账号预算，产品上限/账号绑定/owner-only/授权证据/过期拒发、确认未发释放、usage冲突重放/未知收费保留/超额真实计入及阻断后续。
 
 发送标记竞争仅一胜者，崩溃恢复不重发；已知Case恢复只feedback，默认worker不能绕过已有模型阶段；撤权/旧fence返回只历史费用、零新增动作；等待1.4秒独立续租与竞争claim拒绝。strict usage校验后才可结算，错误usage保持UNKNOWN预留。所有provider响应自建MockTransport；测试进程拦截真实httpx.HTTPTransport，实际CLI代码固定MockTransport。真实API/原生Windows/完整业务AT EX仍NOT_RUN/BLOCKED。
+
+
+## ENG008文件候选工程与未执行原生oracle
+
+69 Linux纯policy/FakeAPI/ctypes布局与相对调用实参子集：规范UUID、全部root组件/ADS/别名/保留名拒绝、每级reparse/异卷/非普通对象、不安全/复杂/继承ACL拒绝、完整性/变更与逆序handle关闭、未知NTSTATUS handle回收、系统DLL Linux不加载、原生probe Linux不写路径。已有Linux资源API不接候选。
+
+新增FileCandidateTest.ps1+file_candidate_probe.py只在Windows11/Python3.12x64建立全新自建合成fixture，正例必须先过再测unsafe ACL/hardlink/junction/可选symlink/持有handle写入与rename拒绝。全原生NOT_RUN；Linux AST/guard不是Windows oracle，缺symlink权限不自动提权、不能将所有拒绝当PASS。完整AT05导入/渲染及native启用集成不由子集完成。

@@ -58,3 +58,10 @@ READY_FOR_REVIEW：六Windows候选生命周期脚本/安全配置/首次体验�
 先冻结ENG007-Mapping并按Checklist只补T05，不做Windows backend或F2。HTTP传输代码、账号级共享持久usage/配额、正常worker显式离线两阶段链及持久恢复已实现；最终全量174 PASS/1 Windows SKIP/2既有WARN（82.06秒）。独立的provider account总额保护，产品额度与身份/业务库仍独立，第二产品仅合成模拟，不改Sim2Act。wrong model/secret echo/不完整参数/未知收费/无预算失败关闭；反馈失败不抹去已知Case。
 
 真实安全注入、账户审批、两真实产品同协调点配置、实际HTTP/usage/计费/AT02/30仍BLOCKED，真实调用与授权预算0。Windows安全文件backend单独下一候选；Windows实机/版本/ACL门NOT_RUN。未来窗口滚动/货币账单校准及完整业务oracle另列工作；不把本轮称完整成本系统。交付后停止新增供复核。
+
+
+## 第八有界增量ENG-008：Windows只读文件候选
+
+READY_FOR_REVIEW：Microsoft官方handle API核对后实现未启用Windows候选（RootDirectory单名称、每级no-follow与对象检查、private protected ACL、同句柄读取/完整性），69 Linux policy/ABI/实参测试；原生Windows专属合成probe，不改既有ACL/策略。最终全量243 PASS/1原生WindowsSKIP/2 WARN，84.97秒；Linux PowerShell AST10项零错误与两个新guard拒绝。这不是Windows通过，产品文件入口继续关闭，注册写入未启用。
+
+F1仍IN_PROGRESS，残余并非全部外部验证：native验证后生产dispatcher/owner注册、安全LIVE注入接入、计划修订artifact/完整before-after oracle与部分F1完整业务oracle仍独立未做。Windows/LIVE0预算/共享真实部署/真实资料/C0门BLOCKED或NOT_RUN，后续金额/窗口及F2+业务不扩建。详见WindowsFileCandidate及Checklist，本轮提交push后停止。

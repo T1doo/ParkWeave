@@ -24,3 +24,6 @@ ENG-006 READY_FOR_REVIEW：F1收尾候选生命周期/固定AT汇总/离线模�
 
 
 ENG-007 T05基础增量：固定HTTPS传输代码、共享账号持久预留/usage与产品上限、正常worker显式离线规划/可信动作/已提交Case回执反馈/恢复。仅合成MockTransport验证，LIVE安全注入与真实预算/共享部署/真实计费仍BLOCKED、实际调用0。Windows文件backend仍独立未做；本轮不扩F2，交付后停待复核。
+
+
+ENG-008 READY_FOR_REVIEW：Windows原生只读文件候选代码/69 Linux policy与ABI单测/原生专属probe；生产Windows入口仍关闭，native NOT_RUN。最终243 PASS/1 SKIP；F1剩余不是仅外部验证，候选启用/owner注册、LIVE安全注入/计划修订与完整oracle仍需独立工程，详见F1/Checklist及WindowsFileCandidate。真实调用/预算0，本轮结束不扩F2。

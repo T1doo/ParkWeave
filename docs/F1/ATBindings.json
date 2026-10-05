@@ -1,5 +1,5 @@
 {
-  "origin": "NEW: V1 definitions + ENG001-007 executed engineering subsets; not supplied acceptance package",
+  "origin": "NEW: V1 definitions + ENG001-008 engineering subsets; not supplied acceptance package",
   "cases": [
     {
       "id": "AT-01",
@@ -68,7 +68,11 @@
         "tests/test_authorization_files.py::test_insecure_private_directories_rejected_without_repair",
         "tests/test_authorization_files.py::test_private_directory_wrong_owner_and_new_minimum_mode",
         "tests/test_lifecycle.py::test_windows_existing_acl_check_does_not_repair_permissions",
-        "tests/test_lifecycle.py::test_environment_whitelist_never_reads_or_forwards_unrelated_keys"
+        "tests/test_lifecycle.py::test_environment_whitelist_never_reads_or_forwards_unrelated_keys",
+        "tests/test_windows_file_candidate.py::test_candidate_flow_opens_relative_once_keeps_handles_and_checks_acl_twice",
+        "tests/test_windows_file_candidate.py::test_reparse_every_component_and_bad_object_refused_handles_close",
+        "tests/test_windows_file_candidate.py::test_unsafe_or_unsupported_acl_refused_without_mutators",
+        "tests/test_windows_file_candidate.py::test_linux_does_not_load_dll_or_expose_unsafe_fallback"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
       "gate": "WINDOWS_NATIVE_NOT_RUN: Linux static/mock/descriptor tests do not complete native oracle"

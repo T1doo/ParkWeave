@@ -142,3 +142,19 @@ schema6 additive model_steps持久PLAN/FEEDBACK；正常CLI worker --model-fixtu
 冻结最终代码后的完整命令：.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng007-acceptance-summary.json。最终174 PASS/1 Windows SKIP/2既有WARN，82.06秒（前146+新增28）。42 whole AT/EX全NOT_RUN，不从工程子集PASS推断真实AT。实际临时PG/本地API/CLIworker工程继续在全量回归；新模型响应全部自建离线HTTP，测试拦截真实HTTPTransport，本轮provider network0。最终报告源hash与提交前源码逐个一致；早期探索回归不冒充最终冻结版本。Windows/LinuxPowerShell/浏览器本轮无新增验收（沿用ENG006历史不改写），尤其不能把Linux当Windows。
 
 最终source archive完整性、git diff --check、暂存无秘密/个人真实数据/忽略配置与日志检查后commit/push，远端SHA以Git核实交付。F1仍IN_PROGRESS，本轮结束停待复核。独立下一候选Windows安全文件backend；LIVE安全注入/批准共享部署与实际计费门BLOCKED，固定窗口滚动/金额账单核对另需有界规格；完整业务oracle后续阶段，不扩F2。所有子进程由fixture finally关闭，无持续服务。
+
+## ENG-008：Windows最小只读文件候选（2026-10-05）
+
+基线d997ba9ea1aa059b2a30eb8bd89fa5d1abee8d37，dev/f1-foundation；先冻结ENG008-Mapping并查Microsoft官方NtCreateFile/OBJECT_ATTRIBUTES/CreateFileW/handle file info/volume/GUID/security/DACL/token/SID文档。不凭Linux模拟称Windows通过，不修改Sim2Act、原入口或用户既有ACL，不进入F2，无子任务/真实provider/模型env读取或持续凭据。官方接口能提供可信候选路径，但平台行为和完整安全保证只能原生实测，不开放unsafe fallback。
+
+实现独立windows_files/windows_handles：ctypes Win64固定宽度struct与SYSTEM32-only DLL；先固定NTFS GUID盘根句柄，再RootDirectory单个名称元数据打开并保留所有handle，OPEN_REPARSE_POINT每级拒绝，type-neutral打开后检查dir/file避免未经确认的DIRECTORY_FILE兼容组合。共享READ-only、FILE_OPEN已有、不backup intent、不创建/写入/改ACL/提权；未知status回收handle拒绝。UUID canonical、ADS/drive relative/UNC/device/短名/保留名/末尾空格点/越界输入拒绝。同handle security owner/processSID、present/protected/nonNULL DACL、simple ACE及可信allow SID，复杂/继承/宽allow拒绝；同handle ReadFile≤16385、单link、NTFS同卷、大小/hash/UTF8及前后metadata/ACL复核。不存在按完整业务路径重开。管理员/同用户/内核不在对抗威胁范围，ACL不能承诺与内容一个原子快照；native共享/替换/过滤驱动行为尚未验证。
+
+独立FileCandidateTest.ps1/file_candidate_probe.py原生专属，Windows11/Python3.12x64 guard；只在既有.runtime下建立全新UUID合成测试根/marker，然后核验私有根并为刚建子fixture设置测试ACL；既有.runtime/用户对象ACL不改，任何不支持拒绝。positive须先PASS才做三层unsafe ACL、hash/UUID/ADS、hardlink/junction、held-handle write/rename拒绝、optional file symlink。权限不足明确NOT_RUN、不改全局策略/提权、不把全拒绝当PASS。只保存新fixture报告计数/类别/安全数值错误，不分享实际SID/正文/模型key。原生探针仍全部NOT_RUN，产品files.py/API/lifecycle均不调用candidate；Windows注册/写入和native dispatcher集成未做。
+
+真实失败/留痕：首轮新单测因raw string尾反斜线语法报1 collection ERROR，修正后66 PASS，再加NT参数/异常handle回收/guard子进程到69 PASS；未删除oracle。首次check_powershell遗漏--report参数将结果写进历史ENG006目标；立即保存本轮为eng008-powershell-parse并从原HEAD字节恢复历史文件，未修改历史证据。Linux PowerShell7.6.6实际AST8脚本+2ACL片段共10项零错误，新PS guard exit1/NOT_RUN；Pythonprobe Linuxguard exit1/NOT_RUN且未创建fixture。无native DLL加载/ACL执行证据。
+
+第一次完整回归243 PASS/1 Windows SKIP/2既有WARN，84.35秒；AT05绑定校验拒绝大写DLL测试名（ValueError unsafe selector），改小写测试名保留原选择器白名单，冻结后再跑全量。最终命令.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng008-acceptance-summary.json：243 PASS/1 SKIP/2 WARN，84.97秒（原174+新增69）；最终测试源hash逐个一致。完整42whole AT/EX NOT_RUN，没有从mock/AST推断原生。新增probe不连PG/model；全量临时PG/本地API/CLIworker由原fixture回归且finally关闭，provider预算授权0/网络调用0。本轮不重跑未改前端的浏览器，ENG006历史浏览器证据不改写为当前验收。
+
+诚实交接：F1残余不只是外部验证。native candidate只读未启用，native验证后dispatcher/owner合成注册仍独立工程；LIVE安全注入/配置/provider持续速率窗口协调、可核查修订artifact及before-after完整oracle尚未开放。当前共享账本只固定窗口总额度，不宣传持续RPM已实现。AT05导入/危险渲染/AT06完整候选与集中澄清等全oracle不由当前子集完成；完整业务/货币校准/通用产物/外部渠道按后续阶段，不本轮扩F2。Windows11真实依赖/NTFS/ACL/reparse/并发/lifecycle、LIVE预算/真实共享部署与费用、真实园区许可/价值/C0模板规则仍NOT_RUN/BLOCKED。Checklist及WindowsFileCandidate表列清代码与验证界限，不宣布F1完成。
+
+两份Library原档字节/行数/hash复核通过；暂存秘密/个人真实数据/忽略配置日志扫描、git diff检查后commit/push并核实远端SHA，完成本有界增量即停止供父任务复核。本轮没有持续测试服务。
