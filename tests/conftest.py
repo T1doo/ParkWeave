@@ -58,6 +58,9 @@ def fixture(pg):
         c.execute('GRANT SELECT ON preparation_catalog,preparation_grants TO parkweave_app')
         c.execute('GRANT SELECT,INSERT,UPDATE ON preparations TO parkweave_app')
         c.execute('GRANT SELECT,INSERT ON preparation_evidence,preparation_events TO parkweave_app')
+        c.execute('GRANT SELECT ON synthetic_resources,synthetic_resource_grants TO parkweave_app')
+        c.execute('GRANT SELECT,INSERT ON synthetic_resource_holds,synthetic_resource_receipts TO parkweave_app')
+        c.execute('GRANT UPDATE(state) ON synthetic_resource_holds TO parkweave_app')
     store = Store(make_conninfo(owner.dsn, user='parkweave_app'))
     with TestClient(create_app(store)) as client:
         yield store, owner, tokens, client

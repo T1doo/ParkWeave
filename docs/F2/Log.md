@@ -1,5 +1,23 @@
 # F2并行工程日志
 
+## ENG018本地纵向切片完成（非F2签收）
+
+在5849基线按实施前规格新增schema10：版本化合成资源/显式READ-HOLD Grant/占位/不可变回执；只新增新业务表权限（登记/Grant只读，占位INSERT和UPDATE state，回执SELECT/INSERT），既有角色上限和旧表Grant字节不变。Store未来版本拒绝门相应改>10，原schema断言9→10/未来11，不删oracle；新SQL纳入package-data。一个合成资源具UTC开放/容量2/前后300秒缓冲，最小REST与资源UI可预检→短期占位→本人状态/释放/过期；无正式/组合确认、后台清理或外部作用。源目录合法合成工程与真实样例许可分类已纠正；原V1两文件字节/hash保持。
+
+后端首轮43 PASS/2 WARN/6.51秒，补跨资源key/身份及资源锁有界冲突后46 PASS/6.82秒；冻结最终46 PASS/0 FAIL/2既有WARN/7.81秒。真实PG覆盖峰值（不误算不相交数量）、半开端点/双缓冲、并发只有2份成功、DB锁等待后时间/无清理过期、同key不重复/不延长、UTC等价指纹、新已确认意图使用新key、撤权前置/同org非owner/跨园区、规则停用/版本变化、输入/TTL约束、回执失败全回滚、应用不可改TTL/原始输入/历史、9→10与重复迁移保留旧资料历史。
+
+实际浏览器首轮及补采均FAIL：preview422后resourcePreview readiness timeout。合成安全诊断证实读取默认日期有效，cached agent-browser fill之后两日期变空（无HOLD写入）；harness改成原生控件赋值+真实input event，而非放宽后端校验。资源响应排序首次FAIL为oracle把CSS选择器当id，修正后17/17 checks PASS；失败留项目.runtime与汇总，不计产品测试PASS。最终真实本地低权限API/独立worker/PG双企业资源browser PASS：预检/显式占位、匿名容量冲突、仅本人记录、主动释放、TTL5实际DB过期且释放容量、重复刷新/reload、脚本文字、320/390无横滚、页面错误0。原生日期选择器手势NOT_RUN。自有harness退出0；既有双角色资料待办browser和23/23排序回归也PASS。
+
+最终冻结全量 **465 PASS/0 FAIL/1 Windows SKIP/2既有WARN，141.70秒**，所有回归源hash与当前文件一致；24个Windows/R4/角色上限保护文件逐字相同。src/roles.sql仅旧内容之后添加新业务表最小权限；未改全局角色权限、安全/网络策略、Win11guard或production R4。新17checks不加入pytest数，旧独立审查仅c285/3aa，不继承给本片。证据在evidence/eng018-acceptance-summary.json、eng018-browser.json；不公开会话/DSN/runtime日志。
+
+本片到此停止扩展；Server37324704568 native_suite具体子项仍UNKNOWN，待用户后优先F1有界定位。F1未签收、F2NOT_PASSED、whole36AT6EXNOT_RUN、R4DISABLED、项目真实provider/预算0；无push/新CI/备份/上传/源代码外发。当前登记支持合成工程；真实资源/价值主张需对应真实来源许可，不把该许可缺失误称全部F1或合成F2硬阻塞。
+
+## ENG018实施前记录：来源分类修正与资源最小纵向范围
+
+基线5849c02。重新读V1：F1-T06要求开始获取来源许可/记录假设，缺许可停对应真实样例而保留显式合成测试；F2允许明确合成目录。更正CloseoutReview矩阵，不再把真实试点许可笼统作为全部F1或合成F2工程硬阻塞；原V1/Windows/真实模型/安全门不降。既有独立review仅c285/3aa，不能继承给资源新片。
+
+用户新授权F2-T03最小资源预检/占位/过期/释放。缺时段容量与占位表，先冻结ENG018-ResourceHolds/Plan。补最小schema10与显式合成登记/最小新表授权；现有角色上限、原身份/授权锁及R4/Win11边界不变，不新增资源管理或真实预订。数据库时钟、短事务、半开/缓冲/峰值容量、当前权限及独立回执；组合确认/正式确认仍未实现。H01—H10初始NOT_RUN，之后真实输出另记。不push/CI/恢复包/上传/源码外发，LIVE/预算0，收到37324704568失败细项先回F1。
+
 ## ENG017：两个本地增量的独立只读收尾（文档only）
 
 固定审查6ff160a..3aa99e4，保留c285竞态修复与3aa待办、本地/远端历史，不扩功能。用户明确授权同工作区独立reviewer，按指定6.1 sol / medium由 /root/local_f2_review只读审查case/session响应与草稿、个人待办role/tenant/owner/assignment、重复/跨case导航和未授权材料。结论未发现所审两增量的实质finding；Python AST/JS语法/diffcheck、ENG016六源码hash匹配。reviewer没有改源码、安装、外网、API/项目模型、私有会话、复制/导出/上传或新测试执行。

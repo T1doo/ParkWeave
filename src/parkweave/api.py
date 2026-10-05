@@ -149,6 +149,35 @@ def create_app(store: Store) -> FastAPI:
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
         return preparation.command(store,token(authorization),preparation_id,idempotency_key,data)
 
+    from . import resource_holds as resources
+    def resource_key(key):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',key):raise HTTPException(422,'invalid request key')
+        return key
+
+    @app.get('/api/synthetic-resources')
+    def resource_catalog(authorization: str | None=Header(default=None)):
+        return resources.catalog(store,token(authorization))
+
+    @app.post('/api/synthetic-resources/{resource_id}/preview')
+    def resource_preview(resource_id: UUID,data: resources.Preview,authorization: str | None=Header(default=None)):
+        return resources.preview(store,token(authorization),resource_id,data)
+
+    @app.post('/api/synthetic-resources/{resource_id}/holds',status_code=201)
+    def resource_hold(resource_id: UUID,data: resources.Hold,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return resources.create(store,token(authorization),resource_id,resource_key(idempotency_key),data)
+
+    @app.get('/api/resource-holds')
+    def my_resource_holds(authorization: str | None=Header(default=None)):
+        return resources.list_holds(store,token(authorization))
+
+    @app.get('/api/resource-holds/{hold_id}')
+    def resource_hold_state(hold_id: UUID,authorization: str | None=Header(default=None)):
+        return resources.read(store,token(authorization),hold_id)
+
+    @app.post('/api/resource-holds/{hold_id}/release')
+    def resource_hold_release(hold_id: UUID,data: resources.Release,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return resources.release(store,token(authorization),hold_id,resource_key(idempotency_key))
+
     return app
 
 

@@ -1,0 +1,165 @@
+{
+  "scope": "F2_PARALLEL_SINGLE_SYNTHETIC_RESOURCE_HOLD_ONLY",
+  "baseline": "5849c02244680ae84e924380053669720e213ba1",
+  "schema": 10,
+  "new_resource_PG_API_tests": {
+    "PASS": 46,
+    "FAIL": 0,
+    "warnings": 2,
+    "seconds": 7.81,
+    "initial_PASS": 43,
+    "initial_seconds": 6.51
+  },
+  "full_regression": {
+    "execution_exit_code": 0,
+    "counts": {
+      "PASS": 465,
+      "FAIL": 0,
+      "SKIP": 1
+    },
+    "summary": "465 passed, 1 skipped, 2 warnings in 141.70s (0:02:21)"
+  },
+  "resource_response_order": {
+    "checks": {
+      "old_identity_catalog_ignored": true,
+      "old_resource_preview_ignored": true,
+      "programmatic_window_change_ignored": true,
+      "latest_preview_wins": true,
+      "write_target_captured": true,
+      "late_write_keeps_new_selection": true,
+      "old_identity_write_ignored": true,
+      "late_list_cannot_clear_new_hold": true,
+      "script_purpose_is_text": true,
+      "navigation_ignores_late_release": true,
+      "current_failure_keeps_draft": true,
+      "conflict_invalidates_preview": true,
+      "ambiguous_retry_same_key": true,
+      "current_success": true,
+      "new_intent_after_ack_has_new_key": true,
+      "old_forbidden_does_not_clear_new_preview": true,
+      "latest_own_list_wins": true
+    },
+    "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+    "model_calls": 0,
+    "business_API_calls": 0,
+    "backend_authorization_tested": false
+  },
+  "preparation_response_order_regression": {
+    "checks": 23,
+    "PASS": 23,
+    "FAIL": 0
+  },
+  "actual_resource_browser": "eng018-browser.json",
+  "existing_preparation_browser_regression": {
+    "scope": "F2_PARALLEL_SYNTHETIC_PERSONAL_TASKS_ONLY",
+    "two_roles_real_UI": true,
+    "two_case_ids": [
+      "3562a3fc-36ee-413b-802c-6ae984dfd0d2",
+      "3289ac47-231e-4861-868b-069933d426d8"
+    ],
+    "missing_materials_and_correction_visible": true,
+    "material_bodies_not_in_task_list": true,
+    "review_then_owner_confirm_then_disappear": true,
+    "reopen_returns_reviewer_task": true,
+    "reload_reads_persisted_tasks": true,
+    "repeated_reads_leave_history_unchanged": true,
+    "task_opens_current_detail": true,
+    "invalid_identity_clears_tasks": true,
+    "invalid_confirmation_rejected": true,
+    "script_text_only": true,
+    "narrow_viewports": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "browser_errors": 0,
+    "model_calls": 0,
+    "real_budget": 0,
+    "native_Windows": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN",
+    "F1": "IN_PROGRESS",
+    "F2_admission": "NOT_PASSED",
+    "R4": "DISABLED"
+  },
+  "observed_failures_preserved": [
+    {
+      "phase": "actual browser initial and diagnostic repeat",
+      "status": "FAIL",
+      "observed": "preview422 then readiness timeout; cached agent-browser fill cleared native datetime-local values",
+      "safe_diagnostic": {
+        "before": {
+          "start": "2026-10-05T17:10",
+          "end": "2026-10-05T18:10",
+          "window": {
+            "starts_at": "2026-10-05T17:10:00Z",
+            "ends_at": "2026-10-05T18:10:00Z",
+            "quantity": 1
+          }
+        },
+        "after_agent_fill": {
+          "start": "",
+          "end": "",
+          "window": {
+            "starts_at": ":00Z",
+            "ends_at": ":00Z",
+            "quantity": 1
+          }
+        }
+      },
+      "correction": "harness sets native control value and dispatches input event; picker gestures remain NOT_RUN"
+    },
+    {
+      "phase": "resource response-order oracle initial",
+      "status": "FAIL",
+      "observed": "oracle used element-id helper for CSS selector; null dataset TypeError",
+      "correction": "proper querySelector; all17 checks pass"
+    }
+  ],
+  "source_sha256": {
+    "src/parkweave/resource_holds.py": "80eda979e896811c63db66017f057a2b4e1e31bee1e2d88fa7f1aaa27b0df8c6",
+    "src/parkweave/migration-010.sql": "c9702f1b4a932f27f2fbbe4c5466a953d2731e07df33b6d014fda31a3c99b15d",
+    "src/parkweave/api.py": "e0898cf53b1c5200920160276badd77f693538c6b82b112f5d6a23e270afa5e1",
+    "src/parkweave/store.py": "328fc5988109757218823baa6acc081e4b6f757d9fdf2ec16ed5be9e25fa02cf",
+    "src/parkweave/roles.sql": "f37b2bba9d303393b8fbe8cb1290f6b8f40c15dcab7a03157c05986137553817",
+    "src/parkweave/web.html": "f5256a7ee8e1564c41b66f366962112a36dca2c77ab13bc03b506ed16ae7e5d4",
+    "pyproject.toml": "3d361a1c83acdeedc34acb533aaeaafde8f9bb49d166fdd0e8d685885e84a864",
+    "tests/test_resource_holds.py": "a9a09118a51c1d027466a37f1d8863a0e9323b9ee33ae1b215b898ec49f41ec4",
+    "tests/conftest.py": "4b3eaaffa5d14ea7d2619a306b431d0383d69820355a1c5d5fb904d56d98020f",
+    "tests/test_worker_gateway.py": "e0f1ed0d0beb005c526abb9a015827437f6cabd7762d74a2d873bf4e90a01e27",
+    "tests/test_authorization_files.py": "e3ffb66ac97608fc4c0fc9384130f34df94ba8ba8cc249e180d27bc51f55b135",
+    "scripts/linux_fixture_server.py": "b4c442bbb80408ef223c5e7d5de90cc0acb591d267d6691a5bb657d388992041",
+    "scripts/resource_holds_browser_smoke.py": "16a440040cd65b995b471a4acffe559245c55b3ebc547f2a5aaa00adb6cbce1c",
+    "scripts/resource_race_browser.py": "8750c6a12090403bf88e1355867c09398e80b239e12c78cd4d851efd0348bfc1",
+    "scripts/resource_race_oracle.js": "226e61226ae1a6070960135c0b2de01dd6381ba12d7b77cb150e445ce85b0f95",
+    "scripts/preparation_race_browser.py": "bdc46f42beabdab7275ce46734e38e79b3440135b24a3dd1d52db712655a202c"
+  },
+  "preserved": {
+    "original_V1_bytes_hash": "MATCH_MANIFEST",
+    "Windows_R4_and_role_upper_bound_protected_files_byte_identical": 24,
+    "previous_DB_role_grants": "BYTE_IDENTICAL_PREFIX; appended only new business-table grants",
+    "source_classification": "lawful synthetic fixture/ledger supports engineering; corresponding real sample/value claims need real permission",
+    "independent_review": "prior c285/3aa only; not inherited to ENG018"
+  },
+  "boundaries": {
+    "formal_resource_confirmation": "NOT_IMPLEMENTED",
+    "combination_confirmation": "NOT_IMPLEMENTED",
+    "reservation": "NOT_CONFIRMED",
+    "external_acceptance": "NOT_SUBMITTED",
+    "offline_fulfillment": "NO_EVIDENCE",
+    "F1": "IN_PROGRESS_UNACCEPTED",
+    "F2_admission": "NOT_PASSED",
+    "R4": "DISABLED",
+    "native_Windows": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN",
+    "real_model_calls": 0,
+    "real_budget": 0,
+    "push": false,
+    "new_CI": false,
+    "upload_or_backup": false
+  }
+}

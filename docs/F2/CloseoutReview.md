@@ -23,7 +23,7 @@ reviewer明确的限制：UI race oracle为mock fetch响应排序；实际本地
 | 纯文本与窄屏、失败回到正常读取 | 双角色浏览器中脚本文字不执行、错误身份清空队列、错误确认拒绝、320/390无横滚、页面错误0 | Linux Chromium与模拟viewport；不是真实手机、Safari、Win11桌面或生产渗透结果 |
 | 工程回归与保护边界 | c285最终400 PASS/0 FAIL/1 Windows SKIP/2既有WARN；3aa最终419 PASS/0 FAIL/1 Windows SKIP/2既有WARN、23checks、原V1 bytes/hash、24保护文件逐字一致 | 成绩来自不同提交，不相加；checks不加到pytest；Linux/static不能替代Windows、LIVE或整项AT |
 
-证据入口：[ENG015](evidence/eng015-ui-race.json)、[ENG016汇总](evidence/eng016-acceptance-summary.json)、[ENG016真实本地浏览器](evidence/eng016-browser.json)。当前源码hash与ENG016冻结源一致；独立审查不会改写旧失败或结果。
+证据入口：[ENG015](evidence/eng015-ui-race.json)、[ENG016汇总](evidence/eng016-acceptance-summary.json)、[ENG016真实本地浏览器](evidence/eng016-browser.json)。该审查时点（3aa）源码hash与ENG016冻结源一致。后续ENG018修改共享web/api等源文件，不能把此旧审查继承为资源新片独立审计；独立审查不会改写旧失败或结果。
 
 ## 剩余依赖与恢复顺序
 
@@ -32,8 +32,9 @@ reviewer明确的限制：UI race oracle为mock fetch响应排序；实际本地
 | 最新Server失败明细（立即所需外部输入） | run37324704568 completed/failure；Prepare/受绑定PG启停PASS；native_suite exit1/78.094s/no timeout；具体FAIL/NOT_RUN子项与原生回归计数缺失 | 只需页面engineering JSON的失败cases及已有exit_code/category/reason，加full_engineering_regression.counts（如有）；据实定位Server命中子项 |
 | E1 Win11 x64原生条件与证据 | Server不是Win11；Win11精确环境/权限/生命周期与candidate ACL/reparse/share/race没有验收 | 原Win11 guard不改；只有取得原生证据后，才复核条件性R4 reader/fixture集成；R4集成仍是未完成代码任务，不能包装成纯外部阻塞 |
 | E2 真实模型安全配置、额度与授权预算 | 真实请求0、预算0；LIVE关闭；真实provider/跨产品shared配额/速率/usage与错误未证实 | 获明确安全注入/账号及核实总额度/预算授权后，才执行限定真实模型链验收；不把mock或其他项目成功继承为本项目PASS |
-| E3 真实业务来源与许可 | 目录/材料/人员流程均合成；无真实园区资料/模型发送范围授权与用户效果证据 | 取得受控来源、许可与验证者后另验真实业务；不编资格/外部受理/线下履约或试点成效 |
+| 来源台账与合法合成fixture（F1-T06工程条件） | 已有原文来源manifest/数据台账、显式版本化合成fixture与oracle；真实来源获取未完成 | 可继续对应合成F1/F2工程；原文要求开始获取授权，不要求先拿真实样例才做全部工程 |
+| E3 对应真实样例/试点价值许可 | 无真实园区资料/模型发送范围授权与真实用户效果证据 | 停对应真实样例/真实试点主张；获取受控来源/许可/验证者后另验，不把许可缺失笼统作为全部F1或合成F2硬阻塞 |
 
-本地两增量已经保留，等待条件不意味着F1只剩日志、F2全量已完成或所有缺口都是外部因素。完整F2 ServicePlan/资源/模板/执行者与通知等原计划能力仍未实现，属于后续阶段而非本次收尾。C0规则/模板等提交条件独立于本轮工程验证，不新增任务充填等待时间。
+本地两增量已经保留，等待条件不意味着F1只剩日志、F2全量已完成或所有缺口都是外部因素。F1-T06的台账/合法合成fixture工程条件与对应真实样例的来源许可分开，F2原文允许明确合成测试目录；真实模型、Windows和安全门不降低。完整F2 ServicePlan/资源/模板/执行者与通知等原计划能力仍未实现，属于后续阶段而非本次收尾。C0规则/模板等提交条件独立于本轮工程验证，不新增任务充填等待时间。
 
-收到最新JSON后：首先核对run id/源码9a8cbc5与失败子项，保留缺失字段和真实计数；将子项映射到原native_suite阶段及对应oracle，只修实际证实且在授权范围内的问题，留下复现/修复/本地定向验证。遇到需私有原始日志但现有字段不足的情况，明确说明最小缺项，不重试被拒日志或替代路线。恢复下一次Windows运行前比较原origin分支/历史，保留远端6ff与本地c285/3aa祖先；根据届时授权普通push实质修复与已审查增量并统一安排一次CI，监测到终态，失败如实保留。无新日志/实质修复时不原样重跑，不force/reset/merge main/deploy；Server通过仍不解除E1—E3或R4/Win11门。
+收到最新JSON后：首先核对run id/源码9a8cbc5与失败子项，保留缺失字段和真实计数；将子项映射到原native_suite阶段及对应oracle，只修实际证实且在授权范围内的问题，留下复现/修复/本地定向验证。遇到需私有原始日志但现有字段不足的情况，明确说明最小缺项，不重试被拒日志或替代路线。恢复下一次Windows运行前比较原origin分支/历史，保留远端6ff与本地c285/3aa祖先；根据届时授权普通push实质修复与已审查增量并统一安排一次CI，监测到终态，失败如实保留。无新日志/实质修复时不原样重跑，不force/reset/merge main/deploy；Server通过仍不解除Win11/真实模型/安全门或R4条件性集成；对应真实样例仍须来源许可。

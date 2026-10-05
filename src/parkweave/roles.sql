@@ -19,3 +19,8 @@ GRANT SELECT,INSERT ON fact_reviews,fact_followups TO parkweave_app;
 GRANT SELECT ON preparation_catalog,preparation_grants TO parkweave_app;
 GRANT SELECT,INSERT,UPDATE ON preparations TO parkweave_app;
 GRANT SELECT,INSERT ON preparation_evidence,preparation_events TO parkweave_app;
+
+-- ENG018: new business tables only; registry/grants/history remain immutable to app.
+GRANT SELECT ON synthetic_resources,synthetic_resource_grants TO parkweave_app;
+GRANT SELECT,INSERT ON synthetic_resource_holds,synthetic_resource_receipts TO parkweave_app;
+GRANT UPDATE(state) ON synthetic_resource_holds TO parkweave_app;

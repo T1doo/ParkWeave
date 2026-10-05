@@ -10,11 +10,12 @@ import threading
 from parkweave.process_env import minimal_environment
 
 
-def main():
+def main(oracle_name="preparation_race_oracle.js"):
     parser = argparse.ArgumentParser()
     parser.add_argument('--report', type=Path, required=True)
     parser.add_argument('--expect-vulnerable', action='store_true')
     args = parser.parse_args()
+    if args.expect_vulnerable and oracle_name != 'preparation_race_oracle.js': parser.error('baseline oracle applies to preparation only')
     root = Path.cwd()
     candidates = [p for p in (root/'.cache/npm/_npx').glob('*/node_modules/agent-browser/package.json') if json.loads(p.read_text())['version'] == '0.38.2']
     assert candidates, 'Approved cached agent-browser required'
@@ -40,7 +41,7 @@ def main():
     try:
         browser('open', f'http://127.0.0.1:{server.server_port}/web.html')
         browser('snapshot', '-i')
-        source = (root/'scripts/preparation_race_oracle.js').read_text()
+        source = (root/'scripts'/oracle_name).read_text()
         source = source.replace('const pending=', 'const expectVulnerable='+str(args.expect_vulnerable).lower()+';const pending=', 1)
         result = json.loads(browser('eval', '--stdin', stdin=source))
         if isinstance(result, str): result = json.loads(result)
