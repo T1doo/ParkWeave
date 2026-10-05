@@ -8,7 +8,7 @@ from psycopg.types.json import Jsonb
 from pydantic import SecretStr
 from .intern_adapter import InternChatAdapter,ModelBoundaryError
 from .http_transport import InternHTTPTransport
-from .quota import PersistentBudget
+from .quota import PersistentBudget,AccountRateLimited
 from .gateway import ExecutionGateway
 from .store import Conflict,Denied,digest
 from .domain import Intake
@@ -105,6 +105,16 @@ class ModelChain:
             final=self.step(claim,phase,messages)
             if final['finish_reason']!='stop' or final['tool_proposal']:raise ModelBoundaryError('FEEDBACK_TOOL_REJECTED')
             self.complete_revision(claim,final)
+        except AccountRateLimited as exc:
+            if exc.retry_after_seconds is None or exc.denials>=3:
+                self.fail(claim,phase,exc.code)
+            else:
+                with self.store.connect() as c:
+                    p,r,op=self.store.locked_execution(c,claim);self.store.check_execution(c,p,r)
+                    delay=max(0.05,min(60.0,float(exc.retry_after_seconds)))
+                    c.execute("UPDATE runs SET state='RUNNING',fence=fence+1,lease_until=NULL,"
+                              "next_attempt_at=clock_timestamp()+%s*interval '1 second',revision=revision+1 WHERE id=%s",(delay,claim['id']))
+                    self.store.event(c,claim['id'])
         except (ModelBoundaryError,Denied) as exc:
             code=exc.code if isinstance(exc,ModelBoundaryError) else 'AUTHORIZATION_REVOKED'
             self.fail(claim,phase,code)

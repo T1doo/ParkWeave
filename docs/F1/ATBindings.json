@@ -1,5 +1,5 @@
 {
-  "origin": "NEW: V1 definitions + ENG001-009 engineering subsets; original stage assignments unchanged",
+  "origin": "NEW: V1 definitions + ENG001-010 engineering subsets; original stage assignments unchanged",
   "cases": [
     {
       "id": "AT-01",
@@ -184,7 +184,9 @@
         "tests/test_facts_heartbeat.py::test_heartbeat_renews_independently_during_mock_wait_and_competing_worker_cannot_steal",
         "tests/test_facts_heartbeat.py::test_killed_waiting_worker_lease_expires_and_old_heartbeat_cannot_resurrect",
         "tests/test_worker_gateway.py::test_actual_expiry_recovery_after_crash_does_not_dispatch_again",
-        "tests/test_plan_revision.py::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call"
+        "tests/test_plan_revision.py::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call",
+        "tests/test_account_rate.py::test_rate_deferred_feedback_resumes_no_duplicate_case_or_plan",
+        "tests/test_account_rate.py::test_rate_denial_retry_is_bounded_three_attempts_known_effect_preserved"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
       "gate": "FULL_ORACLE_NOT_RUN: engineering subset only"
@@ -318,10 +320,25 @@
         "tests/test_intern_adapter.py::test_errors_timeout_truncation_usage_and_no_automatic_retry",
         "tests/test_model_chain.py::test_two_products_coordinate_same_account_atomically",
         "tests/test_model_chain.py::test_unknown_sent_work_survives_restart_no_refund_or_resend",
-        "tests/test_model_chain.py::test_real_transport_gate_zero_network_without_live_budget"
+        "tests/test_model_chain.py::test_real_transport_gate_zero_network_without_live_budget",
+        "tests/test_account_rate.py::test_thirty_first_immediate_send_denied_and_unsent_refunded",
+        "tests/test_account_rate.py::test_exact_sixty_second_boundary_and_same_unsent_work_retry",
+        "tests/test_account_rate.py::test_held_and_inflight_do_not_expire_delayed_send_cooldown_from_finish",
+        "tests/test_account_rate.py::test_release_unsent_held_slot_once_no_refund_sent_or_unknown",
+        "tests/test_account_rate.py::test_reopened_unsent_work_fences_old_generation",
+        "tests/test_account_rate.py::test_lowered_rate_rechecked_at_dispatch_and_zero_disables",
+        "tests/test_account_rate.py::test_clock_rewind_blocks_send_and_finish_is_conservative",
+        "tests/test_account_rate.py::test_cross_worker_account_admission_atomic",
+        "tests/test_account_rate.py::test_two_synthetic_products_same_coordinator_share_thirty_slots",
+        "tests/test_account_rate.py::test_clock_and_rate_policy_owner_only_live_ignores_synthetic_clock",
+        "tests/test_account_rate.py::test_live_config_presence_checks_names_only",
+        "tests/test_account_rate.py::test_live_missing_names_fail_closed",
+        "tests/test_account_rate.py::test_live_each_explicit_precondition_required",
+        "tests/test_account_rate.py::test_default_live_off_does_not_even_iterate_names",
+        "tests/test_account_rate.py::test_coordinator_upgrade_idempotent_and_sent_history_preserved"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
-      "gate": "KNOWN_CODE_GAP_R2: fixed long-window budgets do not enforce V1 section10 default30RPM; no LIVE requests/budget; actual upstream validation BLOCKED"
+      "gate": "LIVE_BLOCKED: SYNTHETIC account send gate implemented; actual provider rate/budget, safe injection and two-product shared deployment unverified"
     },
     {
       "id": "AT-31",

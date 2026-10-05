@@ -72,3 +72,7 @@ F1仍IN_PROGRESS，残余并非全部外部验证：native验证后生产dispatc
 按原任务与12个F1首次AT逐断言映射为Convergence有限清单，阶段/标准不改。只实现R1正常worker计划revision1/2、实际回执修订/哈希与调用ID、immutable历史/当前权限读取、原子终态/outbox与恢复独立oracle，真实模型仍0。该投影仅一goal本地case.create，不是F2 ServicePlan。
 
 剩余固定R2（原产品§10默认30RPM具体失败：固定长窗口<60秒允许31发送标记；需最小account发送门/LIVE配置元数据）、R3（三字段候选/集中必要澄清）、R4（native通过后最小通路集成，目前暂停backend）。E1—E3外门另列，F2/F3保持原首次阶段，不把高级计费/通用平台搬入F1。原Windows候选不启用/不改/不操作。交付push后停止，不串行做其余任务。
+
+## 第十有界增量ENG-010：仅R2
+
+账号行锁30RPM发送预约、未决持续占位/完成后60秒冷却、旧代次拒绝、未发退款与有界next_attempt_at恢复；显式LIVE默认关闭/审批前提/变量名存在性只用Fake Mapping。实际provider/预算0，正常CLI仍SYNTHETIC。真实共享两产品同协调点部署未验，独立DB不自动共享。R3/R4未操作，Windows候选不启用，完整AT/EX NOT_RUN；回归/Log/远端核实后本轮停止。

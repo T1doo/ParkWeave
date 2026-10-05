@@ -174,3 +174,17 @@ R1新增schema7 model_plans及typed local revision contract。正常worker PLAN�
 有限下一任务只R2—R4：R2发送速率+安全LIVE接入元数据（真实额度核实E2）；R3现有三字段候选projection与集中必要问题，不扩任意文档抽取/资格办理；R4native验证后最小reader/受控合成metadata通路，目前按指示暂停backend。不另称还有“完整oracle”，其它具体标准已按Convergence表绑定现有工程或原F2/F3。E1 native Windows、E2账号/预算/真实书生/共享部署、E3真实资料/C0来源外门明确，所有未知不默认通过。不声称F1通过，交付push后停止。
 
 提交前无秘密/真实个人数据/忽略配置与私有logs、Git diff/branch/remote/hash检查；正常CLI/API fixture finally关闭，无持续服务。远端SHA以实际Git核实交付。
+
+## ENG-010：仅R2账号发送门（2026-10-05）
+
+基线cc3458bd18704bcde1d96868d7346b8fe323f7fd，dev/f1-foundation/https://github.com/T1doo/ParkWeave.git；核对remote与已有修改，未发现AGENTS/.agents指令；先冻结ENG010-Mapping，只修R2。R3/R4/Windows候选/原files.py/native probes不改，Sim2Act不操作，无子任务、真实model env/隐藏凭据读取、provider请求或网络配置修改，授权真实预算0。
+
+在既有owner安装的独立shared_model_quota协调器新增账号原子发送预约、rate默认30上限/可下调禁发、HELD/IN_FLIGHT不自动到期、完成后保守60秒COOLDOWN、时点/分类事件，clock回拨拒新发送；只有RESERVED确定未发才能release预算/slot。重开的同work提升generation，旧句柄不能释放/发送新预约；已发/unknown不退款、不重发。迁移幂等保留usage/历史；旧已发无时点记录保守IN_FLIGHT，需要owner核对而不按旧创建时间回收。账号行锁统一共享计数，合成两个产品使用明确同协调库/账号，各自role/product限额；独立数据库不自动共享，两个真实产品的共享部署未验。
+
+rate拒绝未发可持久next_attempt_at延后且fence递增，无sleep/请求自动重试；最多3次拒绝有界失败，cached PLAN/已知Case/VERIFIED回执保留。LIVE纯开关/审批预算/安全注入/速率与共享绑定核实前提及变量名存在性检查只用Fake Mapping，严格bool，默认关闭，不取value。socket adapter须显式安全门+LIVE持久账本，owner仍核验实际审批/窗口/rate evidence。该布尔门不构成实际授权/共享部署证据；正常CLI仍只SYNTHETIC，没有创建实际LIVE运行配置/注入，E2 BLOCKED。
+
+真实失败/修复记录：现有48项先通过；新确定时钟23项通过。自查发现已RELEASED同work重开后旧UUID句柄可影响新预约的ABA风险及下调速率后HELD需再验，补generation/发送前当前限额核验与独立回归，未删除断言；专项共74 PASS/2既有WARN。本轮无unexpected pytest FAIL/collection ERROR；历史ENG009 31即时授权规范失败JSON字节保留，原复现测试改31st拒绝回归，不能把历史失败改成PASS。
+
+最终冻结源码完整命令：.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng010-acceptance-summary.json。Linux实际临时PG/API/独立CLI回归 **289 PASS / 1 Windows SKIP / 2既有WARN，93.211秒**（原263+新增26，账户测试26实例）。发送边界/并发/代次/clock/延后/三次上限与pure配置见eng010-account-rate.json及AccountRate.md；HTTP仅合成MockTransport，禁真实HTTPTransport socket，provider请求0/真实授权预算0。报告65个code/test/script hash与最终文件一致，42个whole AT/EX均NOT_RUN，stage未变。未重跑未改浏览器/PS，不把Linux/Mock称native Windows/LIVE模型/真实园区通过。
+
+两份Library原档44220/31271字节、454/410行、SHA256与manifest一致，原native/files.py及ENG009 gap共6文件逐字HEAD不变。Git diff/暂存秘密与真实个人数据/忽略配置日志检查后commitpush核实远端，测试fixture finally关闭。F1 IN_PROGRESS；真实Windows E1、真实模型安全注入/实际共享协调与预算 E2、真实资料/C0 E3 BLOCKED/NOT_RUN。只交付R2，R3/R4不推进，push后本轮结束供父任务复核。

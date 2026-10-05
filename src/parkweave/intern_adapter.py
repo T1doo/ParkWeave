@@ -116,7 +116,7 @@ def validated_messages(messages):
 
 
 class InternChatAdapter:
-    def __init__(self,*,transport,token:SecretStr,budget=None,timeout=30,before_dispatch=None):
+    def __init__(self,*,transport,token:SecretStr,budget=None,timeout=30,before_dispatch=None,live_safety=None):
         from .http_transport import InternHTTPTransport
         if type(transport) is httpx.MockTransport:
             transport=InternHTTPTransport(transport)
@@ -124,17 +124,27 @@ class InternChatAdapter:
             raise ModelBoundaryError('LIVE_TRANSPORT_DISABLED')
         if transport.transport is None:
             from .quota import PersistentBudget
+            from .live_safety import LiveSafety
+            if type(live_safety) is not LiveSafety:raise ModelBoundaryError('LIVE_SAFETY_BLOCKED')
+            live_safety.require()
             if type(budget) is not PersistentBudget or budget.kind!='LIVE':
                 raise ModelBoundaryError('LIVE_BLOCKED_NO_AUTHORIZED_PARK_BUDGET')
         if not isinstance(token,SecretStr) or not token.get_secret_value().strip():raise ModelBoundaryError('TOKEN_REQUIRED')
         if type(timeout) not in (int,float) or not 0<timeout<=120:raise ModelBoundaryError('TIMEOUT_LIMIT')
         self.transport,self.token,self.budget,self.timeout=transport,token,budget or OfflineBudget(),timeout
         self.before_dispatch=before_dispatch
+        self.live_safety=live_safety
 
     def live_complete(self,*args,**kwargs):
         raise ModelBoundaryError('LIVE_BLOCKED_NO_AUTHORIZED_PARK_BUDGET')
 
     def complete(self,messages,*,max_tokens=512):
+        if self.transport.transport is None:
+            from .live_safety import LiveSafety
+            from .quota import PersistentBudget
+            if type(self.live_safety) is not LiveSafety or type(self.budget) is not PersistentBudget or self.budget.kind!='LIVE':
+                raise ModelBoundaryError('LIVE_SAFETY_BLOCKED')
+            self.live_safety.require()
         if type(max_tokens) is not int or not 1<=max_tokens<=1024:raise ModelBoundaryError('OUTPUT_LIMIT')
         payload={'model':MODEL,'messages':validated_messages(messages),'tools':[TOOL],'stream':False,
                  'n':1,'max_tokens':max_tokens,'thinking_mode':True}

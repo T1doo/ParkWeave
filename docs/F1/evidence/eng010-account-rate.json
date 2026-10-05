@@ -1,0 +1,28 @@
+{
+  "status": "PARTIAL_SYNTHETIC_ENGINEERING_EVIDENCE_NOT_AT_PASS",
+  "baseline_commit": "cc3458bd18704bcde1d96868d7346b8fe323f7fd",
+  "execution_environment": "Linux; PostgreSQL temporary fixture; not Windows",
+  "provider_requests": 0,
+  "real_authorized_budget": 0,
+  "clock": "2030-01-01T00:00:00Z owner-controlled SYNTHETIC only",
+  "engineering_report": "eng010-acceptance-summary.json",
+  "oracle_source": "tests/test_account_rate.py",
+  "source_sha256": "c930bef91b38d61cb8479ee194626f8194f4caa92648a9f00a4ebcbd30165ab1",
+  "passed_rate_test_instances": 26,
+  "assertions": [
+    "30 immediate authorizations; 31st denied before HTTP and unsent budget refunded",
+    "40 concurrent workers: aggregate 30 authorizations, 10 unsent denials",
+    "two synthetic product roles explicitly bound to same coordinator/account: aggregate 30 of 40",
+    "at completion+59.999999 seconds denied; at +60 seconds admitted",
+    "HELD/IN_FLIGHT never automatically expire; delayed send cooldown starts at finish",
+    "known timeout counted and no refund/resend; confirmed unsent release permits new fenced generation",
+    "backwards clock blocks new send; completion time clamps to last observed timestamp",
+    "cached PLAN/local Case preserved during durable FEEDBACK deferral; resume sends only fixture feedback",
+    "three unsent rate denials terminally fail bounded retry, preserve verified local Case",
+    "Fake Mapping name-only LIVE opt-in/preconditions checks, no secret values read"
+  ],
+  "whole_AT_EX": "NOT_RUN",
+  "real_shared_deployment": "BLOCKED: independent DBs do not automatically share counters",
+  "native_windows": "NOT_RUN",
+  "historical_gap_sha256": "b589c19bd90b7ba3735d5bc136bed4c3c3d0ef803abbb3ba1fc2d7159c8be590"
+}

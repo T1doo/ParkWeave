@@ -24,7 +24,7 @@ def no_provider_sockets(monkeypatch):
 def provision(owner,*,calls=4,tokens=32768,approved=True,kind='SYNTHETIC'):
     with owner.connect() as c:
         c.execute(Path('src/parkweave/quota.sql').read_text())
-        c.execute("INSERT INTO shared_model_quota.accounts VALUES('synthetic-shared-account',%s,%s,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour',%s,%s,0,0,NULL,NULL)",(kind,approved,calls,tokens))
+        c.execute("INSERT INTO shared_model_quota.accounts(account,kind,approved,starts,ends,call_limit,token_limit,calls,tokens,authorization_evidence,approved_by) VALUES('synthetic-shared-account',%s,%s,clock_timestamp()-interval '1 minute',clock_timestamp()+interval '1 hour',%s,%s,0,0,NULL,NULL)",(kind,approved,calls,tokens))
         c.execute("INSERT INTO shared_model_quota.products VALUES('parkweave','parkweave_app','synthetic-shared-account',%s,%s,0,0)",(calls,tokens))
         c.execute('GRANT USAGE ON SCHEMA shared_model_quota TO parkweave_app')
         c.execute('GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA shared_model_quota TO parkweave_app')
@@ -78,7 +78,9 @@ def test_worker_without_budget_blocks_before_http_or_effect(fixture):
 @pytest.mark.parametrize('approved,kind',[(False,'LIVE'),(True,'SYNTHETIC')])
 def test_real_transport_gate_zero_network_without_live_budget(fixture,approved,kind):
     store,owner,*_=fixture;provision(owner,approved=approved,kind=kind)
-    adapter=InternChatAdapter(transport=InternHTTPTransport(),token=SecretStr(FAKE_TOKEN),budget=budget(store,kind='LIVE'))
+    from parkweave.live_safety import LiveSafety
+    safety=LiveSafety(*([True]*7))  # Explicit fictional conditions, never real environment.
+    adapter=InternChatAdapter(transport=InternHTTPTransport(),token=SecretStr(FAKE_TOKEN),budget=budget(store,kind='LIVE'),live_safety=safety)
     with pytest.raises(ModelBoundaryError,match='QUOTA_DENIED'):adapter.complete([{'role':'user','content':'synthetic'}])
     with owner.connect() as c:assert c.execute('SELECT calls FROM shared_model_quota.accounts').fetchone()['calls']==0
 

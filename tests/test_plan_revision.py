@@ -139,21 +139,17 @@ def test_old_known_effect_never_gets_fabricated_pre_effect_history(fixture):
     with owner.connect() as c:assert c.execute("SELECT outcome FROM model_steps WHERE run_id=%s AND phase='PLAN'",(run,)).fetchone()['outcome']=='PRE_EFFECT_PLAN_MISSING'
 
 
-def test_fixed_long_window_admits_31_in_minute_known_normative_gap(fixture):
-    # This is a reproduced FAILURE of the frozen product §10 30RPM rule, not AT30 PASS.
+def test_fixed_long_window_now_blocks_31st_account_dispatch(fixture):
+    from parkweave.quota import AccountRateLimited
     store,owner,*_=fixture;provision(owner,calls=64,tokens=64*8192)
-    started=time.monotonic()
-    for i in range(31):
-        b=budget(store,'SYNTHETIC-RATE-GAP:'+str(i));r=b.reserve();b.dispatch(r)
-    elapsed=time.monotonic()-started;assert elapsed<60
+    for i in range(30):
+        b=budget(store,'SYNTHETIC-RATE:'+str(i));r=b.reserve();b.dispatch(r)
+    b=budget(store,'SYNTHETIC-RATE:31');r=b.reserve()
+    with pytest.raises(AccountRateLimited):b.dispatch(r)
     with owner.connect() as c:
-        admitted=c.execute("SELECT count(*) n FROM shared_model_quota.reservations WHERE state='DISPATCHED'").fetchone()['n']
-    assert admitted==31
-    report={'status':'KNOWN_IMPLEMENTATION_GAP_NOT_AT_PASS','source':'V1 product design section10 default30RPM',
-            'synthetic_dispatch_admissions_in_less_than_60_seconds':admitted,'elapsed_seconds':round(elapsed,3),
-            'required_default_ceiling':30,'provider_requests':0,'real_budget':0,
-            'next_finite_task':'R2 account-level pre-send rate gate using DB time; no reset/refund of dispatched attempts'}
-    private=Path('.runtime');private.mkdir(exist_ok=True);(private/'eng009-rate-gap.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+        assert c.execute("SELECT count(*) n FROM shared_model_quota.reservations WHERE state='DISPATCHED'").fetchone()['n']==30
+        assert c.execute("SELECT state FROM shared_model_quota.reservations WHERE id=%s",(r['id'],)).fetchone()['state']=='RELEASED'
+
 
 def test_assigned_status_role_never_receives_plan_documents(fixture):
     from test_authorization_files import add_role
