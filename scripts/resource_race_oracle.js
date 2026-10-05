@@ -52,5 +52,11 @@ const firstConfirm=document.querySelector('#resource-hold-items [data-resource-a
 const retryConfirm=document.querySelector('#resource-hold-items [data-resource-action=confirm]').onclick();const confirmRetryQ=take('/api/resource-holds/current-confirm/confirm');checks.ambiguous_confirm_retry_same_key=confirmRetryQ.options.headers['Idempotency-Key']===confirmKey;
 answer(confirmRetryQ,{hold:hold('current-confirm','A','CONFIRMED')});await retryConfirm;
 checks.confirmed_has_cancel_no_confirm=!!document.querySelector('#resource-hold-items [data-resource-action=release]')&&!document.querySelector('#resource-hold-items [data-resource-action=confirm]')&&$('resource-hold-items').textContent.includes('本地合成确认');
+
+await catalog();const cancelledReplayList=$('resource-mine').onclick();answer(take('/api/resource-holds'),{items:[hold('cancelled-replay')],has_older_records:false});await cancelledReplayList;
+const lostConfirm=document.querySelector('#resource-hold-items [data-resource-action=confirm]').onclick();const lostConfirmQ=take('/api/resource-holds/cancelled-replay/confirm');const lostKey=lostConfirmQ.options.headers['Idempotency-Key'];answer(lostConfirmQ,{},500);await lostConfirm;
+const cancelledReplay=document.querySelector('#resource-hold-items [data-resource-action=confirm]').onclick();const cancelledReplayQ=take('/api/resource-holds/cancelled-replay/confirm');checks.cancelled_confirm_retry_same_key=cancelledReplayQ.options.headers['Idempotency-Key']===lostKey;
+answer(cancelledReplayQ,{hold:hold('cancelled-replay','A','RELEASED'),receipt:{action:'CONFIRM',observed_state:'CONFIRMED'}});await cancelledReplay;
+checks.cancelled_confirm_replay_uses_current_state=$('resource-hold-items').textContent.includes('占位已释放')&&$('resource-preview-result').textContent.includes('已释放')&&!$('resource-preview-result').textContent.includes('已核对本地合成确认');
 return JSON.stringify({checks,scope:'SYNTHETIC_RESOURCE_UI_RESPONSE_ORDER_ONLY'});
 })()

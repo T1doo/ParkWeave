@@ -1,0 +1,310 @@
+{
+  "scope": "ENG020_LOCAL_CONFIRM_REVIEW_AND_UI",
+  "baseline": "50f7c4bd7fe6704e61bd2dc3c9a96d26f3e31f90",
+  "independent_review": {
+    "agent": "confirm_review",
+    "model": "6.1sol medium",
+    "range": "da69ea6..50f7c4b",
+    "read_only": true,
+    "substantive_findings": 1,
+    "severity": "P2",
+    "finding": "CONFIRM replay after another page cancels displayed fixed confirmed message despite current RELEASED state",
+    "backend_findings": 0,
+    "tests_independently_rerun": false
+  },
+  "finding_reproduction": {
+    "report": ".runtime/eng020-review-repro.json",
+    "failed_check": "cancelled_confirm_replay_uses_current_state",
+    "initial_status": false,
+    "fix": "Render current hold.state, mark differing receipt observed_state as historical; no backend change"
+  },
+  "final_regression": {
+    "counts": {
+      "PASS": 486,
+      "FAIL": 0,
+      "SKIP": 1
+    },
+    "summary": "486 passed, 1 skipped, 2 warnings in 146.07s (0:02:26)",
+    "exit_code": 0,
+    "frozen_source_bytes_match": true
+  },
+  "resource_PG_API": {
+    "PASS": 67,
+    "FAIL": 0,
+    "new_tests": "distinct-key same-hold double confirmation; revocation committed during principal lock wait"
+  },
+  "resource_response_order": {
+    "checks": {
+      "old_identity_catalog_ignored": true,
+      "old_resource_preview_ignored": true,
+      "programmatic_window_change_ignored": true,
+      "latest_preview_wins": true,
+      "write_target_captured": true,
+      "late_write_keeps_new_selection": true,
+      "old_identity_write_ignored": true,
+      "late_list_cannot_clear_new_hold": true,
+      "script_purpose_is_text": true,
+      "navigation_ignores_late_release": true,
+      "current_failure_keeps_draft": true,
+      "conflict_invalidates_preview": true,
+      "ambiguous_retry_same_key": true,
+      "current_success": true,
+      "new_intent_after_ack_has_new_key": true,
+      "old_forbidden_does_not_clear_new_preview": true,
+      "latest_own_list_wins": true,
+      "confirm_frozen_revision": true,
+      "late_confirm_preserves_new_draft": true,
+      "ambiguous_confirm_retry_same_key": true,
+      "confirmed_has_cancel_no_confirm": true,
+      "cancelled_confirm_retry_same_key": true,
+      "cancelled_confirm_replay_uses_current_state": true
+    },
+    "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+    "model_calls": 0,
+    "business_API_calls": 0,
+    "backend_authorization_tested": false
+  },
+  "preparation_response_order": {
+    "old_case_overwrites_selection": false,
+    "wrong_case_write": false,
+    "old_identity_restored": false,
+    "checks": {
+      "selection_and_write_target": true,
+      "identity_clears_pending": true,
+      "late_write_preserves_new_draft": true,
+      "late_write_preserves_same_case_edit": true,
+      "failure_preserves_draft": true,
+      "retry_key": true,
+      "normal_success": true,
+      "stale_failure_ignored": true,
+      "return_generation": true,
+      "cross_case_drafts_cleared": true,
+      "refresh_preserves_current_draft": true,
+      "submit_id_guard": true,
+      "submit_revision_guard": true,
+      "submit_case_guard": true,
+      "submit_snapshot_revision_guard": true,
+      "stale_catalog_ignored": true,
+      "stale_list_ignored": true,
+      "cancel_navigation": true,
+      "new_navigation": true,
+      "cancelled_create_no_followup": true,
+      "stale_tasks_keep_new_selection": true,
+      "old_identity_tasks_ignored": true,
+      "task_scope_limit_visible": true
+    },
+    "synthetic_writes": [
+      {
+        "path": "/api/preparations/B/commands",
+        "body": {
+          "action": "ADD_EVIDENCE",
+          "expected_revision": 1,
+          "slot": "need_summary",
+          "text": "B draft",
+          "source_kind": "USER_STATEMENT",
+          "source_label": "SYNTHETIC v1"
+        }
+      }
+    ],
+    "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+    "model_calls": 0,
+    "business_API_calls": 0,
+    "backend_authorization_tested": false
+  },
+  "actual_resource_browser": {
+    "scope": "F2_PARALLEL_SYNTHETIC_SINGLE_RESOURCE_CONFIRM_ONLY",
+    "two_enterprises_real_UI": true,
+    "hold_ids": [
+      "934cfd5d-9a9d-4bf4-882f-094bbf6a4850",
+      "600b6574-c1c1-4f1e-a647-f7e710def7c8"
+    ],
+    "preview_then_explicit_hold": true,
+    "anonymous_capacity_conflict": true,
+    "other_enterprise_ids_and_purpose_hidden": true,
+    "owner_release": true,
+    "disabled_repeat_hold_click_no_duplicate": true,
+    "screenshots": [
+      ".runtime/eng020-ui-final/service-desktop.png",
+      ".runtime/eng020-ui-final/service-mobile.png",
+      ".runtime/eng020-ui-final/resource-held.png",
+      ".runtime/eng020-ui-final/resource-confirmed-desktop.png",
+      ".runtime/eng020-ui-final/resource-confirmed-320.png",
+      ".runtime/eng020-ui-final/resource-confirmed-390.png",
+      ".runtime/eng020-ui-final/resource-capacity-warning.png",
+      ".runtime/eng020-ui-final/resource-cancelled.png",
+      ".runtime/eng020-ui-final/resource-expired.png",
+      ".runtime/eng020-ui-final/resource-permission-error.png",
+      ".runtime/eng020-ui-final/resource-empty.png",
+      ".runtime/eng020-ui-final/resource-confirmed-readable.png",
+      ".runtime/eng020-ui-final/resource-confirmed-readable-mobile.png"
+    ],
+    "return_navigation_clears_old_resource_form": true,
+    "explicit_single_resource_local_confirm": true,
+    "confirm_preserves_hold_deadline_history": true,
+    "confirmed_capacity_blocks_other_enterprise": true,
+    "local_cancel_frees_capacity": true,
+    "TTL5_expired_by_actual_DB_clock_no_cleaner": true,
+    "expiry_frees_capacity": true,
+    "repeated_read_and_reload": true,
+    "identity_change_and_invalid_session_clear_UI": true,
+    "script_text_only": true,
+    "narrow_viewports": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "native_datetime_picker_gestures": "NOT_RUN; native values plus input events",
+    "browser_errors": 0,
+    "model_calls": 0,
+    "real_budget": 0,
+    "reservation": "NOT_CONFIRMED",
+    "external_acceptance": "NOT_SUBMITTED",
+    "offline_fulfillment": "NO_EVIDENCE",
+    "native_Windows": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN",
+    "F1": "IN_PROGRESS",
+    "F2_admission": "NOT_PASSED",
+    "R4": "DISABLED"
+  },
+  "actual_preparation_browser": {
+    "scope": "F2_PARALLEL_SYNTHETIC_PERSONAL_TASKS_ONLY",
+    "two_roles_real_UI": true,
+    "screenshots": [
+      ".runtime/eng020-ui-final/collaboration-desktop.png",
+      ".runtime/eng020-ui-final/collaboration-mobile.png",
+      ".runtime/eng020-ui-final/preparation-confirmed.png",
+      ".runtime/eng020-ui-final/preparation-error.png"
+    ],
+    "two_case_ids": [
+      "992b9273-d7d9-47d6-9ba4-b3badf2c6878",
+      "4c127e10-58e2-4ca3-8285-2f1f8355a607"
+    ],
+    "missing_materials_and_correction_visible": true,
+    "material_bodies_not_in_task_list": true,
+    "review_then_owner_confirm_then_disappear": true,
+    "reopen_returns_reviewer_task": true,
+    "reload_reads_persisted_tasks": true,
+    "repeated_reads_leave_history_unchanged": true,
+    "task_opens_current_detail": true,
+    "invalid_identity_clears_tasks": true,
+    "invalid_confirmation_rejected": true,
+    "script_text_only": true,
+    "narrow_viewports": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "browser_errors": 0,
+    "model_calls": 0,
+    "real_budget": 0,
+    "native_Windows": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN",
+    "F1": "IN_PROGRESS",
+    "F2_admission": "NOT_PASSED",
+    "R4": "DISABLED"
+  },
+  "actual_candidate_browser": {
+    "status": "PARTIAL_SYNTHETIC_ENGINEERING_PASS",
+    "environment": "Linux Chromium/local API/independent worker/PG only",
+    "provider_requests": 0,
+    "real_budget": 0,
+    "whole_AT_EX": "NOT_RUN",
+    "native_windows": "NOT_RUN",
+    "parent_run": "b6362030-490f-4311-9c92-1236e6f91964",
+    "child_run": "50b69be0-a82c-4c51-991f-9c42af10e91e",
+    "parent_sha256": "f50e34ca02bd609e50a55b4370927311e40f2120270a42955bbb6894ca19de2e",
+    "child_sha256": "c7ae013a124bcc269d7baa6421bf88aed80842efcf89a3f7a45c2ae862acd30b",
+    "grouped_fields": [
+      "region",
+      "employees",
+      "service_need"
+    ],
+    "answer_kept_unknown": true,
+    "cancel_only_followup": true,
+    "facts_accordion_opened_by_real_click": true,
+    "history_unchanged": true,
+    "narrow_viewports": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "browser_errors": 0
+  },
+  "screenshots_sha256": {
+    ".runtime/eng020-ui-final/collaboration-desktop.png": "99d5298105e5ab7e38a5aed3de4bcfdb740f2ee4f2d7e3a6883d814e143bcb54",
+    ".runtime/eng020-ui-final/collaboration-mobile.png": "3ab6b0190b1386d477069813f386afa270d14931b572c178106cb5e0908cdd3b",
+    ".runtime/eng020-ui-final/preparation-confirmed.png": "de835b14350f4c157174f6b3c5e7dc36a83636452b5aaeb3e25b64a9a6208aaa",
+    ".runtime/eng020-ui-final/preparation-error.png": "1e8da9d8259a6a40d049187caea44d11f7c3ab5b56a954c367e7003da85261a0",
+    ".runtime/eng020-ui-final/resource-cancelled.png": "f4b1aec62bcba0b3613ed6a3229ab330402e4188b08e621aa8c7cb742c0b835d",
+    ".runtime/eng020-ui-final/resource-capacity-warning.png": "f4ec1441d1bac588095aa9d0b24f4483ab4511362d9f658061ad8c26eff757dc",
+    ".runtime/eng020-ui-final/resource-confirmed-320.png": "4fa0bfa5b802e41eeda1cbd7c18b32e16a74b3dc8ca32b76dfece3f469d94515",
+    ".runtime/eng020-ui-final/resource-confirmed-390.png": "9e9d8373e13b54b380a494783b568c54723c665961e4533596dfa48c19f1ac42",
+    ".runtime/eng020-ui-final/resource-confirmed-desktop.png": "16c6f38f49c1c82eff668a4a71d5d4e81da4d4a2c0b960080b43ed06a866aa57",
+    ".runtime/eng020-ui-final/resource-confirmed-readable-mobile.png": "3e5d013beea4f618bbcb2ad03723897a218788cb0cfac65d3e990c6cb45cdce6",
+    ".runtime/eng020-ui-final/resource-confirmed-readable.png": "742ea2e9d42a45e8e245de14149b06bb9fb7fc6441b2f107bbb4e0fdd8f53dcb",
+    ".runtime/eng020-ui-final/resource-empty.png": "20bfc75056e54652f11daf9699b96abd42a2ead10ce1ad60f233e8beff49f084",
+    ".runtime/eng020-ui-final/resource-expired.png": "9a9f166cd829b513a43fa036dda1e9236209cb99819aff4ce7e8c8c0fc561982",
+    ".runtime/eng020-ui-final/resource-held.png": "08b478c893f152f769aef21c6c54daef0fb16c3056fcb37f93be31d5ff036e6b",
+    ".runtime/eng020-ui-final/resource-permission-error.png": "5fa82f6a37272af8727c4a54902b7fbe6e1f7c0c1b9cb3a678d6ec41c7bba745",
+    ".runtime/eng020-ui-final/service-desktop.png": "dc3293569761109a8adfb0d2a834851f110f4268105bae78f3645b4ce0177f60",
+    ".runtime/eng020-ui-final/service-mobile.png": "e5701dec60186ae8941ba23385007ac8ca0e99eb2216f10bcf7dd02fc3c561bc"
+  },
+  "visual_review": {
+    "method": "Viewed actual local Chromium images; DOM checks supplement screenshots",
+    "viewports": [
+      1200,
+      320,
+      390
+    ],
+    "reviewed_states": [
+      "service entry",
+      "local confirmed resource",
+      "320/390 cards",
+      "empty resource catalog",
+      "permission error",
+      "collaboration mobile",
+      "preparation confirmed and error"
+    ],
+    "result": "Readable spacing/type and operation hierarchy; no horizontal overflow in tested narrow views; synthetic/no external fulfillment labels visible",
+    "user_visual_signoff": "PENDING"
+  },
+  "tested_source_sha256": {
+    "scripts/candidate_browser_smoke.py": "bd26065031254a2499ffb15c5da5766cf60c46ddaaf188aa9835b896ba2df573",
+    "scripts/preparation_tasks_browser_smoke.py": "4cd43a3a8a76ec4c9a5c043574ced6d74140a69bb613f40247add461f3831796",
+    "scripts/resource_holds_browser_smoke.py": "cd51eecfe9e0605c46c2ad01ef02173271a1e364c121130765428d5b99a929ef",
+    "scripts/resource_race_oracle.js": "b10b7b1d24c316abe31629aeffa8f08f42b8f355dcf096d108b875a0a0da8498",
+    "src/parkweave/web.html": "4286c30fef0a42784864f3aad15c231a7a6ba843773136ed62216d371a710d28",
+    "tests/test_resource_confirm.py": "07def124d0c87bd24a13650458fc2e6f5bc0e1940972b346495fcd42f17cff36"
+  },
+  "protected_files_unchanged": 25,
+  "backend_or_permissions_changed": false,
+  "gates": {
+    "F1": "IN_PROGRESS_UNACCEPTED",
+    "F2": "NOT_PASSED",
+    "R4": "DISABLED",
+    "Win11": "NOT_RUN",
+    "native_picker": "NOT_RUN",
+    "real_devices": "NOT_RUN",
+    "whole36AT6EX": "NOT_RUN",
+    "LIVE": 0,
+    "budget": 0
+  },
+  "push": false,
+  "new_CI": false,
+  "backup_or_upload": false
+}

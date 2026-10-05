@@ -29,6 +29,8 @@ try:
     browser('open','http://127.0.0.1:8765');browser('snapshot','-i')
     token=json.loads((root/'.runtime/synthetic-sessions.json').read_text())['fixture-a']
     browser('eval','--stdin',stdin="document.querySelector('#token').value="+json.dumps(token)+";undefined")
+    browser('click','.supplementary > summary');browser('snapshot','-i')
+    assert value("document.querySelector('.supplementary').open") is True
     browser('fill','#candidate-region','SYNTHETIC 地区');browser('find','role','button','click','--name','评审三项候选');browser('snapshot','-i')
     parent=value("document.querySelector('#run').value");assert len(parent)==36;ready(parent)
     browser('click','#review');browser('snapshot','-i');browser('wait','#answer-employees')
@@ -49,6 +51,6 @@ try:
         browser('set','viewport',str(width),'844');browser('snapshot','-i')
         metric=value('({width:innerWidth,scroll:document.documentElement.scrollWidth})');assert metric['scroll']<=metric['width'];narrow.append(metric)
     errors=browser('errors');assert not errors,errors
-    report={'status':'PARTIAL_SYNTHETIC_ENGINEERING_PASS','environment':'Linux Chromium/local API/independent worker/PG only','provider_requests':0,'real_budget':0,'whole_AT_EX':'NOT_RUN','native_windows':'NOT_RUN','parent_run':parent,'child_run':child,'parent_sha256':before['sha256'],'child_sha256':after['sha256'],'grouped_fields':['region','employees','service_need'],'answer_kept_unknown':True,'cancel_only_followup':True,'history_unchanged':True,'narrow_viewports':narrow,'browser_errors':0}
+    report={'status':'PARTIAL_SYNTHETIC_ENGINEERING_PASS','environment':'Linux Chromium/local API/independent worker/PG only','provider_requests':0,'real_budget':0,'whole_AT_EX':'NOT_RUN','native_windows':'NOT_RUN','parent_run':parent,'child_run':child,'parent_sha256':before['sha256'],'child_sha256':after['sha256'],'grouped_fields':['region','employees','service_need'],'answer_kept_unknown':True,'cancel_only_followup':True,'facts_accordion_opened_by_real_click':True,'history_unchanged':True,'narrow_viewports':narrow,'browser_errors':0}
     args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n');print(json.dumps(report,ensure_ascii=False))
 finally:browser('close')

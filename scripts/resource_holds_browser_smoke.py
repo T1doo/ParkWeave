@@ -8,7 +8,7 @@ import time
 import uuid
 from parkweave.process_env import minimal_environment
 
-root=Path.cwd();p=argparse.ArgumentParser();p.add_argument('--report',required=True,type=Path);args=p.parse_args()
+root=Path.cwd();p=argparse.ArgumentParser();p.add_argument('--report',required=True,type=Path);p.add_argument('--screenshots-dir',type=Path);args=p.parse_args()
 if os.name=='nt':raise RuntimeError('NOT_RUN: Linux browser harness is not Windows verification')
 env=minimal_environment(os.environ,npm_config_cache=str(root/'.cache/npm'),XDG_RUNTIME_DIR=str(root/'.runtime/sockets'))
 candidates=[p for p in (root/'.cache/npm/_npx').glob('*/node_modules/agent-browser/package.json') if json.loads(p.read_text()).get('version')=='0.38.2']
@@ -29,6 +29,18 @@ def wait(expression,predicate,timeout=15):
         if predicate(result):return result
         time.sleep(.1)
     raise AssertionError('SYNTHETIC browser readiness timeout: '+expression)
+
+shots=[]
+def capture(name,width=1200,focus=None):
+    if not args.screenshots_dir:return
+    args.screenshots_dir.mkdir(parents=True,exist_ok=True)
+    browser('set','viewport',str(width),'900' if width>600 else '844')
+    if focus:browser('eval','document.querySelector('+json.dumps(focus)+').scrollIntoView({block:"center"});undefined')
+    else:browser('eval','scrollTo(0,0);undefined')
+    browser('snapshot','-i')
+    path=args.screenshots_dir/(name+'.png');browser('screenshot',str(path))
+    shots.append(str(path.relative_to(root)))
+
 
 def switch(token):
     browser('eval','--stdin',stdin="document.querySelector('#token').value="+json.dumps(token)+";document.querySelector('#token').dispatchEvent(new Event('input'));undefined")
@@ -87,11 +99,16 @@ def mine(id):
 
 try:
     browser('open','http://127.0.0.1:8765');browser('snapshot','-i')
-    sessions=json.loads((root/'.runtime/synthetic-sessions.json').read_text());a=sessions['fixture-a'];b=sessions['fixture-b']
+    sessions=json.loads((root/'.runtime/synthetic-sessions.json').read_text());a=sessions['fixture-a'];b=sessions['fixture-b'];capture('service-desktop');capture('service-mobile',390);browser('set','viewport','1200','900')
     suffix=uuid.uuid4().hex[:8];purposeA='<script>globalThis.RESOURCE_BAD=true</script> SYNTHETIC A '+suffix;purposeB='SYNTHETIC B '+suffix
     switch(a);catalog();start=value("document.querySelector('#resource-start').value");end=value("document.querySelector('#resource-end').value")
-    fill_window(start,end,2,120,purposeA);precheck=check_available(True);idA=create_hold()
+    fill_window(start,end,2,120,purposeA);precheck=check_available(True);idA=create_hold();capture('resource-held',focus='#resource-current')
     stateA=value("resourceCall('/api/resource-holds/'+"+json.dumps(idA)+")")
+    assert value("document.querySelector('#resource-hold').disabled") is True
+    browser('eval',"document.querySelector('#resource-hold').click();undefined")
+    own=value("resourceCall('/api/resource-holds')")
+    assert len([h for h in own['items'] if h['purpose']==purposeA])==1
+
     assert stateA['hold']['state']=='HELD' and stateA['reservation']=='NOT_CONFIRMED' and stateA['offline_fulfillment']=='NO_EVIDENCE'
     assert value('Boolean(globalThis.RESOURCE_BAD||document.querySelector("#resource-current script"))') is False
     browser('click','#resource-current [data-resource-action=confirm]');browser('snapshot','-i')
@@ -100,14 +117,16 @@ try:
     assert confirmed['hold']['state']=='CONFIRMED' and confirmed['hold']['local_confirmation']=='CONFIRMED'
     assert confirmed['hold']['expires_at']==stateA['hold']['expires_at'] and confirmed['external_acceptance']=='NOT_SUBMITTED'
     assert value("document.querySelector('#resource-current [data-resource-action=confirm]')===null") is True
+    capture('resource-confirmed-desktop',focus='#resource-current');capture('resource-confirmed-320',320,'#resource-current');capture('resource-confirmed-390',390,'#resource-current');browser('set','viewport','1200','900')
 
     switch(b);assert value("document.querySelector('#resource-current').textContent")=='';catalog();fill_window(start,end,1,120,purposeB)
-    blocked=check_available(False);assert blocked['view']['occupied_peak']==2
+    blocked=check_available(False);assert blocked['view']['occupied_peak']==2;capture('resource-capacity-warning',focus='#resource-preview-result')
     assert idA not in json.dumps(blocked) and purposeA not in json.dumps(blocked)
     text=mine(None);assert purposeA not in text
     switch(a);browser('click','[data-tab=resource]');browser('snapshot','-i');mine(idA)
     browser('click',f'#resource-hold-items article[data-hold-id="{idA}"] button');browser('snapshot','-i')
     wait("document.querySelector('#resource-hold-items article[data-hold-id=\""+idA+"\"]').textContent",lambda x:'占位已释放' in x)
+    capture('resource-cancelled',focus='#resource-hold-items')
     switch(b);catalog();fill_window(start,end,2,5,purposeB);check_available(True);idB=create_hold()
     expired=wait("resourceCall('/api/resource-holds/'+"+json.dumps(idB)+")",lambda x:x['hold']['state']=='EXPIRED',timeout=15)
     assert expired['reservation']=='NOT_CONFIRMED'
@@ -118,14 +137,22 @@ try:
     mine(idB);narrow=[]
     for width in (320,390):
         browser('set','viewport',str(width),'844');browser('snapshot','-i');m=value('({width:innerWidth,scroll:document.documentElement.scrollWidth})');assert m['scroll']<=m['width'];narrow.append(m)
-    browser('set','viewport','1200','900');browser('screenshot',str(root/'.runtime/eng018-resources.png'))
+    browser('set','viewport','1200','900');browser('screenshot',str(root/'.runtime'/(args.report.stem+'-resources.png')));capture('resource-expired',focus='#resource-hold-items')
     switch('SYNTHETIC-invalid-session');browser('click','#resource-catalog');browser('snapshot','-i')
     wait("document.querySelector('#resource-error').textContent",lambda x:'权限' in x)
     assert value("document.querySelector('#resource-hold-items').textContent")==''
+    capture('resource-permission-error',focus='#page-feedback')
+    switch(sessions['fixture-c']);catalog_empty=browser('click','#resource-catalog');browser('snapshot','-i');wait("document.querySelector('#resource-catalog-view').textContent",lambda x:'没有可读' in x);capture('resource-empty',focus='#resource-catalog-view')
+    switch(a);catalog();fill_window(start,end,1,120,'SYNTHETIC · 团队协作时段');check_available(True);clean_id=create_hold()
+    browser('click','#resource-current [data-resource-action=confirm]');browser('snapshot','-i');wait("document.querySelector('#resource-current').textContent",lambda x:'本地合成确认' in x)
+    capture('resource-confirmed-readable',focus='#resource-current');capture('resource-confirmed-readable-mobile',390,'#resource-current')
+    browser('click','#resource-current [data-resource-action=release]');browser('snapshot','-i');wait("document.querySelector('#resource-current').textContent",lambda x:'占位已释放' in x)
+
+    browser('click','[data-tab=service]');browser('click','[data-tab=resource]');browser('snapshot','-i');assert value("document.querySelector('#resource-form').hidden") is True
     errors=browser('errors');assert not errors,errors
     report={'scope':'F2_PARALLEL_SYNTHETIC_SINGLE_RESOURCE_CONFIRM_ONLY','two_enterprises_real_UI':True,'hold_ids':[idA,idB],
       'preview_then_explicit_hold':True,'anonymous_capacity_conflict':True,'other_enterprise_ids_and_purpose_hidden':True,
-      'owner_release':True,'explicit_single_resource_local_confirm':True,'confirm_preserves_hold_deadline_history':True,'confirmed_capacity_blocks_other_enterprise':True,'local_cancel_frees_capacity':True,'TTL5_expired_by_actual_DB_clock_no_cleaner':True,'expiry_frees_capacity':True,
+      'owner_release':True,'disabled_repeat_hold_click_no_duplicate':True,'screenshots':shots,'return_navigation_clears_old_resource_form':True,'explicit_single_resource_local_confirm':True,'confirm_preserves_hold_deadline_history':True,'confirmed_capacity_blocks_other_enterprise':True,'local_cancel_frees_capacity':True,'TTL5_expired_by_actual_DB_clock_no_cleaner':True,'expiry_frees_capacity':True,
       'repeated_read_and_reload':True,'identity_change_and_invalid_session_clear_UI':True,'script_text_only':True,'narrow_viewports':narrow,
       'native_datetime_picker_gestures':'NOT_RUN; native values plus input events','browser_errors':0,'model_calls':0,'real_budget':0,'reservation':'NOT_CONFIRMED','external_acceptance':'NOT_SUBMITTED',
       'offline_fulfillment':'NO_EVIDENCE','native_Windows':'NOT_RUN','whole_AT_EX':'NOT_RUN','F1':'IN_PROGRESS','F2_admission':'NOT_PASSED','R4':'DISABLED'}

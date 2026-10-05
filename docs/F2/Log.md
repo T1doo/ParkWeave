@@ -1,5 +1,15 @@
 # F2并行工程日志
 
+## ENG020 确认审查修复与前端可审阅版本完成（仅本地）
+
+起始50f7c4b/干净工作树。同工作区独立6.1 sol medium reviewer固定da69..50f7发现1项P2：CONFIRM响应丢失、另一页取消、原key重试时后端历史回执+当前RELEASED正确，但旧UI提示已确认。真实Chromium合成响应先复现22/23 true/1 false（.runtime/eng020-review-repro.json），最小修复按当前hold.state反馈，回执与状态不一致则标历史回执；后端、不可变回执、锁/授权不变。review未独立重跑API，不将已有成绩冒充审查执行；范围与未测见ENG020-UIReview/CloseoutReview。
+
+依据V1三工作区和用户美观要求，小范围纯HTML/CSS优化：绿色/暖白、统一字号间距与卡片/表单、明确当前导航、服务诉求/材料和资源步骤层级、主确认/次取消、当前状态色/空态/全页错误反馈、UTC可读时间。事实候选折叠但真实可展开办理，JSON工程记录默认收起；合成/未真实预约/未受理/未履约标签仍可见。无需框架/字体/CDN/安装。初轮真实截图可视审阅后改善时间，最终17张截图保留.runtime/eng020-ui-final，原初轮目录也保留；证据有各图hash。桌面1200/手机320与390实图检查正常确认、空态/权限错误、服务/协同/资料状态，未用DOM成绩代替美观；用户视觉签收仍PENDING。
+
+实际低权限API/独立worker/PG浏览器：资源双企业预检/占位/确认/取消/TTL5过期、匿名容量、本人记录/reload、disabled重复click无重复、返回导航清旧form、script纯文本 PASS；资料双角色补正/补交/人工核对/确认/重开及事实区块展开/补充仍UNKNOWN/取消历史均PASS，自有fixture清理exit0，页面错误0。最终资源排序23/23、旧资料排序23/23 PASS。实际PG/API67 PASS/2既有WARN，新增不同key双确认仅一次提交和等待身份锁时撤权拒绝，既有版本/期限/tenant/取消竞争/幂等保留。
+
+冻结最终全量 **486 passed, 1 skipped, 2 warnings in 146.07s (0:02:26)**，486 PASS/0 FAIL/1 Windows SKIP，所有测试源hash与冻结文件一致；25个Windows/R4/角色及roles SQL保护文件逐字相同，原V1来源字节未改。证据evidence/eng020-acceptance-summary.json；日志/会话只在.runtime，不公开明文会话或DSN。F1未签收/F2NOT_PASSED/R4DISABLED，Win11/原生picker/真实手机/完整36AT6EXNOT_RUN；Windows37324704568失败明细待用户。无push/新CI/备份/上传/新凭据/真实provider或外部预约，预算0。
+
 ## ENG019 单资源本地合成确认完成（本地并行工程，非阶段签收）
 
 基线da69ea6。同工作区独立只读resource_hold_review审查5849..da69占位/过期/释放，未发现实质finding；具体边界见CloseoutReview，本次确认不继承独立审查结论。按实施前ENG019规格新增schema11状态/action约束、Confirm typed API与明确的本地确认/取消按钮，不增加应用数据库权限、不改原输入/TTL。有效HELD才可确认；锁后DB时钟、当前角色/tenant/core及资源Grant、固定/当前版本、开放/容量重验，排除本条占位避免双计数；确认保留区间容量，显式release兼作本地取消，TTL保留历史，状态/不可变回执同事务。

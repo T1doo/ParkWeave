@@ -45,3 +45,10 @@ reviewer明确的限制：UI race oracle为mock fetch响应排序；实际本地
 用户明确授权同工作区reviewer，以6.1 sol medium检查5849c022..da69ea6资源占位/过期/释放。/root/resource_hold_review结论：未发现实质finding。检查DB锁后时钟、principal→key→resource锁序/3s边界、峰值半开容量/双缓冲、当前授权与回执回放、过期事实、新表最小权限及UI generation/token/resource/draft守卫。仅源码、测试和已有公开合成证据只读；未改文件、运行业务API/模型、访问外网或读私有runtime，465/46成绩是已有证据而非reviewer重跑。
 
 owner登记规则更新/撤权遵循同资源锁/principal排他锁协议；日期picker和Windows仍未验证。新CONFIRM不继承此次独立审查覆盖；其本地测试另记ENG019 Log/evidence。
+
+
+## ENG020 独立确认增量审查与修复
+
+固定da69ea6..50f7c4b，由/root/confirm_review（6.1 sol medium）只读检查；未跑API/模型、外网或私有runtime。1项P2：原key CONFIRM回放在另一页取消后返回历史回执+当前RELEASED，旧UI按action提示已确认，与卡片矛盾。Chromium合成响应确实复现，eng020-review-repro的该check false；现按当前hold.state反馈，并标明原回执历史，不改后端或回执。后续23/23资源排序检查通过，新增实际PG不同key双确认和锁等待撤权测试补覆盖。
+
+未发现有证据的后端并发/权限/版本/tenant漏洞，不声称完整时序审计。原生picker、Windows/真实设备、park身份迁移等未验证。完整验证与截图目录/hash见ENG020-UIReview、Log及evidence/eng020-acceptance-summary.json。界面可审阅版本不代表用户美观签收、F1/F2阶段通过或R4启用。

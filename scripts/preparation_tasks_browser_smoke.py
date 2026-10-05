@@ -8,7 +8,7 @@ import time
 import uuid
 from parkweave.process_env import minimal_environment
 
-root=Path.cwd();p=argparse.ArgumentParser();p.add_argument('--report',required=True,type=Path);args=p.parse_args()
+root=Path.cwd();p=argparse.ArgumentParser();p.add_argument('--report',required=True,type=Path);p.add_argument('--screenshots-dir',type=Path);args=p.parse_args()
 if os.name=='nt':raise RuntimeError('NOT_RUN: Linux browser harness is not Windows verification')
 env=minimal_environment(os.environ,npm_config_cache=str(root/'.cache/npm'),XDG_RUNTIME_DIR=str(root/'.runtime/sockets'))
 candidates=[p for p in (root/'.cache/npm/_npx').glob('*/node_modules/agent-browser/package.json') if json.loads(p.read_text()).get('version')=='0.38.2']
@@ -29,6 +29,16 @@ def wait(expression,predicate,timeout=15):
         if predicate(result):return result
         time.sleep(.1)
     raise AssertionError('SYNTHETIC browser readiness timeout: '+expression)
+
+shots=[]
+def capture(name,width=1200,focus=None):
+    if not args.screenshots_dir:return
+    args.screenshots_dir.mkdir(parents=True,exist_ok=True)
+    browser('set','viewport',str(width),'900' if width>600 else '844')
+    if focus:browser('eval','document.querySelector('+json.dumps(focus)+').scrollIntoView({block:"center"});undefined')
+    else:browser('eval','scrollTo(0,0);undefined')
+    browser('snapshot','-i');path=args.screenshots_dir/(name+'.png');browser('screenshot',str(path));shots.append(str(path.relative_to(root)))
+
 
 def switch(token):
     browser('eval','--stdin',stdin="document.querySelector('#token').value="+json.dumps(token)+";document.querySelector('#token').dispatchEvent(new Event('input'));undefined")
@@ -82,7 +92,7 @@ try:
     material('need_summary','<script>globalThis.PARKWEAVE_TASK_BAD=true</script> SYNTHETIC PRIVATE MATERIAL','SYNTHETIC inbox source v1')
     b=new_case(other);assert b['current_materials']==[]
     browser('click','[data-tab=collaboration]');browser('snapshot','-i')
-    initial=task_list(goal,True);assert other in initial and '待补材料：材料目录' in initial and 'PRIVATE MATERIAL' not in initial
+    initial=task_list(goal,True);assert other in initial and '待补材料：材料目录' in initial and 'PRIVATE MATERIAL' not in initial;capture('collaboration-desktop',focus='#prep-task-items');capture('collaboration-mobile',390,'#prep-task-items');browser('set','viewport','1200','900')
     task_list(goal,True);assert open_task(goal)['preparation']['id']==id
     switch(specialist);task_list(goal,False);list_select(goal)
     act('#prep-correction','<script>globalThis.PARKWEAVE_TASK_BAD=true</script> SYNTHETIC 补目录')
@@ -94,7 +104,7 @@ try:
     reviewed=act('#prep-review','SYNTHETIC 人工核对');assert reviewed['preparation']['state']=='REVIEWED'
     task_list(goal,False)
     switch(enterprise);assert '请确认本地资料准备' in task_list(goal,True);open_task(goal)
-    confirmed=act('#prep-confirm','SYNTHETIC 本地资料确认');assert confirmed['preparation']['state']=='LOCAL_CONFIRMED'
+    confirmed=act('#prep-confirm','SYNTHETIC 本地资料确认');assert confirmed['preparation']['state']=='LOCAL_CONFIRMED';capture('preparation-confirmed',focus='#prep-detail')
     task_list(goal,False);browser('reload');browser('snapshot','-i');switch(enterprise)
     browser('click','[data-tab=collaboration]');browser('snapshot','-i');reloaded=task_list(goal,False);assert other in reloaded
     list_select(goal);reopened=act('#prep-reopen','SYNTHETIC 再核对');assert reopened['preparation']['state']=='IN_PREPARATION'
@@ -106,16 +116,16 @@ try:
     for width in (320,390):
         browser('set','viewport',str(width),'844');browser('snapshot','-i')
         metric=value('({width:innerWidth,scroll:document.documentElement.scrollWidth})');assert metric['scroll']<=metric['width'];narrow.append(metric)
-    browser('set','viewport','1200','900');browser('screenshot',str(root/'.runtime/eng016-tasks.png'))
+    browser('set','viewport','1200','900');browser('screenshot',str(root/'.runtime'/(args.report.stem+'-tasks.png')))
     switch('SYNTHETIC-invalid-session');browser('click','#prep-tasks');browser('snapshot','-i')
     wait("document.querySelector('#result').textContent",lambda x:'权限' in x)
     assert value("document.querySelector('#prep-task-items').textContent")==''
     switch(enterprise);task_list(other,True);list_select(goal)
     browser('fill','#prep-reason','SYNTHETIC invalid stale confirmation');browser('click','#prep-confirm');browser('snapshot','-i')
-    wait("document.querySelector('#prep-error').textContent",lambda x:bool(x))
+    wait("document.querySelector('#prep-error').textContent",lambda x:bool(x));capture('preparation-error',focus='#page-feedback')
     assert value('preparationView.preparation.state')=='IN_PREPARATION'
     errors=browser('errors');assert not errors,errors
-    report={'scope':'F2_PARALLEL_SYNTHETIC_PERSONAL_TASKS_ONLY','two_roles_real_UI':True,'two_case_ids':[id,b['preparation']['id']],
+    report={'scope':'F2_PARALLEL_SYNTHETIC_PERSONAL_TASKS_ONLY','two_roles_real_UI':True,'screenshots':shots,'two_case_ids':[id,b['preparation']['id']],
       'missing_materials_and_correction_visible':True,'material_bodies_not_in_task_list':True,'review_then_owner_confirm_then_disappear':True,
       'reopen_returns_reviewer_task':True,'reload_reads_persisted_tasks':True,'repeated_reads_leave_history_unchanged':True,
       'task_opens_current_detail':True,'invalid_identity_clears_tasks':True,'invalid_confirmation_rejected':True,'script_text_only':True,

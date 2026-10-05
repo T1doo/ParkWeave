@@ -130,3 +130,30 @@ def test_two_owners_confirm_at_capacity_without_double_count_and_new_key_once(re
         xs=list(pool.map(lambda pair:rh.confirm(f[0],f[2][pair[0]],UUID(pair[1]),uuid4().hex,rh.Confirm(expected_revision=1)),[('fixture-a',a),('fixture-b',b)]))
     assert all(x['hold']['state']=='CONFIRMED' for x in xs) and preview(f,data).json()['occupied_peak']==2
     assert counts(f)==(2,4)
+
+
+def test_same_hold_distinct_confirmation_keys_commit_once(resource_fixture):
+    f=resource_fixture;id=hold(f).json()['hold']['id']
+    def write(_):
+        try:return rh.confirm(f[0],f[2]['fixture-a'],UUID(id),uuid4().hex,rh.Confirm(expected_revision=1))
+        except Conflict:return 'CONFLICT'
+    with ThreadPoolExecutor(max_workers=2) as pool:xs=list(pool.map(write,range(2)))
+    assert xs.count('CONFLICT')==1 and counts(f)==(1,2)
+    assert read(f,id).json()['hold']['state']=='CONFIRMED'
+
+
+def test_revocation_committed_while_confirmation_waits_prevents_write(resource_fixture,monkeypatch):
+    import threading
+    from parkweave.store import Denied
+    f=resource_fixture;id=hold(f).json()['hold']['id'];entered=threading.Event();original=f[0].lock_principal
+    def signal(c,id,exclusive=False):entered.set();return original(c,id,exclusive)
+    monkeypatch.setattr(f[0],'lock_principal',signal)
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        with f[1].connect() as c:
+            f[1].lock_principal(c,'fixture-a',exclusive=True)
+            c.execute("UPDATE principals SET active=false WHERE id='fixture-a'")
+            future=pool.submit(rh.confirm,f[0],f[2]['fixture-a'],UUID(id),uuid4().hex,rh.Confirm(expected_revision=1))
+            assert entered.wait(2)
+        with pytest.raises(Denied):future.result(timeout=5)
+    assert counts(f)==(1,1)
+    with f[1].connect() as c:assert c.execute('SELECT state FROM synthetic_resource_holds WHERE id=%s',(UUID(id),)).fetchone()['state']=='HELD'
