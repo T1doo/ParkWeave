@@ -66,6 +66,10 @@ def create_app(store: Store) -> FastAPI:
     def read(run_id: UUID, authorization: str | None = Header(default=None)):
         return store.read(token(authorization), run_id)
 
+    @app.get("/api/runs/{run_id}/plan-revisions")
+    def plan_revisions(run_id: UUID, authorization: str | None = Header(default=None)):
+        return {'revisions':store.read_plan_revisions(token(authorization),run_id)}
+
     @app.post("/api/runs/{run_id}/{intent}")
     def control(run_id: UUID, intent: Literal["pause", "cancel", "resume", "reconcile"],
                 authorization: str | None = Header(default=None)):

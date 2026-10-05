@@ -65,3 +65,10 @@ READY_FOR_REVIEW：六Windows候选生命周期脚本/安全配置/首次体验�
 READY_FOR_REVIEW：Microsoft官方handle API核对后实现未启用Windows候选（RootDirectory单名称、每级no-follow与对象检查、private protected ACL、同句柄读取/完整性），69 Linux policy/ABI/实参测试；原生Windows专属合成probe，不改既有ACL/策略。最终全量243 PASS/1原生WindowsSKIP/2 WARN，84.97秒；Linux PowerShell AST10项零错误与两个新guard拒绝。这不是Windows通过，产品文件入口继续关闭，注册写入未启用。
 
 F1仍IN_PROGRESS，残余并非全部外部验证：native验证后生产dispatcher/owner注册、安全LIVE注入接入、计划修订artifact/完整before-after oracle与部分F1完整业务oracle仍独立未做。Windows/LIVE0预算/共享真实部署/真实资料/C0门BLOCKED或NOT_RUN，后续金额/窗口及F2+业务不扩建。详见WindowsFileCandidate及Checklist，本轮提交push后停止。
+
+
+## 第九有界增量ENG-009：F1收敛/R1
+
+按原任务与12个F1首次AT逐断言映射为Convergence有限清单，阶段/标准不改。只实现R1正常worker计划revision1/2、实际回执修订/哈希与调用ID、immutable历史/当前权限读取、原子终态/outbox与恢复独立oracle，真实模型仍0。该投影仅一goal本地case.create，不是F2 ServicePlan。
+
+剩余固定R2（原产品§10默认30RPM具体失败：固定长窗口<60秒允许31发送标记；需最小account发送门/LIVE配置元数据）、R3（三字段候选/集中必要澄清）、R4（native通过后最小通路集成，目前暂停backend）。E1—E3外门另列，F2/F3保持原首次阶段，不把高级计费/通用平台搬入F1。原Windows候选不启用/不改/不操作。交付push后停止，不串行做其余任务。

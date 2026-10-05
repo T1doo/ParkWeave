@@ -27,3 +27,6 @@ ENG-007 T05基础增量：固定HTTPS传输代码、共享账号持久预留/usa
 
 
 ENG-008 READY_FOR_REVIEW：Windows原生只读文件候选代码/69 Linux policy与ABI单测/原生专属probe；生产Windows入口仍关闭，native NOT_RUN。最终243 PASS/1 SKIP；F1剩余不是仅外部验证，候选启用/owner注册、LIVE安全注入/计划修订与完整oracle仍需独立工程，详见F1/Checklist及WindowsFileCandidate。真实调用/预算0，本轮结束不扩F2。
+
+
+ENG-009：按F1原任务/12AT断言收敛为Convergence有限清单，单项R1计划修订artifact与独立oracle已实现；原阶段不改、真实模型/预算0、Windows候选不动。残余固定R2账号速率/LIVE接入、R3有限候选/集中澄清、R4实机后通路集成，外门E1—E3；具体失败和退出断言均已列明，不泛称还有“完整”欠项，不扩F2。

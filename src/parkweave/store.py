@@ -37,7 +37,7 @@ class Store:
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
             c.execute(Path(__file__).with_name("schema.sql").read_text())
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
-            if version > 6:
+            if version > 7:
                 raise Conflict("database version newer than this code")
             if version < 2:
                 c.execute(Path(__file__).with_name("migration-002.sql").read_text())
@@ -50,6 +50,9 @@ class Store:
 
             if version < 6:
                 c.execute(Path(__file__).with_name("migration-006.sql").read_text())
+
+            if version < 7:
+                c.execute(Path(__file__).with_name("migration-007.sql").read_text())
 
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""
@@ -494,3 +497,11 @@ class Store:
         with self.connect() as c:
             p=c.execute('SELECT id FROM principals WHERE token_hash=%s',(digest(token),)).fetchone()
             if p:self.audit(c,p['id'],'API_AUTHORIZATION','DENIED')
+
+    def read_plan_revisions(self,token,run_id):
+        with self.connect() as c:
+            p=self.auth(c,token,lock=True)
+            r=self.scoped_run(c,p,run_id)
+            self.current_delivery_authority(c,p,r)
+            return c.execute("SELECT revision,document,sha256,provider_call_id,tool_call_id,created_at "
+                             "FROM model_plans WHERE run_id=%s ORDER BY revision",(run_id,)).fetchall()

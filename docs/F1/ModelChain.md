@@ -33,3 +33,6 @@ RESERVED → DISPATCHED → SETTLED(严格usage)或OUTCOME_UNKNOWN。只有RESER
 ## 复核命令及后续独立工程
 
 `.venv/bin/python -m pytest tests/test_model_chain.py tests/test_intern_adapter.py -q`；全量执行器仍42定义whole NOT_RUN。Windows安全文件backend单独派发；同账号真实共享部署、安全注入、LIVE worker activation、真实usage/计费/AT-02/30门另行授权。窗口滚动/货币账单核对需要后续有界规格，不借本轮扩F2。
+
+
+ENG009更新：旧“FEEDBACK只stop文本”是ENG007历史；当前stop内容须结构化revision2，先于效果存revision1，之后accepted revision2+terminal/outbox同TX，详见PlanRevision。原产品§10有明确default30RPM；固定窗口仅总额基础，31即时发送标记失败已复现为R2，不称限流合规。Convergence收敛了有限任务，不把高级费用/滚动平台无限加到F1。

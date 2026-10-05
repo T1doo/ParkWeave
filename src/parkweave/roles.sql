@@ -12,3 +12,5 @@ GRANT SELECT ON action_grants TO parkweave_app;
 GRANT INSERT ON authorization_audit TO parkweave_app;
 
 GRANT SELECT,INSERT,UPDATE ON model_steps TO parkweave_app;
+
+GRANT SELECT,INSERT ON model_plans TO parkweave_app;

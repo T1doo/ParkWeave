@@ -1,5 +1,5 @@
 {
-  "origin": "NEW: V1 definitions + ENG001-008 engineering subsets; not supplied acceptance package",
+  "origin": "NEW: V1 definitions + ENG001-009 engineering subsets; original stage assignments unchanged",
   "cases": [
     {
       "id": "AT-01",
@@ -19,7 +19,9 @@
       "engineering_selectors": [
         "tests/test_intern_adapter.py::test_offline_tool_feedback_and_known_model_case_identity",
         "tests/test_model_chain.py::test_actual_worker_plan_tool_feedback_and_failures",
-        "tests/test_model_chain.py::test_feedback_resume_keeps_known_effect_and_does_not_repeat_plan"
+        "tests/test_model_chain.py::test_feedback_resume_keeps_known_effect_and_does_not_repeat_plan",
+        "tests/test_plan_revision.py::test_normal_cli_worker_persists_actual_revision_and_independent_oracle",
+        "tests/test_plan_revision.py::test_invalid_revision_keeps_known_effect_without_publishing_artifact"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
       "gate": "LIVE_BLOCKED: Park has no authorized real budget/config/shared quota; offline transport only"
@@ -181,7 +183,8 @@
       "engineering_selectors": [
         "tests/test_facts_heartbeat.py::test_heartbeat_renews_independently_during_mock_wait_and_competing_worker_cannot_steal",
         "tests/test_facts_heartbeat.py::test_killed_waiting_worker_lease_expires_and_old_heartbeat_cannot_resurrect",
-        "tests/test_worker_gateway.py::test_actual_expiry_recovery_after_crash_does_not_dispatch_again"
+        "tests/test_worker_gateway.py::test_actual_expiry_recovery_after_crash_does_not_dispatch_again",
+        "tests/test_plan_revision.py::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
       "gate": "FULL_ORACLE_NOT_RUN: engineering subset only"
@@ -209,7 +212,9 @@
         "tests/test_authorization_files.py::test_outbox_revoked_before_consume_suppressed_after_delivery_retracted",
         "tests/test_authorization_files.py::test_queued_execution_rechecks_current_capability",
         "tests/test_facts_heartbeat.py::test_grant_revoke_blocks_cached_receipt_new_read_and_write_and_seed_does_not_restore",
-        "tests/test_worker_gateway.py::test_real_worker_revocation_before_dispatch_and_after_effect"
+        "tests/test_worker_gateway.py::test_real_worker_revocation_before_dispatch_and_after_effect",
+        "tests/test_plan_revision.py::test_current_authority_and_cross_scope_no_revision_leak",
+        "tests/test_plan_revision.py::test_assigned_status_role_never_receives_plan_documents"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
       "gate": "FULL_ORACLE_NOT_RUN: engineering subset only"
@@ -316,7 +321,7 @@
         "tests/test_model_chain.py::test_real_transport_gate_zero_network_without_live_budget"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
-      "gate": "LIVE_BLOCKED: Park has no authorized real budget/config/shared quota; offline transport only"
+      "gate": "KNOWN_CODE_GAP_R2: fixed long-window budgets do not enforce V1 section10 default30RPM; no LIVE requests/budget; actual upstream validation BLOCKED"
     },
     {
       "id": "AT-31",

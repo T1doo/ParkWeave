@@ -147,3 +147,10 @@ LOCAL_INBOX交付与消费在同一授权锁+数据库事务。发给浏览器�
 69 Linux纯policy/FakeAPI/ctypes布局与相对调用实参子集：规范UUID、全部root组件/ADS/别名/保留名拒绝、每级reparse/异卷/非普通对象、不安全/复杂/继承ACL拒绝、完整性/变更与逆序handle关闭、未知NTSTATUS handle回收、系统DLL Linux不加载、原生probe Linux不写路径。已有Linux资源API不接候选。
 
 新增FileCandidateTest.ps1+file_candidate_probe.py只在Windows11/Python3.12x64建立全新自建合成fixture，正例必须先过再测unsafe ACL/hardlink/junction/可选symlink/持有handle写入与rename拒绝。全原生NOT_RUN；Linux AST/guard不是Windows oracle，缺symlink权限不自动提权、不能将所有拒绝当PASS。完整AT05导入/渲染及native启用集成不由子集完成。
+
+
+## ENG009 R1独立oracle与R2已知失败
+
+固定一goal Case动作的revision1/2；独立测试从API/PG读全字段，自己计算SHA并核对op/Case/tool/provider IDs，不调用生产revision构造/validator。正常CLI、13种伪造/不完整修订、动作前持久、immutable行权限、after+terminal/outbox事务中断恢复不增请求、scope/撤权/状态角色不泄露、旧效果不伪造前历史。全部模型回包SYNTHETIC MockTransport。
+
+另一个限制复现：SYNTHETIC 64/hour账号预算在<60秒允许31个DISPATCHED标记，原产品§10要求default30RPM；没有发送HTTP，单独KNOWN_IMPLEMENTATION_GAP_NOT_AT_PASS。pytest能确认该失败存在不代表速率通过，AT30 gate明确R2。12个F1首次AT及T06的31/32规格责任详见Convergence，原阶段/标准不改。

@@ -158,3 +158,19 @@ schema6 additive model_steps持久PLAN/FEEDBACK；正常CLI worker --model-fixtu
 诚实交接：F1残余不只是外部验证。native candidate只读未启用，native验证后dispatcher/owner合成注册仍独立工程；LIVE安全注入/配置/provider持续速率窗口协调、可核查修订artifact及before-after完整oracle尚未开放。当前共享账本只固定窗口总额度，不宣传持续RPM已实现。AT05导入/危险渲染/AT06完整候选与集中澄清等全oracle不由当前子集完成；完整业务/货币校准/通用产物/外部渠道按后续阶段，不本轮扩F2。Windows11真实依赖/NTFS/ACL/reparse/并发/lifecycle、LIVE预算/真实共享部署与费用、真实园区许可/价值/C0模板规则仍NOT_RUN/BLOCKED。Checklist及WindowsFileCandidate表列清代码与验证界限，不宣布F1完成。
 
 两份Library原档字节/行数/hash复核通过；暂存秘密/个人真实数据/忽略配置日志扫描、git diff检查后commit/push并核实远端SHA，完成本有界增量即停止供父任务复核。本轮没有持续测试服务。
+
+## ENG-009：收敛有限F1断言与单项R1（2026-10-05）
+
+基线4ac2d2e3767491d997356f0eaf1e5613a1f35cc7，dev/f1-foundation；先按原Library §3/§10及固定表读取F1-T01—06、首次12个F1 AT具体断言。Convergence不改阶段/不降标准，区分现有代码外验证、有限代码R1—R4、原F2/F3等；31/32在F1只有规格与来源准备，不挪完整B0-B2/效果评测到F1。只选R1实施，不同时写其它项目/高级计费平台/Windows后端；没有子任务、真实model/env密钥读取、provider调用或持续凭据。
+
+原文§10有明确默认每用户30RPM。初冻结仅查看AT30“共享总额度”将速率视为纯外验证的推断不完整；补读产品原文后纠正，保留标准并建立具体限制复现。临时SYNTHETIC 64/hour账号在<60秒给31不同work DISPATCHED许可，实际HTTP0/real budget0，证据KNOWN_IMPLEMENTATION_GAP_NOT_AT_PASS，pytest对复现确认PASS不能冒充AT30限流通过。R2固定为同account pre-send DB-clock速率门/核实配置、最小LIVE注入配置与原§10时点耗时/分类元数据，不发展通用协调平台。按用户“只选一项”本轮不修第二项，LIVE仍关闭；高级金额账单/跨协调点仲裁不搬入F1。
+
+R1新增schema7 model_plans及typed local revision contract。正常worker PLAN通过后先不可变revision1，绑定goal/op/tool/provider ID/sha，先commit再可信gateway作用；已知旧Case无前artifact不补造历史。FEEDBACK来自真实PG Case/VERIFIED receipt及前sha，模型自建回包必须严格revision2：保留目标、Case/op/tool/receipt/previous绑定，step本地record已建、Case NEEDS_INPUT、外部NOT_SUBMITTED/线下NO_EVIDENCE及下一步缺件。拒新动作/改goal/浮点rev/重复JSON/虚假履约/错证据，已有Case与回执不转FAILED_SAFE。accepted rev2/Run terminal/outbox同TX，失联已持久FEEDBACK恢复无新模型call。GET plan-revisions当前身份/scope/READ/owner，获派状态角色/跨企业园区/撤权无内容。应用plan表无UPDATE/DELETE；原案例/撤权/migration历史保留，future DB版本门改8。
+
+独立oracle不调用生产initial/validate/hash helpers，直接读API/PG逐字段匹配两个版本、自己sha、Case/op、不同provider IDs与tool回填ID；正常真实CLI+PG数据、13种错误修订、作用前保存/immutable授权、事务中断恢复、当前权限/状态角色、旧效果缺历史拒绝。全部provider回包合成MockTransport，源码HTTPTransport禁止socket的fixture用于新增测试。真实模型预算/请求0。共享账本VALIDATED只表示wire/usage通过，修订失败独立记录业务阶段INVALID_PLAN_REVISION，不声称业务成功或免费。
+
+专项19 PASS，增加仅获派角色后联同既有model-chain专项48 PASS（新增20+原28），2既有WARN；无unexpected pytest失败/删除用例。最终命令.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng009-acceptance-summary.json：263 PASS/1 Windows SKIP/2既有WARN，88.85秒（原243+新增20）；已知速率规范失败在独立JSON/AT30 gate保留，整个36AT/6EX NOT_RUN。最终代码/test/scripts hash全部匹配报告，原Library2份字节/行/hash复核一致。Windows候选/原files.py及两个native probe源码逐个与HEAD一致，不启用/不执行Windows、不重跑PS或浏览器；旧证据不改写成新验收。
+
+有限下一任务只R2—R4：R2发送速率+安全LIVE接入元数据（真实额度核实E2）；R3现有三字段候选projection与集中必要问题，不扩任意文档抽取/资格办理；R4native验证后最小reader/受控合成metadata通路，目前按指示暂停backend。不另称还有“完整oracle”，其它具体标准已按Convergence表绑定现有工程或原F2/F3。E1 native Windows、E2账号/预算/真实书生/共享部署、E3真实资料/C0来源外门明确，所有未知不默认通过。不声称F1通过，交付push后停止。
+
+提交前无秘密/真实个人数据/忽略配置与私有logs、Git diff/branch/remote/hash检查；正常CLI/API fixture finally关闭，无持续服务。远端SHA以实际Git核实交付。
