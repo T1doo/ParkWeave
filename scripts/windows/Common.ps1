@@ -1,6 +1,7 @@
 # Shared native launcher. No execution-policy changes or credential persistence.
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'PythonCommand.ps1')
 function Invoke-ParkWeave {
     param([string]$Action, [string]$Python = 'python')
     if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
@@ -10,7 +11,7 @@ function Invoke-ParkWeave {
     if (!(Test-Path (Join-Path $Repo 'pyproject.toml'))) { throw 'ParkWeave repository missing.' }
     $ManagedPython = Join-Path $Repo '.venv-windows\Scripts\python.exe'
     if ($Action -ne 'setup' -and (Test-Path $ManagedPython)) { $Python = $ManagedPython }
-    $Executable = (Get-Command $Python -CommandType Application -ErrorAction Stop).Source
+    $Executable = Resolve-ParkWeavePython -Python $Python
     Push-Location $Repo
     try {
         & $Executable (Join-Path $PSScriptRoot 'lifecycle.py') $Action

@@ -10,7 +10,8 @@ if ($OS.Caption -notmatch 'Windows Server 2025' -or $OS.ProductType -eq 1) {
     throw 'NOT_RUN: explicit Windows Server 2025 required; this is not a Win11 harness.'
 }
 $Repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
-$BasePython=(Get-Command $Python -CommandType Application -ErrorAction Stop).Source
+. (Join-Path $PSScriptRoot '..\windows\PythonCommand.ps1')
+$BasePython=Resolve-ParkWeavePython -Python $Python
 Import-Module (Join-Path $PSScriptRoot 'ClusterControl.psm1') -Force
 function Invoke-Checked([string]$Exe,[string[]]$Arguments) {
     & $Exe @Arguments

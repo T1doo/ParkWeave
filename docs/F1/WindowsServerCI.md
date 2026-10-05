@@ -1,6 +1,10 @@
 # Windows Server CI本地候选（ENG012）
 
-## 迁移后显式Python配置修复（仅本地，待本次Prepare错误）
+## 迁移后显式Python配置与多路径解析修复
+
+用户已提供首轮Prepare截图：Engineering.ps1行16调用的程序名包含hostedtoolcache的Python3.12.10路径及WindowsApps别名路径，两者被拼成一个字符串，exit1。这是已观察根因；Python3.12.10已存在，不能把此前显式setup-python配置缺口称此次根因。最小修复将Get-Command的多候选枚举逐个处理，只返回一个实际存在、非WindowsApps执行别名、非零长度的文件路径，保留完整空格且用调用运算符传独立参数；Prepare原3.12/x64/win32验证保持。Common.ps1相同解析缺陷同步使用该共享resolver。无硬编码runner个人路径、无空格删除/数组拼接、无版本守卫放宽。
+
+本地PowerShell实测覆盖两个实际ApplicationInfo候选、WindowsApps别名优先/仅别名、带空格的可执行路径与独立参数、数组Source拒绝、缺失/零字节候选和错误版本拒绝；相关CI回归42 PASS。首轮测试夹具把单元素JSON数组解包成字符串后索引首字符，以及错误展开数组Source替身，导致5 FAIL/37 PASS；只修这两处夹具，未放宽产品断言。官方PowerShell7.6.6归档hash匹配，AST12脚本零错误/4个CI Linux拒绝守卫及原六Windows守卫PASS。这仍是Linux工程验证，原生Server需新run结果；Win11仍NOT_RUN。命令枚举语义参考[Microsoft Get-Command](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/get-command?view=powershell-7.5)。
 
 恢复并普通push的精确51734906已触发首次Server run 37314450132，Prepare失败/Test跳过/Stop成功；详细日志下载在正式审批后仍Forbidden，数值HTTP状态及拒绝层未知，停止该下载且不换路线。已有步骤metadata没有错误注释，具体根因仍UNKNOWN。原发布提交和旧证据不修改。
 
