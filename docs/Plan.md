@@ -32,3 +32,5 @@ ENG-008 READY_FOR_REVIEW：Windows原生只读文件候选代码/69 Linux policy
 ENG-009：按F1原任务/12AT断言收敛为Convergence有限清单，单项R1计划修订artifact与独立oracle已实现；原阶段不改、真实模型/预算0、Windows候选不动。残余固定R2账号速率/LIVE接入、R3有限候选/集中澄清、R4实机后通路集成，外门E1—E3；具体失败和退出断言均已列明，不泛称还有“完整”欠项，不扩F2。
 
 ENG013：对ENG012候选CI作有限PG失败/state篡改/browser超时oracle与owner/admin环境审计；原应用子进程白名单边界保留，辅助命令按phase收窄。仅本地提交，Actions访问不重试、workflow不push、runner0；Linux/static/synthetic证据不能替代Server/Win11实测，生产R4关闭/真实模型预算0。供父任务复核后另派。
+
+ENG014（新授权并行切片）：F2 PARALLEL_ENGINEERING，正式准入NOT_PASSED；F1仍IN_PROGRESS。合成企业资料整理：链接真实本地Case/Run，企业带来源版本的纯文本补件、获派专员补正/人工核对、企业确认本地资料准备与重开，旧核对自动失效/历史保留。只确认本地资料准备，不自动判断资格、外部受理或线下履约。详见F2/Plan、TestSpecification、FirstUse与Log。此新授权替代此前各轮“不进入F2”的当轮范围限制，不修改原V1阶段门或历史成绩。真实模型预算0、R4关闭、Win11未验证；本轮一次Actions复核仍Forbidden，Git分支只读查得原基线，未fetch/push/runner。

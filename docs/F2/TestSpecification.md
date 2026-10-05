@@ -8,6 +8,6 @@ Oracle独立读数据库：统计Preparation/evidence/events与canonical snapsho
 
 每次写需request key+当前revision。锁序为principal授权锁→请求key锁→单Preparation行；同key重放必须先重验当前角色/Grant/获派范围且返回当时回执，不再次应用。每次改变资料/reopen清除当前review hash，旧确认保留。专员核对必须两个当前材料槽齐全，人工说明不能为空；确认只接受当前核对快照。
 
-API输入16KiB、两个固定槽、纯文本每项最大4000字符、来源摘要最大200字符、版本由数据库逐槽增长；未知字段/HTML不执行、不抓取来源URL。历史为SELECT/INSERT-only。一次提交事件记录包含actor、命令、revision、当前快照hash，不等同站外消息送达或履约。
+API输入16KiB、两个固定槽、纯文本每项最大4000字符、单事项最多64条事件、来源摘要最大200字符、版本由数据库逐槽增长；未知字段/HTML不执行、不抓取来源URL。历史为SELECT/INSERT-only。一次提交事件记录包含actor、命令、revision、当前快照hash，不等同站外消息送达或履约。
 
 重置由pytest独立PG fixture创建/销毁自己的UUID库；浏览器使用既有本机合成smoke库和新request key/新Run，不重置旧Case。浏览器会话仅当前页内存，公开证据无token/临时DSN。原来源hash/Windows guard/workflow保护检查后冻结全量回归。失败先留痕再修复，不删oracle或把NOT_RUN计PASS。

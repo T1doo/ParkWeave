@@ -90,3 +90,5 @@ LOCAL_ONLY/NEEDS_REVIEW：窄push workflow、标准Server2025/Python3.12x64/原�
 ## 第十三有界增量ENG013：有限清理故障与CI凭据边界
 
 仅ENG013-Mapping.md冻结范围：PG start失败/自有state篡改/browser超时，合成command doubles与实际原API/worker启动循环的mock环境捕获；收窄CI辅助命令owner/admin暴露面。不重试Actions/gh、不换身份路线、不读隐藏凭据、不push workflow、不启动runner、不改权限。全部本地commit待复核，WindowsServerCI.md只列恢复授权后一次标准mock job的最小计划；原Win11/R4/LIVE/E1—E3与完整AT/EX门不变。本轮结束不扩新F1产品范围或F2。
+
+最新接续授权：ENG014允许F1未签收时并行开发一个独立F2合成资料准备切片。历史“不扩F2”是此前当轮限制，现由用户新指示替代；F1任务、Convergence R4与E1—E3外门不转PASS。开发不等于F2正式准入或完整AT签收。详见../F2/Plan.md。

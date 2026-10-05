@@ -225,3 +225,9 @@ def test_scope_grant_change_and_seed_never_reactivates(preparation_fixture):
     prep.seed_synthetic(f[1],f[2])
     assert read(f,row).status_code==403
     with f[1].connect() as c:assert c.execute("SELECT active,org_id FROM preparation_grants WHERE principal_id='fixture-a'").fetchone()=={'active':False,'org_id':'org-b'}
+
+def test_history_limit_rejects_write_without_partial_event(preparation_fixture):
+    f=preparation_fixture;row,_,_=create(f)
+    with f[1].connect() as c:c.execute('UPDATE preparations SET revision=64 WHERE id=%s',(UUID(row['preparation_id']),))
+    before=counts(f[1]);assert add(f,row,revision=64).status_code==409
+    assert counts(f[1])==before

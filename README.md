@@ -98,3 +98,5 @@ Schema4/5非破坏迁移增加绑定park/org的当前能力/动作Grant、单Run
 intern_adapter.py只用明确MockTransport测试官方非流式HTTP形状，真实传输/live_complete拒绝；本地离线预算不是共享实账，API/worker未接入真实规划链。已知Intern-S2/intern-s2 ASCII大小写同名接受，其他型号/Unicode近形/截断/未知工具拒绝；不会执行生成工具或丢响应盲重试。模型真实调用0，详见ModelBoundary。
 
 审查修复：文件根/既有files目录和文件须当前POSIX属主且group/other无权限，0777/0755拒绝，不自动chmod/chown；新files0700、fixture0600。Windows既有ACL只读检查，不借POSIX位推定安全，原生backend仍关闭。所有受控测试/启动子进程用OS项白名单+显式项目配置，不复制全os.environ或转发无关密钥。安全说明见SecurityConfiguration。
+
+F2资料准备并行切片：参见[首次使用](docs/F2/FirstUse.md)与[开发边界](docs/F2/Plan.md)。企业带来源补件→获派专员人工核对→企业确认/重开，全部SYNTHETIC本地业务；F1未签收、Windows未验证、资格未判定、生产R4关闭。当前GitHub Actions访问阻塞不妨碍本地使用。

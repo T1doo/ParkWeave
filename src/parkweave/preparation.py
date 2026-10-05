@@ -116,6 +116,7 @@ def command(store,token,id,key,data):
         previous=replay(c,p,key,fp,id)
         if previous:return previous
         if row['revision']!=data.expected_revision:raise Conflict('stale preparation revision; refresh required')
+        if row['revision']>=64:raise Conflict('bounded preparation history limit reached')
         items=latest(c,id);current_hash=snapshot(row,items);review_hash=None
         if data.action=='ADD_EVIDENCE':
             old=next((i for i in items if i['slot']==data.slot),None);version=old['version']+1 if old else 1
