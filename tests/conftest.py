@@ -1,3 +1,4 @@
+import os
 import secrets
 import uuid
 import pytest
@@ -10,6 +11,23 @@ from parkweave.api import create_app
 
 @pytest.fixture(scope="session")
 def pg(tmp_path_factory):
+    if os.name=='nt':
+        dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+        if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+        from psycopg.conninfo import conninfo_to_dict
+        parsed=conninfo_to_dict(dsn)
+        if parsed.get('host') not in ('127.0.0.1','localhost') or parsed.get('dbname')!='postgres' or parsed.get('service') or parsed.get('hostaddr') not in (None,'127.0.0.1','::1'):
+            pytest.fail('explicit localhost maintenance postgres DSN required; no remote/production test reset')
+        # Explicit installed native service only. Tests create/drop UUID-prefixed
+        # fixture databases, never reset the configured parkweave application DB.
+        with psycopg.connect(dsn) as c:
+            row=c.execute("SELECT rolsuper,rolcreatedb FROM pg_roles WHERE rolname=current_user").fetchone()
+            if not any(row):pytest.fail('native test owner needs isolated database creation permission')
+            if not c.execute("SELECT 1 FROM pg_roles WHERE rolname='parkweave_app'").fetchone():pytest.fail('parkweave_app must be explicitly prepared')
+        class NativeTestServer:
+            def get_uri(self):return dsn
+        yield NativeTestServer()
+        return
     import pgserver  # Linux evidence only; native Windows uses an installed service.
     server = pgserver.get_server(tmp_path_factory.mktemp("parkweave-pg") / 'data', cleanup_mode='delete')
     with psycopg.connect(server.get_uri(), autocommit=True) as c:

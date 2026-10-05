@@ -51,7 +51,7 @@ def create_app(store: Store) -> FastAPI:
     def health():
         with store.connect() as c:
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
-        return {"status": "ok", "schema": version, "model": "MODEL_MOCK", "data": "SYNTHETIC", "execution_mode": store.mode}
+        return {"status": "ok", "project":"ParkWeave", "process_id":os.getpid(), "schema": version, "model": "MODEL_MOCK", "data": "SYNTHETIC", "execution_mode": store.mode}
 
     @app.post("/api/runs", status_code=202)
     def submit(data: Intake, authorization: str | None = Header(default=None),

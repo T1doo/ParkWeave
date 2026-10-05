@@ -19,3 +19,5 @@ ENG-003 READY_FOR_REVIEW：正常API/worker已通过统一网关执行本地动�
 ENG-004 READY_FOR_REVIEW：78工程回归、V1最小结构实际API校验、事实冲突与字段Grant实际API/worker、独立心跳和等待控制。Windows11仅用户自报确认，原生门仍BLOCKED；真实模型注入与预算仍待确认。事实核对成功不代表资格满足或服务履约，未进入F2。下一独立F1缺口见F1/Plan。
 
 ENG-005 READY_FOR_REVIEW：四角色最小权限交集、当前outbox授权与本地交付撤回、逻辑文件ID及Linux路径边界工程子集；107 PASS/1 SKIP，浏览器桌面及320/390模拟PASS。完整AT/EX仍NOT_RUN，F1剩余工程与外部门槛见F1/Plan。跨平台网页目标保留Windows主门，不承诺手机本地后端或公网部署。
+
+ENG-006 READY_FOR_REVIEW：F1收尾候选生命周期/固定AT汇总/离线模型边界与审查安全修复，146工程PASS/1 WindowsSKIP；完整阶段未签收。逐条清单见F1/Checklist、首次使用说明见首次体验。本轮交付停止新增；T01原生文件backend及T05真实传输/持久usage/共享配额/运行链绑定独立未做，外部Windows/LIVE/真实园区/C0门另列，不进入F2。

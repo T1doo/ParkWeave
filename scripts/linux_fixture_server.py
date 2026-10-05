@@ -1,3 +1,4 @@
+from parkweave.process_env import minimal_environment
 """Opt-in Linux test harness; never a Windows installer or production launcher."""
 from pathlib import Path
 import json
@@ -31,7 +32,7 @@ def main():
             c.execute(Path('src/parkweave/roles-fault-fixture.sql').read_text())
         version=c.execute('SELECT version()').fetchone()['version']
     mode='FAULT_INJECTION' if args.fault_fixtures else 'LOCAL'
-    env=dict(os.environ,PARKWEAVE_DSN=owner.dsn,PARKWEAVE_MODE=mode)
+    env=minimal_environment(os.environ,PARKWEAVE_DSN=owner.dsn,PARKWEAVE_MODE=mode)
     if not (root/'synthetic-sessions.json').exists():
         subprocess.run([sys.executable,'-m','parkweave.cli','seed-synthetic'],env=env,check=True)
     owner.seed(json.loads((root/'synthetic-sessions.json').read_text()))

@@ -103,3 +103,26 @@ Schema4/5新增capability_grants/action_grants/run_assignments/deliveries/file_r
 提交前交集审查修正：给能力和动作Grant显式绑定park/org，防止身份改属后旧Grant跟随；追加独立oracle后106 PASS/1 SKIP（71.56秒）。本轮已运行的未发布schema4缺这两个scope列，因此新增migration005按当前合成setup范围增量补齐、保留active/业务历史，未修改已发布migration001—003。新迁移oracle只构造旧schema元数据，Run状态不手改；原新回归107 PASS/1 SKIP（71.12秒）。审查同时明确本地inbox只限当前企业经办recipient；非企业角色即使获派Run状态仍不能沿旧消息通道扩大读范围，撤回独立断言随最终完整回归验证。此处修正属于原冻结权限交集，不增加新业务或F2。
 
 最终发布候选完整回归107 PASS/1 SKIP/2 WARN，71.87秒（原78+新增29 PASS、1原生Windows跳过），同样保留既有WARN。schema5迁移后的最终连续LOCAL服务API51815/worker51816重新加载最新代码，browser_smoke PASS，Run19431b07-e07f-455f-9547-b4196b82b692、Caseaa64cbc0-5e7f-4003-94c1-4cd54487f315、Operation484d45d7-fd61-41dc-9f3a-0b0fb0976698。最终覆盖表/源码hash与此版本一致；完整AT/EX NOT_RUN，原件未改，交付后关闭本地服务。
+
+
+## 2026-10-05 ENG-006（F1收尾候选与审查安全小修）
+
+基线3387aa2f5a2315440cf8d169f4391863bb4601ab，dev/f1-foundation/https://github.com/T1doo/ParkWeave.git；先冻结ENG006-Mapping。只收尾生命周期/固定AT/离线模型边界，不启动F2。没有子任务、高成本委派、真实模型探测、隐藏凭据读取、持续凭据设置或公开部署。原Library来源不变。
+
+新增Doctor/Setup/Start/Status/Stop/Test.ps1+共享native-only driver：明确候选Python3.12x64/专用数据库及低权限app，由授权安装者准备服务/账号；已有config EXCL拒覆盖、已有环境不静默重装、旧sessions/撤权Grant不恢复。Start只localhost、应用子进程不传owner/model秘密；health返回本项目PID供ready核对。Stop必须可信命令/cwd/创建时间/PID匹配，PID复用、foreign、AccessDenied拒绝，不强杀/停止PG服务/删数据。既有Windows根/敏感项ACL只读检查与明确错误，不自动修改；新根才私有ACL，当前native filebackend关闭。首次体验/安全配置/逐条Checklist新建，面向安装者与不熟悉开发的使用者，不称Windows已可一键安装。
+
+正式模型HTTP边界来源是2026-10-05公开官方Chat/Models文档；未请求chat/completions/models实际接口。仅MockTransport，工具case_create的类型/goal边界，已知ASCII Intern-S2大小写同名，其他/Unicode近形型号拒绝；非流式、反馈ID配对、strictJSON重复键拒绝、length/无完成/坏usage/429/鉴权/5xx/重定向/超时/断链拒绝且不自动重试。metadata记录本地尝试/UNKNOWN预留/有效usage，不含token/body；最大3次内存fixture预算，不是共享持久实账。LIVE入口拒绝，API/worker不连接此适配器，真实调用授权0/实际0；没有用其他项目回包冒充Park。
+
+固定42AT/EX定义保持NOT_RUN，ATBindings/run_acceptance以JUnit独立计数，whole_status不从工程PASS推断；缺selector/skip/error分别保留。后续业务无绑定项目仍NOT_RUN/未实现F1，而非全部写环境BLOCKED。DataLedger明确用户设计/合成身份、事实、文件、故障效果与官方协议来源；无真实园区/政策许可或收益评测。
+
+独立审查小修真实复现：旧files.py在新临时root700/files777接受descriptor，与审查结论一致。随后增加root/files目录与文件的effectiveUID/group-other权限检查；新dir700/file600，旧777/755/owner错配拒绝、原mode不改、没有新增业务/文件。测试中POSIX不用于WindowsACL判断。子进程统一OS项白名单+明确项目覆盖，未知键不读取/不转发、无复制全环境；对祖先root缓存仅自建XDG范围配置。
+
+测试过程真实保留：生命周期/模型/绑定初专项29 PASS（0.27秒），新增身份/JSON/进程AccessDenied等专项32 PASS（0.26秒）；审查修复+授权文件专项67 PASS/1 Windows SKIP（30.92秒）；修复期全量145 PASS/1 SKIP；加ASCII近形拒绝后最终run_acceptance全量146 PASS/1 Windows SKIP/2既有WARN，75.04秒（原107+新39）。实际uvicorn/CLIworker/临时PG工程仍在回归，新增模型HTTP都自建fixture。没有意外pytest FAIL，故障/拒绝/skip不删断言。
+
+工具失败：官方PowerShell7.6.6 Linux包SHA256 ddbc4a2d113bbd46d283cfedcbcd117a70caefd7673f41f2b4e0000badf103bc核对后仅放忽略缓存；首次启动因/home/agent/.cache只读初始化失败，指定XDG_CACHE/CONFIG后又因默认.local/share只读失败；补工作区XDG_DATA后实际AST7脚本+2ACL片段零错误，六脚本Linux原生guard均退出1/NOT_RUN。没有改HOME、全局策略/防火墙或安装到系统；这不是Windows执行。PowerShell5.1兼容/ACL/原生PG实际门NOT_RUN。
+
+浏览器失败：最小env下npx开放版本解析令open/close各30秒超时，未写PASS；选择工作区cache已验证agent-browser0.38.2 CLI直接运行，免registry解析后真实桌面/320/390模拟与textContent注入检查PASS。它是pytest后唯一源更改，acceptance-summary保留原测试源码hash并明记单独browser验证，manifest为最终源码；不重新假写同一回归hash。最新连续LOCAL API61886/worker61887，Python3.12.14/PG16.2；浏览器Runb53761ac-73ad-4f77-b2aa-c45a641a40b4，仅LOCAL_CASE_CREATED/NEEDS_INPUT/NOT_SUBMITTED/NO_EVIDENCE。Windows/Mac/手机实机均NOT_RUN。
+
+实际命令：python scripts/run_acceptance.py --report docs/F1/evidence/eng006-acceptance-summary.json；python scripts/check_powershell.py --pwsh .cache/powershell/bin/pwsh；python scripts/linux_fixture_server.py；python scripts/browser_smoke.py --report docs/F1/evidence/eng006-browser-smoke.json。完整错误/JUnit/会话/截图/数据库在私有忽略.runtime，公开结果只计数/分类/hash。完整AT/EX没有PASS。
+
+交接界限：F1仍IN_PROGRESS。T01原生安全文件backend、T05真实传输/持久usage/共享额度/worker规划链绑定独立未做；Windows实机/服务安装/精确版本、Park安全配置与预算、真实园区资料许可/收益、C0模板/跨赛道/准确截止另列外门。源原件hash检查和秘密扫描后提交push、核对远端，关闭测试服务，本轮停止新增供复核，不进入F2。实际commit由Git历史与交付链接关联。

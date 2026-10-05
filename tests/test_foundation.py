@@ -1,3 +1,4 @@
+from parkweave.process_env import minimal_environment
 from concurrent.futures import ThreadPoolExecutor
 import itertools
 import os
@@ -26,7 +27,7 @@ def test_api_worker_process_restart_and_business_separation(fixture):
     store, owner, tokens, client = fixture
     run_id = submit(fixture)
     # API object replacement and independent Python process demonstrate DB persistence.
-    env = dict(os.environ, PARKWEAVE_DSN=store.dsn)
+    env = minimal_environment(os.environ, PARKWEAVE_DSN=store.dsn)
     result = subprocess.run([sys.executable,'-m','parkweave.worker','--once'],env=env,capture_output=True,timeout=20)
     assert result.returncode == 0, result.stderr.decode()
     r = client.get('/api/runs/'+run_id,headers=headers(tokens)).json()

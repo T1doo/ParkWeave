@@ -1,3 +1,4 @@
+from parkweave.process_env import minimal_environment
 """Linux local fixture UI verification using agent-browser, not Windows acceptance."""
 from pathlib import Path
 import json
@@ -7,8 +8,11 @@ import time
 import argparse
 
 root=Path.cwd()
-env=dict(os.environ,npm_config_cache=str(root/'.cache/npm'),XDG_RUNTIME_DIR=str(root/'.runtime/sockets'))
-cmd=['npx','--yes','--package=agent-browser','agent-browser','--executable-path','/usr/bin/chromium','--args','--no-sandbox']
+env=minimal_environment(os.environ,npm_config_cache=str(root/'.cache/npm'),XDG_RUNTIME_DIR=str(root/'.runtime/sockets'))
+candidates=[p for p in (root/'.cache/npm/_npx').glob('*/node_modules/agent-browser/package.json') if json.loads(p.read_text()).get('version')=='0.38.2']
+if not candidates:raise RuntimeError('Install approved agent-browser0.38.2 in workspace cache before smoke; no automatic network install')
+cli=sorted(candidates)[0].parent/'bin/agent-browser.js'
+cmd=['node',str(cli),'--executable-path','/usr/bin/chromium','--args','--no-sandbox']
 
 def browser(*args,stdin=None):
     result=subprocess.run(cmd+list(args),input=stdin,text=True,capture_output=True,env=env,timeout=30)

@@ -1,3 +1,4 @@
+from parkweave.process_env import minimal_environment
 """Real HTTP API + independent CLI workers + PG; no test-only execution ledger."""
 import json
 import os
@@ -19,7 +20,7 @@ def runtime(fixture,tmp_path):
         c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
     with socket.socket() as s:
         s.bind(('127.0.0.1',0));port=s.getsockname()[1]
-    env=dict(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+    env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
     log=(tmp_path/'api.log').open('w+')
     proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
                            '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)

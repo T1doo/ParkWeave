@@ -8,6 +8,12 @@ from uuid import UUID
 from .store import Denied
 
 
+def require_private_directory(fd):
+    info=os.fstat(fd)
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid!=os.geteuid() or info.st_mode&0o077:
+        raise Denied('unsafe private directory owner/permissions; existing permissions unchanged')
+
+
 @contextmanager
 def resource_directory(root,create=False):
     if root is None or not hasattr(os,'O_NOFOLLOW') or os.open not in os.supports_dir_fd:
@@ -23,11 +29,13 @@ def resource_directory(root,create=False):
         for part in path.parts[1:]:
             child=os.open(part,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=fd)
             os.close(fd);fd=child
+        require_private_directory(fd)
         if create:
             try:os.mkdir('files',0o700,dir_fd=fd)
             except FileExistsError:pass
         child=os.open('files',os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW,dir_fd=fd)
         os.close(fd);fd=child
+        require_private_directory(fd)
         yield fd
     except OSError as exc:raise Denied('resource unavailable') from exc
     finally:
@@ -42,7 +50,8 @@ def read_text_resource(root,resource):
             item=os.open(name,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK,dir_fd=directory)
             try:
                 info=os.fstat(item)
-                if not stat.S_ISREG(info.st_mode) or info.st_nlink!=1 or info.st_size>16384:
+                if (not stat.S_ISREG(info.st_mode) or info.st_nlink!=1 or info.st_size>16384
+                        or info.st_uid!=os.geteuid() or info.st_mode&0o077):
                     raise Denied('invalid resource')
                 with os.fdopen(item,'rb',closefd=False) as f:data=f.read(16385)
             finally:os.close(item)

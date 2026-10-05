@@ -87,3 +87,14 @@ Schema4/5非破坏迁移增加绑定park/org的当前能力/动作Grant、单Run
 跨平台目标：响应式网页用于Windows/Mac/Android/iOS浏览器；后端仍以Windows11 x64原生为主验收。Mac本地Python/PG兼容需独立验证，手机连接已运行且获授权的后端，不承诺手机运行数据库或原生App。本轮仅Linux Chromium桌面和320/390像素视口模拟，无手机/Mac/Windows实机证据；按钮≥44px、无水平溢出。保持127.0.0.1，不启动公网或更改防火墙。
 
 模型LIVE仍关闭，预算0；其他项目的模型成功不证明Park成功。将来模型身份仅兼容已知同型号intern-s2/Intern-S2大小写，其他型号仍须拒绝，不能删除身份校验。详见F1/ENG005-Mapping.md及TestSpecification.md。
+
+
+## ENG-006 生命周期、固定验收汇总与离线模型边界
+
+首次体验见[docs/首次体验.md](docs/首次体验.md)，逐条F1交接见[Checklist](docs/F1/Checklist.md)。六Windows脚本位于scripts/windows：Doctor/Setup/Start/Status/Stop/Test。只支持原生Windows、localhost、独立.venv-windows；已有配置不覆盖、已撤权会话不恢复、外部进程不终止、不停止PG服务、不关安全策略。脚本是尚未原生实测的候选，requirements-windows-candidate仅候选直接依赖，不是Windows精确锁。
+
+`python scripts/run_acceptance.py --report .runtime/engineering-acceptance.json`运行完整工程回归，并按docs/F1/ATBindings.json绑定42固定AT/EX定义，分别输出工程子集与完整NOT_RUN。`--ids AT-04,AT-19`只跑所绑定子集，不把缺用例/跳过记PASS。完整错误/JUnit留私有.runtime，公开汇总只有分类/计数/源码hash；原Windows/LIVE门不自动签收。
+
+intern_adapter.py只用明确MockTransport测试官方非流式HTTP形状，真实传输/live_complete拒绝；本地离线预算不是共享实账，API/worker未接入真实规划链。已知Intern-S2/intern-s2 ASCII大小写同名接受，其他型号/Unicode近形/截断/未知工具拒绝；不会执行生成工具或丢响应盲重试。模型真实调用0，详见ModelBoundary。
+
+审查修复：文件根/既有files目录和文件须当前POSIX属主且group/other无权限，0777/0755拒绝，不自动chmod/chown；新files0700、fixture0600。Windows既有ACL只读检查，不借POSIX位推定安全，原生backend仍关闭。所有受控测试/启动子进程用OS项白名单+显式项目配置，不复制全os.environ或转发无关密钥。安全说明见SecurityConfiguration。

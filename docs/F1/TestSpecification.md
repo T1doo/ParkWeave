@@ -116,3 +116,20 @@ LOCAL_INBOX交付与消费在同一授权锁+数据库事务。发给浏览器�
 完整36AT/6EX状态维持NOT_RUN；当前工程子集PASS不改整条验收状态。仍有原生生命周期脚本及固定AT完整执行绑定独立工程缺口；LIVE预算/安全注入/限流、Windows实机、真实园区/来源许可及C0赛方资料另属外部门槛。
 
 提交前完成范围绑定后最终107 PASS/1 SKIP/2 WARN（71.87秒）。增量schema5修复本轮未发布schema4的Grant scope，保持active及所有业务历史，重复迁移稳定；身份改属不带走旧Grant，非企业角色即使获派Run状态也不能读旧inbox。对应AT-27迁移工程子集，不表示整条AT-27通过。
+
+
+## ENG-006 收尾工程绑定与审查修复
+
+执行前范围见ENG006-Mapping；ATBindings逐项覆盖全部42固定定义，run_acceptance读取pytest JUnit按testcase独立计数，whole_status永远NOT_RUN；绑定缺失/unsafe selector/预填PASS拒绝，未执行选择器为INCOMPLETE，失败和Windows跳过不能PASS。全部工程回归146 PASS/1 Windows SKIP/2 WARN（75.04秒）。原107继续；新39含生命周期mock/格式边界/来源完整性与目录安全，重叠AT计数不能相加。Linux实际API/worker/PG路径仍在回归里，没有真实模型调用。
+
+生命周期：Linux上实际Python CLI六操作全部拒绝；PowerShell7.6.6实际AST解析7脚本+2内嵌ACL片段零错误，六PS脚本都以NOT_RUN拒Linux。共享安全策略用mock进程检验PID复用/外国命令/cwd/AccessDenied拒绝，配置EXCL防覆盖、DSN/app身份边界、环境白名单未知项不读取/转发、既有WindowsACL只Get-Acl不Set-Acl。Windows执行/权限/PG服务/安装依赖/签名NOT_RUN，不用Linux解析等同Win5.1兼容通过。
+
+模型：官方格式来源见ModelBoundary；离线单位样例涵盖两次工具反馈、已知大小写、其他型号/重复JSON/未知工具/script拒绝、length/无完成标记、429/鉴权/5xx/重定向/超时/断链/坏JSON、usage错误/缺失/超预留、并发本地尝试预算。数据全部自建SYNTHETICHTTP，strict MockTransport、live入口拒绝，不调用密钥resolver或真实服务。不证明真实限流/超时终止/全成本。
+
+审查修复：临时files0777在旧代码真实accepted，修复后root/files/currentUID+group/other0校验拒绝，mode保持0777；新增root777/files777/files755实际HTTP403、登记拒绝且0新增文件/业务、属主错配mock、新files0700。新files/文件descriptor最小权限；既有目录/ACL不自动改。WindowsACL读检查必须原生验证，backend仍禁用。详见eng006-directory-review.json。
+
+真实失败保留：PowerShell首次初始化因/home/agent缓存只读失败，配置XDG_CACHE_HOME后仍因XDG_DATA_HOME默认只读失败；指定工作区XDG缓存/配置/数据后AST成功，未改HOME/全局策略。浏览器npx开放版本解析在最小env下open/close各30秒超时，未记PASS；改用缓存中验证版本0.38.2的CLI直接执行，免registry解析，单独重测，结果另见browser证据。pytest本轮无意外FAIL，预期拒绝/skip均有独立oracle。
+
+剩余独立实现与外部门槛逐条见Checklist。本轮交付后停止新增；完整AT/EX没有PASS，不进入F2。
+
+最终浏览器缓存CLI修复后桌面及320/390模拟PASS、无页面错误；该脚本是全回归后唯一源变动，实际浏览器单独验证，acceptance-summary保留原pytest源快照并记录post_regression_verification，未伪造覆盖全回归hash。

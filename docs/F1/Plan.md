@@ -44,3 +44,10 @@ READY_FOR_REVIEW：按执行前ENG005-Mapping冻结F1-T01/T02/T03/T04中AT-03/04
 模型0调用/预算0；intern-s2与官方Intern-S2已知同型号大小写兼容只登记后续真实链要求，不放行其他型号。跨平台目标用响应式网页，Windows本地后端主验收保留；Mac本地后端及手机浏览器实机独立验证，手机不承诺运行数据库。本轮仅Linux Chromium模拟，不部署公网。
 
 剩余独立F1工程：Windows Doctor/Setup/Start/Status/Stop/Test脚本及完整固定AT初态/oracle执行绑定；完整生命周期、模型故障/限流/usage仍需对应实现与证据，不能把全量AT状态仅改成外部BLOCKED。CaseStep/正式服务执行权限、真实消息适配器、通用文件产物协议属尚未开放范围，不借本轮扩平台。外部门槛：Park模型安全配置/预算及共享总限流确认（其他项目验证不继承）、Windows11 x64原生机器/安装权限/精确版本、真实园区来源/许可与试点评测、C0模板/跨赛道/准确截止核实。F1仍IN_PROGRESS，完整AT/EX NOT_RUN，本轮交付后停待复核。
+
+
+## 第六有界增量ENG-006：收尾交接
+
+READY_FOR_REVIEW：六Windows候选生命周期脚本/安全配置/首次体验、42固定AT/EX绑定及独立汇总、正式HTTP模型离线边界；附独立审查目录0777缺口修复和子进程最小环境。完整146 PASS/1 Windows SKIP/2 WARN；Linux PowerShell7.6.6 AST零错误、六guard拒Linux原生流程。Windows实际运行/ACL/filebackend/真实模型仍未通过，完整AT/EX NOT_RUN。
+
+本轮交付即停止新增，不进入F2。准确逐任务实现/独立缺口/外部门槛见Checklist：Windows文件backend仍关闭；真实传输、持久调用usage、共享额度协调和worker真实规划链绑定尚未做，不把它们混为仅外部验收。预算授权0，不因其他项目回包成功探测Park。候选安装不覆盖数据/配置或改既有ACL/全局策略。

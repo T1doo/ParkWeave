@@ -129,6 +129,7 @@ def test_outbox_ack_fault_rolls_back_delivery_monotonic_replay(fixture):
 
 @pytest.fixture
 def file_runtime(runtime,tmp_path):
+    if os.name=='nt':pytest.skip('NOT_RUN: native file backend remains disabled')
     # Restart actual API with explicit private synthetic file root, no credential lookup.
     api,owner,tokens,env=runtime
     root=tmp_path/'private';root.mkdir(mode=0o700)
@@ -262,6 +263,7 @@ def test_denied_file_authorization_never_opens_backend(fixture,monkeypatch):
 
 
 def test_fixture_writer_cannot_follow_configured_root_symlink(fixture,tmp_path):
+    if os.name=='nt':pytest.skip('NOT_RUN: native reparse writer backend not verified')
     store,owner,tokens,client=fixture
     outside=tmp_path/'outside';outside.mkdir()
     root=tmp_path/'private';root.symlink_to(outside,target_is_directory=True)
@@ -308,3 +310,29 @@ def test_additive_unreleased_grant_scope_migration_preserves_withdrawal(fixture)
     store.finish(store.claim('current-worker'))
     assert store.read(tokens['fixture-a'],run)['operation']['state']=='FAILED_SAFE'
     assert counts(owner)['cases']==0
+
+
+@pytest.mark.parametrize('target,mode',[('root',0o777),('files',0o777),('files',0o755)])
+def test_insecure_private_directories_rejected_without_repair(file_runtime,target,mode):
+    api,owner,tokens,env,root,run,fid=file_runtime
+    directory=root if target=='root' else root/'files'
+    directory.chmod(mode);before=counts(owner)
+    r=api.get('/api/files/'+fid,headers=auth(tokens))
+    assert r.status_code==403 and b'SYNTHETIC ONLY' not in r.content
+    with pytest.raises(Denied,match='unsafe private directory'):
+        owner.register_synthetic_file('fixture-a',run,b'SYNTHETIC NEW')
+    assert directory.stat().st_mode&0o777==mode and counts(owner)==before
+
+
+def test_private_directory_wrong_owner_and_new_minimum_mode(tmp_path,monkeypatch):
+    if os.name=='nt':pytest.skip('NOT_RUN: POSIX owner cannot prove Windows ACL')
+    from parkweave.files import resource_directory,require_private_directory
+    root=tmp_path/'private';root.mkdir(mode=0o700)
+    with resource_directory(root,create=True):pass
+    assert (root/'files').stat().st_mode&0o777==0o700
+    with resource_directory(root) as fd:
+        original=os.fstat
+        from types import SimpleNamespace
+        info=original(fd)
+        monkeypatch.setattr(os,'fstat',lambda _:SimpleNamespace(st_mode=info.st_mode,st_uid=os.geteuid()+1))
+        with pytest.raises(Denied,match='unsafe private directory'):require_private_directory(fd)
