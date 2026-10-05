@@ -54,6 +54,7 @@ def fixture(pg):
         c.execute('GRANT INSERT ON authorization_audit TO parkweave_app')
         c.execute('GRANT SELECT,INSERT,UPDATE ON runs,operations,cases,outbox,run_projection,model_steps TO parkweave_app')
         c.execute('GRANT SELECT,INSERT ON model_plans TO parkweave_app')
+        c.execute('GRANT SELECT,INSERT ON fact_reviews,fact_followups TO parkweave_app')
     store = Store(make_conninfo(owner.dsn, user='parkweave_app'))
     with TestClient(create_app(store)) as client:
         yield store, owner, tokens, client

@@ -14,3 +14,4 @@ GRANT INSERT ON authorization_audit TO parkweave_app;
 GRANT SELECT,INSERT,UPDATE ON model_steps TO parkweave_app;
 
 GRANT SELECT,INSERT ON model_plans TO parkweave_app;
+GRANT SELECT,INSERT ON fact_reviews,fact_followups TO parkweave_app;

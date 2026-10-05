@@ -1,0 +1,28 @@
+{
+  "status": "REPAIRED_FINAL_ENGINEERING_REGRESSION_PASS_NOT_WHOLE_AT",
+  "provider_requests": 0,
+  "real_authorized_budget": 0,
+  "initial_counts": {
+    "PASS": 316,
+    "FAIL": 1,
+    "SKIP": 1
+  },
+  "initial_seconds": "106.516",
+  "failures": [
+    {
+      "test": "tests.test_authorization_files::test_additive_unreleased_grant_scope_migration_preserves_withdrawal",
+      "message": "psycopg.errors.DuplicateTable: relation \"fact_reviews\" already exists"
+    }
+  ],
+  "fix": "schema8 CREATE TABLE IF NOT EXISTS and schema version insert ON CONFLICT preserve already present immutable tables during unreleased prototype migration replay",
+  "repair_targeted_tests": "29 PASS / 2 existing WARN",
+  "test_removed": false,
+  "initial_report": "eng011-initial-regression-summary.json",
+  "whole_AT_EX": "NOT_RUN",
+  "final_report": "eng011-acceptance-summary.json",
+  "final_counts": {
+    "PASS": 317,
+    "FAIL": 0,
+    "SKIP": 1
+  }
+}

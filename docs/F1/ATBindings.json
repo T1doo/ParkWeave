@@ -1,5 +1,5 @@
 {
-  "origin": "NEW: V1 definitions + ENG001-010 engineering subsets; original stage assignments unchanged",
+  "origin": "NEW: V1 definitions + ENG001-011 engineering subsets; original stage assignments unchanged",
   "cases": [
     {
       "id": "AT-01",
@@ -85,10 +85,28 @@
       "whole_status": "NOT_RUN",
       "engineering_selectors": [
         "tests/test_facts_heartbeat.py::test_api_facts_conflict_missing_and_independent_source_preservation",
-        "tests/test_facts_heartbeat.py::test_expired_fact_never_becomes_known_and_idempotency"
+        "tests/test_facts_heartbeat.py::test_expired_fact_never_becomes_known_and_idempotency",
+        "tests/test_candidate_review.py::test_normal_cli_source_projection_questions_and_independent_hash",
+        "tests/test_candidate_review.py::test_existing_assertion_history_not_promoted_or_overwritten",
+        "tests/test_candidate_review.py::test_expired_source_and_empty_fields_unknown",
+        "tests/test_candidate_review.py::test_cross_org_park_review_and_answer_denied",
+        "tests/test_candidate_review.py::test_current_read_write_and_role_intersection",
+        "tests/test_candidate_review.py::test_assigned_status_role_never_reads_candidates",
+        "tests/test_candidate_review.py::test_queued_revoke_no_review_side_effect",
+        "tests/test_candidate_review.py::test_revocation_after_mock_projection_rechecked",
+        "tests/test_candidate_review.py::test_control_during_mock_wait_old_fence_cannot_publish",
+        "tests/test_candidate_review.py::test_mock_value_disagrees_preserve_source_and_stays_unknown",
+        "tests/test_candidate_review.py::test_clarification_append_only_lineage_retry_conflict_and_cancel",
+        "tests/test_candidate_review.py::test_missing_answer_becomes_only_unverified_not_known",
+        "tests/test_candidate_review.py::test_answer_retry_rechecks_grants_and_rejects_out_of_review_field",
+        "tests/test_candidate_review.py::test_cancel_queued_child_no_review_and_no_change_parent",
+        "tests/test_candidate_review.py::test_review_transaction_failure_restart_fence_and_immutable_history",
+        "tests/test_candidate_review.py::test_invalid_mock_projection_never_persisted",
+        "tests/test_candidate_review.py::test_untrusted_candidate_contract_rejects_origin_promotion_new_field_real_source",
+        "tests/test_candidate_review.py::test_concurrent_clarification_same_key_one_child"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
-      "gate": "FULL_ORACLE_NOT_RUN: engineering subset only"
+      "gate": "REAL_SOURCE/LIVE_BLOCKED: bounded three-field SYNTHETIC candidate review implemented; real extraction/authorized verification and whole acceptance not run"
     },
     {
       "id": "AT-07",
@@ -186,7 +204,8 @@
         "tests/test_worker_gateway.py::test_actual_expiry_recovery_after_crash_does_not_dispatch_again",
         "tests/test_plan_revision.py::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call",
         "tests/test_account_rate.py::test_rate_deferred_feedback_resumes_no_duplicate_case_or_plan",
-        "tests/test_account_rate.py::test_rate_denial_retry_is_bounded_three_attempts_known_effect_preserved"
+        "tests/test_account_rate.py::test_rate_denial_retry_is_bounded_three_attempts_known_effect_preserved",
+        "tests/test_candidate_review.py::test_review_transaction_failure_restart_fence_and_immutable_history"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
       "gate": "FULL_ORACLE_NOT_RUN: engineering subset only"
@@ -216,7 +235,9 @@
         "tests/test_facts_heartbeat.py::test_grant_revoke_blocks_cached_receipt_new_read_and_write_and_seed_does_not_restore",
         "tests/test_worker_gateway.py::test_real_worker_revocation_before_dispatch_and_after_effect",
         "tests/test_plan_revision.py::test_current_authority_and_cross_scope_no_revision_leak",
-        "tests/test_plan_revision.py::test_assigned_status_role_never_receives_plan_documents"
+        "tests/test_plan_revision.py::test_assigned_status_role_never_receives_plan_documents",
+        "tests/test_candidate_review.py::test_revocation_after_mock_projection_rechecked",
+        "tests/test_candidate_review.py::test_current_read_write_and_role_intersection"
       ],
       "scope": "PARTIAL_ENGINEERING_ONLY",
       "gate": "FULL_ORACLE_NOT_RUN: engineering subset only"

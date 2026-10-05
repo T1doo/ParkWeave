@@ -5,7 +5,7 @@ from typing import Literal
 from uuid import UUID
 from fastapi import FastAPI, Header, HTTPException, Request, Query
 from fastapi.responses import HTMLResponse, JSONResponse, Response
-from .domain import Intake, FactInput, V1ServiceSpec, V1ServicePlan, FieldName
+from .domain import Intake, FactInput, ClarificationInput, V1ServiceSpec, V1ServicePlan, FieldName
 from .store import Store, Denied, Conflict
 
 
@@ -69,6 +69,17 @@ def create_app(store: Store) -> FastAPI:
     @app.get("/api/runs/{run_id}/plan-revisions")
     def plan_revisions(run_id: UUID, authorization: str | None = Header(default=None)):
         return {'revisions':store.read_plan_revisions(token(authorization),run_id)}
+
+    @app.get('/api/runs/{run_id}/fact-review')
+    def fact_review(run_id: UUID,authorization: str | None=Header(default=None)):
+        from .fact_review_store import read
+        return read(store,token(authorization),run_id)
+
+    @app.post('/api/runs/{run_id}/clarifications',status_code=202)
+    def clarification(run_id: UUID,data: ClarificationInput,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
+        from .fact_review_store import followup
+        return followup(store,token(authorization),run_id,idempotency_key,data)
 
     @app.post("/api/runs/{run_id}/{intent}")
     def control(run_id: UUID, intent: Literal["pause", "cancel", "resume", "reconcile"],

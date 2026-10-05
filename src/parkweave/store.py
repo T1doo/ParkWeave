@@ -37,7 +37,7 @@ class Store:
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
             c.execute(Path(__file__).with_name("schema.sql").read_text())
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
-            if version > 7:
+            if version > 8:
                 raise Conflict("database version newer than this code")
             if version < 2:
                 c.execute(Path(__file__).with_name("migration-002.sql").read_text())
@@ -53,6 +53,8 @@ class Store:
 
             if version < 7:
                 c.execute(Path(__file__).with_name("migration-007.sql").read_text())
+            if version < 8:
+                c.execute(Path(__file__).with_name("migration-008.sql").read_text())
 
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""
@@ -122,7 +124,9 @@ class Store:
             raise Denied('trusted action required')
         if not c.execute('SELECT 1 FROM action_grants WHERE principal_id=%s AND action=%s AND park_id=%s AND org_id=%s AND active',(p['id'],action,p['park_id'],p['org_id'])).fetchone():
             raise Denied('current action capability required')
-        if action=='facts.assess':self.check_fields(c,p,r['input']['fact_fields'],'READ')
+        if action=='facts.assess':
+            self.check_fields(c,p,r['input']['fact_fields'],'READ')
+            if r['input'].get('candidate_review'):self.check_fields(c,p,r['input']['fact_fields'],'WRITE')
 
     def revoke_capability(self,principal_id,capability):
         if capability not in ROLE_CAPABILITIES['enterprise_operator']:raise ValueError('unknown capability')
@@ -155,7 +159,9 @@ class Store:
             p = self.auth(c, token, lock=True)
             self.check_capability(c,p,'EXECUTE')
             if not c.execute('SELECT 1 FROM action_grants WHERE principal_id=%s AND action=%s AND park_id=%s AND org_id=%s AND active',(p['id'],data.action,p['park_id'],p['org_id'])).fetchone():raise Denied('current action grant required')
-            if data.action=='facts.assess':self.check_fields(c,p,data.fact_fields,'READ')
+            if data.action=='facts.assess':
+                self.check_fields(c,p,data.fact_fields,'READ')
+                if data.candidate_review:self.check_fields(c,p,data.fact_fields,'WRITE')
             # Serializes request-key lookup/create. Scope derives exclusively from DB identity.
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s,0))", (p["id"] + ':' + key,))
             old = c.execute("SELECT id,fingerprint FROM runs WHERE principal_id=%s AND request_key=%s",

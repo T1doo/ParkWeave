@@ -188,3 +188,21 @@ rate拒绝未发可持久next_attempt_at延后且fence递增，无sleep/请求�
 最终冻结源码完整命令：.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng010-acceptance-summary.json。Linux实际临时PG/API/独立CLI回归 **289 PASS / 1 Windows SKIP / 2既有WARN，93.211秒**（原263+新增26，账户测试26实例）。发送边界/并发/代次/clock/延后/三次上限与pure配置见eng010-account-rate.json及AccountRate.md；HTTP仅合成MockTransport，禁真实HTTPTransport socket，provider请求0/真实授权预算0。报告65个code/test/script hash与最终文件一致，42个whole AT/EX均NOT_RUN，stage未变。未重跑未改浏览器/PS，不把Linux/Mock称native Windows/LIVE模型/真实园区通过。
 
 两份Library原档44220/31271字节、454/410行、SHA256与manifest一致，原native/files.py及ENG009 gap共6文件逐字HEAD不变。Git diff/暂存秘密与真实个人数据/忽略配置日志检查后commitpush核实远端，测试fixture finally关闭。F1 IN_PROGRESS；真实Windows E1、真实模型安全注入/实际共享协调与预算 E2、真实资料/C0 E3 BLOCKED/NOT_RUN。只交付R2，R3/R4不推进，push后本轮结束供父任务复核。
+
+## ENG-011：仅R3三字段候选/集中澄清（2026-10-05）
+
+基线d395fc1856b350fa1d4256563f0731a6b27b3687，dev/f1-foundation/https://github.com/T1doo/ParkWeave.git；核对branch/remote与clean基线，未发现AGENTS/.agents。冻结ENG011-Mapping，仅R3，不新增业务字段/服务场景、不进F2/F3，不改Sim2Act/Windows候选/backend/probe，不启用R4；无子任务、真实model env/隐藏凭据读取、provider调用、外网部署或持续凭据配置。真实授权预算/模型API请求0。
+
+沿用正常facts.assess Intake新增显式candidate_review及最多12条已有FactInput形状的合成候选。USER_STATEMENT/DOCUMENT_EVIDENCE仅提供者合成自述/摘录，不声称收到真实文档/原包；来源id/version、有效期/摘录保留。正常gateway/worker默认明确OFFLINE_MOCK_MODEL，严格投影MODEL_CANDIDATE，禁止伪造来源/字段/verified，不同值单列冲突而不覆盖。返回后当前owner/scope、READ/WRITE/EXECUTE/action、control/fence/lease/输入hash重验；mock等待无长DB事务。新评审MISSING/EXPIRED/CONFLICT/UNVERIFIED统一UNKNOWN、资格NOT_EVALUATED、外部NOT_SUBMITTED/履约NO_EVIDENCE，无Case/已核实事实效果。旧非候选assessment与fact_assertions历史不改写。
+
+Schema8增量immutable fact_reviews(document/hash)/fact_followups；review/receipt/Run终态/outbox同事务。op VERIFIED只表示本地评审完成，scope CANDIDATES_REVIEWED_UNVERIFIED；新GET评审当前READ/owner，仅获派状态角色拒绝内容。统一三字段必要问题在API和网页集中呈现。带父hash/key回填追加USER_STATEMENT并原子建子Run/链接，不覆盖旧review/source版本；同key相同body幂等/并发一子Run，不同body409，重复仍重验权限。取消只记本次补充，无旧效果撤销；child使用既有cancel/pause/resume。网页失败请求保留原body/key便于安全重试。source上限/16KiB明确拒绝，应用review/followups无UPDATE/DELETE。
+
+独立oracle自己算canonical hash并逐字段查PG/实际CLI/API，验证双方版本/来源/缺失过期、mock值冲突/伪造拒绝、用户补充仍UNKNOWN、READ-WRITE/跨园区企业/角色交集与撤权、取消/暂停/旧fence、同key并发、事务rollback/新worker恢复、immutable/history/迁移。专项初24 PASS；补控制在途/模型另值/答复重试撤权后28 PASS。既有foundation/facts先35 PASS。
+
+真实失败/修复：首轮完整316 PASS/1 FAIL/1 Windows SKIP/2既有WARN，106.52秒。旧原型grant-scope迁移测试清版本却保留新表，schema8 CREATE遇DuplicateTable fact_reviews；保留该测试/失败报告eng011-initial-regression-summary.json，改新表CREATE IF NOT EXISTS及version ON CONFLICT，再专项29 PASS。最终冻结源码命令.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng011-acceptance-summary.json：**317 PASS /1 Windows SKIP /2既有WARN，99.046秒**（原289+新增28）。修复证据eng011-migration-repair.json，无删除旧oracle或预填完整AT PASS。报告70个code/test/script hash与最终源码匹配；36AT/6EX whole NOT_RUN，固定stage unchanged。
+
+使用vercel:agent-browser技能（c10/agent-browser SKILL.md），已缓存agent-browser0.38.2/Linux Chromium本地合成harness验证正常表单→三项集中问题→自述补充子Run→仍UNKNOWN→取消、父history/hash不变，320/390无横向溢出、browser error0。报告eng011-browser-candidates.json。运行环境实测Python3.12.14/PG16.2/Linux x64；无Windows/Mac/手机实机证据，也不把本轮当真实模型提取通过。harness/API/worker主动SIGTERM正常finally退出，浏览器session关闭，无保留活跃测试服务。
+
+两份Library原档44220/31271字节、454/410行、hash与manifest一致；原files.py/Windows候选/native probes与ENG009失败/ENG010最终证据共7文件HEAD逐字不变。Git diff/暂存秘密/真实个人数据/忽略配置日志检查后commitpush验证远端SHA，R3交付后即停。F1仍IN_PROGRESS；R4继续未启用，E1 Windows11原生、E2真实模型/安全注入/共享部署预算、E3真实来源/C0仍BLOCKED/NOT_RUN。
+
+用户中途接续指示仅记录到Plan：下一轮优先云端免费公共仓库windows-2025 CI、Python3.12x64、PG17 PGBIN freshcluster/显式test-owner DSN/parkweave_app，mockonly；Windows Server不能替代Win11，不绕file_candidate_probe release11 guard，独立Server harness保持生产关闭。本轮未创建CI、未开启付费runner或修改权限/持续凭据，具体版本/runner条件留下一轮核实。

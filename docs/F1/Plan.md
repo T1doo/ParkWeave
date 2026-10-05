@@ -76,3 +76,9 @@ F1仍IN_PROGRESS，残余并非全部外部验证：native验证后生产dispatc
 ## 第十有界增量ENG-010：仅R2
 
 账号行锁30RPM发送预约、未决持续占位/完成后60秒冷却、旧代次拒绝、未发退款与有界next_attempt_at恢复；显式LIVE默认关闭/审批前提/变量名存在性只用Fake Mapping。实际provider/预算0，正常CLI仍SYNTHETIC。真实共享两产品同协调点部署未验，独立DB不自动共享。R3/R4未操作，Windows候选不启用，完整AT/EX NOT_RUN；回归/Log/远端核实后本轮停止。
+
+## 第十一有界增量ENG-011：仅R3
+
+正常facts.assess请求/worker接入三字段合成候选projection、明确MockCandidateModel、USER_STATEMENT/DOCUMENT_EVIDENCE/MODEL_CANDIDATE来源及版本，统一UNKNOWN/必要问题、immutable review/hash/append-only澄清子Run。权限/源绑定/冲突缺失/取消/重试/恢复oracle及Linux浏览器证据；真实provider请求/预算0、资格NOT_EVALUATED。R4未操作/仍关闭，Windows实机/LIVE/真实来源外门保持，完整AT/EX NOT_RUN。回归及commitpush后停待复核。
+
+下一轮接续候选（用户优先云端，不依赖用户电脑）：标准免费公共仓库GitHub windows-2025 CI，Python3.12 x64、runner原生PG17 PGBIN fresh cluster、显式PARKWEAVE_TEST_OWNER_DSN及parkweave_app role，全部mock。Windows Server不是Windows11；现有file_candidate_probe的严格release11 guard不绕过，后续独立Server工程harness仍保留生产候选未启用和Win11门。本轮只记录，不创建CI/付费runner、不调整仓库权限/网络或持续凭据；具体CI下一轮独立核实和实施。

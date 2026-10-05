@@ -108,10 +108,14 @@ class Intake(Contract):
     source: Literal["SYNTHETIC"] = "SYNTHETIC"
 
     fact_fields: list[Literal['region','employees','service_need']] = Field(default_factory=list, max_length=3)
+    candidate_review: bool = False
+    fact_candidates: list['CandidateEvidence'] = Field(default_factory=list,max_length=12)
 
     def snapshot(self):
         data=self.model_dump()
         if self.action!='facts.assess':data.pop('fact_fields')
+        if not self.candidate_review:
+            data.pop('candidate_review');data.pop('fact_candidates')
         return data
 
     @model_validator(mode="after")
@@ -121,8 +125,12 @@ class Intake(Contract):
         if self.action=='facts.assess':
             if not self.fact_fields or len(set(self.fact_fields))!=len(self.fact_fields):
                 raise ValueError('assessment requires unique explicit fields')
+            if any(item.field not in self.fact_fields for item in self.fact_candidates):
+                raise ValueError('candidate outside requested fields')
         elif self.fact_fields:
             raise ValueError('fields only supported by facts.assess')
+        if (self.candidate_review and self.action!='facts.assess') or (self.fact_candidates and not self.candidate_review):
+            raise ValueError('candidate review requires facts.assess opt-in')
         return self
 
 
@@ -285,3 +293,28 @@ class FactInput(Contract):
         elif type(self.value) is not str or not self.value.strip() or len(self.value)>2000 or self.unit!='text':
             raise ValueError('text fact requires bounded nonblank text')
         return self
+
+
+class CandidateEvidence(FactInput):
+    origin: Literal['USER_STATEMENT','DOCUMENT_EVIDENCE']
+
+
+class ModelCandidate(FactInput):
+    origin: Literal['MODEL_CANDIDATE'] = 'MODEL_CANDIDATE'
+    verification: Literal['UNVERIFIED'] = 'UNVERIFIED'
+
+
+class ClarificationInput(Contract):
+    review_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
+    decision: Literal['ANSWER','CANCEL']
+    answers: list[FactInput] = Field(default_factory=list,max_length=3)
+
+    @model_validator(mode='after')
+    def bounded_answers(self):
+        if (self.decision=='ANSWER' and not self.answers) or (self.decision=='CANCEL' and self.answers):
+            raise ValueError('answer or cancellation required')
+        if len({a.field for a in self.answers})!=len(self.answers):raise ValueError('duplicate answer field')
+        return self
+
+
+Intake.model_rebuild()

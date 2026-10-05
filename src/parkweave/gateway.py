@@ -49,7 +49,7 @@ class ExecutionGateway:
         with self.store.connect() as c:
             p,r,op=self.store.locked_execution(c,claim)
             if op['action']=='facts.assess':
-                return 'ASSESS', None
+                return ('CANDIDATES' if r['input'].get('candidate_review') else 'ASSESS'), None
             if op['action']=='case.create':
                 return 'LOCAL', None
             if op['action']!='fault.record' or self.store.mode!='FAULT_INJECTION':
@@ -97,6 +97,9 @@ class ExecutionGateway:
         phase,envelope=self.prepare_dispatch(claim)
         if phase=='ASSESS':
             self.store.assess_facts(claim)
+        elif phase=='CANDIDATES':
+            from .fact_review_store import assess
+            assess(self.store,claim)
         elif phase=='LOCAL':
             self.store.finish(claim,defer_completion=defer_completion)
         elif phase=='SEND':
