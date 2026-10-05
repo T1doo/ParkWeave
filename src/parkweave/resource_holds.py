@@ -30,6 +30,10 @@ class Hold(Preview):
     ttl_seconds: int=Field(default=120,ge=5,le=300)
     purpose: str=Field(min_length=1,max_length=200)
 
+class Confirm(BaseModel):
+    model_config=ConfigDict(extra="forbid",strict=True)
+    expected_revision: int=Field(ge=1)
+
 class Release(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True)
 
@@ -76,11 +80,12 @@ def _window(r,data,now):
     return lo,hi
 
 
-def _peak(c,id,lo,hi,now):
+def _peak(c,id,lo,hi,now,exclude=None):
     rows=c.execute("""SELECT starts_at,ends_at,buffer_seconds,quantity FROM synthetic_resource_holds
-        WHERE resource_id=%s AND state='HELD' AND expires_at>%s
+        WHERE resource_id=%s AND ((state='HELD' AND expires_at>%s) OR state='CONFIRMED')
+        AND (%s::uuid IS NULL OR id<>%s::uuid)
         AND starts_at-make_interval(secs=>buffer_seconds)<%s
-        AND ends_at+make_interval(secs=>buffer_seconds)>%s""",(id,now,hi,lo)).fetchall()
+        AND ends_at+make_interval(secs=>buffer_seconds)>%s""",(id,now,exclude,exclude,hi,lo)).fetchall()
     points=defaultdict(int)
     for h in rows:
         start=max(lo,h['starts_at']-timedelta(seconds=h['buffer_seconds']))
@@ -94,7 +99,8 @@ def _peak(c,id,lo,hi,now):
 
 def _public(h,now):
     result={k:h[k] for k in ('id','resource_id','resource_revision','starts_at','ends_at','quantity','purpose','created_at','expires_at')}
-    result['state']='RELEASED' if h['state']=='RELEASED' else 'EXPIRED' if h['expires_at']<=now else 'HELD'
+    result['state']=h['state'] if h['state'] in ('RELEASED','CONFIRMED') else 'EXPIRED' if h['expires_at']<=now else 'HELD'
+    result['local_confirmation']='CONFIRMED' if h['state']=='CONFIRMED' else 'NOT_CONFIRMED'
     return result
 
 
@@ -191,10 +197,30 @@ def release(store,token,id,key):
         _key(c,p,key);_lock(c,h['resource_id']);_scope(c,p,h['resource_id'],write=True)
         h=_own(c,p,id,lock=True);now=_now(c);receipt=_replay(c,p,key,fp)
         if not receipt:
-            if h['state']=='HELD' and h['expires_at']>now:
+            if h['state']=='CONFIRMED' or (h['state']=='HELD' and h['expires_at']>now):
                 h=c.execute("UPDATE synthetic_resource_holds SET state='RELEASED' WHERE id=%s RETURNING *",(id,)).fetchone()
             receipt=_receipt(c,p,h,key,fp,'RELEASE',now)
         return _boundary(receipt=receipt,hold=_public(h,now),server_time=now)
+
+
+def confirm(store,token,id,key,data):
+    fp=_fingerprint('CONFIRM',id,data)
+    with store.connect() as c:
+        p=_auth(store,c,token,write=True);h=_own(c,p,id);_scope(c,p,h['resource_id'],write=True)
+        _key(c,p,key);_lock(c,h['resource_id']);r=_scope(c,p,h['resource_id'],write=True)
+        h=_own(c,p,id,lock=True);now=_now(c);receipt=_replay(c,p,key,fp)
+        if not receipt:
+            if h['state']!='HELD' or h['expires_at']<=now:raise Conflict('valid unconfirmed hold required')
+            if data.expected_revision!=h['resource_revision'] or data.expected_revision!=r['revision']:
+                raise Conflict('resource revision changed; release and preview again')
+            window=Preview(starts_at=h['starts_at'],ends_at=h['ends_at'],quantity=h['quantity'])
+            lo,hi=_window(r,window,now)
+            if _peak(c,h['resource_id'],lo,hi,now,exclude=id)+h['quantity']>r['capacity']:
+                raise Conflict('synthetic resource capacity conflict')
+            h=c.execute("UPDATE synthetic_resource_holds SET state='CONFIRMED' WHERE id=%s RETURNING *",(id,)).fetchone()
+            receipt=_receipt(c,p,h,key,fp,'CONFIRM',now)
+        return _boundary(receipt=receipt,hold=_public(h,now),server_time=now,
+                         confirmation_scope='LOCAL_SYNTHETIC_SINGLE_RESOURCE_ONLY')
 
 
 def seed_synthetic(owner):

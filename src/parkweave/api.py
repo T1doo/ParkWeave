@@ -174,6 +174,10 @@ def create_app(store: Store) -> FastAPI:
     def resource_hold_state(hold_id: UUID,authorization: str | None=Header(default=None)):
         return resources.read(store,token(authorization),hold_id)
 
+    @app.post('/api/resource-holds/{hold_id}/confirm')
+    def resource_hold_confirm(hold_id: UUID,data: resources.Confirm,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return resources.confirm(store,token(authorization),hold_id,resource_key(idempotency_key),data)
+
     @app.post('/api/resource-holds/{hold_id}/release')
     def resource_hold_release(hold_id: UUID,data: resources.Release,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return resources.release(store,token(authorization),hold_id,resource_key(idempotency_key))

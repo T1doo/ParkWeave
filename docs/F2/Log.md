@@ -1,5 +1,15 @@
 # F2并行工程日志
 
+## ENG019 单资源本地合成确认完成（本地并行工程，非阶段签收）
+
+基线da69ea6。同工作区独立只读resource_hold_review审查5849..da69占位/过期/释放，未发现实质finding；具体边界见CloseoutReview，本次确认不继承独立审查结论。按实施前ENG019规格新增schema11状态/action约束、Confirm typed API与明确的本地确认/取消按钮，不增加应用数据库权限、不改原输入/TTL。有效HELD才可确认；锁后DB时钟、当前角色/tenant/core及资源Grant、固定/当前版本、开放/容量重验，排除本条占位避免双计数；确认保留区间容量，显式release兼作本地取消，TTL保留历史，状态/不可变回执同事务。
+
+新PG/API首轮与旧资源共63 PASS（17新增+46旧），后补锁等待过期和双owner满容量确认2项，最终全量 484 passed, 1 skipped, 2 warnings in 141.49s (0:02:21)。首轮全量483 PASS/1 FAIL/1 SKIP：健康schema断言修改发生在运行期间，收集的10与DB11冲突；失败项目.runtime保留，不算通过。最终源码冻结重跑，484 PASS/0 FAIL/1 Windows SKIP；全部测试source hash与冻结文件一致。迁移10→11/重复迁移保留占位及原回执，回执写失败确认全回滚；版本/停用/窗口/容量/期限/撤权/跨owner/非法字段/同key指纹/并发确认取消负向已验证。25个Windows/R4/角色/roles SQL保护文件逐字相同，无新授权。
+
+实际Chromium低权限PG/API双企业资源browser PASS：显式确认、历史TTL不变、另一企业匿名容量冲突、本人取消释放；TTL5真实DB过期、反复读取/reload、纯文本、320/390窄屏和页面错误0仍通过。既有双角色资料待办browser PASS；资源排序21/21与旧资料排序23/23 PASS，包括迟到确认草稿守卫和结果不明同key重试。自有fixture进程清理exit0。实际截图可视检查标签可读，非视觉设计签收；后续统一配色/字号/间距/信息层次/各状态/手机设计已入Plan，日期picker手势NOT_RUN。
+
+证据evidence/eng019-acceptance-summary.json；运行日志/会话仅项目.runtime不公开。CONFIRMED只表示本地合成账本，真实预约NOT_CONFIRMED、外部NOT_SUBMITTED、线下NO_EVIDENCE；组合确认未实现。F1未签收、F2NOT_PASSED、R4DISABLED、Win11NOT_RUN、完整36AT6EXNOT_RUN，真实provider/预算0。无push/Actions日志/新CI/备份/上传/新凭据；Windows37324704568具体失败子项仍待用户，收到优先F1。
+
 ## ENG018本地纵向切片完成（非F2签收）
 
 在5849基线按实施前规格新增schema10：版本化合成资源/显式READ-HOLD Grant/占位/不可变回执；只新增新业务表权限（登记/Grant只读，占位INSERT和UPDATE state，回执SELECT/INSERT），既有角色上限和旧表Grant字节不变。Store未来版本拒绝门相应改>10，原schema断言9→10/未来11，不删oracle；新SQL纳入package-data。一个合成资源具UTC开放/容量2/前后300秒缓冲，最小REST与资源UI可预检→短期占位→本人状态/释放/过期；无正式/组合确认、后台清理或外部作用。源目录合法合成工程与真实样例许可分类已纠正；原V1两文件字节/hash保持。

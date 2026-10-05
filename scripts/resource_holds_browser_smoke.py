@@ -94,6 +94,13 @@ try:
     stateA=value("resourceCall('/api/resource-holds/'+"+json.dumps(idA)+")")
     assert stateA['hold']['state']=='HELD' and stateA['reservation']=='NOT_CONFIRMED' and stateA['offline_fulfillment']=='NO_EVIDENCE'
     assert value('Boolean(globalThis.RESOURCE_BAD||document.querySelector("#resource-current script"))') is False
+    browser('click','#resource-current [data-resource-action=confirm]');browser('snapshot','-i')
+    wait("document.querySelector('#resource-current').textContent",lambda x:'本地合成确认' in x)
+    confirmed=value("resourceCall('/api/resource-holds/'+"+json.dumps(idA)+")")
+    assert confirmed['hold']['state']=='CONFIRMED' and confirmed['hold']['local_confirmation']=='CONFIRMED'
+    assert confirmed['hold']['expires_at']==stateA['hold']['expires_at'] and confirmed['external_acceptance']=='NOT_SUBMITTED'
+    assert value("document.querySelector('#resource-current [data-resource-action=confirm]')===null") is True
+
     switch(b);assert value("document.querySelector('#resource-current').textContent")=='';catalog();fill_window(start,end,1,120,purposeB)
     blocked=check_available(False);assert blocked['view']['occupied_peak']==2
     assert idA not in json.dumps(blocked) and purposeA not in json.dumps(blocked)
@@ -116,9 +123,9 @@ try:
     wait("document.querySelector('#resource-error').textContent",lambda x:'权限' in x)
     assert value("document.querySelector('#resource-hold-items').textContent")==''
     errors=browser('errors');assert not errors,errors
-    report={'scope':'F2_PARALLEL_SYNTHETIC_RESOURCE_HOLDS_ONLY','two_enterprises_real_UI':True,'hold_ids':[idA,idB],
+    report={'scope':'F2_PARALLEL_SYNTHETIC_SINGLE_RESOURCE_CONFIRM_ONLY','two_enterprises_real_UI':True,'hold_ids':[idA,idB],
       'preview_then_explicit_hold':True,'anonymous_capacity_conflict':True,'other_enterprise_ids_and_purpose_hidden':True,
-      'owner_release':True,'TTL5_expired_by_actual_DB_clock_no_cleaner':True,'expiry_frees_capacity':True,
+      'owner_release':True,'explicit_single_resource_local_confirm':True,'confirm_preserves_hold_deadline_history':True,'confirmed_capacity_blocks_other_enterprise':True,'local_cancel_frees_capacity':True,'TTL5_expired_by_actual_DB_clock_no_cleaner':True,'expiry_frees_capacity':True,
       'repeated_read_and_reload':True,'identity_change_and_invalid_session_clear_UI':True,'script_text_only':True,'narrow_viewports':narrow,
       'native_datetime_picker_gestures':'NOT_RUN; native values plus input events','browser_errors':0,'model_calls':0,'real_budget':0,'reservation':'NOT_CONFIRMED','external_acceptance':'NOT_SUBMITTED',
       'offline_fulfillment':'NO_EVIDENCE','native_Windows':'NOT_RUN','whole_AT_EX':'NOT_RUN','F1':'IN_PROGRESS','F2_admission':'NOT_PASSED','R4':'DISABLED'}

@@ -38,3 +38,10 @@ reviewer明确的限制：UI race oracle为mock fetch响应排序；实际本地
 本地两增量已经保留，等待条件不意味着F1只剩日志、F2全量已完成或所有缺口都是外部因素。F1-T06的台账/合法合成fixture工程条件与对应真实样例的来源许可分开，F2原文允许明确合成测试目录；真实模型、Windows和安全门不降低。完整F2 ServicePlan/资源/模板/执行者与通知等原计划能力仍未实现，属于后续阶段而非本次收尾。C0规则/模板等提交条件独立于本轮工程验证，不新增任务充填等待时间。
 
 收到最新JSON后：首先核对run id/源码9a8cbc5与失败子项，保留缺失字段和真实计数；将子项映射到原native_suite阶段及对应oracle，只修实际证实且在授权范围内的问题，留下复现/修复/本地定向验证。遇到需私有原始日志但现有字段不足的情况，明确说明最小缺项，不重试被拒日志或替代路线。恢复下一次Windows运行前比较原origin分支/历史，保留远端6ff与本地c285/3aa祖先；根据届时授权普通push实质修复与已审查增量并统一安排一次CI，监测到终态，失败如实保留。无新日志/实质修复时不原样重跑，不force/reset/merge main/deploy；Server通过仍不解除Win11/真实模型/安全门或R4条件性集成；对应真实样例仍须来源许可。
+
+
+## ENG019 前置独立只读审查
+
+用户明确授权同工作区reviewer，以6.1 sol medium检查5849c022..da69ea6资源占位/过期/释放。/root/resource_hold_review结论：未发现实质finding。检查DB锁后时钟、principal→key→resource锁序/3s边界、峰值半开容量/双缓冲、当前授权与回执回放、过期事实、新表最小权限及UI generation/token/resource/draft守卫。仅源码、测试和已有公开合成证据只读；未改文件、运行业务API/模型、访问外网或读私有runtime，465/46成绩是已有证据而非reviewer重跑。
+
+owner登记规则更新/撤权遵循同资源锁/principal排他锁协议；日期picker和Windows仍未验证。新CONFIRM不继承此次独立审查覆盖；其本地测试另记ENG019 Log/evidence。

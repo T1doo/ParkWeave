@@ -41,5 +41,16 @@ await catalog();const staleFail=$('resource-preview').onclick();const staleQ=tak
 checks.old_forbidden_does_not_clear_new_preview=resourcePreview.view.resource_id==='B'&&$('resource-error').textContent==='';
 const repeated1=$('resource-mine').onclick();const list1=take('/api/resource-holds');const repeated2=$('resource-mine').onclick();const list2=take('/api/resource-holds');answer(list2,{items:[hold('current-list','B','EXPIRED')],has_older_records:false});await repeated2;answer(list1,{items:[],has_older_records:false});await repeated1;
 checks.latest_own_list_wins=document.querySelector('#resource-hold-items article').dataset.holdId==='current-list';
+
+await catalog();const ownConfirm=$('resource-mine').onclick();answer(take('/api/resource-holds'),{items:[hold('confirm-target')],has_older_records:false});await ownConfirm;
+const confirming=document.querySelector('#resource-hold-items [data-resource-action=confirm]').onclick();const confirmQ=take('/api/resource-holds/confirm-target/confirm');
+checks.confirm_frozen_revision=JSON.parse(confirmQ.options.body).expected_revision===1;
+select('B');$('resource-purpose').value='new B draft';answer(confirmQ,{hold:hold('confirm-target','A','CONFIRMED')});await confirming;
+checks.late_confirm_preserves_new_draft=$('resource-select').value==='B'&&$('resource-purpose').value==='new B draft'&&!$('resource-hold-items').textContent.includes('本地合成确认');
+await catalog();const currentConfirm=$('resource-mine').onclick();answer(take('/api/resource-holds'),{items:[hold('current-confirm')],has_older_records:false});await currentConfirm;
+const firstConfirm=document.querySelector('#resource-hold-items [data-resource-action=confirm]').onclick();const confirmFirstQ=take('/api/resource-holds/current-confirm/confirm');const confirmKey=confirmFirstQ.options.headers['Idempotency-Key'];answer(confirmFirstQ,{},500);await firstConfirm;
+const retryConfirm=document.querySelector('#resource-hold-items [data-resource-action=confirm]').onclick();const confirmRetryQ=take('/api/resource-holds/current-confirm/confirm');checks.ambiguous_confirm_retry_same_key=confirmRetryQ.options.headers['Idempotency-Key']===confirmKey;
+answer(confirmRetryQ,{hold:hold('current-confirm','A','CONFIRMED')});await retryConfirm;
+checks.confirmed_has_cancel_no_confirm=!!document.querySelector('#resource-hold-items [data-resource-action=release]')&&!document.querySelector('#resource-hold-items [data-resource-action=confirm]')&&$('resource-hold-items').textContent.includes('本地合成确认');
 return JSON.stringify({checks,scope:'SYNTHETIC_RESOURCE_UI_RESPONSE_ORDER_ONLY'});
 })()
