@@ -2,6 +2,7 @@
 # Local tests replace ONLY Invoke-ClusterCommand with an explicit SYNTHETIC double.
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
+Import-Module (Join-Path $PSScriptRoot 'NativeCommand.psm1')
 function Get-OwnedCluster {
     param([string]$Root,[string]$RunnerTemp,[string]$Bin)
     if (!$Root -or !$RunnerTemp -or !$Bin) { throw 'Explicit owned cluster binding required.' }
@@ -29,29 +30,29 @@ function Get-OwnedCluster {
     return $state
 }
 function Invoke-ClusterCommand {
-    param([string]$Exe,[string[]]$Arguments)
-    & $Exe @Arguments | Out-Null
-    return $LASTEXITCODE
+    param([string]$Exe,[string[]]$Arguments,[string]$Python,[string]$LogDirectory,[string]$Phase,[int]$TimeoutSeconds)
+    $result=Invoke-BoundedNative $Python $Exe $Arguments $Phase $TimeoutSeconds $LogDirectory
+    return $result.exit_code
 }
 function Stop-OwnedCluster {
-    param([string]$Root,[string]$RunnerTemp,[string]$Bin)
+    param([string]$Root,[string]$RunnerTemp,[string]$Bin,[string]$Python,[string]$LogDirectory)
     $state=Get-OwnedCluster -Root $Root -RunnerTemp $RunnerTemp -Bin $Bin
     $ctl=Join-Path $state.bin 'pg_ctl.exe'
-    $status=Invoke-ClusterCommand $ctl @('-D',$state.data,'status')
+    $status=Invoke-ClusterCommand $ctl @('-D',$state.data,'status') $Python $LogDirectory 'pg_status' 15
     if ($status -eq 3) { return @{status='NOT_RUNNING';exit_code=3} }
     if ($status -ne 0) { throw 'Unknown cluster status; stop refused.' }
-    $exit=Invoke-ClusterCommand $ctl @('-D',$state.data,'-m','fast','-w','-t','30','stop')
+    $exit=Invoke-ClusterCommand $ctl @('-D',$state.data,'-m','fast','-w','-t','30','stop') $Python $LogDirectory 'pg_stop' 60
     if ($exit -ne 0) { throw 'Owned cluster stop failed; no fallback.' }
     return @{status='STOPPED';exit_code=0}
 }
 function Start-OwnedCluster {
-    param([string]$Root,[string]$RunnerTemp,[string]$Bin)
+    param([string]$Root,[string]$RunnerTemp,[string]$Bin,[string]$Python,[string]$LogDirectory)
     $state=Get-OwnedCluster -Root $Root -RunnerTemp $RunnerTemp -Bin $Bin
-    $exit=Invoke-ClusterCommand (Join-Path $state.bin 'pg_ctl.exe') @('-D',$state.data,'-l',(Join-Path $Root 'postgres.log'),'-o',"-h 127.0.0.1 -p $($state.port)",'-w','-t','30','start')
+    $exit=Invoke-ClusterCommand (Join-Path $state.bin 'pg_ctl.exe') @('-D',$state.data,'-l',(Join-Path $Root 'postgres.log'),'-o',"-h 127.0.0.1 -p $($state.port)",'-w','-t','30','start') $Python $LogDirectory 'pg_start' 60
     if ($exit -eq 0) { return @{status='STARTED';exit_code=0} }
     # A failed/timed-out pg_ctl may have started a process. Re-validate binding;
     # preserve primary failure even when cleanup refuses an unknown status.
-    try { $cleanup=Stop-OwnedCluster -Root $Root -RunnerTemp $RunnerTemp -Bin $Bin }
+    try { $cleanup=Stop-OwnedCluster -Root $Root -RunnerTemp $RunnerTemp -Bin $Bin -Python $Python -LogDirectory $LogDirectory }
     catch { $cleanup=@{status='REFUSED_OR_FAILED';category=$_.Exception.GetType().Name} }
     return @{status='START_FAILED';exit_code=$exit;cleanup=$cleanup}
 }

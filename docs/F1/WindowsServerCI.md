@@ -1,5 +1,15 @@
 # Windows Server CI本地候选（ENG012）
 
+## Server超时后的有界诊断（首次挂起命令仍UNKNOWN）
+
+run37318040507/source5a0987f于约25m10s completed/cancelled；watch允许的注释明确maximum execution25m0s，Prepare cancelled/Test skipped/Stop failure。该证据确认任务超时与清理失败，不能确认是哪一条原生命令挂起。旧日志下载拒绝路线未重试、未换身份或接口读取同一日志。
+
+静态可证：原Invoke-Checked对Python/initdb/psql/pip没有宿主侧时限，原pg_ctl通过PowerShell管道Out-Null消费输出；pg_ctl -t30不能证明宿主管道不会等待继承输出句柄的后台进程EOF。继承句柄只是待核实假设，不称本次真实根因。
+
+诊断改为一个薄stdlib子进程执行器：shell=False/独立参数/DEVNULL stdin，stdout与stderr只写新私有trace目录普通文件；父程序只等待直接Popen子进程，按闭集阶段设时限，超时仅kill该直接命令并等待5秒，返回124及清理状态，不递归杀PostgreSQL/其它进程。pg_ctl status15/start60/stop60秒；其原生-w/-t30及原cluster UUID/data/bin/reparse/state绑定完全保留，未知status仍拒绝Stop。initdb120、psql30、venv60、pip锁依赖240/项目120、版本/端口15–30秒，suite900秒。suite超时可能跳过finally，因此always Stop在存在原自有状态记录时先复用lifecycle.stop的PID/cwd/命令/时间核验；失败仍尝试独立PG Stop，保持失败结论。该app_stop子进程复用原OS环境白名单，不继承owner/test-owner/model/GitHub配置。
+
+公开notice/error只含闭集阶段名、START/END、deadline、exit、elapsed、timeout和直接子进程清理状态，不含参数/DSN/原始stdout/stderr。原始输出与JSON记录留本轮新私有trace，无artifact/cache上传。真实命令替身验证stdin EOF、空格参数、非零退出、超时不影响其它进程、私有输出不泄露、父退出后后代持有文件句柄仍及时返回、PowerShell桥接、原17个ownedcluster故障oracle；定向48 PASS。这些是Linux合成工程，不宣称Windows运行通过；用于下一次有实质变化的诊断run，不重复原样CI。
+
 ## 迁移后显式Python配置与多路径解析修复
 
 用户已提供首轮Prepare截图：Engineering.ps1行16调用的程序名包含hostedtoolcache的Python3.12.10路径及WindowsApps别名路径，两者被拼成一个字符串，exit1。这是已观察根因；Python3.12.10已存在，不能把此前显式setup-python配置缺口称此次根因。最小修复将Get-Command的多候选枚举逐个处理，只返回一个实际存在、非WindowsApps执行别名、非零长度的文件路径，保留完整空格且用调用运算符传独立参数；Prepare原3.12/x64/win32验证保持。Common.ps1相同解析缺陷同步使用该共享resolver。无硬编码runner个人路径、无空格删除/数组拼接、无版本守卫放宽。

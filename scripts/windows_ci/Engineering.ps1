@@ -13,9 +13,14 @@ $Repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 . (Join-Path $PSScriptRoot '..\windows\PythonCommand.ps1')
 $BasePython=Resolve-ParkWeavePython -Python $Python
 Import-Module (Join-Path $PSScriptRoot 'ClusterControl.psm1') -Force
-function Invoke-Checked([string]$Exe,[string[]]$Arguments) {
-    & $Exe @Arguments
-    if ($LASTEXITCODE -ne 0) { throw 'Native engineering command failed; preserve fixture, no fallback or policy change.' }
+Import-Module (Join-Path $PSScriptRoot 'NativeCommand.psm1')
+function Invoke-Checked([string]$Exe,[string[]]$Arguments,[string]$Phase,[int]$TimeoutSeconds,[switch]$Capture) {
+    $result=Invoke-BoundedNative $BasePython $Exe $Arguments $Phase $TimeoutSeconds $TraceRoot -Capture:$Capture
+    if ($result.exit_code -ne 0) {
+        Write-Host "::error title=ParkWeave CI phase::$Phase FAILED exit=$($result.exit_code) timeout=$($result.timed_out) cleanup=$($result.cleanup)"
+        throw 'Native engineering phase failed; private output retained, no fallback or policy change.'
+    }
+    if ($Capture) { return $result.stdout }
 }
 function Protect-NewDirectory([string]$Path) {
     $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User
@@ -30,19 +35,23 @@ function Get-OwnedState {
 }
 Push-Location $Repo
 try {
+    if (!$env:RUNNER_TEMP) { throw 'Explicit runner temp required; no discovery.' }
+    $TraceRoot=Join-Path $env:RUNNER_TEMP ('parkweave-native-trace-'+[Guid]::NewGuid().ToString())
+    New-Item -ItemType Directory -Path $TraceRoot -ErrorAction Stop | Out-Null
+    Protect-NewDirectory $TraceRoot
     if ($Action -eq 'Prepare') {
-        Invoke-Checked $BasePython @('-c',"import sys,struct;assert sys.platform=='win32' and sys.version_info[:2]==(3,12) and struct.calcsize('P')==8")
+        Invoke-Checked $BasePython @('-c',"import sys,struct;assert sys.platform=='win32' and sys.version_info[:2]==(3,12) and struct.calcsize('P')==8") 'python_guard' 30
         if (!$env:PGBIN -or !(Test-Path (Join-Path $env:PGBIN 'initdb.exe')) -or !$env:RUNNER_TEMP -or !$env:GITHUB_ENV) {
             throw 'Explicit runner PGBIN/RUNNER_TEMP/GITHUB_ENV required; no discovery or downloads.'
         }
         $pg=Join-Path $env:PGBIN 'postgres.exe'
-        $version=& $pg --version
-        if ($LASTEXITCODE -ne 0 -or $version -notmatch '^postgres \(PostgreSQL\) 17\.') { throw 'Native PG17 required.' }
+        $version=Invoke-Checked $pg @('--version') 'postgres_version' 15 -Capture
+        if ($version -notmatch '^postgres \(PostgreSQL\) 17\.') { throw 'Native PG17 required.' }
         $root=Join-Path $env:RUNNER_TEMP ('parkweave-server-ci-'+[Guid]::NewGuid().ToString())
         New-Item -ItemType Directory -Path $root -ErrorAction Stop | Out-Null
         Protect-NewDirectory $root
-        $port=& $BasePython -c "import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1]);s.close()"
-        if ($LASTEXITCODE -ne 0 -or [int]$port -lt 1024) { throw 'Loopback port allocation failed.' }
+        $port=Invoke-Checked $BasePython @('-c',"import socket;s=socket.socket();s.bind(('127.0.0.1',0));print(s.getsockname()[1]);s.close()") 'allocate_port' 15 -Capture
+        if ([int]$port -lt 1024) { throw 'Loopback port allocation failed.' }
         $state=@{project='ParkWeave';scope='SYNTHETIC_SERVER_ENGINEERING';data=(Join-Path $root 'data');bin=$env:PGBIN;port=[int]$port}
         $state | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $root 'cluster-state.json') -Encoding utf8
         # Publish only explicitly constructed ephemeral config, never inherited secrets.
@@ -54,29 +63,44 @@ try {
         "PARKWEAVE_TEST_OWNER_DSN=$testDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
         "PARKWEAVE_OWNER_DSN=$ownerDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
         "PARKWEAVE_DSN=$appDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
-        Invoke-Checked (Join-Path $env:PGBIN 'initdb.exe') @('-D',$state.data,'-U','park_ci_owner','--auth-local=trust','--auth-host=trust','--encoding=UTF8','--locale=C')
-        $started=Start-OwnedCluster -Root $root -RunnerTemp $env:RUNNER_TEMP -Bin $env:PGBIN
+        Invoke-Checked (Join-Path $env:PGBIN 'initdb.exe') @('-D',$state.data,'-U','park_ci_owner','--auth-local=trust','--auth-host=trust','--encoding=UTF8','--locale=C') 'initdb' 120
+        $started=Start-OwnedCluster -Root $root -RunnerTemp $env:RUNNER_TEMP -Bin $env:PGBIN -Python $BasePython -LogDirectory $TraceRoot
         if ($started.status -ne 'STARTED') { $started | ConvertTo-Json -Depth 4; throw 'Owned PG start failed; primary failure preserved.' }
         $psql=Join-Path $env:PGBIN 'psql.exe'
-        Invoke-Checked $psql @('-h','127.0.0.1','-p',"$port",'-U','park_ci_owner','-d','postgres','-v','ON_ERROR_STOP=1','-c','CREATE ROLE parkweave_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE')
-        Invoke-Checked $psql @('-h','127.0.0.1','-p',"$port",'-U','park_ci_owner','-d','postgres','-v','ON_ERROR_STOP=1','-c','CREATE DATABASE parkweave')
+        Invoke-Checked $psql @('-h','127.0.0.1','-p',"$port",'-U','park_ci_owner','-d','postgres','-v','ON_ERROR_STOP=1','-c','CREATE ROLE parkweave_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE') 'create_role' 30
+        Invoke-Checked $psql @('-h','127.0.0.1','-p',"$port",'-U','park_ci_owner','-d','postgres','-v','ON_ERROR_STOP=1','-c','CREATE DATABASE parkweave') 'create_database' 30
         if (Test-Path -LiteralPath '.venv-windows') { throw 'Existing managed environment protected; fresh checkout required.' }
-        Invoke-Checked $BasePython @('-m','venv','.venv-windows')
+        Invoke-Checked $BasePython @('-m','venv','.venv-windows') 'venv' 60
         $managed=Join-Path $Repo '.venv-windows\Scripts\python.exe'
-        Invoke-Checked $managed @('-m','pip','install','--no-cache-dir','-r','requirements-windows-candidate.txt')
-        Invoke-Checked $managed @('-m','pip','install','--no-cache-dir','--no-deps','-e','.')
+        Invoke-Checked $managed @('-m','pip','install','--no-cache-dir','-r','requirements-windows-candidate.txt') 'pip_dependencies' 240
+        Invoke-Checked $managed @('-m','pip','install','--no-cache-dir','--no-deps','-e','.') 'pip_project' 120
         $uac=(Get-ItemProperty -LiteralPath 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System' -Name EnableLUA).EnableLUA
         $identity=[System.Security.Principal.WindowsPrincipal]::new([System.Security.Principal.WindowsIdentity]::GetCurrent())
-        $metadata=@{scope='WINDOWS_SERVER_ENGINEERING_NOT_WIN11';caption=$OS.Caption;build=$OS.BuildNumber;administrator=$identity.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator);uac_enable_lua=$uac;postgres_binary=$version;python=(& $managed --version);image_version=$env:ImageVersion;real_model_calls=0;win11_acceptance='NOT_RUN'}
+        $pythonVersion=Invoke-Checked $managed @('--version') 'python_version' 15 -Capture
+        $metadata=@{scope='WINDOWS_SERVER_ENGINEERING_NOT_WIN11';caption=$OS.Caption;build=$OS.BuildNumber;administrator=$identity.IsInRole([System.Security.Principal.WindowsBuiltInRole]::Administrator);uac_enable_lua=$uac;postgres_binary=$version;python=$pythonVersion;image_version=$env:ImageVersion;real_model_calls=0;win11_acceptance='NOT_RUN'}
         $metadata | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $root 'environment.json') -Encoding utf8
         $metadata | ConvertTo-Json
     } elseif ($Action -eq 'Test') {
         $state=Get-OwnedState
         $managed=Join-Path $Repo '.venv-windows\Scripts\python.exe'
-        Invoke-Checked $managed @('scripts/windows_ci/native_suite.py','--report',(Join-Path $env:PARKWEAVE_CI_ROOT 'engineering.json'))
+        Invoke-Checked $managed @('scripts/windows_ci/native_suite.py','--report',(Join-Path $env:PARKWEAVE_CI_ROOT 'engineering.json')) 'native_suite' 900
     } else {
-        if (!$env:PARKWEAVE_CI_ROOT) { Write-Output 'NOT_RUN: no published owned cluster; no service touched.'; exit 0 }
+        $appStopFailed=$false
+        # A timed-out suite may not have reached its finally. Reuse the existing
+        # lifecycle stop oracle; it verifies recorded PID/cwd/command/start time.
+        if (Test-Path -LiteralPath '.runtime/windows-processes.json') {
+            try {
+                $managed=Join-Path $Repo '.venv-windows\Scripts\python.exe'
+                Invoke-Checked $managed @('scripts/windows/lifecycle.py','stop') 'app_stop' 60
+            } catch { $appStopFailed=$true }
+        }
+        if (!$env:PARKWEAVE_CI_ROOT) {
+            Write-Output 'NOT_RUN: no published owned cluster; no service touched.'
+            if ($appStopFailed) { throw 'Owned app cleanup failed; no process discovery or fallback.' }
+            exit 0
+        }
         $state=Get-OwnedState
-        Stop-OwnedCluster -Root $env:PARKWEAVE_CI_ROOT -RunnerTemp $env:RUNNER_TEMP -Bin $env:PGBIN | ConvertTo-Json
+        Stop-OwnedCluster -Root $env:PARKWEAVE_CI_ROOT -RunnerTemp $env:RUNNER_TEMP -Bin $env:PGBIN -Python $BasePython -LogDirectory $TraceRoot | ConvertTo-Json
+        if ($appStopFailed) { throw 'Owned app cleanup failed; PG cleanup still attempted.' }
     }
 } finally { Pop-Location }
