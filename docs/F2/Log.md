@@ -272,3 +272,8 @@ ENG041普通快进push至9801259，唯一标准37444794329/attempt1 completed/fa
 ## ENG052 有界定位与Start清理拒绝记录保留
 
 正常安全CI只读复核不变，Setup/Doctor仅流程推断，Windows健康与回归根因UNKNOWN。32项既有目标八轮9.633秒通过，每次teardown自有库0/锁计数0，分类时长不相加；本地PG16.2/Unixsocket与CI PG17/TCP不同，不外推。单次Linux真实API/workerhealth1PASS，7attempt1response三条件匹配，仅Linux/非worker业务证据。受控复现Start忽略FOREIGN_REFUSED删STATE（前2FAIL2PASS），最小保留记录/主失败fix后定点138PASS2WindowsSKIP4.99秒，两审查无阻断，无身份/权限/终止扩展。见[ENG052](ENG052-BoundedStartupAndDatabaseDiagnosis.md)；只本地commit，不push/CI/升600/900，下一必要观测为原通道固定health枚举/计数与累计/fixture阶段时长及少量连接边界样本，尚未实现。原门、预算/R4、环境包保持。
+
+
+## ENG058 已授权原生测量，默认代理连接失败
+
+本地05fcb0e无冲突整合严格身份/单job调度/原导航，源码manifest指纹保持。获准普通push dev并唯一25分钟标准CI，200秒清理与每片600不变，预算不足明确NOT_RUN。唯一无凭据api.github.com HEAD exit7、代理8080连接失败，未到GitHub；未远端/Actions查询、未push/newCI，无路线/身份/策略更改。详见[ENG058](ENG058-AuthorizedMeasurementBlocked.md)；原环境/备份/导航保留、R4关闭、LIVE预算0、F1/F2/Win11门不解除。

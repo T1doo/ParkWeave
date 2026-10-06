@@ -1,5 +1,9 @@
 # ParkWeave 动态计划
 
+## ENG058 一次标准原生测量已授权，默认连接阻塞
+
+严格身份修复与单job顺序调度已获普通push及唯一标准CI授权，本地与原导航无冲突整合为05fcb0e。1500秒总限额/200秒清理/每片600秒不变，容量未确认仅作测量，缺片NOT_RUN不称全通过。本环境api.github.com无凭据HEAD唯一尝试exit7，现有代理8080连接失败，未到GitHub；未查远端/Actions、未push或运行CI、未改网络/身份/策略。默认连接恢复后续核对远端并执行原授权，不自动重跑。见[ENG058](F2/ENG058-AuthorizedMeasurementBlocked.md)。原工作树/备份保留；R4关闭、LIVE/预算0、F1未签收/F2并行、Win11/36AT6EX NOT_RUN。以下保留历史范围。
+
 ## ENG034 有边界阶段收口
 
 原F2逐项能力、真实未实现项、外部事实与输入边界见[F2收口审查](F2/ENG034-CloseoutReview.md)。没有新增业务功能，仅修复现有Case资源关联锁前时钟P2；旧PG负例FAIL→最小修复后72定向PASS/精确到期原因PASS，当前冻结全量776PASS/0FAIL/1WinSKIP（225.250s）。ENG033 775成绩保持历史原提交范围。唯一下一步建议是当前分派链授权站内通知与同事务业务Outbox，尚未实施；原完整计划执行/核验/模板与正式F1F2门仍未通过。仅本地commit，不push/newCI/export/LIVE，Windows37420887816只等待已有安全JSON，R4关闭、模型预算0。以下保持各轮历史。

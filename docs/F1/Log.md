@@ -301,3 +301,8 @@ Server/Win11/browser原生NOT_RUN或BLOCKED、production R4 DISABLED、whole36AT
 ## ENG033 本地Case记录关闭与重开
 
 按原V1§5.5/7完成当前合成资料Case的最小本地记录闭环：显式四项重验→本地关闭（真实Case WAITING_CONFIRMATION）→重开（REOPENED）→新cycle显式重验。保留材料/分派/回执/资源历史，不宣称真实目标FULFILLED。真实三角色浏览器2轮5事件与reload/窄屏通过，受控时序23/23，独立只读审查通过；最终冻结全量775PASS/0FAIL/1WindowsSKIP/2既有WARN（228.266s）、142份hash一致与证据见[F2/ENG033](../F2/ENG033-LocalCaseLifecycle.md)。仅本地commit，无push/newCI/export/LIVE；最新Server37420887816仍FAIL等待已有安全JSON，不猜根因或盲重跑。F1未签收、F2准入NOT_PASSED、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0；原环境与备份保留。
+
+
+## ENG058 已授权原生测量，默认代理连接失败
+
+本地05fcb0e无冲突整合严格身份/单job调度/原导航，源码manifest指纹保持。获准普通push dev并唯一25分钟标准CI，200秒清理与每片600不变，预算不足明确NOT_RUN。唯一无凭据api.github.com HEAD exit7、代理8080连接失败，未到GitHub；未远端/Actions查询、未push/newCI，无路线/身份/策略更改。详见[ENG058](../F2/ENG058-AuthorizedMeasurementBlocked.md)；原环境/备份/导航保留、R4关闭、LIVE预算0、F1/F2/Win11门不解除。
