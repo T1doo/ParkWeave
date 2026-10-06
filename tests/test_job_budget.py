@@ -137,7 +137,7 @@ def test_portable_publication_sink_keeps_exact_utf8_lf_boundary(tmp_path,monkeyp
 def test_partial_publisher_output_is_fixed_unavailable_and_failure(tmp_path,fragment):
     native=module('native_command');publisher=module('publish_summary')
     text=json.dumps(publisher.base('SUMMARY_MISSING'))
-    if fragment=='{': text='{' 
+    if fragment=='{': text='{'
     if fragment=='missing_terminal_lf':text+='\n::notice title=ParkWeave safe diagnostics::{"kind":"publication","state":"ANNOTATIONS_UNAVAILABLE"}'
     command='import sys;sys.stdout.write('+repr(text)+');sys.stdout.flush()'
     timeout=5
