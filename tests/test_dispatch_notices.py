@@ -141,7 +141,7 @@ def test_read_only_owner_can_open_and_mark_no_execute_required(receipt_fixture):
 
 def test_notice_minimal_column_permissions_and_upgrade_without_legacy_backfill(receipt_fixture):
     f=receipt_fixture;r,parent,_=offer(f);before=r.json()
-    with f[1].connect() as c:c.execute('DROP TABLE dispatch_notices,dispatch_notice_outbox');c.execute('DELETE FROM schema_version WHERE version=17')
+    with f[1].connect() as c:c.execute('DROP TABLE dispatch_notices,dispatch_notice_outbox');c.execute('DELETE FROM schema_version WHERE version>=17')
     f[1].migrate();f[1].migrate()
     # Keep the UUID fixture database boundary on native Windows too. Only the
     # CONNECT target is substituted; execute all real table/column grants intact.

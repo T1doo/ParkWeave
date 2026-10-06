@@ -75,6 +75,8 @@ def bind(store,token,id,key,data):
         if old:
             if old['fingerprint']!=fp:raise Conflict('case resource request key fingerprint mismatch')
             return _view(c,p,parent,rows,old)
+        from .controlled_plans import gate
+        gate(store,c,parent,1)
         if parent['state']!='LOCAL_CONFIRMED' or parent['revision']!=data.expected_preparation_revision:raise Conflict('current locally confirmed preparation required')
         revision=rows[-1]['revision'] if rows else 0
         if data.expected_link_revision!=revision:raise Conflict('stale Case resource link revision; refresh required')
@@ -89,6 +91,8 @@ def bind(store,token,id,key,data):
         c.execute('INSERT INTO resource_case_claims(combination_id,case_id,owner_id,park_id,org_id) VALUES(%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING',(g['id'],parent['case_id'],p['id'],p['park_id'],p['org_id']))
         row=c.execute('''INSERT INTO case_resource_links(id,preparation_id,case_id,run_id,owner_id,park_id,org_id,combination_id,revision,preparation_revision,preparation_sha256,service_id,service_version,reason,snapshot,actor_id,request_key,fingerprint)
           VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *''',(uuid4(),id,parent['case_id'],parent['run_id'],p['id'],p['park_id'],p['org_id'],g['id'],revision+1,parent['revision'],parent['review_sha256'],parent['service_id'],parent['service_version'],data.reason,Jsonb(snapshot),p['id'],key,fp)).fetchone()
+        from .controlled_plans import invalidate
+        invalidate(c,id,2)
         return _view(c,p,parent,rows+[row],row)
 
 @bounded

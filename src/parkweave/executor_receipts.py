@@ -13,8 +13,23 @@ SCOPE='SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY'
 def bounded(fn):
     @wraps(fn)
     def call(*args,**kwargs):
+        from .controlled_plans import OBSERVATIONS,PlanBlocked,persist_rejected_observation
+        context=OBSERVATIONS.set([])
         try:return fn(*args,**kwargs)
-        except LockNotAvailable as exc:raise Conflict('receipt authorization or record busy; retry same key') from exc
+        except (Conflict,Denied,LockNotAvailable) as exc:
+            observations=OBSERVATIONS.get()
+            if isinstance(exc,PlanBlocked):observations.append(exc)
+            seen=set()
+            for observation in observations:
+                stamp=(observation.plan_id,observation.revision,observation.index)
+                if stamp in seen:continue
+                seen.add(stamp)
+                try:persist_rejected_observation(args[0],observation)
+                except LockNotAvailable as busy:
+                    raise Conflict('controlled plan observation busy; retry same key and explicitly recheck prerequisites') from busy
+            if isinstance(exc,LockNotAvailable):raise Conflict('receipt authorization or record busy; retry same key') from exc
+            raise
+        finally:OBSERVATIONS.reset(context)
     return call
 class Create(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True)
@@ -122,6 +137,8 @@ def create(store,token,key,data):
         if old:
             row=_base(store,c,p,UUID(old['step_id']));row=_locked(c,row['id'])
             return _view(c,p,row,parent,old)
+        from .controlled_plans import gate
+        gate(store,c,parent,3)
         if parent['state']!='LOCAL_CONFIRMED' or parent['revision']!=data.expected_preparation_revision:raise Conflict('current locally confirmed preparation required')
         if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s',(parent['id'],)).fetchone():raise Conflict('preparation already has receipt step')
         if c.execute('SELECT 1 FROM service_dispatches WHERE preparation_id=%s',(parent['id'],)).fetchone():raise Conflict('internal dispatch requires executor acceptance')
@@ -148,6 +165,10 @@ def command(store,token,id,key,data):
         if p['role']=='enterprise_operator':_executor(store,c,row['executor_id'],row['run_id'])
         parent=_parent(c,row);row=_locked(c,id,write=True);old=_replay(c,p,key,fp)
         if old:return _view(c,p,row,parent,old)
+        from .controlled_plans import gate
+        if data.action in ('SUBMIT','ACKNOWLEDGE'):
+            full_parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()
+            gate(store,c,full_parent,3)
         if not _fresh(row,parent):raise Conflict('receipt preparation dependency changed; explicit replanning required')
         if row['revision']!=data.expected_revision:raise Conflict('stale receipt step revision; refresh required')
         if row['revision']>=64:raise Conflict('receipt history limit reached')
@@ -169,6 +190,8 @@ def command(store,token,id,key,data):
                 if row['state'] not in ('RECEIPT_RECORDED','LOCAL_ACKNOWLEDGED'):raise Conflict('recorded receipt required for reopen')
                 state='AWAITING_RECEIPT'
         row=c.execute('UPDATE service_receipt_steps SET state=%s,revision=revision+1,current_receipt_id=%s WHERE id=%s RETURNING *',(state,current_id,id)).fetchone()
+        from .controlled_plans import invalidate
+        invalidate(c,row['preparation_id'],4)
         e=_event(c,p,row,key,fp,data.action,receipt_id=str(current_id),receipt_sha256=_current(c,row)['source_sha256'],reason=data.reason)
         return _view(c,p,row,parent,e)
 

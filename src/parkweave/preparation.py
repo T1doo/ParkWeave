@@ -136,6 +136,8 @@ def command(store,token,id,key,data):
             if row['state'] not in ('REVIEWED','LOCAL_CONFIRMED'):raise Conflict('reviewed preparation required for reopen')
             state='IN_PREPARATION'
         updated=c.execute('UPDATE preparations SET state=%s,revision=revision+1,review_sha256=%s WHERE id=%s RETURNING *',(state,review_hash,id)).fetchone()
+        from .controlled_plans import invalidate
+        invalidate(c,id,1)
         return event(c,p,updated,key,fp,data.action,snapshot_sha256=current_hash,reason=data.reason)
 
 def read(store,token,id):

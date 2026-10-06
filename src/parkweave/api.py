@@ -201,6 +201,20 @@ def create_app(store: Store) -> FastAPI:
         return combinations.cancel(store,token(authorization),combination_id,resource_key(idempotency_key))
 
     from . import dispatch_notices as notices
+    from . import controlled_plans as cp
+    @app.get('/api/controlled-plans/template')
+    def fixed_template(authorization: str | None=Header(default=None)):
+        return cp.template(store,token(authorization))
+    @app.get('/api/preparations/{preparation_id}/controlled-plan')
+    def fixed_plan(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return cp.read(store,token(authorization),preparation_id)
+    @app.post('/api/preparations/{preparation_id}/controlled-plan',status_code=201)
+    def fixed_plan_create(preparation_id: UUID,data: cp.Create,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return cp.create(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+    @app.post('/api/preparations/{preparation_id}/controlled-plan/commands')
+    def fixed_plan_command(preparation_id: UUID,data: cp.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return cp.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
     @app.get('/api/dispatch-notices')
     def notice_list(authorization: str | None=Header(default=None)):
         return notices.list_items(store,token(authorization))

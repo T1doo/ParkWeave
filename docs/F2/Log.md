@@ -196,3 +196,14 @@ Linux定向第一次30 PASS/6.22秒，补并发同Case与审核-补件竞态、G
 ## ENG034 有边界阶段收口与现有bug修复
 
 对照原V1 T01—T07，独立只读检查资料、资源、分派/本人接单、合成回执和本地关闭重开。只新增准确能力/差距/依赖说明，下一步仅建议当前分派链授权站内通知及业务Outbox，未实现。主代理真实PG复现Case关联锁前时钟P2，旧代码1FAIL（返回NEEDS_RECHECK而非拒绝）；最小挪至最后锁后，72相关PG/API PASS（29.185s），独立资源补审确认修复。原775成绩保持ENG033历史范围；本轮bug修复后全量776PASS/0FAIL/1WindowsSKIP/2既有WARN（225.250s）、142份冻结hash一致，另记[evidence](evidence/eng034-closeout-review.json)。见[ENG034](ENG034-CloseoutReview.md)。不push/newCI/export/LIVE，不重复索图；Windows37420887816安全JSON仍未到，F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、模型/预算0。
+
+
+## ENG037 固定四步持久合成模板
+
+基线2da286a，用户采用ENG036四个A默认后实现单一工程审查模板。版本18新增计划及不可变CHECK审计，资料/资源关联/分派/回执原入口同事务校验当前前置，缺合法assignment阻塞，不新增Grant。固定P1—P4由企业显式重验，源失配/观察撤权不自动复活；保留原材料、已接受责任、回执和资源。
+
+三位只读复核发现并关闭只读门误加EXECUTE、executor资料入口、CREATE误清未使用草稿、补记锁忙500及失败门/门通过后业务409丢失观察等问题。失败业务先回滚，观察补记独立元数据事务仅同plan ID/revision生效；锁忙返回可重试409，不能当补记成功；未观察撤权恢复仍无统一授权epoch保证。真实PG含崩溃/重启/幂等/CAS/当前权限/越序零副作用及两条观察失败路径，最终29模板例PASS。初始139PASS/2FAIL和期间源码变化的全量836PASS/1SKIP均保留为中间记录，不挪作最终冻结成绩。
+
+最终冻结全量837PASS/0FAIL/1WindowsSKIP/2既有WARN（261.69s），154完整源/142runner源hash匹配；397安全诊断函数ID，24保护文件与两份原V1源保持。真实三角色Chromium/API/worker/PG闭环及观察撤权恢复：初建缺assignment BLOCKED，fixture owner另行准备访问后四步完成，再P2—P4显式重验到revision8/events8；Case仍NEEDS_INPUT，资源/责任/回执保持。18新计划+16既有通知+23既有Case时序PASS，9张独立当前图hash匹配/320390无溢出/刷新持久。owned harness/API/worker精确PID停止，PG及历史环境/备份/证据保留。
+
+证据见[ENG037](ENG037-ControlledTemplate.md)及[evidence](evidence/eng037-controlled-template.json)。只本地commit，无push/newCI/export/LIVE/真实模型/预算。完整DAG/发布/Approval/授权epoch/AT14预览/无fixture赋权冷会话/真实履约仍欠；F1/F2未签收、R4关闭、Win11和36AT6EX NOT_RUN。最新Server37420887816仍FAIL等待已有安全JSON，未重复索图或网络/盲重跑。

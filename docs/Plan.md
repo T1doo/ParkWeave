@@ -97,3 +97,8 @@ ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合�
 ## ENG036 固定模板设计收敛
 
 当前材料→资源组合→合法分派接单→回执核对固定四步设计与未来验收边界见[F2/ENG036](F2/ENG036-ControlledTemplatePlan.md)。本轮仅本地文档与既有离线合同/单动作持久计划验证，新四步模板/复合计划未实现；不注册新动作/赋权或自动履约。ENG035 808成绩原范围与源码不变，不签收全F2/冷会话/Windows，不push/newCI/export/LIVE。
+
+
+## ENG037 固定四步模板本地实现
+
+已批准的四个A默认落为持久固定合成计划及当前权限/来源核验，限定材料→资源→合法本人接单→回执核对。用户显式逐步CHECK，缺assignment阻塞、观察失效后须重验、实际责任/资源/回执保留。真实PG/API及三角色Chromium验证见[F2/ENG037](F2/ENG037-ControlledTemplate.md)。只本地commit，不push/newCI/export/LIVE；完整DAG/发布/冷会话/预览/真实履约及F1/F2/Windows阶段门保留。

@@ -89,6 +89,8 @@ def _event(c, p, root, offer, key, fp, action, reason):
     event_id=uuid4()
     c.execute('INSERT INTO service_dispatch_events(id,dispatch_id,offer_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)',
               (event_id, root['id'], offer['id'], p['id'], key, fp, root['revision'], action, Jsonb(payload)))
+    from .controlled_plans import invalidate
+    invalidate(c,c.execute('SELECT preparation_id FROM service_dispatches WHERE id=%s',(root['id'],)).fetchone()['preparation_id'],3)
     from .dispatch_notices import enqueue
     enqueue(c,event_id)
     return payload
@@ -164,6 +166,8 @@ def offer(store, token, id, key, data):
         old = _replay(c, p, key, fp, root)
         if old: return _view(c, p, parent, root, old)
         _party(store, c, parent, parent['owner_id'], 'PREPARE')
+        from .controlled_plans import gate
+        gate(store,c,parent,2)
         if parent['state'] != 'LOCAL_CONFIRMED' or parent['revision'] != data.expected_preparation_revision:
             raise Conflict('current locally confirmed preparation required')
         if (root['revision'] if root else 0) != data.expected_dispatch_revision:
@@ -207,6 +211,8 @@ def command(store, token, id, key, data):
         # Decline/withdraw may resolve stale offers without reviving revoked grants.
         step_id = None
         if data.action == 'ACCEPT':
+            from .controlled_plans import gate
+            gate(store,c,parent,2)
             if not _fresh(parent, own): raise Conflict('dispatch preparation dependency changed')
             if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s', (parent['id'],)).fetchone():
                 raise Conflict('preparation already has receipt step')

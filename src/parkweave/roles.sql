@@ -48,3 +48,7 @@ GRANT UPDATE(revision,cycle,state,verified_snapshot,verified_sha256) ON case_loc
 GRANT SELECT,INSERT ON dispatch_notice_outbox,dispatch_notices TO parkweave_app;
 GRANT UPDATE(state,consumed_at) ON dispatch_notice_outbox TO parkweave_app;
 GRANT UPDATE(seen_at,read_at) ON dispatch_notices TO parkweave_app;
+
+-- ENG037 only local plan metadata and immutable audit, no grants to identities.
+GRANT SELECT,INSERT ON controlled_plans,controlled_plan_events TO parkweave_app;
+GRANT UPDATE(revision,checked,invalidated_from,invalidated_at) ON controlled_plans TO parkweave_app;

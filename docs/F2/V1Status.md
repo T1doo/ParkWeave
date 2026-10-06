@@ -74,3 +74,8 @@ ENG028增加仅固定test ID、阶段、异常类别和有界统计的诊断；�
 截至ENG026结束，本地缓存origin/dev/f1-foundation为6ff160a，积累11个本地提交尚未推送；该历史缓存不是实时GitHub状态。ENG027已恢复授权，并正常读取实时远端仍6ff160a，确认快进关系；普通同步精确验证1baa2cf，标准ServerCI37414981257FAIL，具体case待用户，详见同步记录。仍不force/reset丢代码、不备份/导出/上传/LIVE。
 
 旧Windows事实：源码9a8cbc527503ab55978a4b50612207d3bf72de26的CI37324704568 Prepare通过，native_suite78.094秒退出1，失败case/日志未取得。新标准Server CI37414981257已对同步1baa2cf执行并FAIL：Prepare通过、native_suite79.235秒exit1未超时、owned cluster停止通过；case与根因仍UNKNOWN，不能用Linux模拟/AST替代。Server不是Win11。F1/F2未签收、R4关闭、36AT/6EX NOT_RUN；Windows失败明细仍待用户，不能用猜测替代。
+
+
+## ENG037 固定合成模板当前增量
+
+新增一个工程审查的不可变四步模板/持久计划，绑定当前合成资料事项，owner明确核验当前版本/hash并阻止已有业务入口越序。实际三角色链、撤权观察后恢复显式重验、历史/资源/责任保留见[ENG037](ENG037-ControlledTemplate.md)。T06现有固定模板首片已实现；审核后参数化服务包/版本发布、全新企业无fixture赋权的冷会话及AT35仍未完成。T02通用ServicePlan/DAG执行/原目标核验、完整Approval、统一授权epoch、AT14预览隔离和真实履约仍未交付。
