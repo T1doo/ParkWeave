@@ -121,3 +121,8 @@
 ## ENG047 已授权首建session owner，本地修复与同步阻塞
 
 用户明确授权后，仅Windows synthetic首建固定session文件，CREATE_NEW独占handle设置当前运行processTOKEN_USER owner，验证DACL/control保持后写正文；不改已有/ROOT/CONFIG/allowlist/身份/特权。两位只读复核定位并关闭CRT移交包装失败双关，定点结果与源hash见[ENG047](ENG047-SyntheticSessionOwner.md)/[evidence](evidence/eng047-session-owner.json)。5个Windows用例SKIP（owner1/Job4），当前原生Setup/Doctor/Start/回归ID/Job清理无新观测。默认GitHub根HEAD exit7代理连接失败，停止网络动作，未远端查询/push/新CI或改代理策略；已授权普通push与唯一标准CI待连接恢复，推送前须实时比较远端。600/900/runner/原签收门/R4/模型预算/环境备份保持。
+
+
+## ENG048 单次 owner/Job CI 终态：CONFIG边界停止
+
+正式require_escalated审批同根HEAD200，保持代理/身份/目标；远端8da8e4a无新提交，普通快进至ab445a9，唯一标准37457916936/attempt1精确head completed/failure，末次远端仍ab445a9且同头run仅1。Setup从SESSIONS前进至CONFIG/ACL_OWNER_MISMATCH：之前SESSIONS owner+DACL该次通过，CONFIG实际owner未观测/DACL未检查；CONFIG权限动作outscope未实施。Doctor/Start因Setup失败未运行，API/browserNOT_RUN。回归600TimeoutExpired/countsMISSING，最后pytest_call/test_preparation::test_unassigned_or_wrong_role_grant_is_not_authority仅快照不是根因。内层及外层实际原生Job均OWNED_TREE_STOPPED；外层658.296秒exit1未超900，原失败保持。四专用native例逐项结果未提供，不能PASS；PGStop独立success/exit0/.125秒。4notice404max/988total/1ID界限通过，两位只读复核确认，见[ENG048](ENG048-SingleOwnerJobCI.md)/[evidence](evidence/eng048-owner-job-ci.json)。结果docs仅本地commit不再push/CI/权限/日志下载，原阶段门/R4/预算/环境包保留。
