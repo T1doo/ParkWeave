@@ -1,0 +1,65 @@
+{
+  "scope": "ENG047_AUTHORIZED_SYNTHETIC_SESSION_OWNER",
+  "base": "c796f4bf225eb5fe73602cd86188dc64ec42461e",
+  "authorization": "2026-10-06 11:30UTC user accepted parent minimal first-created Windows test session owner proposal",
+  "source_sha256": {
+    "src/parkweave/synthetic_session_file.py": "0c6e2a406ec1719e19077c6e3a0be09f51e173bfee1f5b025f15916c1740ca3f",
+    "src/parkweave/cli.py": "e5a80d2d909619892be463e8ac803de32db9b88d98e83a431e62cf0ba6ea6128",
+    "tests/test_synthetic_session_file.py": "be11db03ab9f58dc5de1d697b1ee93a71f467e183ab0429a5d49d6b8452d6206",
+    "scripts/windows_ci/diagnostic-test-ids.json": "850ae8886787787342666558524c27845f431d4f2828c023837698a73250bae9"
+  },
+  "targeted": {
+    "tests": 134,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 5,
+    "seconds": 0.672,
+    "xml_sha256": "0dc423e7d69306b8f806d3dbb8ef848f811e60a9bd5852347ff7bfa03dc90559"
+  },
+  "reviews": [
+    "windows_native_review: no remaining blockers",
+    "cross_module_review: no remaining blockers"
+  ],
+  "permission_contract": "CREATE_NEW/share0 exact handle; same process TOKEN_USER; OWNER_SECURITY_INFORMATION only1; DACL bytes/control unchanged except owner-defaulted bit; verify before tokens; no existing/config/root changes; no privilege enablement",
+  "handle_failure_fix": "two-stage CRT transfer; outer HANDLE cleared before fdopen; fdopen/close failures cannot double-close Windows HANDLE",
+  "connectivity": {
+    "request": "one credential-free HEAD https://api.github.com/ through default environment proxy",
+    "exit_code": 7,
+    "redacted_reason": "Failed to connect to proxy port 8080 after 0 ms: Could not connect to server",
+    "network_identity_proxy_changes": 0,
+    "remote_query": "NOT_RUN_AFTER_CONNECTIVITY_FAILURE",
+    "push": "BLOCKED_NOT_PERFORMED",
+    "new_ci": 0
+  },
+  "current_native_results": {
+    "Setup": "NOT_RUN",
+    "Doctor": "NOT_RUN",
+    "Start": "NOT_RUN",
+    "regression_phase": "NOT_OBSERVED",
+    "active_test_id": "NOT_OBSERVED",
+    "JobObject": "NOT_RUN_ON_LINUX; four native tests SKIP",
+    "cleanup": "NO_NEW_WINDOWS_RUN"
+  },
+  "last_known_ci": {
+    "run_id": 37450539320,
+    "head": "8da8e4a95f90965ae06fd4b990abd02e047b4364",
+    "Setup": "FAIL SESSIONS/ACL_OWNER_MISMATCH",
+    "regression": "TimeoutExpired600; last snapshot pytest_call / test_plan_revision::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call",
+    "note": "historical only; not a new result"
+  },
+  "actions": {
+    "actual_windows_owner_updates": 0,
+    "push": 0,
+    "new_ci": 0,
+    "runner_changes": 0,
+    "real_model_calls": 0,
+    "budget": 0
+  },
+  "remaining": [
+    "default GitHub proxy unreachable; exact current remote branch not verified",
+    "authorized ordinary push and one standard CI still pending connectivity",
+    "Windows session owner native test skipped",
+    "JobObject native behavior and nested runner jobs unverified",
+    "F1/F2 unaccepted; Server not Win11; R4 disabled"
+  ]
+}

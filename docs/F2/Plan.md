@@ -116,3 +116,8 @@
 ## ENG046 专用 JobObject 本地实现，原生验证待完成
 
 保留Linux实际直接父超时后自有后代存活基线（性质FAIL、探针1PASS）；仅Windows outer native_suite/inner regression接入新无名不可继承Job，挂起创建→精确creation handle/PID与Job归属验证→恢复，绑定拒绝无fallback。正常/超时/协调器异常仅回收本Job默认继承的后代；外层包括本次生命周期新建后代，既有外部PG/无关进程不加入，原owned PG Stop保留。600/900不变，清理5秒确认；原非0/TimeoutExpired保持，cleanup失败单列不变PASS。两位只读复核定位并关闭创建期stdio关闭错误导致挂起child句柄丢失；低层注入覆盖。最终7份源冻结定点152PASS/0FAIL/4WindowsSKIP/2受限socketDESELECTED/1既有WARN/8.33s。见[ENG046](ENG046-OwnedJobRecovery.md)及[evidence](evidence/eng046-owned-job.json)。仅本地commit，无push/newCI/LIVE/ACL/提权/runner修改/模型预算；SESSIONS owner仍待审批，OWNED_REGRESSION_DESCENDANTS为IMPLEMENTED_NATIVE_VERIFICATION_PENDING未关闭，真实Windows挂点UNKNOWN，原阶段门/R4/环境备份保留。
+
+
+## ENG047 已授权首建session owner，本地修复与同步阻塞
+
+用户明确授权后，仅Windows synthetic首建固定session文件，CREATE_NEW独占handle设置当前运行processTOKEN_USER owner，验证DACL/control保持后写正文；不改已有/ROOT/CONFIG/allowlist/身份/特权。两位只读复核定位并关闭CRT移交包装失败双关，定点结果与源hash见[ENG047](ENG047-SyntheticSessionOwner.md)/[evidence](evidence/eng047-session-owner.json)。5个Windows用例SKIP（owner1/Job4），当前原生Setup/Doctor/Start/回归ID/Job清理无新观测。默认GitHub根HEAD exit7代理连接失败，停止网络动作，未远端查询/push/新CI或改代理策略；已授权普通push与唯一标准CI待连接恢复，推送前须实时比较远端。600/900/runner/原签收门/R4/模型预算/环境备份保持。

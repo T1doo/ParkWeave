@@ -1,0 +1,75 @@
+"""Owner-only synthetic session creation; native cases separate from fake contracts."""
+import io
+import os
+from pathlib import Path
+import pytest
+from parkweave.synthetic_session_file import create_synthetic_session_file,SessionOwnerError
+
+class Backend:
+    def __init__(self,fail=None,changed=False):self.events=[];self.fail=fail;self.changed=changed;self.n=0
+    def event(self,name):
+        self.events.append(name)
+        if self.fail==name:raise SessionOwnerError('SYNTHETIC_REFUSAL')
+    def current_user(self):self.event('current_user');return object(),'current_sid'
+    def create(self,path):self.event('create_new');return 'exact_handle'
+    def inspect(self,handle):
+        assert handle=='exact_handle';self.n+=1;self.event('inspect'+str(self.n))
+        return 'descriptor'+str(self.n),'current_sid',b'DACL_CHANGED' if self.changed and self.n==2 else b'DACL',0x8004|(1 if self.n==1 else 0)
+    def set_owner(self,handle,sid):assert (handle,sid)==('exact_handle','current_sid');self.event('owner_only')
+    def verify_owner(self,owner,sid):assert owner==sid;self.event('verify_owner')
+    def transfer_fd(self,handle):self.event('transfer');return 77
+    def text_file(self,fd):assert fd==77;return io.StringIO()
+    def release_descriptor(self,descriptor):self.events.append('free_'+descriptor)
+    def close(self,handle):assert handle=='exact_handle';self.events.append('close_exact')
+
+def test_session_owner_verified_with_unchanged_dacl_before_stream_transfer():
+    backend=Backend();stream=create_synthetic_session_file('.runtime/synthetic-sessions.json',_backend=backend)
+    assert stream.getvalue()==''
+    assert backend.events==['current_user','create_new','inspect1','owner_only','inspect2','verify_owner','transfer','free_descriptor2','free_descriptor1']
+
+@pytest.mark.parametrize('fail',['current_user','create_new','inspect1','owner_only','inspect2','verify_owner','transfer'])
+def test_session_owner_failure_never_exposes_token_stream_or_reopens(fail):
+    backend=Backend(fail=fail)
+    with pytest.raises(SessionOwnerError):create_synthetic_session_file('.runtime/synthetic-sessions.json',_backend=backend)
+    assert backend.events.count('create_new')<=1
+    if fail not in ('current_user','create_new'):assert backend.events[-1]=='close_exact'
+    if fail!='transfer':assert 'transfer' not in backend.events
+
+def test_session_dacl_difference_refused_before_any_token_write():
+    backend=Backend(changed=True)
+    with pytest.raises(SessionOwnerError,match='SESSION_PERMISSIONS_CHANGED'):create_synthetic_session_file('.runtime/synthetic-sessions.json',_backend=backend)
+    assert 'transfer' not in backend.events and backend.events[-1]=='close_exact'
+
+def test_session_other_path_refused_before_backend_access():
+    backend=Backend()
+    with pytest.raises(ValueError):create_synthetic_session_file('.runtime/windows-config.json',_backend=backend)
+    assert not backend.events
+
+@pytest.mark.skipif(os.name!='nt',reason='native Windows owner-only verification required')
+def test_native_session_owner_matches_current_user_and_existing_bytes_protected(tmp_path,monkeypatch):
+    from parkweave.synthetic_session_file import WindowsSessionFile
+    monkeypatch.chdir(tmp_path);Path('.runtime').mkdir()
+    with create_synthetic_session_file('.runtime/synthetic-sessions.json') as stream:stream.write('SYNTHETIC_ONLY')
+    path=Path('.runtime/synthetic-sessions.json');before=path.read_bytes()
+    with pytest.raises(FileExistsError):create_synthetic_session_file(path)
+    assert path.read_bytes()==before
+
+@pytest.mark.parametrize('close_refused',[False,True])
+def test_session_crt_transfer_then_text_wrap_failure_closes_fd_once_without_handle_close(monkeypatch,close_refused):
+    import sys
+    from types import SimpleNamespace
+    import parkweave.synthetic_session_file as module
+    closed=[]
+    monkeypatch.setitem(sys.modules,'msvcrt',SimpleNamespace(open_osfhandle=lambda handle,flags:77))
+    def refuse(*args,**kwargs):raise OSError('SYNTHETIC_WRAP_REFUSED')
+    def close(fd):
+        closed.append(fd)
+        if close_refused:raise OSError('SYNTHETIC_CLOSE_REFUSED')
+    monkeypatch.setattr(module,'os',SimpleNamespace(O_WRONLY=1,O_TEXT=0,fdopen=refuse,close=close))
+    class Transferred(Backend):
+        def transfer_fd(self,handle):return module.WindowsSessionFile.transfer_fd(self,handle)
+        def text_file(self,fd):return module.WindowsSessionFile.text_file(self,fd)
+    backend=Transferred()
+    with pytest.raises(OSError):module.create_synthetic_session_file('.runtime/synthetic-sessions.json',_backend=backend)
+    assert closed==[77] and 'close_exact' not in backend.events
+    assert backend.events[-2:]==['free_descriptor2','free_descriptor1']

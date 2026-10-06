@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import secrets
 from .store import Store
+from .synthetic_session_file import create_synthetic_session_file
 
 
 def main():
@@ -27,8 +28,8 @@ def main():
         path.parent.mkdir(mode=0o700, exist_ok=True)
         identities = {i: secrets.token_urlsafe(32) for i in ("fixture-a", "fixture-b", "fixture-c")}
         # Exclusive private output, no tokens in stdout or logs.
-        with path.open("x") as f:
-            os.chmod(path, 0o600)
+        with (create_synthetic_session_file(path) if os.name == "nt" else path.open("x")) as f:
+            if os.name != "nt":os.chmod(path, 0o600)
             json.dump(identities, f)
         store.seed(identities)
         print("Synthetic sessions written to private .runtime/synthetic-sessions.json")
