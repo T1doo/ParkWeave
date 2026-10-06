@@ -1,5 +1,9 @@
 # F1 真实日志
 
+## ENG068 仅本地剩余定点修复，原生实际仍OPEN
+
+本地代码 `b1b50f2`：超大参数仅缩短显示ID、保留payload与拒绝gold；UTF8拒绝报告/真实HTTP fixture、平台cleanup gold、既有文件lstat保护及只读Job kernel观察定点修复。Restart每次仍exclusive，最多1秒、权限/活listener/未知/超期拒绝，现有固定boundary贯通发布capture；不宣称旧Restart由TIME_WAIT造成。最终相关453 PASS/8 native SKIP，独立NO_BLOCKERS；广跑1307项1297/1/9，唯一旧port替身FAIL修正后模块27 PASS，最终1323只collect不称全PASS，旧1283 stablekeys全保留，提交blob/raw指纹一致。实际Windows仍ENG067的11FAIL，Restart/owner/nativeJob未原生复证；无push/newCI，预算0、R4关闭、F1未签收/F2仅并行/Server非Win11。一次transport disconnected后默认入口恢复，原环境与备份保留。见[ENG068](../F2/ENG068-TargetedRemainingRepairs.md).
+
 ## ENG067 唯一25分钟CI终态FAIL，Start与失败映射修复实测生效
 
 已授权普通push到46648fb，同HEAD唯一run37504916551 attempt1 completed/failure，16分58秒。实际Start PASS/exit0、DIRECT_CHILD/identityTrue/mismatch0；首次Stop由重启前强制断言路径推知通过（无独立PASS row），Restart FAIL原因UNKNOWN。回归1221/11/51、1283项，四片FAIL4/2/2/3且coverageTrue/owned树停止、无timeout。11失败case完整映射10去参数白名单函数，unknown/省略0，8 notices续页实际生效；native Job专项2FAIL保持OPEN，不拿外层TreeStopped替代。PGStop0、最后Stop步骤SUCCESS但无app_stop独立调用证据。断开通知后shell及同身份正式gh核实正常；无重复push/CI或身份/权限/runner/预算扩展/LIVE。见[ENG067](../F2/ENG067-SingleNativeTerminal.md)；F1未签收/F2并行/R4关闭/Server非Win11。
