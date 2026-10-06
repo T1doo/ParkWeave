@@ -1,5 +1,10 @@
 # F1 真实日志
 
+## ENG067 唯一25分钟CI终态FAIL，Start与失败映射修复实测生效
+
+已授权普通push到46648fb，同HEAD唯一run37504916551 attempt1 completed/failure，16分58秒。实际Start PASS/exit0、DIRECT_CHILD/identityTrue/mismatch0；首次Stop由重启前强制断言路径推知通过（无独立PASS row），Restart FAIL原因UNKNOWN。回归1221/11/51、1283项，四片FAIL4/2/2/3且coverageTrue/owned树停止、无timeout。11失败case完整映射10去参数白名单函数，unknown/省略0，8 notices续页实际生效；native Job专项2FAIL保持OPEN，不拿外层TreeStopped替代。PGStop0、最后Stop步骤SUCCESS但无app_stop独立调用证据。断开通知后shell及同身份正式gh核实正常；无重复push/CI或身份/权限/runner/预算扩展/LIVE。见[ENG067](../F2/ENG067-SingleNativeTerminal.md)；F1未签收/F2并行/R4关闭/Server非Win11。
+
+
 ## ENG066 本地精确argv0/fixture/安全映射修复，原生Job保持OPEN
 
 仅本地代码 `649803f`，指定managed runtime/cfg导出单一base executable并校验实际image/完整tail/父链/pins，Stop重导出漂移拒绝；canonical fixture及长参数去参映射修复，安全续页贯通完整capture，原25ID/8条/2KiB/16KiB不变。定点347 PASS、local业务及loopback109 PASS、关闭重开/双角色确认62 PASS，独立NO_BLOCKERS；collection1283不是全量PASS，raw提交指纹一致。最后真实Windows仍ENG065的1160/42/51，四个native Job oracle和未公开断言OPEN，外层TreeStopped不能替代专项。无push/newCI、权限/身份/代理/预算扩展或LIVE，F1未签收/F2并行/R4关闭/Server非Win11。见[ENG066](../F2/ENG066-TargetedLocalRepairs.md)。
