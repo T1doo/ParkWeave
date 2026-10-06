@@ -225,11 +225,11 @@ def test_close_and_dependency_change_have_serializable_effects(link_fixture,depe
 def test_version_15_upgrade_preserves_existing_preparation_dispatch_receipt_resources(link_fixture):
     f=link_fixture;parent,g,d,s=built(f)
     with f[1].connect() as c:
-        c.execute('DROP TABLE case_local_events');c.execute('DROP TABLE case_local_lifecycles');c.execute('DELETE FROM schema_version WHERE version=16')
+        c.execute('DROP TABLE case_local_events');c.execute('DROP TABLE case_local_lifecycles');c.execute('DELETE FROM schema_version WHERE version>=16')
         before=[c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] for t in ('preparations','service_dispatch_offers','service_step_receipts','case_resource_links','synthetic_resource_holds')]
     f[1].migrate()
     with f[1].connect() as c:
-        assert c.execute('SELECT max(version) n FROM schema_version').fetchone()['n']==16
+        assert c.execute('SELECT max(version) n FROM schema_version').fetchone()['n']==17
         assert before==[c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] for t in ('preparations','service_dispatch_offers','service_step_receipts','case_resource_links','synthetic_resource_holds')]
         c.execute(__import__('pathlib').Path('src/parkweave/roles.sql').read_text().replace('GRANT CONNECT ON DATABASE parkweave TO parkweave_app;',''))
     assert not any(read(f,parent).json()['checks'].values())

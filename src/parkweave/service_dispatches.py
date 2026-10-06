@@ -1,4 +1,4 @@
-"""Internal synthetic offers; never grants, notifications or external fulfillment."""
+"""Internal synthetic offers; never grants or external fulfillment."""
 from typing import Literal
 from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
@@ -86,8 +86,11 @@ def _event(c, p, root, offer, key, fp, action, reason):
     payload = dict(dispatch_id=str(root['id']), offer_id=str(offer['id']), revision=root['revision'],
                    action=action, state=offer['state'], actor_id=p['id'], executor_id=offer['executor_id'],
                    reason=reason, receipt_step_id=str(offer['receipt_step_id']) if offer['receipt_step_id'] else None)
+    event_id=uuid4()
     c.execute('INSERT INTO service_dispatch_events(id,dispatch_id,offer_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)',
-              (uuid4(), root['id'], offer['id'], p['id'], key, fp, root['revision'], action, Jsonb(payload)))
+              (event_id, root['id'], offer['id'], p['id'], key, fp, root['revision'], action, Jsonb(payload)))
+    from .dispatch_notices import enqueue
+    enqueue(c,event_id)
     return payload
 
 

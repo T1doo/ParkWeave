@@ -55,6 +55,12 @@ def main():
                 print("claim fenced or authorization changed", flush=True)
         while store.consume():
             pass
+        from .dispatch_notices import consume as consume_notices
+        try:
+            for _ in range(100):
+                if not consume_notices(store):break
+        except Conflict:
+            pass  # A busy source/auth lock leaves the notice pending for retry.
         if args.once:
             return
         time.sleep(0.25)

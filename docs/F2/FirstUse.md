@@ -1,5 +1,10 @@
 # 本地合成资料准备：首次使用
 
+
+## ENG035 站内通知
+
+在“协同”页刷新“我的站内通知”，选择通知后可请求打开当前分派事项，再明确点击“我已读此通知”。平台可收取、打开请求、本人已读分别记录，都不代表履约。历史事件会标明历史，打开时重新读取当前事项；返回通知列表、切换身份或事项后旧回复不能回填。列表本次检查最近100条本人收件记录，只显示当前仍有权查看的通知；撤权后不能通过通知缓存绕过权限。只覆盖本轮后新分派事件，没有旧历史补发，也不发邮件、短信或Slack。详见[ENG035](ENG035-DispatchNotices.md)。
+
 ## ENG029 当前同步与Server CI结果
 
 ENG028代码已普通快进同步，精确远端ff00b6d8ad0880b24afaca49e33b9f8b982ceb87。标准Server [run37417713362](https://github.com/T1doo/ParkWeave/actions/runs/37417713362)已completed/failure：PreparePASS、native_suite623.032秒exit1/外层timeoutFalse、受绑定PG StopPASS。获准check summary/text为空，19条注释未给具体case/counts；仍UNKNOWN，不把时长推断成内部超时或根因。下一定位仅需此新run页面安全JSON，旧截图请求已过时。见[ENG029真实同步记录](ENG029-SyncCI.md)。下方ENG028“本地未push/待核对”等均为当时快照，现已被本节取代；F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。

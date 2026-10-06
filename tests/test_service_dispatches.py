@@ -186,6 +186,7 @@ def test_strict_offer_shape(mutation):
 def test_exact14_upgrade_keeps_legacy_receipt_and_creates_dispatch_tables(receipt_fixture):
     f=receipt_fixture;r,parent,_=legacy_create(f);before=r.json()
     with f[1].connect() as c:
+        c.execute('DROP TABLE dispatch_notices,dispatch_notice_outbox')
         c.execute('DROP TABLE service_dispatch_events,service_dispatch_offers,service_dispatches CASCADE')
         c.execute('DELETE FROM schema_version WHERE version>=15')
         assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==14

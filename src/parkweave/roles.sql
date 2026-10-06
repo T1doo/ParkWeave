@@ -44,3 +44,7 @@ GRANT UPDATE(state,receipt_step_id) ON service_dispatch_offers TO parkweave_app;
 -- ENG033 new local lifecycle ledger and immutable events only.
 GRANT SELECT,INSERT ON case_local_lifecycles,case_local_events TO parkweave_app;
 GRANT UPDATE(revision,cycle,state,verified_snapshot,verified_sha256) ON case_local_lifecycles TO parkweave_app;
+
+GRANT SELECT,INSERT ON dispatch_notice_outbox,dispatch_notices TO parkweave_app;
+GRANT UPDATE(state,consumed_at) ON dispatch_notice_outbox TO parkweave_app;
+GRANT UPDATE(seen_at,read_at) ON dispatch_notices TO parkweave_app;

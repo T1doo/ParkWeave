@@ -87,3 +87,8 @@ ENG014（新授权并行切片）：F2 PARALLEL_ENGINEERING，正式准入NOT_PA
 ## ENG033 本地Case记录关闭与重开
 
 按原V1§5.5/7完成当前合成资料Case的最小本地记录闭环：显式四项重验→本地关闭（真实Case WAITING_CONFIRMATION）→重开（REOPENED）→新cycle显式重验。保留材料/分派/回执/资源历史，不宣称真实目标FULFILLED。真实三角色浏览器2轮5事件与reload/窄屏通过，受控时序23/23，独立只读审查通过；最终冻结全量775PASS/0FAIL/1WindowsSKIP/2既有WARN（228.266s）、142份hash一致与证据见[F2/ENG033](F2/ENG033-LocalCaseLifecycle.md)。仅本地commit，无push/newCI/export/LIVE；最新Server37420887816仍FAIL等待已有安全JSON，不猜根因或盲重跑。F1未签收、F2准入NOT_PASSED、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0；原环境与备份保留。
+
+
+## ENG035 当前分派链站内通知
+
+ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合法收件人平台通知、OPEN请求/本人已读分记、并发去重/崩溃重启及当前Case权限复查。最终本地冻结808PASS/0FAIL/1WindowsSKIP（232.54s）、实际三角色通知闭环和16时序检查通过，148份源hash/8张当前图匹配；证据见[F2/ENG035](F2/ENG035-DispatchNotices.md)。仅新SYNTHETIC内部事件、0LIVE/预算，不push/newCI/export；通知不代表履约，原通用CaseStep/Outbox/DAG/模板/实际目标核验欠项及阶段门保留。

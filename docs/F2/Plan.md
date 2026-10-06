@@ -1,5 +1,10 @@
 # F2并行开发计划：本地资料准备与个人待办
 
+
+## ENG035 当前分派链站内通知（本地完成）
+
+在ENG034明确建议后获新授权，实现当前新分派事件的业务+Outbox同事务、已有收件人平台通知、OPEN请求与本人已读、重复/并发/重启恢复及当前Case权限复查。仅SYNTHETIC内部三角色，内容最小，不新增Grant/Runassignment、无旧历史backfill，无外部消息。最终冻结808PASS/0FAIL/1WindowsSKIP/2既有WARN（232.54s），148源hash/137 runner源hash与8张独立当前截图匹配；三角色实际闭环与16时序检查通过。完成范围与最终证据见[ENG035](ENG035-DispatchNotices.md)。这只补当前分派链的小闭环；通用CaseStep/通知/全业务Outbox、原完整DAG/模板、承诺交付核验及实际FULFILLED仍未完成。F1/F2未签收、R4关闭、Win11/36AT6EX NOT_RUN；0LIVE/预算、不push/newCI/export，Server37420887816仍待已有安全JSON。下方记录保留各轮历史范围。
+
 ## ENG034 阶段收口
 
 当前逐项能力、原规格真实差距、外部事实边界和唯一下一步建议见[ENG034](ENG034-CloseoutReview.md)。仅修复现有资源关联的锁后时钟bug，无新增业务范围。ENG033的775回归保持历史范围；本轮另记修复验证。T01有限冲突检查与T02有限DAG结构校验已有，不能当完全缺失；固定两资源不足以代表全计划，原文也没有无限资源组合或默认多Case共享要求。真实Case的承诺交付/核验/授权确认工程与实际凭据均未完成，不能把本地关闭当FULFILLED。仅本地commit，不push/CI/export/LIVE；下一功能只建议，不自动启动。下方记录均保留历史范围。

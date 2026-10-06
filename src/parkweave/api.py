@@ -200,6 +200,19 @@ def create_app(store: Store) -> FastAPI:
     def resource_combination_cancel(combination_id: UUID,data: resources.Release,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return combinations.cancel(store,token(authorization),combination_id,resource_key(idempotency_key))
 
+    from . import dispatch_notices as notices
+    @app.get('/api/dispatch-notices')
+    def notice_list(authorization: str | None=Header(default=None)):
+        return notices.list_items(store,token(authorization))
+
+    @app.get('/api/dispatch-notices/{event_id}')
+    def notice_read(event_id: UUID,authorization: str | None=Header(default=None)):
+        return notices.read(store,token(authorization),event_id)
+
+    @app.post('/api/dispatch-notices/{event_id}/commands')
+    def notice_command(event_id: UUID,data: notices.Command,authorization: str | None=Header(default=None)):
+        return notices.command(store,token(authorization),event_id,data)
+
     from . import case_lifecycle
     @app.get('/api/preparations/{preparation_id}/local-case')
     def local_case_read(preparation_id: UUID,authorization: str | None=Header(default=None)):

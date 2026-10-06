@@ -222,7 +222,7 @@ def test_exact_11_upgrade_repeat_preserves_existing_single_receipts(pair_fixture
         c.execute('DELETE FROM schema_version WHERE version>=12')
     f[1].migrate();f[1].migrate()
     with f[1].connect() as c:
-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==16
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==17
         c.execute('GRANT SELECT,INSERT ON synthetic_resource_combinations,synthetic_resource_combination_members,synthetic_resource_combination_receipts TO parkweave_app')
         c.execute('GRANT UPDATE(state) ON synthetic_resource_combinations TO parkweave_app')
         payload=c.execute("SELECT payload FROM synthetic_resource_receipts WHERE action='CONFIRM'").fetchone()['payload']
