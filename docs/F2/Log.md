@@ -358,3 +358,8 @@ formal根HEAD200、原remote41bcc11确认未变，普通push已复核f5c8667成�
 ## ENG063 原身份读取恢复，唯一run实际终态
 
 同一路径认证恢复，无新凭据/身份/权限、push或CI。唯一37489722219/attempt1/sourcef5c8667 completed/failure，job1118秒；字节预检sourceAVAILABLE，Start/内部Stop CHILD_POLICY/POLICY_REFUSED。实际aggregate1117PASS49FAIL51SKIP/1217，逐片typed结果/覆盖flag未公开，不冒充PASS；Lifecycle80.594/Validation970.219均非timeout、内外Job回收，最终app/PGStop0。详见[ENG063](ENG063-SingleNativeTerminal.md)；不是预算耗尽，原门/runner/期限/R4/预算/环境备份保持。
+
+
+## ENG077 owner-free 测量候选
+
+从8e40f42保留并完成已有未提交Job入口与只读描述符诊断；真实父子创建、query/sync转移句柄、正常/超时/无关进程gold，完整严格时间线，owner/ACL与生产launcher不变。实际本地290PASS5nativeSKIP，1463 collect-only四片345/345/349/424、86源码hash校验通过；workflow补丁仅check未应用。原生、owner修改、push/CI仍暂停，历史权限因果UNKNOWN；父检查后安排独立Windows测量。见[ENG077](ENG077-OwnerFreeMeasurementCandidates.md)。F1未签收/F2并行、Server非Win11、R4关闭/模型预算0、原环境备份保留。

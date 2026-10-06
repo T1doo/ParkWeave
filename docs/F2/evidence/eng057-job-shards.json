@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "scope": "LOCAL_ENG074_OPTIN_HELD_DESCENDANT_JOB_WIRING_NOT_WINDOWS_PROVEN",
-  "source_parent_head": "055d9f70588f898036b68f612e328dde790fbe64",
-  "collected_cases": 1403,
-  "collected_files": 51,
+  "scope": "LOCAL_ENG077_OWNER_FREE_CONTROLLED_JOB_AND_READONLY_DESCRIPTOR_NOT_WINDOWS_PROVEN",
+  "source_parent_head": "8e40f429c356af1ba7b2e2b0a390549c88e65c5e",
+  "collected_cases": 1463,
+  "collected_files": 53,
   "mutually_exclusive_and_complete": true,
   "weight_source": "ENG049 historical Linux phase costs by file, minimum0.2 seconds/currentcase; relative balance only, not Windows duration prediction.",
   "limits": {
@@ -94,9 +94,11 @@
         "tests/test_preparation.py",
         "tests/test_preparation_tasks.py",
         "tests/test_resource_confirm.py",
-        "tests/test_synthetic_config_file.py"
+        "tests/test_synthetic_config_file.py",
+        "tests/test_controlled_job_measurement.py",
+        "tests/test_descriptor_readonly_probe.py"
       ],
-      "cases": 364,
+      "cases": 424,
       "historical_linux_relative_weight_seconds": 99.281126
     }
   ],
@@ -152,7 +154,9 @@
     "tests/test_v1_contracts.py": "406fa4454e729eb6023a66af634b6412629b3da65e0fc35c09ea694f5a820da1",
     "tests/test_windows_ci_preparation.py": "c84003dff3b52e3c8162db922a11ee74d5bd1147fe1f7f5108f388c2c5df1aed",
     "tests/test_windows_file_candidate.py": "88628e33ed6c563f6a64c5e0f25738114c0ea34feef5562db9ed44b9adc88948",
-    "tests/test_worker_gateway.py": "bde858bc9fc2a529b9d4b1c2492f5d965b13d666146bc54066e4aa9d2442104d"
+    "tests/test_worker_gateway.py": "bde858bc9fc2a529b9d4b1c2492f5d965b13d666146bc54066e4aa9d2442104d",
+    "tests/test_controlled_job_measurement.py": "124f330960c603a82f526f2e0ae01270d738c73144b81c98f3da4cc84dc74d2a",
+    "tests/test_descriptor_readonly_probe.py": "376d2f8b3965fa8c3a097a80f9c145da5897d8abbba7f07d2a121eb98343bebb"
   },
   "implementation_source_sha256": {
     ".github/workflows/windows-server-engineering.yml": "3dae85505e8d323769890acef9de54ac7047c0d7392a28d3a13c191ff6daf190",
@@ -185,9 +189,11 @@
     "scripts/windows_ci/native_failure_oracles.py": "0f68802c35fb76c4a9ed2362b24ea818f30a5618ad30cb1c3f90f7d6e18459ca",
     "scripts/windows_ci/minimal_native_job_oracle.py": "25a829660855aa6914b58ba897034a4c4faa785bb2f3c5b2ab05ba92ab649654",
     "scripts/windows/owner_descriptor_observation.py": "90ff710e92d6f92ebcfa94862624b6390f0edf6621b6de2a44f466a9e4ccc04d",
-    "scripts/windows_ci/job_stop_observation.py": "e7f7e0c81b5a5f54df8f231a357192820d05cca8ec2a48f75e5a634c30a78f26"
+    "scripts/windows_ci/job_stop_observation.py": "e7f7e0c81b5a5f54df8f231a357192820d05cca8ec2a48f75e5a634c30a78f26",
+    "scripts/windows_ci/controlled_job_measurement.py": "5e9e7a5b36fd4369c00a4a380532aea695f700f00bf0a331375fb542d084909a",
+    "scripts/windows/descriptor_readonly_probe.py": "18795c71bf4c39c238f873e75e7f7382ad6e7adab9806cb5f9dbd8600c07b608"
   },
-  "diagnostic_allowlist_sha256": "ce08f33f57adf5c6deac9bf96257e54ffecb5030700a6955917e651258f255de",
+  "diagnostic_allowlist_sha256": "b27c7639264cf5f0ab887f71d8db92c9a1adbd42c0956dcab7121e8b14a3e42f",
   "new_CI_runs": 0,
   "eng061_refresh": {
     "producer_parent_head": "41bcc113f7e7690a346cc79249fe76803a98bd0e",
@@ -290,16 +296,16 @@
     "new_cases_since_eng057": 55
   },
   "collection_evidence": {
-    "current_cases": 1403,
+    "current_cases": 1463,
     "pieces": [
       345,
       345,
       349,
-      364
+      424
     ],
     "exact_piece_stable_multiset_matches_global": true,
-    "all_previous_eng073_exact_case_keys_retained": true,
-    "new_cases_since_eng073": 32,
+    "all_previous_eng074_exact_case_keys_retained": true,
+    "new_cases_since_eng074": 60,
     "execution_claim": "COLLECT_ONLY_NOT_PASS"
   },
   "historical_eng064_collection_evidence": {
@@ -379,6 +385,19 @@
     "exact_piece_stable_multiset_matches_global": true,
     "all_previous_eng072_exact_case_keys_retained": true,
     "new_cases_since_eng072": 17,
+    "execution_claim": "COLLECT_ONLY_NOT_PASS"
+  },
+  "historical_eng074_collection_evidence": {
+    "current_cases": 1403,
+    "pieces": [
+      345,
+      345,
+      349,
+      364
+    ],
+    "exact_piece_stable_multiset_matches_global": true,
+    "all_previous_eng073_exact_case_keys_retained": true,
+    "new_cases_since_eng073": 32,
     "execution_claim": "COLLECT_ONLY_NOT_PASS"
   }
 }
