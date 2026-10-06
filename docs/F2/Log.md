@@ -237,3 +237,8 @@ ENG041普通快进push至9801259，唯一标准37444794329/attempt1 completed/fa
 ## ENG044 最小对象与最后测试观测
 
 仅沿既有安全协议增加ROOT/SESSIONS/CONFIG对象及同一原子快照的白名单去参数active_test_id；称最后记录，不称确定根因。严格ACL合同、600s/900s/权限/身份不变，JobObject产品修复未混入，后代回收仍OPEN。定点264PASS及两位独立只读复核通过；连同ENG043普通推送至8da8e4a；唯一标准37450539320失败，Setup已明确SESSIONS/ACL_OWNER_MISMATCH，完整回归600s TimeoutExpired最后原子记录pytest_call及test_plan_revision::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call，具体挂点/因果未知，PGStop成功；未再push/newCI。见[ENG044](ENG044-MinimalObservationsCI.md)。原签收门/R4/预算、环境与备份保留。
+
+
+## ENG045 定点恢复等待与 SESSIONS owner 待审批方案
+
+只读解释 TOKEN_OWNER 与父目录 ACE 继承分别决定默认 owner/访问权，实际 owner SID 未观测；最小候选仅 Windows 首次新建 SESSIONS 的 owner，在写 token 前验证，DACL/SACL/继承/其他对象保持，待用户确认，实际安全变更0。精确最后记录恢复测试原样1PASS；受控自有 PG 锁复现旧DSN等待、新测试DSN 1秒锁/5秒语句超时及释放后恢复，回滚/两份reservation/唯一成功outbox保持。独立复核通过，最终定点26PASS/0FAIL/2既有WARN/17.56s，三份源冻结，见[ENG045](ENG045-TargetedRecoveryAndACLPlan.md)及[evidence](evidence/eng045-targeted-recovery.json)。仅本地commit，无push/newCI/全量/权限执行/模型预算；Windows600秒根因UNKNOWN，600/900与产品清理保持，后代回收OPEN，原阶段门/R4/环境备份保留。

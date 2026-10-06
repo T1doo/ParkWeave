@@ -11,6 +11,7 @@ import time
 import httpx
 import psycopg
 import pytest
+from psycopg.conninfo import make_conninfo,conninfo_to_dict
 from parkweave.store import Conflict
 from parkweave.model_chain import ModelChain,synthetic_transport
 from parkweave.http_transport import InternHTTPTransport
@@ -104,7 +105,19 @@ def test_before_artifact_visible_before_trusted_action_and_immutable(fixture,mon
             with store.connect() as c:c.execute(sql)
 
 
-def test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call(fixture,monkeypatch):
+
+@pytest.fixture
+def bounded_recovery_sql(fixture,monkeypatch):
+    """Only this recovery oracle: all app/owner/quota connections inherit deadlines."""
+    before={}
+    for label,store in zip(('app','owner'),fixture[:2]):
+        before[label]=store.dsn
+        options=conninfo_to_dict(store.dsn).get('options','')
+        monkeypatch.setattr(store,'dsn',make_conninfo(store.dsn,options=options+' -c lock_timeout=1000 -c statement_timeout=5000'))
+    return before
+
+
+def test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call(fixture,monkeypatch,bounded_recovery_sql):
     store,owner,*_=fixture;provision(owner);run=submit(fixture);ch=chain(store);old=ch.insert_artifact
     def crash(c,claim,document,call_id):
         old(c,claim,document,call_id)

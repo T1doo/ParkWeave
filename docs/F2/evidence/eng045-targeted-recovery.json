@@ -1,0 +1,73 @@
+{
+  "scope": "ENG045_TARGETED_RECOVERY_AND_READONLY_ACL_DESIGN",
+  "base_commit": "e0bdf845f16a16a75bc2058b7c3229f55577fdb7",
+  "last_verified_remote_head": "8da8e4a95f90965ae06fd4b990abd02e047b4364",
+  "prior_ci_run": 37450539320,
+  "windows_root_cause": "UNKNOWN",
+  "actual_sessions_owner_sid": "NOT_OBSERVED",
+  "source_sha256": {
+    "tests/test_plan_revision.py": "2a790a7c5de70ed72339e7d2b5773696659ed2b93f825bda1586356717b7f24c",
+    "tests/test_plan_revision_waits.py": "188e162839d6a563f560eeee6e7f798be9cdd2048fcb4b47ee6a7bd3d485ba80",
+    "scripts/windows_ci/diagnostic-test-ids.json": "568db00415355975124c297ac30d28a737fcfd1aaa1a8a0a189165bf1234c04e"
+  },
+  "local_results": {
+    "before": {
+      "path": ".runtime/eng045-target-before.xml",
+      "sha256": "342aefff8d3fa43f5aca0bbb58e388f18b4f5af7712b6e8c7f99c65474b35988",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 0.972
+    },
+    "initial_after": {
+      "path": ".runtime/eng045-target-after.xml",
+      "sha256": "0a0c5076129c2233392d5393b7deaf36858c976bf9241627940898ed1320d0c0",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 11.095
+    },
+    "final": {
+      "path": ".runtime/eng045-final-targeted.xml",
+      "sha256": "60464343740d0e320ff0b4233635823119e4873de8201eaf44d1ec2688ff5a59",
+      "tests": 26,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 17.54
+    }
+  },
+  "final_pytest_console_seconds": 17.56,
+  "warnings": 2,
+  "controlled_probes": {
+    "unbounded_run_row_wait": "OWNED_LOCK_OBSERVED; child still waiting at parent deadline; completes after release",
+    "bounded_run_row_wait": "LOCK_TIMEOUT exit3 under4s; rollback preserved RUNNING/VERIFIED; retry completes",
+    "principal_read_wait": "LockNotAvailable under3s; after release GET200",
+    "quota_wait": "QUOTA_DENIED under3s; zero reservation/calls before release; afterward RESERVED",
+    "statement_deadline": "QueryCanceled under7s for owned pg_sleep20; fresh SELECT1 succeeds",
+    "recovery_oracle": "two quota reservations; two revisions; exactly one SUCCEEDED outbox; interrupted transaction connection closed"
+  },
+  "test_fixture_only": {
+    "lock_timeout_ms": 1000,
+    "statement_timeout_ms": 5000,
+    "scope": "explicit fixture consumers only; app/owner DSN options restored by monkeypatch",
+    "global_role_or_database_changes": false
+  },
+  "review": "independent readonly source review; no substantive blocker; exact child kill fallback implemented",
+  "actions": {
+    "permission_mutations": 0,
+    "new_ci": 0,
+    "push": 0,
+    "full_suite": 0,
+    "real_model_calls": 0,
+    "budget": 0
+  },
+  "remaining": [
+    "actual Windows hang cause UNKNOWN",
+    "SESSIONS DACL and CONFIG not checked after owner rejection",
+    "OWNED_REGRESSION_DESCENDANTS OPEN",
+    "F1/F2 unaccepted; Server is not Win11; 36AT6EX NOT_RUN; R4 disabled"
+  ]
+}

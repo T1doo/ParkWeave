@@ -106,3 +106,8 @@
 ## ENG037 固定模板实施
 
 用户采用ENG036四个A默认后，实施一个固定材料→资源→分派→回执的持久合成模板。新增版本18计划/审计表、owner明确CHECK及既有写入口事务内前置门，不自动授予访问或执行动作。实现、当前验证与保留限制见[ENG037](ENG037-ControlledTemplate.md)。原通用DAG/完整Approval/授权epoch/发布和冷会话/预览/真实履约缺口仍在。仅本地commit，不push/newCI/export/LIVE。
+
+
+## ENG045 定点恢复等待与 SESSIONS owner 待审批方案
+
+只读解释 TOKEN_OWNER 与父目录 ACE 继承分别决定默认 owner/访问权，实际 owner SID 未观测；最小候选仅 Windows 首次新建 SESSIONS 的 owner，在写 token 前验证，DACL/SACL/继承/其他对象保持，待用户确认，实际安全变更0。精确最后记录恢复测试原样1PASS；受控自有 PG 锁复现旧DSN等待、新测试DSN 1秒锁/5秒语句超时及释放后恢复，回滚/两份reservation/唯一成功outbox保持。独立复核通过，最终定点26PASS/0FAIL/2既有WARN/17.56s，三份源冻结，见[ENG045](ENG045-TargetedRecoveryAndACLPlan.md)及[evidence](evidence/eng045-targeted-recovery.json)。仅本地commit，无push/newCI/全量/权限执行/模型预算；Windows600秒根因UNKNOWN，600/900与产品清理保持，后代回收OPEN，原阶段门/R4/环境备份保留。
