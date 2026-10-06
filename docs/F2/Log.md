@@ -1,3 +1,7 @@
+## ENG076 只读证据复核与最小下一步
+
+历史SESSION/CONFIG只有ACL/control不等布尔，无具体delta，当前readonly A/B能定位现状/稳定性但不能还原owner转变或证明DACL保持。Job生产注入/暂停合同当前134PASS5nativeSKIP；原生samehandle membership→Terminate→Accounting0→signal及无关/17/timeout仍缺，S4单独OPEN。优先owner无关受控Job recipe候选，再独立原生gold；不请求新权限，owner继续暂停，不原生/CI/network/导出备份，不把其他对象批准当DACL豁免。见[ENG076](ENG076-ReadonlyEvidenceAndNextStep.md)。
+
 ## ENG075 同Case纠错新版与显式重验实际体验
 
 复用ENG073原Case/Run合法assignment，无seed/migrate/assign，前后完整assignment/grant相等。实际Chromium企业重开旧ACK回执→待审版→要求纠正→执行者新版→企业重核→旧Case snapshot失效、关闭阻塞→显式重验再本地关闭/reload通过。像素查看发现READY静态摘要误导，现明确原校验失效；同Case重跑及主线程/独立实际看图通过，320/390无横溢出。最终cycle4/revision13、回执v5、目标仍未完成。权限/业务关闭条件不变，owner暂停，无权限实验/push/CI/LIVE，预算0；Win11/全AT未验。见[ENG075](ENG075-SameCaseReceiptCorrection.md)。
