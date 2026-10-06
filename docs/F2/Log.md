@@ -262,3 +262,8 @@ ENG041普通快进push至9801259，唯一标准37444794329/attempt1 completed/fa
 ## ENG049/ENG050 本地诊断与已授权CONFIG首建owner
 
 有效同顺序Linux基线990PASS6WindowsSKIP290.942秒，Windows最后两目标本地均快；实际600秒根因仍UNKNOWN。故障注入复现并修复fixture初始化/client退出失败时自有UUID数据库清理，保留原异常。CONFIG首建owner获父线程明确批准，复用同handle最小协议，不改既有/ROOT/DACL/身份。独立审查通过，修改后定点139PASS2WindowsSKIP14.23秒；见[ENG049](ENG049-RegressionTimingAndFixtureCleanup.md)与[ENG050](ENG050-SyntheticConfigOwner.md)。允许一次普通push/标准CI，600/900与阶段门、预算/R4不变。
+
+
+## ENG051 单次CONFIG owner CI终态
+
+普通push7596427，唯一37462634764/attempt1精确head completed/failure，末次remote不变且同头仅1run。完整非PASS0遗漏及固定源码路径支持推断Setup/配置保留/Doctor已通过，CONFIG障碍越过；不是直接逐项PASS报告。Start转为health_readiness/READINESS_TIMEOUT，API/browser/restart NOT_RUN。回归原600TimeoutExpired/countsMISSING，最后pytest_setup/plan_revision恢复fn仅快照不根因。内外Job实际OWNED_TREE_STOPPED，outer693.546秒exit1未超900；四专用native逐项仍UNAVAILABLE；PGStop0/.234秒成功。4notice426max/990total/1ID边界通过。见[ENG051](ENG051-SingleConfigOwnerCI.md)；无新权限动作/诊断扩展/再push或CI，结果docs仅本地commit，原门/R4/预算和环境包保持。
