@@ -24,14 +24,17 @@ from regression_progress import read_snapshot as regression_snapshot
 from owned_job import run as run_owned_job
 
 
-def run_regression(managed, report, progress, env):
+def run_regression(managed, report, progress, env, *, shards=None, budget=600):
+    if shards is not None and not 0<budget<=900:raise ValueError('existing outer budget required')
     command=[str(managed),'scripts/run_acceptance.py','--progress',str(progress),'--report',str(report)]
+    if shards is not None:command.extend(['--shards',str(shards),'--shard-budget',str(budget)])
+    else:budget=600
     if os.name != 'nt':
         # Portable fault-injection harness only; the actual suite requires Server.
-        return subprocess.run(command,cwd=REPO,env=env,capture_output=True,text=True,timeout=600)
+        return subprocess.run(command,cwd=REPO,env=env,capture_output=True,text=True,timeout=budget)
     prefix=report.stem+'-'+uuid.uuid4().hex
     with (report.parent/(prefix+'.stdout')).open('xb') as out,(report.parent/(prefix+'.stderr')).open('xb') as err:
-        return run_owned_job(command,cwd=REPO,env=env,stdout=out,stderr=err,timeout=600)
+        return run_owned_job(command,cwd=REPO,env=env,stdout=out,stderr=err,timeout=budget)
 
 def owned_status(stdout):
     """A successful read command alone does not prove both owned services exist."""
@@ -58,7 +61,10 @@ def emit_summary(report,rows):
     return 0 if ok and rows and all(r['status']=='PASS' for r in rows) else 1
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('--report',required=True,type=Path);args=parser.parse_args()
+    suite_started=time.monotonic()
+    parser=argparse.ArgumentParser();parser.add_argument('--report',required=True,type=Path)
+    parser.add_argument('--regression-shards',type=Path,help='Opt-in local shard candidate; does not extend outer 900 seconds')
+    args=parser.parse_args()
     try:require_server()
     except RuntimeError as exc:print(str(exc));return 2
     # Only names of explicitly created temporary cluster config. No model env access.
@@ -138,15 +144,26 @@ def main():
     try:
         phase='regression_run';checkpoint(phase);report=REPO/'.runtime'/('server-regression-'+uuid.uuid4().hex+'.json');report.parent.mkdir(exist_ok=True)
         progress=report.with_suffix('.progress.json')
-        proc=run_regression(managed,report,progress,command_environment(os.environ,config,'regression'))
-        rows.append({'case':'full_engineering_regression','status':'PASS' if proc.returncode==0 else 'FAIL','exit_code':proc.returncode})
-        rows[-1].update(regression_snapshot(progress))
-        if hasattr(proc,'cleanup'):rows[-1]['owned_tree_cleanup']=proc.cleanup
-        if report.exists():
-            phase='regression_report';checkpoint(phase);parsed,counts=read_report(report)
-            rows[-1]['counts']=counts;rows[-1]['whole_AT_EX']='NOT_RUN'
-            rows[-1]['failure_diagnostics']=failure_tests(REPO,parsed.get('private_junit'))
-        else:rows[-1]['failure_diagnostics']={'state':'REPORT_MISSING','failed_test_ids':[]}
+        proc=None
+        if args.regression_shards is None:
+            proc=run_regression(managed,report,progress,command_environment(os.environ,config,'regression'))
+        else:
+            # Preserve capacity for the independent 15s/180s stages and cleanup.
+            budget=900-(time.monotonic()-suite_started)-210
+            if budget<=0:
+                rows.append({'case':'full_engineering_regression','status':'NOT_RUN','exit_code':1,'phase':'regression_run',
+                             'reason':'TOTAL_BUDGET_EXHAUSTED'})
+            else:
+                proc=run_regression(managed,report,progress,command_environment(os.environ,config,'regression'),shards=args.regression_shards,budget=budget)
+        if proc is not None:
+            rows.append({'case':'full_engineering_regression','status':'PASS' if proc.returncode==0 else 'FAIL','exit_code':proc.returncode})
+            rows[-1].update(regression_snapshot(progress))
+            if hasattr(proc,'cleanup'):rows[-1]['owned_tree_cleanup']=proc.cleanup
+            if report.exists():
+                phase='regression_report';checkpoint(phase);parsed,counts=read_report(report)
+                rows[-1]['counts']=counts;rows[-1]['whole_AT_EX']='NOT_RUN'
+                rows[-1]['failure_diagnostics']=failure_tests(REPO,parsed.get('private_junit'))
+            else:rows[-1]['failure_diagnostics']={'state':'REPORT_MISSING','failed_test_ids':[]}
     except Exception as exc:
         row=exception_row('full_engineering_regression',exc,phase)
         if phase=='regression_run' and 'progress' in locals():row.update(regression_snapshot(progress))

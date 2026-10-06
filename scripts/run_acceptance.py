@@ -10,6 +10,7 @@ import sys
 import uuid
 import xml.etree.ElementTree as ET
 
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'src'))
 from parkweave.process_env import minimal_environment
 sys.path.insert(0,str(Path(__file__).resolve().parent/'windows_ci'))
 from regression_progress import write as progress_write,read_snapshot as progress_read
@@ -51,7 +52,11 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--report',type=Path,default=ROOT/'.runtime/engineering-acceptance.json')
     parser.add_argument('--ids',help='Optional comma-separated fixed IDs; default runs full engineering regression')
     parser.add_argument('--progress',type=Path,help='Optional private fixed-phase diagnostic checkpoint')
+    parser.add_argument('--shards',type=Path,help='Opt-in fixed-file shard manifest; default remains unsharded')
+    parser.add_argument('--shard-budget',type=float,default=900,help='Opt-in total seconds, at most the existing 900-second outer budget')
     args=parser.parse_args()
+    if args.shards and args.ids:parser.error('shards require complete engineering collection, not selected AT IDs')
+    if args.shards and not 0<args.shard_budget<=900:parser.error('shard budget must be within 900 seconds')
     progress_write(args.progress,'acceptance_bindings')
     bindings=json.loads((ROOT/'docs/F1/ATBindings.json').read_text(encoding='utf-8'));spec=json.loads((ROOT/'docs/验收规格.json').read_text(encoding='utf-8'))
     rows=validate_bindings(bindings,spec)
@@ -63,7 +68,13 @@ def main():
     junit=private/('pytest-'+uuid.uuid4().hex+'.xml');log=private/('pytest-'+uuid.uuid4().hex+'.log')
     selectors=sorted({s for r in rows for s in r['engineering_selectors']}) if args.ids else ['tests']
     code=0
-    if selectors:
+    shard_result=None
+    if args.shards:
+        from regression_shards import execute
+        env=minimal_environment(os.environ,PYTHONPATH=str(ROOT/'src'),**({'PARKWEAVE_TEST_OWNER_DSN':os.environ['PARKWEAVE_TEST_OWNER_DSN']} if os.name=='nt' and 'PARKWEAVE_TEST_OWNER_DSN' in os.environ else {}))
+        shard_result=execute(ROOT,sys.executable,args.shards,private,args.report,env=env,progress=args.progress,total_seconds=args.shard_budget)
+        code=shard_result['execution_exit_code'];junit=ROOT/shard_result['private_junit']
+    elif selectors:
         with log.open('w',encoding='utf-8') as f:
             progress_write(args.progress,'pytest_launch')
             telemetry=['-p','scripts.windows_ci.regression_plugin','--parkweave-progress',str(args.progress)] if args.progress is not None else []
@@ -72,8 +83,10 @@ def main():
     if not junit.exists():junit.write_text('<testsuites/>',encoding='utf-8')
     telemetry=progress_read(args.progress).get('regression_observation') if args.progress is not None else None
     progress_write(args.progress,'report_summary',telemetry=telemetry);report=summarize(rows,junit,code)
+    if shard_result is not None:report.update(shard_result)
     report.update(environment=sys.platform,model_calls=0,native_windows='NOT_RUN: native manual gates not auto-graded',
-                  full_regression=not bool(args.ids),private_log=str(log.relative_to(ROOT)),private_junit=str(junit.relative_to(ROOT)))
+                  full_regression=not bool(args.ids) and (shard_result is None or shard_result['coverage_complete']),private_junit=str(junit.relative_to(ROOT)))
+    if shard_result is None:report['private_log']=str(log.relative_to(ROOT))
     source_files=sorted(p for folder in ('src/parkweave','tests','scripts') for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix in ('.py','.ps1','.psm1','.sql','.html'))
     report['tested_source_sha256']={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_files}
     progress_write(args.progress,'report_write',telemetry=telemetry);args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')

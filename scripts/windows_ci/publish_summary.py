@@ -16,7 +16,7 @@ MAX_ANNOTATIONS=8
 MAX_ANNOTATION_BYTES=2048  # Entire UTF-8 workflow command, including final LF.
 MAX_ANNOTATION_TOTAL_BYTES=16*1024
 CASES=frozenset({'suite_initialization','suite_exception','lifecycle_exception','final_Stop_owned_services','full_engineering_regression','Win11_guard_refuses_Server','separate_Server_candidate_oracles','Setup_native','Setup_refuses_existing_config','config_sessions_preserved','Doctor_native','Start_native','Status_native','actual_API_worker_local_case','Stop_native','Restart_native','data_read_after_restart','native_local_browser','API_browser_restart','lifecycle_API_browser'})
-REASONS=frozenset({'OWNED_STATUS_NOT_CONFIRMED','START_FAILED','SETUP_FAILED'})
+REASONS=frozenset({'OWNED_STATUS_NOT_CONFIRMED','START_FAILED','SETUP_FAILED','TOTAL_BUDGET_EXHAUSTED'})
 STATES=frozenset({'UNAVAILABLE','AVAILABLE','JUNIT_PATH_REFUSED','ALLOWLIST_UNAVAILABLE','JUNIT_MISSING','JUNIT_UNREADABLE_OR_OVERSIZE','JUNIT_FORMAT_REFUSED','JUNIT_INVALID','JUNIT_CASE_LIMIT','REPORT_MISSING'})
 
 
