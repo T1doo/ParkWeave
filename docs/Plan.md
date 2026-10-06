@@ -1,5 +1,9 @@
 # ParkWeave 动态计划
 
+## ENG024 当前本地验收与具体缺陷修复
+
+基线8e2195a，审计历史截图可复验性，旧通用覆盖图与恢复缺图明确限制，不改历史运行成绩。按原V1Status串联现有资料纠错/双资源组合/合法获派执行者回执/企业核对重开，资源与Case仅测试手动关联，无通用ServicePlan或跨模块自动事务。独立review发现通用UI身份/迟到响应缺陷并真实复现后最小修复；不改业务API/权限上限或原计划。规格/最终证据见[F2/ENG024-CrossModule.md](F2/ENG024-CrossModule.md)。只本地提交后停止，不push/newCI/export/upload/backup/LIVE；F1/F2未签收R4关闭，Windows失败明细待用户。
+
 ## ENG023 本地执行者回执子集
 
 在c2f3465基础先完成[F2原V1逐项对照](F2/V1Status.md)，再推进[F2-T04最小合成回执](F2/ENG023-ExecutorReceipts.md)：合法获派执行者记有来源/版本/hash的回执，企业核对/纠错/重开，保持角色上限、当前授权、父版本/幂等/事务边界。不是通用办理编排或真实履约；本地切片完成后停止，不push/新CI/备份/导出/上传/LIVE。F1未签收、F2NOT_PASSED、R4关闭、Win11与36AT6EXNOT_RUN；Windows失败明细收到优先F1。

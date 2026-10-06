@@ -1,5 +1,9 @@
 # F2并行开发计划：本地资料准备与个人待办
 
+## ENG024 当前本地验收与具体缺陷修复
+
+基线8e2195a，审计历史截图可复验性，旧通用覆盖图与恢复缺图明确限制，不改历史运行成绩。按原V1Status串联现有资料纠错/双资源组合/合法获派执行者回执/企业核对重开，资源与Case仅测试手动关联，无通用ServicePlan或跨模块自动事务。独立review发现通用UI身份/迟到响应缺陷并真实复现后最小修复；不改业务API/权限上限或原计划。规格/最终证据见[ENG024-CrossModule.md](ENG024-CrossModule.md)。只本地提交后停止，不push/newCI/export/upload/backup/LIVE；F1/F2未签收R4关闭，Windows失败明细待用户。
+
 ## ENG023 当前有界延续：获派执行者合成回执
 
 先按原V1逐项整理真实成果/未完成/依赖，见[V1Status.md](V1Status.md)，不改原V1。最小F2-T04复用当前run_assignments获派执行者，已LOCAL_CONFIRMED准备事项建立合成步骤，执行者追加有来源/版本/hash的回执，企业本地核对、纠错或有理由重开。权限上限不变，无材料正文/真实身份/外部通知，不关Case。冻结R01—R06见[ENG023-ExecutorReceipts.md](ENG023-ExecutorReceipts.md)。仅本地提交后停止，不push/新CI/Library/备份/导出/上传/LIVE；后续新授权优先于本文件旧条目的备份安排。

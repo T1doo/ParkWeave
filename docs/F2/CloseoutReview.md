@@ -1,5 +1,13 @@
 # F2 本地两个增量的有界收尾
 
+## ENG024 当前独立验收收尾
+
+独立reviewer cross_module_review（6.1sol medium）只读8e2195a后公开源码/测试/文档，发现通用UI跨身份残留和迟到回填、验收第二占位旧卡等待竞态与执行者权限措辞，具体复现/修复后只读复核无残留实质问题。未跑API/DB/browser/回归或读私有runtime，运行证据来自实现者。真实页面原generic7失败复现，最终7PASS；已有模块72守卫及真实跨模块三角色/通用事实browser PASS；冻结全聚合555PASS/0FAIL/1WindowsSKIP/2WARN、115源码hash匹配。原API/权限/业务模块/CSS及33保护文件不改。
+
+新流程仍手动关联资源与Case，现有模块局部事务不等于完整ServicePlan或原阶段端到端签收。截图最终41图hash匹配，3旧通用覆盖图与3恢复缺图不可复验，旧运行成绩保留，新图不代旧图。scope/独立审查限制/真实链/未完成项详见[ENG024-CrossModule](ENG024-CrossModule.md)与[证据](evidence/eng024-acceptance-summary.json)。本轮只本地提交，F1F2未签收/R4关闭，Windows失败明细仍待用户；无push/newCI/backup/export/upload/LIVE。
+
+当前复验注记（ENG024）：旧ENG023资料截图目录恢复后缺失，已在原证据追加不可复验标记，详见[ScreenshotEvidence.md](ScreenshotEvidence.md)。原报告运行成绩保留；32张已登记命名图（含旧阶段22张）hash匹配，不能用新图补造旧图。
+
 ## ENG023 独立本地收尾
 
 本轮范围为c2f3465之后的获派执行者SYNTHETIC回执切片，并先整理[V1Status.md](V1Status.md)；原文未修改。独立只读6.1sol medium reviewer executor_receipt_review两次检查公开代码/测试/文档、fixture/browser/oracle，无实质finding。未运行任何API/DB/browser/测试，不将实现者555PASS或36新用例当独立复跑。授权先于重放、父锁先于步骤、当前READ/assignment/owner与owner EXECUTE、父绑定/CAS/hash、不可变表历史和本地有限事务均检查；UI token/id/generation、草稿和迟到响应检查。详情见[ENG023范围与结果](ENG023-ExecutorReceipts.md)与[运行证据](evidence/eng023-acceptance-summary.json)。

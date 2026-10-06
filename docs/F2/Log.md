@@ -1,5 +1,17 @@
 # F2并行工程日志
 
+## ENG024 跨模块合成验收与通用UI隔离修复（本地完成）
+
+实际恢复HEAD8e2195ad63dd19d0b7c8e3ef94f47e0c04044a6a/干净工作树与Python3.12.14，未回滚/重下旧ZIP。审计docs全部可解析.runtime PNG/hash引用，旧ENG02017+ENG0215命名图hash保持，ENG023回执10图保持；历史准备browser固定3图覆盖无法恢复，相关旧JSON追加NOT_REPRODUCIBLE，原运行成绩不改。恢复后ENG023 preparation目录3图缺失也追加明确限制，不用新图冒充。ScreenshotEvidence清单和审计script可复核，最终含本片新9图共41HASH_MATCH/3MISSING/3LEGACY_OVERWRITTEN；文字/文件存在不能替代历史hash匹配。
+
+以原V1Status为界，仅现有接口：新企业资料诉求/两槽来源→获派专员纠错→企业材料新版本→专员核对/企业本地确认→两个不同资源预检/占位/组合同事务确认→显式SYN fixture owner为该Run准备现有assignment→合法执行者回执v1→企业纠错→v2→本地核对→重开→v3→reload→显式整组取消两条RELEASED。真实API/独立worker/PG/Chromium三角色PASS；资源保持到明确取消，回执不自动释放或关闭Case，Case仍NEEDS_INPUT。资源/Case仅测试手动关联ID/诉求标签，无ServicePlan/Approval绑定或跨模块全事务。并行与通用分派/接单/通知/真实履约缺口未虚构。
+
+独立6.1sol medium cross_module_review首轮发现通用apiCall没有token/run/generation守卫、切身份残留JSON/运行/诉求/事实草稿，旧review/create迟到可回填新身份；原真实页面mock复现7项全false（预期复现FAIL保留）。最小web UI修复加入冻结context/响应后及caller DOM后二次检查/最新请求与run编辑导航失效、身份清JSON/表单/问题/重试、旧错误不改新状态。API/权限/业务表/桌面手机CSS未改，已经发送的POST仍可能提交的限制明确保留。review另发现第二资源wait可能复用旧卡，script改等待新唯一hold ID，文档“不能读企业决定”改“不能代企业决定”。最终只读复核无残留实质finding；review未跑API/DB/browser/测试或读私有runtime。
+
+修复后冻结最终跨模块browser及通用事实候选补充/评审/取消browser均PASS，取消空run_id保留当前运行，事实UNKNOWN，历史不变；新generic7/7与旧资料23/23/资源31/31/回执18/18共79页面守卫PASS，不增加pytest数量。最终全聚合 **555 passed, 1 skipped, 2 warnings in 166.97s (0:02:46)**，555PASS/0FAIL/1WindowsSKIP，115包含JS源码hash冻结匹配，compileall/JS语法/diffcheck PASS。33原V1/Windows/R4/角色保护文件与roles SQL全字节不变，旧22命名图hash不变。新9图.runtime/eng024-ui-final，已实际查看资源确认/整组取消/企业纠错及320回执；320/390无横滚、页面错误0，不称用户视觉或真手机/Win11签收。
+
+证据evidence/eng024-acceptance-summary.json、eng024-screenshot-audit.json；scope见ENG024-CrossModule。自有harness正常结束仅停自身children，无provider/预算/外部通知或真实身份办理，未push/newCI/backup/export/upload/LIVE。仍缺原计划注册服务DAG/目标覆盖、CaseStep/运营分派接单、通知/全业务Outbox、模板/冷会话/真实证明履约和完整F2端到端。F1F2未签收/R4关闭/Win11及whole36AT6EXNOT_RUN，Windows失败明细待用户，收到优先F1。安全本地提交后本片停止。
+
 ## ENG023 获派执行者合成回执完成（仅本地有界切片）
 
 基线c2f3465，先按原V1 F2-T01—T07逐项整理V1Status的一页已完成子集/未完成/依赖，不改原计划。现有执行者仅Run READ，没有办理回执。新增schema13三张业务表和步骤有限状态：只有已LOCAL_CONFIRMED合成资料整理事项的本人企业创建，执行者必须当前合法run_assignments获派；执行者追加SYNTHETIC来源/版本/hash，企业当前hash核对、要求纠正或有理由重开，三版本与历史保留。核心角色上限/先前roles SQL prefix未改，新表只授权特定状态/版本/current receipt列，历史/绑定不可修改；不导入真实材料、身份或通知，不关闭Case。父资料state/revision/hash改变只保留历史并阻止新写，显式重规划仍待实现。

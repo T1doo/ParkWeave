@@ -1,5 +1,7 @@
 # ENG023 最小获派执行者合成办理回执
 
+当前复验注记（ENG024）：旧ENG023资料截图目录恢复后缺失，已在原证据追加不可复验标记，详见[ScreenshotEvidence.md](ScreenshotEvidence.md)。原报告运行成绩保留；32张已登记命名图（含旧阶段22张）hash匹配，不能用新图补造旧图。
+
 实施前，基线c2f3465。对照原V1 F2-T04、产品5.5/7.4；计划对照见V1Status。不存在执行者办理回执模块，旧Operation LOCAL_CASE_CREATED仅建单；准备资料LOCAL_CONFIRMED也不是办理完成。
 
 只用于已人工核对并由企业LOCAL_CONFIRMED的合成资料整理服务。企业为该Preparation建立一个本地回执步骤，绑定当前prep revision/review hash、Run/Case/Service版本及当前合法run_assignments中的service_executor。API不创建或修改assignment/身份/核心Grant；明确合成owner测试setup可准备假执行者/已分配样例，未增加真实身份。service_executor核心仍READ，无通用EXECUTE/CONTROL/材料/事实/其他事项权；回执写入只由固定角色+本人步骤+当前READ与现有assignment的交集允许。

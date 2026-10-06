@@ -1,0 +1,355 @@
+{
+  "scope": "ENG024_BOUNDED_SYNTHETIC_CROSS_MODULE_REPLAY_AND_EXISTING_UI_FIX",
+  "baseline": "8e2195ad63dd19d0b7c8e3ef94f47e0c04044a6a",
+  "environment_execution_verified": true,
+  "independent_review": {
+    "agent": "cross_module_review",
+    "model": "6.1sol medium",
+    "read_only_same_workspace": true,
+    "findings": [
+      {
+        "severity": "P1",
+        "description": "generic UI old identity data/drafts remain or late response restores old JSON/questions/run",
+        "fixed": true,
+        "real_page_reproduced": true
+      },
+      {
+        "severity": "P2",
+        "description": "browser second hold completion wait could reuse first hold card",
+        "fixed": true
+      },
+      {
+        "description": "executor can read own-step enterprise reasons; cannot act for enterprise, corrected document",
+        "fixed": true
+      }
+    ],
+    "followup_substantive_findings": 0,
+    "tests_independently_rerun": false,
+    "private_runtime_read": false
+  },
+  "before_fix_generic_response_order": {
+    "checks": {
+      "identity_clears_generic_data": false,
+      "old_identity_response_ignored": false,
+      "old_review_cannot_restore_question": false,
+      "old_create_cannot_restore_run": false,
+      "run_change_invalidates_pending": false,
+      "latest_generic_read_wins": false,
+      "navigation_invalidates_pending": false
+    },
+    "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+    "model_calls": 0,
+    "business_API_calls": 0,
+    "backend_authorization_tested": false
+  },
+  "final_response_order": {
+    "generic_session": {
+      "checks": {
+        "identity_clears_generic_data": true,
+        "old_identity_response_ignored": true,
+        "old_review_cannot_restore_question": true,
+        "old_create_cannot_restore_run": true,
+        "run_change_invalidates_pending": true,
+        "latest_generic_read_wins": true,
+        "navigation_invalidates_pending": true
+      },
+      "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+      "model_calls": 0,
+      "business_API_calls": 0,
+      "backend_authorization_tested": false
+    },
+    "preparation": {
+      "old_case_overwrites_selection": false,
+      "wrong_case_write": false,
+      "old_identity_restored": false,
+      "checks": {
+        "selection_and_write_target": true,
+        "identity_clears_pending": true,
+        "late_write_preserves_new_draft": true,
+        "late_write_preserves_same_case_edit": true,
+        "failure_preserves_draft": true,
+        "retry_key": true,
+        "normal_success": true,
+        "stale_failure_ignored": true,
+        "return_generation": true,
+        "cross_case_drafts_cleared": true,
+        "refresh_preserves_current_draft": true,
+        "submit_id_guard": true,
+        "submit_revision_guard": true,
+        "submit_case_guard": true,
+        "submit_snapshot_revision_guard": true,
+        "stale_catalog_ignored": true,
+        "stale_list_ignored": true,
+        "cancel_navigation": true,
+        "new_navigation": true,
+        "cancelled_create_no_followup": true,
+        "stale_tasks_keep_new_selection": true,
+        "old_identity_tasks_ignored": true,
+        "task_scope_limit_visible": true
+      },
+      "synthetic_writes": [
+        {
+          "path": "/api/preparations/B/commands",
+          "body": {
+            "action": "ADD_EVIDENCE",
+            "expected_revision": 1,
+            "slot": "need_summary",
+            "text": "B draft",
+            "source_kind": "USER_STATEMENT",
+            "source_label": "SYNTHETIC v1"
+          }
+        }
+      ],
+      "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+      "model_calls": 0,
+      "business_API_calls": 0,
+      "backend_authorization_tested": false
+    },
+    "resource": {
+      "checks": {
+        "old_identity_catalog_ignored": true,
+        "old_resource_preview_ignored": true,
+        "programmatic_window_change_ignored": true,
+        "latest_preview_wins": true,
+        "write_target_captured": true,
+        "late_write_keeps_new_selection": true,
+        "old_identity_write_ignored": true,
+        "late_list_cannot_clear_new_hold": true,
+        "script_purpose_is_text": true,
+        "navigation_ignores_late_release": true,
+        "current_failure_keeps_draft": true,
+        "conflict_invalidates_preview": true,
+        "ambiguous_retry_same_key": true,
+        "current_success": true,
+        "new_intent_after_ack_has_new_key": true,
+        "old_forbidden_does_not_clear_new_preview": true,
+        "latest_own_list_wins": true,
+        "confirm_frozen_revision": true,
+        "late_confirm_preserves_new_draft": true,
+        "ambiguous_confirm_retry_same_key": true,
+        "confirmed_has_cancel_no_confirm": true,
+        "cancelled_confirm_retry_same_key": true,
+        "cancelled_confirm_replay_uses_current_state": true,
+        "combo_body_binds_two_hold_versions": true,
+        "late_combo_preserves_new_draft": true,
+        "combo_ambiguous_preserves_unknown": true,
+        "combo_ambiguous_retry_same_key": true,
+        "combo_cancelled_replay_current_state": true,
+        "combo_failure_label_is_error": true,
+        "combo_failure_keeps_unconfirmed_cards": true,
+        "combo_navigation_clears_late_result": true
+      },
+      "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+      "model_calls": 0,
+      "business_API_calls": 0,
+      "backend_authorization_tested": false
+    },
+    "executor_receipt": {
+      "checks": {
+        "cross_step_drafts_cleared": true,
+        "late_detail_preserves_selection": true,
+        "write_target_snapshot": true,
+        "failure_preserves_draft": true,
+        "same_input_retry_frozen": true,
+        "normal_success_clears_draft": true,
+        "late_write_no_followup": true,
+        "pending_edit_preserved": true,
+        "late_forbidden_ignored": true,
+        "identity_pending_cleared": true,
+        "return_generation": true,
+        "refresh_preserves_draft": true,
+        "id_guard": true,
+        "revision_guard": true,
+        "receipt_hash_guard": true,
+        "late_list_ignored": true,
+        "navigation_clears_receipt": true,
+        "late_create_catalog_ignored": true
+      },
+      "scope": "SYNTHETIC_BROWSER_RESPONSE_ORDER_ONLY",
+      "model_calls": 0,
+      "business_API_calls": 0,
+      "backend_authorization_tested": false
+    }
+  },
+  "actual_cross_module_browser": {
+    "scope": "BOUNDED_SYNTHETIC_CROSS_MODULE_REPLAY",
+    "environment": "Linux Chromium/local API/worker/PostgreSQL",
+    "manual_test_correlation_only": true,
+    "automatic_Case_ServicePlan_resource_binding": false,
+    "combination_id": "a18c7e33-409c-4f14-99ae-d3826749eb6f",
+    "hold_ids": [
+      "c5a29825-8e2f-46e3-b3ba-8a701b0a76ef",
+      "d826a40b-4550-4dcf-a3e8-f741b3f6862e"
+    ],
+    "resources_confirmed_during_receipt": true,
+    "explicit_cleanup_both_released": true,
+    "material_correction_before_confirmation": true,
+    "Case_state": "NEEDS_INPUT",
+    "step_id": "fb741bcf-f513-477c-84e1-84a7c0307726",
+    "run_id": "4bcfb4d3-dc41-47b4-97a6-6e750540cda1",
+    "case_id": "5b8ffe0d-459f-4f39-8ff2-dbe8b2009cbd",
+    "three_roles_real_UI": true,
+    "fixture_owner_assignment_outside_UI": true,
+    "receipt_versions": 3,
+    "history_events": 7,
+    "correction_acknowledgement_reopen": true,
+    "executor_decision_denied": true,
+    "cross_enterprise_isolated": true,
+    "identity_clears_private_views": true,
+    "script_text_only": true,
+    "reload_persistent": true,
+    "narrow_viewports": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "model_calls": 0,
+    "real_budget": 0,
+    "F1": "UNACCEPTED",
+    "F2": "NOT_PASSED",
+    "R4": "DISABLED",
+    "native_Windows": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN"
+  },
+  "actual_generic_facts_browser": {
+    "status": "PARTIAL_SYNTHETIC_ENGINEERING_PASS",
+    "environment": "Linux Chromium/local API/independent worker/PG only",
+    "provider_requests": 0,
+    "real_budget": 0,
+    "whole_AT_EX": "NOT_RUN",
+    "native_windows": "NOT_RUN",
+    "parent_run": "894acca6-b1e6-41b3-83b4-c8dbff1ce411",
+    "child_run": "6393654c-4262-46ab-a4da-1d6c9bf9fcf8",
+    "parent_sha256": "016336c6cd6d041b8384886160ebdd711d27a8a0693867ca798053fbce3623a7",
+    "child_sha256": "4e16136cbbcc4f25c9d9b2af81e547af7b289fe310afe00e643f0002471cfc7f",
+    "grouped_fields": [
+      "region",
+      "employees",
+      "service_need"
+    ],
+    "answer_kept_unknown": true,
+    "cancel_only_followup": true,
+    "facts_accordion_opened_by_real_click": true,
+    "history_unchanged": true,
+    "narrow_viewports": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "browser_errors": 0
+  },
+  "initial_cross_module_browser": {
+    "scope": "BOUNDED_SYNTHETIC_CROSS_MODULE_REPLAY",
+    "environment": "Linux Chromium/local API/worker/PostgreSQL",
+    "manual_test_correlation_only": true,
+    "automatic_Case_ServicePlan_resource_binding": false,
+    "combination_id": "5a62bf01-02fa-4f60-aad2-91fe1d4b2af6",
+    "hold_ids": [
+      "accf6fff-6605-4b3d-b1a3-c66d77c30a57",
+      "2f97e9c4-8cee-475d-b098-9db8b69a8957"
+    ],
+    "resources_confirmed_during_receipt": true,
+    "explicit_cleanup_both_released": true,
+    "material_correction_before_confirmation": true,
+    "Case_state": "NEEDS_INPUT",
+    "step_id": "1a7188d6-89c2-4c5b-82b4-cde55a995f70",
+    "run_id": "dd35913f-34fb-49b7-9510-3263986d8d53",
+    "case_id": "16628431-a5c8-4aa6-abcd-05a289304d44",
+    "three_roles_real_UI": true,
+    "fixture_owner_assignment_outside_UI": true,
+    "receipt_versions": 3,
+    "history_events": 7,
+    "correction_acknowledgement_reopen": true,
+    "executor_decision_denied": true,
+    "cross_enterprise_isolated": true,
+    "identity_clears_private_views": true,
+    "script_text_only": true,
+    "reload_persistent": true,
+    "narrow_viewports": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      }
+    ],
+    "model_calls": 0,
+    "real_budget": 0,
+    "F1": "UNACCEPTED",
+    "F2": "NOT_PASSED",
+    "R4": "DISABLED",
+    "native_Windows": "NOT_RUN",
+    "whole_AT_EX": "NOT_RUN"
+  },
+  "initial_browser_note": "Passed existing workflow before generic fix; does not prove absence of identified hold-wait race. Final corrected script and UI rerun passed.",
+  "final_regression": {
+    "counts": {
+      "PASS": 555,
+      "FAIL": 0,
+      "SKIP": 1
+    },
+    "summary": "555 passed, 1 skipped, 2 warnings in 166.97s (0:02:46)",
+    "exit_code": 0,
+    "frozen_source_files": 115,
+    "frozen_source_bytes_match": true
+  },
+  "screenshot_audit": "docs/F2/evidence/eng024-screenshot-audit.json",
+  "historical_screenshot_note": "22 ENG020/21 and 10 ENG023 named images hash match. Old 3 fixed preparation outputs overwritten and original bytes unavailable; 3 ENG023 preparation images absent in resumed workspace. Historical runtime results retained; new images never substitute.",
+  "screenshots_sha256": {
+    ".runtime/eng024-ui-final/enterprise-acknowledged.png": "80e9ea6419490ac931e3818096df165745532145fca2030b7d97ee6c298d11c5",
+    ".runtime/eng024-ui-final/enterprise-correction.png": "0042bbb0bf6403cf6020dea9a3276046c852a4cb865fc593937d948ab8a1f094",
+    ".runtime/eng024-ui-final/executor-recorded.png": "d6ba8d861535715612b4da9cca4bb6ac8902bde334ef3734345392fccffe7a3f",
+    ".runtime/eng024-ui-final/materials-corrected-confirmed.png": "d9e72dd4dce5d959be8782e5b2b8b20f66844ae8105886e43e0f46d2b54546b7",
+    ".runtime/eng024-ui-final/receipt-320.png": "705006900843a11a3a75bfd33daf0f899afbbcff33c4d633b7a18a98980617c9",
+    ".runtime/eng024-ui-final/receipt-390.png": "a7c9496b4af36a4909727cdff790b5f15f958c79c437147210b2756b39b81393",
+    ".runtime/eng024-ui-final/receipt-final.png": "1a5d4fee906aff9f60b026e9e7a949e28dc9057cd4002b3ef922ed30d5398b5e",
+    ".runtime/eng024-ui-final/resources-confirmed.png": "5a267d1de7309120c4b2c03e4982eefe51579e47190e0f9370bc563a8e8b2582",
+    ".runtime/eng024-ui-final/resources-explicitly-cancelled.png": "48d00f2a655c7dd0444f4ad236f9b318df25577fe292aaee8174c3b158f0c89f"
+  },
+  "visual_review": "Viewed actual real-browser receipt 320px, resource combination confirmed desktop, enterprise correction and explicitly cancelled resource state. Prior CSS and named stage images unchanged; current success/correction/cancel labels remain visible. 320/390 simulated viewport overflow checks passed; user visual acceptance pending.",
+  "tested_changed_source_sha256": {
+    "scripts/audit_screenshot_evidence.py": "3e0fdec832ad3b534a44bbf4b820e7f9b399e9c112b9a2685e3e9a4147f9dad7",
+    "scripts/cross_module_browser_smoke.py": "fff4c2ab176da7cc75c03197f6f0505bd295c466c09ea2ba5495ba12e0e2ae66",
+    "scripts/generic_session_race_browser.py": "9144faf2b92dd03db499b633d06c92fd18501beda9ff42bef21c41f6882d611f",
+    "scripts/generic_session_race_oracle.js": "b70c252ea5c777e78df2010a37566068b40f35694f208fd99faa5bd341fd244d",
+    "src/parkweave/web.html": "0ce98a8f819f8e6d4b11e3bc9b92fc37ab48cdd571f4179ddaeffab7d6542e33"
+  },
+  "protected_original_Windows_R4_role_source_files_unchanged": 33,
+  "roles_SQL_unchanged": true,
+  "actual_demonstrable_chain": "new enterprise preparation goal -> sourced materials -> assigned specialist requests correction -> owner material v2 -> manual review -> local confirmation -> two resource holds and atomic combination confirmation -> explicitly fixture-owner prepared current assignment -> executor receipt v1 -> owner correction -> receipt v2 -> owner local acknowledgement -> reopen -> receipt v3 -> persistent reload -> explicit combination cancellation releases both",
+  "cross_module_boundary": "Resource combination has no business Case/ServicePlan/Approval binding. Script correlation only; local module transactions, not automatic dependency or global atomic workflow. Case remains NEEDS_INPUT; receipt acknowledgement does not release resources or prove physical fulfillment.",
+  "remaining_original_plan": [
+    "registered service DAG/required goal coverage/general ServicePlan and Approval/resource binding",
+    "generic CaseStep/operator assignment UI/full executor acceptance",
+    "notifications/delivery/read and whole business Outbox",
+    "real evidence/signature/identity/physical fulfillment validation",
+    "approved templates/new enterprise cold sessions/full F2 end-to-end acceptance"
+  ],
+  "gates": {
+    "F1": "UNACCEPTED",
+    "F2": "NOT_PASSED",
+    "R4": "DISABLED",
+    "Win11": "NOT_RUN",
+    "real_devices": "NOT_RUN",
+    "whole36AT6EX": "NOT_RUN",
+    "Windows_Server_failure_details": "AWAITING_USER",
+    "LIVE": 0,
+    "budget": 0
+  },
+  "own_fixture_harness_stopped": true,
+  "push": false,
+  "new_CI": false,
+  "backup_export_upload": false
+}
