@@ -1,5 +1,10 @@
 # F1 计划
 
+## ENG065 唯一标准Windows CI终态FAIL，已取得细码及四片实测
+
+新授权普通推送source `5146655a2ab56e842924eba93d4d39971394c7a3`，唯一run37498631767 attempt1 completed/failure，job16分30秒。Windows实测1160 PASS/42 FAIL/51 SKIP，1253项；四片FAIL35/2/2/3、coverageTrue及owned树停止均明确。CHILD_POLICY/ARGV0_MISMATCH确认argv0不一致，原始路径/命令尾部仍未知；最后app/PGStop成功。49→42只是不同collection的净变化，非49项逐一关闭；公开4 ID/省略16，剩余断言类别未公开。无job预算耗尽证据，不扩权限/runner/deadline/cleanup；无第二CI/LIVE，报告本地提交。见[ENG065](../F2/ENG065-SingleNativeTerminal.md)，原本地证据与真实Windows分开。F1未签收/F2并行/R4关闭/Server非Win11。
+
+
 ## 当前接续计划（2026-10-05）
 
 唯一CI当前状态见[WindowsServerCI当前权威状态](WindowsServerCI.md#current-status)。最新代码9a8cbc5已发布，run37324704568 completed/failure：Prepare、Python3.12 x64校验及受绑定PG启停通过，native_suite在78.094s退出1且未超时；具体失败子项和原生回归计数尚缺，Server整体未通过。旧37318040507超时由注释确认，挂起命令及旧Stop失败根因UNKNOWN；不再等待旧首轮截图或重取旧超时日志。

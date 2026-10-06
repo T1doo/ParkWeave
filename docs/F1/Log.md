@@ -1,5 +1,10 @@
 # F1 真实日志
 
+## ENG065 唯一标准Windows CI终态FAIL，已取得细码及四片实测
+
+新授权普通推送source `5146655a2ab56e842924eba93d4d39971394c7a3`，唯一run37498631767 attempt1 completed/failure，job16分30秒。Windows实测1160 PASS/42 FAIL/51 SKIP，1253项；四片FAIL35/2/2/3、coverageTrue及owned树停止均明确。CHILD_POLICY/ARGV0_MISMATCH确认argv0不一致，原始路径/命令尾部仍未知；最后app/PGStop成功。49→42只是不同collection的净变化，非49项逐一关闭；公开4 ID/省略16，剩余断言类别未公开。无job预算耗尽证据，不扩权限/runner/deadline/cleanup；无第二CI/LIVE，报告本地提交。见[ENG065](../F2/ENG065-SingleNativeTerminal.md)，原本地证据与真实Windows分开。F1未签收/F2并行/R4关闭/Server非Win11。
+
+
 ## ENG032 F2本地延续与Windows边界
 
 F2内部合法分派/本人接受拒绝/未接单撤回/原因重派切片仅本地完成，136份冻结文件全量734PASS/0FAIL/1WindowsSKIP/2既有WARN（205.879s），真实三角色浏览器与独立只读审查通过，见[ENG032记录](../F2/ENG032-InternalDispatch.md)。未push/newCI，最新实际Server仍为e9e962d的run37420887816 FAIL；publisherPASS但具体cases/counts等待安全JSON，不称本地通过修复Windows。F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、模型/预算0。下方ENG031冻结源与F2暂停说明是当轮快照。
