@@ -198,3 +198,8 @@ formal根HEAD200、原remote41bcc11确认未变，普通push已复核f5c8667成�
 ## ENG077 owner-free 测量候选
 
 从8e40f42保留并完成已有未提交Job入口与只读描述符诊断；真实父子创建、query/sync转移句柄、正常/超时/无关进程gold，完整严格时间线，owner/ACL与生产launcher不变。实际本地290PASS5nativeSKIP，1463 collect-only四片345/345/349/424、86源码hash校验通过；workflow补丁仅check未应用。原生、owner修改、push/CI仍暂停，历史权限因果UNKNOWN；父检查后安排独立Windows测量。见[ENG077](ENG077-OwnerFreeMeasurementCandidates.md)。F1未签收/F2并行、Server非Win11、R4关闭/模型预算0、原环境备份保留。
+
+
+## ENG078 一次独立Job原生测量终态
+
+已授权应用owner-free workflow，配置检查PASS/本地157PASS4nativeSKIP；同目标正式权限HEAD200、远端2339a4d祖先确认，一次普通push到381a20a并核实精确远端。唯一37545785486/attempt1 completed/success，windows-2025 job21s/measurement4s。日志读取Forbidden，立即停网络；安全逐项JSON未取得，后代membership/signal、无关进程存活与清理/句柄关闭直接证据UNAVAILABLE，绿灯不能替代。无第二push/rerun/owner/描述符目标/广泛kill/上传；结果仅本地commit。完整回归恢复计划及证据见[ENG078](ENG078-IndependentNativeJobMeasurement.md)，不算完整工程CI或原S4通过，原门/R4/预算/环境备份保持。
