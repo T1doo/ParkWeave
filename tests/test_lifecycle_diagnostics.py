@@ -281,3 +281,36 @@ def test_setup_readonly_failure_survives_safe_annotation_projection():
     public=publisher.project(record,binding);commands,ok=publisher.annotation_commands(public)
     assert ok and len(commands)==2 and POISON not in repr(commands)
     assert public["cases"][0]["boundary_reason"]=="ACL_OWNER_MISMATCH"
+
+
+@pytest.mark.parametrize('outcomes',[('FOREIGN_REFUSED','STOPPED'),('STOPPED','FOREIGN_REFUSED'),('STOPPED','ABSENT'),('ABSENT','ABSENT')])
+def test_start_cleanup_refusal_preserves_record_and_readiness_failure(tmp_path,monkeypatch,outcomes):
+    import psutil,urllib.request
+    from types import SimpleNamespace
+    monkeypatch.setattr(lifecycle,'RUNTIME',tmp_path);monkeypatch.setattr(lifecycle,'STATE',tmp_path/'state.json')
+    monkeypatch.setattr(lifecycle,'load_config',lambda:{'python':'SYNTHETIC-python','port':8765})
+    for name in ('check_python','port_available','protect_private_root'):monkeypatch.setattr(lifecycle,name,lambda *args:None)
+    monkeypatch.setattr(lifecycle,'check_dsn_scope',lambda *args,**kw:None)
+    monkeypatch.setattr(lifecycle,'needed_environment',lambda name:'SYNTHETIC')
+    monkeypatch.setattr(lifecycle,'time',SimpleNamespace(sleep=lambda _:None))
+    class Child:
+        next_pid=901
+        def __init__(self,*args,**kwargs):self.pid=Child.next_pid;Child.next_pid+=1
+        def create_time(self):return 1.0
+        def poll(self):return None
+    monkeypatch.setattr(psutil,'Popen',Child)
+    class Opener:
+        def open(self,*args,**kwargs):raise ConnectionRefusedError('SYNTHETIC')
+    monkeypatch.setattr(urllib.request,'build_opener',lambda *args:Opener())
+    attempted=[];written=[];write=lifecycle.write_exclusive
+    def save(path,value):write(path,value);written.append(path.read_bytes())
+    def cleanup(record,*args):attempted.append(record['pid']);return outcomes[len(attempted)-1]
+    monkeypatch.setattr(lifecycle,'write_exclusive',save);monkeypatch.setattr(lifecycle,'stop_record',cleanup)
+    with pytest.raises(lifecycle.BoundaryError) as failure:lifecycle.start()
+    assert len(attempted)==len(set(attempted))==2
+    refused='FOREIGN_REFUSED' in outcomes
+    assert lifecycle.STATE.exists()==refused
+    if refused:assert lifecycle.STATE.read_bytes()==written[0]
+    row=diagnostic.parse(diagnostic.command('start',failure.value),'start')
+    assert row['boundary_phase']=='health_readiness' and row['boundary_reason']=='READINESS_TIMEOUT'
+    assert row.get('cleanup_category')==('BoundaryError' if refused else None)

@@ -313,7 +313,9 @@ def start():
         # Keep the existing cleanup/exit behavior; retain the original failure's
         # fixed metadata if a cleanup exception replaces it.
         try:
-            for record in records:stop_record(record,REPO,psutil.Process)
+            results=[stop_record(record,REPO,psutil.Process) for record in records]
+            if any(result not in ('STOPPED','ABSENT') for result in results):
+                raise BoundaryError('managed process cleanup unconfirmed; process record preserved')
             if state_written:STATE.unlink(missing_ok=True)
         except Exception as cleanup:
             cleanup.parkweave_lifecycle_primary=failure(primary)

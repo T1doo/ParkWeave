@@ -142,3 +142,8 @@ ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合�
 ## ENG051 单次CONFIG owner CI终态
 
 普通push7596427，唯一37462634764/attempt1精确head completed/failure，末次remote不变且同头仅1run。完整非PASS0遗漏及固定源码路径支持推断Setup/配置保留/Doctor已通过，CONFIG障碍越过；不是直接逐项PASS报告。Start转为health_readiness/READINESS_TIMEOUT，API/browser/restart NOT_RUN。回归原600TimeoutExpired/countsMISSING，最后pytest_setup/plan_revision恢复fn仅快照不根因。内外Job实际OWNED_TREE_STOPPED，outer693.546秒exit1未超900；四专用native逐项仍UNAVAILABLE；PGStop0/.234秒成功。4notice426max/990total/1ID边界通过。见[ENG051](F2/ENG051-SingleConfigOwnerCI.md)；无新权限动作/诊断扩展/再push或CI，结果docs仅本地commit，原门/R4/预算和环境包保持。
+
+
+## ENG052 有界定位与Start清理拒绝记录保留
+
+正常安全CI只读复核不变，Setup/Doctor仅流程推断，Windows健康与回归根因UNKNOWN。32项既有目标八轮9.633秒通过，每次teardown自有库0/锁计数0，分类时长不相加；本地PG16.2/Unixsocket与CI PG17/TCP不同，不外推。单次Linux真实API/workerhealth1PASS，7attempt1response三条件匹配，仅Linux/非worker业务证据。受控复现Start忽略FOREIGN_REFUSED删STATE（前2FAIL2PASS），最小保留记录/主失败fix后定点138PASS2WindowsSKIP4.99秒，两审查无阻断，无身份/权限/终止扩展。见[ENG052](F2/ENG052-BoundedStartupAndDatabaseDiagnosis.md)；只本地commit，不push/CI/升600/900，下一必要观测为原通道固定health枚举/计数与累计/fixture阶段时长及少量连接边界样本，尚未实现。原门、预算/R4、环境包保持。

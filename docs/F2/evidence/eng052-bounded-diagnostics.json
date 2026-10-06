@@ -1,0 +1,308 @@
+{
+  "junit": {
+    "name": "pytest",
+    "errors": "0",
+    "failures": "0",
+    "skipped": "0",
+    "tests": "32",
+    "time": "9.633",
+    "timestamp": "2026-10-06T12:41:59.887593+00:00"
+  },
+  "supervisor": {
+    "exit_code": 0,
+    "stop_reason": null,
+    "elapsed": 10.6858,
+    "owned_cleanup": "EXACT_DESCENDANTS_REAPED",
+    "phase_deadline": 30,
+    "global_deadline": 120,
+    "native_windows": false
+  },
+  "categories": {
+    "CONNECT": {
+      "count": 913,
+      "total_seconds": 1.680168,
+      "max_seconds": 0.039703,
+      "median_seconds": 0.001679,
+      "first_round_total_seconds": 0.219402,
+      "last_round_total_seconds": 0.200311
+    },
+    "CREATE_DATABASE": {
+      "count": 32,
+      "total_seconds": 0.369975,
+      "max_seconds": 0.019547,
+      "median_seconds": 0.010728999999999999,
+      "first_round_total_seconds": 0.052985,
+      "last_round_total_seconds": 0.048027
+    },
+    "DROP_DATABASE": {
+      "count": 32,
+      "total_seconds": 0.106988,
+      "max_seconds": 0.007009,
+      "median_seconds": 0.0030715,
+      "first_round_total_seconds": 0.017703,
+      "last_round_total_seconds": 0.015249
+    },
+    "GRANT": {
+      "count": 1008,
+      "total_seconds": 0.146988,
+      "max_seconds": 0.001289,
+      "median_seconds": 0.000125,
+      "first_round_total_seconds": 0.021042,
+      "last_round_total_seconds": 0.016675
+    },
+    "MIGRATE_TRANSACTION": {
+      "count": 32,
+      "total_seconds": 2.053811,
+      "max_seconds": 0.072755,
+      "median_seconds": 0.064433,
+      "first_round_total_seconds": 0.258965,
+      "last_round_total_seconds": 0.261875
+    },
+    "SEED_TRANSACTION": {
+      "count": 32,
+      "total_seconds": 0.338365,
+      "max_seconds": 0.014385,
+      "median_seconds": 0.009507499999999999,
+      "first_round_total_seconds": 0.048113,
+      "last_round_total_seconds": 0.044487
+    }
+  },
+  "post_teardown_rows": 32,
+  "post_teardown_ranges": {
+    "fixture_databases": {
+      "min": 0,
+      "max": 0,
+      "last": 0
+    },
+    "pg_activity_rows": {
+      "min": 5,
+      "max": 5,
+      "last": 5
+    },
+    "idle_in_transaction": {
+      "min": 0,
+      "max": 0,
+      "last": 0
+    },
+    "lock_waiters": {
+      "min": 0,
+      "max": 0,
+      "last": 0
+    },
+    "blocked_connections": {
+      "min": 0,
+      "max": 0,
+      "last": 0
+    }
+  },
+  "limits": [
+    "Linux eight rounds of existing assertion functions via private parametrized wrapper; not Windows telemetry",
+    "DB categories overlap MIGRATE/SEED/CONNECT; not additive",
+    "GRANT execute excludes commit and extra fixture setup",
+    "post-teardown is sample at each boundary, not proof of absence between samples"
+  ],
+  "phase_seconds": {
+    "setup": {
+      "total": 5.072798,
+      "max": 0.705519
+    },
+    "call": {
+      "total": 4.151493,
+      "max": 0.27439
+    },
+    "teardown": {
+      "total": 0.225229,
+      "max": 0.013715
+    }
+  },
+  "one_hz_samples": 9,
+  "resource_ranges": {
+    "live_python_connections": {
+      "min": 0,
+      "max": 1,
+      "last": 1
+    },
+    "threads": {
+      "min": 2,
+      "max": 4,
+      "last": 2
+    },
+    "visible_descendants": {
+      "min": 0,
+      "max": 0,
+      "last": 0
+    },
+    "fd_count": {
+      "min": 13,
+      "max": 17,
+      "last": 13
+    },
+    "connect_total": {
+      "min": 54,
+      "max": 873,
+      "last": 873
+    }
+  },
+  "health_probe": {
+    "observations": {
+      "scope": "LINUX_OWNED_SYNTHETIC_PROBE",
+      "created_children": 2,
+      "attempt_count": 7,
+      "response_count": 1,
+      "last_observation": "HEALTH_MATCH",
+      "child_poll_states": [
+        "RUNNING",
+        "RUNNING"
+      ],
+      "mode_matches": true,
+      "model_matches": true,
+      "process_matches": true,
+      "final_child_poll_states": [
+        "RUNNING",
+        "RUNNING"
+      ],
+      "after_owned_stop_states": [
+        "EXIT_NONZERO",
+        "EXIT_NONZERO"
+      ]
+    },
+    "junit": {
+      "tests": "1",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "1.503"
+    },
+    "supervisor": {
+      "exit_code": 0,
+      "stop_reason": null,
+      "elapsed": 2.5073,
+      "owned_cleanup": "EXACT_DESCENDANTS_REAPED",
+      "phase_deadline": 30,
+      "global_deadline": 120,
+      "native_windows": false
+    },
+    "limits": [
+      "Linux direct child PID matched; Windows redirector hypothesis untested",
+      "API health confirms response/DB query once; worker process running does not prove worker business processing",
+      "nonzero exits recorded only after explicit owned termination; not startup failure",
+      "model_calls/budget were declared policy constants, not measured counters",
+      "private probe cleanup partial failures are not proven; only this successful two-child stop was observed; supervisor provides separate actual scoped cleanup record"
+    ],
+    "declared_configuration_policy": {
+      "model_calls": 0,
+      "budget": 0
+    },
+    "console_seconds": 1.52
+  },
+  "current_ci_recheck": {
+    "run_id": 37462634764,
+    "head_sha": "7596427486f43c79616814e2246a9085b743d05b",
+    "attempt": 1,
+    "conclusion": "failure",
+    "annotations_unchanged": true,
+    "pass_fields": "FLOW_INFERENCE_ONLY",
+    "start": "READINESS_TIMEOUT",
+    "regression": "TimeoutExpired/pytest_setup/last recorded plan_revision",
+    "counts": "MISSING",
+    "raw_logs_read": false
+  },
+  "initial_probe": {
+    "tests": 4,
+    "passed": 4,
+    "seconds": 1.85,
+    "limitation": "duplicate CLI selectors yielded four actual cases; not eight rounds; separate evidence preserved"
+  },
+  "private_probe_limits": [
+    "dedicated subprocess isolation; db-cost plugin not suitable for long-running in-process pytest sessions",
+    "temporary test wrapper files removed after runs; private copies retained",
+    "observed PG total rows include background backends and exclude current observer; not per-client connection inventory"
+  ],
+  "review": {
+    "cross_module_review": "no blocker; category overlap and isolation limits retained",
+    "windows_native_review": "no static confirmed readiness cause; fixed enum/count/bool minimum observation proposed"
+  },
+  "hashes": {
+    ".runtime/eng052_db_cost.py": "397872297a41f0ac1f341db057b44185edf501a66c2c25d0c71ec308bad05dc4",
+    ".runtime/eng052_repeated_targets.py": "fa78e70ed7b47579ee64150a4ba4692e14b1626967e22e34bc3c2a815792bbc3",
+    ".runtime/eng052_local_health.py": "e511ea41f9159d1e1a69b1364324c0a2ec3d92d5ce7bed169d9d442b114884b1",
+    ".runtime/eng052-db-repeated/result.xml": "8711be2420e3606a68f4e5732ba1d209e60db85b11c50688a845150de22b08fa",
+    ".runtime/eng052-local-health/result.xml": "0a66ac39f84ae5bf886a083588c3360b2199ce940a85037a533ad0ceefc0bded",
+    "docs/F2/evidence/eng052-bounded-db-cost.csv": "1c9532c67461561bffafe31d9c3cef9479026879b7f3a4e7a8aac510538b1358"
+  },
+  "environment_comparison": {
+    "local_postgres_binary_version": "16.2",
+    "local_transport": "UNIX_SOCKET",
+    "CI_required_postgres_major": 17,
+    "CI_transport": "LOOPBACK_TCP",
+    "windows_performance_extrapolation": "NOT_SUPPORTED"
+  },
+  "start_cleanup_fix": {
+    "problem": "Start failure ignored FOREIGN_REFUSED and removed process record",
+    "before": {
+      "passed": 2,
+      "failed": 2,
+      "controlled_only": true,
+      "console_seconds": 0.13
+    },
+    "after_targeted": {
+      "tests": "140",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "2",
+      "time": "4.986"
+    },
+    "after_passed": 138,
+    "source_hashes": {
+      "scripts/windows/lifecycle.py": "f9d02ff72cea2a81d533c4b3ccf74693fca31b61695e77544ba514c9e6de02e1",
+      "tests/test_lifecycle_diagnostics.py": "9dc6261059b81dcf3e294704011cd6308f8b8abf29d3796cd911632853f76200",
+      "scripts/windows_ci/diagnostic-test-ids.json": "e3d2aacb88e534954452dafef21ad46cc2fdb564717983304d7409013ce25a99"
+    },
+    "before_junit_sha256": "1161f36e365d3ad11243e916633e9410614b4795768450432167165d78fcf16d",
+    "after_junit_sha256": "30d1c276fdbe9b2b654cbfa96c4de47308c7defd92816c0bc0fe1fa5a189cd69",
+    "default_sandbox_intermediate": {
+      "passed": 136,
+      "failed_socket_EPERM": 2,
+      "windows_skipped": 2,
+      "formal_tool_permission_used_for_final": true,
+      "automatic_approval_rejection": false
+    },
+    "limits": [
+      "local controlled preservation fix; no proof this branch occurred on Windows",
+      "actual terminating operations and identity contract unchanged",
+      "exceptions may still interrupt subsequent cleanup, existing behavior retained",
+      "no push or new CI; full profile/32/health experiments preceded this fix"
+    ],
+    "after_console_seconds": 4.99
+  },
+  "readiness_evidence": {
+    "Setup_Doctor": "FLOW_INFERENCE_ONLY from complete nonPASS publication and fixed branch flow",
+    "API_worker_launch_processes": "two Popen/create_time/STATE completed by timeout-path inference; service readiness not proved",
+    "host_port_binding": "same validated loopback/config port used for launch and health, by source inspection",
+    "proxy": "existing loopback no-proxy opener unchanged; GitHub proxy/identity unchanged",
+    "child_exit_checkpoints": "not exited at polling checkpoints by timeout-path inference; actual exit statuses NOT_OBSERVED",
+    "post_failed_Start_cleanup": "UNKNOWN in CI because stop_record results ignored; final outer Job cleanup is a later observation",
+    "health_response_details": "NOT_OBSERVED on Windows",
+    "http_timeout_seconds": 1,
+    "Store_connect_timeout_seconds": 2,
+    "Windows_root_cause": "UNKNOWN"
+  },
+  "next_minimum_observation": {
+    "health": [
+      "attempt_count/response_count 0..50",
+      "fixed last_observation enum",
+      "mode_matches/model_matches/process_matches booleans only after valid parsed response",
+      "existing STOPPED/ABSENT/FOREIGN_REFUSED counts plus attempted/recorded counts 0..2; preserve errors and no new termination"
+    ],
+    "regression": [
+      "existing atomic last snapshot: elapsed_ms, ordinal, completed_count",
+      "fixed current fixture stage and stage_elapsed_ms; aggregate CREATE/MIGRATE/SEED/GRANTS/DROP timings, do not add overlapping values",
+      "bounded boundary samples for actual client backend/fixture-DB connection counts, idleTxn/Lock/blocked and owned direct-child state; exclude observer, separate background rows"
+    ],
+    "limits": [
+      "proposal only; no production telemetry implementation",
+      "reuse bounded current-run protocol, no raw SQL/DSN/PID/HTTP body/URL/logs",
+      "600/900 and assertions unchanged; no automatic push/CI"
+    ]
+  }
+}
