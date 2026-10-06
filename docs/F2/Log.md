@@ -1,5 +1,10 @@
 # F2并行工程日志
 
+## ENG064 本地原生失败 oracle 与四片观测修复
+
+仅本地代码68e5306；portable/strict fixture隔离、Windows实际owned-job mock、固定child拒绝细码及四片typed计数/耗时/cleanup投影，严格身份接受集合与原预算/安全输出边界保持。相关501 PASS、最终missing观测两模块77 PASS（重叠不累加）、现有Case/组合/回执角色流程140 PASS，独立NO_BLOCKERS。collection1253不是全量PASS；真实49项断言和child原生子因尚未证明关闭，无push/newCI/LIVE。见[ENG064](ENG064-LocalNativeFailures.md)及固定证据；F1未签收/F2并行/R4关闭/Server非Win11。
+
+
 
 ## ENG036 固定模板设计收敛（设计与合同验证）
 

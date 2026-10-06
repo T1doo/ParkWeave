@@ -1,5 +1,10 @@
 # ParkWeave 动态计划
 
+## ENG064 本地原生失败 oracle 与四片观测修复
+
+仅本地代码68e5306；portable/strict fixture隔离、Windows实际owned-job mock、固定child拒绝细码及四片typed计数/耗时/cleanup投影，严格身份接受集合与原预算/安全输出边界保持。相关501 PASS、最终missing观测两模块77 PASS（重叠不累加）、现有Case/组合/回执角色流程140 PASS，独立NO_BLOCKERS。collection1253不是全量PASS；真实49项断言和child原生子因尚未证明关闭，无push/newCI/LIVE。见[ENG064](F2/ENG064-LocalNativeFailures.md)及固定证据；F1未签收/F2并行/R4关闭/Server非Win11。
+
+
 ## ENG060 唯一标准原生测量终态FAIL，先补拒绝/分片观测
 
 正式工具审批路径成功后普通push08cd659，唯一run37483067638 attempt1 completed/failure，总job153秒。Start最近positive PID/mode/model有效但server_relationREFUSED；内部stop两记录foreign拒绝，随后Lifecycle/Validation及regression ownedJob树回收确认，最终app/PGStop成功。回归phaseacceptance_bindings、REPORT_MISSING/countsMISSING，四片时间/覆盖与nativeJob逐项UNAVAILABLE，不是容量耗尽或全量通过。CRLF hash拒绝仅本地严格复现候选、非native已确认根因。详见[ENG060](F2/ENG060-SingleNativeMeasurement.md)。不重跑/增runner/权限/LIVE；只同步docs不触发新CI，先固定原因与分片报告，再据实考虑fixture优化。1500/200/600合同、阶段门、原环境/备份保留。以下为历史。
