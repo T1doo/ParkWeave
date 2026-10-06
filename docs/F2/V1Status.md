@@ -1,5 +1,9 @@
 # F2 与原V1计划的真实对照
 
+## ENG027 当前同步授权
+
+用户已解除ENG026的临时push/newCI暂停，恢复普通推送dev/f1-foundation及现有标准Windows Server CI；实际SHA/终态见[同步记录](ENG027-SyncCI.md)。旧ENG026未推送/暂停说明属于当时快照，不能当当前状态。未经精确远端验证不声称GitHub已更新，CI结果取得后据实记录；不force/merge main/deploy/LIVE，不重试被拒日志或换身份。F1F2/Win11/R4门槛保持。
+
 当前收敛基线：本地 `2fddccae02a27818e3632cfca7676104e6eb3569`（ENG025）。原V1《分阶段开发计划》F2-T01—T07及产品§3、5.2—5.5是来源；原文/验收规格未改。下表是实际子集，不是阶段或整项AT签收：F1未签收、F2准入NOT_PASSED、R4关闭，PR0-alpha未完成。
 
 ## 当前已能复现的合成链
@@ -24,6 +28,6 @@
 
 [FirstUse](FirstUse.md)给出当前产品UI步骤；[ENG026同步前收敛说明](ENG026-SyncReadiness.md)列出仓库实际CLI入口、所需本地fixture/合法分配、提交链及检查限制。ENG025冻结源全量584PASS/0FAIL/1WindowsSKIP、95页面时序检查；本轮Windows验收脚本窄修复的独立结果见ENG026，不复用旧数字当新测试。
 
-本地缓存origin/dev/f1-foundation仍为6ff160a。到ENG025积累10个本地提交，尚未推送；缓存引用不是当前GitHub状态，不称GitHub可见。只凭离线祖先关系不能判断当前远端是否可普通快进；后续获授权后仍需正常只读比较，未知冲突先报，不force/reset丢代码。本轮不push/新CI/备份/导出/上传/LIVE。
+截至ENG026结束，本地缓存origin/dev/f1-foundation为6ff160a，积累11个本地提交尚未推送；该历史缓存不是实时GitHub状态。ENG027已恢复授权，并正常读取实时远端仍6ff160a，确认快进关系；实际同步SHA/CI终态据同步记录后记。仍不force/reset丢代码、不备份/导出/上传/LIVE。
 
 Windows唯一已知事实：旧源码9a8cbc527503ab55978a4b50612207d3bf72de26的CI37324704568 Prepare通过，native_suite78.094秒退出1，失败case/日志未取得。原生Server当前结果和根因UNKNOWN，不能用Linux模拟/AST替代；Server不是Win11。F1/F2未签收、R4关闭、36AT/6EX NOT_RUN；Windows失败明细仍待用户，不能用猜测替代。

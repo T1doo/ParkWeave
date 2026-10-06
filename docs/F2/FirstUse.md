@@ -1,5 +1,9 @@
 # 本地合成资料准备：首次使用
 
+## ENG027 当前同步授权
+
+用户已解除ENG026的临时push/newCI暂停，恢复普通推送dev/f1-foundation及现有标准Windows Server CI；实际SHA/终态见[同步记录](ENG027-SyncCI.md)。旧ENG026未推送/暂停说明属于当时快照，不能当当前状态。未经精确远端验证不声称GitHub已更新，CI结果取得后据实记录；不force/merge main/deploy/LIVE，不重试被拒日志或换身份。F1F2/Win11/R4门槛保持。
+
 ## ENG026 当前复现与可见性
 
 当前积累源码只在本地；不能因本地commit或缓存origin引用称GitHub已更新。已实现/未实现原V1项见[V1Status](V1Status.md)，实际CLI、fixture前置及Windows检查限制见[ENG026-SyncReadiness](ENG026-SyncReadiness.md)。自动Case/回执browser还需要调用者明确提供同一本机SYNTHETIC cluster的测试owner DSN准备合法分配，不能当作产品已有自动分派。历史临时runner/会话不等于干净环境复现入口。当前暂停push/newCI/备份/导出/上传/LIVE。

@@ -1,5 +1,9 @@
 # ParkWeave 动态计划
 
+## ENG027 当前同步授权
+
+用户已解除ENG026的临时push/newCI暂停，恢复普通推送dev/f1-foundation及现有标准Windows Server CI；实际SHA/终态见[同步记录](F2/ENG027-SyncCI.md)。旧ENG026未推送/暂停说明属于当时快照，不能当当前状态。未经精确远端验证不声称GitHub已更新，CI结果取得后据实记录；不force/merge main/deploy/LIVE，不重试被拒日志或换身份。F1F2/Win11/R4门槛保持。
+
 ## ENG026 收敛与同步前审查
 
 当前2fddccae基线只核对积累提交链、更新F2真实闭环/缺口及复现入口，独立审查Windows native_suite并修复代码可证验收弱点；不继续扩产品功能。结果和源码同步/原生验证/业务签收三种判断见[F2/ENG026-SyncReadiness.md](F2/ENG026-SyncReadiness.md)。当前不push/新CI/备份/导出/上传/LIVE，旧CI失败case待用户，不能猜根因。
