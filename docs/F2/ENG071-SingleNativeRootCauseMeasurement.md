@@ -1,0 +1,11 @@
+# ENG071 单次标准原生根因测量
+
+用户授权普通推送已审ENG070提交与一次原标准25分钟CI，并执行最小原生方案。远端只读核对仍c10fef15bd1196d0bac275754ef4e95599fa8ebe，未并行变更。
+
+本轮增加固定只读阶段观测与已审ENG070最小Job原生脚本，单独步骤沿用原job共享wall/uptime epoch，outer Job90秒上限及10秒余量，workflow总25分钟保持。标准Validation仍使用剩余共享预算；无第二CI/rerun/dispatch。
+
+公开固定stage/category/reason、owner/DACL/control比较bool、Job primary/cleanup/record/unrelated/descendant固定枚举及端口10048/10013类别；输出最多5条notice，每条2KiB、总16KiB界限。无路径、PID、SID、token或原始日志。原Job测试仅拆开primary/cleanup及record/unrelated断言以分阶段，不改变gold或参数。
+
+owner测量仅调用原session/config首次新建及既有拒绝测试。不设置新增SERVICE_LOG/PROCESS_RECORD/FILES owner或修改既有owner/ACL，不变身份、代理、权限。最小Job独立要求primary、unrelated exactleaf存活及descendant精确死亡，不能将cleanup当PASS。
+
+本地相关85PASS/4nativeSKIP，真实loopback端口与HTTP5PASS，projection poison拒绝；native recipe本地明确stub未运行，不能算native结果。独立review NO_BLOCKERS，固定源码manifest更新。实际CI终态待补。F1未签收/F2仅并行、R4关闭、Server非Win11、LIVE与模型预算0。

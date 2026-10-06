@@ -50,6 +50,11 @@ jobs:
         run: ./scripts/windows_ci/Engineering.ps1 -Action Prepare
       - name: Native lifecycle and local browser within shared job budget
         run: ./scripts/windows_ci/Engineering.ps1 -Action Lifecycle
+      - name: Fixed native failure stages within original shared budget
+        if: always()
+        timeout-minutes: 2
+        run: |
+          & .\.venv-windows\Scripts\python.exe scripts/windows_ci/native_failure_oracles.py
       - name: Independent Server guard and four sequential regression shards
         if: always()
         run: ./scripts/windows_ci/Engineering.ps1 -Action Validation

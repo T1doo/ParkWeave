@@ -272,8 +272,10 @@ def test_native_job_stops_owned_descendant_and_preserves_unrelated_and_primary(t
                 assert failure.value.cleanup=='OWNED_TREE_STOPPED'
             else:
                 result=JOB.run([sys.executable,'-c',parent],timeout=5,stdout=out,stderr=err)
-                assert result.returncode==17 and result.cleanup=='OWNED_TREE_STOPPED'
-        data=json.loads(record.read_text());assert unrelated.poll() is None
+                assert result.returncode==17
+                assert result.cleanup=='OWNED_TREE_STOPPED'
+        data=json.loads(record.read_text())
+        assert unrelated.poll() is None
         # No killing by recorded PID: the kernel job already owns termination.
         assert not recorded_child_alive(data)
     finally:
