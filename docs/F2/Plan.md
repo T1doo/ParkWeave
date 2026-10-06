@@ -1,5 +1,9 @@
 # F2并行开发计划：本地资料准备与个人待办
 
+## ENG060 唯一标准原生测量终态FAIL，先补拒绝/分片观测
+
+正式工具审批路径成功后普通push08cd659，唯一run37483067638 attempt1 completed/failure，总job153秒。Start最近positive PID/mode/model有效但server_relationREFUSED；内部stop两记录foreign拒绝，随后Lifecycle/Validation及regression ownedJob树回收确认，最终app/PGStop成功。回归phaseacceptance_bindings、REPORT_MISSING/countsMISSING，四片时间/覆盖与nativeJob逐项UNAVAILABLE，不是容量耗尽或全量通过。CRLF hash拒绝仅本地严格复现候选、非native已确认根因。详见[ENG060](ENG060-SingleNativeMeasurement.md)。不重跑/增runner/权限/LIVE；只同步docs不触发新CI，先固定原因与分片报告，再据实考虑fixture优化。1500/200/600合同、阶段门、原环境/备份保留。以下为历史。
+
 ## ENG059 正式工具审批路径已恢复，唯一标准原生测量待普通push
 
 同根HEAD require_escalated审批成功HTTP200；精确远端仍aa3dc55、最近Actions均completed。已整合身份/单job调度/原导航且冻结指纹匹配，普通push后只监测唯一新run，不dispatch/rerun。1500秒/200秒清理/每片600不变，预算不足明确NOT_RUN，容量尚未签收。见[ENG059](ENG059-FormalPathSingleMeasurement.md)。默认exit7不能当正式路径不可用；不改proxy/身份/host、不重复建环境。R4/LIVE预算/阶段门保持，下方保留历史。

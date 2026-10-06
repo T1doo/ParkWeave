@@ -282,3 +282,8 @@ ENG041普通快进push至9801259，唯一标准37444794329/attempt1 completed/fa
 ## ENG059 正式路径成功，唯一原生测量候选
 
 require_escalated同GitHub根无凭据HEAD审批成功200，原origin dev精确aa3dc55及5个completed Actions只读核对成功。候选源指纹/1162四片覆盖保持，拟审批普通push并仅监测一次标准25分钟run；200秒清理、每片600、NOT_RUN/partial/cleanup失败合同保持，无LIVE/新权限/新runner。详见[ENG059](ENG059-FormalPathSingleMeasurement.md)；默认失败不能替代正式审批核验，不迁移新环境。
+
+
+## ENG060 唯一原生测量实际结果
+
+formal HEAD200、普通push精确08cd659、唯一标准run37483067638 attempt1终态failure/job153s。native_lifecycle85.562s、native_validation17.282s均exit1无timeout且OWNED_TREE_STOPPED，regression内树亦确认回收；最终appStop0/.109s、PGStop0/.235s，安全发布成功。Start relationREFUSED/positivehealthPID，root内部stop拒绝2记录；具体身份拒绝分支未知。回归acceptance_bindings/REPORT_MISSING、count及四片耗时/覆盖UNAVAILABLE；本地CRLF checkout可严格复现接口，非native归因。详见[ENG060](ENG060-SingleNativeMeasurement.md)，无第二CI/私有logs/源码弱化/fixture改造/LIVE。固定预算/阶段门、原环境备份导航保留。
