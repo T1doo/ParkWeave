@@ -1,11 +1,15 @@
 # F1 真实日志
 
-## ENG030 本地安全诊断发布修复（未同步）
+## ENG031 当前精确SHA同步与Server CI终态
+
+ENG030代码已普通快进同步，精确远端e9e962d4a5e2b42ea3750c83ee8d7145cc3f24f1；本地冻结129份源码仍匹配681PASS/0FAIL/1WindowsSKIP/2WARN（178.67s）。标准Server [run37420887816](https://github.com/T1doo/ParkWeave/actions/runs/37420887816)已completed/failure：PreparePASS，native_suite677.625秒exit1/外层timeoutFalse，独立安全发布器PASS，受绑定PG StopPASS。获准check title/summary/text仍为空，19条注释未给具体cases/counts，真实子项/报告阶段/根因仍UNKNOWN。发布器exit0结合已验证源码仅证明本次绑定报告SUMMARY_AVAILABLE且stdout/StepSummary写入成功，不能推定report_state=COMPLETED或回归通过。下一最小输入是此run“Windows Server safe engineering diagnostics”安全JSON的report_state/active_phase和FAIL/NOT_RUN行及已有有界计数；不需旧截图或私有日志。未改源码、猜测修复或盲重跑；F2-T04仍暂停于只读合同审查，F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。 见[ENG031记录](../F2/ENG031-SyncCI.md)。下方未同步/待截图描述保留为当轮历史，不覆盖本节。
+
+## 历史ENG030本地诊断快照（后续同步见顶部）
 
 最新截图仍仅wrapper错误：实际run37417713362的native_suite623.032秒exit1/外层timeoutFalse，真实case/counts/根因UNKNOWN。源码确认stdout/stderr私有捕获与失败后throw，但native_suite继承GITHUB_STEP_SUMMARY，不能断言子进程未写JobSummary。本地新增Test后Stop前独立always安全报告发布、版本/本次运行绑定、有限阶段检查点，详见[ENG030记录](../F2/ENG030-SummaryPublication.md)。仅本地测试/提交，未push或新CI；F2-T04暂停于只读合同审查，分派功能未改。预算0、R4关闭、F1/F2未签收、Win11/36AT6EX NOT_RUN。
 
 
-## ENG029 当前同步与Server CI结果
+## 历史ENG029同步与Server CI结果
 
 ENG028代码已普通快进同步，精确远端ff00b6d8ad0880b24afaca49e33b9f8b982ceb87。标准Server [run37417713362](https://github.com/T1doo/ParkWeave/actions/runs/37417713362)已completed/failure：PreparePASS、native_suite623.032秒exit1/外层timeoutFalse、受绑定PG StopPASS。获准check summary/text为空，19条注释未给具体case/counts；仍UNKNOWN，不把时长推断成内部超时或根因。下一定位仅需此新run页面安全JSON，旧截图请求已过时。见[ENG029真实同步记录](../F2/ENG029-SyncCI.md)。下方ENG028“本地未push/待核对”等均为当时快照，现已被本节取代；F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。
 
