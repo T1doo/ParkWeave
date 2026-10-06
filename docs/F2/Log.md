@@ -277,3 +277,8 @@ ENG041普通快进push至9801259，唯一标准37444794329/attempt1 completed/fa
 ## ENG058 已授权原生测量，默认代理连接失败
 
 本地05fcb0e无冲突整合严格身份/单job调度/原导航，源码manifest指纹保持。获准普通push dev并唯一25分钟标准CI，200秒清理与每片600不变，预算不足明确NOT_RUN。唯一无凭据api.github.com HEAD exit7、代理8080连接失败，未到GitHub；未远端/Actions查询、未push/newCI，无路线/身份/策略更改。详见[ENG058](ENG058-AuthorizedMeasurementBlocked.md)；原环境/备份/导航保留、R4关闭、LIVE预算0、F1/F2/Win11门不解除。
+
+
+## ENG059 正式路径成功，唯一原生测量候选
+
+require_escalated同GitHub根无凭据HEAD审批成功200，原origin dev精确aa3dc55及5个completed Actions只读核对成功。候选源指纹/1162四片覆盖保持，拟审批普通push并仅监测一次标准25分钟run；200秒清理、每片600、NOT_RUN/partial/cleanup失败合同保持，无LIVE/新权限/新runner。详见[ENG059](ENG059-FormalPathSingleMeasurement.md)；默认失败不能替代正式审批核验，不迁移新环境。

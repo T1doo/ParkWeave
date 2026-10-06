@@ -1,5 +1,9 @@
 # F2并行开发计划：本地资料准备与个人待办
 
+## ENG059 正式工具审批路径已恢复，唯一标准原生测量待普通push
+
+同根HEAD require_escalated审批成功HTTP200；精确远端仍aa3dc55、最近Actions均completed。已整合身份/单job调度/原导航且冻结指纹匹配，普通push后只监测唯一新run，不dispatch/rerun。1500秒/200秒清理/每片600不变，预算不足明确NOT_RUN，容量尚未签收。见[ENG059](ENG059-FormalPathSingleMeasurement.md)。默认exit7不能当正式路径不可用；不改proxy/身份/host、不重复建环境。R4/LIVE预算/阶段门保持，下方保留历史。
+
 ## ENG058 一次标准原生测量已授权，默认连接阻塞
 
 严格身份修复与单job顺序调度已获普通push及唯一标准CI授权，本地与原导航无冲突整合为05fcb0e。1500秒总限额/200秒清理/每片600秒不变，容量未确认仅作测量，缺片NOT_RUN不称全通过。本环境api.github.com无凭据HEAD唯一尝试exit7，现有代理8080连接失败，未到GitHub；未查远端/Actions、未push或运行CI、未改网络/身份/策略。默认连接恢复后续核对远端并执行原授权，不自动重跑。见[ENG058](ENG058-AuthorizedMeasurementBlocked.md)。原工作树/备份保留；R4关闭、LIVE/预算0、F1未签收/F2并行、Win11/36AT6EX NOT_RUN。以下保留历史范围。
