@@ -1,3 +1,5 @@
+> 当前只读复用入口与已修复的回执失败反馈见[ENG079](ENG079-ReceiptReadFeedbackAndEvidenceLimits.md)。本轮保留原Case和授权；下方ENG073新建场景入口仅是历史说明，不用于当前复验。
+
 > ENG075补充同一个保留Case的纠错与新版本重核/显式重验，无新增assignment；实际短步骤及不清空历史的重放条件见[同Case体验](ENG075-SameCaseReceiptCorrection.md)。下方ENG073隔离新Case自动runner属于当轮演示，当前只复用授权的切片不调用它。
 
 # 当前最短合成体验（ENG073）

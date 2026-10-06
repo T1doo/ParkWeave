@@ -240,3 +240,8 @@ formal根HEAD200、原remote41bcc11确认未变，普通push已复核f5c8667成�
 ## ENG078 一次独立Job原生测量终态
 
 已授权应用owner-free workflow，配置检查PASS/本地157PASS4nativeSKIP；同目标正式权限HEAD200、远端2339a4d祖先确认，一次普通push到381a20a并核实精确远端。唯一37545785486/attempt1 completed/success，windows-2025 job21s/measurement4s。日志读取Forbidden，立即停网络；安全逐项JSON未取得，后代membership/signal、无关进程存活与清理/句柄关闭直接证据UNAVAILABLE，绿灯不能替代。无第二push/rerun/owner/描述符目标/广泛kill/上传；结果仅本地commit。完整回归恢复计划及证据见[ENG078](F2/ENG078-IndependentNativeJobMeasurement.md)，不算完整工程CI或原S4通过，原门/R4/预算/环境备份保持。
+
+
+## ENG079 本地回执读取可见反馈
+
+GitHub日志Forbidden仅确定在已获批job-log GET流程，API/重定向位置和HTTP状态码未保存，不再请求网络；独立success不替代直接JSON。复用同Case与assignment真实UI只读发现403/刷新失败提示藏在hidden详情，最小修复可见反馈及成功清除；迟到成功/错误身份隔离仍通过，receipt revision13/5版本/history/grants不变。已实际复验交付脚本、看图、77PASS，API/worker自有句柄清理与PGSTOPPED。仅本地commit，owner/完整CI/push/run暂停；见[ENG079](F2/ENG079-ReceiptReadFeedbackAndEvidenceLimits.md)。
