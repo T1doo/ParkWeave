@@ -1,5 +1,10 @@
 # 本地合成资料准备：首次使用
 
+## ENG029 当前同步与Server CI结果
+
+ENG028代码已普通快进同步，精确远端ff00b6d8ad0880b24afaca49e33b9f8b982ceb87。标准Server [run37417713362](https://github.com/T1doo/ParkWeave/actions/runs/37417713362)已completed/failure：PreparePASS、native_suite623.032秒exit1/外层timeoutFalse、受绑定PG StopPASS。获准check summary/text为空，19条注释未给具体case/counts；仍UNKNOWN，不把时长推断成内部超时或根因。下一定位仅需此新run页面安全JSON，旧截图请求已过时。见[ENG029真实同步记录](ENG029-SyncCI.md)。下方ENG028“本地未push/待核对”等均为当时快照，现已被本节取代；F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。
+
+
 ## ENG027 当前同步授权
 
 普通同步已完成：精确代码push头1baa2cf93f795dbf3036245b8f2ea2ec2ce15e56（含已验证54fad8c）。标准Server CI37414981257终态FAIL：Prepare成功、native_suite79.235秒exit1、owned cluster停止成功；具体case仍UNKNOWN。实际证据见[同步记录](ENG027-SyncCI.md)。旧ENG026未推送/暂停说明属于当时快照，不能当当前状态。未经精确远端验证不声称GitHub已更新，CI结果取得后据实记录；不force/merge main/deploy/LIVE，不重试被拒日志或换身份。F1F2/Win11/R4门槛保持。
