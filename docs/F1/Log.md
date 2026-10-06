@@ -1,5 +1,10 @@
 # F1 真实日志
 
+## ENG066 本地精确argv0/fixture/安全映射修复，原生Job保持OPEN
+
+仅本地代码 `649803f`，指定managed runtime/cfg导出单一base executable并校验实际image/完整tail/父链/pins，Stop重导出漂移拒绝；canonical fixture及长参数去参映射修复，安全续页贯通完整capture，原25ID/8条/2KiB/16KiB不变。定点347 PASS、local业务及loopback109 PASS、关闭重开/双角色确认62 PASS，独立NO_BLOCKERS；collection1283不是全量PASS，raw提交指纹一致。最后真实Windows仍ENG065的1160/42/51，四个native Job oracle和未公开断言OPEN，外层TreeStopped不能替代专项。无push/newCI、权限/身份/代理/预算扩展或LIVE，F1未签收/F2并行/R4关闭/Server非Win11。见[ENG066](../F2/ENG066-TargetedLocalRepairs.md)。
+
+
 ## ENG065 唯一标准Windows CI终态FAIL，已取得细码及四片实测
 
 新授权普通推送source `5146655a2ab56e842924eba93d4d39971394c7a3`，唯一run37498631767 attempt1 completed/failure，job16分30秒。Windows实测1160 PASS/42 FAIL/51 SKIP，1253项；四片FAIL35/2/2/3、coverageTrue及owned树停止均明确。CHILD_POLICY/ARGV0_MISMATCH确认argv0不一致，原始路径/命令尾部仍未知；最后app/PGStop成功。49→42只是不同collection的净变化，非49项逐一关闭；公开4 ID/省略16，剩余断言类别未公开。无job预算耗尽证据，不扩权限/runner/deadline/cleanup；无第二CI/LIVE，报告本地提交。见[ENG065](../F2/ENG065-SingleNativeTerminal.md)，原本地证据与真实Windows分开。F1未签收/F2并行/R4关闭/Server非Win11。
