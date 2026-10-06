@@ -107,3 +107,8 @@ ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合�
 ## ENG039 本地有界安全annotations
 
 按用户采用方案实施已有安全case投影的GitHub notice，限定数量/UTF8实际字节/全局精确测试ID并移除路径；异常关闭，原失败及always清理保持。独立审查CRLF问题修复，169相关合成测试PASS；[准确diff与示例/证据](F2/ENG039-SafeAnnotations.md)。仅本地commit不push/newCI，用户另定普通同步；原Windows37420887816根因UNKNOWN不变。
+
+
+## ENG040 dev普通同步与标准Server终态
+
+用户解除暂缓后，7个审查提交普通快进推送到8ddf139，无force/main merge。唯一标准[CI37439323047](https://github.com/T1doo/ParkWeave/actions/runs/37439323047)已FAIL，新annotations实际送达，明确Doctor/Start exit1与完整回归regression_run TimeoutExpired；单pytest ID/计数和底层启动原因仍UNKNOWN。PG停止成功。当前证据/下一有限诊断建议见[F2/ENG040](F2/ENG040-SyncCI.md)；不盲重跑/扩权限或增加模型预算，F1/F2/Win11阶段门保留。

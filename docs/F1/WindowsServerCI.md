@@ -116,3 +116,8 @@ CI辅助进程按阶段构建环境：Setup只接owner+app，Doctor/Start/Status
 ClusterControl纯PS helper先验证UUID直接子目录、精确state字段/范围/路径/无reparse，再执行自身data的pg_ctl。start失败重新验证+status：未运行不stop、已运行只stop自己、未知状态拒绝，保留原start退出码；清理失败明确REFUSED_OR_FAILED，不猜成功。浏览器会话/自有driver退出先于profile清理；主超时不会被清理异常覆盖，清理错误保留分类注释。全部故障由明确SYNTHETIC命令替身/配置/临时目录验证，原生PG/Chrome/Server仍NOT_RUN。
 
 访问恢复后的唯一最小验证计划：在原身份/原通道获准恢复后，先做一次只读Actions状态/日志访问验证；确认可读及workflow发布授权、复核checkout不可变SHA后，才推当前独立分支并运行一次标准windows-2025 mock任务，核对安全版本/低权限app身份、生命周期和故障检查/最终Stop摘要。失败按原输出记录，不自动换身份、改权限或反复启动job。Windows11门仍独立BLOCKED；现在不执行该计划。
+
+
+## ENG040 最新标准Server实际结果
+
+普通快进同步8ddf139后，唯一标准[run37439323047](https://github.com/T1doo/ParkWeave/actions/runs/37439323047)/attempt1 completed/failure。新安全annotations经正常API真实读取：Doctor_native FAIL exit1；Start_native FAIL exit1；API_browser_restart NOT_RUN START_FAILED；full_engineering_regression在regression_run TimeoutExpired，counts MISSING/无pytest ID。harness合计5PASS3FAIL1NOT_RUN，非pytest全量成绩。发布器成功、owned PG status/stop exit0无超时；Doctor/Start底层原因及单测试信息未知。细节见[ENG040](../F2/ENG040-SyncCI.md)。旧37420887816根因未知保持历史范围，不做同因推断；Server不是Win11，F1/F2未签收，R4关闭/36AT6EX NOT_RUN。结果docs-only同步不会另触发源码workflow。

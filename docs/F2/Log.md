@@ -212,3 +212,8 @@ Linux定向第一次30 PASS/6.22秒，补并发同Case与审核-补件竞态、G
 ## ENG039 有界安全诊断annotations
 
 用户授权本地实现，新增固定notice白名单摘要，8条/整条2KiB含LF/总16KiB/整批25无路径测试ID。两位只读审查定位并闭合Windows CRLF实际字节P2，真实本地模拟旧2049/16392超限→二进制2048/16384。最终相关169PASS/0FAIL/0SKIP/1既有WARN8.63s，4份冻结hash一致；唯一原保护文件授权变化publisher，业务src及原ENG037拒绝路径证据保留。不改原失败/清理、权限/环境策略，不上传日志/artifacts；异常常量关闭，stdout原JSON后追加annotations。见[ENG039](ENG039-SafeAnnotations.md)。仅本地commit，无push/newCI；当前Server37420887816根因仍UNKNOWN，实际新annotations送达/nativeWindows未验证，F1F2未签收/R4关闭/36AT6EXNOT_RUN/模型预算0。
+
+
+## ENG040 普通同步与有界annotations真实送达
+
+实时远端c5b389b到8ddf139为7提交普通快进，无他人提交覆盖；唯一标准run37439323047/attempt1精确head8ddf139已completed/failure。正常API收到5新安全annotations：harness5PASS/3FAIL/1NOT_RUN、零case省略；Doctor/Start exit1、API_browser_restart因START_FAILED未运行、完整回归regression_run TimeoutExpired且counts MISSING/无pytest ID。底层Doctor/Start原因与具体测试未知；不把旧run未知猜成同因。发布器成功，PG status/stop exit0/无超时，外层native_suite693.422秒exit1未超时。见[ENG040](ENG040-SyncCI.md)。结果docs-only同步不命中唯一workflow的paths，无重跑/权限runner更改/日志下载/artifacts/模型预算；原签收门保留。
