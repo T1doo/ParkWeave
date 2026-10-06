@@ -3,7 +3,7 @@ from pathlib import Path
 import argparse,json,os,subprocess,time,uuid
 from parkweave.process_env import minimal_environment
 from parkweave.store import Store
-root=Path.cwd();p=argparse.ArgumentParser();p.add_argument('--case-id',required=True,type=uuid.UUID);p.add_argument('--report',required=True,type=Path);p.add_argument('--screenshots',required=True,type=Path);args=p.parse_args()
+root=Path.cwd();p=argparse.ArgumentParser();p.add_argument('--case-id',required=True,type=uuid.UUID);p.add_argument('--report',required=True,type=Path);p.add_argument('--screenshots',required=True,type=Path);p.add_argument('--exercise-write-retry',action='store_true');p.add_argument('--continue-reopened-case',action='store_true');args=p.parse_args()
 if os.name=='nt':raise RuntimeError('NOT_RUN: Linux harness is not native Windows evidence')
 owner=Store(os.environ['PARKWEAVE_CASE_FIXTURE_OWNER_DSN'])
 env=minimal_environment(os.environ,npm_config_cache=str(root/'.cache/npm'),XDG_RUNTIME_DIR=str(root/'.runtime/sockets'))
@@ -72,15 +72,41 @@ try:
     sessions=json.loads((root/'.runtime/synthetic-sessions.json').read_text());executors=json.loads((root/'.runtime/receipt-sessions.json').read_text())
     goal=parent['goal'];browser('open','http://127.0.0.1:8765');browser('snapshot','-i');switch(sessions['fixture-a']);click('[data-tab=collaboration]')
     before_receipt=receipt_select(goal);assert before_receipt['step']['state']=='LOCAL_ACKNOWLEDGED'
-    before=open_case();assert before['case_id']==str(args.case_id) and before['local_record_state']=='LOCAL_RECORD_CLOSED'
-    reopened=case_act('#local-case-reopen','SYNTHETIC reopen same Case to inspect changed receipt');assert reopened['cycle']==before['cycle']+1
+    before=open_case();assert before['case_id']==str(args.case_id)
+    if before['local_record_state']=='LOCAL_RECORD_CLOSED':
+        reopened=case_act('#local-case-reopen','SYNTHETIC reopen same Case to inspect changed receipt');assert reopened['cycle']==before['cycle']+1
+    else:
+        assert args.continue_reopened_case and before['local_record_state']=='REOPENED'
+        reopened=before
     ready=case_act('#local-case-validate','SYNTHETIC baseline current dependencies before receipt correction');assert ready['verification_current'] and ready['can_close_local_record']
     baseline_sha=ready['verified_snapshot_sha256'];screenshot('same-case-ready-before-correction.png')
+    # Cancel the plan view and return to the same current Case without creating a template.
+    case_revision=ready['revision'];case_cycle=ready['cycle']
+    click('#local-case-plan');wait('planView',lambda x:isinstance(x,dict))
+    assert value("document.querySelector('#local-case-detail').hidden") is True
+    click('#plan-back');returned=wait('localCaseView',lambda x:isinstance(x,dict) and not value("document.querySelector('#local-case-detail').hidden"))
+    assert returned['case_id']==str(args.case_id) and returned['revision']==case_revision and returned['cycle']==case_cycle
+    assert returned['verification_current'] and returned['can_close_local_record'] and value('planView') is None
+    screenshot('plan-cancel-return-same-case.png')
     # Acknowledged receipts must reopen before a reviewable submission/correction.
     receipt_select(goal);decision('#receipt-reopen','SYNTHETIC reopen acknowledged log for further review')
     blocked=open_case();assert not blocked['verification_current'] and not blocked['can_revalidate'] and not blocked['can_close_local_record'];screenshot('same-case-receipt-reopened-blocks-close.png')
     switch(executors['receipt-executor-fixture-a']);receipt_select(goal)
-    review=submit('SYNTHETIC additional work log needing clarification','SYNTHETIC review draft')
+    if args.exercise_write_retry:
+        prior_revision=value('receiptView.step.revision');prior_versions=value('receiptView.receipt_history.length')
+        browser('fill','#receipt-text','SYNTHETIC additional work log needing clarification');browser('fill','#receipt-source','SYNTHETIC review draft')
+        # Actual server write completes; the browser loses just this successful response.
+        value("(()=>{window.beforeReplyFaultFetch=window.fetch;window.droppedReceiptStatus=null;window.fetch=async(p,o)=>{const r=await window.beforeReplyFaultFetch(p,o);if(o?.method==='POST'&&String(p).startsWith('/api/executor-receipts/')){window.fetch=window.beforeReplyFaultFetch;window.droppedReceiptStatus=r.status;throw Error('SYNTHETIC_RESPONSE_LOST_AFTER_COMMIT');}return r;};return true;})()")
+        click('#receipt-submit-button');wait("document.querySelector('#receipt-error').textContent",lambda x:bool(x))
+        assert value('droppedReceiptStatus') in (200,201) and value('receiptView.step.revision')==prior_revision
+        assert value("document.querySelector('#receipt-text').value")=='SYNTHETIC additional work log needing clarification'
+        assert '检查本地连接' in value("document.querySelector('#page-feedback').textContent")
+        screenshot('lost-write-response-before-same-input-retry.png')
+        click('#receipt-submit-button');review=wait('receiptView',lambda x:isinstance(x,dict) and x['step']['revision']>prior_revision)
+        assert review['step']['revision']==prior_revision+1 and len(review['receipt_history'])==prior_versions+1
+        assert not value("document.querySelector('#page-feedback').textContent")
+    else:
+        review=submit('SYNTHETIC additional work log needing clarification','SYNTHETIC review draft')
     switch(sessions['fixture-a']);receipt_select(goal);corrected=decision('#receipt-correct','SYNTHETIC specify the missing work-log detail')
     assert corrected['step']['state']=='CHANGES_REQUESTED';screenshot('enterprise-requested-correction.png')
     blocked=open_case();assert not blocked['can_revalidate'] and not blocked['can_close_local_record']
@@ -108,6 +134,6 @@ try:
     reloaded=open_case();assert reloaded['revision']==final['revision'] and reloaded['cycle']==final['cycle'];screenshot('same-case-corrected-reload.png')
     assert grant_snapshot()==grants_before
     assert not browser('errors')
-    report=dict(scope='EXISTING_SYNTHETIC_CASE_RECEIPT_CORRECTION_REVALIDATION',case_id=str(args.case_id),run_id=str(parent['run_id']),same_existing_Case=True,existing_assignment_reused=True,new_assignments=0,grants_unchanged=True,real_UI=True,source_receipt_revision=before_receipt['step']['revision'],final_receipt_revision=acked['step']['revision'],source_receipt_versions=len(before_receipt['receipt_history']),final_receipt_versions=len(loaded['receipt_history']),correction_requests_current_version=True,new_version_hash_changed=True,ack_blocks_close_until_explicit_revalidation=True,old_verified_snapshot_invalidated=True,local_record_revision=final['revision'],cycle=final['cycle'],reload_persistent=True,case_goal_completed=False,case_state=final['case_state'],qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',narrow_viewports=metrics,screenshots_directory=str(args.screenshots),model_calls=0,budget=0,R4='DISABLED',native_Windows='NOT_RUN',whole_AT_EX='NOT_RUN')
+    report=dict(scope='EXISTING_SYNTHETIC_CASE_RECEIPT_CORRECTION_REVALIDATION',case_id=str(args.case_id),run_id=str(parent['run_id']),same_existing_Case=True,existing_assignment_reused=True,new_assignments=0,grants_unchanged=True,real_UI=True,source_receipt_revision=before_receipt['step']['revision'],final_receipt_revision=acked['step']['revision'],source_receipt_versions=len(before_receipt['receipt_history']),final_receipt_versions=len(loaded['receipt_history']),correction_requests_current_version=True,new_version_hash_changed=True,ack_blocks_close_until_explicit_revalidation=True,old_verified_snapshot_invalidated=True,local_record_revision=final['revision'],cycle=final['cycle'],reload_persistent=True,case_goal_completed=False,case_state=final['case_state'],qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',narrow_viewports=metrics,screenshots_directory=str(args.screenshots),model_calls=0,budget=0,R4='DISABLED',native_Windows='NOT_RUN',whole_AT_EX='NOT_RUN',write_response_lost_then_same_input_retry=args.exercise_write_retry,write_retry_single_revision_and_version=args.exercise_write_retry,plan_cancel_return_same_case_without_write=True,source_local_record_state=before['local_record_state'],continued_existing_reopened_case=args.continue_reopened_case)
     args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n');print(json.dumps(report,ensure_ascii=False))
 finally:browser('close')

@@ -1,3 +1,9 @@
+## ENG080 当前本地核对（以下旧条目为历史快照）
+
+当前源码完整Linux回归 **1454PASS/0FAIL/9原生WindowsSKIP**，299.57秒；首轮三项旧workflow断言失败已修正后全量复验，用例未删/未增skip。实际同Case回执失败恢复、提交后丢响应的相同输入幂等重试、身份切换迟到响应、纠错新版重核/Case显式重验、收起计划返回及1200/390/320视图通过；原资源时段结束先正确阻塞，再经正常UI关联新有效组合v2，规则与授权不变。最终cycle5/本地revision17、回执revision18/v7，Case等待真实确认、目标未完成。
+
+F1未签收/F2仅并行、R4关闭/模型预算0；完整工程Windows仍有ENG071失败与S4缺口，ENG078独立success缺直接JSON，owner保持暂停、完整CI未恢复、Win11未验。无新增GitHub请求/push/run；最后已核实远端381a20a，后续本地提交未推送，不当作实时远端。快速体验命令、前置与实际证据见[ENG080](../F2/ENG080-FullLinuxAndQuickExperience.md)；旧新Case/seed/赋权入口属于历史演示，不用于本轮只复用Case的复验。
+
 ## ENG072 owner实际流程暂停与只读候选
 
 仅本地：默认native owner入口在construct/create前、原生backend注入及setter均OWNER_MUTATION_PAUSED；不扩大权限掩盖DACL/control拒绝。只读审查最小OWNER-only参数无DACLflags，mock证ACL slack可致storage不等，但实际ACE/controldelta及访问语义UNKNOWN，SACL未查询；严格全bytes/control仍保留。Job独立mock复现ActiveProcesses0→TreeStopped但kernelhandleLIVE，readonlymembership/signal候选原5s/8samples未wired，timeout/unrelated原生PASS保持，S4未验。PORT候选以固定base/ConnectionTimeout/OTHER与三goldbool定点，不称实际native subtype已知。最终312PASS6nativeSKIP、独立NO_BLOCKERS，collect1354≠全量PASS；无push/CI/LIVE/原生权限修改，不夜间提问。见[ENG072](../F2/ENG072-OwnerPauseReadonlyCandidates.md)。

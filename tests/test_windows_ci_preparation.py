@@ -36,10 +36,17 @@ def test_server_guard_checks_actual_product_type_and_build(product,build,accepte
 def test_ci_workflow_scope_is_narrow_read_only_and_unpublished():
     text=(ROOT/'.github/workflows/windows-server-engineering.yml').read_text()
     assert 'branches: [dev/f1-foundation]' in text and 'contents: read' in text and 'runs-on: windows-2025' in text
-    assert 'persist-credentials: false' in text and 'timeout-minutes: 25' in text and 'if: always()' in text
+    assert 'persist-credentials: false' in text and 'timeout-minutes: 25' in text and 'timeout-minutes: 2\n' in text
     assert 'actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065' in text
     assert "python-version: '3.12'" in text and "architecture: 'x64'" in text
-    assert text.index('Select Python 3.12 x64') < text.index('Prepare fresh native loopback PostgreSQL and Python')
+    assert text.index('Select Python 3.12 x64') < text.index('Independent controlled Job measurement without owner helpers')
+    assert text.count('runs-on:')==1 and text.count('      - name:')==4
+    assert 'group: parkweave-server-engineering-${{ github.ref }}' in text and 'cancel-in-progress: false' in text
+    executable='\n'.join(line for line in text.splitlines() if not line.strip().startswith('#'))
+    for prohibited in ('Engineering.ps1','SetOwner','Set-Acl','pip','descriptor_readonly_probe','native_failure_oracles'):
+        assert prohibited not in executable
+    assert "$os.Caption -notmatch 'Windows Server 2025' -or $os.ProductType -eq 1" in executable
+    assert 'python -m scripts.windows_ci.controlled_job_measurement --run-controlled' in executable
     for prohibited in ('secrets.','actions/cache','upload-artifact','pull_request_target','workflow_dispatch:'):
         assert prohibited not in text
 

@@ -47,12 +47,16 @@ def test_workflow_keeps_one_job_and_25_minutes_with_independent_followups():
     text=(ROOT/'.github/workflows/windows-server-engineering.yml').read_text()
     assert text.count('runs-on:')==1 and text.count('timeout-minutes: 25')==1
     assert 'UtcNow.ToUnixTimeSeconds()-30' in text
-    actions=['Anchor existing','Checkout without','Select Python','-Action Prepare','-Action Lifecycle','-Action Validation','-Action Publish','-Action Stop']
+    # Historical test ID retained; current authorized mode is isolated measurement.
+    actions=['Anchor existing','Checkout without','Select Python','Independent controlled Job measurement']
     positions=[text.index(s) for s in actions]
-    assert positions==sorted(positions)
-    for name in ('Validation','Publish','Stop'):
-        section=text[:text.index('-Action '+name)].rsplit('      - name:',1)[-1]
-        assert 'if: always()' in section
+    assert positions==sorted(positions) and text.count('      - name:')==4
+    assert text.count('timeout-minutes: 2\n')==1
+    assert 'python -m scripts.windows_ci.controlled_job_measurement --run-controlled' in text
+    executable='\n'.join(line for line in text.splitlines() if not line.strip().startswith('#'))
+    for prohibited in ('Engineering.ps1','native_failure_oracles.py','SetOwner','Set-Acl','if: always()'):
+        assert prohibited not in executable
+    assert 'cancel-in-progress: false' in text
     assert 'contents: read' in text and 'checks: write' not in text
     entry=(ROOT/'scripts/windows_ci/Engineering.ps1').read_text()
     assert "'native_suite' 900" in entry

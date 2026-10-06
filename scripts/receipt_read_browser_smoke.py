@@ -37,6 +37,14 @@ def receipt_select(goal):
     name=value("Array.from(document.querySelectorAll('#receipt-items button')).find(x=>x.textContent.startsWith("+json.dumps(goal)+")).textContent")
     browser('find','role','button','click','--name',name);browser('snapshot','-i');return wait('receiptView',lambda x:isinstance(x,dict))
 args.screenshots.mkdir(parents=True,exist_ok=False)
+viewport_checks=[]
+def feedback_widths(label):
+    for width in (1200,390,320):
+        browser('set','viewport',str(width),'900' if width==1200 else '844');browser('snapshot','-i')
+        metric=value('({width:innerWidth,scroll:document.documentElement.scrollWidth})');assert metric['scroll']<=metric['width']
+        viewport_checks.append(dict(stage=label,**metric))
+        value("(()=>{document.querySelector('#page-feedback').scrollIntoView({block:'center'});return true;})()");browser('screenshot',str(args.screenshots.resolve()/(label+'-'+str(width)+'.png')))
+    browser('set','viewport','1200','900')
 def screenshot(name):
     value("(()=>{const panel=document.querySelector('#local-case-detail:not([hidden])')||document.querySelector('#receipt-detail:not([hidden])');if(panel)panel.scrollIntoView({block:'start'});return true;})()");browser('snapshot','-i');browser('screenshot',str(args.screenshots.resolve()/name))
 
@@ -60,13 +68,13 @@ try:
     value("(()=>{window.captureFetch=window.fetch;window.invalidStatus=null;window.fetch=async(p,o)=>{const r=await window.captureFetch(p,o);if(String(p)==='/api/executor-receipts')window.invalidStatus=r.status;return r;};return true;})()");switch('SYNTHETIC_INVALID_SESSION');click('#receipt-list')
     wait("document.querySelector('#receipt-error').textContent",lambda x:bool(x))
     assert value('invalidStatus')==403;value("(()=>{window.fetch=window.captureFetch;return true;})()");invalid=value("({httpStatus:invalidStatus,detailHidden:document.querySelector('#receipt-detail').hidden,error:document.querySelector('#receipt-error').textContent,feedback:document.querySelector('#page-feedback').textContent})")
-    assert invalid['feedback']==invalid['error'] and '权限' in invalid['feedback'];value("(()=>{document.querySelector('#page-feedback').scrollIntoView({block:'center'});return true;})()");screenshot('invalid-session-feedback.png')
+    assert invalid['feedback']==invalid['error'] and '权限' in invalid['feedback'];value("(()=>{document.querySelector('#page-feedback').scrollIntoView({block:'center'});return true;})()");screenshot('invalid-session-feedback.png');feedback_widths('invalid-session-feedback')
     switch(sessions['fixture-a']);receipt_select(parent['goal'])
     # One deterministic local browser network fault, not a backend permission result.
     value("(()=>{window.realFetch=window.fetch;window.fetch=async(p,o)=>{if(String(p).startsWith('/api/executor-receipts/')){window.fetch=window.realFetch;throw Error('SYNTHETIC_OFFLINE_FAULT');}return window.realFetch(p,o);};return true;})()")
     click('#receipt-refresh');wait("document.querySelector('#receipt-error').textContent",lambda x:bool(x))
     offline=value("({detailHidden:document.querySelector('#receipt-detail').hidden,error:document.querySelector('#receipt-error').textContent,feedback:document.querySelector('#page-feedback').textContent})")
-    assert offline['feedback']==offline['error'] and '检查本地连接' in offline['feedback'];value("(()=>{document.querySelector('#page-feedback').scrollIntoView({block:'center'});return true;})()");screenshot('refresh-failure-feedback.png')
+    assert offline['feedback']==offline['error'] and '检查本地连接' in offline['feedback'];value("(()=>{document.querySelector('#page-feedback').scrollIntoView({block:'center'});return true;})()");screenshot('refresh-failure-feedback.png');feedback_widths('refresh-failure-feedback')
     click('#receipt-list');wait("document.querySelector('#receipt-items').textContent",lambda x:parent['goal'] in x);assert not value("document.querySelector('#page-feedback').textContent");receipt_select(parent['goal'])
     assert not value("document.querySelector('#page-feedback').textContent")
     # Hold an actual successful read until after identity switch, without changing payload.
@@ -89,7 +97,15 @@ try:
     stale_error=value("({role:receiptView.role,error:document.querySelector('#receipt-error').textContent,feedback:document.querySelector('#page-feedback').textContent})")
     assert stale_error['role']=='enterprise_operator' and not stale_error['error'] and not stale_error['feedback']
     assert grant_snapshot()==before and current['step']['revision']==initial['step']['revision'] and current['receipt_history']==initial['receipt_history']
+    for width in (1200,390,320):
+        browser('set','viewport',str(width),'900' if width==1200 else '844');browser('snapshot','-i')
+        metric=value('({width:innerWidth,scroll:document.documentElement.scrollWidth})');assert metric['scroll']<=metric['width'];viewport_checks.append(dict(stage='current-receipt-history',**metric));screenshot('current-receipt-'+str(width)+'.png')
+    click('#local-case-receipt');local=wait('localCaseView',lambda x:isinstance(x,dict))
+    assert local['case_id']==str(args.case_id) and local['local_record_state']=='LOCAL_RECORD_CLOSED' and not local['case_goal_completed']
+    for width in (1200,390,320):
+        browser('set','viewport',str(width),'900' if width==1200 else '844');browser('snapshot','-i')
+        metric=value('({width:innerWidth,scroll:document.documentElement.scrollWidth})');assert metric['scroll']<=metric['width'];viewport_checks.append(dict(stage='current-case-local-record',**metric));screenshot('current-case-'+str(width)+'.png')
     assert not browser('errors')
-    report={'scope':'EXISTING_CASE_READONLY_RECEIPT_REAL_UI_SESSION_AND_LATE_RESPONSES','case_id':str(args.case_id),'receipt_revision':initial['step']['revision'],'receipt_versions':len(initial['receipt_history']),'real_API_invalid_session':invalid,'injected_browser_network_failure':offline,'late_success_identity_switch':cleared,'late_error_new_identity':stale_error,'receipt_revision_and_history_unchanged':True,'grants_unchanged':True,'new_assignments':0,'business_writes':0,'model_calls':0,'R4':'DISABLED'}
+    report={'scope':'EXISTING_CASE_READONLY_RECEIPT_REAL_UI_SESSION_AND_LATE_RESPONSES','case_id':str(args.case_id),'receipt_revision':initial['step']['revision'],'receipt_versions':len(initial['receipt_history']),'real_API_invalid_session':invalid,'injected_browser_network_failure':offline,'late_success_identity_switch':cleared,'late_error_new_identity':stale_error,'receipt_revision_and_history_unchanged':True,'grants_unchanged':True,'new_assignments':0,'business_writes':0,'model_calls':0,'R4':'DISABLED','viewport_checks':viewport_checks,'case_local_revision':local['revision'],'case_cycle':local['cycle'],'case_goal_completed':local['case_goal_completed'],'case_state':local['case_state']}
     args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n');print(json.dumps(report,ensure_ascii=False))
 finally:browser('close')
