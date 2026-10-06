@@ -321,3 +321,8 @@ formal HEAD200、普通push精确08cd659、唯一标准run37483067638 attempt1�
 ## ENG061 本地完整性与固定拒绝原因
 
 仅本地修复：tests固定LF检出，实际HEAD/test Git blob/manifest SHA256/工作树raw bytes一致才绑定；strict Start/Stop最小固定stage/reason，主拒绝与cleanup分开；acceptance入口原子固定失败报告，非0与NOT_RUN保持。原生153秒为提前失败，根因仍UNKNOWN；不push/CI，不扩身份/权限/预算。验证与复核见[ENG061](../F2/ENG061-LocalIntegrityAndRefusal.md)；F1未签收/F2并行探索、Server非Win11、R4关闭、LIVE预算0及原环境备份保持。
+
+
+## ENG062 一次授权CI监测被认证拒绝
+
+formal根HEAD200、原remote41bcc11确认未变，普通push已复核f5c8667成功；唯一run37489722219/attempt1精确同头已启动，最后Prepare in_progress。后续jobs读取HTTP401/Bad credentials，立即停网络，不换身份/代理/凭据、不rerun；终态/LF实际检查/拒绝分支/四片/cleanup UNAVAILABLE，counts缺失不能PASS。详见[ENG062](../F2/ENG062-SingleNativeMonitorBlocked.md)；恢复同一连接后仅继续该run，原期限/runner/权限/门/预算/环境备份保持。
