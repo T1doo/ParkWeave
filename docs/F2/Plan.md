@@ -1,5 +1,9 @@
 # F2并行开发计划：本地资料准备与个人待办
 
+## ENG069 唯一标准CI终态FAIL；Restart固定owner拒绝已公开
+
+普通push到c10fef1，同HEAD唯一run37511398754 attempt1失败，18分37秒。完整1323项1265/7/51，四片317/0/25、299/3/22、342/1/4、307/3/0且coverageTrue/COMPLETE、owned清理、无timeout。Start PASS；Restart private_acl/ACL_OWNER_MISMATCH、具体ACL对象UNKNOWN；两参数nativeJob仍2FAIL，与正常Stop路径推知及外层TreeStopped分列。原五个失败函数不再出现在完整列表，新增端口fixture硬编码98错误已仅本地修复2815139、独立NO_BLOCKERS/8PASS、相关90PASS，不push/新CI、不改写实测7FAIL。历史本地1297/1/9及其后模块27保留，不称全仓全绿；owner权限未扩大，F1未签收/F2并行/R4关闭/Server非Win11，预算0。见[ENG069](ENG069-SingleNativeTerminal.md).
+
 ## ENG068 仅本地剩余定点修复，原生实际仍OPEN
 
 本地代码 `b1b50f2`：超大参数仅缩短显示ID、保留payload与拒绝gold；UTF8拒绝报告/真实HTTP fixture、平台cleanup gold、既有文件lstat保护及只读Job kernel观察定点修复。Restart每次仍exclusive，最多1秒、权限/活listener/未知/超期拒绝，现有固定boundary贯通发布capture；不宣称旧Restart由TIME_WAIT造成。最终相关453 PASS/8 native SKIP，独立NO_BLOCKERS；广跑1307项1297/1/9，唯一旧port替身FAIL修正后模块27 PASS，最终1323只collect不称全PASS，旧1283 stablekeys全保留，提交blob/raw指纹一致。实际Windows仍ENG067的11FAIL，Restart/owner/nativeJob未原生复证；无push/newCI，预算0、R4关闭、F1未签收/F2仅并行/Server非Win11。一次transport disconnected后默认入口恢复，原环境与备份保留。见[ENG068](ENG068-TargetedRemainingRepairs.md).
