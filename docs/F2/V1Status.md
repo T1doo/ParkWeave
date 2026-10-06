@@ -1,3 +1,5 @@
+> ENG073最新本地产品走查：同Case三角色本地记录闭环与另Case固定四步计划均实际Chromium通过，目标仍未完成，fixture owner赋权前置保留。入口/缺口见[最短体验](ENG073-QuickExperience.md)，当前权限暂停及Windows边界见[ENG073](ENG073-DecisionPackageAndProductWalk.md)。下方历史逐轮范围不作为本轮全量验收。
+
 # F2 与原V1计划的真实对照
 
 

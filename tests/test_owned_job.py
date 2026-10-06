@@ -345,3 +345,102 @@ def test_readonly_job_candidate_refuses_invalid_handles_before_any_read(invalid)
     for process,job in ((invalid,1),(1,invalid)):
         row=observe(process,job,cleanup_started=10,clock=lambda:10,backend=NoRead())
         assert row=={'status':'UNKNOWN','reason':'INVALID_INPUT','sample_count':0,'samples':[]}
+
+
+@pytest.mark.parametrize('primary',[0,17,'timeout'])
+@pytest.mark.parametrize('mode',['signal_later','live','unknown','non_member'])
+def test_eng073_unwired_adapter_exact_gold_and_close_order(tmp_path,primary,mode):
+    """Only injected handles and reads; no Windows/process/termination operation."""
+    from scripts.windows_ci.job_stop_observation import StopObservationAdapter
+    class Candidate:
+        def __init__(self):
+            self.events=[];self.now=10.;self.row=None;self.reads=0
+        def clock(self):return self.now
+        def pause(self,seconds):self.now+=seconds
+        def create_job(self):return 101
+        def launch(self,*args):return 202,303,404
+        def bind(self,*args):self.events.append('bind_before_resume')
+        def resume(self,*args):self.events.append('resume')
+        def wait(self,*args):
+            if primary=='timeout':raise subprocess.TimeoutExpired('OWNED_JOB',1)
+            return primary
+        def membership(self,*args):
+            self.events.append('readonly_member');return mode!='non_member'
+        def active_processes(self,*args):
+            self.events.append('readonly_accounting');return 2 if self.reads==0 else 0
+        def signal(self,*args):
+            self.events.append('readonly_signal');self.reads+=1
+            if mode=='unknown':return 'UNKNOWN'
+            return 'SIGNALED' if mode=='signal_later' and self.reads>=4 else 'LIVE'
+        def stop_tree(self,job):
+            observer=StopObservationAdapter(202,job,cleanup_started=self.now,
+                    backend=self,clock=self.clock,pause=self.pause)
+            observer.capture('BEFORE_TERMINATE')
+            self.events.append('existing_termination_mock')
+            observer.capture('AFTER_TERMINATE')
+            observer.capture('ACCOUNTING_ZERO')
+            self.row=observer.finish();self.events.append('exact_gold_before_close')
+            # Test-only coordinator projection; exact PASS never becomes tree PASS.
+            if self.row['status']!='PASS':raise JOB.OwnedJobError('JOB_STOP_UNCONFIRMED')
+            return 'OWNED_TREE_STOP_UNCONFIRMED'
+        def close(self,handle):self.events.append('close_'+str(handle))
+    backend=Candidate()
+    if primary=='timeout':
+        with pytest.raises(subprocess.TimeoutExpired) as failed:injected(tmp_path,backend)
+        assert failed.value.cleanup=='OWNED_TREE_STOP_UNCONFIRMED'
+    elif primary==0 and mode!='signal_later':
+        with pytest.raises(JOB.OwnedJobError) as failed:injected(tmp_path,backend)
+        assert failed.value.cleanup=='OWNED_TREE_STOP_UNCONFIRMED'
+    else:
+        result=injected(tmp_path,backend)
+        assert result.returncode==primary and result.cleanup=='OWNED_TREE_STOP_UNCONFIRMED'
+    assert backend.row['scope']=='EXACT_PROCESS_ONLY'
+    assert backend.row['status']==('PASS' if mode=='signal_later' else 'FAIL')
+    assert backend.events[-4:]==['exact_gold_before_close','close_303','close_202','close_101']
+    assert backend.now<15 and backend.row['sample_count']<=8
+    if mode=='signal_later':
+        assert backend.row['samples'][2]['signal']=='LIVE'
+        assert backend.row['samples'][-1]['signal']=='SIGNALED'
+
+
+@pytest.mark.parametrize('elapsed',[5,6])
+def test_eng073_adapter_does_not_refresh_expired_cleanup_budget(elapsed):
+    from scripts.windows_ci.job_stop_observation import StopObservationAdapter
+    class NoRead:
+        def __getattr__(self,name):raise AssertionError('expired budget reached backend')
+    observer=StopObservationAdapter(1,2,cleanup_started=10,backend=NoRead(),clock=lambda:10+elapsed)
+    for stage in observer.STAGES:observer.capture(stage)
+    row=observer.finish()
+    assert row['status']=='FAIL' and row['reason']=='DEADLINE' and row['sample_count']==0
+
+
+def test_eng073_adapter_rejects_missing_before_termination_hook():
+    from scripts.windows_ci.job_stop_observation import StopObservationAdapter
+    observer=StopObservationAdapter(1,2,cleanup_started=10,backend=object(),clock=lambda:10)
+    observer.capture('AFTER_TERMINATE')
+    assert observer.finish()['reason']=='STAGE_REFUSED'
+
+
+def test_eng073_accounting_zero_hook_requires_actual_zero():
+    from scripts.windows_ci.job_stop_observation import StopObservationAdapter
+    class Backend:
+        def membership(self,*args):return True
+        def active_processes(self,*args):return 1
+        def signal(self,*args):return 'SIGNALED'
+    observer=StopObservationAdapter(1,2,cleanup_started=10,backend=Backend(),clock=lambda:10)
+    for stage in observer.STAGES:observer.capture(stage)
+    assert observer.finish()['reason']=='STAGE_REFUSED'
+
+
+def test_eng073_finish_rechecks_original_deadline_after_signal():
+    from scripts.windows_ci.job_stop_observation import StopObservationAdapter
+    class Backend:
+        def membership(self,*args):return True
+        def active_processes(self,*args):return 0
+        def signal(self,*args):return 'SIGNALED'
+    now=[10.]
+    observer=StopObservationAdapter(1,2,cleanup_started=10,backend=Backend(),clock=lambda:now[0])
+    for stage in observer.STAGES:observer.capture(stage)
+    now[0]=15.
+    row=observer.finish()
+    assert row['status']=='FAIL' and row['reason']=='DEADLINE'

@@ -122,3 +122,101 @@ def observe(process, job, *, cleanup_started, backend, clock=time.monotonic,
         return result('UNKNOWN', 'SAMPLE_LIMIT')
     except Exception:
         return result('UNKNOWN', 'READ_UNKNOWN')
+
+
+class StopObservationAdapter:
+    """Opt-in future hooks; never calls or replaces the caller's termination.
+
+    Construct with the single existing cleanup start, before termination. Call
+    capture at BEFORE_TERMINATE, AFTER_TERMINATE and ACCOUNTING_ZERO, then finish
+    before closing either held handle. Production stop_tree currently has no
+    such hooks, so this adapter is not wired into it. PASS applies only to the
+    caller-verified exact process, not job/tree completeness.
+    """
+    STAGES = ('BEFORE_TERMINATE', 'AFTER_TERMINATE', 'ACCOUNTING_ZERO')
+
+    def __init__(self, process, job, *, cleanup_started, backend,
+                 clock=time.monotonic, pause=time.sleep):
+        self.process, self.job = process, job
+        self.started, self.backend = cleanup_started, backend
+        self.clock, self.pause = clock, pause
+        self.samples, self.reason, self.next_stage = [], None, 0
+        if (type(process) is not int or not 0 < process <= MAX_HANDLE
+                or type(job) is not int or not 0 < job <= MAX_HANDLE
+                or type(cleanup_started) not in (int, float)
+                or not math.isfinite(cleanup_started)):
+            self.reason = 'INVALID_INPUT'
+
+    def _remaining(self):
+        now = self.clock()
+        if type(now) not in (int, float) or not math.isfinite(now) or now < self.started:
+            raise ValueError()
+        return self.started + CLEANUP_SECONDS - now
+
+    def _gate(self):
+        if self._remaining() <= 0:
+            self.reason = 'DEADLINE'
+            return False
+        return True
+
+    def _capture(self, stage):
+        if self.reason is not None:
+            return
+        if len(self.samples) >= MAX_SAMPLES:
+            self.reason = 'SAMPLE_LIMIT'
+            return
+        try:
+            if not self._gate():return
+            member = self.backend.membership(self.process, self.job)
+            if type(member) is not bool:raise ValueError()
+            if not self._gate():return
+            active = self.backend.active_processes(self.job)
+            if type(active) is not int or active < 0:raise ValueError()
+            if not self._gate():return
+            signal = self.backend.signal(self.process)
+            if type(signal) is not str or signal not in ('LIVE', 'SIGNALED', 'UNKNOWN'):
+                raise ValueError()
+            if not self._gate():return
+            self.samples.append({'stage': stage,
+                                 'membership': 'MEMBER' if member else 'NON_MEMBER',
+                                 'accounting': 'ZERO' if active == 0 else 'NONZERO',
+                                 'signal': signal})
+            if not member:self.reason = 'NON_MEMBER'
+            elif signal == 'UNKNOWN':self.reason = 'READ_UNKNOWN'
+            elif stage == 'ACCOUNTING_ZERO' and active != 0:
+                self.reason = 'STAGE_REFUSED'
+        except Exception:
+            self.reason = 'READ_UNKNOWN'
+
+    def capture(self, stage):
+        if (type(stage) is not str or self.next_stage >= len(self.STAGES)
+                or stage != self.STAGES[self.next_stage]):
+            self.reason = 'STAGE_REFUSED'
+            return
+        self.next_stage += 1
+        self._capture(stage)
+
+    def finish(self):
+        if self.next_stage != len(self.STAGES) and self.reason is None:
+            self.reason = 'STAGE_REFUSED'
+        if self.reason is None:
+            try:self._gate()
+            except Exception:self.reason = 'READ_UNKNOWN'
+        while self.reason is None:
+            last = self.samples[-1]
+            if last['accounting'] == 'ZERO' and last['signal'] == 'SIGNALED':
+                break
+            if len(self.samples) >= MAX_SAMPLES:
+                self.reason = 'SAMPLE_LIMIT'
+                break
+            try:
+                if not self._gate():break
+                self.pause(min(INTERVAL, self._remaining()))
+            except Exception:
+                self.reason = 'READ_UNKNOWN'
+                break
+            self._capture('AFTER_ACCOUNTING_ZERO')
+        return {'scope': 'EXACT_PROCESS_ONLY',
+                'status': 'PASS' if self.reason is None else 'FAIL',
+                'reason': self.reason or 'EXACT_PROCESS_SIGNALED',
+                'sample_count': len(self.samples), 'samples': list(self.samples)}

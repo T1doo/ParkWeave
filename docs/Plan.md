@@ -1,3 +1,7 @@
+## ENG073 只读决策包与实际本地产品体验
+
+owner保持暂停，新增LOG/STATE/原子临时对象及未启用FILES仅集中列范围与未知风险，无新权限动作或夜间提问。Job未接线三stage候选补零stage/最终deadline拒绝，65PASS4nativeSKIP；生产缺hook与精确descendant，Windows问题仍OPEN。实际Linux Chromium/API/worker/PG：同Case三角色资料→资源关联→分派接单→合成回执ACK→两轮本地关闭/重开/reload通过；另Case固定四步计划BLOCKED/失效/重验通过，均320/390无横溢出，不拼成同Case全验。新Run assignment由fixture owner在UI外准备，目标均未完成；最短体验与未完清单见[ENG073](F2/ENG073-DecisionPackageAndProductWalk.md)。不push/CI/deploy/LIVE，预算0，F1未签收/F2并行/R4关闭/Win11未验。
+
 ## ENG072 owner实际流程暂停与只读候选
 
 仅本地：默认native owner入口在construct/create前、原生backend注入及setter均OWNER_MUTATION_PAUSED；不扩大权限掩盖DACL/control拒绝。只读审查最小OWNER-only参数无DACLflags，mock证ACL slack可致storage不等，但实际ACE/controldelta及访问语义UNKNOWN，SACL未查询；严格全bytes/control仍保留。Job独立mock复现ActiveProcesses0→TreeStopped但kernelhandleLIVE，readonlymembership/signal候选原5s/8samples未wired，timeout/unrelated原生PASS保持，S4未验。PORT候选以固定base/ConnectionTimeout/OTHER与三goldbool定点，不称实际native subtype已知。最终312PASS6nativeSKIP、独立NO_BLOCKERS，collect1354≠全量PASS；无push/CI/LIVE/原生权限修改，不夜间提问。见[ENG072](F2/ENG072-OwnerPauseReadonlyCandidates.md)。
