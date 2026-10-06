@@ -1,0 +1,11 @@
+# ENG054：唯一有界观测Windows CI终态
+
+普通推送7596427→aa3dc550765d3a23d598b0e282dde6bfe84784eb，唯一原standard workflow [37470355894](https://github.com/T1doo/ParkWeave/actions/runs/37470355894)，push/attempt1，终态failure。没有manual dispatch/rerun/force、workflow或600/900改变。证据仅原Actions/jobs、check-run及安全annotations，未下载原日志。6PASS2FAIL1NOT_RUN、非PASS0遗漏；4条safe notice，最大938字节/总1896/1受信任去参数测试ID，各界限通过。细节见[evidence](evidence/eng054-single-observation-ci.json)。Setup/Doctor及字节保留通过仍为固定流程和完整非PASS集合推断，不宣称取得其直接PASS注释。
+
+Start创建2child，50请求，49解析响应/49完整readiness失配、1transport timeout、0refused/HTTP/other。最近解析响应mode/model为true、process比较false；不宣称49次均只有PID失配。两个启动child在请求前轮询RUNNING。当前代码没有单独证明process_id存在且正整数，响应者与Popen进程关系未观测，故不把redirector猜测当确证。原等式保持，不能直接接受任意后代PID或改health含义。两条cleanup记录STOPPED，主动停止后两个记录进程EXIT_NONZERO，foreign0；这是受管记录退出证据，不证明所有后代当时已退出。API/browser/restart因START_FAILED直接NOT_RUN。
+
+回归600秒监督触发TimeoutExpired、countsMISSING，快照elapsed597547ms，548个teardown已报告/收集1027/当前ordinal549。累计setup236089ms、call328544ms、teardown29238ms，合计593871ms，占快照elapsed99.38%。更支持累计预算耗尽，不能证明所有测试正常或排除未采样等待；548不是PASS。最后checkpoint为pytest_call/model_chain feedback第二工具不执行用例，phase_ms0/CLIENT47ms/checkpointage1359ms；不是该用例已失败或挂起。阶段CREATE42486/MIGRATE61467/SEED15710/GRANTS14851/DROP27734ms与pytest总时长重叠，禁止相加。
+
+第20且最后一个样本在elapsed572672ms，距快照24875ms，cost16ms；client与fixture连接0，idleTxn/lock/blocked0，fixture库1。这是离散时点，不是终态零资源或全程无锁。内回归Job和外native_suite均实际OWNED_TREE_STOPPED；outer692.187秒/exit1，无900timeout。PG Stop exit0/.218秒、状态exit0/.015秒；publish及PGStop步骤success。四个专用native Job性质没有逐项结果，仍INDIVIDUAL_RESULTS_UNAVAILABLE，不由整树cleanup推定PASS。
+
+两个独立review均确认上述边界。尚无已证实且保持现有PID判定的直接修法；下一项是原生受控PID类型/等式/祖先与受控命令关系核对，公开仍仅固定bool/enum，原判定/配置解释器/终止范围保持。另给固定互斥完整分片候选，保留每片600与原断言，任何缺片/失败/超时使汇总失败。均未自动实施新CI或安全变更。本次授权唯一CI已用完，后续测试需要新一轮明确范围。F1/F2未签收、Server非Win11、36AT6EX NOT_RUN、R4关闭、预算0和原环境/备份保留。

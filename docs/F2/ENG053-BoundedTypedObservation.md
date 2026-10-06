@@ -10,4 +10,4 @@
 
 首次体验文档已纠正当前回执重提→企业LOCAL_ACKNOWLEDGED→Case重验/关闭顺序，并明确Run assignment需owner受控fixture前置；四步计划与Case关闭脚本分开，不冒充冷启动完整V1或真实履约。下一可用切片复用现有API，将同一新Case的四步、通知、关闭/重开/重载串成向导及本地结果摘要，先不新增通用DAG或授权API。
 
-本次拟普通推送dev/f1-foundation并仅观察一次原standard Windows CI；实际终态另记，禁止由Linux结果声明Windows通过。F1未签收/F2仅并行探索、Server非Win11、36AT6EX NOT_RUN、R4关闭与预算0保持；原环境和恢复包保留。
+本次已普通推送aa3dc55至dev/f1-foundation，并观察唯一原standard Windows CI37470355894；failure终态见ENG054，禁止由Linux结果声明Windows通过。F1未签收/F2仅并行探索、Server非Win11、36AT6EX NOT_RUN、R4关闭与预算0保持；原环境和恢复包保留。
