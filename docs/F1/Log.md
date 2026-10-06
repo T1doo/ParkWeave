@@ -269,3 +269,7 @@ Server/Win11/browser原生NOT_RUN或BLOCKED、production R4 DISABLED、whole36AT
 保持唯一旧CI事实：9a8cbc527503ab55978a4b50612207d3bf72de26的37324704568 Prepare通过，native_suite78.094秒exit1，具体失败case未取得，根因UNKNOWN。本轮未取日志/重试被拒路线/改身份、push或新CI；Server不是Win11，当前原生结果NOT_RUN。
 
 同工作区只读6.1sol medium审查发现三处可代码证实的验收弱点并复核最小修正：suite Status必须确认两个自有服务；主/仅清理失败类别留在脱敏摘要；注入oracle改经实际应用渲染。不是旧CI根因定位。主代理本地Windows相关136PASS、YAML/13脚本AST/4Linux拒绝守卫和真实Linux渲染链PASS，全量594PASS/0FAIL/1WindowsSKIP；不是native PASS，不变更F1门或R4。详细[F2/ENG026说明](../F2/ENG026-SyncReadiness.md)。本轮本地提交收敛后停止，F1/F2未签收，Windows失败明细仍待用户。
+
+## ENG027 新标准Server CI终态（非Win11）
+
+普通推送已验证远端1baa2cf93f795dbf3036245b8f2ea2ec2ce15e56（已验证54fad8c及准确授权说明）。新CI37414981257 completed/failure：PreparePASS，native_suite79.235秒exit1未超时，owned临时cluster停止PASS。允许读取的check summary/text为空，注释无case；具体失败case/counts/根因仍UNKNOWN。信息请求更新为该新run Job Summary安全FAIL/NOT_RUN行，旧37324704568根因未猜测。未访问被拒日志路径、换身份/runner/Secrets或无证据修代码重跑。详细[F2/ENG027](../F2/ENG027-SyncCI.md)。F1/Win11未通过，R4关闭，真实模型预算0。

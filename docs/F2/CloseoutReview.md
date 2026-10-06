@@ -93,3 +93,11 @@ reviewer指出取消中途失败/单条confirm竞争/新表权限/精确11→12�
 冻结后全量594PASS/0FAIL/1WindowsSKIP/2既有WARN174.96秒，121源码hash一致；Windows相关本地136PASS，13 PowerShell AST/4拒绝守卫/YAML策略及真实Linux渲染链PASS。工具初次.venv无PyYAML与直接pwsh版本探针默认缓存只读失败保留，不当应用或Windows失败；最终使用已有系统解释器与工作区XDG隔离，无安装/改HOME/策略。31保护文件保留，仅2个验收文件明确变化；原V1源文/规格、产品代码与旧截图报告未改。
 
 唯一旧CI事实仍9a8cbc的37324704568 PreparePASS，native_suite78.094秒exit1，失败case/根因UNKNOWN。未重试日志下载/网络或换身份。同步判断、可复现实测入口及证据见[ENG026](ENG026-SyncReadiness.md)和[evidence/eng026-sync-readiness.json](evidence/eng026-sync-readiness.json)。当前push明确暂停且未比较实时远端；Windows验证缺口阻止宣称F1原生通过，原始F2剩余项阻止业务签收，不能混作已知源码同步漏洞。仅本地commit后结束，无push/newCI/备份/导出/上传/LIVE/provider/预算。
+
+## ENG027 普通dev同步与标准Server CI终态
+
+用户解除临时push/newCI暂停。原默认沙箱proxy8080无法连接；同一默认origin/代理/身份经工具正式网络批准后正常只读远端6ff160a，与11个本地积累提交完整快进。扫描无私人附件/运行期文件及凭据模式命中，121冻结源码hash保留；普通push成功并实时验证1baa2cf93f795dbf3036245b8f2ea2ec2ce15e56，含已验证54fad8c和授权说明文档。未force/main merge/付费runner/Secrets/代理身份变更。
+
+新标准CI37414981257精确head1baa2cf已completed/failure；Prepare成功，native_suite79.235秒exit1未超时，owned临时cluster停止成功。允许check摘要/text为空，注释无具体case；case/counts/根因UNKNOWN。未重试被拒日志下载，未根据相近耗时猜旧37324704568根因，未无证据修源码/重复CI。用户信息需求更新为新run Job Summary FAIL/NOT_RUN行（安全case/status/exit/category/counts）。细节见[ENG027](ENG027-SyncCI.md)及[evidence/eng027-sync-ci.json](evidence/eng027-sync-ci.json)。
+
+结果仅追加准确docs并普通同步，源码未变，不声明CI测试了后续docs commit。当前dev成果GitHub可见，CI仍红，F1F2未签收/Win11和whole36AT6EXNOT_RUN/R4关闭；0LIVE/部署/备份/导出/Library/provider/预算。

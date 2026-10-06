@@ -2,7 +2,7 @@
 
 ## ENG027 当前同步授权
 
-用户已解除ENG026的临时push/newCI暂停，恢复普通推送dev/f1-foundation及现有标准Windows Server CI；实际SHA/终态见[同步记录](ENG027-SyncCI.md)。旧ENG026未推送/暂停说明属于当时快照，不能当当前状态。未经精确远端验证不声称GitHub已更新，CI结果取得后据实记录；不force/merge main/deploy/LIVE，不重试被拒日志或换身份。F1F2/Win11/R4门槛保持。
+普通同步已完成：精确代码push头1baa2cf93f795dbf3036245b8f2ea2ec2ce15e56（含已验证54fad8c）。标准Server CI37414981257终态FAIL：Prepare成功、native_suite79.235秒exit1、owned cluster停止成功；具体case仍UNKNOWN。实际证据见[同步记录](ENG027-SyncCI.md)。旧ENG026未推送/暂停说明属于当时快照，不能当当前状态。未经精确远端验证不声称GitHub已更新，CI结果取得后据实记录；不force/merge main/deploy/LIVE，不重试被拒日志或换身份。F1F2/Win11/R4门槛保持。
 
 当前收敛基线：本地 `2fddccae02a27818e3632cfca7676104e6eb3569`（ENG025）。原V1《分阶段开发计划》F2-T01—T07及产品§3、5.2—5.5是来源；原文/验收规格未改。下表是实际子集，不是阶段或整项AT签收：F1未签收、F2准入NOT_PASSED、R4关闭，PR0-alpha未完成。
 
@@ -28,6 +28,6 @@
 
 [FirstUse](FirstUse.md)给出当前产品UI步骤；[ENG026同步前收敛说明](ENG026-SyncReadiness.md)列出仓库实际CLI入口、所需本地fixture/合法分配、提交链及检查限制。ENG025冻结源全量584PASS/0FAIL/1WindowsSKIP、95页面时序检查；本轮Windows验收脚本窄修复的独立结果见ENG026，不复用旧数字当新测试。
 
-截至ENG026结束，本地缓存origin/dev/f1-foundation为6ff160a，积累11个本地提交尚未推送；该历史缓存不是实时GitHub状态。ENG027已恢复授权，并正常读取实时远端仍6ff160a，确认快进关系；实际同步SHA/CI终态据同步记录后记。仍不force/reset丢代码、不备份/导出/上传/LIVE。
+截至ENG026结束，本地缓存origin/dev/f1-foundation为6ff160a，积累11个本地提交尚未推送；该历史缓存不是实时GitHub状态。ENG027已恢复授权，并正常读取实时远端仍6ff160a，确认快进关系；普通同步精确验证1baa2cf，标准ServerCI37414981257FAIL，具体case待用户，详见同步记录。仍不force/reset丢代码、不备份/导出/上传/LIVE。
 
-Windows唯一已知事实：旧源码9a8cbc527503ab55978a4b50612207d3bf72de26的CI37324704568 Prepare通过，native_suite78.094秒退出1，失败case/日志未取得。原生Server当前结果和根因UNKNOWN，不能用Linux模拟/AST替代；Server不是Win11。F1/F2未签收、R4关闭、36AT/6EX NOT_RUN；Windows失败明细仍待用户，不能用猜测替代。
+旧Windows事实：源码9a8cbc527503ab55978a4b50612207d3bf72de26的CI37324704568 Prepare通过，native_suite78.094秒退出1，失败case/日志未取得。新标准Server CI37414981257已对同步1baa2cf执行并FAIL：Prepare通过、native_suite79.235秒exit1未超时、owned cluster停止通过；case与根因仍UNKNOWN，不能用Linux模拟/AST替代。Server不是Win11。F1/F2未签收、R4关闭、36AT/6EX NOT_RUN；Windows失败明细仍待用户，不能用猜测替代。
