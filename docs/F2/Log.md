@@ -1,3 +1,7 @@
+## ENG071 单次原生根因已收敛，S4预算缺口保留
+
+普通FF推送已审ENG070链及观测2339a4d；唯一run37518589501 attempt1终态FAIL，20分49秒。Restart明确SERVICE_LOG owner mismatch；SESSION/CONFIG owner已same但DACL/control变而PERMISSIONS_COMPARE拒绝。最小Job normal primary17及unrelatedexactLIVE通过，descendant仍LIVE与TreeStopped冲突；timeout三goldPASS，旧fixture独立2PASS但S4未完整不关闭专项。HTTP四gold及S3整片PASS；PORT收敛DATABASE_GOLD，ConnectionTimeout类别fixture候选受控复现，实际子类型/具体assert仍UNKNOWN。965/2/54仅完整前三片1021，S4TimeoutExpired/countNULL/coverageFalse，不能说7→2全闭环。外层Job各TreeStopped、PGStop0、最后Stop SUCCESS，不能盖专项LIVE。见[ENG071](ENG071-SingleNativeRootCauseMeasurement.md)，新log/STATE/tmp/未启用FILES完整scope清单已只读汇总，未改新增/既有owner/ACL，不夜间问用户，无第二CI/LIVE；F1未签收/F2并行/R4关闭/Server非Win11。
+
 # F2并行工程日志
 
 ## ENG070 本地根因收敛；权限边界不扩张
