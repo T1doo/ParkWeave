@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   server-engineering:
-    name: Server 2025 / Python 3.12 x64 / native PG17 (not Win11 acceptance)
+    name: Server 2025 / Python 3.12 x64 / isolated Job measurement (not Win11)
     runs-on: windows-2025
     timeout-minutes: 25
     defaults:
@@ -46,23 +46,18 @@ jobs:
         with:
           python-version: '3.12'
           architecture: 'x64'
-      - name: Prepare fresh native loopback PostgreSQL and Python
-        run: ./scripts/windows_ci/Engineering.ps1 -Action Prepare
-      - name: Native lifecycle and local browser within shared job budget
-        run: ./scripts/windows_ci/Engineering.ps1 -Action Lifecycle
-      - name: Fixed native failure stages within original shared budget
-        if: always()
+      - name: Independent controlled Job measurement without owner helpers
         timeout-minutes: 2
         run: |
-          & .\.venv-windows\Scripts\python.exe scripts/windows_ci/native_failure_oracles.py
-      - name: Independent Server guard and four sequential regression shards
-        if: always()
-        run: ./scripts/windows_ci/Engineering.ps1 -Action Validation
-      - name: Publish bounded current-run engineering diagnostics
-        if: always()
-        run: ./scripts/windows_ci/Engineering.ps1 -Action Publish
-      - name: Stop only the owned temporary cluster
-        if: always()
-        run: ./scripts/windows_ci/Engineering.ps1 -Action Stop
-# LOCAL CANDIDATE ONLY. Do not push/CI until capacity is reviewed.
-# No workflow_dispatch-only dependency on main, paid runner, cache or artifact upload.
+          $ErrorActionPreference='Stop'
+          $os=Get-CimInstance Win32_OperatingSystem
+          if ($os.Caption -notmatch 'Windows Server 2025' -or $os.ProductType -eq 1) {
+            throw 'NATIVE_SERVER_PLATFORM_REQUIRED'
+          }
+          if (!(Test-Path -LiteralPath '.runtime')) {
+            New-Item -ItemType Directory -Path '.runtime' -ErrorAction Stop | Out-Null
+          }
+          # Ordinary exclusive fixture creation only; no SetOwner/Set-Acl.
+          # No Engineering.ps1, PostgreSQL, app, pip, model or artifact upload.
+          & python -m scripts.windows_ci.controlled_job_measurement --run-controlled
+          if ($LASTEXITCODE -ne 0) { throw 'CONTROLLED_JOB_MEASUREMENT_NOT_PASSED' }
