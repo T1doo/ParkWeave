@@ -318,3 +318,30 @@ def test_start_cleanup_refusal_preserves_record_and_readiness_failure(tmp_path,m
     row=diagnostic.parse(diagnostic.command('start',failure.value),'start')
     assert row['boundary_phase']=='health_readiness' and row['boundary_reason']=='READINESS_TIMEOUT'
     assert row.get('cleanup_category')==('BoundaryError' if refused else None)
+
+
+def test_identity_refusal_schema_rejects_private_fields_and_inconsistent_context():
+    good={'stage':'ROOT_PIN','reason':'CTIME_MISMATCH'}
+    assert diagnostic.validate_identity_refusal(good)==good
+    for bad in [dict(good,pid=901),dict(good,message=POISON),dict(good,stage=POISON),dict(good,reason=POISON),dict(good,reason=True),{'stage':'ROOT_PIN'}]:
+        with pytest.raises(ValueError):diagnostic.validate_identity_refusal(bad)
+    error=lifecycle.BoundaryError('fixed')
+    error.parkweave_identity_refusal=good
+    assert diagnostic.parse(diagnostic.command('stop',error),'stop')['identity_refusal']==good
+    assert 'identity_refusal' not in diagnostic.parse(diagnostic.command('doctor',error),'doctor')
+
+
+def test_lifecycle_identity_worst_bound_preserves_primary_and_cleanup():
+    from server_identity import REFUSAL_STAGES,REFUSAL_REASONS
+    identity={'stage':max(REFUSAL_STAGES,key=len),'reason':max(REFUSAL_REASONS,key=len)}
+    obs={**{k:0 for k in diagnostic.START_SMALL|diagnostic.START_COUNTS},**{k:'EXIT_NONZERO' for k in diagnostic.START_STATE_KEYS},
+         'created':2,'cleanup_attempted':2,'foreign':2,'attempts':50,'responses':50,'mismatches':50,'last':'HEALTH_MISMATCH',
+         'mode_matches':True,'model_matches':True,'process_matches':False,'server_pid_valid':True,'server_relation':'REFUSED','identity_refusal':identity}
+    primary=lifecycle.BoundaryError('fixed','READINESS_TIMEOUT');primary.parkweave_lifecycle_phase='health_readiness'
+    primary.parkweave_start_observation=obs;primary.parkweave_identity_refusal=identity
+    cleanup=lifecycle.BoundaryError('fixed');cleanup.parkweave_identity_refusal=identity;cleanup.parkweave_lifecycle_primary=diagnostic.failure(primary)
+    marker=diagnostic.command('start',cleanup)
+    assert len((marker+'\n').encode('ascii'))<=1024
+    row=diagnostic.parse(marker,'start')
+    assert row['boundary_reason']=='READINESS_TIMEOUT' and row['identity_refusal']==identity and row['cleanup_identity_refusal']==identity
+    assert row['start_observation']['identity_refusal']==identity

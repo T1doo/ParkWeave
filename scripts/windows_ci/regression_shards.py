@@ -24,6 +24,9 @@ def save(path, value):
     try:
         temporary.write_text(json.dumps(value, ensure_ascii=True, separators=(',', ':')) + '\n', encoding='ascii')
         os.replace(temporary, path)
+    except OSError as error:
+        error.acceptance_failure_stage='REPORT_WRITE';error.acceptance_failure_reason='REPORT_WRITE_FAILED'
+        raise
     finally:
         temporary.unlink(missing_ok=True)
 
@@ -44,31 +47,42 @@ def case_key(nodeid, indices):
     return json.dumps([nodeid.split('[', 1)[0], sorted(indices.items())], separators=(',', ':'))
 
 
-def validate_manifest(root, path):
+class ManifestRejected(ValueError):
+    def __init__(self,reason,message):
+        super().__init__(message);self.acceptance_failure_stage='MANIFEST';self.acceptance_failure_reason=reason
+
+
+def validate_manifest(root, path, *, with_hashes=False):
     root = Path(root)
-    manifest = json.loads(Path(path).read_text(encoding='utf-8'))
+    try:
+        manifest = json.loads(Path(path).read_text(encoding='utf-8'))
+    except (OSError, UnicodeError) as error:raise ManifestRejected('MANIFEST_READ_FAILED','manifest unavailable') from error
+    except (ValueError,TypeError) as error:raise ManifestRejected('MANIFEST_SCHEMA_REFUSED','manifest schema refused') from error
+    if not isinstance(manifest,dict):raise ManifestRejected('MANIFEST_SCHEMA_REFUSED','manifest schema refused')
     shards = manifest.get('shards')
-    if not isinstance(shards, list) or [s.get('id') for s in shards] != ['S1', 'S2', 'S3', 'S4']:
-        raise ValueError('four fixed shard identities required')
+    if not isinstance(shards, list) or any(not isinstance(s,dict) for s in shards) or [s.get('id') for s in shards] != ['S1', 'S2', 'S3', 'S4']:
+        raise ManifestRejected('MANIFEST_SCHEMA_REFUSED','four fixed shard identities required')
     files = []
     for shard in shards:
         selected = shard.get('files')
         if not isinstance(selected, list) or not selected:
-            raise ValueError('nonempty shard files required')
+            raise ManifestRejected('MANIFEST_SCHEMA_REFUSED','nonempty shard files required')
         for name in selected:
             if not isinstance(name, str) or not re.fullmatch(r'tests/test_[a-z0-9_]+\.py', name):
-                raise ValueError('fixed test file required')
+                raise ManifestRejected('MANIFEST_SCHEMA_REFUSED','fixed test file required')
             files.append(name)
     actual = {str(p.relative_to(root)).replace('\\', '/') for p in (root / 'tests').rglob('test_*.py')}
     if len(set(files)) != len(files) or set(files) != actual:
-        raise ValueError('shards must partition all current test files')
+        raise ManifestRejected('MANIFEST_SOURCE_SET_MISMATCH','shards must partition all current test files')
     hashes = manifest.get('source_file_sha256')
-    if not isinstance(hashes, dict) or set(hashes) != set(files):
-        raise ValueError('complete file fingerprint required')
-    if any(hashlib.sha256((root / name).read_bytes()).hexdigest() != hashes[name] for name in files):
-        raise ValueError('test file fingerprint changed')
+    if not isinstance(hashes, dict) or set(hashes) != set(files) or any(not isinstance(v,str) or not re.fullmatch(r'[0-9a-f]{64}',v) for v in hashes.values()):
+        raise ManifestRejected('MANIFEST_SCHEMA_REFUSED','complete file fingerprint required')
+    try:
+        mismatch=any(hashlib.sha256((root/name).read_bytes()).hexdigest()!=hashes[name] for name in files)
+    except OSError as error:raise ManifestRejected('MANIFEST_READ_FAILED','test source unavailable') from error
+    if mismatch:raise ManifestRejected('MANIFEST_HASH_MISMATCH','test file fingerprint changed')
     # Historical counts/weights never define current test coverage.
-    return shards
+    return (shards,hashes) if with_hashes else shards
 
 
 def collection(path, allowed):
@@ -149,7 +163,7 @@ def run_command(command, *, root, env, stdout, stderr, timeout):
 
 
 def execute(root, executable, manifest, private, report, *, env, progress=None,
-            total_seconds=900, runner=run_command, clock=time.monotonic, deadline=None, uptime_deadline=None):
+            total_seconds=900, runner=run_command, clock=time.monotonic, deadline=None, uptime_deadline=None, source_head=None):
     """Sequential candidate within a fixed total budget, including collection.
 
     Default total remains <=900; an explicit job cutoff bounds staged execution.
@@ -162,14 +176,23 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
             from .job_budget import JobBudget
         except ImportError:
             from job_budget import JobBudget
-        job = JobBudget(deadline,uptime_deadline=uptime_deadline)
+        try:job = JobBudget(deadline,uptime_deadline=uptime_deadline)
+        except Exception as error:
+            error.acceptance_failure_stage='JOB_BUDGET';error.acceptance_failure_reason='JOB_BUDGET_REFUSED'
+            raise
         total_seconds = min(total_seconds, job.remaining())
     if type(total_seconds) not in (int, float) or not (0 <= total_seconds if deadline is not None else 0 < total_seconds) or total_seconds > (1290 if deadline is not None else 900):
         raise ValueError('existing 900-second maximum required')
     root, private, report = Path(root), Path(private), Path(report)
     private.mkdir(parents=True, exist_ok=True)
     started = clock()
-    shards = validate_manifest(root, manifest)
+    shards,validated_hashes = validate_manifest(root, manifest,with_hashes=True)
+    if source_head is not None:
+        try:
+            from .source_bytes import verify_head_test_sources
+        except ImportError:
+            from source_bytes import verify_head_test_sources
+        verify_head_test_sources(root,source_head,validated_hashes)
     rows = [{'id': s['id'], 'status': 'NOT_RUN', 'reason': 'NOT_STARTED', 'expected_cases': None,
              'counts': {'PASS': 0, 'FAIL': 0, 'SKIP': 0}} for s in shards]
     all_cases = []
@@ -197,6 +220,7 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
                  'shards': rows, 'private_junit': str(aggregate_junit.relative_to(root)),
                  'elapsed_seconds': round(clock() - started, 3), 'total_budget_seconds': total_seconds,
                  'per_shard_max_seconds': 600,
+                 'source_blobs_verified':source_head is not None,
                  'capacity': ('900 seconds cannot guarantee full completion; historical partial Windows trend ~1120 seconds is not a prediction' if deadline is None else
                               'Shared job test cutoff bounds all shards; 1290-second inner envelope does not guarantee complete coverage')}
         if collection_category is not None: value['collection_category'] = collection_category
@@ -208,8 +232,14 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
             case = ET.SubElement(suite, 'testcase', classname=Path(file).stem, name=name)
             if status == 'FAIL': ET.SubElement(case, 'failure')
             elif status == 'SKIP': ET.SubElement(case, 'skipped')
-        ET.ElementTree(suite).write(aggregate_junit, encoding='utf-8', xml_declaration=True)
-        save(report, value)
+        try:
+            ET.ElementTree(suite).write(aggregate_junit, encoding='utf-8', xml_declaration=True)
+            save(report, value)
+        except OSError as error:
+            error.acceptance_failure_stage='REPORT_WRITE'
+            error.acceptance_failure_reason='REPORT_WRITE_FAILED'
+            error.acceptance_report_context=value
+            raise
         return value
 
     def invoke(files, collect=False):

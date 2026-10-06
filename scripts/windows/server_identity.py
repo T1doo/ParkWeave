@@ -7,11 +7,25 @@ from contextlib import ExitStack
 from pathlib import Path
 
 KERNEL_TIME_TOLERANCE = 0.000010
+REFUSAL_STAGES = frozenset({'ROOT_POLICY','ROOT_SNAPSHOT','BORROWED','ROOT_PIN','CHILD_SNAPSHOT','CHILD_POLICY','CHILD_PIN','RECHECK','CLOSE','UNKNOWN'})
+REFUSAL_REASONS = frozenset({'POLICY_REFUSED','RECORD_MISMATCH','UNAVAILABLE','OPEN_FAILED','PID_MISMATCH','CTIME_MISMATCH','NOT_LIVE','READ_FAILED','PARENT_MISMATCH','CREATION_WINDOW_REFUSED','IDENTITY_CHANGED','CLOSE_FAILED','CHECK_FAILED','ORPHAN_REFUSED','AMBIGUOUS'})
+
+
+def validate_identity_refusal(value):
+    if not isinstance(value,dict) or set(value)!={'stage','reason'} or not isinstance(value['stage'],str) or value['stage'] not in REFUSAL_STAGES or not isinstance(value['reason'],str) or value['reason'] not in REFUSAL_REASONS:
+        raise ValueError('invalid identity refusal')
+    return dict(value)
+
+
+def refusal(stage, reason='CHECK_FAILED'):
+    return {'stage':stage if isinstance(stage,str) and stage in REFUSAL_STAGES else 'UNKNOWN',
+            'reason':reason if isinstance(reason,str) and reason in REFUSAL_REASONS else 'CHECK_FAILED'}
 
 
 class IdentityRefused(Exception):
-    def __init__(self):
+    def __init__(self, reason='CHECK_FAILED'):
         super().__init__('SERVER_IDENTITY_REFUSED')
+        self.reason = reason if isinstance(reason,str) and reason in REFUSAL_REASONS else 'CHECK_FAILED'
 
 
 def positive_pid(value):
@@ -45,7 +59,7 @@ class WindowsBackend:
     def open(self, pid):
         handle = self.kernel.OpenProcess(0x1000 | 0x100000, False, pid)
         if not handle:
-            raise IdentityRefused()
+            raise IdentityRefused('OPEN_FAILED')
         return handle
 
     def creation_handle(self, process):
@@ -56,25 +70,25 @@ class WindowsBackend:
         # subprocess.Popen. _proc is the psutil platform object, not Popen.
         handle = process._handle
         if isinstance(handle, bool) or not handle or int(handle) <= 0:
-            raise IdentityRefused()
+            raise IdentityRefused('UNAVAILABLE')
         return int(handle)
 
     def identity(self, handle):
         pid = self.kernel.GetProcessId(handle)
         times = [self.FILETIME() for _ in range(4)]
         if not pid or not self.kernel.GetProcessTimes(handle, *(ctypes.byref(t) for t in times)):
-            raise IdentityRefused()
+            raise IdentityRefused('READ_FAILED')
         ticks = (times[0].dwHighDateTime << 32) | times[0].dwLowDateTime
         # Subtract the epoch before float conversion, preserving sub-microsecond precision.
         created = (ticks - 116444736000000000) / 10000000
         wait = self.kernel.WaitForSingleObject(handle, 0)
         if wait not in (0, 258):
-            raise IdentityRefused()
+            raise IdentityRefused('READ_FAILED')
         return pid, created, wait == 258
 
     def close(self, handle):
         if not self.kernel.CloseHandle(handle):
-            raise IdentityRefused()
+            raise IdentityRefused('CLOSE_FAILED')
 
 
 class PinnedProcess:
@@ -91,9 +105,12 @@ class PinnedProcess:
             raise IdentityRefused()
         if self.handle is None:
             raise IdentityRefused()
-        pid, created, alive = self.backend.identity(self.handle)
-        if not positive_pid(pid) or pid != self.pid or not creation_time(created) or abs(created - self.created) > KERNEL_TIME_TOLERANCE or type(alive) is not bool or (require_live and not alive):
-            raise IdentityRefused()
+        try:pid, created, alive = self.backend.identity(self.handle)
+        except Exception:raise IdentityRefused('READ_FAILED') from None
+        if not positive_pid(pid) or pid != self.pid:raise IdentityRefused('PID_MISMATCH')
+        if not creation_time(created) or abs(created - self.created) > KERNEL_TIME_TOLERANCE:raise IdentityRefused('CTIME_MISMATCH')
+        if type(alive) is not bool:raise IdentityRefused('READ_FAILED')
+        if require_live and not alive:raise IdentityRefused('NOT_LIVE')
         self.alive = alive
         return self
 
@@ -103,7 +120,8 @@ class PinnedProcess:
         if self.backend is None:
             self.backend = WindowsBackend()
         try:
-            self.handle = self.backend.open(self.pid)
+            try:self.handle = self.backend.open(self.pid)
+            except Exception:raise IdentityRefused('OPEN_FAILED') from None
             return self.verify()
         except BaseException as error:
             if self.handle is not None:
@@ -113,7 +131,7 @@ class PinnedProcess:
                 except Exception:
                     pass
             if isinstance(error, Exception):
-                raise IdentityRefused() from None
+                raise IdentityRefused(error.reason if isinstance(error,IdentityRefused) else 'CHECK_FAILED') from None
             raise
 
     def __exit__(self, kind, value, traceback):
@@ -122,7 +140,9 @@ class PinnedProcess:
             try:
                 self.backend.close(handle)
             except Exception:
-                raise IdentityRefused() from None
+                # An existing refusal remains the primary branch. A close error
+                # on an otherwise successful body still forbids acceptance.
+                if kind is None:raise IdentityRefused('CLOSE_FAILED') from None
 
 
 def _snapshot(process):
@@ -139,34 +159,44 @@ def bind_server(root, record, health_pid, repo, *, identify,
     identify must be the lifecycle's unchanged identify_process, including its
     trusted_command check. Only the reported PID is opened; no enumeration.
     """
+    current_stage='ROOT_POLICY'
     try:
         if not positive_pid(health_pid) or not isinstance(record, dict):
-            raise IdentityRefused()
+            raise IdentityRefused('POLICY_REFUSED')
         if not positive_pid(record['pid']) or not creation_time(record['created']) or not isinstance(record['command'], list) or not all(isinstance(arg, str) for arg in record['command']):
-            raise IdentityRefused()
+            raise IdentityRefused('RECORD_MISMATCH')
         if not identify(root, record, repo):
-            raise IdentityRefused()
+            raise IdentityRefused('POLICY_REFUSED')
+        current_stage='ROOT_SNAPSHOT'
         before = _snapshot(root)
         if before[0] != record['pid'] or abs(before[1] - record['created']) > KERNEL_TIME_TOLERANCE:
-            raise IdentityRefused()
+            raise IdentityRefused('RECORD_MISMATCH')
         if before[2] != str(Path(repo).resolve()) or before[3] != tuple(record['command']):
-            raise IdentityRefused()
+            raise IdentityRefused('RECORD_MISMATCH')
+        current_stage='ROOT_PIN'
         if backend is None:
             backend = WindowsBackend()
-        borrowed = backend.creation_handle(root)
+        current_stage='BORROWED'
+        try:borrowed = backend.creation_handle(root)
+        except Exception:raise IdentityRefused('UNAVAILABLE') from None
         def verify_borrowed():
             if borrowed is not None:
-                pid, created, alive = backend.identity(borrowed)
-                if not positive_pid(pid) or pid != before[0] or not creation_time(created) or abs(created-record['created']) > KERNEL_TIME_TOLERANCE or alive is not True:
-                    raise IdentityRefused()
+                try:pid, created, alive = backend.identity(borrowed)
+                except Exception:raise IdentityRefused('READ_FAILED') from None
+                if not positive_pid(pid) or pid != before[0]:raise IdentityRefused('PID_MISMATCH')
+                if not creation_time(created) or abs(created-record['created']) > KERNEL_TIME_TOLERANCE:raise IdentityRefused('CTIME_MISMATCH')
+                if type(alive) is not bool:raise IdentityRefused('READ_FAILED')
+                if alive is not True:raise IdentityRefused('NOT_LIVE')
         verify_borrowed()
         with ExitStack() as stack:
+            current_stage='ROOT_PIN'
             root_pin = stack.enter_context(PinnedProcess(before[0], record['created'], backend))
             child_record = None
             if health_pid == before[0]:
                 relation = 'ROOT'
                 candidate, candidate_before, candidate_pin = root, before, root_pin
             else:
+                current_stage='CHILD_SNAPSHOT'
                 if process_factory is None:
                     import psutil
                     process_factory = psutil.Process
@@ -174,25 +204,33 @@ def bind_server(root, record, health_pid, repo, *, identify,
                 candidate_before = _snapshot(candidate)
                 bound_at = clock()
                 if not creation_time(bound_at) or candidate_before[0] != health_pid:
-                    raise IdentityRefused()
-                if candidate_before[4] != before[0] or not before[1] <= candidate_before[1] <= min(bound_at, before[1] + 60):
-                    raise IdentityRefused()
+                    raise IdentityRefused('RECORD_MISMATCH')
+                if candidate_before[4] != before[0]:raise IdentityRefused('PARENT_MISMATCH')
+                if not before[1] <= candidate_before[1] <= min(bound_at, before[1] + 60):raise IdentityRefused('CREATION_WINDOW_REFUSED')
+                current_stage='CHILD_POLICY'
                 if candidate_before[2:4] != before[2:4]:
-                    raise IdentityRefused()
+                    raise IdentityRefused('POLICY_REFUSED')
                 child_record = {'pid': health_pid, 'created': candidate_before[1],
                                 'command': list(record['command']), 'parent_pid': before[0],
                                 'parent_created': record['created']}
                 if not identify(candidate, child_record, repo):
-                    raise IdentityRefused()
+                    raise IdentityRefused('POLICY_REFUSED')
+                current_stage='CHILD_PIN'
                 candidate_pin = stack.enter_context(PinnedProcess(health_pid, candidate_before[1], backend))
                 relation = 'DIRECT_CHILD'
+            current_stage='RECHECK'
             if _snapshot(root) != before or _snapshot(candidate) != candidate_before:
-                raise IdentityRefused()
+                raise IdentityRefused('IDENTITY_CHANGED')
             if not identify(root, record, repo) or (child_record is not None and not identify(candidate, child_record, repo)):
-                raise IdentityRefused()
+                raise IdentityRefused('POLICY_REFUSED')
+            current_stage='ROOT_PIN'
             root_pin.verify()
+            current_stage='ROOT_PIN' if child_record is None else 'CHILD_PIN'
             candidate_pin.verify()
+            current_stage='BORROWED'
             verify_borrowed()
+            current_stage='CLOSE'
         return {'relation': relation, 'server': child_record}
-    except Exception:
-        return {'relation': 'REFUSED', 'server': None}
+    except Exception as error:
+        reason=error.reason if isinstance(error,IdentityRefused) else 'CHECK_FAILED'
+        return {'relation': 'REFUSED', 'server': None,'identity_refusal':refusal(current_stage,reason)}

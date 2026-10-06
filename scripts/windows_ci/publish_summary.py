@@ -5,9 +5,9 @@ from pathlib import Path
 import re
 import stat
 import sys
-from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,TREE_CLEANUP,_allowed_tests,browser_summary
+from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,TREE_CLEANUP,_allowed_tests,browser_summary,acceptance_failure,source_binding,ACCEPTANCE_REASONS
 from summary_report import SCHEMA,ROOT_PATTERN,current_binding
-from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES,ACL_OBJECTS,start_observation
+from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES,ACL_OBJECTS,start_observation,validate_identity_refusal
 from regression_progress import PHASES as REGRESSION_PHASES,observation as regression_observation
 from stage_result import read_command, failure as command_failure
 
@@ -18,6 +18,7 @@ MAX_ANNOTATION_BYTES=2048  # Entire UTF-8 workflow command, including final LF.
 MAX_ANNOTATION_TOTAL_BYTES=16*1024
 CASES=frozenset({'suite_initialization','suite_exception','lifecycle_exception','final_Stop_owned_services','full_engineering_regression','Win11_guard_refuses_Server','separate_Server_candidate_oracles','Setup_native','Setup_refuses_existing_config','config_sessions_preserved','Doctor_native','Start_native','Status_native','actual_API_worker_local_case','Stop_native','Restart_native','data_read_after_restart','native_local_browser','API_browser_restart','lifecycle_API_browser'})
 REASONS=frozenset({'OWNED_STATUS_NOT_CONFIRMED','START_FAILED','SETUP_FAILED','TOTAL_BUDGET_EXHAUSTED','CLEANUP_NOT_CONFIRMED','VALIDATION_NOT_COMPLETED'})
+REASONS=REASONS|frozenset(reason for values in ACCEPTANCE_REASONS.values() for reason in values)|{'SOURCE_BINDING_UNAVAILABLE','SOURCE_BINDING_MISMATCH'}
 STATES=frozenset({'UNAVAILABLE','AVAILABLE','JUNIT_PATH_REFUSED','ALLOWLIST_UNAVAILABLE','JUNIT_MISSING','JUNIT_UNREADABLE_OR_OVERSIZE','JUNIT_FORMAT_REFUSED','JUNIT_INVALID','JUNIT_CASE_LIMIT','REPORT_MISSING'})
 
 
@@ -78,7 +79,14 @@ def project(record,binding):
         if 'start_observation' in row:
             if row['case']!='Start_native':raise ValueError('invalid start observation case')
             public['start_observation']=start_observation(row['start_observation'])
+        for key in ('identity_refusal','cleanup_identity_refusal'):
+            if key in row:
+                if key=='identity_refusal' and row['case'] not in ('Start_native','Stop_native','final_Stop_owned_services'):raise ValueError('invalid identity case')
+                if key=='cleanup_identity_refusal' and (row['case']!='Start_native' or 'cleanup_category' not in row):raise ValueError('invalid cleanup identity case')
+                public[key]=validate_identity_refusal(row[key])
         if row['case']=='full_engineering_regression':
+            if 'acceptance_failure' in row:public['acceptance_failure']=acceptance_failure(row['acceptance_failure'])
+            if 'source_binding' in row:public['source_binding']=source_binding(row['source_binding'])
             if 'regression_observation' in row:public['regression_observation']=regression_observation(row['regression_observation'])
             if 'owned_tree_cleanup' in row:
                 if not isinstance(row['owned_tree_cleanup'],str) or row['owned_tree_cleanup'] not in TREE_CLEANUP:raise ValueError('invalid tree cleanup')
@@ -177,6 +185,15 @@ def annotation_case(row,allowed):
     for key,case,validator in (('start_observation','Start_native',start_observation),('regression_observation','full_engineering_regression',regression_observation)):
         if key in row:
             if row['case']!=case:raise ValueError('invalid observation case')
+            value[key]=validator(row[key])
+    for key in ('identity_refusal','cleanup_identity_refusal'):
+        if key in row:
+            if key=='identity_refusal' and row['case'] not in ('Start_native','Stop_native','final_Stop_owned_services'):raise ValueError('invalid identity case')
+            if key=='cleanup_identity_refusal' and (row['case']!='Start_native' or 'cleanup_category' not in row):raise ValueError('invalid cleanup identity case')
+            value[key]=validate_identity_refusal(row[key])
+    for key,validator in (('acceptance_failure',acceptance_failure),('source_binding',source_binding)):
+        if key in row:
+            if row['case']!='full_engineering_regression':raise ValueError('invalid acceptance metadata case')
             value[key]=validator(row[key])
     if 'owned_tree_cleanup' in row:
         if row['case']!='full_engineering_regression' or not isinstance(row['owned_tree_cleanup'],str) or row['owned_tree_cleanup'] not in TREE_CLEANUP:raise ValueError('invalid tree cleanup')

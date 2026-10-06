@@ -27,7 +27,7 @@ from regression_progress import read_snapshot as regression_snapshot
 from owned_job import run as run_owned_job
 
 
-def run_regression(managed, report, progress, env, *, shards=None, budget=600, deadline=None, uptime_deadline=None):
+def run_regression(managed, report, progress, env, *, shards=None, budget=600, deadline=None, uptime_deadline=None, source_head=None):
     if shards is not None:
         if deadline is not None and uptime_deadline is None:raise ValueError('shared uptime cutoff required')
         ceiling=900 if deadline is None else JobBudget(deadline,uptime_deadline=uptime_deadline).remaining()
@@ -35,7 +35,9 @@ def run_regression(managed, report, progress, env, *, shards=None, budget=600, d
             result=subprocess.CompletedProcess([],1);result.not_run_reason='TOTAL_BUDGET_EXHAUSTED'
             return result
         if not 0<budget<=ceiling:raise ValueError('bounded regression budget required')
-    command=[str(managed),'scripts/run_acceptance.py','--progress',str(progress),'--report',str(report)]
+    command=[str(managed),'scripts/run_acceptance.py','--progress',str(progress)]
+    if source_head is not None:command.extend(['--source-head',source_head])
+    command.extend(['--report',str(report)])
     if shards is not None:command.extend(['--shards',str(shards),'--shard-budget',str(budget)])
     else:budget=600
     if deadline is not None:command.extend(['--job-test-deadline',str(deadline),'--job-test-uptime',str(uptime_deadline)])
@@ -130,6 +132,9 @@ def main():
             if observation is not None:rows[-1]['start_observation']=observation
         if not ok and label in ('Doctor_native','Start_native','Setup_native'):
             rows[-1].update(lifecycle_failure(proc.stdout,path.stem.lower()))
+        if not ok and label in ('Stop_native','final_Stop_owned_services'):
+            stop=lifecycle_failure(proc.stdout,'stop')
+            rows[-1].update({key:stop[key] for key in ('identity_refusal','category') if key in stop})
         if proc.returncode==expected and validate is not None and not ok:rows[-1]['reason']='OWNED_STATUS_NOT_CONFIRMED'
         checkpoint('final_stop' if label=='final_Stop_owned_services' else phase)
         # Persist no raw subprocess logs in public summary; Doctor output has safe versions.
@@ -209,8 +214,10 @@ def main():
         phase='regression_run';checkpoint(phase);report=REPO/'.runtime'/('server-regression-'+uuid.uuid4().hex+'.json');report.parent.mkdir(exist_ok=True)
         progress=report.with_suffix('.progress.json')
         proc=None
+        binding=current_binding(args.report.parent,os.environ)
+        expected_head=binding['head_sha'] if binding else None
         if args.regression_shards is None:
-            proc=run_regression(managed,report,progress,command_environment(os.environ,config,'regression'))
+            proc=run_regression(managed,report,progress,command_environment(os.environ,config,'regression'),source_head=expected_head)
         else:
             # Preserve capacity for the independent 15s/180s stages and cleanup.
             budget=900-(time.monotonic()-suite_started)-210 if job is None else job.limit(1290,10)
@@ -218,7 +225,7 @@ def main():
                 rows.append({'case':'full_engineering_regression','status':'NOT_RUN','exit_code':1,'phase':'regression_run',
                              'reason':'TOTAL_BUDGET_EXHAUSTED' if isolation_ready else 'CLEANUP_NOT_CONFIRMED'})
             else:
-                proc=run_regression(managed,report,progress,command_environment(os.environ,config,'regression'),shards=args.regression_shards,budget=budget,**({'deadline':args.job_test_deadline,'uptime_deadline':args.job_test_uptime} if job else {}))
+                proc=run_regression(managed,report,progress,command_environment(os.environ,config,'regression'),shards=args.regression_shards,budget=budget,source_head=expected_head,**({'deadline':args.job_test_deadline,'uptime_deadline':args.job_test_uptime} if job else {}))
         if proc is not None and getattr(proc,'not_run_reason',None)=='TOTAL_BUDGET_EXHAUSTED':
             rows.append({'case':'full_engineering_regression','status':'NOT_RUN','exit_code':1,'phase':'regression_run','reason':'TOTAL_BUDGET_EXHAUSTED'})
             proc=None
@@ -230,12 +237,19 @@ def main():
                 if proc.cleanup!='OWNED_TREE_STOPPED':rows[-1]['status']='FAIL'
             if report.exists():
                 phase='regression_report';checkpoint(phase);parsed,counts=read_report(report)
-                rows[-1]['counts']=counts;rows[-1]['whole_AT_EX']='NOT_RUN'
+                if parsed.get('counts_scope')!='UNAVAILABLE':rows[-1]['counts']=counts
+                else:rows[-1]['counts_state']='MISSING'
+                rows[-1]['whole_AT_EX']='NOT_RUN'
+                claimed=parsed.get('source_binding',{'state':'UNAVAILABLE'});rows[-1]['source_binding']=claimed
+                if expected_head is None or claimed.get('state')!='AVAILABLE' or claimed.get('head_sha')!=expected_head:
+                    rows[-1].update(status='FAIL',reason='SOURCE_BINDING_UNAVAILABLE' if expected_head is None or claimed.get('state')!='AVAILABLE' else 'SOURCE_BINDING_MISMATCH')
+                if 'acceptance_failure' in parsed:
+                    rows[-1].update(status='FAIL',acceptance_failure=parsed['acceptance_failure'],reason=parsed['acceptance_failure']['reason'])
                 rows[-1]['failure_diagnostics']=failure_tests(REPO,parsed.get('private_junit'))
                 if job is not None and (parsed.get('coverage_complete') is not True or parsed.get('execution_exit_code')!=0):rows[-1]['status']='FAIL'
             else:
                 rows[-1]['failure_diagnostics']={'state':'REPORT_MISSING','failed_test_ids':[]}
-                if job is not None:rows[-1]['status']='FAIL'
+                rows[-1]['status']='FAIL'
     except Exception as exc:
         row=exception_row('full_engineering_regression',exc,phase)
         if phase=='regression_run' and 'progress' in locals():row.update(regression_snapshot(progress))

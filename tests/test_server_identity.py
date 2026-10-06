@@ -88,7 +88,7 @@ def test_root_reuse_inside_legacy_ten_millisecond_window_is_refused(tmp_path):
 @pytest.mark.parametrize('pid', [True, False, 0, -1, '102', 102., None, 0x100000000])
 def test_invalid_health_pid_never_opens_process(tmp_path, pid):
     *_, backend, bind = setup(tmp_path)
-    assert bind(pid) == {'relation': 'REFUSED', 'server': None}
+    assert bind(pid) == {'relation': 'REFUSED', 'server': None,'identity_refusal':{'stage':'ROOT_POLICY','reason':'POLICY_REFUSED'}}
     assert not backend.opened
 
 
@@ -146,7 +146,9 @@ def test_backend_failures_are_constant_and_release_owned_handles(tmp_path, failu
     if failure == 'missing_creation_handle':
         def refused(root): raise AttributeError('PRIVATE')
         backend.creation_handle = refused
-    assert bind() == {'relation':'REFUSED','server':None}
+    result=bind()
+    expected={'open':('CHILD_PIN','OPEN_FAILED'),'identity':('CHILD_PIN','READ_FAILED'),'close':('CLOSE','CLOSE_FAILED'),'missing_creation_handle':('BORROWED','UNAVAILABLE')}[failure]
+    assert result == {'relation':'REFUSED','server':None,'identity_refusal':dict(zip(('stage','reason'),expected))}
     assert sorted(backend.closed) == sorted(backend.opened)
 
 
@@ -225,3 +227,37 @@ def test_native_windows_popen_binding_preserves_borrowed_creation_handle(tmp_pat
         # child, without expanding termination to any discovered process.
         root.stdin.close()
         root.wait(timeout=10)
+
+
+@pytest.mark.parametrize('field,value,stage,reason', [('command',['foreign'],'CHILD_POLICY','POLICY_REFUSED'),('parent',999,'CHILD_SNAPSHOT','PARENT_MISMATCH'),('created',111.,'CHILD_SNAPSHOT','CREATION_WINDOW_REFUSED')])
+def test_refusal_branch_is_fixed_without_process_or_private_error_content(tmp_path,field,value,stage,reason):
+    root, child, record, backend, bind = setup(tmp_path)
+    setattr(child,field,value)
+    result=bind()
+    assert result['identity_refusal']=={'stage':stage,'reason':reason}
+    assert set(result)=={'relation','server','identity_refusal'} and result['server'] is None
+    assert str(tmp_path) not in repr(result) and 'PRIVATE' not in repr(result)
+
+
+@pytest.mark.parametrize('observation,reason', [( (999,100.,True),'PID_MISMATCH'),((101,100.01,True),'CTIME_MISMATCH'),((101,100.,False),'NOT_LIVE'),((101,100.,None),'READ_FAILED')])
+def test_pin_fixed_reason_and_close_failure_preserve_original_refusal(tmp_path,observation,reason):
+    *_, backend, bind = setup(tmp_path)
+    backend.overrides[('owned',101)]=observation;backend.fail_close=True
+    result=bind()
+    assert result['identity_refusal']=={'stage':'ROOT_PIN','reason':reason}
+    assert backend.closed==[('owned',101)]
+
+
+def test_close_failure_after_body_refusal_preserves_primary_branch(tmp_path):
+    root, child, record, backend, bind = setup(tmp_path)
+    child.parent=999;backend.fail_close=True
+    assert bind()['identity_refusal']=={'stage':'CHILD_SNAPSHOT','reason':'PARENT_MISMATCH'}
+    assert backend.closed==[('owned',101)]
+
+
+def test_borrowed_unknown_liveness_is_read_failure_not_confirmed_exit(tmp_path):
+    *_, backend, bind = setup(tmp_path)
+    backend.borrowed=('borrowed',101)
+    backend.overrides[backend.borrowed]=(101,100.,None)
+    assert bind()['identity_refusal']=={'stage':'BORROWED','reason':'READ_FAILED'}
+    assert not backend.opened and not backend.closed

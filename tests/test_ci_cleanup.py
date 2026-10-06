@@ -162,6 +162,10 @@ def test_browser_timeout_stops_owned_services_and_keeps_independent_phases(tmp_p
     from types import SimpleNamespace
     import urllib.request
     m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+    # Synthetic parent binding and its verified child report are independent of
+    # the injected browser timeout; missing source authority must still fail.
+    binding={'run_id':'1','run_attempt':'1','head_sha':'a'*40,'cluster_id':'00000000-0000-0000-0000-000000000001'}
+    monkeypatch.setattr(m,'current_binding',lambda *args:dict(binding))
     monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'))
     monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'summary.json')])
     monkeypatch.setattr(m.os,'environ',dict(CONFIG))
@@ -184,7 +188,9 @@ def test_browser_timeout_stops_owned_services_and_keeps_independent_phases(tmp_p
             return SimpleNamespace(returncode=0,stdout=json.dumps({'project':'ParkWeave','model':'DISABLED','port':8765,'processes':[{'pid':700,'identity_matches':True},{'pid':701,'identity_matches':True}]}),stderr='')
         elif 'scripts/run_acceptance.py' in joined:
             assert set(key for key in env if key.startswith('PARKWEAVE_'))=={'PARKWEAVE_TEST_OWNER_DSN'}
-            Path(command[-1]).write_text('{"engineering_total_counts":{"PASS":1,"FAIL":0,"SKIP":0},"whole_AT_EX":"NOT_RUN"}')
+            assert command[command.index('--source-head')+1]==binding['head_sha']
+            Path(command[command.index('--report')+1]).write_text(json.dumps({'engineering_total_counts':{'PASS':1,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN',
+                'source_binding':{'state':'AVAILABLE','head_sha':binding['head_sha']}}))
         elif 'file_candidate_probe.py' in joined:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr='')
         return SimpleNamespace(returncode=0,stdout='',stderr='')
     class Response:

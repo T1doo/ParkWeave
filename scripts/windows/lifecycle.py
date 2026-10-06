@@ -207,12 +207,21 @@ def bind_execution(root,record,pid,repo):
     return bind_server(root,record,pid,repo,identify=identify_process)
 
 
-def saved_child_matches(root,record,repo):
+def saved_child_matches(root,record,repo,refusals=None):
     child=record.get('server')
     if child is None:
-        return not native_binding_enabled() or bind_execution(root,record,record.get('pid'),repo)['relation']=='ROOT'
-    result=bind_execution(root,record,child.get('pid'),repo)
-    return result['relation']=='DIRECT_CHILD' and result['server']==child
+        if not native_binding_enabled():return True
+        result=bind_execution(root,record,record.get('pid'),repo)
+        matched=result['relation']=='ROOT'
+    else:
+        result=bind_execution(root,record,child.get('pid'),repo)
+        matched=result['relation']=='DIRECT_CHILD' and result['server']==child
+    if not matched and isinstance(refusals,dict):
+        from server_identity import refusal,validate_identity_refusal
+        try:value=validate_identity_refusal(result.get('identity_refusal'))
+        except ValueError:value=refusal('CHILD_POLICY','RECORD_MISMATCH')
+        refusals.clear();refusals.update(value)
+    return matched
 
 
 def save_execution_bindings(records,original):
@@ -227,55 +236,75 @@ def save_execution_bindings(records,original):
 
 
 @staged('process_stop')
-def stop_record(record,repo,process_factory):
+def stop_record(record,repo,process_factory,refusals=None):
     import psutil
+    from server_identity import refusal,validate_identity_refusal
+    local_refusal=None
+    def refused(stage,reason='CHECK_FAILED',value=None):
+        nonlocal local_refusal
+        try:local_refusal=validate_identity_refusal(value)
+        except ValueError:local_refusal=refusal(stage,reason)
+        if isinstance(refusals,dict):refusals.clear();refusals.update(local_refusal)
+        return 'FOREIGN_REFUSED'
     try:proc=process_factory(record['pid'])
     except (ProcessLookupError,psutil.NoSuchProcess):
         if record.get('server'):
             try:process_factory(record['server']['pid'])
             except (ProcessLookupError,psutil.NoSuchProcess):return 'ABSENT'
             except Exception:pass
-            return 'FOREIGN_REFUSED'  # No orphan discovery or termination.
+            return refused('ROOT_POLICY','ORPHAN_REFUSED')  # No orphan discovery or termination.
         return 'ABSENT'
-    except Exception:raise BoundaryError('cannot inspect recorded PID; process/record preserved') from None
-    if not identify_process(proc,record,repo):return 'FOREIGN_REFUSED'
+    except Exception:
+        error=BoundaryError('cannot inspect recorded PID; process/record preserved')
+        error.parkweave_identity_refusal=refusal('ROOT_SNAPSHOT','READ_FAILED')
+        raise error from None
+    if not identify_process(proc,record,repo):return refused('ROOT_POLICY','POLICY_REFUSED')
     native_process=native_binding_enabled() and isinstance(proc,psutil.Process)
     if native_process or record.get('server'):
         from contextlib import ExitStack
         from server_identity import PinnedProcess,IdentityRefused
+        pin_stage='ROOT_PIN'
         try:
             with ExitStack() as stack:
                 root_pin=stack.enter_context(PinnedProcess(record['pid'],record['created']))
-                if not identify_process(proc,record,repo):return 'FOREIGN_REFUSED'
+                if not identify_process(proc,record,repo):return refused('ROOT_POLICY','POLICY_REFUSED')
                 # Recover only a current unique direct child of the known launcher,
                 # for failure before a health response could persist its binding.
                 if native_process and not record.get('server'):
                     direct=proc.children(recursive=False)
-                    if len(direct)>1:return 'FOREIGN_REFUSED'
+                    if len(direct)>1:return refused('CHILD_POLICY','AMBIGUOUS')
                     if direct:
                         bound=bind_execution(proc,record,direct[0].pid,repo)
-                        if bound['relation']!='DIRECT_CHILD':return 'FOREIGN_REFUSED'
+                        if bound['relation']!='DIRECT_CHILD':return refused('CHILD_POLICY','POLICY_REFUSED',bound.get('identity_refusal'))
                         record={**record,'server':bound['server']}
                 child_record=record.get('server');child=None
                 if child_record:
                     try:child=process_factory(child_record['pid'])
                     except (ProcessLookupError,psutil.NoSuchProcess):pass
-                    except Exception:return 'FOREIGN_REFUSED'
+                    except Exception:return refused('CHILD_SNAPSHOT','READ_FAILED')
                 if child is not None:
+                    pin_stage='CHILD_PIN'
                     child_pin=stack.enter_context(PinnedProcess(child_record['pid'],child_record['created']))
-                    if not saved_child_matches(proc,record,repo):return 'FOREIGN_REFUSED'
-                    root_pin.verify();child_pin.verify()
+                    chain_refusal={}
+                    if not saved_child_matches(proc,record,repo,chain_refusal):return refused('CHILD_POLICY','POLICY_REFUSED',chain_refusal)
+                    pin_stage='ROOT_PIN';root_pin.verify()
+                    pin_stage='CHILD_PIN';child_pin.verify()
                     child.terminate()
                     child.wait(timeout=10)
                 # Its original held handle can confirm autonomous launcher exit.
-                root_pin.verify(require_live=False)
+                pin_stage='ROOT_PIN';root_pin.verify(require_live=False)
                 if not root_pin.alive:return 'STOPPED'
-                if not identify_process(proc,record,repo):return 'FOREIGN_REFUSED'
+                if not identify_process(proc,record,repo):return refused('ROOT_POLICY','POLICY_REFUSED')
                 root_pin.verify()
                 proc.terminate();proc.wait(timeout=10)
                 return 'STOPPED'
-        except IdentityRefused:return 'FOREIGN_REFUSED'
-        except Exception:raise BoundaryError('verified execution did not stop; record preserved') from None
+        except IdentityRefused as error:
+            if local_refusal is not None:return refused('UNKNOWN',value=local_refusal)
+            return refused('CLOSE' if error.reason=='CLOSE_FAILED' else pin_stage,error.reason)
+        except Exception:
+            error=BoundaryError('verified execution did not stop; record preserved')
+            error.parkweave_identity_refusal=refusal('UNKNOWN','CHECK_FAILED')
+            raise error from None
     proc.terminate()
     try:proc.wait(timeout=10)
     except Exception:raise BoundaryError('managed process did not stop; no force kill or unrelated PID termination')
@@ -383,10 +412,16 @@ def start():
                 with stage('health_readiness'):
                     pid=health.get('process_id');valid_pid=type(pid) is int and 0<pid<=0xffffffff
                     binding=bind_execution(children[0],records[0],pid,REPO) if native_binding_enabled() else {'relation':'ROOT' if valid_pid and pid==children[0].pid else 'REFUSED','server':None}
-                    if records[0].get('server') and binding['server']!=records[0]['server']:binding={'relation':'REFUSED','server':None}
+                    if records[0].get('server') and binding['relation'] in ('ROOT','DIRECT_CHILD') and binding['server']!=records[0]['server']:binding={'relation':'REFUSED','server':None,'identity_refusal':{'stage':'CHILD_POLICY','reason':'RECORD_MISMATCH'}}
                     matches={'mode_matches':health.get('execution_mode')=='LOCAL','model_matches':health.get('model')=='MODEL_MOCK','process_matches':binding['relation'] in ('ROOT','DIRECT_CHILD')}
                     observation['responses']+=1;observation.update(matches)
-                    if native_binding_enabled():observation.update(server_pid_valid=valid_pid,server_relation=binding['relation'])
+                    if native_binding_enabled():
+                        observation.update(server_pid_valid=valid_pid,server_relation=binding['relation'])
+                        observation.pop('identity_refusal',None)
+                        if binding['relation']=='REFUSED':
+                            from server_identity import refusal,validate_identity_refusal
+                            try:observation['identity_refusal']=validate_identity_refusal(binding.get('identity_refusal'))
+                            except ValueError:observation['identity_refusal']=refusal('UNKNOWN')
                     if native_binding_enabled() and binding['server'] is not None and 'server' not in records[0]:
                         records[0]['server']=binding['server']
                         with stage('process_record'):save_execution_bindings(records,original_state)
@@ -394,10 +429,16 @@ def start():
                     if all(matches.values()):
                         if native_binding_enabled():
                             worker_children=children[1].children(recursive=False)
-                            if len(worker_children)>1:raise BoundaryError('worker launcher relation ambiguous; record preserved')
+                            if len(worker_children)>1:
+                                error=BoundaryError('worker launcher relation ambiguous; record preserved')
+                                error.parkweave_identity_refusal={'stage':'CHILD_POLICY','reason':'AMBIGUOUS'}
+                                raise error
                             worker_pid=worker_children[0].pid if worker_children else children[1].pid
                             worker_binding=bind_execution(children[1],records[1],worker_pid,REPO)
-                            if worker_binding['relation'] not in ('ROOT','DIRECT_CHILD'):raise BoundaryError('worker execution identity refused; record preserved')
+                            if worker_binding['relation'] not in ('ROOT','DIRECT_CHILD'):
+                                error=BoundaryError('worker execution identity refused; record preserved')
+                                error.parkweave_identity_refusal=worker_binding.get('identity_refusal',{'stage':'UNKNOWN','reason':'CHECK_FAILED'})
+                                raise error
                             for record,resolved in zip(records,(binding,worker_binding)):
                                 if resolved['server'] is not None:record['server']=resolved['server']
                             if any('server' in record for record in records):
@@ -432,14 +473,17 @@ def start():
                 try:
                     code=child.poll();observation[key]='RUNNING' if code is None else 'EXIT_ZERO' if code==0 else 'EXIT_NONZERO'
                 except Exception:observation[key]='UNKNOWN'
+        cleanup_refusal={}
         try:
             results=[]
             for record in records:
                 observation['cleanup_attempted']+=1
-                result=stop_record(record,REPO,psutil.Process);results.append(result)
+                result=stop_record(record,REPO,psutil.Process,cleanup_refusal);results.append(result)
                 if result in ('STOPPED','ABSENT','FOREIGN_REFUSED'):observation[{'STOPPED':'stopped','ABSENT':'absent','FOREIGN_REFUSED':'foreign'}[result]]+=1
             if any(result not in ('STOPPED','ABSENT') for result in results):
-                raise BoundaryError('managed process cleanup unconfirmed; process record preserved')
+                cleanup_error=BoundaryError('managed process cleanup unconfirmed; process record preserved')
+                if cleanup_refusal:cleanup_error.parkweave_identity_refusal=cleanup_refusal
+                raise cleanup_error
             if state_written:STATE.unlink(missing_ok=True)
         except Exception as cleanup:
             observe_after_cleanup()
@@ -469,8 +513,13 @@ def stop():
     if not STATE.exists():print('No managed process record. No process/data changed.');return
     state=json.loads(STATE.read_text(encoding='utf-8'))
     if state.get('project')!='ParkWeave' or state.get('schema')!=1:raise BoundaryError('foreign process record refused')
-    results=[stop_record(record,REPO,psutil.Process) for record in state['processes']]
-    if 'FOREIGN_REFUSED' in results:raise BoundaryError('PID identity mismatch; foreign process and record preserved')
+    refusals={}
+    results=[stop_record(record,REPO,psutil.Process,refusals) for record in state['processes']]
+    if 'FOREIGN_REFUSED' in results:
+        error=BoundaryError('PID identity mismatch; foreign process and record preserved')
+        error.parkweave_lifecycle_phase='process_stop'
+        if refusals:error.parkweave_identity_refusal=refusals
+        raise error
     STATE.unlink()  # Only private PID metadata; never remove DB/files/sessions.
     print('Managed API/worker stopped; database service/data/config/sessions remain.')
 
@@ -488,7 +537,7 @@ def main():
         require_windows()
         globals()[args.action]()
     except Exception as exc:
-        if args.action in ('doctor','start','setup'):
+        if args.action in ('doctor','start','setup','stop'):
             try:print(diagnostic_command(args.action,exc),flush=True)
             except Exception:pass  # Diagnostic emission never changes the exit verdict.
         # No exception/DSN/HTTP payload strings are emitted; they may contain secrets.

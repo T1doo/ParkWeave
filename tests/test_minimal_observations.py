@@ -82,9 +82,12 @@ def test_real_pytest_last_recorded_id_survives_stall_without_raw_parameter(tmp_p
         deadline=time.monotonic()+8
         while time.monotonic()<deadline:
             snapshot=progress.read_snapshot(path)
-            if snapshot=={'regression_phase':phase,'active_test_id':KNOWN}:break
+            if {key:snapshot.get(key) for key in ('regression_phase','active_test_id')}=={'regression_phase':phase,'active_test_id':KNOWN}:break
             assert process.poll() is None;time.sleep(.03)
-        assert snapshot=={'regression_phase':phase,'active_test_id':KNOWN}
+        assert {key:snapshot.get(key) for key in ('regression_phase','active_test_id')}=={'regression_phase':phase,'active_test_id':KNOWN}
+        assert snapshot['regression_observation']['collected']==1
+        assert snapshot['regression_observation']['completed']==0
+        assert POISON not in json.dumps(snapshot)
         assert process.poll() is None and POISON not in path.read_text()
     finally:
         if process.poll() is None:process.terminate()

@@ -18,6 +18,26 @@ PHASES=frozenset({'UNKNOWN','configuration','managed_python','setup','existing_c
 CATEGORIES=CATEGORIES|LIFECYCLE_CATEGORIES
 CATEGORIES=CATEGORIES|{'OwnedJobError'}
 CASES=frozenset({'suite_initialization','suite_exception','lifecycle_exception','final_Stop_owned_services','full_engineering_regression','Win11_guard_refuses_Server','separate_Server_candidate_oracles'})
+ACCEPTANCE_REASONS={
+    'INPUT_CONTRACT':frozenset({'INPUT_CONTRACT_INVALID'}),
+    'SOURCE_BINDING':frozenset({'SOURCE_BINDING_INVALID','SOURCE_HEAD_UNAVAILABLE','SOURCE_HEAD_MISMATCH','GIT_BLOB_UNAVAILABLE','GIT_BLOB_MISMATCH'}),
+    'ACCEPTANCE_BINDINGS':frozenset({'ACCEPTANCE_BINDINGS_INVALID'}),
+    'JOB_BUDGET':frozenset({'JOB_BUDGET_REFUSED'}),
+    'MANIFEST':frozenset({'MANIFEST_SCHEMA_REFUSED','MANIFEST_READ_FAILED','MANIFEST_SOURCE_SET_MISMATCH','MANIFEST_HASH_MISMATCH'}),
+    'REGRESSION_EXECUTION':frozenset({'REGRESSION_EXECUTION_FAILED'}),
+    'REPORT_SUMMARY':frozenset({'REPORT_SUMMARY_FAILED'}),'REPORT_WRITE':frozenset({'REPORT_WRITE_FAILED'})}
+
+
+def acceptance_failure(value):
+    if not isinstance(value,dict) or set(value)!={'stage','reason','category'} or not isinstance(value['stage'],str) or value['stage'] not in ACCEPTANCE_REASONS or not isinstance(value['reason'],str) or value['reason'] not in ACCEPTANCE_REASONS[value['stage']] or not isinstance(value['category'],str) or value['category'] not in CATEGORIES:raise ValueError('invalid acceptance failure')
+    return dict(value)
+
+
+def source_binding(value):
+    if not isinstance(value,dict) or not isinstance(value.get('state'),str):raise ValueError('invalid source binding')
+    if value['state']=='UNAVAILABLE' and set(value)=={'state'}:return dict(value)
+    if value['state'] not in ('HEAD_ONLY','AVAILABLE') or set(value)!={'state','head_sha'} or not isinstance(value['head_sha'],str) or not re.fullmatch(r'[0-9a-f]{40}',value['head_sha']):raise ValueError('invalid source binding')
+    return dict(value)
 
 
 def category(value):return value if isinstance(value,str) and value in CATEGORIES else 'OTHER'
@@ -58,6 +78,8 @@ def read_report(path):
     if not isinstance(data,dict):raise ValueError('invalid diagnostic report structure')
     counts=data['engineering_total_counts']
     if not isinstance(counts,dict) or set(counts)!={'PASS','FAIL','SKIP'} or any(type(x) is not int or not 0<=x<=MAX_TEST_CASES for x in counts.values()) or data['whole_AT_EX']!='NOT_RUN':raise ValueError('invalid diagnostic report metadata')
+    if 'source_binding' in data:source_binding(data['source_binding'])
+    if 'acceptance_failure' in data:acceptance_failure(data['acceptance_failure'])
     return data,dict(counts)
 
 

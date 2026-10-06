@@ -223,7 +223,10 @@ def test_coordinator_checkpoints_cover_API_restart_browser_and_final_stop(public
         if any(str(x).endswith('Status.ps1') for x in command):
             return SimpleNamespace(returncode=0,stdout=json.dumps({'project':'ParkWeave','port':8765,'model':'DISABLED','processes':[{'pid':1,'identity_matches':True},{'pid':2,'identity_matches':True}]}),stderr='')
         if 'scripts/run_acceptance.py' in command:
-            assert active=='regression_run';Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':1,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN'}),encoding='utf-8')
+            assert active=='regression_run'
+            assert command[command.index('--source-head')+1]==source['GITHUB_SHA']
+            Path(command[command.index('--report')+1]).write_text(json.dumps({'engineering_total_counts':{'PASS':1,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN',
+                'source_binding':{'state':'AVAILABLE','head_sha':source['GITHUB_SHA']}}),encoding='utf-8')
         if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr='')
         return SimpleNamespace(returncode=0,stdout='',stderr='')
     class Response:

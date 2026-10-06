@@ -2,6 +2,7 @@
 from contextlib import contextmanager
 import functools
 import json
+from server_identity import validate_identity_refusal
 
 PREFIX='PARKWEAVE_LIFECYCLE_DIAGNOSTIC '
 MAX_BYTES=1024
@@ -23,7 +24,7 @@ START_MATCHES=frozenset({'mode_matches','model_matches','process_matches'})
 def start_observation(value):
     required=START_SMALL|START_COUNTS|START_STATE_KEYS|{'last'}
     relation_keys={'server_pid_valid','server_relation'}
-    if not isinstance(value,dict) or not required<=set(value)<=required|START_MATCHES|relation_keys:raise ValueError('invalid start observation')
+    if not isinstance(value,dict) or not required<=set(value)<=required|START_MATCHES|relation_keys|{'identity_refusal'}:raise ValueError('invalid start observation')
     if any(type(value[k]) is not int or not 0<=value[k]<=2 for k in START_SMALL):raise ValueError('invalid start count')
     if any(type(value[k]) is not int or not 0<=value[k]<=50 for k in START_COUNTS):raise ValueError('invalid request count')
     if any(not isinstance(value[k],str) or value[k] not in START_STATES for k in START_STATE_KEYS) or not isinstance(value['last'],str) or value['last'] not in START_LAST:raise ValueError('invalid start state')
@@ -36,6 +37,9 @@ def start_observation(value):
         if not relation_keys<=set(value) or not value['responses'] or type(value['server_pid_valid']) is not bool or value['server_relation'] not in ('ROOT','DIRECT_CHILD','REFUSED'):raise ValueError('invalid server relation')
         verified=value['server_relation'] in ('ROOT','DIRECT_CHILD')
         if verified!=value['process_matches'] or verified and not value['server_pid_valid']:raise ValueError('inconsistent server relation')
+    if 'identity_refusal' in value:
+        if value.get('server_relation')!='REFUSED' or not value['responses']:raise ValueError('invalid refusal context')
+        value={**value,'identity_refusal':validate_identity_refusal(value['identity_refusal'])}
     return dict(value)
 
 
@@ -81,6 +85,10 @@ def failure(exc):
     if observation is not None:
         try:result['start_observation']=start_observation(observation)
         except ValueError:pass
+    identity=attributes.get('parkweave_identity_refusal')
+    if identity is not None:
+        try:result['identity_refusal']=validate_identity_refusal(identity)
+        except ValueError:pass
     return result
 
 
@@ -89,11 +97,15 @@ def command(action,exc):
     value={'schema':1,'action':action,**failure(exc)}
     primary=vars(exc).get('parkweave_lifecycle_primary')
     expected={'boundary_phase','category','boundary_reason'}
-    if isinstance(primary,dict) and expected<=set(primary)<=expected|{'acl_object','start_observation'} and all(isinstance(primary[k],str) and primary[k] in choices for k,choices in (('boundary_phase',PHASES),('category',CATEGORIES),('boundary_reason',REASONS))) and ('acl_object' not in primary or (primary['boundary_phase']=='private_acl' and isinstance(primary['acl_object'],str) and primary['acl_object'] in ACL_OBJECTS)):
+    if isinstance(primary,dict) and expected<=set(primary)<=expected|{'acl_object','start_observation','identity_refusal'} and all(isinstance(primary[k],str) and primary[k] in choices for k,choices in (('boundary_phase',PHASES),('category',CATEGORIES),('boundary_reason',REASONS))) and ('acl_object' not in primary or (primary['boundary_phase']=='private_acl' and isinstance(primary['acl_object'],str) and primary['acl_object'] in ACL_OBJECTS)):
         value.pop('acl_object',None);value.pop('start_observation',None)
+        cleanup_identity=value.pop('identity_refusal',None)
         if 'start_observation' in primary:primary={**primary,'start_observation':start_observation(primary['start_observation'])}
+        if 'identity_refusal' in primary:primary={**primary,'identity_refusal':validate_identity_refusal(primary['identity_refusal'])}
         value.update(primary,cleanup_category=value['category'])
+        if cleanup_identity is not None:value['cleanup_identity_refusal']=cleanup_identity
     if action!='start':value.pop('start_observation',None)
+    if action not in ('start','stop'):value.pop('identity_refusal',None);value.pop('cleanup_identity_refusal',None)
     result=PREFIX+json.dumps(value,ensure_ascii=True,separators=(',',':'))
     if len((result+'\n').encode('ascii'))>MAX_BYTES:raise ValueError('diagnostic bound exceeded')
     return result
@@ -101,7 +113,7 @@ def command(action,exc):
 
 def parse(stderr,action):
     unavailable={'boundary_phase':'UNKNOWN','category':'OTHER','boundary_reason':'DIAGNOSTIC_UNAVAILABLE'}
-    if action not in ('doctor','start','setup'):return unavailable
+    if action not in ('doctor','start','setup','stop'):return unavailable
     if not isinstance(stderr,str) or len(stderr)>65536:return unavailable
     matches=[line for line in stderr.splitlines() if line.startswith(PREFIX)]
     if len(matches)!=1 or not matches[0].isascii() or len(matches[0])+1>MAX_BYTES:return unavailable
@@ -114,12 +126,16 @@ def parse(stderr,action):
             return result
         row=json.loads(matches[0][len(PREFIX):],object_pairs_hook=unique)
         expected={'schema','action','boundary_phase','category','boundary_reason'}
-        if not isinstance(row,dict) or not expected<=set(row)<=expected|{'cleanup_category','acl_object','start_observation'} or type(row['schema']) is not int or row['schema']!=1 or row['action']!=action:return unavailable
+        if not isinstance(row,dict) or not expected<=set(row)<=expected|{'cleanup_category','acl_object','start_observation','identity_refusal','cleanup_identity_refusal'} or type(row['schema']) is not int or row['schema']!=1 or row['action']!=action:return unavailable
         for key,choices in (('boundary_phase',PHASES),('category',CATEGORIES),('boundary_reason',REASONS),('cleanup_category',CATEGORIES)):
             if key in row and (not isinstance(row[key],str) or row[key] not in choices):return unavailable
         if 'acl_object' in row and (row['boundary_phase']!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS):return unavailable
         if 'start_observation' in row:
             if action!='start':return unavailable
             row['start_observation']=start_observation(row['start_observation'])
+        for key in ('identity_refusal','cleanup_identity_refusal'):
+            if key in row:
+                if action not in ('start','stop') or (key=='cleanup_identity_refusal' and (action!='start' or 'cleanup_category' not in row)):return unavailable
+                row[key]=validate_identity_refusal(row[key])
         return {k:v for k,v in row.items() if k not in ('schema','action')}
     except (ValueError,TypeError,UnicodeError,RecursionError):return unavailable

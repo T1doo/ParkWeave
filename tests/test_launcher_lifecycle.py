@@ -120,3 +120,101 @@ def test_native_root_paths_pin_until_signal_and_bound_failure_children(tmp_path,
     assert result==('STOPPED' if relation in ('NONE','UNIQUE') else 'FOREIGN_REFUSED')
     assert signals==([] if relation in ('AMBIGUOUS','REFUSED') else [1] if relation=='NONE' else [2,1])
     assert not held
+
+
+def test_start_retains_recent_bind_refusal_separately_from_cleanup_refusal(tmp_path,monkeypatch):
+    prepare_start(tmp_path,monkeypatch,'PID_MISMATCH')
+    monkeypatch.setattr(lifecycle,'native_binding_enabled',lambda:True)
+    source={'stage':'ROOT_PIN','reason':'CTIME_MISMATCH'}
+    cleanup={'stage':'CHILD_PIN','reason':'READ_FAILED'}
+    monkeypatch.setattr(lifecycle,'bind_execution',lambda *args:{'relation':'REFUSED','server':None,'identity_refusal':source})
+    def refused(record,repo,factory,collector):collector.clear();collector.update(cleanup);return 'FOREIGN_REFUSED'
+    monkeypatch.setattr(lifecycle,'stop_record',refused)
+    with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.start()
+    marker=diagnostic.command('start',error.value);row=diagnostic.parse(marker,'start')
+    assert row['boundary_phase']=='health_readiness' and row['boundary_reason']=='READINESS_TIMEOUT'
+    assert row['start_observation']['identity_refusal']==source
+    assert row['cleanup_identity_refusal']==cleanup and row['cleanup_category']=='BoundaryError'
+    assert row['start_observation']['foreign']==2 and lifecycle.STATE.exists()
+    assert len((marker+'\n').encode('ascii'))<=1024
+
+
+def test_stop_fixed_pin_refusal_preserves_record_and_is_parseable(tmp_path,monkeypatch):
+    import psutil,server_identity
+    path=tmp_path/'state.json';record={'pid':1,'created':1.,'server':{'pid':2,'created':1.01}}
+    path.write_text(json.dumps({'project':'ParkWeave','schema':1,'processes':[record]}));before=path.read_bytes()
+    monkeypatch.setattr(lifecycle,'STATE',path)
+    monkeypatch.setattr(lifecycle,'identify_process',lambda *args:True)
+    monkeypatch.setattr(lifecycle,'native_binding_enabled',lambda:False)
+    monkeypatch.setattr(psutil,'Process',lambda _:SimpleNamespace(terminate=lambda:pytest.fail('must not signal')))
+    class RefusedPin:
+        def __init__(self,*args):pass
+        def __enter__(self):raise server_identity.IdentityRefused('OPEN_FAILED')
+        def __exit__(self,*args):pass
+    monkeypatch.setattr(server_identity,'PinnedProcess',RefusedPin)
+    with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.stop()
+    row=diagnostic.parse(diagnostic.command('stop',error.value),'stop')
+    assert row['identity_refusal']=={'stage':'ROOT_PIN','reason':'OPEN_FAILED'}
+    assert row['boundary_phase']=='process_stop' and path.read_bytes()==before
+    assert 'start_observation' not in row and 'cleanup_identity_refusal' not in row
+
+
+def test_last_stop_refusal_collector_keeps_return_contract(tmp_path,monkeypatch):
+    monkeypatch.setattr(lifecycle,'identify_process',lambda *args:False)
+    last={}
+    assert lifecycle.stop_record({'pid':1},tmp_path,lambda _:object(),last)=='FOREIGN_REFUSED'
+    assert last=={'stage':'ROOT_POLICY','reason':'POLICY_REFUSED'}
+
+
+def test_successful_later_bind_clears_previous_recent_refusal(tmp_path,monkeypatch,capsys):
+    import psutil
+    prepare_start(tmp_path,monkeypatch,'SUCCESS')
+    monkeypatch.setattr(lifecycle,'native_binding_enabled',lambda:True)
+    monkeypatch.setattr(psutil.Popen,'children',lambda self,recursive=False:[],raising=False)
+    calls=[]
+    def binding(root,*args):
+        calls.append(root.pid)
+        if calls==[901]:return {'relation':'REFUSED','server':None,'identity_refusal':{'stage':'ROOT_PIN','reason':'OPEN_FAILED'}}
+        return {'relation':'ROOT','server':None}
+    monkeypatch.setattr(lifecycle,'bind_execution',binding)
+    lifecycle.start()
+    obs=diagnostic.parse(capsys.readouterr().out,'start')['start_observation']
+    assert obs['server_relation']=='ROOT' and obs['process_matches'] is True
+    assert obs['attempts']==obs['responses']==2 and obs['mismatches']==1 and 'identity_refusal' not in obs
+
+
+def test_stop_policy_refusal_is_not_overwritten_by_pin_close_failure(tmp_path,monkeypatch):
+    import server_identity
+    class Pin:
+        def __init__(self,*args):pass
+        def __enter__(self):return self
+        def __exit__(self,*args):raise server_identity.IdentityRefused('CLOSE_FAILED')
+    monkeypatch.setattr(server_identity,'PinnedProcess',Pin)
+    monkeypatch.setattr(lifecycle,'identify_process',lambda *args:True)
+    monkeypatch.setattr(lifecycle,'saved_child_matches',lambda *args:False)
+    monkeypatch.setattr(lifecycle,'native_binding_enabled',lambda:False)
+    last={};record={'pid':1,'created':1.,'server':{'pid':2,'created':1.01}}
+    proc=SimpleNamespace(terminate=lambda:pytest.fail('must not signal'))
+    assert lifecycle.stop_record(record,tmp_path,lambda _:proc,last)=='FOREIGN_REFUSED'
+    assert last=={'stage':'CHILD_POLICY','reason':'POLICY_REFUSED'}
+
+
+def test_saved_api_child_does_not_overwrite_later_root_pin_refusal(tmp_path,monkeypatch):
+    prepare_start(tmp_path,monkeypatch,'MODE_MISMATCH')
+    monkeypatch.setattr(lifecycle,'native_binding_enabled',lambda:True)
+    monkeypatch.setattr(lifecycle.json,'load',lambda response:{'execution_mode':'FAULT_INJECTION','model':'MODEL_MOCK','process_id':9999})
+    refusal={'stage':'ROOT_PIN','reason':'CTIME_MISMATCH'}
+    calls=[]
+    def binding(root,record,pid,repo):
+        calls.append(pid)
+        if len(calls)==1:
+            return {'relation':'DIRECT_CHILD','server':{'pid':9999,'created':1.01,'command':record['command'],'parent_pid':root.pid,'parent_created':record['created']}}
+        assert record['server']['pid']==9999
+        return {'relation':'REFUSED','server':None,'identity_refusal':refusal}
+    monkeypatch.setattr(lifecycle,'bind_execution',binding)
+    with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.start()
+    row=diagnostic.parse(diagnostic.command('start',error.value),'start')
+    obs=row['start_observation']
+    assert calls==[9999]*50 and obs['responses']==obs['mismatches']==50
+    assert row['boundary_reason']=='READINESS_TIMEOUT' and obs['server_relation']=='REFUSED'
+    assert obs['identity_refusal']==refusal and obs['process_matches'] is False
