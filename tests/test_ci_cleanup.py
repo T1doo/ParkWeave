@@ -139,7 +139,9 @@ def test_actual_api_and_worker_launch_arguments_have_no_owner_env(tmp_path,monke
     monkeypatch.setattr(m,'load_config',lambda:{'python':'SYNTHETIC-python','port':8765})
     monkeypatch.setattr(m,'check_python',lambda value:None)
     monkeypatch.setattr(m,'check_dsn_scope',lambda value,app:None)
-    monkeypatch.setattr(m,'port_available',lambda value:None)
+    def port_available(value,retry_seconds):
+        assert value==8765 and retry_seconds==1
+    monkeypatch.setattr(m,'port_available',port_available)
     monkeypatch.setattr(m,'protect_private_root',lambda value:None)
     monkeypatch.setattr(m,'needed_environment',lambda name:APP)
     monkeypatch.setattr(m.os,'environ',{'PATH':'SYNTHETIC','PARKWEAVE_OWNER_DSN':'SYNTHETIC-owner','PARKWEAVE_TEST_OWNER_DSN':'SYNTHETIC-test','PGPASSWORD':'SYNTHETIC','GITHUB_TOKEN':'SYNTHETIC'})

@@ -11,6 +11,7 @@ PHASES=frozenset({'UNKNOWN','python_guard','configuration','private_acl','enviro
 CATEGORIES=frozenset({'OTHER','BoundaryError','OSError','FileNotFoundError','PermissionError','ValueError','TypeError','KeyError','AttributeError','JSONDecodeError','UnicodeDecodeError','UnicodeEncodeError','CalledProcessError','TimeoutExpired','ModuleNotFoundError','ImportError','OperationalError','InterfaceError','ProgrammingError','InsufficientPrivilege','UndefinedTable','InvalidPassword','InvalidCatalogName'})
 REASONS=frozenset({'UNCLASSIFIED','BOUNDARY_REFUSED','ENVIRONMENT_REQUIRED','NATIVE_PLATFORM_REQUIRED','CONFIG_INVALID','CONFIG_SCOPE_REFUSED','PORT_INVALID','PYTHON_BINDING_REFUSED','PRIVATE_ROOT_MISMATCH','ACL_REFUSED','REPARSE_REFUSED','PYTHON_VERSION_REFUSED','DSN_SCOPE_REFUSED','APP_ROLE_REFUSED','CONFIG_MISSING','PORT_OCCUPIED','PROCESS_RECORD_EXISTS','SERVICE_EXITED','READINESS_TIMEOUT','DIAGNOSTIC_UNAVAILABLE'})
 REASONS=REASONS|{'ACL_OWNER_MISMATCH','ACL_ALLOW_REFUSED','ACL_INHERITANCE_REFUSED','ACL_INSPECTION_FAILED'}
+REASONS=REASONS|{'PORT_CHECK_REFUSED'}
 
 
 START_STATES=frozenset({'NOT_CREATED','RUNNING','EXIT_ZERO','EXIT_NONZERO','UNKNOWN'})

@@ -71,7 +71,7 @@ def test_actual_bounded_private_wrapper_then_independent_publisher(publication,t
     if mode=='missing':assert done.returncode==1 and public['publication_state']=='SUMMARY_MISSING' and public['cases']==[]
     elif mode=='timeout':
         assert done.returncode==0 and public['report_state']=='IN_PROGRESS' and public['active_phase']=='regression_run' and public['cases']==[]
-        assert result['cleanup']=='DIRECT_CHILD_STOPPED'
+        assert result['cleanup']==('OWNED_TREE_STOPPED' if os.name=='nt' else 'DIRECT_CHILD_STOPPED')
     else:
         assert done.returncode==0 and public['cases'][0]['status']=='FAIL' and public['report_state']=='COMPLETED'
         if mode=='cleanup_failure':assert public['cases'][0]['owned_browser_cleanup_failures']==['TimeoutExpired','PermissionError']
@@ -92,7 +92,7 @@ def test_report_current_run_attempt_sha_cluster_binding_is_required(publication,
     assert module('publish_summary').read_summary(source)['publication_state']=='SUMMARY_INVALID'
 
 
-@pytest.mark.parametrize('payload',[b'[]',b'{bad',b'{"scope":NaN}',b'{"scope":1,"scope":2}',b'x'*(64*1024+1),'{}'.encode('utf-16')])
+@pytest.mark.parametrize('payload',[b'[]',b'{bad',b'{"scope":NaN}',b'{"scope":1,"scope":2}',b'x'*(64*1024+1),'{}'.encode('utf-16')],ids=['array','malformed','nonfinite','duplicate','oversize','utf16'])
 def test_invalid_non_utf8_duplicate_and_oversize_report_has_fixed_state(publication,payload):
     source,path,_=publication;path.write_bytes(payload);result=module('publish_summary').read_summary(source)
     assert result['publication_state']=='SUMMARY_INVALID' and result['cases']==[]

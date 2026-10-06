@@ -360,9 +360,108 @@ def test_windows_port_probe_requires_exclusive_before_bind(monkeypatch):
         def bind(self,address):
             assert address==('127.0.0.1',8765)
             assert events==['exclusive']
-            events.append('bind');raise OSError('SYNTHETIC occupied')
+            events.append('bind');raise OSError(98,'SYNTHETIC occupied')
     monkeypatch.setattr(lifecycle,'os',SimpleNamespace(name='nt'))
     monkeypatch.setattr(lifecycle,'socket',SimpleNamespace(socket=Socket,SOL_SOCKET=1,SO_EXCLUSIVEADDRUSE=4))
     with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.port_available(8765)
     assert diagnostic.failure(error.value)['boundary_reason']=='PORT_OCCUPIED'
     assert events==['exclusive','bind','close']
+
+
+@pytest.mark.parametrize('result,expected',[(0,'PORT_OCCUPIED'),(10013,'PORT_CHECK_REFUSED'),(10060,'PORT_CHECK_REFUSED'),(10061,None)])
+def test_exclusive_rebind_only_retries_refused_connection(monkeypatch,result,expected):
+    from types import SimpleNamespace
+    events=[];now=[0.0];binds=[0]
+    class Socket:
+        def __enter__(self):return self
+        def __exit__(self,*args):events.append('close')
+        def setsockopt(self,*args):assert args==(1,4,1);events.append('exclusive')
+        def bind(self,address):
+            binds[0]+=1;events.append('bind')
+            if binds[0]==1:raise OSError(10048,'occupied')
+        def settimeout(self,value):assert 0<value<=.1
+        def connect_ex(self,address):events.append('connect');return result
+    monkeypatch.setattr(lifecycle,'os',SimpleNamespace(name='nt'))
+    monkeypatch.setattr(lifecycle,'socket',SimpleNamespace(socket=Socket,SOL_SOCKET=1,SO_EXCLUSIVEADDRUSE=4))
+    def pause(value):now[0]+=value
+    if expected:
+        with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.port_available(8765,1,clock=lambda:now[0],pause=pause)
+        assert diagnostic.failure(error.value)['boundary_reason']==expected and binds[0]==1 and now[0]==0
+    else:
+        lifecycle.port_available(8765,1,clock=lambda:now[0],pause=pause)
+        assert binds[0]==2 and events.count('exclusive')==2 and now[0]==.05
+
+
+def test_persistent_bound_non_listener_remains_occupied_at_fixed_cap(monkeypatch):
+    from types import SimpleNamespace
+    now=[0.0];binds=[]
+    class Socket:
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def setsockopt(self,*args):assert args==(1,4,1)
+        def bind(self,address):binds.append(now[0]);raise OSError(10048,'occupied')
+        def settimeout(self,value):assert 0<=value<=.1
+        def connect_ex(self,address):return 10061
+    monkeypatch.setattr(lifecycle,'os',SimpleNamespace(name='nt'))
+    monkeypatch.setattr(lifecycle,'socket',SimpleNamespace(socket=Socket,SOL_SOCKET=1,SO_EXCLUSIVEADDRUSE=4))
+    def pause(value):now[0]+=value
+    with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.port_available(8765,1,clock=lambda:now[0],pause=pause)
+    assert diagnostic.failure(error.value)['boundary_reason']=='PORT_OCCUPIED'
+    assert now[0]==1 and len(binds)<=22
+
+
+@pytest.mark.parametrize('kind',['port','acl','identity'])
+def test_restart_existing_start_boundary_survives_publication_and_capture(kind):
+    publisher=module('publish_summary');binding={'synthetic':'binding'}
+    if kind=='port':
+        row={'boundary_phase':'port_check','boundary_reason':'PORT_CHECK_REFUSED','category':'BoundaryError'}
+    elif kind=='acl':
+        row={'boundary_phase':'private_acl','boundary_reason':'ACL_OWNER_MISMATCH','category':'BoundaryError','acl_object':'SESSIONS'}
+    else:
+        from server_identity import REFUSAL_STAGES,REFUSAL_REASONS
+        identity={'stage':sorted(REFUSAL_STAGES)[0],'reason':sorted(REFUSAL_REASONS)[0]}
+        row={'boundary_phase':'health_readiness','boundary_reason':'READINESS_TIMEOUT','category':'BoundaryError','cleanup_category':'BoundaryError','identity_refusal':identity,'cleanup_identity_refusal':identity}
+        row['start_observation']={**{k:0 for k in diagnostic.START_SMALL|diagnostic.START_COUNTS},**{k:'EXIT_NONZERO' for k in diagnostic.START_STATE_KEYS},'attempts':1,'responses':1,'mismatches':1,'last':'HEALTH_MISMATCH','mode_matches':True,'model_matches':True,'process_matches':False,'server_pid_valid':True,'server_relation':'REFUSED','identity_refusal':identity}
+    expected={'case':'Restart_native','status':'FAIL','exit_code':1,**row}
+    record=module('native_suite').summary([{**expected,'private_log':POISON}])
+    record.update(diagnostic_schema=1,diagnostic_binding=binding,report_state='COMPLETED',active_phase='UNKNOWN')
+    public=publisher.project(record,binding);assert public['cases']==[expected]
+    commands,ok=publisher.annotation_commands(public);assert ok and POISON not in repr(commands)
+    payload=json.dumps(public)+'\n'+'\n'.join(commands)+'\n'
+    assert module('native_command').publication_capture(payload.encode())==payload.rstrip('\n')
+
+
+def test_port_permission_precedes_conflicting_busy_errno(monkeypatch):
+    from types import SimpleNamespace
+    calls=[]
+    class Socket:
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def setsockopt(self,*args):pass
+        def bind(self,address):
+            calls.append('bind');error=OSError(98,'refused');error.winerror=10013;raise error
+        def connect_ex(self,address):pytest.fail('permission refusal must not retry')
+    monkeypatch.setattr(lifecycle,'os',SimpleNamespace(name='nt'))
+    monkeypatch.setattr(lifecycle,'socket',SimpleNamespace(socket=Socket,SOL_SOCKET=1,SO_EXCLUSIVEADDRUSE=4))
+    with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.port_available(8765,1)
+    assert diagnostic.failure(error.value)['boundary_reason']=='PORT_CHECK_REFUSED' and calls==['bind']
+
+
+def test_exclusive_rebind_never_accepts_success_after_retry_deadline(monkeypatch):
+    from types import SimpleNamespace
+    now=[0.0];calls=[]
+    class Socket:
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def setsockopt(self,*args):pass
+        def bind(self,address):
+            calls.append('bind')
+            if len(calls)==1:raise OSError(10048,'occupied')
+            pytest.fail('late bind must not occur even if it would succeed')
+        def settimeout(self,value):pass
+        def connect_ex(self,address):return 10061
+    monkeypatch.setattr(lifecycle,'os',SimpleNamespace(name='nt'))
+    monkeypatch.setattr(lifecycle,'socket',SimpleNamespace(socket=Socket,SOL_SOCKET=1,SO_EXCLUSIVEADDRUSE=4))
+    def pause(value):now[0]=1.0
+    with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.port_available(8765,1,clock=lambda:now[0],pause=pause)
+    assert diagnostic.failure(error.value)['boundary_reason']=='PORT_OCCUPIED' and calls==['bind']

@@ -167,7 +167,7 @@ def test_unavailable_allowlist_is_constant_and_does_not_echo(tmp_path,monkeypatc
     assert result['state']=='ALLOWLIST_UNAVAILABLE' and POISON not in json.dumps(result)
 
 
-@pytest.mark.parametrize('payload',[b'{invalid',b'[]',b'null',b'x'* (512*1024+1)])
+@pytest.mark.parametrize('payload',[b'{invalid',b'[]',b'null',b'x'* (512*1024+1)],ids=['malformed','array','null','oversize'])
 def test_report_malformed_non_mapping_and_size_are_rejected(tmp_path,payload):
     m=module('diagnostics');path=tmp_path/'report.json';path.write_bytes(payload)
     with pytest.raises(ValueError):m.read_report(path)

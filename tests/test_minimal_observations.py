@@ -26,7 +26,7 @@ def test_powershell_readonly_object_is_fixed_and_reason_keeps_exit_contract(tmp_
     assert result.returncode==code and result.stdout==expected+'\n' and result.stderr==''
 
 
-@pytest.mark.parametrize('raw,expected',[(b'ROOT\r\n','ROOT'),('SESSIONS\n','SESSIONS'),('CONFIG','CONFIG'),(POISON,None),(b'ROOT\nCONFIG\n',None),(b'ROOT\xff',None),(b'x'*65537,None)])
+@pytest.mark.parametrize('raw,expected',[(b'ROOT\r\n','ROOT'),('SESSIONS\n','SESSIONS'),('CONFIG','CONFIG'),(POISON,None),(b'ROOT\nCONFIG\n',None),(b'ROOT\xff',None),(b'x'*65537,None)],ids=['root-crlf','sessions-lf','config','poison','multiple','non-ascii','oversize'])
 def test_acl_object_roundtrip_discards_private_or_multiple_output(tmp_path,monkeypatch,raw,expected):
     monkeypatch.setattr(lifecycle,'require_windows',lambda:None)
     monkeypatch.setattr(lifecycle.subprocess,'run',lambda *a,**kw:SimpleNamespace(returncode=2,stdout=raw,stderr=POISON))

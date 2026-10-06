@@ -2,6 +2,7 @@
 Never installs a database, discovers credentials, enables LIVE or removes data.
 """
 import argparse
+import errno
 import json
 import os
 from pathlib import Path
@@ -325,12 +326,36 @@ def load_config():
 
 
 @staged('port_check')
-def port_available(port):
-    with socket.socket() as sock:
-        try:
-            if os.name=='nt':sock.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
-            sock.bind(('127.0.0.1',port))
-        except OSError:raise BoundaryError('local port occupied; nothing terminated','PORT_OCCUPIED')
+def port_available(port,retry_seconds=0,*,clock=time.monotonic,pause=time.sleep):
+    if type(retry_seconds) not in (int,float) or not 0<=retry_seconds<=1:raise ValueError('bounded port retry required')
+    deadline=clock()+retry_seconds;first=True
+    while True:
+        if not first and clock()>=deadline:raise BoundaryError('local port occupied; nothing terminated','PORT_OCCUPIED')
+        first=False
+        with socket.socket() as sock:
+            try:
+                if os.name=='nt':sock.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
+            except OSError:raise BoundaryError('exclusive port check refused','PORT_CHECK_REFUSED') from None
+            try:
+                sock.bind(('127.0.0.1',port));return
+            except OSError as error:
+                winerror=getattr(error,'winerror',None)
+                busy=winerror==10048 if winerror is not None else error.errno in (errno.EADDRINUSE,10048)
+                if not busy:raise BoundaryError('exclusive port check refused','PORT_CHECK_REFUSED') from None
+        if not retry_seconds or clock()>=deadline:raise BoundaryError('local port occupied; nothing terminated','PORT_OCCUPIED')
+        # A live listener, permission/read error or inconclusive transport never
+        # becomes available. A refused connection permits only another exclusive
+        # bind, without SO_REUSEADDR, process discovery or termination.
+        with socket.socket() as probe:
+            try:
+                probe.settimeout(min(.1,max(0,deadline-clock())))
+                result=probe.connect_ex(('127.0.0.1',port))
+            except OSError:raise BoundaryError('local listener check refused','PORT_CHECK_REFUSED') from None
+        if result==0:raise BoundaryError('local port occupied; nothing terminated','PORT_OCCUPIED')
+        if result not in (errno.ECONNREFUSED,10061):raise BoundaryError('local listener check refused','PORT_CHECK_REFUSED')
+        remaining=deadline-clock()
+        if remaining<=0:raise BoundaryError('local port occupied; nothing terminated','PORT_OCCUPIED')
+        pause(min(.05,remaining))
 
 
 def setup():
@@ -388,7 +413,7 @@ def start():
     config=load_config();check_python(config['python'])
     dsn=needed_environment('PARKWEAVE_DSN');check_dsn_scope(dsn,app=True)
     if STATE.exists():raise BoundaryError('process record exists; run Status/Stop before restarting','PROCESS_RECORD_EXISTS')
-    port_available(config['port']);protect_private_root(RUNTIME)
+    port_available(config['port'],1);protect_private_root(RUNTIME)
     commands=[[config['python'],'-m','uvicorn','parkweave.api:configured_app','--factory','--host','127.0.0.1','--port',str(config['port'])],
               [config['python'],'-m','parkweave.worker']]
     records=[];children=[];state_written=False

@@ -73,3 +73,34 @@ def test_session_crt_transfer_then_text_wrap_failure_closes_fd_once_without_hand
     with pytest.raises(OSError):module.create_synthetic_session_file('.runtime/synthetic-sessions.json',_backend=backend)
     assert closed==[77] and 'close_exact' not in backend.events
     assert backend.events[-2:]==['free_descriptor2','free_descriptor1']
+
+
+@pytest.mark.parametrize('kind',['file','directory','link'])
+def test_windows_existing_path_refused_before_owner_handle_without_mutation(tmp_path,kind):
+    from types import SimpleNamespace
+    from parkweave.synthetic_session_file import WindowsSessionFile
+    path=tmp_path/'existing';target=tmp_path/'target';target.write_bytes(b'SYNTHETIC_PROTECTED')
+    if kind=='file':path.write_bytes(b'SYNTHETIC_PROTECTED')
+    elif kind=='directory':path.mkdir()
+    else:
+        try:path.symlink_to(target)
+        except OSError:pytest.skip('symlink creation unavailable')
+    before=path.lstat();calls=[];backend=WindowsSessionFile.__new__(WindowsSessionFile)
+    backend.k=SimpleNamespace(CreateFileW=lambda *args:calls.append(args))
+    with pytest.raises(FileExistsError):backend.create(path)
+    after=path.lstat()
+    assert not calls and (after.st_mode,after.st_ino)==(before.st_mode,before.st_ino)
+    assert target.read_bytes()==b'SYNTHETIC_PROTECTED'
+    if kind=='file':assert path.read_bytes()==b'SYNTHETIC_PROTECTED'
+
+
+@pytest.mark.parametrize('code,expected',[(80,FileExistsError),(183,FileExistsError),(5,SessionOwnerError),(32,SessionOwnerError)])
+def test_windows_create_new_race_and_denial_keep_distinct_gold(tmp_path,monkeypatch,code,expected):
+    from types import SimpleNamespace
+    import parkweave.synthetic_session_file as module
+    backend=module.WindowsSessionFile.__new__(module.WindowsSessionFile);calls=[]
+    def create(*args):calls.append(args);return module.ctypes.c_void_p(-1).value
+    backend.k=SimpleNamespace(CreateFileW=create)
+    monkeypatch.setattr(module.ctypes,'get_last_error',lambda:code,raising=False)
+    with pytest.raises(expected):backend.create(tmp_path/'absent')
+    assert len(calls)==1 and calls[0][4]==1 and calls[0][2]==0

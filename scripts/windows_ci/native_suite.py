@@ -127,10 +127,10 @@ def main():
         ok=proc.returncode==expected and (required_error is None or required_error in proc.stderr)
         if ok and validate is not None:ok=validate(proc.stdout)
         rows.append({'case':label,'status':'PASS' if ok else 'FAIL','exit_code':proc.returncode})
-        if label=='Start_native':
+        if label in ('Start_native','Restart_native'):
             observation=lifecycle_failure(proc.stdout,'start').get('start_observation')
             if observation is not None:rows[-1]['start_observation']=observation
-        if not ok and label in ('Doctor_native','Start_native','Setup_native'):
+        if not ok and label in ('Doctor_native','Start_native','Restart_native','Setup_native'):
             rows[-1].update(lifecycle_failure(proc.stdout,path.stem.lower()))
         if not ok and label in ('Stop_native','final_Stop_owned_services'):
             stop=lifecycle_failure(proc.stdout,'stop')

@@ -45,6 +45,12 @@ class WindowsSessionFile:
         finally:self.k.CloseHandle(token)
 
     def create(self,path):
+        # Existing files, links and directories are protected before any request
+        # for WRITE_OWNER. CREATE_NEW still closes the absent-to-created race.
+        try:Path(path).lstat()
+        except FileNotFoundError:pass
+        except OSError:raise SessionOwnerError('SESSION_CREATE_REFUSED') from None
+        else:raise FileExistsError('session file exists')
         # WRITE_OWNER is requested on this new object only; never enable privileges.
         handle=self.k.CreateFileW(str(path),0x40000000|0x20000|0x80000,0,None,1,0x80,None)
         if handle==ctypes.c_void_p(-1).value:

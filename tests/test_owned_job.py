@@ -2,6 +2,7 @@
 import ctypes
 import importlib
 import json
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -196,12 +197,64 @@ def test_native_regression_uses_job_regular_files_existing_environment_and_600_s
     assert len(list(tmp_path.glob('*.stdout')))==1 and len(list(tmp_path.glob('*.stderr')))==1
 
 
-def recorded_child_alive(data):
-    # Observation only; creation time rejects PID reuse, never terminates by PID.
-    try:
-        owned=psutil.Process(data['pid'])
-        return owned.create_time()==data['created'] and owned.is_running()
+def recorded_child_alive(data,*,backend=None,process_factory=psutil.Process):
+    # Retained Windows PIDs can still be is_running after kernel termination.
+    # Observe the exact handle; unknown/open/read/close failures remain failures.
+    def valid_time(value):return type(value) in (int,float) and math.isfinite(value) and value>0
+    if type(data['pid']) is not int or data['pid']<=0 or not valid_time(data['created']):
+        raise AssertionError('recorded identity unavailable')
+    try:owned=process_factory(data['pid'])
     except psutil.NoSuchProcess:return False
+    observed=owned.create_time()
+    if not valid_time(observed):raise AssertionError('observed creation time unavailable')
+    if observed!=data['created']:return False
+    if backend is None and os.name!='nt':
+        return owned.is_running() and owned.status()!=psutil.STATUS_ZOMBIE
+    if backend is None:
+        from scripts.windows.server_identity import WindowsBackend
+        backend=WindowsBackend()
+    handle=backend.open(data['pid'])
+    try:
+        pid,created,alive=backend.identity(handle)
+        if type(pid) is not int or pid<=0 or not valid_time(created):
+            raise AssertionError('kernel identity unavailable')
+        if pid!=data['pid'] or abs(created-data['created'])>0.00001:
+            raise AssertionError('recorded process identity changed during observation')
+        if type(alive) is not bool:raise AssertionError('kernel liveness unavailable')
+        return alive
+    finally:backend.close(handle)
+
+
+@pytest.mark.parametrize('alive',[False,True])
+def test_recorded_child_liveness_uses_exact_kernel_handle_not_retained_pid(alive):
+    events=[]
+    class Backend:
+        def open(self,pid):assert pid==123;events.append('open');return 'exact'
+        def identity(self,h):assert h=='exact';events.append('read');return 123,10.0,alive
+        def close(self,h):assert h=='exact';events.append('close')
+    process=SimpleNamespace(create_time=lambda:10.0,is_running=lambda:True)
+    assert recorded_child_alive({'pid':123,'created':10.0},backend=Backend(),process_factory=lambda pid:process) is alive
+    assert events==['open','read','close']
+
+
+@pytest.mark.parametrize('fault',['open','read','close','pid','created','unknown'])
+def test_recorded_child_liveness_unknown_never_passes_as_stopped(fault):
+    events=[]
+    class Backend:
+        def open(self,pid):
+            events.append('open')
+            if fault=='open':raise OSError('refused')
+            return 'exact'
+        def identity(self,h):
+            events.append('read')
+            if fault=='read':raise OSError('refused')
+            return (124 if fault=='pid' else 123,11.0 if fault=='created' else 10.0,None if fault=='unknown' else False)
+        def close(self,h):
+            events.append('close')
+            if fault=='close':raise OSError('refused')
+    with pytest.raises((OSError,AssertionError)):
+        recorded_child_alive({'pid':123,'created':10.0},backend=Backend(),process_factory=lambda pid:SimpleNamespace(create_time=lambda:10.0))
+    assert ('close' in events)==(fault!='open')
 
 
 @pytest.mark.skipif(os.name!='nt',reason='native Windows JobObject required; Linux/mock is not coverage')
@@ -266,3 +319,17 @@ with open('''+repr(str(tmp_path/'out'))+''','wb') as out,open('''+repr(str(tmp_p
     finally:
         if controller is not None and controller.poll() is None:controller.kill();controller.wait(timeout=5)
         unrelated.terminate();unrelated.wait(timeout=5)
+
+
+@pytest.mark.parametrize('value',[float('nan'),float('inf'),True,None,0])
+@pytest.mark.parametrize('source',['record','process','kernel'])
+def test_recorded_child_invalid_creation_time_never_means_stopped(value,source):
+    calls=[]
+    class Backend:
+        def open(self,pid):calls.append('open');return 'exact'
+        def identity(self,h):return 123,value if source=='kernel' else 10.0,False
+        def close(self,h):calls.append('close')
+    record={'pid':123,'created':value if source=='record' else 10.0}
+    process=SimpleNamespace(create_time=lambda:value if source=='process' else 10.0)
+    with pytest.raises(AssertionError):recorded_child_alive(record,backend=Backend(),process_factory=lambda pid:process)
+    assert calls==(['open','close'] if source=='kernel' else [])

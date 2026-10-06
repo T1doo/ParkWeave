@@ -78,18 +78,18 @@ def project(record,binding):
             if key in row:public[key]=row[key] if isinstance(row[key],str) and row[key] in values else fallback
         for key,values,fallback in (('boundary_phase',BOUNDARY_PHASES,'UNKNOWN'),('boundary_reason',BOUNDARY_REASONS,'DIAGNOSTIC_UNAVAILABLE'),('cleanup_category',BOUNDARY_CATEGORIES,'OTHER')):
             if key in row:
-                if row['case'] not in ('Doctor_native','Start_native','Setup_native'):raise ValueError('invalid lifecycle case')
+                if row['case'] not in ('Doctor_native','Start_native','Restart_native','Setup_native'):raise ValueError('invalid lifecycle case')
                 public[key]=row[key] if isinstance(row[key],str) and row[key] in values else fallback
         if 'acl_object' in row:
-            if row['case'] not in ('Doctor_native','Start_native','Setup_native') or row.get('boundary_phase')!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS:raise ValueError('invalid ACL object')
+            if row['case'] not in ('Doctor_native','Start_native','Restart_native','Setup_native') or row.get('boundary_phase')!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS:raise ValueError('invalid ACL object')
             public['acl_object']=row['acl_object']
         if 'start_observation' in row:
-            if row['case']!='Start_native':raise ValueError('invalid start observation case')
+            if row['case'] not in ('Start_native','Restart_native'):raise ValueError('invalid start observation case')
             public['start_observation']=start_observation(row['start_observation'])
         for key in ('identity_refusal','cleanup_identity_refusal'):
             if key in row:
-                if key=='identity_refusal' and row['case'] not in ('Start_native','Stop_native','final_Stop_owned_services'):raise ValueError('invalid identity case')
-                if key=='cleanup_identity_refusal' and (row['case']!='Start_native' or 'cleanup_category' not in row):raise ValueError('invalid cleanup identity case')
+                if key=='identity_refusal' and row['case'] not in ('Start_native','Restart_native','Stop_native','final_Stop_owned_services'):raise ValueError('invalid identity case')
+                if key=='cleanup_identity_refusal' and (row['case'] not in ('Start_native','Restart_native') or 'cleanup_category' not in row):raise ValueError('invalid cleanup identity case')
                 public[key]=validate_identity_refusal(row[key])
         if row['case']=='full_engineering_regression':
             if 'shards' in row:public['shards']=shard_summary(row['shards'],projected=True)
@@ -188,19 +188,19 @@ def annotation_case(row,allowed):
             value[key]=row[key]
     for key,choices in (('boundary_phase',BOUNDARY_PHASES),('boundary_reason',BOUNDARY_REASONS),('cleanup_category',BOUNDARY_CATEGORIES)):
         if key in row:
-            if row['case'] not in ('Doctor_native','Start_native','Setup_native') or not isinstance(row[key],str) or row[key] not in choices:raise ValueError('invalid lifecycle field')
+            if row['case'] not in ('Doctor_native','Start_native','Restart_native','Setup_native') or not isinstance(row[key],str) or row[key] not in choices:raise ValueError('invalid lifecycle field')
             value[key]=row[key]
     if 'acl_object' in row:
-        if row['case'] not in ('Doctor_native','Start_native','Setup_native') or row.get('boundary_phase')!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS:raise ValueError('invalid ACL object')
+        if row['case'] not in ('Doctor_native','Start_native','Restart_native','Setup_native') or row.get('boundary_phase')!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS:raise ValueError('invalid ACL object')
         value['acl_object']=row['acl_object']
     for key,case,validator in (('start_observation','Start_native',start_observation),('regression_observation','full_engineering_regression',regression_observation)):
         if key in row:
-            if row['case']!=case:raise ValueError('invalid observation case')
+            if row['case'] not in (('Start_native','Restart_native') if key=='start_observation' else (case,)):raise ValueError('invalid observation case')
             value[key]=validator(row[key])
     for key in ('identity_refusal','cleanup_identity_refusal'):
         if key in row:
-            if key=='identity_refusal' and row['case'] not in ('Start_native','Stop_native','final_Stop_owned_services'):raise ValueError('invalid identity case')
-            if key=='cleanup_identity_refusal' and (row['case']!='Start_native' or 'cleanup_category' not in row):raise ValueError('invalid cleanup identity case')
+            if key=='identity_refusal' and row['case'] not in ('Start_native','Restart_native','Stop_native','final_Stop_owned_services'):raise ValueError('invalid identity case')
+            if key=='cleanup_identity_refusal' and (row['case'] not in ('Start_native','Restart_native') or 'cleanup_category' not in row):raise ValueError('invalid cleanup identity case')
             value[key]=validate_identity_refusal(row[key])
     for key,validator in (('acceptance_failure',acceptance_failure),('source_binding',source_binding)):
         if key in row:
