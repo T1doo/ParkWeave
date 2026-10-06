@@ -37,14 +37,15 @@ def test_real_config_missing_and_utf8_corruption_are_distinct(tmp_path,monkeypat
 def test_real_loopback_refusal_and_occupied_port_are_distinct():
     import psycopg
     with socket.socket() as owned:
-        owned.bind(('127.0.0.1',0));port=owned.getsockname()[1]
+        owned.bind(('127.0.0.1',0));owned.listen(1);port=owned.getsockname()[1]
         with pytest.raises(lifecycle.BoundaryError) as occupied:lifecycle.port_available(port)
         assert diagnostic.failure(occupied.value)['boundary_reason']=='PORT_OCCUPIED'
-        with pytest.raises(psycopg.OperationalError) as refused:
-            lifecycle.check_dsn_scope(f'host=127.0.0.1 port={port} dbname=parkweave user=parkweave_app',app=True)
-        assert diagnostic.failure(refused.value)['boundary_phase']=='database_connect'
-        assert diagnostic.failure(refused.value)['category']=='OperationalError'
-        assert str(port) not in diagnostic.command('start',refused.value)
+    # A closed owned listener refuses transport; a live listener owns the port.
+    with pytest.raises(psycopg.OperationalError) as refused:
+        lifecycle.check_dsn_scope(f'host=127.0.0.1 port={port} dbname=parkweave user=parkweave_app',app=True)
+    assert diagnostic.failure(refused.value)['boundary_phase']=='database_connect'
+    assert diagnostic.failure(refused.value)['category']=='OperationalError'
+    assert str(port) not in diagnostic.command('start',refused.value)
 
 
 def test_real_isolated_local_database_scope_schema_and_role(tmp_path):
@@ -182,6 +183,7 @@ def test_suite_uses_setup_doctor_start_stdout_marker_and_preserves_failure(tmp_p
         if 'scripts/run_acceptance.py' in command:Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':1,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN'}))
         if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr='')
         return SimpleNamespace(returncode=0,stdout='',stderr='')
+    monkeypatch.setattr(suite,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
     monkeypatch.setattr(suite.subprocess,'run',run)
     assert suite.main()==1
     rows=json.loads((tmp_path/'summary.json').read_text())['cases']

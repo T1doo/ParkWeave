@@ -99,7 +99,7 @@ def test_staged_helpers_keep_owned_job_exit_and_cleanup(tmp_path,monkeypatch,pha
 def test_only_publisher_retains_bounded_safe_stdout_on_failure(tmp_path,phase,captured):
     native=module('native_command')
     text=json.dumps(module('publish_summary').base('SUMMARY_MISSING'))+'\n::notice title=ParkWeave safe diagnostics::{"kind":"publication","state":"ANNOTATIONS_UNAVAILABLE"}\n'
-    result=native.execute(sys.executable,['-c','import sys;sys.stdout.write('+repr(text)+');raise SystemExit(1)'],phase,5,tmp_path,capture=True)
+    result=native.execute(sys.executable,['-c','import sys;sys.stdout.buffer.write('+repr(text.encode('utf-8'))+');raise SystemExit(1)'],phase,5,tmp_path,capture=True)
     assert result['exit_code']==1
     assert ('stdout' in result)==captured
     if captured: assert result['stdout']==text.rstrip('\n')
@@ -171,3 +171,13 @@ def test_shared_uptime_refuses_new_budget_when_wall_clock_rolls_back(tmp_path,mo
     monkeypatch.setattr(native,'uptime_milliseconds',lambda:1800000)
     with pytest.raises(ValueError):native.execute(sys.executable,['-c','pass'],'native_validation',1,tmp_path)
     assert not list(tmp_path.iterdir())
+
+
+@pytest.mark.parametrize('separator',['\n','\r\n'])
+def test_publication_capture_allows_json_separator_but_requires_annotation_lf(separator):
+    native=module('native_command');publisher=module('publish_summary')
+    public=publisher.base('SUMMARY_MISSING');commands,_=publisher.annotation_commands(public)
+    batch='\n'.join(commands)+'\n'
+    text=json.dumps(public)+separator+batch
+    assert native.publication_capture(text.encode())==text.rstrip('\n')
+    with pytest.raises(ValueError):native.publication_capture((json.dumps(public)+separator+batch.replace('\n','\r\n')).encode())

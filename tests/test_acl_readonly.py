@@ -96,6 +96,8 @@ def test_setup_checks_created_config_and_sessions_without_acl_repair(tmp_path,mo
         def __exit__(self,*args):pass
         def execute(self,*args):pass
     monkeypatch.setattr(Store,'migrate',lambda *args:None);monkeypatch.setattr(Store,'connect',lambda *args:Connection())
+    # Native owner creation is separately tested; this fixture checks the final ACL boundary.
+    monkeypatch.setattr(lifecycle,'create_synthetic_config_file',lambda path:Path(path).open('x',encoding='utf-8'))
     calls=[]
     monkeypatch.setattr(lifecycle,'protect_private_root',lambda root:calls.append('precheck'))
     def final_check(root):

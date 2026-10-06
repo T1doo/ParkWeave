@@ -135,6 +135,7 @@ def test_actual_api_and_worker_launch_arguments_have_no_owner_env(tmp_path,monke
     import urllib.request
     spec=importlib.util.spec_from_file_location('eng013_launch',ROOT/'scripts/windows/lifecycle.py');m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
     m.RUNTIME=tmp_path;m.STATE=tmp_path/'owned-state.json'
+    monkeypatch.setattr(m,'native_binding_enabled',lambda:False)
     monkeypatch.setattr(m,'load_config',lambda:{'python':'SYNTHETIC-python','port':8765})
     monkeypatch.setattr(m,'check_python',lambda value:None)
     monkeypatch.setattr(m,'check_dsn_scope',lambda value,app:None)
@@ -158,10 +159,12 @@ def test_actual_api_and_worker_launch_arguments_have_no_owner_env(tmp_path,monke
     assert len(launches)==2 and 'uvicorn' in launches[0][0] and 'parkweave.worker' in launches[1][0]
     for _,env in launches:assert env=={'PATH':'SYNTHETIC','PARKWEAVE_DSN':APP,'PARKWEAVE_MODE':'LOCAL'}
 
-def test_browser_timeout_stops_owned_services_and_keeps_independent_phases(tmp_path,monkeypatch):
+@pytest.mark.parametrize('platform',['posix','nt'])
+def test_browser_timeout_stops_owned_services_and_keeps_independent_phases(tmp_path,monkeypatch,platform):
     from types import SimpleNamespace
     import urllib.request
     m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+    monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
     # Synthetic parent binding and its verified child report are independent of
     # the injected browser timeout; missing source authority must still fail.
     binding={'run_id':'1','run_attempt':'1','head_sha':'a'*40,'cluster_id':'00000000-0000-0000-0000-000000000001'}
@@ -201,6 +204,7 @@ def test_browser_timeout_stops_owned_services_and_keeps_independent_phases(tmp_p
     class Opener:
         def open(self,request,**kwargs):return Response(request)
     def timeout(*args):raise subprocess.TimeoutExpired('SYNTHETIC-browser',15)
+    monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
     monkeypatch.setattr(m.subprocess,'run',run);monkeypatch.setattr(urllib.request,'build_opener',lambda *args:Opener())
     monkeypatch.setitem(sys.modules,'browser_smoke',SimpleNamespace(run_browser=timeout))
     assert m.main()==1

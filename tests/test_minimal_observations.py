@@ -108,6 +108,7 @@ def test_timeout_reads_one_phase_id_snapshot_and_preserves_failure(tmp_path,monk
             path=Path(command[command.index('--progress')+1]);progress.write(path,'pytest_call',KNOWN)
             raise subprocess.TimeoutExpired(command,600,output=POISON,stderr=POISON)
         return SimpleNamespace(returncode=1,stdout='',stderr='')
+    monkeypatch.setattr(suite,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
     monkeypatch.setattr(suite.subprocess,'run',run)
     assert suite.main()==1 and len(reads)==1
     rows=json.loads((tmp_path/'summary.json').read_text())['cases'];row=next(x for x in rows if x['case']=='full_engineering_regression')

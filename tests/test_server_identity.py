@@ -229,7 +229,7 @@ def test_native_windows_popen_binding_preserves_borrowed_creation_handle(tmp_pat
         root.wait(timeout=10)
 
 
-@pytest.mark.parametrize('field,value,stage,reason', [('command',['foreign'],'CHILD_POLICY','POLICY_REFUSED'),('parent',999,'CHILD_SNAPSHOT','PARENT_MISMATCH'),('created',111.,'CHILD_SNAPSHOT','CREATION_WINDOW_REFUSED')])
+@pytest.mark.parametrize('field,value,stage,reason', [('command',['foreign'],'CHILD_POLICY','ARGV0_MISMATCH'),('parent',999,'CHILD_SNAPSHOT','PARENT_MISMATCH'),('created',111.,'CHILD_SNAPSHOT','CREATION_WINDOW_REFUSED')])
 def test_refusal_branch_is_fixed_without_process_or_private_error_content(tmp_path,field,value,stage,reason):
     root, child, record, backend, bind = setup(tmp_path)
     setattr(child,field,value)
@@ -261,3 +261,17 @@ def test_borrowed_unknown_liveness_is_read_failure_not_confirmed_exit(tmp_path):
     backend.overrides[backend.borrowed]=(101,100.,None)
     assert bind()['identity_refusal']=={'stage':'BORROWED','reason':'READ_FAILED'}
     assert not backend.opened and not backend.closed
+
+
+@pytest.mark.parametrize('field,value,reason',[('repo','PRIVATE','CWD_MISMATCH'),('command',['PRIVATE'],'ARGV0_MISMATCH'),('command',[],'COMMAND_MISMATCH')])
+def test_child_policy_observes_fixed_difference_without_relaxing_identity(tmp_path,field,value,reason):
+    root,child,record,backend,bind=setup(tmp_path)
+    setattr(child,field,value)
+    assert bind()=={'relation':'REFUSED','server':None,'identity_refusal':{'stage':'CHILD_POLICY','reason':reason}}
+    assert backend.closed==[('owned',root.pid)] and not any(handle[1]==child.pid for handle in backend.opened)
+
+
+def test_child_command_tail_difference_remains_refused(tmp_path):
+    root,child,record,backend,bind=setup(tmp_path)
+    child.command[-1]='8999'
+    assert bind()['identity_refusal']=={'stage':'CHILD_POLICY','reason':'COMMAND_TAIL_MISMATCH'}

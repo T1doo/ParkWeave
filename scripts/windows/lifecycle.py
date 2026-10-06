@@ -190,13 +190,19 @@ def trusted_command(command,repo):
             isinstance(command[8],str) and command[8].isdigit() and 8765<=int(command[8])<=8999)
 
 
-def identify_process(proc,record,repo):
-    # PID reuse or a foreign command line cannot authorize termination.
+def identify_process_reason(proc,record,repo):
+    # Preserve ordered predicates and tolerances; return only fixed refusal codes.
     try:
-        return (trusted_command(record['command'],repo) and abs(proc.create_time()-record['created'])<.01 and
-                proc.cwd()==str(Path(repo).resolve()) and
-                proc.cmdline()==record['command'])
-    except Exception:return False
+        if not trusted_command(record['command'],repo):return 'TRUSTED_COMMAND_REFUSED'
+        if not abs(proc.create_time()-record['created'])<.01:return 'CTIME_MISMATCH'
+        if proc.cwd()!=str(Path(repo).resolve()):return 'CWD_MISMATCH'
+        if proc.cmdline()!=record['command']:return 'COMMAND_MISMATCH'
+    except Exception:return 'READ_FAILED'
+    return None
+
+
+def identify_process(proc,record,repo):
+    return identify_process_reason(proc,record,repo) is None
 
 
 def native_binding_enabled():return os.name=='nt'
@@ -204,7 +210,7 @@ def native_binding_enabled():return os.name=='nt'
 
 def bind_execution(root,record,pid,repo):
     from server_identity import bind_server
-    return bind_server(root,record,pid,repo,identify=identify_process)
+    return bind_server(root,record,pid,repo,identify=identify_process,identify_reason=identify_process_reason)
 
 
 def saved_child_matches(root,record,repo,refusals=None):

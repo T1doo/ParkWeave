@@ -50,6 +50,7 @@ def simulate(candidate, *, fault=None, budget=900, duration=1):
             return SimpleNamespace(returncode=0)
         number = len(calls) - 1
         junit = Path(command[command.index('--junitxml') + 1])
+        if fault=='spawn' and number==1:raise OSError('SYNTHETIC spawn refused')
         suite = ET.Element('testsuite')
         for nodeid in names:
             file, name = nodeid.split('::')
@@ -116,7 +117,7 @@ def test_shard_parse_failure_never_discards_original_exit_or_cleanup(candidate, 
     assert len(calls) == (2 if fault=='cleanup_missing_inventory' else 5) and result['execution_exit_code'] == 1 and not result['coverage_complete']
     first = result['shards'][0]
     assert first['status'] == 'FAIL'
-    if fault == 'nonzero_bad_junit': assert first['exit_code'] == 17 and first['owned_tree_cleanup'] == 'OWNED_TREE_STOPPED'
+    if fault == 'nonzero_bad_junit': assert first['exit_code'] == 17 and first['owned_tree_cleanup'] == 'OWNED_TREE_STOPPED' and first['counts'] is None
     else: assert first['exit_code'] == 0 and first['owned_tree_cleanup'] == 'OWNED_TREE_STOP_UNCONFIRMED'
 
 
@@ -316,3 +317,47 @@ def test_budget_exhaustion_fixed_reason_survives_safe_annotation_projection():
     public = publisher.project(record, binding)
     commands, ok = publisher.annotation_commands(public)
     assert ok and len(commands) == 2 and 'TOTAL_BUDGET_EXHAUSTED' in commands[1]
+
+
+@pytest.mark.parametrize('fault',['skip','fail','timeout','cleanup_exception'])
+def test_each_shard_exports_actual_counts_invocation_cost_and_cleanup(candidate,fault):
+    from test_windows_ci_preparation import module
+    result,_=simulate(candidate,fault=fault,duration=2)
+    projected=module('diagnostics').shard_summary(result['shards'])
+    assert [row['id'] for row in projected]==['S1','S2','S3','S4']
+    for original,row in zip(result['shards'],projected):
+        assert row['counts']==original['counts'] and row['status']==original['status']
+        assert row['ms']==(None if row['status']=='NOT_RUN' else 2000)
+        assert row['cleanup']==original['owned_tree_cleanup']
+    public=module('publish_summary').base('SUMMARY_AVAILABLE')
+    public.update(report_state='COMPLETED',active_phase='regression_report',cases=[{'case':'full_engineering_regression','status':'FAIL' if fault!='skip' else 'PASS','shards':projected}])
+    commands,ok=module('publish_summary').annotation_commands(public)
+    assert ok and len(commands)==2 and all('"S'+str(i)+'"' in commands[1] for i in range(1,5))
+    assert all(module('publish_summary').annotation_size(c)<=2048 for c in commands)
+
+
+def test_unstarted_shards_export_null_time_and_actual_zero_counts(candidate):
+    from test_windows_ci_preparation import module
+    result,_=simulate(candidate,budget=15,duration=3)
+    rows=module('diagnostics').shard_summary(result['shards'])
+    assert rows[0]['ms']==3000
+    assert all(row['ms'] is None and row['cleanup']=='NOT_STARTED' and row['counts']=={'PASS':0,'FAIL':0,'SKIP':0} for row in rows[1:])
+    rows[0]['counts']=None;rows[0]['ms']=None;rows[0]['cleanup']='UNAVAILABLE'
+    assert module('diagnostics').shard_summary(rows,projected=True)[0]['counts'] is None
+
+
+@pytest.mark.parametrize('field,value',[('ms',True),('ms',1500001),('cleanup','PRIVATE'),('counts',{'PASS':True,'FAIL':0,'SKIP':0}),('secret','PRIVATE'),('coverage',1)])
+def test_shard_projection_refuses_untyped_or_private_fields(candidate,field,value):
+    from test_windows_ci_preparation import module
+    result,_=simulate(candidate)
+    rows=module('diagnostics').shard_summary(result['shards']);rows[0][field]=value
+    with pytest.raises(ValueError):module('diagnostics').shard_summary(rows,projected=True)
+
+
+
+def test_failed_spawn_without_junit_never_exports_unobserved_zero_counts(candidate):
+    from test_windows_ci_preparation import module
+    result,_=simulate(candidate,fault='spawn')
+    first=module('diagnostics').shard_summary(result['shards'])[0]
+    assert first['status']=='FAIL' and first['counts'] is None and first['cleanup']=='UNAVAILABLE'
+    assert result['engineering_total_counts']=={'PASS':3,'FAIL':0,'SKIP':0}

@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import stat
 import sys
-from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,TREE_CLEANUP,_allowed_tests,browser_summary,acceptance_failure,source_binding,ACCEPTANCE_REASONS
+from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,TREE_CLEANUP,_allowed_tests,browser_summary,acceptance_failure,source_binding,ACCEPTANCE_REASONS,shard_summary
 from summary_report import SCHEMA,ROOT_PATTERN,current_binding
 from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES,ACL_OBJECTS,start_observation,validate_identity_refusal
 from regression_progress import PHASES as REGRESSION_PHASES,observation as regression_observation
@@ -85,6 +85,10 @@ def project(record,binding):
                 if key=='cleanup_identity_refusal' and (row['case']!='Start_native' or 'cleanup_category' not in row):raise ValueError('invalid cleanup identity case')
                 public[key]=validate_identity_refusal(row[key])
         if row['case']=='full_engineering_regression':
+            if 'shards' in row:public['shards']=shard_summary(row['shards'],projected=True)
+            if 'shard_summary_state' in row:
+                if row['shard_summary_state']!='UNAVAILABLE':raise ValueError('invalid shard state')
+                public['shard_summary_state']='UNAVAILABLE'
             if 'acceptance_failure' in row:public['acceptance_failure']=acceptance_failure(row['acceptance_failure'])
             if 'source_binding' in row:public['source_binding']=source_binding(row['source_binding'])
             if 'regression_observation' in row:public['regression_observation']=regression_observation(row['regression_observation'])
@@ -205,6 +209,12 @@ def annotation_case(row,allowed):
         test=row['active_test_id']
         if row['case']!='full_engineering_regression' or 'regression_phase' not in row or not isinstance(test,str) or test not in allowed or not re.fullmatch(r'tests/test_[a-z0-9_]+\.py::test_[A-Za-z0-9_]+',test):raise ValueError('invalid active test')
         value['active_test_id']=test.removeprefix('tests/').replace('.py::','::')
+    if 'shards' in row:
+        if row['case']!='full_engineering_regression':raise ValueError('invalid shard case')
+        value['shards']=shard_summary(row['shards'],projected=True)
+    if 'shard_summary_state' in row:
+        if row['case']!='full_engineering_regression' or row['shard_summary_state']!='UNAVAILABLE':raise ValueError('invalid shard state')
+        value['shard_summary_state']='UNAVAILABLE'
     if 'counts' in row:
         counts=row['counts']
         if row['case']!='full_engineering_regression' or not isinstance(counts,dict) or set(counts)!={'PASS','FAIL','SKIP'} or not all(number(n) for n in counts.values()):raise ValueError('invalid counts')
@@ -244,7 +254,7 @@ def annotation_commands(public):
         rows=public.get('cases')
         if not isinstance(rows,list) or len(rows)>MAX_ROWS:raise ValueError('invalid rows')
         allowed=_allowed_tests();values=[annotation_case(row,allowed) for row in rows]
-        candidates=[row for row in values if row['status']!='PASS']+[row for row in values if row['status']=='PASS' and ('start_observation' in row or 'regression_observation' in row)];remaining=MAX_FAILURE_IDS;commands=[]
+        candidates=[row for row in values if row['status']!='PASS']+[row for row in values if row['status']=='PASS' and ('start_observation' in row or 'regression_observation' in row or 'shards' in row)];remaining=MAX_FAILURE_IDS;commands=[]
         for row in candidates[:MAX_ANNOTATIONS-1]:
             original=len(row.get('failed_test_ids',[]))
             active_original=int('active_test_id' in row)
@@ -260,7 +270,10 @@ def annotation_commands(public):
             while True:
                 command=annotation_command(row)
                 if annotation_size(command)<=MAX_ANNOTATION_BYTES:break
-                if not row.get('failed_test_ids'):raise ValueError('oversize row')
+                if not row.get('failed_test_ids'):
+                    if 'shards' in row and 'regression_observation' in row:
+                        row.pop('regression_observation');row['regression_observation_omitted']=True;continue
+                    raise ValueError('oversize row')
                 row['failed_test_ids'].pop();row['annotation_ids_omitted']+=1;row['ids_truncated']=True
             remaining-=len(row.get('failed_test_ids',[]))+active_kept;commands.append(command)
         header={'kind':'publication','state':'SUMMARY_AVAILABLE','report_state':public['report_state'],'active_phase':public['active_phase'],

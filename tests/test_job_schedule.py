@@ -103,8 +103,11 @@ def test_lifecycle_stage_never_launches_validation(tmp_path,monkeypatch):
     assert not any(r['case']=='full_engineering_regression' for r in records[-1]['cases'])
 
 
-def test_regression_extended_budget_requires_explicit_bounded_cutoff(tmp_path,monkeypatch):
+@pytest.mark.parametrize('platform',['posix','nt'])
+def test_regression_extended_budget_requires_explicit_bounded_cutoff(tmp_path,monkeypatch,platform):
     suite=module('native_suite');calls=[]
+    monkeypatch.setattr(suite,'os',SimpleNamespace(name=platform))
+    monkeypatch.setattr(suite,'run_owned_job',lambda command,**kwargs:calls.append((command,kwargs)) or SimpleNamespace(returncode=0,cleanup='OWNED_TREE_STOPPED'))
     monkeypatch.setattr(suite,'JobBudget',lambda deadline,**kwargs:SimpleNamespace(remaining=lambda:1100))
     monkeypatch.setattr(suite.subprocess,'run',lambda command,**kwargs:calls.append((command,kwargs)) or SimpleNamespace(returncode=0))
     suite.run_regression('python',tmp_path/'report.json',tmp_path/'progress.json',{},shards='manifest.json',budget=1000,deadline=1234,uptime_deadline=1600000)

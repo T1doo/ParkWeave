@@ -157,7 +157,9 @@ def test_native_zero_exit_cannot_pass_wrong_or_incomplete_source_binding(tmp_pat
         binding={'state':state}
         if head is not None:binding['head_sha']=head
         report.write_text(json.dumps({'engineering_total_counts':{'PASS':4,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN',
-                                     'execution_exit_code':0,'coverage_complete':True,'source_binding':binding}))
+                                     'execution_exit_code':0,'coverage_complete':True,'source_binding':binding,
+                                     'shards':[{'id':'S'+str(i),'status':'PASS','reason':'COMPLETE','counts':{'PASS':1,'FAIL':0,'SKIP':0},
+                                                'coverage_complete':True,'exit_code':0,'elapsed_ms':1,'owned_tree_cleanup':'OWNED_TREE_STOPPED'} for i in range(1,5)]}))
         return SimpleNamespace(returncode=0,cleanup='OWNED_TREE_STOPPED')
     monkeypatch.setattr(suite,'run_regression',regression)
     assert suite.main()==1  # Original lifecycle failure remains independent.
@@ -262,3 +264,43 @@ def test_legacy_native_zero_exit_missing_report_is_failure(tmp_path,monkeypatch)
     row=next(r for r in records[-1]['cases'] if r['case']=='full_engineering_regression')
     assert row['status']=='FAIL' and row['exit_code']==0
     assert row['failure_diagnostics']['state']=='REPORT_MISSING'
+
+
+@pytest.mark.parametrize('field,value',[('counts',None),('coverage_complete',False),('exit_code',17),('owned_tree_cleanup','UNAVAILABLE'),('elapsed_ms',True)])
+def test_native_sharded_success_requires_complete_typed_four_piece_evidence(tmp_path,monkeypatch,field,value):
+    from test_job_schedule import validation_fixture
+    suite,_,records=validation_fixture(tmp_path,monkeypatch)
+    def regression(managed,report,progress,env,**kwargs):
+        rows=[{'id':'S'+str(i),'status':'PASS','reason':'COMPLETE','counts':{'PASS':1,'FAIL':0,'SKIP':0},
+               'coverage_complete':True,'exit_code':0,'elapsed_ms':1,'owned_tree_cleanup':'OWNED_TREE_STOPPED'} for i in range(1,5)]
+        rows[0][field]=value
+        report.write_text(json.dumps({'engineering_total_counts':{'PASS':4,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN',
+            'execution_exit_code':0,'coverage_complete':True,'source_binding':{'state':'AVAILABLE','head_sha':'a'*40},'shards':rows}))
+        return SimpleNamespace(returncode=0,cleanup='OWNED_TREE_STOPPED')
+    monkeypatch.setattr(suite,'run_regression',regression)
+    assert suite.main()==1
+    row=next(r for r in records[-1]['cases'] if r['case']=='full_engineering_regression')
+    assert row['status']=='FAIL' and row['counts']=={'PASS':4,'FAIL':0,'SKIP':0}
+
+
+
+def test_late_invalid_shard_context_is_unavailable_not_unstarted(tmp_path,capsys):
+    spec=importlib.util.spec_from_file_location('acceptance_invalid_shard_fixture',Path(__file__).resolve().parents[1]/'scripts/run_acceptance.py');runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
+    args=SimpleNamespace(report=tmp_path/'report.json',shards=True)
+    with pytest.raises(SystemExit):runner.rejected_report(args,'REPORT_WRITE',OSError(POISON),{'state':'UNAVAILABLE'},17,
+        {'engineering_total_counts':{'PASS':1,'FAIL':0,'SKIP':0},'shards':[{'id':'S1','status':'PASS','reason':POISON}]})
+    report=json.loads(args.report.read_text())
+    assert report['engineering_total_counts']=={'PASS':1,'FAIL':0,'SKIP':0}
+    assert all(row['status']=='FAIL' and row['reason']=='EXECUTION_RECORDED' and row['counts'] is None and row['owned_tree_cleanup']=='UNAVAILABLE' for row in report['shards'])
+    assert POISON not in args.report.read_text()
+
+
+
+@pytest.mark.parametrize('counts',[None,{'PASS':True,'FAIL':0,'SKIP':0}])
+def test_late_unreadable_counts_never_claim_actual_zero(tmp_path,capsys,counts):
+    spec=importlib.util.spec_from_file_location('acceptance_missing_counts_fixture',Path(__file__).resolve().parents[1]/'scripts/run_acceptance.py');runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
+    args=SimpleNamespace(report=tmp_path/'report.json',shards=True)
+    with pytest.raises(SystemExit):runner.rejected_report(args,'REPORT_WRITE',OSError(POISON),{'state':'UNAVAILABLE'},17,{'engineering_total_counts':counts})
+    report=json.loads(args.report.read_text())
+    assert report['counts_scope']=='UNAVAILABLE' and report['observed_cases'] is None
+    assert all(row['counts'] is None for row in report['shards'])

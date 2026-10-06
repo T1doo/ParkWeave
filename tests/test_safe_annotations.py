@@ -166,3 +166,24 @@ def test_real_CLI_annotation_bytes_have_exact_LF_without_console_normalization(p
     start=result.stdout.index(PREFIX.encode('ascii'));batch=result.stdout[start:]
     assert b'\r' not in batch and batch.endswith(b'\n') and len(batch)<=16384
     assert all(len(line)+1<=2048 for line in batch.splitlines())
+
+
+def test_four_shards_survive_maximum_safe_diagnostics_with_existing_byte_limits():
+    from test_windows_ci_preparation import module
+    publisher=module('publish_summary');progress=module('regression_progress');diagnostics=module('diagnostics')
+    ids=sorted(diagnostics._allowed_tests(),key=len,reverse=True)[:25]
+    obs={k:900000 for k in progress.TIMINGS}
+    obs.update({k:10000 for k in progress.COUNTS|progress.DB_COUNTS},fixture_stage='CREATE_DB',sample_attempts=20,
+               sample_state='AVAILABLE',sample_elapsed_ms=900000,sample_cost_ms=900000,checkpoint_age_ms=900000)
+    rows=[{'id':'S'+str(i),'status':'FAIL','reason':'CLEANUP_UNCONFIRMED','counts':{'PASS':10000,'FAIL':10000,'SKIP':10000},
+           'ms':1500000,'cleanup':'OWNED_TREE_STOP_UNCONFIRMED','coverage':False,'exit':4294967295,'category':'ConnectionRefusedError'} for i in range(1,5)]
+    public=publisher.base('SUMMARY_AVAILABLE');public.update(report_state='COMPLETED',active_phase='regression_report',cases=[{
+        'case':'full_engineering_regression','status':'FAIL','exit_code':4294967295,'counts':{'PASS':10000,'FAIL':10000,'SKIP':10000},
+        'source_binding':{'state':'AVAILABLE','head_sha':'a'*40},'acceptance_failure':{'stage':'REGRESSION_EXECUTION','reason':'REGRESSION_EXECUTION_FAILED','category':'ConnectionRefusedError'},
+        'shards':rows,'regression_observation':obs,'regression_phase':'report_write','active_test_id':ids[0],
+        'failure_diagnostics':{'state':'AVAILABLE','failed_test_ids':ids,'failed_cases':10000,'test_cases_seen':10000,'unknown_failed_cases':10000,'ids_truncated':True}}])
+    commands,ok=publisher.annotation_commands(public)
+    assert ok and len(commands)==2 and all(publisher.annotation_size(c)<=2048 for c in commands)
+    assert sum(publisher.annotation_size(c) for c in commands)<=16*1024
+    value=json.loads(commands[1].split('::',2)[2])
+    assert value['shards']==rows and value['annotation_ids_omitted']>0 and value['regression_observation_omitted'] is True

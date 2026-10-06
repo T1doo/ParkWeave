@@ -72,7 +72,7 @@ def write_report(path,value):
 
 
 def rejected_report(args,stage,error,binding,code=None,context=None):
-    from diagnostics import category,acceptance_failure
+    from diagnostics import category,acceptance_failure,shard_summary
     original_stage=stage
     reason=getattr(error,'acceptance_failure_reason',getattr(error,'reason',FAILURE_REASONS[stage]))
     stage=getattr(error,'acceptance_failure_stage',stage)
@@ -85,15 +85,30 @@ def rejected_report(args,stage,error,binding,code=None,context=None):
     report={'execution_exit_code':exit_code,'whole_AT_EX':'NOT_RUN','engineering_total_counts':{'PASS':0,'FAIL':0,'SKIP':0},
             'counts_scope':'OBSERVED','observed_cases':0,'coverage_complete':False,'full_regression':False,
             'source_binding':binding,'acceptance_failure':failure,
-            'cases':[],'shards':[{'id':'S'+str(i),'status':'NOT_RUN','reason':'PRECHECK_FAILED','counts':{'PASS':0,'FAIL':0,'SKIP':0}} for i in range(1,5)] if args.shards else []}
+            'cases':[],'shards':[{'id':'S'+str(i),'status':'NOT_RUN','reason':'PRECHECK_FAILED','counts':{'PASS':0,'FAIL':0,'SKIP':0},'elapsed_ms':None,'owned_tree_cleanup':'NOT_STARTED'} for i in range(1,5)] if args.shards else []}
     if isinstance(context,dict):
         counts=context.get('engineering_total_counts')
         if isinstance(counts,dict) and set(counts)=={'PASS','FAIL','SKIP'} and all(type(v) is int and 0<=v<=10000 for v in counts.values()):
             report['engineering_total_counts']=dict(counts);report['observed_cases']=sum(counts.values())
-        for i,row in enumerate(context.get('shards',[]) if isinstance(context.get('shards'),list) else []):
-            if i>=len(report['shards']) or not isinstance(row,dict) or row.get('id')!='S'+str(i+1) or row.get('status') not in ('PASS','FAIL','NOT_RUN','RUNNING'):break
-            report['shards'][i].update(status=row['status'],reason='EXECUTION_RECORDED')
-            if isinstance(row.get('counts'),dict) and set(row['counts'])=={'PASS','FAIL','SKIP'} and all(type(v) is int and 0<=v<=10000 for v in row['counts'].values()):report['shards'][i]['counts']=dict(row['counts'])
+        else:report.update(counts_scope='UNAVAILABLE',observed_cases=None)
+        if args.shards:
+            for row in report['shards']:
+                row.update(status='FAIL',reason='EXECUTION_RECORDED',counts=None,elapsed_ms=None,owned_tree_cleanup='UNAVAILABLE')
+        context_rows=context.get('shards')
+        if args.shards and isinstance(context_rows,list):
+            for index,row in enumerate(context_rows[:4]):
+                if not isinstance(row,dict) or row.get('id')!='S'+str(index+1):continue
+                candidate={**report['shards'][index],**row}
+                if 'counts' not in row:candidate['counts']=None
+                if 'reason' not in row:candidate['reason']='EXECUTION_RECORDED'
+                if 'owned_tree_cleanup' not in row:candidate['owned_tree_cleanup']='UNAVAILABLE'
+                try:
+                    batch=list(report['shards']);batch[index]=candidate
+                    safe=shard_summary(batch)[index]
+                except ValueError:continue
+                report['shards'][index]={'id':safe['id'],'status':safe['status'],'reason':safe['reason'],'counts':safe['counts'],
+                    'elapsed_ms':safe['ms'],'owned_tree_cleanup':safe['cleanup'],'coverage_complete':safe['coverage'],'exit_code':safe['exit'],
+                    **({'category':safe['category']} if 'category' in safe else {})}
     elif original_stage in ('REPORT_SUMMARY','REPORT_WRITE') and code is not None:
         report.update(counts_scope='UNAVAILABLE',observed_cases=None)
     saved=True

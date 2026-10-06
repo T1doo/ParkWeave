@@ -194,7 +194,7 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
             from source_bytes import verify_head_test_sources
         verify_head_test_sources(root,source_head,validated_hashes)
     rows = [{'id': s['id'], 'status': 'NOT_RUN', 'reason': 'NOT_STARTED', 'expected_cases': None,
-             'counts': {'PASS': 0, 'FAIL': 0, 'SKIP': 0}} for s in shards]
+             'counts': {'PASS': 0, 'FAIL': 0, 'SKIP': 0}, 'elapsed_ms': None, 'owned_tree_cleanup': 'NOT_STARTED'} for s in shards]
     all_cases = []
     expected = []
     expected_keys = []
@@ -288,9 +288,10 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
             row['reason'] = 'TOTAL_BUDGET_EXHAUSTED' if isolation_ready else 'CLEANUP_NOT_CONFIRMED'
             persist()
             continue
-        row.update(status='RUNNING', reason='IN_PROGRESS')
+        row.update(status='RUNNING', reason='IN_PROGRESS',owned_tree_cleanup='UNAVAILABLE',counts=None)
         persist()
         row_junit = None
+        shard_started = clock()
         try:
             code, collected, junit, cleanup = invoke(shard['files'])
             row['exit_code'] = code
@@ -317,11 +318,14 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
             if cleanup not in (None,'OWNED_TREE_STOPPED'):isolation_ready=False
             partial = getattr(error, 'shard_junit', row_junit)
             try:
-                observed = junit_cases(partial) if partial is not None else []
-                all_cases.extend(observed)
-                counts = Counter(s for _, s in logical_cases(observed))
-                row['counts'] = {s: counts[s] for s in ('PASS', 'FAIL', 'SKIP')}
+                if partial is not None:
+                    observed = junit_cases(partial)
+                    all_cases.extend(observed)
+                    counts = Counter(s for _, s in logical_cases(observed))
+                    row['counts'] = {s: counts[s] for s in ('PASS', 'FAIL', 'SKIP')}
             except Exception: pass
+        finally:
+            row['elapsed_ms'] = max(0,round((clock()-shard_started)*1000))
         persist()
     # Also reject files edited while the shards were executing.
     try: validate_manifest(root, manifest)

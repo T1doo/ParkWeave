@@ -141,3 +141,35 @@ def browser_summary(value):
     n=value.get('grouped_questions')
     if type(n) is int and 0<=n<=100:result['grouped_questions']=n
     return result
+
+
+SHARD_REASONS=frozenset({'NOT_STARTED','IN_PROGRESS','TOTAL_BUDGET_EXHAUSTED','CLEANUP_NOT_CONFIRMED','CLEANUP_UNCONFIRMED','COMPLETE','COVERAGE_MISMATCH','SHARD_ERROR','SOURCE_CHANGED','PRECHECK_FAILED','EXECUTION_RECORDED'})
+
+def shard_summary(rows, *, projected=False):
+    """Four fixed rows only; elapsed covers each invocation and result parsing.
+
+    It excludes global collection and final report writing. Null means no
+    observation; missing cleanup never becomes confirmed cleanup.
+    """
+    if not isinstance(rows,list) or len(rows)!=4:raise ValueError('four shard rows required')
+    result=[]
+    internal={'id','status','reason','expected_cases','counts','elapsed_ms','owned_tree_cleanup','coverage_complete','exit_code','category'}
+    compact={'id','status','reason','counts','ms','cleanup','coverage','exit','category'}
+    for index,row in enumerate(rows,1):
+        if not isinstance(row,dict) or set(row)-(compact if projected else internal) or row.get('id')!='S'+str(index):raise ValueError('invalid shard identity')
+        status=row.get('status');reason=row.get('reason')
+        if not isinstance(status,str) or status not in ('NOT_RUN','RUNNING','PASS','FAIL') or not isinstance(reason,str) or reason not in SHARD_REASONS:raise ValueError('invalid shard status')
+        counts=row.get('counts')
+        if counts is not None and (not isinstance(counts,dict) or set(counts)!={'PASS','FAIL','SKIP'} or any(type(v) is not int or not 0<=v<=MAX_TEST_CASES for v in counts.values())):raise ValueError('invalid shard counts')
+        elapsed=row.get('ms' if projected else 'elapsed_ms')
+        if elapsed is not None and (type(elapsed) is not int or not 0<=elapsed<=1500000):raise ValueError('invalid shard time')
+        cleanup=row.get('cleanup' if projected else 'owned_tree_cleanup','UNAVAILABLE')
+        if not isinstance(cleanup,str) or cleanup not in TREE_CLEANUP|{'UNAVAILABLE'}:raise ValueError('invalid shard cleanup')
+        coverage=row.get('coverage' if projected else 'coverage_complete')
+        if coverage is not None and type(coverage) is not bool:raise ValueError('invalid shard coverage')
+        code=row.get('exit' if projected else 'exit_code')
+        if code is not None and (type(code) is not int or not -(2**31)<=code<2**32):raise ValueError('invalid shard exit')
+        public={'id':row['id'],'status':status,'reason':reason,'counts':dict(counts) if counts is not None else None,'ms':elapsed,'cleanup':cleanup,'coverage':coverage,'exit':code}
+        if 'category' in row:public['category']=category(row['category'])
+        result.append(public)
+    return result

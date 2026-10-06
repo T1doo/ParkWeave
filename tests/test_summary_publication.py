@@ -241,6 +241,7 @@ def test_coordinator_checkpoints_cover_API_restart_browser_and_final_stop(public
         def open(self,request,timeout):return Response(request)
     def browser(*args):
         assert json.loads(path.read_bytes())['active_phase']=='native_browser';return {'case':'NEEDS_INPUT','clarification':'UNKNOWN'}
+    monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
     monkeypatch.setattr(m.subprocess,'run',run);monkeypatch.setattr(m.urllib.request,'build_opener',lambda *args:Opener());monkeypatch.setitem(sys.modules,'browser_smoke',SimpleNamespace(run_browser=browser))
     assert m.main()==0
     for phase in ('api_case_submit','api_case_wait','restart_read','native_browser','final_stop'):assert phase in phases

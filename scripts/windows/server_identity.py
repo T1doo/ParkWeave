@@ -8,7 +8,7 @@ from pathlib import Path
 
 KERNEL_TIME_TOLERANCE = 0.000010
 REFUSAL_STAGES = frozenset({'ROOT_POLICY','ROOT_SNAPSHOT','BORROWED','ROOT_PIN','CHILD_SNAPSHOT','CHILD_POLICY','CHILD_PIN','RECHECK','CLOSE','UNKNOWN'})
-REFUSAL_REASONS = frozenset({'POLICY_REFUSED','RECORD_MISMATCH','UNAVAILABLE','OPEN_FAILED','PID_MISMATCH','CTIME_MISMATCH','NOT_LIVE','READ_FAILED','PARENT_MISMATCH','CREATION_WINDOW_REFUSED','IDENTITY_CHANGED','CLOSE_FAILED','CHECK_FAILED','ORPHAN_REFUSED','AMBIGUOUS'})
+REFUSAL_REASONS = frozenset({'POLICY_REFUSED','RECORD_MISMATCH','UNAVAILABLE','OPEN_FAILED','PID_MISMATCH','CTIME_MISMATCH','NOT_LIVE','READ_FAILED','PARENT_MISMATCH','CREATION_WINDOW_REFUSED','IDENTITY_CHANGED','CLOSE_FAILED','CHECK_FAILED','ORPHAN_REFUSED','AMBIGUOUS','TRUSTED_COMMAND_REFUSED','CWD_MISMATCH','COMMAND_MISMATCH','ARGV0_MISMATCH','COMMAND_TAIL_MISMATCH'})
 
 
 def validate_identity_refusal(value):
@@ -153,20 +153,25 @@ def _snapshot(process):
 
 
 def bind_server(root, record, health_pid, repo, *, identify,
-                process_factory=None, backend=None, clock=time.time):
+                process_factory=None, backend=None, clock=time.time, identify_reason=None):
     """Return a fixed relation and a private server record (or None).
 
-    identify must be the lifecycle's unchanged identify_process, including its
-    trusted_command check. Only the reported PID is opened; no enumeration.
+    identify (or identify_reason) must retain the lifecycle's exact ordered
+    trusted command/time/cwd/argv predicates. Only the reported PID is opened.
     """
+    def check_policy(process, private_record):
+        if identify_reason is None:
+            if not identify(process,private_record,repo):raise IdentityRefused('POLICY_REFUSED')
+        else:
+            reason=identify_reason(process,private_record,repo)
+            if reason is not None:raise IdentityRefused(reason)
     current_stage='ROOT_POLICY'
     try:
         if not positive_pid(health_pid) or not isinstance(record, dict):
             raise IdentityRefused('POLICY_REFUSED')
         if not positive_pid(record['pid']) or not creation_time(record['created']) or not isinstance(record['command'], list) or not all(isinstance(arg, str) for arg in record['command']):
             raise IdentityRefused('RECORD_MISMATCH')
-        if not identify(root, record, repo):
-            raise IdentityRefused('POLICY_REFUSED')
+        check_policy(root,record)
         current_stage='ROOT_SNAPSHOT'
         before = _snapshot(root)
         if before[0] != record['pid'] or abs(before[1] - record['created']) > KERNEL_TIME_TOLERANCE:
@@ -208,21 +213,23 @@ def bind_server(root, record, health_pid, repo, *, identify,
                 if candidate_before[4] != before[0]:raise IdentityRefused('PARENT_MISMATCH')
                 if not before[1] <= candidate_before[1] <= min(bound_at, before[1] + 60):raise IdentityRefused('CREATION_WINDOW_REFUSED')
                 current_stage='CHILD_POLICY'
-                if candidate_before[2:4] != before[2:4]:
-                    raise IdentityRefused('POLICY_REFUSED')
+                if candidate_before[2] != before[2]:raise IdentityRefused('CWD_MISMATCH')
+                if candidate_before[3] != before[3]:
+                    if not candidate_before[3]:raise IdentityRefused('COMMAND_MISMATCH')
+                    if candidate_before[3][0] != before[3][0]:raise IdentityRefused('ARGV0_MISMATCH')
+                    raise IdentityRefused('COMMAND_TAIL_MISMATCH')
                 child_record = {'pid': health_pid, 'created': candidate_before[1],
                                 'command': list(record['command']), 'parent_pid': before[0],
                                 'parent_created': record['created']}
-                if not identify(candidate, child_record, repo):
-                    raise IdentityRefused('POLICY_REFUSED')
+                check_policy(candidate,child_record)
                 current_stage='CHILD_PIN'
                 candidate_pin = stack.enter_context(PinnedProcess(health_pid, candidate_before[1], backend))
                 relation = 'DIRECT_CHILD'
             current_stage='RECHECK'
             if _snapshot(root) != before or _snapshot(candidate) != candidate_before:
                 raise IdentityRefused('IDENTITY_CHANGED')
-            if not identify(root, record, repo) or (child_record is not None and not identify(candidate, child_record, repo)):
-                raise IdentityRefused('POLICY_REFUSED')
+            check_policy(root,record)
+            if child_record is not None:check_policy(candidate,child_record)
             current_stage='ROOT_PIN'
             root_pin.verify()
             current_stage='ROOT_PIN' if child_record is None else 'CHILD_PIN'

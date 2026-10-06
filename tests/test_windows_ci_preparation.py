@@ -91,6 +91,7 @@ def test_suite_keeps_independent_checks_after_setup_failure(tmp_path,monkeypatch
             Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':1,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN'}));return SimpleNamespace(returncode=0,stdout='',stderr='')
         if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr='')
         return SimpleNamespace(returncode=1,stdout='',stderr='')
+    monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
     monkeypatch.setattr(m.subprocess,'run',run)
     assert m.main()==1
     result=json.loads((tmp_path/'summary.json').read_text());names=[r['case'] for r in result['cases']]
@@ -117,8 +118,12 @@ def test_status_exit_success_cannot_prove_missing_foreign_or_malformed_services(
     assert not m.owned_status('SYNTHETIC unreadable status')
 
 
-def test_suite_marks_exit_zero_status_identity_failure_and_keeps_other_phases(tmp_path,monkeypatch):
+@pytest.mark.parametrize('platform',['posix','nt'])
+def test_suite_marks_exit_zero_status_identity_failure_and_keeps_other_phases(tmp_path,monkeypatch,platform):
     m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+    monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
+    binding={'run_id':'1','run_attempt':'1','head_sha':'a'*40,'cluster_id':'synthetic'}
+    monkeypatch.setattr(m,'current_binding',lambda *args:dict(binding))
     runtime=tmp_path/'.runtime';runtime.mkdir();(runtime/'synthetic-sessions.json').write_text(json.dumps({'fixture-a':'SYNTHETIC-token'}));(runtime/'windows-config.json').write_text('{}')
     monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'))
     monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'summary.json')])
@@ -131,7 +136,7 @@ def test_suite_marks_exit_zero_status_identity_failure_and_keeps_other_phases(tm
             return SimpleNamespace(returncode=0 if setup_count==1 else 1,stdout='',stderr='existing configuration protected')
         if any(str(x).endswith('Status.ps1') for x in command):return SimpleNamespace(returncode=0,stdout=json.dumps({'project':'ParkWeave','port':8765,'model':'DISABLED','processes':[{'pid':1,'identity_matches':False},{'pid':2,'identity_matches':True}]}),stderr='')
         if 'scripts/run_acceptance.py' in command:
-            Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':1,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN'}))
+            Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':1,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN','source_binding':{'state':'AVAILABLE','head_sha':binding['head_sha']}}))
         if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr='')
         return SimpleNamespace(returncode=0,stdout='',stderr='')
     class Response:
@@ -141,6 +146,7 @@ def test_suite_marks_exit_zero_status_identity_failure_and_keeps_other_phases(tm
         def read(self):return json.dumps({'run_id':'SYNTHETIC-run'} if self.request.method=='POST' else {'state':'SUCCEEDED','case':{'id':'SYNTHETIC-case','state':'NEEDS_INPUT','external_acceptance':'NOT_SUBMITTED','offline_fulfillment':'NO_EVIDENCE'}}).encode()
     class Opener:
         def open(self,request,timeout):return Response(request)
+    monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
     monkeypatch.setattr(m.subprocess,'run',run);monkeypatch.setattr(m.urllib.request,'build_opener',lambda *args:Opener())
     monkeypatch.setitem(sys.modules,'browser_smoke',SimpleNamespace(run_browser=lambda *args:{'scope':'SYNTHETIC-MOCK'}))
     assert m.main()==1

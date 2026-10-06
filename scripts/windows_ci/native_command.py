@@ -52,7 +52,8 @@ def publication_capture(data):
     # entire original allowlisted batch and compare every byte/omission field.
     from publish_summary import annotation_commands
     expected,_=annotation_commands(public)
-    if lines!=expected:raise ValueError('incomplete or unknown annotation batch')
+    separator='\r\n' if text[end:].startswith('\r\n') else '\n'
+    if text[end:]!=separator+'\n'.join(expected)+'\n':raise ValueError('incomplete or unknown annotation batch')
     # A truncated final write that omitted LF is not a complete batch.
     if not text.endswith('\n'):raise ValueError('incomplete annotation sink')
     return text.rstrip('\n')

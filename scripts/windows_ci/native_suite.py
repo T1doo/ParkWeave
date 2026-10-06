@@ -18,7 +18,7 @@ sys.path.insert(0,str(REPO/'src'))
 sys.path.insert(0,str(REPO/'scripts/windows'))
 from lifecycle_diagnostics import parse as lifecycle_failure
 from child_environment import command_environment
-from diagnostics import exception_row,read_report,failure_tests,browser_summary
+from diagnostics import exception_row,read_report,failure_tests,browser_summary,shard_summary
 from summary_report import persist, current_binding
 from job_budget import JobBudget
 from publish_summary import project as project_summary
@@ -240,6 +240,11 @@ def main():
                 if parsed.get('counts_scope')!='UNAVAILABLE':rows[-1]['counts']=counts
                 else:rows[-1]['counts_state']='MISSING'
                 rows[-1]['whole_AT_EX']='NOT_RUN'
+                if args.regression_shards is not None:
+                    try:
+                        rows[-1]['shards']=shard_summary(parsed.get('shards'))
+                        if any(row['status']!='PASS' or row['counts'] is None or row['counts']['FAIL']!=0 or row['coverage'] is not True or row['exit']!=0 or row['cleanup']!='OWNED_TREE_STOPPED' for row in rows[-1]['shards']):rows[-1]['status']='FAIL'
+                    except ValueError:rows[-1].update(shard_summary_state='UNAVAILABLE',status='FAIL')
                 claimed=parsed.get('source_binding',{'state':'UNAVAILABLE'});rows[-1]['source_binding']=claimed
                 if expected_head is None or claimed.get('state')!='AVAILABLE' or claimed.get('head_sha')!=expected_head:
                     rows[-1].update(status='FAIL',reason='SOURCE_BINDING_UNAVAILABLE' if expected_head is None or claimed.get('state')!='AVAILABLE' else 'SOURCE_BINDING_MISMATCH')
@@ -248,6 +253,7 @@ def main():
                 rows[-1]['failure_diagnostics']=failure_tests(REPO,parsed.get('private_junit'))
                 if job is not None and (parsed.get('coverage_complete') is not True or parsed.get('execution_exit_code')!=0):rows[-1]['status']='FAIL'
             else:
+                if args.regression_shards is not None:rows[-1]['shard_summary_state']='UNAVAILABLE'
                 rows[-1]['failure_diagnostics']={'state':'REPORT_MISSING','failed_test_ids':[]}
                 rows[-1]['status']='FAIL'
     except Exception as exc:

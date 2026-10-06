@@ -7,6 +7,8 @@ from test_lifecycle_diagnostics import lifecycle,diagnostic,module,POISON
 
 def prepare_start(tmp_path,monkeypatch,case):
     import psutil,urllib.request,urllib.error
+    # This fixture observes portable readiness; strict binding has separate injected oracles.
+    monkeypatch.setattr(lifecycle,'native_binding_enabled',lambda:False)
     monkeypatch.setattr(lifecycle,'RUNTIME',tmp_path);monkeypatch.setattr(lifecycle,'STATE',tmp_path/'state.json')
     monkeypatch.setattr(lifecycle,'load_config',lambda:{'python':'SYNTHETIC-python','port':8765})
     for name in ('check_python','port_available','protect_private_root'):monkeypatch.setattr(lifecycle,name,lambda *args:None)

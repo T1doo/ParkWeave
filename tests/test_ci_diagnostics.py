@@ -98,8 +98,10 @@ def test_browser_binding_failure_has_explicit_phase_without_path(tmp_path,monkey
 
 
 @pytest.mark.parametrize('diagnostic_state',['AVAILABLE','JUNIT_MISSING','JUNIT_INVALID','JUNIT_UNREADABLE_OR_OVERSIZE','ALLOWLIST_UNAVAILABLE','REPORT_INVALID'])
-def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state):
+@pytest.mark.parametrize('platform',['posix','nt'])
+def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state,platform):
     m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+    monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
     path,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),(POISON,POISON,'error')])
     if diagnostic_state=='JUNIT_MISSING':path.unlink()
     elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'<unclosed>')
@@ -118,6 +120,7 @@ def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_fail
             return SimpleNamespace(returncode=1,stdout=POISON,stderr=POISON)
         if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr=POISON)
         return SimpleNamespace(returncode=1 if any(str(x).endswith('Setup.ps1') for x in command) else 0,stdout=POISON,stderr=POISON)
+    monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
     monkeypatch.setattr(m.subprocess,'run',run);assert m.main()==1
     rows=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'];reg=next(x for x in rows if x['case']=='full_engineering_regression')
     assert reg['status']=='FAIL' and reg['exit_code']==1
