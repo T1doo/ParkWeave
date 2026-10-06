@@ -227,3 +227,8 @@ Linux定向第一次30 PASS/6.22秒，补并发同Case与审核-补件竞态、G
 ## ENG042 单次诊断CI终态
 
 ENG041普通快进push至9801259，唯一标准37444794329/attempt1 completed/failure。新安全字段真实送达：Doctor/Start BoundaryError/private_acl/ACL_REFUSED；完整回归内部600s TimeoutExpired、最后记录pytest_call，仍无ID/counts。发布器/ownedPGStop成功，外层684.516s exit1未超时。ACL具体子分支未知，优先检查Setup之后新文件初始化与严格ACL合同；本地自有测试后代存活单列OPEN，不能当Windows原因。见[ENG042](ENG042-SingleDiagnosticCI.md)。未再push/newCI或改600s/权限，修复范围仅方案，阶段门/预算保留。
+
+
+## ENG043 只读ACL检查与等待调查
+
+仅本地修复ACL元数据/SID解析：旧检查受控读取/转换错误可exit0，新检查fail-closed并保留原严格合同；Setup最终只读复查及固定有界错误沿已有协议传播，未改实际对象权限。后代测试flush竞态已修，受控ThreadPool退出等待模型不归因实际Windows600s；OWNED_REGRESSION_DESCENDANTS仍OPEN。两位只读复核无剩余阻断，最终冻结完整回归922PASS/0FAIL/1WindowsSKIP/2既有WARN/270.92s，148份源hash一致。见[ENG043](ENG043-ReadonlyACLAndWaits.md)。不push/newCI/提高600s或900s；真实Windows/PS5及具体ACL违规条件、实际超时原因未知，原阶段门/R4/预算和环境备份保留。

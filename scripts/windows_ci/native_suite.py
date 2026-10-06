@@ -66,7 +66,7 @@ def main():
         ok=proc.returncode==expected and (required_error is None or required_error in proc.stderr)
         if ok and validate is not None:ok=validate(proc.stdout)
         rows.append({'case':label,'status':'PASS' if ok else 'FAIL','exit_code':proc.returncode})
-        if not ok and label in ('Doctor_native','Start_native'):
+        if not ok and label in ('Doctor_native','Start_native','Setup_native'):
             rows[-1].update(lifecycle_failure(proc.stdout,path.stem.lower()))
         if proc.returncode==expected and validate is not None and not ok:rows[-1]['reason']='OWNED_STATUS_NOT_CONFIRMED'
         checkpoint('final_stop' if label=='final_Stop_owned_services' else phase)

@@ -76,6 +76,7 @@ def test_real_isolated_local_database_scope_schema_and_role(tmp_path):
 
 
 @pytest.mark.parametrize('action,phase,exc',[
+    ('setup','private_acl',lifecycle.BoundaryError(POISON,'ACL_OWNER_MISMATCH')),
     ('doctor','private_acl',lifecycle.BoundaryError(POISON,'ACL_REFUSED')),
     ('doctor','dependency_freeze',subprocess.CalledProcessError(1,POISON,output=POISON,stderr=POISON)),
     ('doctor','doctor_output',UnicodeEncodeError('ascii',POISON,0,1,POISON)),
@@ -152,7 +153,8 @@ def test_publisher_standalone_without_site_packages_or_pytest(tmp_path):
     assert result.returncode==1 and 'SUMMARY_MISSING' in result.stdout and 'ANNOTATIONS_UNAVAILABLE' in result.stdout and result.stderr==''
 
 
-def test_suite_uses_only_doctor_start_stdout_marker_and_preserves_failure(tmp_path,monkeypatch,capsys):
+@pytest.mark.parametrize("setup_failure",[False,True])
+def test_suite_uses_setup_doctor_start_stdout_marker_and_preserves_failure(tmp_path,monkeypatch,capsys,setup_failure):
     from types import SimpleNamespace
     suite=module('native_suite');suite.REPO=tmp_path;suite.require_server=lambda:None
     monkeypatch.setattr(suite.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'))
@@ -169,6 +171,9 @@ def test_suite_uses_only_doctor_start_stdout_marker_and_preserves_failure(tmp_pa
                 return SimpleNamespace(returncode=1,stdout=diagnostic.command(action,exc)+'\n',stderr=POISON)
         if any(str(x).endswith('Setup.ps1') for x in command):
             setup_count+=1
+            if setup_failure:
+                exc=lifecycle.BoundaryError(POISON,'ACL_OWNER_MISMATCH');exc.parkweave_lifecycle_phase='private_acl'
+                return SimpleNamespace(returncode=1,stdout=diagnostic.command('setup',exc)+'\n',stderr=POISON)
             return SimpleNamespace(returncode=0 if setup_count==1 else 1,stdout='',stderr='existing configuration protected')
         if 'scripts/run_acceptance.py' in command:Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':1,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN'}))
         if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr='')
@@ -176,6 +181,12 @@ def test_suite_uses_only_doctor_start_stdout_marker_and_preserves_failure(tmp_pa
     monkeypatch.setattr(suite.subprocess,'run',run)
     assert suite.main()==1
     rows=json.loads((tmp_path/'summary.json').read_text())['cases']
+    if setup_failure:
+        row=next(x for x in rows if x['case']=='Setup_native')
+        assert row['status']=='FAIL' and row['boundary_phase']=='private_acl' and row['boundary_reason']=='ACL_OWNER_MISMATCH'
+        assert next(x for x in rows if x['case']=='lifecycle_API_browser')['reason']=='SETUP_FAILED'
+        assert POISON not in capsys.readouterr().out
+        return
     for name in ('Doctor_native','Start_native'):
         row=next(x for x in rows if x['case']==name)
         assert row['status']=='FAIL' and row['exit_code']==1 and row['boundary_phase']=='database_role' and row['boundary_reason']=='APP_ROLE_REFUSED'
@@ -261,3 +272,12 @@ def test_real_pytest_stall_checkpoint_identifies_phase_without_test_content(tmp_
     finally:
         if process.poll() is None:process.terminate()
         process.wait(timeout=5)
+
+
+def test_setup_readonly_failure_survives_safe_annotation_projection():
+    publisher=module("publish_summary");binding={"synthetic":"binding"}
+    record=module("native_suite").summary([{ "case":"Setup_native","status":"FAIL","exit_code":1,"boundary_phase":"private_acl","category":"BoundaryError","boundary_reason":"ACL_OWNER_MISMATCH","private_log":POISON}])
+    record.update(diagnostic_schema=1,diagnostic_binding=binding,report_state="COMPLETED",active_phase="UNKNOWN")
+    public=publisher.project(record,binding);commands,ok=publisher.annotation_commands(public)
+    assert ok and len(commands)==2 and POISON not in repr(commands)
+    assert public["cases"][0]["boundary_reason"]=="ACL_OWNER_MISMATCH"

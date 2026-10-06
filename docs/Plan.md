@@ -122,3 +122,8 @@ ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合�
 ## ENG042 单次标准Windows诊断结果与修复范围
 
 唯一[CI37444794329](https://github.com/T1doo/ParkWeave/actions/runs/37444794329)精确head9801259失败；Doctor/Start已定位private_acl/ACL_REFUSED，具体owner/Allow/继承/PS错误子分支未知。完整回归TimeoutExpired最后记录pytest_call，无具体测试与成绩；PG停止成功。针对性ACL初始化/检查及等待路径修复范围与独立OPEN自有测试后代项见[F2/ENG042](F2/ENG042-SingleDiagnosticCI.md)。本轮没有新增修复/诊断层或再跑CI，原权限、600s、预算和阶段门保留。
+
+
+## ENG043 只读ACL检查与等待调查
+
+仅本地修复ACL元数据/SID解析：旧检查受控读取/转换错误可exit0，新检查fail-closed并保留原严格合同；Setup最终只读复查及固定有界错误沿已有协议传播，未改实际对象权限。后代测试flush竞态已修，受控ThreadPool退出等待模型不归因实际Windows600s；OWNED_REGRESSION_DESCENDANTS仍OPEN。两位只读复核无剩余阻断，最终冻结完整回归922PASS/0FAIL/1WindowsSKIP/2既有WARN/270.92s，148份源hash一致。见[ENG043](F2/ENG043-ReadonlyACLAndWaits.md)。不push/newCI/提高600s或900s；真实Windows/PS5及具体ACL违规条件、实际超时原因未知，原阶段门/R4/预算和环境备份保留。

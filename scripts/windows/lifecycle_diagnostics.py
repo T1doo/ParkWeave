@@ -8,6 +8,7 @@ MAX_BYTES=1024
 PHASES=frozenset({'UNKNOWN','python_guard','configuration','private_acl','environment_binding','dsn_parse','database_connect','database_role','database_version','database_schema','dependency_freeze','doctor_output','process_record','port_check','service_log','process_spawn','process_identity','health_readiness','process_stop'})
 CATEGORIES=frozenset({'OTHER','BoundaryError','OSError','FileNotFoundError','PermissionError','ValueError','TypeError','KeyError','AttributeError','JSONDecodeError','UnicodeDecodeError','UnicodeEncodeError','CalledProcessError','TimeoutExpired','ModuleNotFoundError','ImportError','OperationalError','InterfaceError','ProgrammingError','InsufficientPrivilege','UndefinedTable','InvalidPassword','InvalidCatalogName'})
 REASONS=frozenset({'UNCLASSIFIED','BOUNDARY_REFUSED','ENVIRONMENT_REQUIRED','NATIVE_PLATFORM_REQUIRED','CONFIG_INVALID','CONFIG_SCOPE_REFUSED','PORT_INVALID','PYTHON_BINDING_REFUSED','PRIVATE_ROOT_MISMATCH','ACL_REFUSED','REPARSE_REFUSED','PYTHON_VERSION_REFUSED','DSN_SCOPE_REFUSED','APP_ROLE_REFUSED','CONFIG_MISSING','PORT_OCCUPIED','PROCESS_RECORD_EXISTS','SERVICE_EXITED','READINESS_TIMEOUT','DIAGNOSTIC_UNAVAILABLE'})
+REASONS=REASONS|{'ACL_OWNER_MISMATCH','ACL_ALLOW_REFUSED','ACL_INHERITANCE_REFUSED','ACL_INSPECTION_FAILED'}
 
 
 @contextmanager
@@ -53,7 +54,7 @@ def command(action,exc):
 
 def parse(stderr,action):
     unavailable={'boundary_phase':'UNKNOWN','category':'OTHER','boundary_reason':'DIAGNOSTIC_UNAVAILABLE'}
-    if action not in ('doctor','start'):return unavailable
+    if action not in ('doctor','start','setup'):return unavailable
     if not isinstance(stderr,str) or len(stderr)>65536:return unavailable
     matches=[line for line in stderr.splitlines() if line.startswith(PREFIX)]
     if len(matches)!=1 or not matches[0].isascii() or len(matches[0])+1>MAX_BYTES:return unavailable

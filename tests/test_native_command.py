@@ -44,7 +44,7 @@ def test_timeout_stops_only_exact_child_and_keeps_private_output(tmp_path):
 
 def test_descendant_file_handle_does_not_hold_controller_completion(tmp_path):
     marker = tmp_path / 'descendant-finished'
-    child = 'import time,pathlib;time.sleep(2);print("SYNTHETIC child");pathlib.Path(' + repr(str(marker)) + ').write_text("done")'
+    child = 'import time,pathlib;time.sleep(2);print("SYNTHETIC child",flush=True);pathlib.Path(' + repr(str(marker)) + ').write_text("done")'
     parent = 'import subprocess,sys;subprocess.Popen([sys.executable,"-c",' + repr(child) + ']);print("SYNTHETIC controller exited")'
     result = NATIVE.execute(sys.executable, ['-c', parent], 'pg_start', 5, tmp_path)
     assert result['exit_code'] == 0 and result['elapsed_seconds'] < 1.8

@@ -67,7 +67,7 @@ def project(record,binding):
             if key in row:public[key]=row[key] if isinstance(row[key],str) and row[key] in values else fallback
         for key,values,fallback in (('boundary_phase',BOUNDARY_PHASES,'UNKNOWN'),('boundary_reason',BOUNDARY_REASONS,'DIAGNOSTIC_UNAVAILABLE'),('cleanup_category',BOUNDARY_CATEGORIES,'OTHER')):
             if key in row:
-                if row['case'] not in ('Doctor_native','Start_native'):raise ValueError('invalid lifecycle case')
+                if row['case'] not in ('Doctor_native','Start_native','Setup_native'):raise ValueError('invalid lifecycle case')
                 public[key]=row[key] if isinstance(row[key],str) and row[key] in values else fallback
         if row['case']=='full_engineering_regression':
             if 'regression_phase' in row:public['regression_phase']=row['regression_phase'] if isinstance(row['regression_phase'],str) and row['regression_phase'] in REGRESSION_PHASES else 'UNKNOWN'
@@ -145,7 +145,7 @@ def annotation_case(row,allowed):
             value[key]=row[key]
     for key,choices in (('boundary_phase',BOUNDARY_PHASES),('boundary_reason',BOUNDARY_REASONS),('cleanup_category',BOUNDARY_CATEGORIES)):
         if key in row:
-            if row['case'] not in ('Doctor_native','Start_native') or not isinstance(row[key],str) or row[key] not in choices:raise ValueError('invalid lifecycle field')
+            if row['case'] not in ('Doctor_native','Start_native','Setup_native') or not isinstance(row[key],str) or row[key] not in choices:raise ValueError('invalid lifecycle field')
             value[key]=row[key]
     if 'regression_phase' in row:
         if row['case']!='full_engineering_regression' or not isinstance(row['regression_phase'],str) or row['regression_phase'] not in REGRESSION_PHASES:raise ValueError('invalid regression phase')

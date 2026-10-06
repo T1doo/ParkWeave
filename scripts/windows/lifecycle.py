@@ -58,19 +58,50 @@ def write_exclusive(path,value):
     with Path(path).open('x',encoding='utf-8') as f:json.dump(value,f,ensure_ascii=False,indent=2);f.write('\n')
 
 
+def acl_check_command():
+    # Read only: resolve owner/rules directly as SIDs, never parse display names.
+    # Errors belong to the existing rejection contract, not a successful check.
+    return """$ErrorActionPreference='Stop'
+try {
+    $p=$env:PARKWEAVE_ACL_ROOT
+    $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User
+    if ($null -eq $sid -or [string]::IsNullOrWhiteSpace($sid.Value)) { throw 'SID unavailable' }
+    $paths=@($p)
+    foreach($name in @('files','synthetic-sessions.json','windows-config.json','windows-processes.json','windows-services.log')) {
+        $q=Join-Path $p $name
+        if(Test-Path -LiteralPath $q){$paths+=$q}
+    }
+    foreach($q in $paths){
+        $acl=Get-Acl -LiteralPath $q -ErrorAction Stop
+        $owner=$acl.GetOwner([System.Security.Principal.SecurityIdentifier])
+        if ($null -eq $owner -or [string]::IsNullOrWhiteSpace($owner.Value)) { throw 'Owner SID unavailable' }
+        if($q -eq $p -and -not $acl.AreAccessRulesProtected){exit 4}
+        if($owner.Value -ne $sid.Value){exit 2}
+        $rules=$acl.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier])
+        if ($null -eq $rules) { throw 'Rules unavailable' }
+        foreach($rule in $rules){
+            if($rule.AccessControlType -eq 'Allow'){
+                $id=$rule.IdentityReference.Value
+                if ([string]::IsNullOrWhiteSpace($id)) { throw 'Rule SID unavailable' }
+                if($id -notin @($sid.Value,'S-1-5-18','S-1-5-32-544')){exit 3}
+            }
+        }
+    }
+} catch { exit 5 }
+exit 0
+"""
+
+
 @staged('private_acl')
 def native_acl_check(root):
     require_windows()
-    # Read-only existing ACL check. POSIX mode bits never stand in for Windows ACL.
-    code="$p=$env:PARKWEAVE_ACL_ROOT; $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User; "
-    code+="$paths=@($p); foreach($name in @('files','synthetic-sessions.json','windows-config.json','windows-processes.json','windows-services.log')) { $q=Join-Path $p $name; if(Test-Path -LiteralPath $q){$paths+=$q} }; "
-    code+="foreach($q in $paths){$acl=Get-Acl -LiteralPath $q; $owner=New-Object System.Security.Principal.NTAccount($acl.Owner); "
-    code+="if($q -eq $p -and -not $acl.AreAccessRulesProtected){exit 4}; if($owner.Translate([System.Security.Principal.SecurityIdentifier]).Value -ne $sid.Value){exit 2}; "
-    code+="foreach($rule in $acl.Access){if($rule.AccessControlType -eq 'Allow'){ $id=$rule.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value; "
-    code+="if($id -notin @($sid.Value,'S-1-5-18','S-1-5-32-544')){exit 3} } } }; exit 0"
+    if root.is_symlink() or getattr(root,'is_junction',lambda:False)():raise BoundaryError('private root reparse point refused','REPARSE_REFUSED')
+    code=acl_check_command()
     result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-Command',code],
                           env=minimal_environment(os.environ,PARKWEAVE_ACL_ROOT=str(root)),capture_output=True)
-    if result.returncode:raise BoundaryError('existing private ACL unsafe/unreadable; ask installer to adjust explicitly; nothing changed','ACL_REFUSED')
+    if result.returncode:
+        reason={2:'ACL_OWNER_MISMATCH',3:'ACL_ALLOW_REFUSED',4:'ACL_INHERITANCE_REFUSED'}.get(result.returncode,'ACL_INSPECTION_FAILED')
+        raise BoundaryError('existing private ACL unsafe/unreadable; ask installer to adjust explicitly; nothing changed',reason)
 
 
 @staged('private_acl')
@@ -201,6 +232,7 @@ def setup():
         subprocess.run([str(python),'-m','parkweave.cli','seed-synthetic'],env=env,check=True,cwd=REPO)
     # Existing sessions and grants remain unchanged; setup never reactivates them.
     write_exclusive(CONFIG,config_template(REPO,python))
+    native_acl_check(RUNTIME)  # Read-only final postcondition includes new files.
     print('Setup candidate complete. Config/data protected; LIVE disabled. Run Doctor.ps1 next.')
 
 
@@ -308,7 +340,7 @@ def main():
         require_windows()
         globals()[args.action]()
     except Exception as exc:
-        if args.action in ('doctor','start'):
+        if args.action in ('doctor','start','setup'):
             try:print(diagnostic_command(args.action,exc),flush=True)
             except Exception:pass  # Diagnostic emission never changes the exit verdict.
         # No exception/DSN/HTTP payload strings are emitted; they may contain secrets.
