@@ -9,3 +9,5 @@
 本次Windows实际raw-byte integrity、Start/Stop拒绝分支、四片状态/计数/耗时、cleanup均UNAVAILABLE；counts MISSING不能PASS。ENG061的424本地PASS/39独立PASS、1217 collect-only以及51文件本地autocrlf证明保留为本地证据，不能替代这次Windows结果。原25分钟总cap/每片600/清理200秒、runner/权限/R4关闭、F1未签收/F2并行探索、Server非Win11、LIVE预算0及原环境备份保持。
 
 完整有界状态见[证据](evidence/eng062-single-native-monitor-blocked.json)。本报告仅本地提交，不追加push或CI。
+
+后续只读状态查询恢复，已取得同一run终态failure，详见[ENG063](ENG063-SingleNativeTerminal.md)。上述401及UNAVAILABLE是当时历史状态，未触发新CI。

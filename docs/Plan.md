@@ -169,3 +169,8 @@ ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合�
 ## ENG062 一次授权CI监测被认证拒绝
 
 formal根HEAD200、原remote41bcc11确认未变，普通push已复核f5c8667成功；唯一run37489722219/attempt1精确同头已启动，最后Prepare in_progress。后续jobs读取HTTP401/Bad credentials，立即停网络，不换身份/代理/凭据、不rerun；终态/LF实际检查/拒绝分支/四片/cleanup UNAVAILABLE，counts缺失不能PASS。详见[ENG062](F2/ENG062-SingleNativeMonitorBlocked.md)；恢复同一连接后仅继续该run，原期限/runner/权限/门/预算/环境备份保持。
+
+
+## ENG063 原身份读取恢复，唯一run实际终态
+
+同一路径认证恢复，无新凭据/身份/权限、push或CI。唯一37489722219/attempt1/sourcef5c8667 completed/failure，job1118秒；字节预检sourceAVAILABLE，Start/内部Stop CHILD_POLICY/POLICY_REFUSED。实际aggregate1117PASS49FAIL51SKIP/1217，逐片typed结果/覆盖flag未公开，不冒充PASS；Lifecycle80.594/Validation970.219均非timeout、内外Job回收，最终app/PGStop0。详见[ENG063](F2/ENG063-SingleNativeTerminal.md)；不是预算耗尽，原门/runner/期限/R4/预算/环境备份保持。
