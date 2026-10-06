@@ -13,6 +13,13 @@ import urllib.request
 from urllib.parse import quote
 from parkweave.process_env import minimal_environment
 
+INJECTION_GOAL='SYNTHETIC native browser local case <script>globalThis.PARKWEAVE_NATIVE_SCRIPT_EXECUTED=true</script>'
+
+def verify_case_rendering(driver,record,result):
+    """Observe the actual intake -> worker -> API -> application render path."""
+    assert record['case']['goal']==INJECTION_GOAL and INJECTION_GOAL in result
+    assert driver.execute("return Boolean(globalThis.PARKWEAVE_NATIVE_SCRIPT_EXECUTED||document.querySelector('#result script'));") is False
+
 class LocalDriver:
     def __init__(self,port):
         self.base='http://127.0.0.1:'+str(port)
@@ -59,8 +66,13 @@ def owned_browser(binary,port):
         except Exception as exc:faults.append(type(exc).__name__)
         if faults:
             note='owned browser cleanup failed: '+','.join(faults)
-            if primary is not None:primary.add_note(note)
-            else:raise RuntimeError(note)
+            if primary is not None:
+                primary.parkweave_owned_browser_cleanup=tuple(faults)
+                primary.add_note(note)
+            else:
+                error=RuntimeError(note)
+                error.parkweave_owned_browser_cleanup=tuple(faults)
+                raise error
 
 def run_browser(repo,token):
     if os.name!='nt':raise RuntimeError('NOT_RUN: native Server browser only')
@@ -81,7 +93,7 @@ def run_browser(repo,token):
         session=driver.call('/session','POST',caps);driver.session=session['sessionId']
         driver.call('/session/'+quote(driver.session,safe='')+'/url','POST',{'url':'http://127.0.0.1:8765'})
         driver.execute("document.querySelector('#token').value=arguments[0];return null;",token)
-        driver.execute("document.querySelector('#goal').value='SYNTHETIC native browser local case';document.querySelector('#intake button').click();return null;")
+        driver.execute("document.querySelector('#goal').value=arguments[0];document.querySelector('#intake button').click();return null;",INJECTION_GOAL)
         run=driver.wait("return document.querySelector('#run').value;",lambda value:isinstance(value,str) and len(value)==36)
         # Actual user button refresh on the active API/independent worker.
         driver.execute("document.querySelector('[data-tab=collaboration]').click();document.querySelector('#refresh').click();return null;")
@@ -94,6 +106,7 @@ def run_browser(repo,token):
             driver.execute("document.querySelector('#refresh').click();return null;");time.sleep(.1)
         else:raise AssertionError('native worker did not complete browser case')
         record=json.loads(result);assert record['case']['state']=='NEEDS_INPUT' and record['case']['external_acceptance']=='NOT_SUBMITTED'
+        verify_case_rendering(driver,record,result)
         driver.execute("document.querySelector('#candidate-region').value='SYNTHETIC native region';document.querySelector('#candidate-intake button').click();return null;")
         parent=driver.wait("return document.querySelector('#run').value;",lambda value:isinstance(value,str) and len(value)==36 and value!=run)
         for _ in range(30):
@@ -113,8 +126,6 @@ def run_browser(repo,token):
         driver.execute("document.querySelector('#cancel-clarification').click();return null;")
         cancel=driver.wait("try{return JSON.parse(document.querySelector('#result').textContent)}catch{return null;}",lambda value:isinstance(value,dict) and value.get('decision')=='CANCEL')
         assert cancel['run_id'] is None
-        driver.execute("document.querySelector('#result').textContent='<script>globalThis.PARKWEAVE_BAD=true</script>';return null;")
-        assert driver.execute("return Boolean(globalThis.PARKWEAVE_BAD||document.querySelector('#result script'));") is False
         browser_version=session['capabilities'].get('browserVersion')
         driver.call('/session/'+quote(driver.session,safe=''),'DELETE');driver.session=None
         return {'environment':'native Windows Server engineering, not Win11 acceptance','browser_version':browser_version,

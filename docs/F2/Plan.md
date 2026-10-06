@@ -1,5 +1,9 @@
 # F2并行开发计划：本地资料准备与个人待办
 
+## ENG026 收敛与同步前审查
+
+当前2fddccae基线只核对积累提交链、更新F2真实闭环/缺口及复现入口，独立审查Windows native_suite并修复代码可证验收弱点；不继续扩产品功能。结果和源码同步/原生验证/业务签收三种判断见[ENG026-SyncReadiness.md](ENG026-SyncReadiness.md)。当前不push/新CI/备份/导出/上传/LIVE，旧CI失败case待用户，不能猜根因。
+
 ## ENG025 当前Case资源持久关联切片
 基线18f9f567，覆盖原T03/T04中当前资料服务Case与本人已确认两资源组合的显式持久关联；当前READ/HOLD/EXECUTE与PREPARE授权、资料/关联CAS、不可变历史与一组合一Case归属。允许同Case新资料版本明确重验或换组合，不自动释放旧预约；资料重开、取消、时段结束、资源规则改变显示需重验。暂无通用Case重开/关闭、ServicePlan/Approval/DAG或多Case共享转移。冻结L01—L06及最终结果见[ENG025-CaseResources.md](ENG025-CaseResources.md)。本片只本地commit，不push/newCI/Library/backup/export/upload/LIVE。
 

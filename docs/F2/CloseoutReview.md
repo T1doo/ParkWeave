@@ -83,3 +83,13 @@ reviewer指出取消中途失败/单条confirm竞争/新表权限/精确11→12�
 独立6.1sol medium只读审查三项P2均修复，最终无剩余实质缺陷；不把主代理运行当独立复跑。新增29 PG/API PASS，最终真实三角色浏览器与通用事实候选链PASS，95页面时序检查PASS；全量584PASS/0FAIL/1WindowsSKIP/2既有WARN180.06秒，121源码hash冻结一致。保留最初fixture/约束失败与无效的初轮403 oracle预期，不改历史成绩。14张新独立截图，登记共55图hash匹配，3旧覆盖/3缺失继续不可复验。33保护文件、原V1源文与旧roles前缀未改，新表只SELECT/INSERT。
 
 证据[evidence/eng025-acceptance-summary.json](evidence/eng025-acceptance-summary.json)及[截图审计](evidence/eng025-screenshot-audit.json)。并发真实线程未控制交错，无穷举保证；合法执行者assignment仍测试owner建立。F1F2未签收、R4关闭、Win11/36AT6EXNOT_RUN；Windows失败明细待用户。仅本地安全commit，无network/push/newCI/Library/备份/导出/上传/LIVE/provider/真实预算。
+
+## ENG026 收敛、同步前判断与Windows验收弱点（本地完成）
+
+基线2fddccae。起始树干净、git fsck通过；恢复5173490/旧5185cf4/旧CI9a8cbc/缓存6ff160a祖先与到ENG025的10个连续本地提交完整，无reset丢代码；未推送，缓存不是实时GitHub状态。V1Status更新当前有边界持久关联闭环、T01—T07未完成项及真实入口前置，不继续扩产品功能。
+
+独立windows_native_review（用户指定6.1sol medium）只读发现并复核三处验收弱点：Status exit0不验证自有服务身份；清理类别丢失；注入直接写DOM伪证据。仅改Windows CI suite/browser及测试，修正Status安全JSON判定、结构化主/仅清理失败类别、实际SYNTHETIC intake/worker/API/UI渲染oracle；未改应用Windows文件候选/句柄/dispatch/角色/生命周期/ACL/环境白名单/workflow守卫。最终无剩余实质发现，reviewer未运行测试或读私有runtime。
+
+冻结后全量594PASS/0FAIL/1WindowsSKIP/2既有WARN174.96秒，121源码hash一致；Windows相关本地136PASS，13 PowerShell AST/4拒绝守卫/YAML策略及真实Linux渲染链PASS。工具初次.venv无PyYAML与直接pwsh版本探针默认缓存只读失败保留，不当应用或Windows失败；最终使用已有系统解释器与工作区XDG隔离，无安装/改HOME/策略。31保护文件保留，仅2个验收文件明确变化；原V1源文/规格、产品代码与旧截图报告未改。
+
+唯一旧CI事实仍9a8cbc的37324704568 PreparePASS，native_suite78.094秒exit1，失败case/根因UNKNOWN。未重试日志下载/网络或换身份。同步判断、可复现实测入口及证据见[ENG026](ENG026-SyncReadiness.md)和[evidence/eng026-sync-readiness.json](evidence/eng026-sync-readiness.json)。当前push明确暂停且未比较实时远端；Windows验证缺口阻止宣称F1原生通过，原始F2剩余项阻止业务签收，不能混作已知源码同步漏洞。仅本地commit后结束，无push/newCI/备份/导出/上传/LIVE/provider/预算。

@@ -180,6 +180,8 @@ def test_browser_timeout_stops_owned_services_and_keeps_independent_phases(tmp_p
             state.write_text('{"scope":"SYNTHETIC"}')
         elif 'Stop.ps1' in joined:
             assert not any(key.startswith('PARKWEAVE_') for key in env);state.unlink(missing_ok=True)
+        elif 'Status.ps1' in joined:
+            return SimpleNamespace(returncode=0,stdout=json.dumps({'project':'ParkWeave','model':'DISABLED','port':8765,'processes':[{'pid':700,'identity_matches':True},{'pid':701,'identity_matches':True}]}),stderr='')
         elif 'scripts/run_acceptance.py' in joined:
             assert set(key for key in env if key.startswith('PARKWEAVE_'))=={'PARKWEAVE_TEST_OWNER_DSN'}
             Path(command[-1]).write_text('{"engineering_total_counts":{"PASS":1,"FAIL":0,"SKIP":0},"whole_AT_EX":"NOT_RUN"}')
@@ -232,3 +234,29 @@ def test_browser_cleanup_fault_is_visible_and_never_hides_primary(fault):
             with pytest.raises(subprocess.TimeoutExpired) as error:
                 with m.owned_browser('SYNTHETIC',12345):raise primary
             assert error.value is primary and primary.__notes__ and events==['terminate','wait','profile']
+            summary=module('native_suite').exception_row('lifecycle_exception',primary)
+            assert summary['owned_browser_cleanup_failures']==(['TimeoutExpired'] if fault=='wait' else ['PermissionError'])
+            assert 'SYNTHETIC-body' not in json.dumps(summary) and 'SYNTHETIC-cleanup' not in json.dumps(summary)
+
+@pytest.mark.parametrize('fault',['wait','profile'])
+def test_successful_browser_body_cleanup_failure_reaches_safe_suite_summary(fault):
+    m=module('browser_smoke')
+    class Profile:
+        name='SYNTHETIC-profile'
+        def __init__(self,**kwargs):pass
+        def cleanup(self):
+            if fault=='profile':raise PermissionError('SYNTHETIC-private-cleanup')
+    class Proc:
+        def poll(self):return None
+        def terminate(self):pass
+        def wait(self,timeout):
+            if fault=='wait':raise subprocess.TimeoutExpired('SYNTHETIC-private-command',10)
+    class Driver:
+        session=None
+        def __init__(self,*args):pass
+    with patch.object(m.tempfile,'TemporaryDirectory',Profile),patch.object(m.subprocess,'Popen',lambda *args,**kwargs:Proc()),patch.object(m,'LocalDriver',Driver):
+        with pytest.raises(RuntimeError) as error:
+            with m.owned_browser('SYNTHETIC',12345):pass
+    summary=module('native_suite').exception_row('lifecycle_exception',error.value)
+    assert summary['category']=='RuntimeError' and summary['owned_browser_cleanup_failures']==(['TimeoutExpired'] if fault=='wait' else ['PermissionError'])
+    assert 'SYNTHETIC-private' not in json.dumps(summary)

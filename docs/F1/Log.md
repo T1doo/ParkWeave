@@ -263,3 +263,9 @@ Forbidden记录只来自前轮已捕获输出：gh run list仓库Actions列表ta
 最终定向36 PASS/1既有WARN/0.88秒（原12+新24），YAML policy、PowerShell7.6.6 AST11份零错误、四入口拒Linux，compileall/diffcheck通过。冻结全量 `.venv/bin/python scripts/run_acceptance.py --report docs/F1/evidence/eng013-acceptance-summary.json`：**353 PASS/0 FAIL/1 Windows SKIP/2既有WARN，103.399秒**，80个code/test/script hash复核一致（新增.psm1纳入）；不重跑无依据的全量任务。两Library原档manifest的字节/行/hash仍一致；原files.py/lifecycle/Win11 probe/workflow及ENG012原错误/最终报告逐字不变。
 
 Server/Win11/browser原生NOT_RUN或BLOCKED、production R4 DISABLED、whole36AT6EX NOT_RUN、LIVE/真实共享部署/真实数据外门不解除。WindowsServerCI.md仅列恢复原通道访问与发布授权后一次标准mock job的最小验证计划，本轮不执行。变更文件secret-pattern/人工SYNTHETIC范围及ignored runtime检查通过，仅本地commit不push（包含待审workflow的历史祖先）。未重查远端，最后已核实push仍5185cf4b0a3973f1b7b486bc6adf43f478742db2。F1 IN_PROGRESS，本轮结束供父任务复核，不新扩F1/F2。
+
+## ENG026 离线收敛与Windows验收脚本审查
+
+保持唯一旧CI事实：9a8cbc527503ab55978a4b50612207d3bf72de26的37324704568 Prepare通过，native_suite78.094秒exit1，具体失败case未取得，根因UNKNOWN。本轮未取日志/重试被拒路线/改身份、push或新CI；Server不是Win11，当前原生结果NOT_RUN。
+
+同工作区只读6.1sol medium审查发现三处可代码证实的验收弱点并复核最小修正：suite Status必须确认两个自有服务；主/仅清理失败类别留在脱敏摘要；注入oracle改经实际应用渲染。不是旧CI根因定位。主代理本地Windows相关136PASS、YAML/13脚本AST/4Linux拒绝守卫和真实Linux渲染链PASS，全量594PASS/0FAIL/1WindowsSKIP；不是native PASS，不变更F1门或R4。详细[F2/ENG026说明](../F2/ENG026-SyncReadiness.md)。本轮本地提交收敛后停止，F1/F2未签收，Windows失败明细仍待用户。

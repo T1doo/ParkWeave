@@ -17,6 +17,25 @@ REPO=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(REPO/'src'))
 from child_environment import command_environment
 
+def owned_status(stdout):
+    """A successful read command alone does not prove both owned services exist."""
+    try:
+        state=json.loads(stdout);rows=state['processes']
+        return (state['project']=='ParkWeave' and state['model']=='DISABLED' and
+                state['port']==8765 and len(rows)==2 and
+                all(type(row['pid']) is int and row['pid']>0 and row['identity_matches'] is True for row in rows) and
+                len({row['pid'] for row in rows})==2)
+    except (ValueError,KeyError,TypeError):return False
+
+def exception_row(case,exc):
+    row={'case':case,'status':'FAIL','category':type(exc).__name__}
+    # Only owned_browser's structured exception categories; never raw notes/messages.
+    cleanup=getattr(exc,'parkweave_owned_browser_cleanup',())
+    if isinstance(cleanup,(tuple,list)) and cleanup:
+        import re
+        row['owned_browser_cleanup_failures']=[x for x in cleanup[:6] if isinstance(x,str) and re.fullmatch(r'[A-Za-z][A-Za-z0-9_]{0,63}',x)]
+    return row
+
 def main():
     parser=argparse.ArgumentParser();parser.add_argument('--report',required=True,type=Path);args=parser.parse_args()
     try:require_server()
@@ -26,12 +45,14 @@ def main():
     managed=REPO/'.venv-windows/Scripts/python.exe'
     if Path(sys.executable).resolve()!=managed.resolve():raise RuntimeError('prepared managed Python required')
     rows=[];started=False
-    def script(label,path,*extra,expected=0,timeout=120,required_error=None):
+    def script(label,path,*extra,expected=0,timeout=120,required_error=None,validate=None):
         phase='file_probe' if path.name=='ServerFileTest.ps1' else path.stem.lower()
         env=command_environment(os.environ,config,phase)
         proc=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-File',str(path),'-Python',str(managed),*extra],cwd=REPO,env=env,capture_output=True,text=True,timeout=timeout)
         ok=proc.returncode==expected and (required_error is None or required_error in proc.stderr)
+        if ok and validate is not None:ok=validate(proc.stdout)
         rows.append({'case':label,'status':'PASS' if ok else 'FAIL','exit_code':proc.returncode})
+        if proc.returncode==expected and validate is not None and not ok:rows[-1]['reason']='OWNED_STATUS_NOT_CONFIRMED'
         # Persist no raw subprocess logs in public summary; Doctor output has safe versions.
         if not ok:return False
         return True
@@ -55,7 +76,7 @@ def main():
             script('Doctor_native',wrappers/'Doctor.ps1')
             started=script('Start_native',wrappers/'Start.ps1')
             if started:
-                script('Status_native',wrappers/'Status.ps1')
+                script('Status_native',wrappers/'Status.ps1',validate=owned_status)
                 token=json.loads(sessions.read_text(encoding='utf-8'))['fixture-a']
                 run=local('/api/runs','POST',{'goal':'SYNTHETIC Server persistence case'},token,uuid.uuid4().hex)['run_id']
                 for _ in range(100):
@@ -75,7 +96,7 @@ def main():
                 rows.append({'case':'native_local_browser','status':'PASS','summary':browser})
             else:rows.append({'case':'API_browser_restart','status':'NOT_RUN','reason':'START_FAILED'})
         else:rows.append({'case':'lifecycle_API_browser','status':'NOT_RUN','reason':'SETUP_FAILED'})
-    except Exception as exc:rows.append({'case':'lifecycle_exception','status':'FAIL','category':type(exc).__name__})
+    except Exception as exc:rows.append(exception_row('lifecycle_exception',exc))
     finally:
         if started or (REPO/'.runtime/windows-processes.json').exists():
             try:script('final_Stop_owned_services',wrappers/'Stop.ps1',timeout=60)

@@ -1,5 +1,9 @@
 # ParkWeave 动态计划
 
+## ENG026 收敛与同步前审查
+
+当前2fddccae基线只核对积累提交链、更新F2真实闭环/缺口及复现入口，独立审查Windows native_suite并修复代码可证验收弱点；不继续扩产品功能。结果和源码同步/原生验证/业务签收三种判断见[F2/ENG026-SyncReadiness.md](F2/ENG026-SyncReadiness.md)。当前不push/新CI/备份/导出/上传/LIVE，旧CI失败case待用户，不能猜根因。
+
 ## ENG025 当前Case与资源组合持久关联
 基线18f9f567，按原V1 F2-T03/T04完成当前合成资料Case的显式资源关联API/UI：当前授权、资料与关联版本、组合归属及快照持久化；资料重开需人工重验，换组合不自动释放旧预约，取消/时段结束/规则改变有明确原因。范围与证据见[F2/ENG025-CaseResources.md](F2/ENG025-CaseResources.md)。这仍不是通用ServicePlan/目标编排或真实履约。只本地测试commit，无push/newCI/备份/导出/上传/LIVE；F1F2未签收、R4关闭、Windows明细待用户。
 

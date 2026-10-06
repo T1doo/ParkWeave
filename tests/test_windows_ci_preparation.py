@@ -102,3 +102,65 @@ def test_blocker_record_does_not_invent_http_code_or_permissions():
     assert result['exit_code']==1 and result['numeric_http_status'] is None
     assert result['workflow_write_permission']=='NOT_TESTED' and result['identity_or_route_changed'] is False
     assert '/actions/runs?' in result['target_api'] and result['complete_non_sensitive_stderr'].endswith(': Forbidden\n')
+
+
+@pytest.mark.parametrize('state',[
+    {'project':'ParkWeave','model':'DISABLED','port':8765,'processes':[]},
+    {'project':'ParkWeave','model':'DISABLED','port':8765,'processes':[{'pid':11,'identity_matches':True},{'pid':22,'identity_matches':False}]},
+    {'project':'ParkWeave','model':'DISABLED','port':8765,'processes':[{'pid':11,'identity_matches':True},{'pid':11,'identity_matches':True}]},
+    {'project':'foreign','model':'DISABLED','port':8765,'processes':[{'pid':11,'identity_matches':True},{'pid':22,'identity_matches':True}]},
+    None,
+])
+def test_status_exit_success_cannot_prove_missing_foreign_or_malformed_services(state):
+    m=module('native_suite');assert not m.owned_status(json.dumps(state))
+    assert m.owned_status(json.dumps({'project':'ParkWeave','model':'DISABLED','port':8765,'processes':[{'pid':11,'identity_matches':True},{'pid':22,'identity_matches':True}]}))
+    assert not m.owned_status('SYNTHETIC unreadable status')
+
+
+def test_suite_marks_exit_zero_status_identity_failure_and_keeps_other_phases(tmp_path,monkeypatch):
+    m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+    runtime=tmp_path/'.runtime';runtime.mkdir();(runtime/'synthetic-sessions.json').write_text(json.dumps({'fixture-a':'SYNTHETIC-token'}));(runtime/'windows-config.json').write_text('{}')
+    monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'))
+    monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'summary.json')])
+    monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner'})
+    setup_count=0
+    def run(command,**kwargs):
+        nonlocal setup_count
+        if any(str(x).endswith('Setup.ps1') for x in command):
+            setup_count+=1
+            return SimpleNamespace(returncode=0 if setup_count==1 else 1,stdout='',stderr='existing configuration protected')
+        if any(str(x).endswith('Status.ps1') for x in command):return SimpleNamespace(returncode=0,stdout=json.dumps({'project':'ParkWeave','port':8765,'model':'DISABLED','processes':[{'pid':1,'identity_matches':False},{'pid':2,'identity_matches':True}]}),stderr='')
+        if 'scripts/run_acceptance.py' in command:
+            Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':1,'FAIL':0,'SKIP':0},'whole_AT_EX':'NOT_RUN'}))
+        if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr='')
+        return SimpleNamespace(returncode=0,stdout='',stderr='')
+    class Response:
+        def __init__(self,request):self.request=request
+        def __enter__(self):return self
+        def __exit__(self,*args):pass
+        def read(self):return json.dumps({'run_id':'SYNTHETIC-run'} if self.request.method=='POST' else {'state':'SUCCEEDED','case':{'id':'SYNTHETIC-case','state':'NEEDS_INPUT','external_acceptance':'NOT_SUBMITTED','offline_fulfillment':'NO_EVIDENCE'}}).encode()
+    class Opener:
+        def open(self,request,timeout):return Response(request)
+    monkeypatch.setattr(m.subprocess,'run',run);monkeypatch.setattr(m.urllib.request,'build_opener',lambda *args:Opener())
+    monkeypatch.setitem(sys.modules,'browser_smoke',SimpleNamespace(run_browser=lambda *args:{'scope':'SYNTHETIC-MOCK'}))
+    assert m.main()==1
+    rows=json.loads((tmp_path/'summary.json').read_text())['cases'];status=next(x for x in rows if x['case']=='Status_native')
+    assert status=={'case':'Status_native','status':'FAIL','exit_code':0,'reason':'OWNED_STATUS_NOT_CONFIRMED'}
+    assert all(x['status']=='PASS' for x in rows if x['case']!='Status_native')
+
+
+def test_case_rendering_oracle_requires_actual_goal_and_rejects_script_node():
+    m=module('browser_smoke')
+    class Driver:
+        def __init__(self,bad):self.bad=bad
+        def execute(self,script):return self.bad
+    actual={'case':{'goal':m.INJECTION_GOAL}}
+    m.verify_case_rendering(Driver(False),actual,json.dumps(actual))
+    for record,text,bad in [(actual,'unrelated UI',False),({'case':{'goal':'different'}},json.dumps(actual),False),(actual,json.dumps(actual),True)]:
+        with pytest.raises(AssertionError):m.verify_case_rendering(Driver(bad),record,text)
+
+
+def test_cleanup_summary_uses_structured_categories_never_raw_exception_notes():
+    m=module('native_suite');exc=RuntimeError('SYNTHETIC-private-message');exc.add_note('SYNTHETIC-private-note');exc.parkweave_owned_browser_cleanup=('TimeoutExpired','PermissionError')
+    row=m.exception_row('lifecycle_exception',exc);assert row['category']=='RuntimeError' and row['owned_browser_cleanup_failures']==['TimeoutExpired','PermissionError']
+    assert 'SYNTHETIC-private' not in json.dumps(row)
