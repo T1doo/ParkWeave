@@ -43,6 +43,9 @@ jobs:
         run: ./scripts/windows_ci/Engineering.ps1 -Action Prepare
       - name: Native lifecycle, mock regression, browser and Server candidate
         run: ./scripts/windows_ci/Engineering.ps1 -Action Test
+      - name: Publish bounded current-run engineering diagnostics
+        if: always()
+        run: python scripts/windows_ci/publish_summary.py
       - name: Stop only the owned temporary cluster
         if: always()
         run: ./scripts/windows_ci/Engineering.ps1 -Action Stop

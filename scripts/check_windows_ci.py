@@ -28,6 +28,10 @@ def policy(document):
     assert actions[1]['with']=={'python-version':'3.12','architecture':'x64'}
     assert job['steps'].index(actions[1]) < next(i for i, step in enumerate(job['steps']) if step.get('run')=='./scripts/windows_ci/Engineering.ps1 -Action Prepare')
     assert job['steps'][-1]['if']=='always()'
+    publisher=next(step for step in job['steps'] if step.get('run')=='python scripts/windows_ci/publish_summary.py')
+    assert publisher['if']=='always()'
+    assert job['steps'].index(publisher)>next(i for i,step in enumerate(job['steps']) if step.get('run')=='./scripts/windows_ci/Engineering.ps1 -Action Test')
+    assert job['steps'].index(publisher)<next(i for i,step in enumerate(job['steps']) if step.get('run')=='./scripts/windows_ci/Engineering.ps1 -Action Stop')
     serialized=json.dumps(document)
     assert not any(x in serialized for x in ('secrets.','upload-artifact','actions/cache','larger','workflow_dispatch','pull_request_target'))
 

@@ -1,5 +1,10 @@
 # ParkWeave 动态计划
 
+## ENG030 本地安全诊断发布修复（未同步）
+
+最新截图仍仅wrapper错误：实际run37417713362的native_suite623.032秒exit1/外层timeoutFalse，真实case/counts/根因UNKNOWN。源码确认stdout/stderr私有捕获与失败后throw，但native_suite继承GITHUB_STEP_SUMMARY，不能断言子进程未写JobSummary。本地新增Test后Stop前独立always安全报告发布、版本/本次运行绑定、有限阶段检查点，详见[ENG030记录](F2/ENG030-SummaryPublication.md)。仅本地测试/提交，未push或新CI；F2-T04暂停于只读合同审查，分派功能未改。预算0、R4关闭、F1/F2未签收、Win11/36AT6EX NOT_RUN。
+
+
 ## ENG029 当前同步与Server CI结果
 
 ENG028代码已普通快进同步，精确远端ff00b6d8ad0880b24afaca49e33b9f8b982ceb87。标准Server [run37417713362](https://github.com/T1doo/ParkWeave/actions/runs/37417713362)已completed/failure：PreparePASS、native_suite623.032秒exit1/外层timeoutFalse、受绑定PG StopPASS。获准check summary/text为空，19条注释未给具体case/counts；仍UNKNOWN，不把时长推断成内部超时或根因。下一定位仅需此新run页面安全JSON，旧截图请求已过时。见[ENG029真实同步记录](F2/ENG029-SyncCI.md)。下方ENG028“本地未push/待核对”等均为当时快照，现已被本节取代；F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。
