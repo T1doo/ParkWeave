@@ -352,7 +352,7 @@ def test_lifecycle_identity_worst_bound_preserves_primary_and_cleanup():
 
 def test_windows_port_probe_requires_exclusive_before_bind(monkeypatch):
     from types import SimpleNamespace
-    events=[]
+    events=[];error_code=[98]
     class Socket:
         def __enter__(self):return self
         def __exit__(self,*args):events.append('close')
@@ -360,11 +360,21 @@ def test_windows_port_probe_requires_exclusive_before_bind(monkeypatch):
         def bind(self,address):
             assert address==('127.0.0.1',8765)
             assert events==['exclusive']
-            events.append('bind');raise OSError(98,'SYNTHETIC occupied')
+            events.append('bind');raise OSError(error_code[0],'SYNTHETIC occupied')
     monkeypatch.setattr(lifecycle,'os',SimpleNamespace(name='nt'))
     monkeypatch.setattr(lifecycle,'socket',SimpleNamespace(socket=Socket,SOL_SOCKET=1,SO_EXCLUSIVEADDRUSE=4))
+    # errno.EADDRINUSE is 98 on Linux, WSAEADDRINUSE=10048 on Windows.
+    # Preserve both independent fixed outcomes; a Linux numeric fixture must
+    # not masquerade as Windows's platform-specific occupied error.
+    for native_errno in (98,10048):
+        monkeypatch.setattr(lifecycle,'errno',SimpleNamespace(EADDRINUSE=native_errno))
+        error_code[0]=native_errno;events.clear()
+        with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.port_available(8765)
+        assert diagnostic.failure(error.value)['boundary_reason']=='PORT_OCCUPIED'
+        assert events==['exclusive','bind','close']
+    error_code[0]=98;events.clear()
     with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.port_available(8765)
-    assert diagnostic.failure(error.value)['boundary_reason']=='PORT_OCCUPIED'
+    assert diagnostic.failure(error.value)['boundary_reason']=='PORT_CHECK_REFUSED'
     assert events==['exclusive','bind','close']
 
 
