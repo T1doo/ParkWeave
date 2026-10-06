@@ -236,4 +236,4 @@ ENG041普通快进push至9801259，唯一标准37444794329/attempt1 completed/fa
 
 ## ENG044 最小对象与最后测试观测
 
-仅沿既有安全协议增加ROOT/SESSIONS/CONFIG对象及同一原子快照的白名单去参数active_test_id；称最后记录，不称确定根因。严格ACL合同、600s/900s/权限/身份不变，JobObject产品修复未混入，后代回收仍OPEN。定点264PASS及两位独立只读复核通过；用户授权连同ENG043普通推送dev并仅监测一次标准CI，实际结果待录。见[ENG044](ENG044-MinimalObservationsCI.md)。原签收门/R4/预算、环境与备份保留。
+仅沿既有安全协议增加ROOT/SESSIONS/CONFIG对象及同一原子快照的白名单去参数active_test_id；称最后记录，不称确定根因。严格ACL合同、600s/900s/权限/身份不变，JobObject产品修复未混入，后代回收仍OPEN。定点264PASS及两位独立只读复核通过；连同ENG043普通推送至8da8e4a；唯一标准37450539320失败，Setup已明确SESSIONS/ACL_OWNER_MISMATCH，完整回归600s TimeoutExpired最后原子记录pytest_call及test_plan_revision::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call，具体挂点/因果未知，PGStop成功；未再push/newCI。见[ENG044](ENG044-MinimalObservationsCI.md)。原签收门/R4/预算、环境与备份保留。

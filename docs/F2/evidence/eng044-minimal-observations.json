@@ -104,6 +104,258 @@
     "logs_downloaded": false,
     "artifacts_downloaded": false
   },
-  "push": "PENDING",
-  "standard_CI": "PENDING"
+  "push": {
+    "remote_before": "98012592da107a26c1aa9a06b9b29a1f7a595874",
+    "push_sha": "8da8e4a95f90965ae06fd4b990abd02e047b4364",
+    "remote_only": 0,
+    "local_only": 3,
+    "source_freeze_match": 10,
+    "force": false,
+    "reset": false,
+    "dispatch": false,
+    "rerun": false,
+    "remote_after": "8da8e4a95f90965ae06fd4b990abd02e047b4364",
+    "push_success": true
+  },
+  "standard_CI": {
+    "run": {
+      "id": 37450539320,
+      "head_sha": "8da8e4a95f90965ae06fd4b990abd02e047b4364",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "failure",
+      "html_url": "https://github.com/T1doo/ParkWeave/actions/runs/37450539320",
+      "check_suite_id": 101440553654,
+      "created_at": "2026-10-06T10:33:14Z",
+      "updated_at": "2026-10-06T10:45:41Z"
+    },
+    "jobs": [
+      {
+        "id": 112225754857,
+        "name": "Server 2025 / Python 3.12 x64 / native PG17 (not Win11 acceptance)",
+        "status": "completed",
+        "conclusion": "failure",
+        "check_run_url": "https://api.github.com/repos/T1doo/ParkWeave/check-runs/112225754857",
+        "steps": [
+          {
+            "number": 1,
+            "name": "Set up job",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-06T10:33:18Z",
+            "completed_at": "2026-10-06T10:33:19Z"
+          },
+          {
+            "number": 2,
+            "name": "Checkout without persisted credentials",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-06T10:33:19Z",
+            "completed_at": "2026-10-06T10:33:26Z"
+          },
+          {
+            "number": 3,
+            "name": "Select Python 3.12 x64",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-06T10:33:26Z",
+            "completed_at": "2026-10-06T10:33:26Z"
+          },
+          {
+            "number": 4,
+            "name": "Prepare fresh native loopback PostgreSQL and Python",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-06T10:33:26Z",
+            "completed_at": "2026-10-06T10:34:08Z"
+          },
+          {
+            "number": 5,
+            "name": "Native lifecycle, mock regression, browser and Server candidate",
+            "status": "completed",
+            "conclusion": "failure",
+            "started_at": "2026-10-06T10:34:08Z",
+            "completed_at": "2026-10-06T10:45:34Z"
+          },
+          {
+            "number": 6,
+            "name": "Publish bounded current-run engineering diagnostics",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-06T10:45:34Z",
+            "completed_at": "2026-10-06T10:45:34Z"
+          },
+          {
+            "number": 7,
+            "name": "Stop only the owned temporary cluster",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-06T10:45:34Z",
+            "completed_at": "2026-10-06T10:45:36Z"
+          },
+          {
+            "number": 13,
+            "name": "Post Select Python 3.12 x64",
+            "status": "completed",
+            "conclusion": "skipped",
+            "started_at": "2026-10-06T10:45:36Z",
+            "completed_at": "2026-10-06T10:45:36Z"
+          },
+          {
+            "number": 14,
+            "name": "Post Checkout without persisted credentials",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-06T10:45:36Z",
+            "completed_at": "2026-10-06T10:45:38Z"
+          },
+          {
+            "number": 15,
+            "name": "Complete job",
+            "status": "completed",
+            "conclusion": "success",
+            "started_at": "2026-10-06T10:45:38Z",
+            "completed_at": "2026-10-06T10:45:38Z"
+          }
+        ]
+      }
+    ]
+  },
+  "check": {
+    "id": 112225754857,
+    "head_sha": "8da8e4a95f90965ae06fd4b990abd02e047b4364",
+    "status": "completed",
+    "conclusion": "failure"
+  },
+  "safe_annotations": [
+    {
+      "kind": "case",
+      "case": "full_engineering_regression",
+      "status": "FAIL",
+      "phase": "regression_run",
+      "category": "TimeoutExpired",
+      "counts_state": "MISSING",
+      "regression_phase": "pytest_call",
+      "active_test_id": "test_plan_revision::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call",
+      "annotation_ids_omitted": 0,
+      "ids_truncated": false
+    },
+    {
+      "kind": "case",
+      "case": "lifecycle_API_browser",
+      "status": "NOT_RUN",
+      "reason": "SETUP_FAILED"
+    },
+    {
+      "kind": "case",
+      "case": "Setup_native",
+      "status": "FAIL",
+      "exit_code": 1,
+      "category": "BoundaryError",
+      "boundary_phase": "private_acl",
+      "boundary_reason": "ACL_OWNER_MISMATCH",
+      "acl_object": "SESSIONS"
+    },
+    {
+      "kind": "publication",
+      "state": "SUMMARY_AVAILABLE",
+      "report_state": "COMPLETED",
+      "active_phase": "UNKNOWN",
+      "case_counts": {
+        "PASS": 2,
+        "FAIL": 2,
+        "NOT_RUN": 1
+      },
+      "annotation_cases_omitted": 0
+    }
+  ],
+  "phase_end_annotations": {
+    "pg_stop": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.219,
+      "cleanup": "NOT_NEEDED"
+    },
+    "pg_status": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.016,
+      "cleanup": "NOT_NEEDED"
+    },
+    "native_suite": {
+      "exit_code": 1,
+      "timed_out": false,
+      "elapsed_seconds": 685.157,
+      "cleanup": "NOT_NEEDED"
+    },
+    "pg_start": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.172,
+      "cleanup": "NOT_NEEDED"
+    },
+    "initdb": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 3.562,
+      "cleanup": "NOT_NEEDED"
+    },
+    "allocate_port": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.063,
+      "cleanup": "NOT_NEEDED"
+    },
+    "postgres_version": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.625,
+      "cleanup": "NOT_NEEDED"
+    },
+    "python_guard": {
+      "exit_code": 0,
+      "timed_out": false,
+      "elapsed_seconds": 0.031,
+      "cleanup": "NOT_NEEDED"
+    }
+  },
+  "annotation_limits_verified": {
+    "notice_count": 4,
+    "maximum_bytes": 383,
+    "total_bytes": 969,
+    "test_ids": 1
+  },
+  "final_confirmation": {
+    "remote_sha": "8da8e4a95f90965ae06fd4b990abd02e047b4364",
+    "pushed_head_unchanged": true,
+    "same_head_run_count": 1,
+    "run_id": 37450539320,
+    "attempt": 1,
+    "conclusion": "failure"
+  },
+  "terminal_review": {
+    "windows_native_review": "SESSIONS owner mismatch only; SESSIONS DACL and CONFIG not checked; wrapper1/internalACL2",
+    "cross_module_review": "last recorded atomic phase/test pair only; no exact hang/callback/root-cause or descendant causality claim"
+  },
+  "observed_ACL": {
+    "case": "Setup_native",
+    "object": "SESSIONS",
+    "reason": "ACL_OWNER_MISMATCH",
+    "wrapper_exit": 1,
+    "checker_branch_exit": 2,
+    "SESSIONS_DACL_checked": false,
+    "CONFIG_checked": false,
+    "actual_owner_identity": "NOT_PUBLISHED_NOT_KNOWN"
+  },
+  "observed_regression": {
+    "category": "TimeoutExpired",
+    "phase": "regression_run",
+    "last_recorded_phase": "pytest_call",
+    "last_recorded_active_test_id": "tests/test_plan_revision.py::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call",
+    "counts_state": "MISSING",
+    "exact_hang_point": "UNKNOWN",
+    "root_cause": "UNKNOWN",
+    "descendant_causality": "UNKNOWN"
+  },
+  "final_changed_source_freeze_match": true
 }
