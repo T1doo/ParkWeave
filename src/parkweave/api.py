@@ -200,6 +200,31 @@ def create_app(store: Store) -> FastAPI:
     def resource_combination_cancel(combination_id: UUID,data: resources.Release,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return combinations.cancel(store,token(authorization),combination_id,resource_key(idempotency_key))
 
+    from . import service_dispatches as dispatches
+    @app.get('/api/service-dispatches/catalog')
+    def dispatch_catalog(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return dispatches.catalog(store,token(authorization),preparation_id)
+
+    @app.get('/api/service-dispatches')
+    def dispatch_list(authorization: str | None=Header(default=None)):
+        return dispatches.list_items(store,token(authorization))
+
+    @app.get('/api/preparations/{preparation_id}/dispatch')
+    def dispatch_preparation(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return dispatches.read_preparation(store,token(authorization),preparation_id)
+
+    @app.post('/api/preparations/{preparation_id}/dispatch',status_code=201)
+    def dispatch_offer(preparation_id: UUID,data: dispatches.Offer,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return dispatches.offer(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
+    @app.get('/api/service-dispatches/{dispatch_id}')
+    def dispatch_read(dispatch_id: UUID,authorization: str | None=Header(default=None)):
+        return dispatches.read(store,token(authorization),dispatch_id)
+
+    @app.post('/api/service-dispatches/{dispatch_id}/commands')
+    def dispatch_command(dispatch_id: UUID,data: dispatches.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return dispatches.command(store,token(authorization),dispatch_id,resource_key(idempotency_key),data)
+
     from . import executor_receipts as executor_receipts
     @app.get('/api/executor-receipts/catalog')
     def executor_receipt_catalog(preparation_id: UUID,authorization: str | None=Header(default=None)):

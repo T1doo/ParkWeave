@@ -3,7 +3,7 @@
 <a id="current-status"></a>
 ## 当前权威状态（ENG031已同步，Server FAIL，发布器PASS）
 
-ENG030代码已普通快进同步，精确远端e9e962d4a5e2b42ea3750c83ee8d7145cc3f24f1；本地冻结129份源码仍匹配681PASS/0FAIL/1WindowsSKIP/2WARN（178.67s）。标准Server [run37420887816](https://github.com/T1doo/ParkWeave/actions/runs/37420887816)已completed/failure：PreparePASS，native_suite677.625秒exit1/外层timeoutFalse，独立安全发布器PASS，受绑定PG StopPASS。获准check title/summary/text仍为空，19条注释未给具体cases/counts，真实子项/报告阶段/根因仍UNKNOWN。发布器exit0结合已验证源码仅证明本次绑定报告SUMMARY_AVAILABLE且stdout/StepSummary写入成功，不能推定report_state=COMPLETED或回归通过。下一最小输入是此run“Windows Server safe engineering diagnostics”安全JSON的report_state/active_phase和FAIL/NOT_RUN行及已有有界计数；不需旧截图或私有日志。未改源码、猜测修复或盲重跑；F2-T04仍暂停于只读合同审查，F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。 见[ENG031记录](../F2/ENG031-SyncCI.md)。
+ENG030代码已普通快进同步，精确远端e9e962d4a5e2b42ea3750c83ee8d7145cc3f24f1；ENG030当轮冻结129份源码验证681PASS/0FAIL/1WindowsSKIP/2WARN（178.67s）。标准Server [run37420887816](https://github.com/T1doo/ParkWeave/actions/runs/37420887816)已completed/failure：PreparePASS，native_suite677.625秒exit1/外层timeoutFalse，独立安全发布器PASS，受绑定PG StopPASS。获准check title/summary/text仍为空，19条注释未给具体cases/counts，真实子项/报告阶段/根因仍UNKNOWN。发布器exit0结合已验证源码仅证明本次绑定报告SUMMARY_AVAILABLE且stdout/StepSummary写入成功，不能推定report_state=COMPLETED或回归通过。下一最小输入是此run“Windows Server safe engineering diagnostics”安全JSON的report_state/active_phase和FAIL/NOT_RUN行及已有有界计数；不需旧截图或私有日志。ENG031未作无证据CI修复或盲重跑；F2-T04后续ENG032内部分派切片仅本地完成，见[记录](../F2/ENG032-InternalDispatch.md)，其源码未同步到本次CI，F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。 见[ENG031记录](../F2/ENG031-SyncCI.md)。
 
 ## 历史ENG030本地诊断快照
 

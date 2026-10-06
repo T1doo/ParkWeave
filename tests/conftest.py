@@ -66,6 +66,9 @@ def fixture(pg):
         c.execute('GRANT SELECT,INSERT ON service_receipt_steps,service_step_receipts,service_receipt_events TO parkweave_app')
         c.execute('GRANT UPDATE(state,revision,current_receipt_id) ON service_receipt_steps TO parkweave_app')
         c.execute('GRANT SELECT,INSERT ON resource_case_claims,case_resource_links TO parkweave_app')
+        c.execute('GRANT SELECT,INSERT ON service_dispatches,service_dispatch_offers,service_dispatch_events TO parkweave_app')
+        c.execute('GRANT UPDATE(revision,current_offer_id) ON service_dispatches TO parkweave_app')
+        c.execute('GRANT UPDATE(state,receipt_step_id) ON service_dispatch_offers TO parkweave_app')
     store = Store(make_conninfo(owner.dsn, user='parkweave_app'))
     with TestClient(create_app(store)) as client:
         yield store, owner, tokens, client

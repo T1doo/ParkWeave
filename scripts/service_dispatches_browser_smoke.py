@@ -1,0 +1,114 @@
+"""Real Chromium/local API/worker/PG, three synthetic roles, no external execution."""
+from pathlib import Path
+import argparse,json,os,subprocess,time,uuid
+from parkweave.process_env import minimal_environment
+from parkweave.store import Store
+root=Path.cwd();p=argparse.ArgumentParser();p.add_argument('--report',required=True,type=Path);p.add_argument('--screenshots',required=True,type=Path);args=p.parse_args()
+if os.name=='nt':raise RuntimeError('NOT_RUN: Linux harness is not native Windows evidence')
+owner=Store(os.environ['PARKWEAVE_DISPATCH_FIXTURE_OWNER_DSN'])
+env=minimal_environment(os.environ,npm_config_cache=str(root/'.cache/npm'),XDG_RUNTIME_DIR=str(root/'.runtime/sockets'))
+candidates=[p for p in (root/'.cache/npm/_npx').glob('*/node_modules/agent-browser/package.json') if json.loads(p.read_text()).get('version')=='0.38.2'];assert candidates
+cmd=['node',str(sorted(candidates)[0].parent/'bin/agent-browser.js'),'--session','parkweave-dispatch','--executable-path','/usr/bin/chromium','--args','--no-sandbox']
+def browser(*items,stdin=None):
+    r=subprocess.run(cmd+list(items),input=stdin,capture_output=True,text=True,env=env,timeout=30)
+    if r.returncode:raise RuntimeError('cached local browser command failed')
+    return r.stdout.strip()
+def value(expr):
+    r=json.loads(browser('eval','(async()=>JSON.stringify(await ('+expr+')))()'));return json.loads(r) if isinstance(r,str) else r
+
+def wait(expr,predicate,timeout=20):
+    end=time.monotonic()+timeout
+    while time.monotonic()<end:
+        x=value(expr)
+        if predicate(x):return x
+        time.sleep(.1)
+    raise AssertionError('browser readiness failed: '+expr)
+def click(selector):browser('click',selector);browser('snapshot','-i')
+def switch(token):
+    browser('eval','--stdin',stdin="document.querySelector('#token').value="+json.dumps(token)+";document.querySelector('#token').dispatchEvent(new Event('input'));undefined")
+    assert value('receiptView') is None and value('preparationView') is None
+    assert value("document.querySelector('#receipt-history').textContent")==''
+    browser('snapshot','-i')
+def prep_act(selector):
+    revision=value('preparationView.preparation.revision');browser('fill','#prep-reason','SYNTHETIC local manual check');click(selector)
+    return wait('preparationView',lambda x:isinstance(x,dict) and x['preparation']['revision']>revision)
+def prep_select(goal):
+    click('#prep-list');wait("document.querySelector('#prep-items').textContent",lambda x:goal in x)
+    name=value("Array.from(document.querySelectorAll('#prep-items button')).find(x=>x.textContent.startsWith("+json.dumps(goal)+")).textContent")
+    browser('find','role','button','click','--name',name);browser('snapshot','-i');wait('preparationView',lambda x:isinstance(x,dict))
+def receipt_select(goal):
+    click('#receipt-list');wait("document.querySelector('#receipt-items').textContent",lambda x:goal in x)
+    name=value("Array.from(document.querySelectorAll('#receipt-items button')).find(x=>x.textContent.startsWith("+json.dumps(goal)+")).textContent")
+    browser('find','role','button','click','--name',name);browser('snapshot','-i');return wait('receiptView',lambda x:isinstance(x,dict))
+def submit(text,label):
+    revision=value('receiptView.step.revision');browser('fill','#receipt-text',text);browser('fill','#receipt-source',label);click('#receipt-submit-button')
+    return wait('receiptView',lambda x:isinstance(x,dict) and x['step']['revision']>revision)
+def decision(selector,reason):
+    revision=value('receiptView.step.revision');browser('fill','#receipt-reason',reason);click(selector)
+    return wait('receiptView',lambda x:isinstance(x,dict) and x['step']['revision']>revision)
+args.screenshots.mkdir(parents=True,exist_ok=True)
+def screenshot(name):
+    value("(()=>{const panel=document.querySelector('#dispatch-detail:not([hidden])')||document.querySelector('#receipt-detail:not([hidden])');if(panel)panel.scrollIntoView({block:'start'});return true;})()");browser('snapshot','-i');browser('screenshot',str(args.screenshots.resolve()/name))
+try:
+    sessions=json.loads((root/'.runtime/synthetic-sessions.json').read_text());specialists=json.loads((root/'.runtime/preparation-sessions.json').read_text());executors=json.loads((root/'.runtime/receipt-sessions.json').read_text())
+    browser('open','http://127.0.0.1:8765');browser('snapshot','-i');switch(sessions['fixture-a'])
+    goal='SYNTHETIC executor receipt '+uuid.uuid4().hex[:8]
+    click('#prep-catalog');wait('prepCatalog',lambda x:isinstance(x,dict));browser('fill','#prep-goal',goal);browser('find','role','button','click','--name','开始资料准备');browser('snapshot','-i');wait('preparationView',lambda x:isinstance(x,dict))
+    for slot,text in [('need_summary','SYNTHETIC request'),('material_outline','SYNTHETIC private material body')]:
+        revision=value('preparationView.preparation.revision');browser('select','#prep-slot',slot);browser('fill','#prep-text',text);browser('fill','#prep-source-label','SYNTHETIC fixture document v1');browser('find','role','button','click','--name','追加材料版本');browser('snapshot','-i');wait('preparationView',lambda x:isinstance(x,dict) and x['preparation']['revision']>revision)
+    click('[data-tab=collaboration]');switch(specialists['prep-specialist-fixture-a']);prep_select(goal);prep_act('#prep-review')
+    switch(sessions['fixture-a']);prep_select(goal);parent=prep_act('#prep-confirm')['preparation']
+    # Explicit fixture-owner setup of this new synthetic Run. No app assignment API.
+    owner.assign_status('receipt-executor-fixture-a',uuid.UUID(parent['run_id']),active=True)
+    switch(specialists['prep-specialist-fixture-a']);prep_select(goal)
+    click('#dispatch-prepare');wait('dispatchView',lambda x:isinstance(x,dict) and x['revision']==0)
+    def dispatch_offer(reason):
+        previous=value('dispatchView.revision');browser('fill','#dispatch-offer-reason',reason);click('#dispatch-offer-button')
+        return wait('dispatchView',lambda x:isinstance(x,dict) and x['revision']>previous)
+    def dispatch_select():
+        click('#dispatch-list');wait("document.querySelector('#dispatch-items').textContent",lambda x:goal in x)
+        browser('find','role','button','click','--name',goal);browser('snapshot','-i');return wait('dispatchView',lambda x:isinstance(x,dict))
+    def dispatch_decide(selector,reason):
+        previous=value('dispatchView.revision');browser('fill','#dispatch-decision-reason',reason);click(selector)
+        return wait('dispatchView',lambda x:isinstance(x,dict) and x['revision']>previous)
+    offered=dispatch_offer('<script>globalThis.BAD_DISPATCH=true</script> SYNTHETIC please handle locally');dispatch_id=offered['dispatch_id']
+    assert not value('Boolean(globalThis.BAD_DISPATCH||document.querySelector("#dispatch-current script"))');screenshot('specialist-offered.png')
+    switch(executors['receipt-executor-fixture-a']);dispatch_select()
+    assert value("document.querySelector('#prep-materials').textContent")==''
+    assert value("document.querySelector('#dispatch-offer').hidden") is True
+    refused=dispatch_decide('#dispatch-decline','SYNTHETIC local schedule unavailable');assert refused['current_offer']['state']=='DECLINED';screenshot('executor-declined.png')
+    switch(specialists['prep-specialist-fixture-a']);dispatch_select();dispatch_offer('SYNTHETIC reasoned second offer')
+    withdrawn=dispatch_decide('#dispatch-withdraw','SYNTHETIC specialist revises responsibility');assert withdrawn['current_offer']['state']=='WITHDRAWN';screenshot('specialist-withdrawn.png')
+    dispatch_offer('SYNTHETIC reasoned final offer')
+    switch(executors['receipt-executor-fixture-a']);dispatch_select();accepted=dispatch_decide('#dispatch-accept','SYNTHETIC executor accepts current local task')
+    assert accepted['current_offer']['state']=='ACCEPTED' and accepted['revision']==6
+    assert [e['action'] for e in accepted['history']]==['OFFER','DECLINE','REOFFER','WITHDRAW','REOFFER','ACCEPT'];screenshot('executor-accepted.png')
+    dispatch_metrics=[]
+    for width in (320,390):
+        browser('set','viewport',str(width),'844');browser('snapshot','-i');m=value('({width:innerWidth,scroll:document.documentElement.scrollWidth})');assert m['scroll']<=m['width'];dispatch_metrics.append(m);screenshot('dispatch-'+str(width)+'.png')
+    browser('set','viewport','1200','900')
+    id=accepted['receipt_step_id'];click('#dispatch-receipt');wait('receiptView',lambda x:isinstance(x,dict) and x['step']['id']==id)
+    assert value("document.querySelector('#receipt-decisions').hidden") is True
+    assert value("document.querySelector('#prep-materials').textContent")==''
+    first=submit('<script>globalThis.BAD_RECEIPT=true</script> SYNTHETIC work log','SYNTHETIC work log v1');assert first['step']['state']=='RECEIPT_RECORDED'
+    assert not value('Boolean(globalThis.BAD_RECEIPT||document.querySelector("#receipt-current script"))');screenshot('executor-recorded.png')
+    # API retries are evaluated independently of the real UI actions.
+    status=value("(async()=>{const r=await fetch('/api/executor-receipts/"+id+"/commands',{method:'POST',headers:{Authorization:'Bearer '+document.querySelector('#token').value,'Content-Type':'application/json','Idempotency-Key':crypto.randomUUID()},body:JSON.stringify({action:'ACKNOWLEDGE',expected_revision:2,receipt_sha256:receiptView.current_receipt.source_sha256,reason:'SYNTHETIC invalid executor decision'})});return r.status;})()")
+    assert status==403
+    switch(sessions['fixture-a']);receipt_select(goal);corrected=decision('#receipt-correct','SYNTHETIC please clarify the local log');assert corrected['step']['state']=='CHANGES_REQUESTED';screenshot('enterprise-correction.png')
+    switch(executors['receipt-executor-fixture-a']);receipt_select(goal);submit('SYNTHETIC corrected local work log','SYNTHETIC work log v2')
+    switch(sessions['fixture-a']);receipt_select(goal);acked=decision('#receipt-ack','SYNTHETIC checked current receipt only');assert acked['step']['state']=='LOCAL_ACKNOWLEDGED';screenshot('enterprise-acknowledged.png')
+    reopened=decision('#receipt-reopen','SYNTHETIC further local check required');assert reopened['step']['state']=='AWAITING_RECEIPT'
+    switch(executors['receipt-executor-fixture-a']);receipt_select(goal);latest=submit('SYNTHETIC reopened local work log','SYNTHETIC work log v3')
+    assert len(latest['receipt_history'])==3 and len(latest['history'])==7
+    assert latest['offline_fulfillment']=='NO_EVIDENCE' and latest['external_acceptance']=='NOT_SUBMITTED' and not latest['case_goal_completed']
+    browser('reload');browser('snapshot','-i');switch(sessions['fixture-a']);click('[data-tab=collaboration]');loaded=receipt_select(goal);assert loaded['step']['revision']==7
+    switch(sessions['fixture-b']);click('#receipt-list');wait("document.querySelector('#receipt-items').textContent",lambda x:bool(x));assert goal not in value("document.querySelector('#receipt-items').textContent")
+    switch(sessions['fixture-a']);receipt_select(goal)
+    metrics=[]
+    for width in (320,390):
+        browser('set','viewport',str(width),'844');browser('snapshot','-i');m=value('({width:innerWidth,scroll:document.documentElement.scrollWidth})');assert m['scroll']<=m['width'];metrics.append(m);screenshot('receipt-'+str(width)+'.png')
+    browser('set','viewport','1200','900');screenshot('receipt-final.png');assert not browser('errors')
+    report=dict(scope='SYNTHETIC_INTERNAL_DISPATCH_AND_RECEIPT_ONLY',dispatch_id=dispatch_id,dispatch_revision=6,dispatch_events=6,dispatch_narrow_viewports=dispatch_metrics,offer_decline_reoffer_withdraw_accept=True,accepted_actor_is_executor=True,environment='Linux Chromium/local API/worker/PostgreSQL',step_id=id,run_id=parent['run_id'],case_id=parent['case_id'],three_roles_real_UI=True,fixture_owner_assignment_outside_UI=True,application_creates_no_grants=True,receipt_versions=3,history_events=7,correction_acknowledgement_reopen=True,executor_decision_denied=True,cross_enterprise_isolated=True,identity_clears_private_views=True,script_text_only=True,reload_persistent=True,narrow_viewports=metrics,model_calls=0,real_budget=0,F1='UNACCEPTED',F2='NOT_PASSED',R4='DISABLED',native_Windows='NOT_RUN',whole_AT_EX='NOT_RUN')
+    args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n');print(json.dumps(report,ensure_ascii=False))
+finally:browser('close')

@@ -1,6 +1,10 @@
 # ParkWeave 动态计划
 
-## ENG031 当前精确SHA同步与Server CI终态
+## ENG032 当前最小内部分派与本人接单（本地完成）
+
+基线c5b389b，按原V1 F2-T04与产品§5.5完成最小本地内部业务分派：当前获派资料专员向已有同tenant Run访问权的执行者说明原因分派；本人拒绝、未接单撤回、原因重派及本人接受同事务衔接既有回执，保留版本历史。未新增Grant或Runassignment，不给resource_admin扩权；接受后调整待产品决定，本片暂不支持，原计划目标未改。真实PG/API定向132PASS，136份冻结源全量734PASS/0FAIL/1WindowsSKIP/2既有WARN（205.879s），实际三角色Chromium/PG/API/worker分派6事件→回执3版本/7事件及320/390PASS，受控迟到响应23/23PASS，独立只读审查通过。仅本地commit，不push/newCI/export/LIVE；原Server run37420887816仍FAIL、具体cases/counts等待新安全JSON，本地成绩不称修复Windows。F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。 见[ENG032记录](F2/ENG032-InternalDispatch.md)。下方暂停/未实现分派/旧冻结源等描述均为当轮历史；完整原计划剩余以本轮记录与下表为准。
+
+## ENG031 最新实际Server CI（代码e9e962d历史冻结源）
 
 ENG030代码已普通快进同步，精确远端e9e962d4a5e2b42ea3750c83ee8d7145cc3f24f1；本地冻结129份源码仍匹配681PASS/0FAIL/1WindowsSKIP/2WARN（178.67s）。标准Server [run37420887816](https://github.com/T1doo/ParkWeave/actions/runs/37420887816)已completed/failure：PreparePASS，native_suite677.625秒exit1/外层timeoutFalse，独立安全发布器PASS，受绑定PG StopPASS。获准check title/summary/text仍为空，19条注释未给具体cases/counts，真实子项/报告阶段/根因仍UNKNOWN。发布器exit0结合已验证源码仅证明本次绑定报告SUMMARY_AVAILABLE且stdout/StepSummary写入成功，不能推定report_state=COMPLETED或回归通过。下一最小输入是此run“Windows Server safe engineering diagnostics”安全JSON的report_state/active_phase和FAIL/NOT_RUN行及已有有界计数；不需旧截图或私有日志。未改源码、猜测修复或盲重跑；F2-T04仍暂停于只读合同审查，F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。 见[ENG031记录](F2/ENG031-SyncCI.md)。下方未同步/待截图描述保留为当轮历史，不覆盖本节。
 

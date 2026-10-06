@@ -233,7 +233,7 @@ def test_upgrade_from_9_and_repeat_migration_preserve_older_preparation_history(
         c.execute('DROP TABLE case_resource_links,resource_case_claims; DROP TABLE service_receipt_events,service_step_receipts,service_receipt_steps CASCADE; DROP TABLE synthetic_resource_combination_receipts,synthetic_resource_combination_members,synthetic_resource_combinations,synthetic_resource_receipts,synthetic_resource_holds,synthetic_resource_grants,synthetic_resources')
         c.execute('DELETE FROM schema_version WHERE version>=10')
     f[1].migrate();f[1].migrate();assert read_preparation(f,row).json()==before
-    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==14
+    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==15
 
 
 def test_same_request_key_cannot_cross_registered_resource(resource_fixture):

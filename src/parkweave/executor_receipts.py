@@ -104,6 +104,11 @@ def catalog(store,token,id):
           AND e.park_id=%s AND e.org_id=%s ORDER BY e.id LIMIT 100""",(row['run_id'],p['park_id'],p['org_id'])).fetchall()
         return dict(scope=SCOPE,preparation_revision=row['revision'],ready=row['state']=='LOCAL_CONFIRMED',executors=rows)
 
+def _insert_step(c,parent,executor_id):
+    return c.execute("""INSERT INTO service_receipt_steps(id,preparation_id,run_id,case_id,owner_id,executor_id,park_id,org_id,service_id,service_version,
+          preparation_revision,preparation_sha256,goal,state,revision,namespace)
+          VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'AWAITING_RECEIPT',1,'SYNTHETIC') RETURNING *""",(uuid4(),parent['id'],parent['run_id'],parent['case_id'],parent['owner_id'],executor_id,parent['park_id'],parent['org_id'],parent['service_id'],parent['service_version'],parent['revision'],parent['review_sha256'],parent['goal'])).fetchone()
+
 @bounded
 def create(store,token,key,data):
     fp=digest(prep.canonical({'action':'CREATE',**data.model_dump(mode='json')}))
@@ -119,9 +124,8 @@ def create(store,token,key,data):
             return _view(c,p,row,parent,old)
         if parent['state']!='LOCAL_CONFIRMED' or parent['revision']!=data.expected_preparation_revision:raise Conflict('current locally confirmed preparation required')
         if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s',(parent['id'],)).fetchone():raise Conflict('preparation already has receipt step')
-        row=c.execute("""INSERT INTO service_receipt_steps(id,preparation_id,run_id,case_id,owner_id,executor_id,park_id,org_id,service_id,service_version,
-          preparation_revision,preparation_sha256,goal,state,revision,namespace)
-          VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'AWAITING_RECEIPT',1,'SYNTHETIC') RETURNING *""",(uuid4(),parent['id'],parent['run_id'],parent['case_id'],p['id'],data.executor_id,p['park_id'],p['org_id'],parent['service_id'],parent['service_version'],parent['revision'],parent['review_sha256'],parent['goal'])).fetchone()
+        if c.execute('SELECT 1 FROM service_dispatches WHERE preparation_id=%s',(parent['id'],)).fetchone():raise Conflict('internal dispatch requires executor acceptance')
+        row=_insert_step(c,parent,data.executor_id)
         return _view(c,p,row,parent,_event(c,p,row,key,fp,'CREATE'))
 
 @bounded
