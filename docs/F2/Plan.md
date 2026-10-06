@@ -1,5 +1,9 @@
 # F2并行开发计划：本地资料准备与个人待办
 
+## ENG025 当前Case资源持久关联切片
+基线18f9f567，覆盖原T03/T04中当前资料服务Case与本人已确认两资源组合的显式持久关联；当前READ/HOLD/EXECUTE与PREPARE授权、资料/关联CAS、不可变历史与一组合一Case归属。允许同Case新资料版本明确重验或换组合，不自动释放旧预约；资料重开、取消、时段结束、资源规则改变显示需重验。暂无通用Case重开/关闭、ServicePlan/Approval/DAG或多Case共享转移。冻结L01—L06及最终结果见[ENG025-CaseResources.md](ENG025-CaseResources.md)。本片只本地commit，不push/newCI/Library/backup/export/upload/LIVE。
+
+
 ## ENG024 当前本地验收与具体缺陷修复
 
 基线8e2195a，审计历史截图可复验性，旧通用覆盖图与恢复缺图明确限制，不改历史运行成绩。按原V1Status串联现有资料纠错/双资源组合/合法获派执行者回执/企业核对重开，资源与Case仅测试手动关联，无通用ServicePlan或跨模块自动事务。独立review发现通用UI身份/迟到响应缺陷并真实复现后最小修复；不改业务API/权限上限或原计划。规格/最终证据见[ENG024-CrossModule.md](ENG024-CrossModule.md)。只本地提交后停止，不push/newCI/export/upload/backup/LIVE；F1/F2未签收R4关闭，Windows失败明细待用户。

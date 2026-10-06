@@ -1,5 +1,9 @@
 # ParkWeave 动态计划
 
+## ENG025 当前Case与资源组合持久关联
+基线18f9f567，按原V1 F2-T03/T04完成当前合成资料Case的显式资源关联API/UI：当前授权、资料与关联版本、组合归属及快照持久化；资料重开需人工重验，换组合不自动释放旧预约，取消/时段结束/规则改变有明确原因。范围与证据见[F2/ENG025-CaseResources.md](F2/ENG025-CaseResources.md)。这仍不是通用ServicePlan/目标编排或真实履约。只本地测试commit，无push/newCI/备份/导出/上传/LIVE；F1F2未签收、R4关闭、Windows明细待用户。
+
+
 ## ENG024 当前本地验收与具体缺陷修复
 
 基线8e2195a，审计历史截图可复验性，旧通用覆盖图与恢复缺图明确限制，不改历史运行成绩。按原V1Status串联现有资料纠错/双资源组合/合法获派执行者回执/企业核对重开，资源与Case仅测试手动关联，无通用ServicePlan或跨模块自动事务。独立review发现通用UI身份/迟到响应缺陷并真实复现后最小修复；不改业务API/权限上限或原计划。规格/最终证据见[F2/ENG024-CrossModule.md](F2/ENG024-CrossModule.md)。只本地提交后停止，不push/newCI/export/upload/backup/LIVE；F1/F2未签收R4关闭，Windows失败明细待用户。

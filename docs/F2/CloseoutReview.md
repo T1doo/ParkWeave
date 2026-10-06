@@ -75,3 +75,11 @@ owner登记规则更新/撤权遵循同资源锁/principal排他锁协议；日�
 reviewer指出取消中途失败/单条confirm竞争/新表权限/精确11→12测试缺口，主代理已补实际PG验证；reviewer未独立跑API或写入测试、未读私有runtime/外网/模型。最后全量发现重复标记迁移重复建表，主代理改新增表IF NOT EXISTS，验证既有组合历史保留并冻结重跑；不把审查无finding当代码已完整通过。验收与失败/修复在ENG021 Log/evidence。
 
 范围仍只有同库SYNTHETIC LOCAL_AUTHORITY的两条不同资源占位；不含任意数量、部分替代、ServicePlan/Approval通用编排、外部预约/履约、真实资源规则、管理员任意SQL并发/park迁移或Windows真实设备。本地成果不签收F1/F2，R4关闭。
+
+## ENG025 Case资源持久关联（本地完成）
+
+基线18f9f567。按原V1 T03/T04将当前合成资料Case与本人确认组合推进为真实产品API/UI持久关联，保留一组合一Case归属/资料版本/资源快照/原因。重开资料需明确重验，换组合不释放旧预约，取消/结束/规则变化明确显示；没有通用Case重开/关闭或真实履约。详见[ENG025-CaseResources](ENG025-CaseResources.md)。
+
+独立6.1sol medium只读审查三项P2均修复，最终无剩余实质缺陷；不把主代理运行当独立复跑。新增29 PG/API PASS，最终真实三角色浏览器与通用事实候选链PASS，95页面时序检查PASS；全量584PASS/0FAIL/1WindowsSKIP/2既有WARN180.06秒，121源码hash冻结一致。保留最初fixture/约束失败与无效的初轮403 oracle预期，不改历史成绩。14张新独立截图，登记共55图hash匹配，3旧覆盖/3缺失继续不可复验。33保护文件、原V1源文与旧roles前缀未改，新表只SELECT/INSERT。
+
+证据[evidence/eng025-acceptance-summary.json](evidence/eng025-acceptance-summary.json)及[截图审计](evidence/eng025-screenshot-audit.json)。并发真实线程未控制交错，无穷举保证；合法执行者assignment仍测试owner建立。F1F2未签收、R4关闭、Win11/36AT6EXNOT_RUN；Windows失败明细待用户。仅本地安全commit，无network/push/newCI/Library/备份/导出/上传/LIVE/provider/真实预算。

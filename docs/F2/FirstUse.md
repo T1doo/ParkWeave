@@ -1,5 +1,11 @@
 # 本地合成资料准备：首次使用
 
+## ENG025 显式关联此Case的资源
+企业先在资源工作区确认本人两资源组合，再打开本人已本地确认的资料事项，点“查看此Case资源并选择关联”。从有当前操作权的组合中选择，填写关联说明，点“确认此Case资源关联”。页面显示Case、资料版本、关联版本、创建快照及当前资源状态；刷新或重启仍可读取历史。
+资料重开后旧关联显示需重验，原组合继续占用；重新人工核对/确认资料后，可明确关联同组合或新组合。换组合也不会释放旧预约；到资源工作区显式整组取消。已取消、使用时段结束、规则改变或归另一Case的组合不可关联。当前无HOLD的候选禁用，无EXECUTE只读历史；当前403清除旧私有视图。失败保留原输入用于相同key重试，选择/说明改变会成为新输入；忽略迟到UI不代表服务端POST回滚。
+仅当前合成资料Case；没有通用ServicePlan、接单/通知/真实预约/线下履约。原Case仍NEEDS_INPUT，资料REOPEN不是Case生命周期重开。首次harness可使用原 `--preparation-fixtures --resource-fixtures --combination-fixtures --receipt-fixtures` 本机合成入口；执行者分派仍需测试owner准备合法SYNTHETIC assignment，产品没有分派写入口。预算0，不上传/导出，Windows结果待独立验证。细节见[ENG025-CaseResources.md](ENG025-CaseResources.md)。
+
+
 ## ENG023 获派执行者回执入口
 
 显式Linux测试入口可追加 `--receipt-fixtures`，只准备三名明确假执行者READ会话，不自动分配Run、不修复撤权。需测试owner仅为本次新的SYNTHETIC Run准备既有assignment；应用没有assignment写API，不提供增加角色权限入口。

@@ -127,3 +127,11 @@ Linux定向第一次30 PASS/6.22秒，补并发同Case与审核-补件竞态、G
 本轮功能切片至此结束：企业资料准备/人工核对有可见可操作闭环，不只辅助测试；F2完整多服务计划/资源/执行者接单与真实回执/模板仍未做。F1 IN_PROGRESS、F2正式准入NOT_PASSED、whole36AT6EX NOT_RUN、R4 DISABLED、Windows/LIVE/真实数据门保留，provider请求及预算0。原V1来源字节/行/hash和R4/Win11 guard/workflow保护保持；低权限Grant与纯文本新API均本地可信代码，不执行任意生成代码，无外部业务写入。FirstUse说明显式合成入口/角色与限制，Plan标注新授权仅替代此前当轮不扩F2限制。
 
 暂存前检查凭据模式无命中、无真实个人数据或private runtime/会话/DSN日志，安全本地commit保留checkpoint历史。阶段成果后仅更新一次用户私有Library恢复备份；不频繁上传，不把备份或恢复验证称Windows业务验收。最终本轮停止，交父任务复核派下一切片。
+
+## ENG025 Case资源持久关联（本地完成）
+
+基线18f9f567。按原V1 T03/T04将当前合成资料Case与本人确认组合推进为真实产品API/UI持久关联，保留一组合一Case归属/资料版本/资源快照/原因。重开资料需明确重验，换组合不释放旧预约，取消/结束/规则变化明确显示；没有通用Case重开/关闭或真实履约。详见[ENG025-CaseResources](ENG025-CaseResources.md)。
+
+独立6.1sol medium只读审查三项P2均修复，最终无剩余实质缺陷；不把主代理运行当独立复跑。新增29 PG/API PASS，最终真实三角色浏览器与通用事实候选链PASS，95页面时序检查PASS；全量584PASS/0FAIL/1WindowsSKIP/2既有WARN180.06秒，121源码hash冻结一致。保留最初fixture/约束失败与无效的初轮403 oracle预期，不改历史成绩。14张新独立截图，登记共55图hash匹配，3旧覆盖/3缺失继续不可复验。33保护文件、原V1源文与旧roles前缀未改，新表只SELECT/INSERT。
+
+证据[evidence/eng025-acceptance-summary.json](evidence/eng025-acceptance-summary.json)及[截图审计](evidence/eng025-screenshot-audit.json)。并发真实线程未控制交错，无穷举保证；合法执行者assignment仍测试owner建立。F1F2未签收、R4关闭、Win11/36AT6EXNOT_RUN；Windows失败明细待用户。仅本地安全commit，无network/push/newCI/Library/备份/导出/上传/LIVE/provider/真实预算。

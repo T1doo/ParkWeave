@@ -32,3 +32,6 @@ GRANT UPDATE(state) ON synthetic_resource_combinations TO parkweave_app;
 -- ENG023: new assigned-receipt tables only, parent binding/history immutable.
 GRANT SELECT,INSERT ON service_receipt_steps,service_step_receipts,service_receipt_events TO parkweave_app;
 GRANT UPDATE(state,revision,current_receipt_id) ON service_receipt_steps TO parkweave_app;
+
+-- ENG025 immutable association/ownership tables only; core capabilities unchanged.
+GRANT SELECT,INSERT ON resource_case_claims,case_resource_links TO parkweave_app;

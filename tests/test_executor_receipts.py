@@ -166,9 +166,9 @@ def test_permissions_migration_and_current_receipt_foreign_step_constraint(recei
     with pytest.raises(psycopg.errors.ForeignKeyViolation):
         with f[0].connect() as c:c.execute('UPDATE service_receipt_steps SET current_receipt_id=%s WHERE id=%s',(UUID(row['current_receipt']['id']),UUID(other.json()['step']['id'])))
     before=read(f,row).json()
-    with f[1].connect() as c:c.execute('DELETE FROM schema_version WHERE version=13')
+    with f[1].connect() as c:c.execute('DELETE FROM schema_version WHERE version>=13')
     f[1].migrate();f[1].migrate();assert read(f,row).json()==before
-    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==13
+    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==14
 
 @pytest.mark.parametrize('mutation',[{'source_kind':'VERIFIED'},{'text':' '},{'source_label':''},{'actor_id':'fixture-a'},{'text':'x'*4001},{'reason':'cannot mix'}])
 def test_invalid_provenance_shape_has_no_effect(receipt_fixture,mutation):
@@ -187,7 +187,7 @@ def test_exact12_upgrade_preserves_preparation_and_creates_receipt_tables(receip
     f=receipt_fixture;parent=ready(f)
     with f[1].connect() as c:
         c.execute('DROP TABLE service_receipt_events,service_step_receipts,service_receipt_steps CASCADE')
-        c.execute('DELETE FROM schema_version WHERE version=13')
+        c.execute('DELETE FROM schema_version WHERE version>=13')
     f[1].migrate();f[1].migrate()
     with f[1].connect() as c:
         c.execute('GRANT SELECT,INSERT ON service_receipt_steps,service_step_receipts,service_receipt_events TO parkweave_app')

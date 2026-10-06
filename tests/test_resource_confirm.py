@@ -102,6 +102,7 @@ def test_receipt_failure_rolls_back_confirmation_and_upgrade_keeps_history(resou
     with f[1].connect() as c:
         c.execute('GRANT INSERT ON synthetic_resource_receipts TO parkweave_app')
         c.execute('DELETE FROM schema_version WHERE version>=11')
+        c.execute('DROP TABLE case_resource_links,resource_case_claims')
         c.execute('DROP TABLE synthetic_resource_combination_receipts,synthetic_resource_combination_members,synthetic_resource_combinations')
         c.execute('ALTER TABLE synthetic_resource_holds DROP CONSTRAINT synthetic_resource_holds_state_check')
         c.execute("ALTER TABLE synthetic_resource_holds ADD CONSTRAINT synthetic_resource_holds_state_check CHECK(state IN ('HELD','RELEASED'))")

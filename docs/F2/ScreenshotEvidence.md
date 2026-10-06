@@ -9,3 +9,7 @@
 - ENG023报告中的.runtime/eng023-preparation-ui目录本次恢复后缺失，三张已报告截图也不可复验；在原报告追加NOT_REPRODUCIBLE_MISSING_FROM_RESUMED_WORKSPACE。不得用通用同名图或本轮新图替代。
 
 本轮新截图只用于ENG024当前验收，独立目录并记录实际hash/流程ID；不回填旧图。原始阶段文档和22张命名证据保持。本地图片不导出或上传；用户视觉签收、原生Win11/真实设备仍未完成。未登记具体路径/hash的旧报告只可复核文字运行结果，不能据此认定旧截图字节已验证。
+
+## ENG025 增量
+
+最终14张新图使用唯一eng025-ui-verified目录，记录真实流程ID及SHA256；首轮图仍本地保留，但不充当最终冻结结果。55张登记图hash匹配（旧41+本片14），原3通用覆盖/3恢复缺图仍不可复验，详见[evidence/eng025-screenshot-audit.json](evidence/eng025-screenshot-audit.json)。未导出/上传/备份；用户视觉签收、真实设备和Win11仍未完成。

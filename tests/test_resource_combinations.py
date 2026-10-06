@@ -218,11 +218,11 @@ def test_combination_history_permissions_are_minimal(pair_fixture):
 def test_exact_11_upgrade_repeat_preserves_existing_single_receipts(pair_fixture):
     f=pair_fixture;hs,data=pair(f);single=single_confirm(f,hs[0]['id']).json();before=counts(f)
     with f[1].connect() as c:
-        c.execute('DROP TABLE synthetic_resource_combination_receipts,synthetic_resource_combination_members,synthetic_resource_combinations')
+        c.execute('DROP TABLE case_resource_links,resource_case_claims; DROP TABLE synthetic_resource_combination_receipts,synthetic_resource_combination_members,synthetic_resource_combinations')
         c.execute('DELETE FROM schema_version WHERE version>=12')
     f[1].migrate();f[1].migrate()
     with f[1].connect() as c:
-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==13
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==14
         c.execute('GRANT SELECT,INSERT ON synthetic_resource_combinations,synthetic_resource_combination_members,synthetic_resource_combination_receipts TO parkweave_app')
         c.execute('GRANT UPDATE(state) ON synthetic_resource_combinations TO parkweave_app')
         payload=c.execute("SELECT payload FROM synthetic_resource_receipts WHERE action='CONFIRM'").fetchone()['payload']

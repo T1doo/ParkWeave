@@ -222,6 +222,19 @@ def create_app(store: Store) -> FastAPI:
         try:return executor_receipts.command(store,token(authorization),step_id,resource_key(idempotency_key),data)
         except LockNotAvailable as e:raise Conflict('receipt authorization or record busy; retry same key') from e
 
+    from . import case_resources as case_resources
+    @app.get('/api/preparations/{preparation_id}/resource-link')
+    def case_resource_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return case_resources.read(store,token(authorization),preparation_id)
+
+    @app.get('/api/preparations/{preparation_id}/resource-link-candidates')
+    def case_resource_candidates(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return case_resources.candidates(store,token(authorization),preparation_id)
+
+    @app.post('/api/preparations/{preparation_id}/resource-link',status_code=201)
+    def case_resource_bind(preparation_id: UUID,data: case_resources.Bind,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return case_resources.bind(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
     return app
 
 
