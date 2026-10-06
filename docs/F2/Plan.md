@@ -1,6 +1,11 @@
 # F2并行开发计划：本地资料准备与个人待办
 
 
+## ENG036 固定模板设计收敛（设计与合同验证）
+
+按原V1收敛材料准备→资源组合→已有授权分派/本人接单→合成回执核对四步模板，冻结建议依赖/版本/当前权限/输入变化失效及未来独立oracle，见[短Plan](ENG036-ControlledTemplatePlan.md)。本轮没有实现模板执行器/复合持久计划、注册新动作或赋权；既有合同/单case.create持久修订离线回归29PASS与7项拒绝探针只验证原边界，不称四步或冷会话通过。原AT14预览隔离、AT08/35冷会话和完整F2仍缺；ENG035的808全量保持其原范围，148源hash无变化。下一产品决定是资源与分派先后、合法新Run访问入口、模板审核发布/升级及接受后失配处理。仅本地文档与验证，不push/CI/export/LIVE；R4/Windows/阶段门不变。
+
+
 ## ENG035 当前分派链站内通知（本地完成）
 
 在ENG034明确建议后获新授权，实现当前新分派事件的业务+Outbox同事务、已有收件人平台通知、OPEN请求与本人已读、重复/并发/重启恢复及当前Case权限复查。仅SYNTHETIC内部三角色，内容最小，不新增Grant/Runassignment、无旧历史backfill，无外部消息。最终冻结808PASS/0FAIL/1WindowsSKIP/2既有WARN（232.54s），148源hash/137 runner源hash与8张独立当前截图匹配；三角色实际闭环与16时序检查通过。完成范围与最终证据见[ENG035](ENG035-DispatchNotices.md)。这只补当前分派链的小闭环；通用CaseStep/通知/全业务Outbox、原完整DAG/模板、承诺交付核验及实际FULFILLED仍未完成。F1/F2未签收、R4关闭、Win11/36AT6EX NOT_RUN；0LIVE/预算、不push/newCI/export，Server37420887816仍待已有安全JSON。下方记录保留各轮历史范围。

@@ -92,3 +92,8 @@ ENG014（新授权并行切片）：F2 PARALLEL_ENGINEERING，正式准入NOT_PA
 ## ENG035 当前分派链站内通知
 
 ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合法收件人平台通知、OPEN请求/本人已读分记、并发去重/崩溃重启及当前Case权限复查。最终本地冻结808PASS/0FAIL/1WindowsSKIP（232.54s）、实际三角色通知闭环和16时序检查通过，148份源hash/8张当前图匹配；证据见[F2/ENG035](F2/ENG035-DispatchNotices.md)。仅新SYNTHETIC内部事件、0LIVE/预算，不push/newCI/export；通知不代表履约，原通用CaseStep/Outbox/DAG/模板/实际目标核验欠项及阶段门保留。
+
+
+## ENG036 固定模板设计收敛
+
+当前材料→资源组合→合法分派接单→回执核对固定四步设计与未来验收边界见[F2/ENG036](F2/ENG036-ControlledTemplatePlan.md)。本轮仅本地文档与既有离线合同/单动作持久计划验证，新四步模板/复合计划未实现；不注册新动作/赋权或自动履约。ENG035 808成绩原范围与源码不变，不签收全F2/冷会话/Windows，不push/newCI/export/LIVE。
