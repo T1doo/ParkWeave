@@ -7,8 +7,8 @@ import stat
 import sys
 from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,TREE_CLEANUP,_allowed_tests,browser_summary
 from summary_report import SCHEMA,ROOT_PATTERN,current_binding
-from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES,ACL_OBJECTS
-from regression_progress import PHASES as REGRESSION_PHASES
+from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES,ACL_OBJECTS,start_observation
+from regression_progress import PHASES as REGRESSION_PHASES,observation as regression_observation
 
 MAX_BYTES=64*1024
 MAX_ROWS=32
@@ -72,7 +72,11 @@ def project(record,binding):
         if 'acl_object' in row:
             if row['case'] not in ('Doctor_native','Start_native','Setup_native') or row.get('boundary_phase')!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS:raise ValueError('invalid ACL object')
             public['acl_object']=row['acl_object']
+        if 'start_observation' in row:
+            if row['case']!='Start_native':raise ValueError('invalid start observation case')
+            public['start_observation']=start_observation(row['start_observation'])
         if row['case']=='full_engineering_regression':
+            if 'regression_observation' in row:public['regression_observation']=regression_observation(row['regression_observation'])
             if 'owned_tree_cleanup' in row:
                 if not isinstance(row['owned_tree_cleanup'],str) or row['owned_tree_cleanup'] not in TREE_CLEANUP:raise ValueError('invalid tree cleanup')
                 public['owned_tree_cleanup']=row['owned_tree_cleanup']
@@ -159,6 +163,10 @@ def annotation_case(row,allowed):
     if 'acl_object' in row:
         if row['case'] not in ('Doctor_native','Start_native','Setup_native') or row.get('boundary_phase')!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS:raise ValueError('invalid ACL object')
         value['acl_object']=row['acl_object']
+    for key,case,validator in (('start_observation','Start_native',start_observation),('regression_observation','full_engineering_regression',regression_observation)):
+        if key in row:
+            if row['case']!=case:raise ValueError('invalid observation case')
+            value[key]=validator(row[key])
     if 'owned_tree_cleanup' in row:
         if row['case']!='full_engineering_regression' or not isinstance(row['owned_tree_cleanup'],str) or row['owned_tree_cleanup'] not in TREE_CLEANUP:raise ValueError('invalid tree cleanup')
         value['owned_tree_cleanup']=row['owned_tree_cleanup']
@@ -208,7 +216,7 @@ def annotation_commands(public):
         rows=public.get('cases')
         if not isinstance(rows,list) or len(rows)>MAX_ROWS:raise ValueError('invalid rows')
         allowed=_allowed_tests();values=[annotation_case(row,allowed) for row in rows]
-        candidates=[row for row in values if row['status']!='PASS'];remaining=MAX_FAILURE_IDS;commands=[]
+        candidates=[row for row in values if row['status']!='PASS']+[row for row in values if row['status']=='PASS' and ('start_observation' in row or 'regression_observation' in row)];remaining=MAX_FAILURE_IDS;commands=[]
         for row in candidates[:MAX_ANNOTATIONS-1]:
             original=len(row.get('failed_test_ids',[]))
             active_original=int('active_test_id' in row)

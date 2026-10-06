@@ -12,7 +12,7 @@ import xml.etree.ElementTree as ET
 
 from parkweave.process_env import minimal_environment
 sys.path.insert(0,str(Path(__file__).resolve().parent/'windows_ci'))
-from regression_progress import write as progress_write
+from regression_progress import write as progress_write,read_snapshot as progress_read
 
 ROOT=Path(__file__).resolve().parents[1]
 
@@ -70,12 +70,13 @@ def main():
             process=subprocess.run([sys.executable,'-m','pytest','-q','--junitxml',str(junit),*telemetry,*selectors],cwd=ROOT,stdout=f,stderr=subprocess.STDOUT,env=minimal_environment(os.environ,**({'PARKWEAVE_TEST_OWNER_DSN':os.environ['PARKWEAVE_TEST_OWNER_DSN']} if os.name=='nt' and 'PARKWEAVE_TEST_OWNER_DSN' in os.environ else {})))
         code=process.returncode
     if not junit.exists():junit.write_text('<testsuites/>',encoding='utf-8')
-    progress_write(args.progress,'report_summary');report=summarize(rows,junit,code)
+    telemetry=progress_read(args.progress).get('regression_observation') if args.progress is not None else None
+    progress_write(args.progress,'report_summary',telemetry=telemetry);report=summarize(rows,junit,code)
     report.update(environment=sys.platform,model_calls=0,native_windows='NOT_RUN: native manual gates not auto-graded',
                   full_regression=not bool(args.ids),private_log=str(log.relative_to(ROOT)),private_junit=str(junit.relative_to(ROOT)))
     source_files=sorted(p for folder in ('src/parkweave','tests','scripts') for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix in ('.py','.ps1','.psm1','.sql','.html'))
     report['tested_source_sha256']={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_files}
-    progress_write(args.progress,'report_write');args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
+    progress_write(args.progress,'report_write',telemetry=telemetry);args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({'whole_AT_EX':'NOT_RUN','engineering_exit_code':code,'report':str(args.report),'native_windows':'NOT_RUN','model_calls':0},ensure_ascii=False))
     raise SystemExit(code)
 

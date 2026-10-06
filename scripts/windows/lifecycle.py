@@ -11,7 +11,7 @@ import sys
 import time
 import uuid
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from lifecycle_diagnostics import staged,stage,failure,command as diagnostic_command
+from lifecycle_diagnostics import staged,stage,failure,command as diagnostic_command,start_status_command
 
 REPO = Path(__file__).resolve().parents[2]
 RUNTIME = REPO / '.runtime'
@@ -284,42 +284,73 @@ def start():
     commands=[[config['python'],'-m','uvicorn','parkweave.api:configured_app','--factory','--host','127.0.0.1','--port',str(config['port'])],
               [config['python'],'-m','parkweave.worker']]
     records=[];children=[];state_written=False
+    observation={**{k:0 for k in ('created','attempts','responses','refused','timeouts','http_errors','other_errors','mismatches','alive_refused','cleanup_attempted','stopped','absent','foreign')},**{k:'NOT_CREATED' for k in ('api','worker','after_api','after_worker')},'last':'NOT_PROBED'}
     with stage('service_log'):log=(RUNTIME/'windows-services.log').open('a',encoding='utf-8')
     try:
         for command in commands:
             with stage('process_spawn'):
                 child=psutil.Popen(command,cwd=REPO,env=app_environment(dsn,os.environ),stdout=log,stderr=log)
-            children.append(child)
+            children.append(child);observation['created']+=1;observation[('api','worker')[len(children)-1]]='UNKNOWN';observation[('after_api','after_worker')[len(children)-1]]='UNKNOWN'
             with stage('process_identity'):records.append({'pid':child.pid,'created':child.create_time(),'command':command})
         with stage('process_record'):write_exclusive(STATE,{'project':'ParkWeave','schema':1,'processes':records})
         state_written=True
         import urllib.request
         opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
         for _ in range(50):
-            if any(c.poll() is not None for c in children):
+            states=[c.poll() for c in children]
+            for key,code in zip(('api','worker'),states):observation[key]='RUNNING' if code is None else 'EXIT_ZERO' if code==0 else 'EXIT_NONZERO'
+            if any(code is not None for code in states):
+                observation['last']='CHILD_EXITED'
                 with stage('health_readiness'):raise BoundaryError('managed service exited; inspect private log','SERVICE_EXITED')
+            observation['attempts']+=1
             try:
                 with stage('health_readiness'):
                     with opener.open(f"http://127.0.0.1:{config['port']}/health",timeout=1) as r:
                         health=json.load(r)
                 with stage('health_readiness'):
-                    if health.get('execution_mode')=='LOCAL' and health.get('model')=='MODEL_MOCK' and health.get('process_id')==children[0].pid:break
-            except OSError:pass
+                    matches={'mode_matches':health.get('execution_mode')=='LOCAL','model_matches':health.get('model')=='MODEL_MOCK','process_matches':health.get('process_id')==children[0].pid}
+                    observation['responses']+=1;observation.update(matches)
+                    if all(matches.values()):observation['last']='HEALTH_MATCH';break
+                    observation['mismatches']+=1;observation['last']='HEALTH_MISMATCH'
+            except OSError as error:
+                import urllib.error
+                cause=getattr(error,'reason',None)
+                if isinstance(error,urllib.error.HTTPError):key,last='http_errors','HTTP_NON_SUCCESS'
+                elif isinstance(error,TimeoutError) or isinstance(cause,TimeoutError):key,last='timeouts','TRANSPORT_TIMEOUT'
+                elif isinstance(error,ConnectionRefusedError) or isinstance(cause,ConnectionRefusedError):
+                    key,last='refused','CONNECTION_REFUSED'
+                    if all(code is None for code in states):observation['alive_refused']+=1
+                else:key,last='other_errors','TRANSPORT_OTHER'
+                observation[key]+=1;observation['last']=last
             time.sleep(.1)
         else:
             with stage('health_readiness'):raise BoundaryError('local health readiness timeout','READINESS_TIMEOUT')
+        try:print(start_status_command(observation))
+        except Exception:pass  # Telemetry cannot turn successful readiness into failure.
         print(f"Open http://127.0.0.1:{config['port']} ; synthetic local mode only.")
     except Exception as primary:
         # Keep the existing cleanup/exit behavior; retain the original failure's
         # fixed metadata if a cleanup exception replaces it.
+        primary.parkweave_start_observation=observation
+        def observe_after_cleanup():
+            for key,child in zip(('after_api','after_worker'),children):
+                try:
+                    code=child.poll();observation[key]='RUNNING' if code is None else 'EXIT_ZERO' if code==0 else 'EXIT_NONZERO'
+                except Exception:observation[key]='UNKNOWN'
         try:
-            results=[stop_record(record,REPO,psutil.Process) for record in records]
+            results=[]
+            for record in records:
+                observation['cleanup_attempted']+=1
+                result=stop_record(record,REPO,psutil.Process);results.append(result)
+                if result in ('STOPPED','ABSENT','FOREIGN_REFUSED'):observation[{'STOPPED':'stopped','ABSENT':'absent','FOREIGN_REFUSED':'foreign'}[result]]+=1
             if any(result not in ('STOPPED','ABSENT') for result in results):
                 raise BoundaryError('managed process cleanup unconfirmed; process record preserved')
             if state_written:STATE.unlink(missing_ok=True)
         except Exception as cleanup:
+            observe_after_cleanup()
             cleanup.parkweave_lifecycle_primary=failure(primary)
             raise
+        observe_after_cleanup()
         raise
     finally:log.close()
 

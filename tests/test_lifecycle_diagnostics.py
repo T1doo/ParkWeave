@@ -143,7 +143,11 @@ def test_start_preserves_primary_diagnostic_if_cleanup_replaces_exception(tmp_pa
     with pytest.raises(PermissionError) as failure:lifecycle.start()
     row=diagnostic.parse(diagnostic.command('start',failure.value),'start')
     phase,category,reason={'service_exit':('health_readiness','BoundaryError','SERVICE_EXITED'),'health_shape':('health_readiness','AttributeError','UNCLASSIFIED'),'record_write':('process_record','OSError','UNCLASSIFIED')}[fault]
-    assert row=={'boundary_phase':phase,'category':category,'boundary_reason':reason,'cleanup_category':'PermissionError'}
+    expected={'boundary_phase':phase,'category':category,'boundary_reason':reason,'cleanup_category':'PermissionError'}
+    assert set(row)==set(expected)|{'start_observation'} and {k:row[k] for k in expected}==expected
+    observation=diagnostic.start_observation(row['start_observation'])
+    assert observation['created']==2 and observation['responses']==0 and observation['cleanup_attempted']==1
+    assert observation['attempts']==(1 if fault=='health_shape' else 0)
     assert (tmp_path/'state.json').exists()==(fault!='record_write')  # Original cleanup behavior.
 
 
@@ -214,7 +218,7 @@ def test_regression_progress_atomic_binding_and_corruption_fail_closed(tmp_path,
     progress.write(path,'pytest_setup');assert progress.read(path)=='pytest_setup'
     data=json.loads(path.read_bytes());assert set(data)=={'schema','execution_id','phase','active_test_id'}
     data['execution_id']=uuid.uuid4().hex;path.write_text(json.dumps(data));assert progress.read(path)=='UNKNOWN'
-    for value in (POISON,'x'*513):path.write_text(value);assert progress.read(path)=='UNKNOWN'
+    for value in (POISON,'x'*(progress.MAX_BYTES+1)):path.write_text(value);assert progress.read(path)=='UNKNOWN'
     monkeypatch.setattr(progress.os,'replace',lambda *args:(_ for _ in ()).throw(PermissionError(POISON)))
     progress.write(path,'pytest_call')  # Failure is diagnostic only.
     assert not list(tmp_path.glob('.progress-*.tmp'))

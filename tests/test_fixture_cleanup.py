@@ -26,7 +26,7 @@ def test_owned_fixture_database_dropped_on_setup_or_client_exit_failure(pg,monke
     try:
         if stage=='migration':monkeypatch.setattr(cf.Store,'migrate',migrate_failure)
         else:monkeypatch.setattr(cf,'TestClient',ExitFailure)
-        generator=cf.fixture.__wrapped__(pg)
+        generator=cf.fixture.__wrapped__(pg,None)
         with pytest.raises(RuntimeError,match='SYNTHETIC_'):
             next(generator)
             if stage=='client_exit':next(generator)
@@ -42,7 +42,7 @@ def test_owned_fixture_cleanup_refusal_preserves_original_setup_failure(pg,monke
     try:
         with monkeypatch.context() as patch:
             patch.setattr(cf.Store,'migrate',migrate_failure);patch.setattr(cf,'drop_owned_fixture_database',drop_failure)
-            with pytest.raises(RuntimeError) as failure:next(cf.fixture.__wrapped__(pg))
+            with pytest.raises(RuntimeError) as failure:next(cf.fixture.__wrapped__(pg,None))
             assert failure.value.args==('SYNTHETIC_PRIMARY_FAILURE',)
             assert attempts==[True] and any('RuntimeError' in note for note in failure.value.__notes__)
             assert len(owned_dbs(pg)-before)==1

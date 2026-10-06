@@ -1,0 +1,13 @@
+# ENG053：最小有界启动与回归观测
+
+复用现有生命周期标记和单条原子checkpoint；未调整600秒回归/900秒套件限额、测试判定、代理、身份或权限。Start记录固定退出状态与0–50请求计数，区分子进程退出、连接拒绝、传输超时、HTTP非成功及有效响应不匹配。仅有效响应产生mode/model/process三个布尔值；它们代表最近有效响应，不保证最后请求相同。alive_refused代表请求前轮询两child存活，不证明监听或持续存活；传输超时不细分连接与读取。失败清理沿既有身份检查，记录STOPPED/ABSENT/FOREIGN_REFUSED计数及清理后直接child状态；不新增终止权限。成功后的after状态UNKNOWN，表示未观察清理。
+
+回归记录elapsed、setup/call/teardown累计毫秒、ordinal/collected/completed、当前fixture阶段/耗时与CREATE/MIGRATE/SEED/GRANTS/DROP累计成本。completed仅代表teardown报告已收到，不等同PASS。CLIENT阶段包含测试体，fixture阶段与pytest阶段重叠，不可相加。checkpoint限1024字节，trusted测试ID去参数化；reader另计算checkpoint_age_ms。采样独立维护连接仅返回六个计数，立即一次后每30秒一次，最多20次；connect2秒、statement1秒、lock0.5秒。采样失败只给UNAVAILABLE，无SQL/参数/身份/路径/凭据/异常文字。样本是离散观测，sample_elapsed_ms与checkpoint_age_ms用于判断新鲜度，不能证明连续无锁/无泄漏。公开字段在采样完成后原子更新，首次采样进行中仍保留有效NOT_SAMPLED快照。
+
+安全publisher仍非PASS优先，再发布有观测的Start/回归PASS行；原8条/每条2048字节/总16KiB/25测试ID上限保持。严格类型、枚举、交叉计数与额外字段拒绝保持；观测不可改变业务结果。
+
+本地定点154PASS、2WindowsSKIP；新增严格输入测试后观测集合14PASS。真实插件CLI执行既有恢复测试与三个preparation参数，4PASS，控制台1.79秒，最终completed/collected/ordinal均4，累计setup1184ms/call512ms/teardown37ms，一次AVAILABLE样本；这只是Linux PG16.2/Unix socket证据，不能外推Windows PG17/TCP性能。详细结果见[evidence](evidence/eng053-bounded-observation-local.json)。Start与回归独立只读review无阻断；回归review发现的首次采样进行中非法状态已修正并有并发测试。
+
+首次体验文档已纠正当前回执重提→企业LOCAL_ACKNOWLEDGED→Case重验/关闭顺序，并明确Run assignment需owner受控fixture前置；四步计划与Case关闭脚本分开，不冒充冷启动完整V1或真实履约。下一可用切片复用现有API，将同一新Case的四步、通知、关闭/重开/重载串成向导及本地结果摘要，先不新增通用DAG或授权API。
+
+本次拟普通推送dev/f1-foundation并仅观察一次原standard Windows CI；实际终态另记，禁止由Linux结果声明Windows通过。F1未签收/F2仅并行探索、Server非Win11、36AT6EX NOT_RUN、R4关闭与预算0保持；原环境和恢复包保留。

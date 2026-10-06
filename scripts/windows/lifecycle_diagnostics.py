@@ -12,6 +12,36 @@ REASONS=frozenset({'UNCLASSIFIED','BOUNDARY_REFUSED','ENVIRONMENT_REQUIRED','NAT
 REASONS=REASONS|{'ACL_OWNER_MISMATCH','ACL_ALLOW_REFUSED','ACL_INHERITANCE_REFUSED','ACL_INSPECTION_FAILED'}
 
 
+START_STATES=frozenset({'NOT_CREATED','RUNNING','EXIT_ZERO','EXIT_NONZERO','UNKNOWN'})
+START_LAST=frozenset({'NOT_PROBED','CHILD_EXITED','CONNECTION_REFUSED','TRANSPORT_TIMEOUT','HTTP_NON_SUCCESS','TRANSPORT_OTHER','HEALTH_MISMATCH','HEALTH_MATCH'})
+START_SMALL=frozenset({'created','cleanup_attempted','stopped','absent','foreign'})
+START_COUNTS=frozenset({'attempts','responses','refused','timeouts','http_errors','other_errors','mismatches','alive_refused'})
+START_STATE_KEYS=frozenset({'api','worker','after_api','after_worker'})
+START_MATCHES=frozenset({'mode_matches','model_matches','process_matches'})
+
+
+def start_observation(value):
+    required=START_SMALL|START_COUNTS|START_STATE_KEYS|{'last'}
+    if not isinstance(value,dict) or not required<=set(value)<=required|START_MATCHES:raise ValueError('invalid start observation')
+    if any(type(value[k]) is not int or not 0<=value[k]<=2 for k in START_SMALL):raise ValueError('invalid start count')
+    if any(type(value[k]) is not int or not 0<=value[k]<=50 for k in START_COUNTS):raise ValueError('invalid request count')
+    if any(not isinstance(value[k],str) or value[k] not in START_STATES for k in START_STATE_KEYS) or not isinstance(value['last'],str) or value['last'] not in START_LAST:raise ValueError('invalid start state')
+    if value['responses']>value['attempts'] or value['mismatches']>value['responses'] or value['alive_refused']>value['refused']:raise ValueError('inconsistent request counts')
+    if sum(value[k] for k in ('responses','refused','timeouts','http_errors','other_errors'))>value['attempts']:raise ValueError('inconsistent attempt counts')
+    if value['stopped']+value['absent']+value['foreign']>value['cleanup_attempted'] or value['cleanup_attempted']>value['created']:raise ValueError('inconsistent cleanup counts')
+    present=START_MATCHES&set(value)
+    if present!=(START_MATCHES if value['responses'] else set()) or any(type(value[k]) is not bool for k in present):raise ValueError('invalid health matching evidence')
+    return dict(value)
+
+
+def start_status_command(observation):
+    # On exit0, the suite consumes only observation; boundary slots are neutral.
+    value={'schema':1,'action':'start','boundary_phase':'health_readiness','category':'OTHER','boundary_reason':'UNCLASSIFIED','start_observation':start_observation(observation)}
+    result=PREFIX+json.dumps(value,ensure_ascii=True,separators=(',',':'))
+    if len((result+'\n').encode('ascii'))>MAX_BYTES:raise ValueError('diagnostic bound exceeded')
+    return result
+
+
 @contextmanager
 def stage(name):
     try:yield
@@ -42,6 +72,10 @@ def failure(exc):
             'boundary_reason':reason if isinstance(reason,str) and reason in REASONS else 'UNCLASSIFIED'}
     obj=attributes.get('parkweave_acl_object')
     if result['boundary_phase']=='private_acl' and isinstance(obj,str) and obj in ACL_OBJECTS:result['acl_object']=obj
+    observation=attributes.get('parkweave_start_observation')
+    if observation is not None:
+        try:result['start_observation']=start_observation(observation)
+        except ValueError:pass
     return result
 
 
@@ -50,9 +84,11 @@ def command(action,exc):
     value={'schema':1,'action':action,**failure(exc)}
     primary=vars(exc).get('parkweave_lifecycle_primary')
     expected={'boundary_phase','category','boundary_reason'}
-    if isinstance(primary,dict) and expected<=set(primary)<=expected|{'acl_object'} and all(isinstance(primary[k],str) and primary[k] in choices for k,choices in (('boundary_phase',PHASES),('category',CATEGORIES),('boundary_reason',REASONS))) and ('acl_object' not in primary or (primary['boundary_phase']=='private_acl' and isinstance(primary['acl_object'],str) and primary['acl_object'] in ACL_OBJECTS)):
-        value.pop('acl_object',None)
+    if isinstance(primary,dict) and expected<=set(primary)<=expected|{'acl_object','start_observation'} and all(isinstance(primary[k],str) and primary[k] in choices for k,choices in (('boundary_phase',PHASES),('category',CATEGORIES),('boundary_reason',REASONS))) and ('acl_object' not in primary or (primary['boundary_phase']=='private_acl' and isinstance(primary['acl_object'],str) and primary['acl_object'] in ACL_OBJECTS)):
+        value.pop('acl_object',None);value.pop('start_observation',None)
+        if 'start_observation' in primary:primary={**primary,'start_observation':start_observation(primary['start_observation'])}
         value.update(primary,cleanup_category=value['category'])
+    if action!='start':value.pop('start_observation',None)
     result=PREFIX+json.dumps(value,ensure_ascii=True,separators=(',',':'))
     if len((result+'\n').encode('ascii'))>MAX_BYTES:raise ValueError('diagnostic bound exceeded')
     return result
@@ -73,9 +109,12 @@ def parse(stderr,action):
             return result
         row=json.loads(matches[0][len(PREFIX):],object_pairs_hook=unique)
         expected={'schema','action','boundary_phase','category','boundary_reason'}
-        if not isinstance(row,dict) or not expected<=set(row)<=expected|{'cleanup_category','acl_object'} or type(row['schema']) is not int or row['schema']!=1 or row['action']!=action:return unavailable
+        if not isinstance(row,dict) or not expected<=set(row)<=expected|{'cleanup_category','acl_object','start_observation'} or type(row['schema']) is not int or row['schema']!=1 or row['action']!=action:return unavailable
         for key,choices in (('boundary_phase',PHASES),('category',CATEGORIES),('boundary_reason',REASONS),('cleanup_category',CATEGORIES)):
             if key in row and (not isinstance(row[key],str) or row[key] not in choices):return unavailable
         if 'acl_object' in row and (row['boundary_phase']!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS):return unavailable
+        if 'start_observation' in row:
+            if action!='start':return unavailable
+            row['start_observation']=start_observation(row['start_observation'])
         return {k:v for k,v in row.items() if k not in ('schema','action')}
     except (ValueError,TypeError,UnicodeError,RecursionError):return unavailable

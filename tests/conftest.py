@@ -46,18 +46,29 @@ def drop_owned_fixture_database(pg,db):
         c.execute(psycopg.sql.SQL('DROP DATABASE {}').format(psycopg.sql.Identifier(db)))
 
 
+def fixture_progress(request,stage):
+    # Existing optional pytest plugin only; no credentials or SQL enter the record.
+    if request is None:return
+    try:
+        plugin=request.config.pluginmanager.get_plugin('scripts.windows_ci.regression_plugin')
+        if plugin is not None:plugin.fixture_stage(request,stage)
+    except Exception:pass
+
+
 @pytest.fixture
-def fixture(pg):
+def fixture(pg,request):
     db = 'fixture_' + uuid.uuid4().hex
     created=False
     try:
+        fixture_progress(request,'CREATE_DB')
         with psycopg.connect(pg.get_uri(), autocommit=True) as c:
             c.execute(psycopg.sql.SQL('CREATE DATABASE {}').format(psycopg.sql.Identifier(db)))
             created=True
         owner = Store(make_conninfo(pg.get_uri(), dbname=db))
-        owner.migrate()
+        fixture_progress(request,'MIGRATE');owner.migrate()
         tokens = {k: secrets.token_urlsafe(32) for k in ('fixture-a','fixture-b','fixture-c')}
-        owner.seed(tokens)
+        fixture_progress(request,'SEED');owner.seed(tokens)
+        fixture_progress(request,'GRANTS')
         with owner.connect() as c:
             c.execute('GRANT USAGE ON SCHEMA public TO parkweave_app')
             c.execute('GRANT SELECT ON schema_version,principals,field_grants TO parkweave_app')
@@ -91,13 +102,17 @@ def fixture(pg):
             c.execute('GRANT SELECT,INSERT ON controlled_plans,controlled_plan_events TO parkweave_app')
             c.execute('GRANT UPDATE(revision,checked,invalidated_from,invalidated_at) ON controlled_plans TO parkweave_app')
         store = Store(make_conninfo(owner.dsn, user='parkweave_app'))
+        fixture_progress(request,'CLIENT')
         with TestClient(create_app(store)) as client:
             yield store, owner, tokens, client
+            fixture_progress(request,'CLIENT_EXIT')
     except BaseException as primary:
         if created:
-            try:drop_owned_fixture_database(pg,db)
+            try:
+                fixture_progress(request,'DROP_DB');drop_owned_fixture_database(pg,db);fixture_progress(request,'DONE')
             except Exception as cleanup:
                 primary.add_note('Owned fixture cleanup failed: '+type(cleanup).__name__)
         raise
     else:
-        if created:drop_owned_fixture_database(pg,db)
+        if created:
+            fixture_progress(request,'DROP_DB');drop_owned_fixture_database(pg,db);fixture_progress(request,'DONE')

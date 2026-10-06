@@ -77,6 +77,9 @@ def main():
         ok=proc.returncode==expected and (required_error is None or required_error in proc.stderr)
         if ok and validate is not None:ok=validate(proc.stdout)
         rows.append({'case':label,'status':'PASS' if ok else 'FAIL','exit_code':proc.returncode})
+        if label=='Start_native':
+            observation=lifecycle_failure(proc.stdout,'start').get('start_observation')
+            if observation is not None:rows[-1]['start_observation']=observation
         if not ok and label in ('Doctor_native','Start_native','Setup_native'):
             rows[-1].update(lifecycle_failure(proc.stdout,path.stem.lower()))
         if proc.returncode==expected and validate is not None and not ok:rows[-1]['reason']='OWNED_STATUS_NOT_CONFIRMED'
@@ -137,6 +140,7 @@ def main():
         progress=report.with_suffix('.progress.json')
         proc=run_regression(managed,report,progress,command_environment(os.environ,config,'regression'))
         rows.append({'case':'full_engineering_regression','status':'PASS' if proc.returncode==0 else 'FAIL','exit_code':proc.returncode})
+        rows[-1].update(regression_snapshot(progress))
         if hasattr(proc,'cleanup'):rows[-1]['owned_tree_cleanup']=proc.cleanup
         if report.exists():
             phase='regression_report';checkpoint(phase);parsed,counts=read_report(report)
