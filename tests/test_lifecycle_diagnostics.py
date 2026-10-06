@@ -347,3 +347,22 @@ def test_lifecycle_identity_worst_bound_preserves_primary_and_cleanup():
     row=diagnostic.parse(marker,'start')
     assert row['boundary_reason']=='READINESS_TIMEOUT' and row['identity_refusal']==identity and row['cleanup_identity_refusal']==identity
     assert row['start_observation']['identity_refusal']==identity
+
+
+
+def test_windows_port_probe_requires_exclusive_before_bind(monkeypatch):
+    from types import SimpleNamespace
+    events=[]
+    class Socket:
+        def __enter__(self):return self
+        def __exit__(self,*args):events.append('close')
+        def setsockopt(self,*args):assert args==(1,4,1);events.append('exclusive')
+        def bind(self,address):
+            assert address==('127.0.0.1',8765)
+            assert events==['exclusive']
+            events.append('bind');raise OSError('SYNTHETIC occupied')
+    monkeypatch.setattr(lifecycle,'os',SimpleNamespace(name='nt'))
+    monkeypatch.setattr(lifecycle,'socket',SimpleNamespace(socket=Socket,SOL_SOCKET=1,SO_EXCLUSIVEADDRUSE=4))
+    with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.port_available(8765)
+    assert diagnostic.failure(error.value)['boundary_reason']=='PORT_OCCUPIED'
+    assert events==['exclusive','bind','close']

@@ -184,3 +184,17 @@ def test_linked_private_junit_is_refused(tmp_path):
     try:path.symlink_to(outside)
     except OSError:pytest.skip('platform cannot create test-owned symlink')
     assert m.failure_tests(tmp_path,reference)['state']=='JUNIT_PATH_REFUSED'
+
+
+
+def test_long_parameter_is_mapped_before_length_check_and_all_cases_aggregate(tmp_path):
+    m=module('diagnostics')
+    _,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON*100+']','failure')]*42)
+    result=m.failure_tests(tmp_path,reference)
+    assert result['failed_test_counts']=={KNOWN:42}
+    assert result['mapped_failed_cases']==42 and result['unknown_failed_cases']==result['mapped_cases_omitted']==0
+    assert POISON not in json.dumps(result)
+    public=module('publish_summary').failure_diagnostics(result,{KNOWN})
+    assert public['failed_test_counts']=={KNOWN:42}
+    result['mapped_failed_cases']=41
+    assert module('publish_summary').failure_diagnostics(result,{KNOWN})['state']=='DIAGNOSTIC_FIELDS_INVALID'

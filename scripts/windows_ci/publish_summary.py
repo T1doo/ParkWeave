@@ -45,6 +45,13 @@ def failure_diagnostics(value,allowed):
     if 'ids_truncated' in value:
         if type(value['ids_truncated']) is not bool:return invalid
         result['ids_truncated']=value['ids_truncated']
+    aggregation={'failed_test_counts','mapped_failed_cases','mapped_cases_omitted'}
+    if aggregation & set(value):
+        counts=value.get('failed_test_counts')
+        if not aggregation<=set(value) or not isinstance(counts,dict) or set(counts)!=set(ids) or any(not number(n) or n==0 for n in counts.values()):return invalid
+        if not all(number(value[k]) for k in ('mapped_failed_cases','mapped_cases_omitted')):return invalid
+        if sum(counts.values())+value['mapped_cases_omitted']!=value['mapped_failed_cases'] or value.get('failed_cases')!=value['mapped_failed_cases']+value.get('unknown_failed_cases',0):return invalid
+        result.update(failed_test_counts=dict(counts),mapped_failed_cases=value['mapped_failed_cases'],mapped_cases_omitted=value['mapped_cases_omitted'])
     return result
 
 
@@ -227,6 +234,12 @@ def annotation_case(row,allowed):
         # Stable allowlisted test identifiers, without repository/runtime paths.
         value['diagnostic_state']=d['state']
         value['failed_test_ids']=[x.split('::')[0].removeprefix('tests/').removesuffix('.py')+'::'+x.split('::')[1] for x in sorted(set(ids))]
+        if 'failed_test_counts' in d:
+            checked=failure_diagnostics(d,allowed)
+            if checked['state']=='DIAGNOSTIC_FIELDS_INVALID':raise ValueError('invalid aggregation')
+            value['failed_test_case_counts']=[checked['failed_test_counts'][test] for test in sorted(set(ids))]
+            value['mapped_failed_cases']=checked['mapped_failed_cases']
+            value['mapped_cases_omitted']=checked['mapped_cases_omitted']
         for key in ('test_cases_seen','failed_cases','unknown_failed_cases'):
             if key in d:
                 if not number(d[key]):raise ValueError('invalid diagnostic count')
@@ -254,7 +267,13 @@ def annotation_commands(public):
         rows=public.get('cases')
         if not isinstance(rows,list) or len(rows)>MAX_ROWS:raise ValueError('invalid rows')
         allowed=_allowed_tests();values=[annotation_case(row,allowed) for row in rows]
-        candidates=[row for row in values if row['status']!='PASS']+[row for row in values if row['status']=='PASS' and ('start_observation' in row or 'regression_observation' in row or 'shards' in row)];remaining=MAX_FAILURE_IDS;commands=[]
+        candidates=[row for row in values if row['status']!='PASS']+[row for row in values if row['status']=='PASS' and ('start_observation' in row or 'regression_observation' in row or 'shards' in row)];remaining=MAX_FAILURE_IDS;commands=[];packed=[];pending=[]
+        original_truncation={id(row):row.get('ids_truncated',False) for row in candidates}
+        case_counts={id(row):dict(zip(row.get('failed_test_ids',[]),row.get('failed_test_case_counts',[]))) for row in candidates}
+        def align_counts(row):
+            if 'failed_test_case_counts' in row:
+                row['failed_test_case_counts']=[case_counts[id(row)][test] for test in row['failed_test_ids']]
+                row['annotation_mapped_cases_omitted']=row['mapped_failed_cases']-sum(row['failed_test_case_counts'])
         for row in candidates[:MAX_ANNOTATIONS-1]:
             original=len(row.get('failed_test_ids',[]))
             active_original=int('active_test_id' in row)
@@ -268,16 +287,42 @@ def annotation_commands(public):
                 row['annotation_ids_omitted']=row.get('annotation_ids_omitted',0)+active_original-active_kept
                 row['ids_truncated']=row.get('ids_truncated',False) or not active_kept
             while True:
+                align_counts(row)
                 command=annotation_command(row)
-                if annotation_size(command)<=MAX_ANNOTATION_BYTES:break
+                # JSON false is one byte longer than true. A continuation may
+                # remove the last omission, so fit the longest final flag now.
+                sized={**row,'ids_truncated':False} if 'ids_truncated' in row else row
+                if annotation_size(annotation_command(sized))<=MAX_ANNOTATION_BYTES:break
+                if 'shards' in row and 'regression_observation' in row:
+                    row.pop('regression_observation');row['regression_observation_omitted']=True;continue
                 if not row.get('failed_test_ids'):
-                    if 'shards' in row and 'regression_observation' in row:
-                        row.pop('regression_observation');row['regression_observation_omitted']=True;continue
                     raise ValueError('oversize row')
-                row['failed_test_ids'].pop();row['annotation_ids_omitted']+=1;row['ids_truncated']=True
-            remaining-=len(row.get('failed_test_ids',[]))+active_kept;commands.append(command)
+                pending.append((row,row['failed_test_ids'].pop()));row['annotation_ids_omitted']+=1;row['ids_truncated']=True
+            remaining-=len(row.get('failed_test_ids',[]))+active_kept;packed.append(row)
+        # Preserve case rows first; unused existing slots carry only prevalidated
+        # whole IDs. A large timing observation must not hide failure identities.
+        continuations=[]
+        for row in packed:
+            ids=sorted(test for owner,test in pending if owner is row)
+            while ids and remaining and len(packed)+len(continuations)<MAX_ANNOTATIONS-1:
+                extra={'kind':'case_ids','case':row['case'],'status':row['status'],'failed_test_ids':[]}
+                if 'failed_test_case_counts' in row:extra['failed_test_case_counts']=[]
+                while ids and remaining:
+                    test=ids[0];extra['failed_test_ids'].append(test)
+                    if 'failed_test_case_counts' in extra:extra['failed_test_case_counts'].append(case_counts[id(row)][test])
+                    if annotation_size(annotation_command(extra))>MAX_ANNOTATION_BYTES:
+                        extra['failed_test_ids'].pop()
+                        if 'failed_test_case_counts' in extra:extra['failed_test_case_counts'].pop()
+                        break
+                    ids.pop(0);remaining-=1;row['annotation_ids_omitted']-=1
+                    if 'failed_test_case_counts' in row:row['annotation_mapped_cases_omitted']-=case_counts[id(row)][test]
+                if not extra['failed_test_ids']:break
+                continuations.append(extra)
+            if 'failed_test_ids' in row:
+                row['ids_truncated']=original_truncation[id(row)] or row['annotation_ids_omitted']>0
+        commands=[annotation_command(row) for row in packed+continuations]
         header={'kind':'publication','state':'SUMMARY_AVAILABLE','report_state':public['report_state'],'active_phase':public['active_phase'],
-                'case_counts':{s:sum(row['status']==s for row in values) for s in ('PASS','FAIL','NOT_RUN')},'annotation_cases_omitted':len(candidates)-len(commands)}
+                'case_counts':{s:sum(row['status']==s for row in values) for s in ('PASS','FAIL','NOT_RUN')},'annotation_cases_omitted':len(candidates)-len(packed)}
         commands.insert(0,annotation_command(header))
         if len(commands)>MAX_ANNOTATIONS or any(annotation_size(c)>MAX_ANNOTATION_BYTES for c in commands) or sum(annotation_size(c) for c in commands)>MAX_ANNOTATION_TOTAL_BYTES:raise ValueError('oversize annotations')
         return commands,True

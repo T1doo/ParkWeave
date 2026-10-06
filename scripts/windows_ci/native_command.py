@@ -46,7 +46,7 @@ def publication_capture(data):
         if not line.startswith(prefix) or len((line+'\n').encode('utf-8'))>2048:
             raise ValueError('invalid annotation batch')
         value=json.loads(line[len(prefix):])
-        if not isinstance(value,dict) or value.get('kind') not in ('publication','case'):
+        if not isinstance(value,dict) or value.get('kind') not in ('publication','case','case_ids'):
             raise ValueError('invalid annotation payload')
     # A short write may stop exactly after a complete line. Rebuild the
     # entire original allowlisted batch and compare every byte/omission field.

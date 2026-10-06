@@ -20,7 +20,7 @@ def candidate(tmp_path):
     for name in ('a', 'b', 'c', 'd'):
         path = root / 'tests' / ('test_' + name + '.py')
         path.write_text('def test_one():\n assert True\n')
-        files.append(str(path.relative_to(root)))
+        files.append(path.relative_to(root).as_posix())
     manifest = root / 'manifest.json'
     document = {'shards': [{'id': 'S' + str(i + 1), 'files': [f]} for i, f in enumerate(files)],
                 'source_file_sha256': {f: hashlib.sha256((root / f).read_bytes()).hexdigest() for f in files}}

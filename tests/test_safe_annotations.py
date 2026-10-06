@@ -73,9 +73,10 @@ def test_long_whitelisted_IDs_pack_whole_identifiers_under_byte_limit(publicatio
     ids=['tests/test_synthetic.py::test_'+('a'*210)+str(n) for n in range(25)]
     monkeypatch.setattr(m,'_allowed_tests',lambda:set(ids));public['cases'][0]['failure_diagnostics']['failed_test_ids']=ids
     commands,ok=m.annotation_commands(public);assert ok
-    case=payloads(commands)[1];assert case['ids_truncated'] and case['annotation_ids_omitted']>0
+    values=payloads(commands);case=values[1];assert not case['ids_truncated'] and case['annotation_ids_omitted']==0
     converted={x.removeprefix('tests/').replace('.py::','::') for x in ids}
-    assert set(case['failed_test_ids'])<=converted and len(case['failed_test_ids'])+case['annotation_ids_omitted']==25
+    emitted=[test for value in values for test in value.get('failed_test_ids',[])]
+    assert set(emitted)==converted and len(emitted)==25 and len(commands)<=8
     assert all(m.annotation_size(x)<=2048 for x in commands)
     assert max(m.annotation_size(x) for x in commands)>1800
 
@@ -183,7 +184,56 @@ def test_four_shards_survive_maximum_safe_diagnostics_with_existing_byte_limits(
         'shards':rows,'regression_observation':obs,'regression_phase':'report_write','active_test_id':ids[0],
         'failure_diagnostics':{'state':'AVAILABLE','failed_test_ids':ids,'failed_cases':10000,'test_cases_seen':10000,'unknown_failed_cases':10000,'ids_truncated':True}}])
     commands,ok=publisher.annotation_commands(public)
-    assert ok and len(commands)==2 and all(publisher.annotation_size(c)<=2048 for c in commands)
+    assert ok and 2<len(commands)<=8 and all(publisher.annotation_size(c)<=2048 for c in commands)
     assert sum(publisher.annotation_size(c) for c in commands)<=16*1024
     value=json.loads(commands[1].split('::',2)[2])
-    assert value['shards']==rows and value['annotation_ids_omitted']>0 and value['regression_observation_omitted'] is True
+    assert value['shards']==rows and value['annotation_ids_omitted']==1 and value['regression_observation_omitted'] is True
+    values=payloads(commands)
+    assert sum(len(v.get('failed_test_ids',[]))+int('active_test_id' in v) for v in values)==25
+    assert values[0]['annotation_cases_omitted']==0
+
+
+
+def test_eng065_shape_preserves_twenty_safe_failure_ids_in_existing_eight_slots():
+    publisher=module('publish_summary');progress=module('regression_progress')
+    ids=sorted(x for x in publisher._allowed_tests() if x.startswith('tests/test_regression_shards.py::'))[:20]
+    assert len(ids)==20
+    obs={k:286921 for k in progress.TIMINGS};obs.update({k:287 for k in progress.COUNTS},fixture_stage='DONE',sample_attempts=0,sample_state='NOT_SAMPLED')
+    shards=[{'id':'S'+str(i),'status':'FAIL','reason':'COMPLETE','counts':{'PASS':281,'FAIL':35,'SKIP':25},'ms':288891,'cleanup':'OWNED_TREE_STOPPED','coverage':True,'exit':1,'category':'OTHER'} for i in range(1,5)]
+    public=publisher.base('SUMMARY_AVAILABLE');public.update(report_state='COMPLETED',active_phase='regression_report',cases=[
+        {'case':name,'status':'FAIL','category':'RuntimeError','phase':'UNKNOWN'} for name in ('Start_native','final_Stop_owned_services','lifecycle_exception','suite_exception')]+[
+        {'case':'API_browser_restart','status':'NOT_RUN','reason':'START_FAILED'},
+        {'case':'full_engineering_regression','status':'FAIL','exit_code':1,'counts':{'PASS':1160,'FAIL':42,'SKIP':51},'shards':shards,'regression_observation':obs,'source_binding':{'state':'AVAILABLE','head_sha':'a'*40},'failure_diagnostics':{'state':'AVAILABLE','failed_test_ids':ids,'failed_cases':42,'test_cases_seen':1253,'unknown_failed_cases':0,'ids_truncated':False,'failed_test_counts':{test:(4 if i==19 else 2) for i,test in enumerate(ids)},'mapped_failed_cases':42,'mapped_cases_omitted':0}}])
+    commands,ok=publisher.annotation_commands(public);assert ok and len(commands)==8
+    values=payloads(commands);emitted=[test for value in values for test in value.get('failed_test_ids',[])]
+    assert set(emitted)=={x.removeprefix('tests/').replace('.py::','::') for x in ids} and len(emitted)==20
+    row=next(v for v in values if v.get('kind')=='case' and v.get('case')=='full_engineering_regression')
+    assert row['annotation_ids_omitted']==0 and not row['ids_truncated'] and row['shards']==shards
+    assert values[0]['annotation_cases_omitted']==0
+    assert all(publisher.annotation_size(c)<=2048 for c in commands) and sum(publisher.annotation_size(c) for c in commands)<=16384
+
+    assert sum(sum(v.get('failed_test_case_counts',[])) for v in values)==42
+    assert row['annotation_mapped_cases_omitted']==0 and row['mapped_failed_cases']==42
+    native=module('native_command')
+    data=(json.dumps(public)+'\n'+'\n'.join(commands)+'\n').encode('utf-8')
+    assert native.publication_capture(data).endswith(commands[-1])
+    with pytest.raises(ValueError):native.publication_capture(data.replace(b'"kind":"case_ids"',b'"kind":"unknown"'))
+    with pytest.raises(ValueError):native.publication_capture(data[:data.rfind(b'\n',0,-1)+1])
+
+
+def test_continuation_final_false_flag_fits_every_byte_boundary(publication,monkeypatch):
+    source,_,_=publication;m=module('publish_summary');public=m.read_summary(source)
+    ids=sorted(m._allowed_tests(),key=len,reverse=True)[:2]
+    public['cases'][0]['failure_diagnostics']['failed_test_ids']=ids
+    row=m.annotation_case(public['cases'][0],set(ids))
+    empty={**row,'failed_test_ids':[],'annotation_ids_omitted':2,'ids_truncated':False}
+    singles=[{'kind':'case_ids','case':row['case'],'status':row['status'],'failed_test_ids':[test]} for test in row['failed_test_ids']]
+    minimum=max(m.annotation_size(m.annotation_command(value)) for value in [empty,*singles])
+    for limit in range(minimum,minimum+300):
+        monkeypatch.setattr(m,'MAX_ANNOTATION_BYTES',limit)
+        commands,ok=m.annotation_commands(public)
+        assert ok,limit
+        values=payloads(commands)
+        assert sum(len(value.get('failed_test_ids',[])) for value in values)==2
+        assert not values[1]['ids_truncated'] and values[1]['annotation_ids_omitted']==0
+        assert all(m.annotation_size(command)<=limit for command in commands)

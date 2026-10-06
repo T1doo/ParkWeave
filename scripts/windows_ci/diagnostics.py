@@ -111,23 +111,31 @@ def failure_tests(repo,private_junit):
     try:root=ET.fromstring(xml)
     except (ET.ParseError,ValueError):return {**result,'state':'JUNIT_INVALID'}
     if root.tag not in ('testsuite','testsuites'):return {**result,'state':'JUNIT_FORMAT_REFUSED'}
-    ids=set();result['state']='AVAILABLE'
+    ids=set();mapped={};result['state']='AVAILABLE'
+    def finish(state=None,limited=False):
+        selected=sorted(ids)[:MAX_FAILURE_IDS]
+        result.update(failed_test_ids=selected,ids_truncated=limited or len(ids)>MAX_FAILURE_IDS,
+                      failed_test_counts={test:mapped[test] for test in selected},
+                      mapped_failed_cases=sum(mapped.values()),
+                      mapped_cases_omitted=sum(n for test,n in mapped.items() if test not in selected))
+        if state is not None:result['state']=state
+        return result
     for entry in root.iter('testcase'):
-        if result['test_cases_seen']>=MAX_TEST_CASES:return {**result,'state':'JUNIT_CASE_LIMIT','failed_test_ids':sorted(ids)[:MAX_FAILURE_IDS],'ids_truncated':True}
+        if result['test_cases_seen']>=MAX_TEST_CASES:return finish('JUNIT_CASE_LIMIT',True)
         result['test_cases_seen']+=1
         if entry.find('failure') is None and entry.find('error') is None:continue
         result['failed_cases']+=1
         classname=entry.get('classname','');name=entry.get('name','')
         # Parameters, traceback, message, properties and stdout never become identifiers.
-        if len(classname)>128 or len(name)>512:
-            result['unknown_failed_cases']+=1;continue
         name=name.split('[',1)[0]
+        if len(classname)>128 or len(name)>256:
+            result['unknown_failed_cases']+=1;continue
         module=classname.removeprefix('tests.')
         candidate='tests/'+module+'.py::'+name
-        if candidate in allowed and classname in (module,'tests.'+module):ids.add(candidate)
+        if candidate in allowed and classname in (module,'tests.'+module):
+            ids.add(candidate);mapped[candidate]=mapped.get(candidate,0)+1
         else:result['unknown_failed_cases']+=1
-    result['failed_test_ids']=sorted(ids)[:MAX_FAILURE_IDS];result['ids_truncated']=len(ids)>MAX_FAILURE_IDS
-    return result
+    return finish()
 
 
 def browser_summary(value):

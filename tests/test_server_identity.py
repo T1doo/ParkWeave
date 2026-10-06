@@ -22,6 +22,7 @@ class Process:
     def cwd(self): return self.repo
     def cmdline(self): return self.command
     def ppid(self): return self.parent
+    def exe(self): return getattr(self, "image", self.command[0])
 
 
 class Backend:
@@ -275,3 +276,99 @@ def test_child_command_tail_difference_remains_refused(tmp_path):
     root,child,record,backend,bind=setup(tmp_path)
     child.command[-1]='8999'
     assert bind()['identity_refusal']=={'stage':'CHILD_POLICY','reason':'COMMAND_TAIL_MISMATCH'}
+
+
+@pytest.fixture
+def redirector(tmp_path):
+    from types import SimpleNamespace
+    root, child, record, backend, _ = setup(tmp_path)
+    managed=tmp_path/'.venv-windows/Scripts/python.exe'
+    managed.parent.mkdir(parents=True);managed.write_bytes(b'SYNTHETIC')
+    base=tmp_path/'base/python.exe';base.parent.mkdir();base.write_bytes(b'SYNTHETIC')
+    cfg=tmp_path/'.venv-windows/pyvenv.cfg'
+    cfg.write_text('home = '+str(base.parent)+'\nexecutable = '+str(base)+'\n')
+    runtime=SimpleNamespace(executable=str(managed),prefix=str(managed.parent.parent),base_prefix=str(base.parent),_base_executable=str(base))
+    authority=lambda command,repo:identity.redirector_authority(command,repo,runtime)
+    child.command=[str(base),*record['command'][1:]]
+    def identify(p,rec,repo):
+        return rec['command']==record['command'] and not abs(p.create_time()-rec['created'])>=.01 and p.cwd()==str(repo) and p.cmdline()==rec['command']
+    def bind():
+        return identity.bind_server(root,record,child.pid,tmp_path,identify=identify,process_factory={101:root,102:child}.__getitem__,backend=backend,clock=lambda:110.,command_authority=authority)
+    return root,child,record,backend,runtime,cfg,bind
+
+
+def test_redirector_accepts_only_managed_runtime_exact_base_image_and_tail(redirector):
+    root,child,record,backend,runtime,cfg,bind=redirector
+    before=identity.bind_server(root,record,child.pid,Path(root.repo),identify=lambda p,rec,repo:p.cmdline()==rec['command'],process_factory={101:root,102:child}.__getitem__,backend=backend,clock=lambda:110.)
+    assert before['identity_refusal']=={'stage':'CHILD_POLICY','reason':'ARGV0_MISMATCH'}
+    backend.opened.clear();backend.closed.clear()
+    result=bind()
+    assert result['relation']=='DIRECT_CHILD'
+    assert result['server']['command']==child.command
+    assert result['server']['launcher_command']==record['command']
+    assert result['server']['base_executable']==runtime._base_executable
+    assert backend.closed==[('owned',102),('owned',101)]
+    # The saved identity is re-derived, never trusted after authority drift.
+    cfg.write_text('home = '+str(cfg.parent)+'\n')
+    assert bind()['relation']=='REFUSED'
+
+
+@pytest.mark.parametrize('field,value',[
+ ('executable','python.exe'),('prefix','/foreign'),('base_prefix','/foreign'),
+ ('_base_executable','python.exe'),('_base_executable','/missing/python.exe')])
+def test_redirector_authority_refuses_runtime_drift(redirector,field,value):
+    *_,runtime,cfg,bind=redirector
+    setattr(runtime,field,value)
+    result=bind();assert result['relation']=='REFUSED'
+    assert result['identity_refusal']['reason']=='TRUSTED_COMMAND_REFUSED'
+
+
+@pytest.mark.parametrize('fault',['other_python','tail_port','tail_added','tail_missing','image','relative_image','cwd','parent','late','nan','inf','nonfile','duplicate_home','cfg_executable','authority_recheck'])
+def test_redirector_rejects_spoofed_identity_and_changed_authority(redirector,fault):
+    root,child,record,backend,runtime,cfg,bind=redirector
+    if fault=='other_python':child.command[0]=str(cfg.parent/'other/python.exe')
+    elif fault=='tail_port':child.command[-1]='8766'
+    elif fault=='tail_added':child.command.append('--foreign')
+    elif fault=='tail_missing':child.command.pop()
+    elif fault=='image':child.image=record['command'][0]
+    elif fault=='relative_image':child.image='python.exe'
+    elif fault=='cwd':child.repo='foreign'
+    elif fault=='parent':child.parent=999
+    elif fault=='late':child.created=161.
+    elif fault in ('nan','inf'):child.created=float(fault)
+    elif fault=='nonfile':Path(runtime._base_executable).unlink();Path(runtime._base_executable).mkdir()
+    elif fault=='duplicate_home':cfg.write_text(cfg.read_text()+'home = '+runtime.base_prefix+'\n')
+    elif fault=='cfg_executable':cfg.write_text('home = '+runtime.base_prefix+'\nexecutable = '+record['command'][0]+'\n')
+    elif fault=='authority_recheck':child.mutate=lambda p:cfg.write_text('home = foreign\n')
+    result=bind();assert result['relation']=='REFUSED' and result['server'] is None
+    assert backend.closed==list(reversed(backend.opened))
+
+
+@pytest.mark.parametrize('drift',[False,True])
+def test_stop_rederives_redirector_record_before_any_signal(redirector,monkeypatch,drift):
+    from test_lifecycle import lifecycle
+    import server_identity
+    root,child,record,backend,runtime,cfg,bind=redirector
+    bound=bind();assert bound['relation']=='DIRECT_CHILD'
+    record={**record,'server':bound['server']};signals=[]
+    root.terminate=lambda:signals.append('root');root.wait=lambda **kwargs:None
+    child.terminate=lambda:signals.append('child');child.wait=lambda **kwargs:None
+    monkeypatch.setattr(server_identity,'PinnedProcess',lambda pid,created:identity.PinnedProcess(pid,created,backend))
+    monkeypatch.setattr(lifecycle,'bind_execution',lambda *args:bind())
+    if drift:cfg.write_text('home = foreign\n')
+    result=lifecycle.stop_record(record,Path(root.repo),{101:root,102:child}.__getitem__)
+    assert result==('FOREIGN_REFUSED' if drift else 'STOPPED')
+    assert signals==([] if drift else ['child','root'])
+
+
+@pytest.mark.parametrize('created',[float('nan'),float('inf'),'invalid'])
+def test_redirector_dynamic_creation_read_never_bypasses_child_policy(redirector,created):
+    root,child,record,backend,runtime,cfg,bind=redirector
+    original=child.create_time
+    def read():
+        value=original()
+        return created if child.reads==2 else value
+    child.create_time=read
+    result=bind()
+    assert result['identity_refusal']=={'stage':'CHILD_POLICY','reason':'READ_FAILED' if isinstance(created,str) else 'CTIME_MISMATCH'}
+    assert result['relation']=='REFUSED' and backend.closed==[('owned',101)]

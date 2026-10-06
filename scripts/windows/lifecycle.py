@@ -209,8 +209,9 @@ def native_binding_enabled():return os.name=='nt'
 
 
 def bind_execution(root,record,pid,repo):
-    from server_identity import bind_server
-    return bind_server(root,record,pid,repo,identify=identify_process,identify_reason=identify_process_reason)
+    from server_identity import bind_server,redirector_authority
+    return bind_server(root,record,pid,repo,identify=identify_process,identify_reason=identify_process_reason,
+                       command_authority=redirector_authority if native_binding_enabled() else None)
 
 
 def saved_child_matches(root,record,repo,refusals=None):
@@ -326,7 +327,9 @@ def load_config():
 @staged('port_check')
 def port_available(port):
     with socket.socket() as sock:
-        try:sock.bind(('127.0.0.1',port))
+        try:
+            if os.name=='nt':sock.setsockopt(socket.SOL_SOCKET,socket.SO_EXCLUSIVEADDRUSE,1)
+            sock.bind(('127.0.0.1',port))
         except OSError:raise BoundaryError('local port occupied; nothing terminated','PORT_OCCUPIED')
 
 
