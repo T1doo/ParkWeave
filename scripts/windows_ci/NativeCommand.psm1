@@ -19,3 +19,15 @@ function Invoke-BoundedNative {
     return $result
 }
 Export-ModuleMember -Function Invoke-BoundedNative
+function Write-BoundedPublication {
+    param([string]$Text)
+    # Re-emit only the trusted publisher capture with UTF-8/LF. Write-Host
+    # would translate a boundary annotation's final LF to CRLF on Windows.
+    $bytes=[Text.UTF8Encoding]::new($false,$true).GetBytes($Text+"`n")
+    if ($bytes.Length -gt (96*1024+1)) { throw 'Bounded publication capture refused.' }
+    [Console]::Out.Flush()
+    $sink=[Console]::OpenStandardOutput()
+    $sink.Write($bytes,0,$bytes.Length)
+    $sink.Flush()
+}
+Export-ModuleMember -Function Write-BoundedPublication

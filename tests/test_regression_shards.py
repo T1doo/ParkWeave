@@ -44,6 +44,9 @@ def simulate(candidate, *, fault=None, budget=900, duration=1):
         if collect:
             if fault == 'collect_timeout': raise subprocess.TimeoutExpired(command, kwargs['timeout'])
             if fault == 'collect_failure': return SimpleNamespace(returncode=2)
+            if fault == 'collect_cleanup_exception':
+                error=subprocess.TimeoutExpired(command,kwargs['timeout']);error.cleanup='OWNED_TREE_STOP_UNCONFIRMED';raise error
+            if fault == 'collect_cleanup_return':return SimpleNamespace(returncode=17,cleanup='UNKNOWN')
             return SimpleNamespace(returncode=0)
         number = len(calls) - 1
         junit = Path(command[command.index('--junitxml') + 1])
@@ -58,6 +61,8 @@ def simulate(candidate, *, fault=None, budget=900, duration=1):
         ET.ElementTree(suite).write(junit)
         if fault == 'timeout' and number == 1:
             raise subprocess.TimeoutExpired(command, kwargs['timeout'])
+        if fault == 'cleanup_exception' and number == 1:
+            error=subprocess.TimeoutExpired(command,kwargs['timeout']);error.cleanup='OWNED_TREE_STOP_UNCONFIRMED';raise error
         if fault in ('missing_collection', 'cleanup_missing_inventory') and number == 1: inventory.unlink()
         if fault == 'nonzero_bad_junit' and number == 1: junit.write_text('<invalid')
         if fault == 'source_change' and number == 1: (root / names[0].split('::')[0]).write_text('changed')
@@ -76,7 +81,7 @@ def test_shards_complete_exactly_once_and_keep_counts(candidate):
     assert result['whole_AT_EX'] == 'NOT_RUN'
 
 
-@pytest.mark.parametrize('fault', ['fail', 'timeout', 'cleanup', 'missing', 'duplicate', 'missing_collection', 'source_change'])
+@pytest.mark.parametrize('fault', ['fail', 'timeout', 'missing', 'duplicate', 'missing_collection', 'source_change'])
 def test_shard_failures_keep_running_other_shards_and_partial_reports(candidate, fault):
     result, calls = simulate(candidate, fault=fault)
     assert len(calls) == 5 and result['execution_exit_code'] == 1
@@ -85,7 +90,6 @@ def test_shard_failures_keep_running_other_shards_and_partial_reports(candidate,
     if fault not in ('missing',): assert result['engineering_total_counts']['PASS'] + result['engineering_total_counts']['FAIL'] == 4
     if fault == 'fail': assert result['shards'][0]['exit_code'] == 17
     if fault == 'timeout': assert result['shards'][0]['category'] == 'TimeoutExpired'
-    if fault == 'cleanup': assert result['shards'][0]['reason'] == 'CLEANUP_UNCONFIRMED'
     if fault in ('missing', 'duplicate', 'missing_collection', 'source_change', 'timeout'): assert not result['coverage_complete']
 
 
@@ -109,11 +113,39 @@ def test_precollection_failure_keeps_independent_shard_evidence_without_full_pas
 @pytest.mark.parametrize('fault', ['nonzero_bad_junit', 'cleanup_missing_inventory'])
 def test_shard_parse_failure_never_discards_original_exit_or_cleanup(candidate, fault):
     result, calls = simulate(candidate, fault=fault)
-    assert len(calls) == 5 and result['execution_exit_code'] == 1 and not result['coverage_complete']
+    assert len(calls) == (2 if fault=='cleanup_missing_inventory' else 5) and result['execution_exit_code'] == 1 and not result['coverage_complete']
     first = result['shards'][0]
     assert first['status'] == 'FAIL'
     if fault == 'nonzero_bad_junit': assert first['exit_code'] == 17 and first['owned_tree_cleanup'] == 'OWNED_TREE_STOPPED'
     else: assert first['exit_code'] == 0 and first['owned_tree_cleanup'] == 'OWNED_TREE_STOP_UNCONFIRMED'
+
+
+@pytest.mark.parametrize('fault',['collect_cleanup_return','collect_cleanup_exception','cleanup','cleanup_exception'])
+def test_unconfirmed_tree_cleanup_preserves_original_evidence_and_isolates_following_shards(candidate,fault):
+    result,calls=simulate(candidate,fault=fault)
+    pre=fault.startswith('collect_');assert len(calls)==(1 if pre else 2)
+    assert result['execution_exit_code']==1 and not result['coverage_complete']
+    following=result['shards'] if pre else result['shards'][1:]
+    assert all(r['status']=='NOT_RUN' and r['reason']=='CLEANUP_NOT_CONFIRMED' for r in following)
+    if pre:
+        assert result['collection_owned_tree_cleanup']==('UNKNOWN' if fault.endswith('return') else 'OWNED_TREE_STOP_UNCONFIRMED')
+        if fault.endswith('return'):assert result['collection_exit_code']==17
+    else:
+        first=result['shards'][0];assert first['status']=='FAIL' and first['owned_tree_cleanup']=='OWNED_TREE_STOP_UNCONFIRMED'
+        assert result['engineering_total_counts']=={'PASS':1,'FAIL':0,'SKIP':0}
+        if fault=='cleanup':assert first['exit_code']==0
+        else:assert first['category']=='TimeoutExpired'
+
+
+def test_actual_expired_coordinator_persists_all_not_run_without_launch(candidate,monkeypatch):
+    from scripts.windows_ci import job_budget
+    actual=job_budget.JobBudget
+    monkeypatch.setattr(job_budget,'JobBudget',lambda deadline,**kwargs:actual(deadline,wall=lambda:200,uptime=lambda:200000,clock=lambda:0,**kwargs))
+    root,manifest,_=candidate
+    result=shards.execute(root,sys.executable,manifest,root/'.runtime',root/'result.json',env={},total_seconds=0,
+                          deadline=100,uptime_deadline=100000,runner=lambda *args,**kwargs:pytest.fail('expired launch'))
+    assert result['execution_exit_code']==1 and result['observed_cases']==0 and not result['coverage_complete']
+    assert all(r['status']=='NOT_RUN' and r['reason']=='TOTAL_BUDGET_EXHAUSTED' for r in result['shards'])
 
 
 @pytest.mark.parametrize('fault', ['duplicate', 'missing_file', 'changed_hash', 'extra_file'])
@@ -159,6 +191,24 @@ def test_real_small_four_shard_run_collects_executes_and_merges_exactly_once(can
     assert all(row['coverage_complete'] and row['status'] == 'PASS' for row in result['shards'])
     assert len(shards.junit_cases(root / result['private_junit'])) == 8
     assert all(row['expected_cases'] == 2 for row in result['shards'])
+
+
+def test_real_shard_failure_aggregate_uses_existing_public_junit_allowlist(candidate):
+    root, manifest, document = candidate
+    old=document['shards'][0]['files'][0];(root/old).unlink()
+    file='tests/test_regression_shards.py';test_id=file+'::test_duplicate_stable_parameter_identity_is_rejected'
+    (root/file).write_text('def test_duplicate_stable_parameter_identity_is_rejected():\n assert False\n')
+    document['shards'][0]['files']=[file];del document['source_file_sha256'][old]
+    document['source_file_sha256'][file]=hashlib.sha256((root/file).read_bytes()).hexdigest();manifest.write_text(json.dumps(document))
+    repo=Path(__file__).resolve().parents[1]
+    from parkweave.process_env import minimal_environment
+    from test_windows_ci_preparation import module
+    env=minimal_environment(os.environ,PYTHONPATH=str(repo)+os.pathsep+str(repo/'src'))
+    result=shards.execute(root,sys.executable,manifest,root/'.runtime',root/'result.json',env=env,total_seconds=30)
+    assert result['execution_exit_code']==1 and result['coverage_complete']
+    assert result['engineering_total_counts']=={'PASS':3,'FAIL':1,'SKIP':0}
+    public=module('diagnostics').failure_tests(root,result['private_junit'])
+    assert public['state']=='AVAILABLE' and public['failed_test_ids']==[test_id]
 
 
 def test_native_shard_opt_in_keeps_default_deadline_and_explicit_remaining_budget(tmp_path, monkeypatch):

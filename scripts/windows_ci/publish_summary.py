@@ -9,6 +9,7 @@ from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,TREE_CLEAN
 from summary_report import SCHEMA,ROOT_PATTERN,current_binding
 from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES,ACL_OBJECTS,start_observation
 from regression_progress import PHASES as REGRESSION_PHASES,observation as regression_observation
+from stage_result import read_command, failure as command_failure
 
 MAX_BYTES=64*1024
 MAX_ROWS=32
@@ -16,7 +17,7 @@ MAX_ANNOTATIONS=8
 MAX_ANNOTATION_BYTES=2048  # Entire UTF-8 workflow command, including final LF.
 MAX_ANNOTATION_TOTAL_BYTES=16*1024
 CASES=frozenset({'suite_initialization','suite_exception','lifecycle_exception','final_Stop_owned_services','full_engineering_regression','Win11_guard_refuses_Server','separate_Server_candidate_oracles','Setup_native','Setup_refuses_existing_config','config_sessions_preserved','Doctor_native','Start_native','Status_native','actual_API_worker_local_case','Stop_native','Restart_native','data_read_after_restart','native_local_browser','API_browser_restart','lifecycle_API_browser'})
-REASONS=frozenset({'OWNED_STATUS_NOT_CONFIRMED','START_FAILED','SETUP_FAILED','TOTAL_BUDGET_EXHAUSTED'})
+REASONS=frozenset({'OWNED_STATUS_NOT_CONFIRMED','START_FAILED','SETUP_FAILED','TOTAL_BUDGET_EXHAUSTED','CLEANUP_NOT_CONFIRMED','VALIDATION_NOT_COMPLETED'})
 STATES=frozenset({'UNAVAILABLE','AVAILABLE','JUNIT_PATH_REFUSED','ALLOWLIST_UNAVAILABLE','JUNIT_MISSING','JUNIT_UNREADABLE_OR_OVERSIZE','JUNIT_FORMAT_REFUSED','JUNIT_INVALID','JUNIT_CASE_LIMIT','REPORT_MISSING'})
 
 
@@ -54,10 +55,12 @@ def project(record,binding):
     state=record.get('report_state');phase=record.get('active_phase')
     if state not in ('IN_PROGRESS','COMPLETED') or not isinstance(phase,str) or phase not in PHASES:raise ValueError('invalid summary stage')
     rows=record.get('cases')
+    if 'native_stage' in record and record['native_stage'] not in ('lifecycle','validation'):raise ValueError('invalid native stage')
     if not isinstance(rows,list) or len(rows)>MAX_ROWS:raise ValueError('invalid summary rows')
     allowed=_allowed_tests();result=base('SUMMARY_AVAILABLE');result.update(report_state=state,active_phase=phase)
     for row in rows:
         if not isinstance(row,dict) or not isinstance(row.get('case'),str) or row['case'] not in CASES or row.get('status') not in ('PASS','FAIL','NOT_RUN'):raise ValueError('invalid summary row')
+        if record.get('native_stage')=='lifecycle' and row['case'] in ('full_engineering_regression','Win11_guard_refuses_Server','separate_Server_candidate_oracles'):raise ValueError('invalid lifecycle row')
         public={'case':row['case'],'status':row['status']}
         if 'exit_code' in row:
             value=row['exit_code']
@@ -127,7 +130,15 @@ def read_summary(source):
         if linked(report) or report.resolve()!=report:return base('SUMMARY_INVALID')
         with report.open('rb') as stream:data=stream.read(MAX_BYTES+1)
         if len(data)>MAX_BYTES:return base('SUMMARY_INVALID')
-        result=project(json.loads(data.decode('utf-8'),object_pairs_hook=strict_object,parse_constant=invalid_constant),current_binding(root,source))
+        record=json.loads(data.decode('utf-8'),object_pairs_hook=strict_object,parse_constant=invalid_constant)
+        binding=current_binding(root,source);result=project(record,binding)
+        if record.get('native_stage') in ('lifecycle','validation'):
+            try:
+                failure=command_failure(read_command(root/(record['native_stage']+'-command.json'),binding),'suite_exception')
+            except (OSError,UnicodeError,ValueError,TypeError,KeyError,RuntimeError,RecursionError):
+                failure={'case':'suite_exception','status':'FAIL','phase':'final_stop','category':'RuntimeError','reason':'CLEANUP_NOT_CONFIRMED'}
+            if failure is not None:result['cases'].append(failure)
+            if record['native_stage']=='lifecycle':result['cases'].append({'case':'full_engineering_regression','status':'NOT_RUN','phase':'regression_run','reason':'VALIDATION_NOT_COMPLETED'})
         if len(json.dumps(result).encode('utf-8'))>MAX_BYTES:return base('SUMMARY_INVALID')
         return result
     except FileNotFoundError:return base('SUMMARY_MISSING')
@@ -256,7 +267,9 @@ def write_annotations(commands,stream=None):
 
 def main(source=None):
     source=os.environ if source is None else source
-    public=read_summary(source);text=json.dumps(public,indent=2);console_ok=True;summary_ok=False
+    public=read_summary(source);text=json.dumps(public,indent=2)
+    if len(text.encode('utf-8'))>MAX_BYTES:text=json.dumps(public,separators=(',',':'))
+    console_ok=True;summary_ok=False
     # Independent outputs: a console failure must not suppress the Job Summary.
     try:print(text)
     except (OSError,UnicodeError):console_ok=False

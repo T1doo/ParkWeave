@@ -149,13 +149,22 @@ def run_command(command, *, root, env, stdout, stderr, timeout):
 
 
 def execute(root, executable, manifest, private, report, *, env, progress=None,
-            total_seconds=900, runner=run_command, clock=time.monotonic):
+            total_seconds=900, runner=run_command, clock=time.monotonic, deadline=None, uptime_deadline=None):
     """Sequential candidate within a fixed total budget, including collection.
 
+    Default total remains <=900; an explicit job cutoff bounds staged execution.
     Each command gets <=600 seconds; collection <=60. Keep ten seconds for tree
     cleanup/reporting. Exhaustion produces NOT_RUN shards and a failing report.
     """
-    if type(total_seconds) not in (int, float) or not 0 < total_seconds <= 900:
+    if deadline is not None:
+        if uptime_deadline is None:raise ValueError('shared uptime cutoff required')
+        try:
+            from .job_budget import JobBudget
+        except ImportError:
+            from job_budget import JobBudget
+        job = JobBudget(deadline,uptime_deadline=uptime_deadline)
+        total_seconds = min(total_seconds, job.remaining())
+    if type(total_seconds) not in (int, float) or not (0 <= total_seconds if deadline is not None else 0 < total_seconds) or total_seconds > (1290 if deadline is not None else 900):
         raise ValueError('existing 900-second maximum required')
     root, private, report = Path(root), Path(private), Path(report)
     private.mkdir(parents=True, exist_ok=True)
@@ -168,7 +177,10 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
     expected_keys = []
     collection_state = 'NOT_RUN'
     collection_category = None
-    aggregate_junit = private / ('shards-' + uuid.uuid4().hex + '.xml')
+    collection_exit_code = None
+    collection_cleanup = None
+    isolation_ready = True
+    aggregate_junit = private / ('pytest-' + uuid.uuid4().hex + '.xml')
 
     def remaining():
         return max(0, total_seconds - (clock() - started) - 10)
@@ -185,8 +197,11 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
                  'shards': rows, 'private_junit': str(aggregate_junit.relative_to(root)),
                  'elapsed_seconds': round(clock() - started, 3), 'total_budget_seconds': total_seconds,
                  'per_shard_max_seconds': 600,
-                 'capacity': '900 seconds cannot guarantee full completion; historical partial Windows trend ~1120 seconds is not a prediction'}
+                 'capacity': ('900 seconds cannot guarantee full completion; historical partial Windows trend ~1120 seconds is not a prediction' if deadline is None else
+                              'Shared job test cutoff bounds all shards; 1290-second inner envelope does not guarantee complete coverage')}
         if collection_category is not None: value['collection_category'] = collection_category
+        if collection_exit_code is not None:value['collection_exit_code']=collection_exit_code
+        if collection_cleanup is not None:value['collection_owned_tree_cleanup']=collection_cleanup
         suite = ET.Element('testsuite')
         for nodeid, status in logical:
             file, name = nodeid.split('::', 1)
@@ -222,10 +237,16 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
     try:
         if remaining() <= 0: raise TimeoutError('collection budget exhausted')
         code, collected, _, cleanup = invoke(['tests'], collect=True)
+        collection_exit_code=code;collection_cleanup=cleanup
+        if cleanup not in (None,'OWNED_TREE_STOPPED'):isolation_ready=False
         if code != 0 or cleanup not in (None, 'OWNED_TREE_STOPPED'): raise ValueError('actual collection failed')
         expected, expected_keys = collection(collected, {f for s in shards for f in s['files']})
         collection_state = 'AVAILABLE'
     except Exception as error:
+        cleanup=getattr(error,'cleanup',None)
+        if cleanup is not None:
+            collection_cleanup=cleanup
+            if cleanup!='OWNED_TREE_STOPPED':isolation_ready=False
         collection_state = 'UNAVAILABLE'
         collection_category = type(error).__name__
         persist()  # Still obtain independent shard evidence if budget remains.
@@ -233,8 +254,8 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
         current = [n for n in expected if n.split('::', 1)[0] in shard['files']]
         current_keys = [key for n, key in zip(expected, expected_keys) if n.split('::', 1)[0] in shard['files']]
         row['expected_cases'] = len(current) if collection_state == 'AVAILABLE' else None
-        if remaining() <= 0:
-            row['reason'] = 'TOTAL_BUDGET_EXHAUSTED'
+        if remaining() <= 0 or not isolation_ready:
+            row['reason'] = 'TOTAL_BUDGET_EXHAUSTED' if isolation_ready else 'CLEANUP_NOT_CONFIRMED'
             persist()
             continue
         row.update(status='RUNNING', reason='IN_PROGRESS')
@@ -244,6 +265,7 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
             code, collected, junit, cleanup = invoke(shard['files'])
             row['exit_code'] = code
             if cleanup is not None: row['owned_tree_cleanup'] = cleanup
+            if cleanup not in (None,'OWNED_TREE_STOPPED'):isolation_ready=False
             row_junit = junit
             observed = junit_cases(junit)
             found, found_keys = collection(collected, set(shard['files']))
@@ -257,10 +279,12 @@ def execute(root, executable, manifest, private, report, *, env, progress=None,
                        reason='CLEANUP_UNCONFIRMED' if not clean else 'COMPLETE' if coverage else 'COVERAGE_MISMATCH', exit_code=code,
                        coverage_complete=coverage, counts={s: counts[s] for s in ('PASS', 'FAIL', 'SKIP')})
             if cleanup is not None: row['owned_tree_cleanup'] = cleanup
+            if cleanup not in (None,'OWNED_TREE_STOPPED'):isolation_ready=False
         except Exception as error:
             row.update(status='FAIL', reason='SHARD_ERROR', category=type(error).__name__, coverage_complete=False)
             cleanup = getattr(error, 'cleanup', None)
             if cleanup is not None: row['owned_tree_cleanup'] = cleanup
+            if cleanup not in (None,'OWNED_TREE_STOPPED'):isolation_ready=False
             partial = getattr(error, 'shard_junit', row_junit)
             try:
                 observed = junit_cases(partial) if partial is not None else []

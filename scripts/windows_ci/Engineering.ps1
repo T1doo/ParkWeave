@@ -1,5 +1,5 @@
 #requires -Version 7.0
-param([ValidateSet('Prepare','Test','Stop')][string]$Action, [string]$Python='python')
+param([ValidateSet('Prepare','Test','Lifecycle','Validation','Publish','Stop')][string]$Action, [string]$Python='python')
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
@@ -14,8 +14,36 @@ $Repo=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..'))
 $BasePython=Resolve-ParkWeavePython -Python $Python
 Import-Module (Join-Path $PSScriptRoot 'ClusterControl.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'NativeCommand.psm1')
+Import-Module (Join-Path $PSScriptRoot 'BudgetControl.psm1')
+$JobBudget=$null
+if ($Action -in @('Prepare','Lifecycle','Validation')) {
+    $JobBudget=New-ParkWeaveJobBudget -Started $env:PARKWEAVE_CI_JOB_STARTED
+}
 function Invoke-Checked([string]$Exe,[string[]]$Arguments,[string]$Phase,[int]$TimeoutSeconds,[switch]$Capture) {
-    $result=Invoke-BoundedNative $BasePython $Exe $Arguments $Phase $TimeoutSeconds $TraceRoot -Capture:$Capture
+    if ($null -ne $JobBudget) { $TimeoutSeconds=Get-ParkWeaveWorkTimeout $JobBudget $TimeoutSeconds }
+    $result=@{exit_code=125;timed_out=$false;cleanup='OWNED_TREE_STOP_UNCONFIRMED'}
+    try {
+        $result=Invoke-BoundedNative $BasePython $Exe $Arguments $Phase $TimeoutSeconds $TraceRoot -Capture:$Capture
+    } finally {
+        if ($Phase -in @('native_lifecycle','native_validation')) {
+            # Persist the outer Job result after its tree cleanup, even if the
+            # Python checkpoint claimed PASS or the helper threw before return.
+            $stageName=if ($Phase -eq 'native_lifecycle') { 'lifecycle' } else { 'validation' }
+            $cluster=(Split-Path $env:PARKWEAVE_CI_ROOT -Leaf).Substring('parkweave-server-ci-'.Length)
+            $record=@{schema=1;diagnostic_binding=@{run_id=$env:GITHUB_RUN_ID;run_attempt=$env:GITHUB_RUN_ATTEMPT;head_sha=$env:GITHUB_SHA;cluster_id=$cluster};exit_code=[long]$result.exit_code;timed_out=[bool]$result.timed_out;cleanup=[string]$result.cleanup}
+            $destination=Join-Path $env:PARKWEAVE_CI_ROOT ($stageName+'-command.json')
+            $temporary=Join-Path $env:PARKWEAVE_CI_ROOT ('.command-'+[Guid]::NewGuid().ToString()+'.tmp')
+            try {
+                $record | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $temporary -Encoding utf8
+                [IO.File]::Move($temporary,$destination,$true)
+            } finally {
+                if ([IO.File]::Exists($temporary)) { [IO.File]::Delete($temporary) }
+            }
+        }
+    }
+    if ($Phase -eq 'summary_publish' -and $result.PSObject.Properties.Name -contains 'stdout') {
+        Write-BoundedPublication $result.stdout
+    }
     if ($result.exit_code -ne 0) {
         Write-Host "::error title=ParkWeave CI phase::$Phase FAILED exit=$($result.exit_code) timeout=$($result.timed_out) cleanup=$($result.cleanup)"
         throw 'Native engineering phase failed; private output retained, no fallback or policy change.'
@@ -64,6 +92,9 @@ try {
         "PARKWEAVE_OWNER_DSN=$ownerDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
         "PARKWEAVE_DSN=$appDsn" | Add-Content -LiteralPath $env:GITHUB_ENV
         Invoke-Checked (Join-Path $env:PGBIN 'initdb.exe') @('-D',$state.data,'-U','park_ci_owner','--auth-local=trust','--auth-host=trust','--encoding=UTF8','--locale=C') 'initdb' 120
+        # Start failure may include owned status/stop recovery (up to 145s).
+        # Admit it only when all those existing bounded paths fit before cutoff.
+        if ((Get-ParkWeaveWorkTimeout $JobBudget 145) -lt 145) { throw 'NOT_RUN: TOTAL_BUDGET_EXHAUSTED' }
         $started=Start-OwnedCluster -Root $root -RunnerTemp $env:RUNNER_TEMP -Bin $env:PGBIN -Python $BasePython -LogDirectory $TraceRoot
         if ($started.status -ne 'STARTED') { $started | ConvertTo-Json -Depth 4; throw 'Owned PG start failed; primary failure preserved.' }
         $psql=Join-Path $env:PGBIN 'psql.exe'
@@ -84,6 +115,19 @@ try {
         $state=Get-OwnedState
         $managed=Join-Path $Repo '.venv-windows\Scripts\python.exe'
         Invoke-Checked $managed @('scripts/windows_ci/native_suite.py','--report',(Join-Path $env:PARKWEAVE_CI_ROOT 'engineering.json')) 'native_suite' 900
+    } elseif ($Action -in @('Lifecycle','Validation')) {
+        $state=Get-OwnedState
+        $managed=Join-Path $Repo '.venv-windows\Scripts\python.exe'
+        $stage=if ($Action -eq 'Lifecycle') { 'lifecycle' } else { 'validation' }
+        $phase=if ($Action -eq 'Lifecycle') { 'native_lifecycle' } else { 'native_validation' }
+        $limit=if ($Action -eq 'Lifecycle') { 300 } else { 1300 }
+        $arguments=@('scripts/windows_ci/native_suite.py','--report',(Join-Path $env:PARKWEAVE_CI_ROOT 'engineering.json'),'--stage',$stage,'--job-test-deadline',[string]$JobBudget.python_deadline_unix,'--job-test-uptime',[string]$JobBudget.python_deadline_uptime)
+        $arguments+=@('--regression-shards','docs/F2/evidence/eng057-job-shards.json')
+        # Each action may fail; the workflow always runs the next independent
+        # stage and final publication/Stop. Neither phase gets a fresh 900s.
+        Invoke-Checked $managed $arguments $phase $limit
+    } elseif ($Action -eq 'Publish') {
+        Invoke-Checked $BasePython @('scripts/windows_ci/publish_summary.py') 'summary_publish' 15 -Capture | Out-Null
     } else {
         $appStopFailed=$false
         # A timed-out suite may not have reached its finally. Reuse the existing

@@ -1,0 +1,96 @@
+{
+  "schema": 1,
+  "scope": "LOCAL_SCHEDULE_CANDIDATE_NOT_WINDOWS_PROVEN",
+  "identity_commit": "26f848b",
+  "shard_commit": "e5123b3",
+  "branch": "local/eng057-schedule",
+  "final_targeted_test": {
+    "command": "PYTHONPATH=/workspace/ParkWeave-targeted/src /workspace/ParkWeave-restored/.venv/bin/python -m pytest -q tests/test_job_schedule.py tests/test_job_budget.py tests/test_regression_shards.py tests/test_acceptance_runner.py tests/test_windows_ci_preparation.py tests/test_summary_publication.py tests/test_safe_annotations.py tests/test_native_command.py --junitxml=.runtime/eng057-schedule-targeted.xml",
+    "passed": 175,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 11.129,
+    "junit_sha256": "045c015f0f7759a2fe666ceebdcdc9ebade2c039b8cca27d0ff0d5b5e2dac543"
+  },
+  "independent_reviews": {
+    "PS_budget_native_helper_publication": "NO_BLOCKERS",
+    "Python_coverage_deadline_stage_merge_cleanup": "NO_BLOCKERS",
+    "reviewed_hashes_match_current": true
+  },
+  "reviewed_source_sha256": {
+    "scripts/windows_ci/native_suite.py": "a0abde71dd165e6a245f4f9e71bd7bd1830c9dc2967f2c05895f16a865303a4b",
+    "scripts/windows_ci/job_budget.py": "5fb02a495b45c44974d56d21ec36ff590b3af6475a5f0b9a69b015ae5d340da6",
+    "scripts/windows_ci/stage_result.py": "477deae62836492662a1778571162c1c0a6e6d24f3fb0d33a01fbe41dd52afb7",
+    "scripts/run_acceptance.py": "60a7d63ad8d75e3f1fb76b4d28fe3ffac50a418387c8190b26b1cb2f6265c412",
+    "scripts/windows_ci/regression_shards.py": "bc253240f73e137f5715b3e3ea45153f3d7d0b03c92f6f7c089a9dd4e1ee3113",
+    "scripts/windows_ci/publish_summary.py": "dd5a58983f38c66d4351f4bf9ec7a1d1369c2688490ebe62b5ad18d58df84b1a",
+    "scripts/windows_ci/BudgetControl.psm1": "1d9901bbfe13df108fb66e4fac0e456fec353455f542293c0c99a148ccb2440d",
+    "scripts/windows_ci/Engineering.ps1": "89e8680fee3fa8113e1852c32ee24d6013515f1abc748e8c1dea18d386725ea2",
+    "scripts/windows_ci/native_command.py": "6cb61af396df93a7944b8bd664dbfae597098fb8c1ff35d0dcd292178ad716fb",
+    "scripts/windows_ci/NativeCommand.psm1": "5d601b7b34690a35b6df539beee6291e960a5266c7db89ee2ee784fdf26b63e6",
+    ".github/workflows/windows-server-engineering.yml": "ddb5f7adfde779fee77c293364c92d44e7f286320b01b703529c5b4fe02ebc33"
+  },
+  "manifest_sha256": "1cd369586a6e088d7c08d4aa94e97cabe2d1af2686f14630b8d022c0c641e0d3",
+  "coverage": {
+    "current_cases": 1162,
+    "files": 49,
+    "pieces": [
+      276,
+      264,
+      342,
+      280
+    ],
+    "actual_global_and_four_piece_collect_only": true,
+    "full_regression_execution": false,
+    "baseline_cases": 1027,
+    "raw_baseline_matches": 1023,
+    "random_display_variants": 4,
+    "new_cases": 135
+  },
+  "job_budget": {
+    "total_seconds_unchanged": 1500,
+    "work_cutoff_seconds": 1300,
+    "python_cutoff_seconds": 1290,
+    "tail_reserve_seconds": 200,
+    "bootstrap_allowance_seconds": 30,
+    "bootstrap_allowance_is_observation": false,
+    "wall_and_shared_uptime_minimum": true,
+    "per_piece_max_seconds": 600,
+    "lifecycle_max_seconds": 300,
+    "guard_max_seconds": 15,
+    "candidate_max_seconds": 180,
+    "publisher_max_seconds": 15,
+    "owned_final_stop_command_and_wait_max_seconds": 150,
+    "tail_other_margin_seconds": 35
+  },
+  "capacity": {
+    "previous_prepare_seconds": 27,
+    "previous_native_total_seconds": 692.187,
+    "previous_nonregression_approx_seconds": 92.187,
+    "checkpoint_seconds": 597.547,
+    "checkpoint_completed_teardowns": 548,
+    "baseline_1027_linear_seconds": 1119.855,
+    "current_1162_linear_plus_known_and_allowance_seconds": 1416.248,
+    "linear_values_are_predictions": false,
+    "four_piece_actual_Windows_times": "NOT_RUN",
+    "capacity_confirmed": false
+  },
+  "navigation": {
+    "preserved_commit": "1aa81a2ea43f07dc8099d46077a128b01a94affd",
+    "identity_split_byte_equal_to_prior_candidate": true,
+    "isolated_merge_into_e5123b3": "NO_CONFLICT, seven navigation file blobs unchanged",
+    "final_schedule_merge": "PENDING_POST_COMMIT_ISOLATED_CHECK"
+  },
+  "constraints": {
+    "pushes": 0,
+    "new_CI_runs": 0,
+    "extra_jobs_or_runners": 0,
+    "LIVE_calls": 0,
+    "budget": 0,
+    "R4": "DISABLED",
+    "F1": "NOT_ACCEPTED",
+    "F2": "PARALLEL_EXPLORATION",
+    "Win11_and_36AT_6EX": "NOT_RUN",
+    "original_environment_backups_preserved": true
+  }
+}

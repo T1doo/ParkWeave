@@ -53,10 +53,17 @@ def main():
     parser.add_argument('--ids',help='Optional comma-separated fixed IDs; default runs full engineering regression')
     parser.add_argument('--progress',type=Path,help='Optional private fixed-phase diagnostic checkpoint')
     parser.add_argument('--shards',type=Path,help='Opt-in fixed-file shard manifest; default remains unsharded')
-    parser.add_argument('--shard-budget',type=float,default=900,help='Opt-in total seconds, at most the existing 900-second outer budget')
+    parser.add_argument('--shard-budget',type=float,default=900,help='Total seconds: default maximum 900, explicit staged cutoff maximum 1290')
+    parser.add_argument('--job-test-deadline',type=float,help='Explicit staged job cutoff; default limits remain unchanged')
+    parser.add_argument('--job-test-uptime',type=int,help='Shared kernel uptime cutoff in milliseconds')
     args=parser.parse_args()
     if args.shards and args.ids:parser.error('shards require complete engineering collection, not selected AT IDs')
-    if args.shards and not 0<args.shard_budget<=900:parser.error('shard budget must be within 900 seconds')
+    if args.job_test_deadline is not None:
+        if not args.shards or args.job_test_uptime is None:parser.error('job cutoff requires fixed shards and shared uptime')
+        from job_budget import JobBudget
+        JobBudget(args.job_test_deadline,uptime_deadline=args.job_test_uptime)
+    elif args.job_test_uptime is not None:parser.error('uptime cutoff requires wall cutoff')
+    if args.shards and not ((0<=args.shard_budget if args.job_test_deadline is not None else 0<args.shard_budget) and args.shard_budget<=(1290 if args.job_test_deadline is not None else 900)):parser.error('shard budget exceeds bounded stage envelope')
     progress_write(args.progress,'acceptance_bindings')
     bindings=json.loads((ROOT/'docs/F1/ATBindings.json').read_text(encoding='utf-8'));spec=json.loads((ROOT/'docs/验收规格.json').read_text(encoding='utf-8'))
     rows=validate_bindings(bindings,spec)
@@ -72,7 +79,7 @@ def main():
     if args.shards:
         from regression_shards import execute
         env=minimal_environment(os.environ,PYTHONPATH=str(ROOT/'src'),**({'PARKWEAVE_TEST_OWNER_DSN':os.environ['PARKWEAVE_TEST_OWNER_DSN']} if os.name=='nt' and 'PARKWEAVE_TEST_OWNER_DSN' in os.environ else {}))
-        shard_result=execute(ROOT,sys.executable,args.shards,private,args.report,env=env,progress=args.progress,total_seconds=args.shard_budget)
+        shard_result=execute(ROOT,sys.executable,args.shards,private,args.report,env=env,progress=args.progress,total_seconds=args.shard_budget,**({'deadline':args.job_test_deadline,'uptime_deadline':args.job_test_uptime} if args.job_test_deadline is not None else {}))
         code=shard_result['execution_exit_code'];junit=ROOT/shard_result['private_junit']
     elif selectors:
         with log.open('w',encoding='utf-8') as f:

@@ -29,6 +29,13 @@ jobs:
       run:
         shell: pwsh
     steps:
+      - name: Anchor existing 25 minute job budget
+        run: |
+          # Conservative 30s allowance for bootstrap before this first step.
+          $started=[DateTimeOffset]::UtcNow.ToUnixTimeSeconds()-30
+          "PARKWEAVE_CI_JOB_STARTED=$started" | Add-Content -LiteralPath $env:GITHUB_ENV
+          $uptime=[Math]::Max(0,[Environment]::TickCount64-30000)
+          "PARKWEAVE_CI_JOB_UPTIME=$uptime" | Add-Content -LiteralPath $env:GITHUB_ENV
       - name: Checkout without persisted credentials
         uses: actions/checkout@v4
         with:
@@ -41,13 +48,16 @@ jobs:
           architecture: 'x64'
       - name: Prepare fresh native loopback PostgreSQL and Python
         run: ./scripts/windows_ci/Engineering.ps1 -Action Prepare
-      - name: Native lifecycle, mock regression, browser and Server candidate
-        run: ./scripts/windows_ci/Engineering.ps1 -Action Test
+      - name: Native lifecycle and local browser within shared job budget
+        run: ./scripts/windows_ci/Engineering.ps1 -Action Lifecycle
+      - name: Independent Server guard and four sequential regression shards
+        if: always()
+        run: ./scripts/windows_ci/Engineering.ps1 -Action Validation
       - name: Publish bounded current-run engineering diagnostics
         if: always()
-        run: python scripts/windows_ci/publish_summary.py
+        run: ./scripts/windows_ci/Engineering.ps1 -Action Publish
       - name: Stop only the owned temporary cluster
         if: always()
         run: ./scripts/windows_ci/Engineering.ps1 -Action Stop
-# LOCAL REVIEW ONLY. Do not push until Park Actions access is restored/reviewed.
+# LOCAL CANDIDATE ONLY. Do not push/CI until capacity is reviewed.
 # No workflow_dispatch-only dependency on main, paid runner, cache or artifact upload.

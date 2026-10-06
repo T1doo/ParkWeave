@@ -130,7 +130,9 @@ def test_early_checkpoint_without_cases_still_exposes_current_phase(publication)
 def test_annotations_use_only_notices_and_leave_cleanup_order_unchanged():
     m=module('publish_summary');assert m.annotation_command({'kind':'publication'}).startswith('::notice ')
     text=(ROOT/'.github/workflows/windows-server-engineering.yml').read_text(encoding='utf-8')
-    assert text.index('publish_summary.py')<text.index('Engineering.ps1 -Action Stop')
+    assert text.index('Engineering.ps1 -Action Publish')<text.index('Engineering.ps1 -Action Stop')
+    entry=(ROOT/'scripts/windows_ci/Engineering.ps1').read_text()
+    assert "@('scripts/windows_ci/publish_summary.py') 'summary_publish' 15 -Capture" in entry
     assert 'contents: read' in text and 'checks: write' not in text and 'upload-artifact' not in text
 
 
