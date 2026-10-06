@@ -19,6 +19,7 @@ CONFIG = RUNTIME / 'windows-config.json'
 STATE = RUNTIME / 'windows-processes.json'
 sys.path.insert(0,str(REPO/'src'))
 from parkweave.process_env import minimal_environment
+from parkweave.synthetic_session_file import create_synthetic_config_file
 
 ACTIONS = {'doctor','setup','start','status','stop','test'}
 
@@ -55,7 +56,8 @@ def validate_config(config,repo):
 
 def write_exclusive(path,value):
     # os.open with EXCL protects existing configuration even in a creation race.
-    with Path(path).open('x',encoding='utf-8') as f:json.dump(value,f,ensure_ascii=False,indent=2);f.write('\n')
+    stream=create_synthetic_config_file(path) if os.name=='nt' and Path(path)==CONFIG else Path(path).open('x',encoding='utf-8')
+    with stream as f:json.dump(value,f,ensure_ascii=False,indent=2);f.write('\n')
 
 
 def acl_check_command():

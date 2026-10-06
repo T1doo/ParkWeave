@@ -95,6 +95,18 @@ def create_synthetic_session_file(path,*,_backend=None):
     path=Path(path)
     if path!=Path('.runtime/synthetic-sessions.json'):
         raise ValueError('fixed synthetic session path required')
+    return _create_owned_synthetic_file(path,_backend=_backend)
+
+
+def create_synthetic_config_file(path,*,_backend=None):
+    """Only lifecycle's repository-bound first new synthetic CONFIG file."""
+    expected=Path(__file__).resolve().parents[2]/'.runtime/windows-config.json'
+    path=Path(path)
+    if path!=expected:raise ValueError('fixed synthetic config path required')
+    return _create_owned_synthetic_file(path,_backend=_backend)
+
+
+def _create_owned_synthetic_file(path,*,_backend=None):
     if _backend is None and os.name!='nt':raise SessionOwnerError('WINDOWS_REQUIRED')
     backend=_backend if _backend is not None else WindowsSessionFile()
     backing,sid=backend.current_user()

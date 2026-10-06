@@ -132,3 +132,8 @@ ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合�
 ## ENG044 最小对象与最后测试观测
 
 仅沿既有安全协议增加ROOT/SESSIONS/CONFIG对象及同一原子快照的白名单去参数active_test_id；称最后记录，不称确定根因。严格ACL合同、600s/900s/权限/身份不变，JobObject产品修复未混入，后代回收仍OPEN。定点264PASS及两位独立只读复核通过；连同ENG043普通推送至8da8e4a；唯一标准37450539320失败，Setup已明确SESSIONS/ACL_OWNER_MISMATCH，完整回归600s TimeoutExpired最后原子记录pytest_call及test_plan_revision::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call，具体挂点/因果未知，PGStop成功；未再push/newCI。见[ENG044](F2/ENG044-MinimalObservationsCI.md)。原签收门/R4/预算、环境与备份保留。
+
+
+## ENG049/ENG050 本地诊断与已授权CONFIG首建owner
+
+有效同顺序Linux基线990PASS6WindowsSKIP290.942秒，Windows最后两目标本地均快；实际600秒根因仍UNKNOWN。故障注入复现并修复fixture初始化/client退出失败时自有UUID数据库清理，保留原异常。CONFIG首建owner获父线程明确批准，复用同handle最小协议，不改既有/ROOT/DACL/身份。独立审查通过，修改后定点139PASS2WindowsSKIP14.23秒；见[ENG049](F2/ENG049-RegressionTimingAndFixtureCleanup.md)与[ENG050](F2/ENG050-SyntheticConfigOwner.md)。允许一次普通push/标准CI，600/900与阶段门、预算/R4不变。

@@ -257,3 +257,8 @@ ENG041普通快进push至9801259，唯一标准37444794329/attempt1 completed/fa
 ## ENG048 单次 owner/Job CI 终态：CONFIG边界停止
 
 正式require_escalated审批同根HEAD200，保持代理/身份/目标；远端8da8e4a无新提交，普通快进至ab445a9，唯一标准37457916936/attempt1精确head completed/failure，末次远端仍ab445a9且同头run仅1。Setup从SESSIONS前进至CONFIG/ACL_OWNER_MISMATCH：之前SESSIONS owner+DACL该次通过，CONFIG实际owner未观测/DACL未检查；CONFIG权限动作outscope未实施。Doctor/Start因Setup失败未运行，API/browserNOT_RUN。回归600TimeoutExpired/countsMISSING，最后pytest_call/test_preparation::test_unassigned_or_wrong_role_grant_is_not_authority仅快照不是根因。内层及外层实际原生Job均OWNED_TREE_STOPPED；外层658.296秒exit1未超900，原失败保持。四专用native例逐项结果未提供，不能PASS；PGStop独立success/exit0/.125秒。4notice404max/988total/1ID界限通过，两位只读复核确认，见[ENG048](ENG048-SingleOwnerJobCI.md)/[evidence](evidence/eng048-owner-job-ci.json)。结果docs仅本地commit不再push/CI/权限/日志下载，原阶段门/R4/预算/环境包保留。
+
+
+## ENG049/ENG050 本地诊断与已授权CONFIG首建owner
+
+有效同顺序Linux基线990PASS6WindowsSKIP290.942秒，Windows最后两目标本地均快；实际600秒根因仍UNKNOWN。故障注入复现并修复fixture初始化/client退出失败时自有UUID数据库清理，保留原异常。CONFIG首建owner获父线程明确批准，复用同handle最小协议，不改既有/ROOT/DACL/身份。独立审查通过，修改后定点139PASS2WindowsSKIP14.23秒；见[ENG049](ENG049-RegressionTimingAndFixtureCleanup.md)与[ENG050](ENG050-SyntheticConfigOwner.md)。允许一次普通push/标准CI，600/900与阶段门、预算/R4不变。
