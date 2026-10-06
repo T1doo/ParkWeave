@@ -222,3 +222,8 @@ Linux定向第一次30 PASS/6.22秒，补并发同Case与审核-补件竞态、G
 ## ENG041 Doctor/Start与回归等待最小阶段诊断
 
 再次正常API确认37439323047的Doctor/Start exit1底层原因UNKNOWN、内部regression_run TimeoutExpired；本地真实缺解释器/UTF8配置/loopback连接/端口/自有PG角色schema、pytest三阶段与父超时后代存活探针分别验证。新增仅Doctor/Start固定stdout标记与UUID绑定pytest阶段，保持判定/600s/900s/权限/环境/产品清理。203相关PASS；最终完整895PASS/0FAIL/1SKIP/271.73s、冻结一致，两位只读复核无阻断。见[ENG041](ENG041-DiagnosticBoundaries.md)。只本地commit不push/newCI，实际Windows原因/PS5送达及产品后代回收仍待验证；不改阶段门/R4/模型预算。
+
+
+## ENG042 单次诊断CI终态
+
+ENG041普通快进push至9801259，唯一标准37444794329/attempt1 completed/failure。新安全字段真实送达：Doctor/Start BoundaryError/private_acl/ACL_REFUSED；完整回归内部600s TimeoutExpired、最后记录pytest_call，仍无ID/counts。发布器/ownedPGStop成功，外层684.516s exit1未超时。ACL具体子分支未知，优先检查Setup之后新文件初始化与严格ACL合同；本地自有测试后代存活单列OPEN，不能当Windows原因。见[ENG042](ENG042-SingleDiagnosticCI.md)。未再push/newCI或改600s/权限，修复范围仅方案，阶段门/预算保留。

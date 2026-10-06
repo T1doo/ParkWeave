@@ -117,3 +117,8 @@ ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合�
 ## ENG041 本地固定边界诊断及复核
 
 再次正常API确认37439323047的Doctor/Start exit1底层原因UNKNOWN、内部regression_run TimeoutExpired；本地真实缺解释器/UTF8配置/loopback连接/端口/自有PG角色schema、pytest三阶段与父超时后代存活探针分别验证。新增仅Doctor/Start固定stdout标记与UUID绑定pytest阶段，保持判定/600s/900s/权限/环境/产品清理。203相关PASS；最终完整895PASS/0FAIL/1SKIP/271.73s、冻结一致，两位只读复核无阻断。见[F2/ENG041](F2/ENG041-DiagnosticBoundaries.md)。只本地commit不push/newCI，实际Windows原因/PS5送达及产品后代回收仍待验证；不改阶段门/R4/模型预算。
+
+
+## ENG042 单次标准Windows诊断结果与修复范围
+
+唯一[CI37444794329](https://github.com/T1doo/ParkWeave/actions/runs/37444794329)精确head9801259失败；Doctor/Start已定位private_acl/ACL_REFUSED，具体owner/Allow/继承/PS错误子分支未知。完整回归TimeoutExpired最后记录pytest_call，无具体测试与成绩；PG停止成功。针对性ACL初始化/检查及等待路径修复范围与独立OPEN自有测试后代项见[F2/ENG042](F2/ENG042-SingleDiagnosticCI.md)。本轮没有新增修复/诊断层或再跑CI，原权限、600s、预算和阶段门保留。
