@@ -140,3 +140,15 @@ def parse(stderr,action):
                 row[key]=validate_identity_refusal(row[key])
         return {k:v for k,v in row.items() if k not in ('schema','action')}
     except (ValueError,TypeError,UnicodeError,RecursionError):return unavailable
+
+
+def database_refusal_observation(exc,port):
+    """Split a fixture's three golds; no exception text, DSN or port publication."""
+    import psycopg
+    row=failure(exc)
+    exact=type(exc)
+    kind='OPERATIONAL_ERROR' if exact is psycopg.OperationalError else 'CONNECTION_TIMEOUT' if exact is psycopg.errors.ConnectionTimeout else 'OTHER'
+    # Observations preserve today's exact-type classifier; never accept OTHER.
+    safe=command('start',exc)
+    valid_port=type(port) is int and 1<=port<=65535
+    return {'database_error':kind,'database_operational_family':isinstance(exc,psycopg.OperationalError),'database_phase_gold':row['boundary_phase']=='database_connect','database_category_gold':row['category']=='OperationalError','database_redaction_gold':valid_port and str(port) not in safe}

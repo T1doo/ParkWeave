@@ -1,4 +1,4 @@
-"""Exclusive synthetic Windows session file; owner-only update before token writes."""
+"""Exclusive synthetic Windows file; native owner workflow paused for review."""
 import ctypes
 import os
 from pathlib import Path
@@ -75,8 +75,9 @@ class WindowsSessionFile:
             self.k.LocalFree(descriptor);raise
 
     def set_owner(self,handle,sid):
-        if self.a.SetSecurityInfo(handle,1,1,sid,None,None,None):
-            raise SessionOwnerError('SESSION_OWNER_REFUSED')
+        # ENG072: observed DACL/control change violates the original contract.
+        # No alternate API, override, or broader target silently resumes it.
+        raise SessionOwnerError('OWNER_MUTATION_PAUSED')
 
     def verify_owner(self,owner,sid):
         if not self.a.EqualSid(owner,sid):raise SessionOwnerError('SESSION_OWNER_MISMATCH')
@@ -113,7 +114,11 @@ def create_synthetic_config_file(path,*,_backend=None):
 
 
 def _create_owned_synthetic_file(path,*,_backend=None):
-    if _backend is None and os.name!='nt':raise SessionOwnerError('WINDOWS_REQUIRED')
+    if _backend is None:
+        if os.name!='nt':raise SessionOwnerError('WINDOWS_REQUIRED')
+        # Refuse before even constructing a native backend or creating a file.
+        raise SessionOwnerError('OWNER_MUTATION_PAUSED')
+    if isinstance(_backend,WindowsSessionFile):raise SessionOwnerError('OWNER_MUTATION_PAUSED')
     backend=_backend if _backend is not None else WindowsSessionFile()
     backing,sid=backend.current_user()
     handle=backend.create(path)
@@ -123,7 +128,8 @@ def _create_owned_synthetic_file(path,*,_backend=None):
         backend.set_owner(handle,sid)
         after=backend.inspect(handle)
         backend.verify_owner(after[1],sid)
-        # Owner-defaulted may change; all DACL/SACL inheritance/control bits stay.
+        # Owner-defaulted may change; compare returned OWNER/DACL descriptor control.
+        # SACL content was not queried; never claim full SACL verification.
         if before[2]!=after[2] or (before[3]&~1)!=(after[3]&~1):
             raise SessionOwnerError('SESSION_PERMISSIONS_CHANGED')
         fd=backend.transfer_fd(handle)

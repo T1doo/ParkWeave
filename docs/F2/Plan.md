@@ -1,3 +1,7 @@
+## ENG072 owner实际流程暂停与只读候选
+
+仅本地：默认native owner入口在construct/create前、原生backend注入及setter均OWNER_MUTATION_PAUSED；不扩大权限掩盖DACL/control拒绝。只读审查最小OWNER-only参数无DACLflags，mock证ACL slack可致storage不等，但实际ACE/controldelta及访问语义UNKNOWN，SACL未查询；严格全bytes/control仍保留。Job独立mock复现ActiveProcesses0→TreeStopped但kernelhandleLIVE，readonlymembership/signal候选原5s/8samples未wired，timeout/unrelated原生PASS保持，S4未验。PORT候选以固定base/ConnectionTimeout/OTHER与三goldbool定点，不称实际native subtype已知。最终312PASS6nativeSKIP、独立NO_BLOCKERS，collect1354≠全量PASS；无push/CI/LIVE/原生权限修改，不夜间提问。见[ENG072](ENG072-OwnerPauseReadonlyCandidates.md)。
+
 ## ENG071 单次原生根因已收敛，S4预算缺口保留
 
 普通FF推送已审ENG070链及观测2339a4d；唯一run37518589501 attempt1终态FAIL，20分49秒。Restart明确SERVICE_LOG owner mismatch；SESSION/CONFIG owner已same但DACL/control变而PERMISSIONS_COMPARE拒绝。最小Job normal primary17及unrelatedexactLIVE通过，descendant仍LIVE与TreeStopped冲突；timeout三goldPASS，旧fixture独立2PASS但S4未完整不关闭专项。HTTP四gold及S3整片PASS；PORT收敛DATABASE_GOLD，ConnectionTimeout类别fixture候选受控复现，实际子类型/具体assert仍UNKNOWN。965/2/54仅完整前三片1021，S4TimeoutExpired/countNULL/coverageFalse，不能说7→2全闭环。外层Job各TreeStopped、PGStop0、最后Stop SUCCESS，不能盖专项LIVE。见[ENG071](ENG071-SingleNativeRootCauseMeasurement.md)，新log/STATE/tmp/未启用FILES完整scope清单已只读汇总，未改新增/既有owner/ACL，不夜间问用户，无第二CI/LIVE；F1未签收/F2并行/R4关闭/Server非Win11。

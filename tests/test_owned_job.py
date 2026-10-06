@@ -335,3 +335,13 @@ def test_recorded_child_invalid_creation_time_never_means_stopped(value,source):
     process=SimpleNamespace(create_time=lambda:value if source=='process' else 10.0)
     with pytest.raises(AssertionError):recorded_child_alive(record,backend=Backend(),process_factory=lambda pid:process)
     assert calls==(['open','close'] if source=='kernel' else [])
+
+
+@pytest.mark.parametrize('invalid',[0,-1,True,1<<64,1<<128])
+def test_readonly_job_candidate_refuses_invalid_handles_before_any_read(invalid):
+    from scripts.windows_ci.job_stop_observation import observe
+    class NoRead:
+        def __getattr__(self,name):raise AssertionError('invalid handle reached backend')
+    for process,job in ((invalid,1),(1,invalid)):
+        row=observe(process,job,cleanup_started=10,clock=lambda:10,backend=NoRead())
+        assert row=={'status':'UNKNOWN','reason':'INVALID_INPUT','sample_count':0,'samples':[]}

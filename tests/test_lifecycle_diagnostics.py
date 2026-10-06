@@ -475,3 +475,15 @@ def test_exclusive_rebind_never_accepts_success_after_retry_deadline(monkeypatch
     def pause(value):now[0]=1.0
     with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.port_available(8765,1,clock=lambda:now[0],pause=pause)
     assert diagnostic.failure(error.value)['boundary_reason']=='PORT_OCCUPIED' and calls==['bind']
+
+
+@pytest.mark.parametrize('kind',['BASE','TIMEOUT','UNKNOWN'])
+def test_database_fixed_observation_splits_family_category_and_redaction(kind):
+    import psycopg
+    error=psycopg.OperationalError(POISON) if kind=='BASE' else psycopg.errors.ConnectionTimeout(POISON) if kind=='TIMEOUT' else RuntimeError(POISON)
+    error.parkweave_lifecycle_phase='database_connect'
+    row=diagnostic.database_refusal_observation(error,54321)
+    assert row['database_error']=={'BASE':'OPERATIONAL_ERROR','TIMEOUT':'CONNECTION_TIMEOUT','UNKNOWN':'OTHER'}[kind]
+    assert row['database_operational_family']==(kind!='UNKNOWN')
+    assert row['database_phase_gold'] and row['database_category_gold']==(kind=='BASE') and row['database_redaction_gold']
+    assert POISON not in json.dumps(row) and '54321' not in json.dumps(row)

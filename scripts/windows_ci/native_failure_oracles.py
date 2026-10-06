@@ -10,9 +10,9 @@ REPO=Path(__file__).resolve().parents[2]
 CASES={'SESSION','CONFIG','PORT','HTTP_LF_OLD','HTTP_LF_CURRENT','HTTP_CRLF_OLD','HTTP_CRLF_CURRENT','ORIGINAL_JOB_EXIT17','ORIGINAL_JOB_TIMEOUT','PARENT_EXIT17','PARENT_TIMEOUT'}
 STAGES={'SETUP','CURRENT_USER','CREATE_NEW','INSPECT_BEFORE','SET_OWNER','INSPECT_AFTER','VERIFY_OWNER','PERMISSIONS_COMPARE','FD_TRANSFER','TEXT_WRAP','FIRST_BYTES','SECOND_REFUSAL','EXISTING_BYTES','PORT_BIND','PORT_OCCUPIED_GOLD','DATABASE_REFUSAL','DATABASE_GOLD','HTTP_SETUP','HTTP_READINESS','HTTP_STATUS','HTTP_HEADER','HTTP_CONTENT','HTTP_CLEANUP','PARENT_RUN','PRIMARY_GOLD','CLEANUP_GOLD','RECORD_READ','UNRELATED_EXACT_LEAF','DESCENDANT_EXACT_HANDLE','UNRELATED_SETUP','UNRELATED_LAUNCHER_GOLD','UNRELATED_OWNED_CLEANUP','QUERY_HANDLE_CLOSE','COMPLETE'}
 CATEGORIES={'NONE','OTHER','AssertionError','OwnedJobError','IdentityRefused','FileNotFoundError','JSONDecodeError','OSError','AccessDenied','SessionOwnerError','FileExistsError','BoundaryError','TimeoutExpired'}
-REASONS={'NONE','UNKNOWN','CHECK_REFUSED','WINDOWS_REQUIRED','TOKEN_QUERY_REFUSED','SESSION_CREATE_REFUSED','SESSION_INSPECTION_REFUSED','SESSION_OWNER_REFUSED','SESSION_OWNER_MISMATCH','SESSION_PERMISSIONS_CHANGED','PORT_OCCUPIED','PORT_BIND_REFUSED','WINDOWS_REQUIRED','JOB_CREATE_REFUSED','JOB_LIMIT_REFUSED','CREATION_IDENTITY_REFUSED','JOB_BIND_REFUSED','JOB_MEMBERSHIP_REFUSED','THREAD_RESUME_REFUSED','PROCESS_WAIT_REFUSED','JOB_TERMINATE_REFUSED','JOB_QUERY_REFUSED','JOB_STOP_UNCONFIRMED'}
-ENUMS={'primary':{'UNKNOWN','EXIT17','TIMEOUT','OTHER_EXIT'},'cleanup':{'UNKNOWN','OWNED_TREE_STOPPED','OWNED_TREE_STOP_UNCONFIRMED','SUSPENDED_CHILD_STOPPED','NOT_STARTED'},'record':{'UNKNOWN','AVAILABLE'},'unrelated':{'UNKNOWN','LIVE'},'descendant':{'UNKNOWN','LIVE','ABSENT','OLD_IDENTITY_ABSENT','SIGNALED'},'socket_error':{'UNKNOWN','EADDRINUSE','EACCES','WSAEADDRINUSE','WSAEACCES'}}
-BOOLS={'owner_same','acl_equal','control_equal','owner_defaulted_changed'}
+REASONS={'NONE','UNKNOWN','CHECK_REFUSED','WINDOWS_REQUIRED','TOKEN_QUERY_REFUSED','SESSION_CREATE_REFUSED','SESSION_INSPECTION_REFUSED','SESSION_OWNER_REFUSED','SESSION_OWNER_MISMATCH','SESSION_PERMISSIONS_CHANGED','OWNER_MUTATION_PAUSED','PORT_OCCUPIED','PORT_BIND_REFUSED','WINDOWS_REQUIRED','JOB_CREATE_REFUSED','JOB_LIMIT_REFUSED','CREATION_IDENTITY_REFUSED','JOB_BIND_REFUSED','JOB_MEMBERSHIP_REFUSED','THREAD_RESUME_REFUSED','PROCESS_WAIT_REFUSED','JOB_TERMINATE_REFUSED','JOB_QUERY_REFUSED','JOB_STOP_UNCONFIRMED'}
+ENUMS={'primary':{'UNKNOWN','EXIT17','TIMEOUT','OTHER_EXIT'},'cleanup':{'UNKNOWN','OWNED_TREE_STOPPED','OWNED_TREE_STOP_UNCONFIRMED','SUSPENDED_CHILD_STOPPED','NOT_STARTED'},'record':{'UNKNOWN','AVAILABLE'},'unrelated':{'UNKNOWN','LIVE'},'descendant':{'UNKNOWN','LIVE','ABSENT','OLD_IDENTITY_ABSENT','SIGNALED'},'socket_error':{'UNKNOWN','EADDRINUSE','EACCES','WSAEADDRINUSE','WSAEACCES'},'database_error':{'OPERATIONAL_ERROR','CONNECTION_TIMEOUT','OTHER'}}
+BOOLS={'owner_same','acl_equal','control_equal','owner_defaulted_changed','database_operational_family','database_phase_gold','database_category_gold','database_redaction_gold'}
 
 def project(row):
     if not isinstance(row,dict) or row.get('case') not in CASES or row.get('stage') not in STAGES or row.get('status') not in {'PASS','FAIL','NOT_RUN'} or row.get('category') not in CATEGORIES or row.get('reason') not in REASONS:raise ValueError('FIXED_RECEIPT_REFUSED')
@@ -56,7 +56,10 @@ def worker():
                     if 'owned.bind(' in text:stage('PORT_BIND')
                     if 'port_available(' in text:stage('PORT_OCCUPIED_GOLD')
                     if 'check_dsn_scope(' in text:stage('DATABASE_REFUSAL')
-                    if "assert diagnostic.failure(refused.value)" in text:stage('DATABASE_GOLD')
+                    if "assert diagnostic.failure(refused.value)" in text or "assert str(port) not in diagnostic.command" in text:
+                        observation=ports.diagnostic.database_refusal_observation(frame.f_locals['refused'].value,frame.f_locals['port'])
+                        row.update(observation)
+                        stage('DATABASE_GOLD')
                 if name=='test_actual_chinese_UI_http_under_non_utf8_path_default':
                     if 'thread.start()' in text:stage('HTTP_SETUP')
                     if 'opener.open(' in text:stage('HTTP_READINESS')

@@ -1,3 +1,5 @@
+> ENG072当前：SESSION/CONFIG实际owner流程也已暂停。未来新增对象范围确认不能豁免原“其他权限保持”合同；既有对象不修复。本轮不夜间询问或执行新增权限。
+
 # ENG071 owner 范围集中决策清单（只读，不执行权限变更）
 
 本轮保持原授权：只有固定 SESSION/CONFIG 首次新建可执行既有 verified-owner 事务；不修复任何既有 owner/ACL，不新增其他对象 owner 设置。实际 Restart 对象及原生 owner 子阶段以同次CI安全annotation终态为准。本清单是完整源码路径盘点，不能把未实测对象标为失败。
