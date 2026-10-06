@@ -1,0 +1,127 @@
+{
+  "scope": "ENG046_OWNED_WINDOWS_JOB_LOCAL_IMPLEMENTATION",
+  "base_commit": "88feb1d46adb0fb164735543d63d994048622f19",
+  "last_verified_remote_head": "8da8e4a95f90965ae06fd4b990abd02e047b4364",
+  "source_sha256": {
+    "scripts/windows_ci/owned_job.py": "5efa36e495aa21c191938350821f82c319472ae181ea74ca12dde300e2ab4dc8",
+    "scripts/windows_ci/native_command.py": "be8827d091e3420a3cd90e5c500841dc4a569aa473998ff2466647ac03b614b4",
+    "scripts/windows_ci/native_suite.py": "6cb0bbe156f53f28ee2fcab449bb5de0b2c189731d57d58a0f62046c12b33887",
+    "scripts/windows_ci/diagnostics.py": "ae961977f6b73298da6f4227a8f28d6eea78a080f98962794894e1bff85127bc",
+    "scripts/windows_ci/publish_summary.py": "101a1901829bd87c12ec7a7a723adc85929d1848289d063c399c67de12d86e4f",
+    "scripts/windows_ci/diagnostic-test-ids.json": "0350da8fb59b8bc4239c6d2fdadd978b945494f88b07ddc3437cc6a355721f28",
+    "tests/test_owned_job.py": "ab36e9c88c74718f8eab5982dace2aca65c25d9147c7c8d9addc07cd84cb9486"
+  },
+  "results": {
+    "baseline": {
+      "path": ".runtime/eng046-descendant-before.xml",
+      "sha256": "4f3655707a518879af9b3e7a5d0e65fe2ee5466347cd5c666bb6ba7cfa43bbc2",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 2.096
+    },
+    "initial": {
+      "path": ".runtime/eng046-targeted-initial.xml",
+      "sha256": "9b9362a207808e58fdee101e666a5b044735ab32802eca29c6f93b8471489248",
+      "tests": 98,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 3,
+      "junit_seconds": 8.097
+    },
+    "low_level_intermediate": {
+      "path": ".runtime/eng046-job-injection.xml",
+      "sha256": "17e1b5d49fc59375d9865cde3acde3269ef285f3254ced031e57453ea8b95929",
+      "tests": 21,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 4,
+      "junit_seconds": 0.132
+    },
+    "candidate": {
+      "path": ".runtime/eng046-targeted-candidate.xml",
+      "sha256": "06056421c2858b54da9df8f55b70d2141986c135e6ad7a89184445f4696c008c",
+      "tests": 106,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4,
+      "junit_seconds": 8.289
+    },
+    "publisher_preparation": {
+      "path": ".runtime/eng046-publisher-and-preparation.xml",
+      "sha256": "669601a47bc66cd0b816d846d409d94c33d551a0c735d3fd47de6dbcf907c07d",
+      "tests": 50,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 0.342
+    },
+    "final_job": {
+      "path": ".runtime/eng046-job-final.xml",
+      "sha256": "d878d800aa26fa4ace1db6d5d35d59de8e95fdd38402ca0f75cc667d36d53065",
+      "tests": 25,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4,
+      "junit_seconds": 0.249
+    },
+    "final_frozen": {
+      "path": ".runtime/eng046-final-targeted.xml",
+      "sha256": "1b366f28d3a2cb5d30bba739d84b7841b45c34f92365ac60a8f39271dbbe366f",
+      "tests": 156,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4,
+      "junit_seconds": 8.327
+    }
+  },
+  "baseline_property": "FAIL: direct parent timeout leaves identity-verified owned descendant alive; original probe asserts this known failure and passes; supervisor then reaps only owned probe",
+  "final_console": {
+    "pass": 152,
+    "fail": 0,
+    "skip_native_windows": 4,
+    "deselected_socket_restricted": 2,
+    "warnings": 1,
+    "seconds": 8.33
+  },
+  "native_job_verification": "NOT_RUN_ON_LINUX",
+  "owned_regression_descendants": "IMPLEMENTED_NATIVE_VERIFICATION_PENDING",
+  "kernel_scope": "fresh unnamed non-inheritable job; only exact suspended creation handle assigned; default descendants included; outer native_suite includes newly created lifecycle descendants; unrelated/preexisting external processes never added",
+  "timeouts": {
+    "regression_seconds": 600,
+    "suite_seconds": 900,
+    "cleanup_confirmation_seconds": 5
+  },
+  "review": {
+    "reviewers": [
+      "windows_native_review",
+      "cross_module_review"
+    ],
+    "finding_closed": "launch return-before-stdio-close failure lost creation handles; now exact suspended abort and all-handle close attempts; low-level injection added",
+    "remaining_blockers": [],
+    "native_validation_pending": true
+  },
+  "initial_failures": [
+    "2 existing loopback/owned PG tests: default sandbox socket PermissionError; no network/escalation workaround",
+    "1 diagnostic test allowlist pending regeneration"
+  ],
+  "low_level_intermediate_failures": "3 new assertions incorrectly unpacked variable-length event tuples; fixed test observation only",
+  "actions": {
+    "push": 0,
+    "new_ci": 0,
+    "full_suite": 0,
+    "acl_or_owner_mutations": 0,
+    "privilege_adjustment": 0,
+    "runner_configuration_changes": 0,
+    "real_model_calls": 0,
+    "budget": 0
+  },
+  "remaining": [
+    "Windows ABI and actual owned tree exit/unrelated survival not validated",
+    "Windows nested Job/runner restrictions not validated; binding refusal is fail closed",
+    "SESSIONS owner candidate awaiting explicit user approval, unchanged",
+    "actual Windows 600 second hang cause UNKNOWN",
+    "F1/F2 unaccepted; Server not Win11; 36AT6EX NOT_RUN; R4 disabled"
+  ]
+}

@@ -12,9 +12,11 @@ MAX_JUNIT_BYTES=4*1024*1024
 MAX_TEST_CASES=10000
 MAX_FAILURE_IDS=25
 MAX_CLEANUP=6
+TREE_CLEANUP=frozenset({'NOT_STARTED','SUSPENDED_CHILD_STOPPED','OWNED_TREE_STOPPED','OWNED_TREE_STOP_UNCONFIRMED'})
 CATEGORIES=frozenset({'AssertionError','AttributeError','KeyError','TypeError','ValueError','RuntimeError','OSError','FileNotFoundError','PermissionError','TimeoutError','ConnectionError','ConnectionRefusedError','JSONDecodeError','UnicodeDecodeError','TimeoutExpired','CalledProcessError','HTTPError','URLError','UnsupportedOperation','NotImplementedError','IndexError','ImportError','ModuleNotFoundError','BrokenPipeError','ProcessLookupError','LookupError','OverflowError','OTHER'})
 PHASES=frozenset({'UNKNOWN','configuration','managed_python','setup','existing_config','config_preservation','doctor','start','status','session_read','api_case_submit','api_case_wait','stop','stop_record_check','restart','restart_read','native_browser','final_stop','regression_run','regression_report','win11_guard','server_candidate','browser_guard','browser_driver_binding','browser_start','browser_driver_ready','browser_session','browser_navigation','browser_case_create','browser_case_read','browser_render','browser_fact_parent','browser_fact_review','browser_clarification','browser_child_review','browser_cancel','browser_cleanup'})
 CATEGORIES=CATEGORIES|LIFECYCLE_CATEGORIES
+CATEGORIES=CATEGORIES|{'OwnedJobError'}
 CASES=frozenset({'suite_initialization','suite_exception','lifecycle_exception','final_Stop_owned_services','full_engineering_regression','Win11_guard_refuses_Server','separate_Server_candidate_oracles'})
 
 
@@ -28,6 +30,8 @@ def exception_row(case,exc,phase='UNKNOWN'):
     explicit=attributes.get('parkweave_diagnostic_phase')
     phase=explicit if isinstance(explicit,str) and explicit in PHASES else phase
     row={'case':case if isinstance(case,str) and case in CASES else 'suite_exception','status':'FAIL','phase':phase if isinstance(phase,str) and phase in PHASES else 'UNKNOWN','category':category(type(exc).__name__)}
+    tree=attributes.get('parkweave_owned_tree_cleanup')
+    if case=='full_engineering_regression' and isinstance(tree,str) and tree in TREE_CLEANUP:row['owned_tree_cleanup']=tree
     cleanup=attributes.get('parkweave_owned_browser_cleanup',())
     if isinstance(cleanup,(tuple,list)):
         if not cleanup:return row

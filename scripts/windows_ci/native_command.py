@@ -1,6 +1,6 @@
-"""Bounded direct child; regular files avoid waiting for descendant pipe EOF.
+"""Bounded commands; native_suite owns a Windows job, others a direct child.
 
-No shell, process discovery, process-tree kill, or cluster control here.
+No shell, process discovery or cluster control here.
 """
 import argparse
 import json
@@ -12,7 +12,12 @@ import time
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'src'))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 from parkweave.process_env import minimal_environment
+try:
+    from .owned_job import run as run_owned_job
+except ImportError:
+    from owned_job import run as run_owned_job
 
 LIMITS = {
     'python_guard': 30, 'postgres_version': 15, 'allocate_port': 15,
@@ -38,15 +43,28 @@ def execute(executable, arguments, phase, timeout, directory, capture=False):
               'stderr_file': stderr_path.name}
     with stdout_path.open('xb') as stdout, stderr_path.open('xb') as stderr:
         try:
-            # Descendants may inherit these file handles, but never our stdout pipe.
-            process = subprocess.Popen([str(executable), *arguments], stdin=subprocess.DEVNULL,
-                                       stdout=stdout, stderr=stderr, shell=False,
-                                       env=minimal_environment(os.environ) if phase == 'app_stop' else None)
+            if phase == 'native_suite' and os.name == 'nt':
+                try:
+                    completed = run_owned_job([str(executable), *arguments], timeout=timeout,
+                                              stdout=stdout, stderr=stderr)
+                    result.update(exit_code=completed.returncode, cleanup=completed.cleanup)
+                except subprocess.TimeoutExpired as error:
+                    result.update(exit_code=124, timed_out=True, cleanup=error.cleanup)
+                except Exception as error:
+                    result.update(error_category=type(error).__name__,
+                                  cleanup=getattr(error, 'cleanup', 'OWNED_TREE_STOP_UNCONFIRMED'))
+                process = None
+            else:
+                # Descendants may inherit files, never our stdout pipe.
+                process = subprocess.Popen([str(executable), *arguments], stdin=subprocess.DEVNULL,
+                                           stdout=stdout, stderr=stderr, shell=False,
+                                           env=minimal_environment(os.environ) if phase == 'app_stop' else None)
         except OSError as error:
             result['error_category'] = type(error).__name__
         else:
             try:
-                result['exit_code'] = process.wait(timeout=timeout)
+                if process is not None:
+                    result['exit_code'] = process.wait(timeout=timeout)
             except subprocess.TimeoutExpired:
                 result.update(exit_code=124, timed_out=True)
                 try:

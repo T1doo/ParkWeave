@@ -111,3 +111,8 @@
 ## ENG045 定点恢复等待与 SESSIONS owner 待审批方案
 
 只读解释 TOKEN_OWNER 与父目录 ACE 继承分别决定默认 owner/访问权，实际 owner SID 未观测；最小候选仅 Windows 首次新建 SESSIONS 的 owner，在写 token 前验证，DACL/SACL/继承/其他对象保持，待用户确认，实际安全变更0。精确最后记录恢复测试原样1PASS；受控自有 PG 锁复现旧DSN等待、新测试DSN 1秒锁/5秒语句超时及释放后恢复，回滚/两份reservation/唯一成功outbox保持。独立复核通过，最终定点26PASS/0FAIL/2既有WARN/17.56s，三份源冻结，见[ENG045](ENG045-TargetedRecoveryAndACLPlan.md)及[evidence](evidence/eng045-targeted-recovery.json)。仅本地commit，无push/newCI/全量/权限执行/模型预算；Windows600秒根因UNKNOWN，600/900与产品清理保持，后代回收OPEN，原阶段门/R4/环境备份保留。
+
+
+## ENG046 专用 JobObject 本地实现，原生验证待完成
+
+保留Linux实际直接父超时后自有后代存活基线（性质FAIL、探针1PASS）；仅Windows outer native_suite/inner regression接入新无名不可继承Job，挂起创建→精确creation handle/PID与Job归属验证→恢复，绑定拒绝无fallback。正常/超时/协调器异常仅回收本Job默认继承的后代；外层包括本次生命周期新建后代，既有外部PG/无关进程不加入，原owned PG Stop保留。600/900不变，清理5秒确认；原非0/TimeoutExpired保持，cleanup失败单列不变PASS。两位只读复核定位并关闭创建期stdio关闭错误导致挂起child句柄丢失；低层注入覆盖。最终7份源冻结定点152PASS/0FAIL/4WindowsSKIP/2受限socketDESELECTED/1既有WARN/8.33s。见[ENG046](ENG046-OwnedJobRecovery.md)及[evidence](evidence/eng046-owned-job.json)。仅本地commit，无push/newCI/LIVE/ACL/提权/runner修改/模型预算；SESSIONS owner仍待审批，OWNED_REGRESSION_DESCENDANTS为IMPLEMENTED_NATIVE_VERIFICATION_PENDING未关闭，真实Windows挂点UNKNOWN，原阶段门/R4/环境备份保留。

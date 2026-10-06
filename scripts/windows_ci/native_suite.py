@@ -21,6 +21,17 @@ from child_environment import command_environment
 from diagnostics import exception_row,read_report,failure_tests,browser_summary
 from summary_report import persist
 from regression_progress import read_snapshot as regression_snapshot
+from owned_job import run as run_owned_job
+
+
+def run_regression(managed, report, progress, env):
+    command=[str(managed),'scripts/run_acceptance.py','--progress',str(progress),'--report',str(report)]
+    if os.name != 'nt':
+        # Portable fault-injection harness only; the actual suite requires Server.
+        return subprocess.run(command,cwd=REPO,env=env,capture_output=True,text=True,timeout=600)
+    prefix=report.stem+'-'+uuid.uuid4().hex
+    with (report.parent/(prefix+'.stdout')).open('xb') as out,(report.parent/(prefix+'.stderr')).open('xb') as err:
+        return run_owned_job(command,cwd=REPO,env=env,stdout=out,stderr=err,timeout=600)
 
 def owned_status(stdout):
     """A successful read command alone does not prove both owned services exist."""
@@ -124,8 +135,9 @@ def main():
     try:
         phase='regression_run';checkpoint(phase);report=REPO/'.runtime'/('server-regression-'+uuid.uuid4().hex+'.json');report.parent.mkdir(exist_ok=True)
         progress=report.with_suffix('.progress.json')
-        proc=subprocess.run([str(managed),'scripts/run_acceptance.py','--progress',str(progress),'--report',str(report)],cwd=REPO,env=command_environment(os.environ,config,'regression'),capture_output=True,text=True,timeout=600)
+        proc=run_regression(managed,report,progress,command_environment(os.environ,config,'regression'))
         rows.append({'case':'full_engineering_regression','status':'PASS' if proc.returncode==0 else 'FAIL','exit_code':proc.returncode})
+        if hasattr(proc,'cleanup'):rows[-1]['owned_tree_cleanup']=proc.cleanup
         if report.exists():
             phase='regression_report';checkpoint(phase);parsed,counts=read_report(report)
             rows[-1]['counts']=counts;rows[-1]['whole_AT_EX']='NOT_RUN'

@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import stat
 import sys
-from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,_allowed_tests,browser_summary
+from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,TREE_CLEANUP,_allowed_tests,browser_summary
 from summary_report import SCHEMA,ROOT_PATTERN,current_binding
 from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES,ACL_OBJECTS
 from regression_progress import PHASES as REGRESSION_PHASES
@@ -73,6 +73,9 @@ def project(record,binding):
             if row['case'] not in ('Doctor_native','Start_native','Setup_native') or row.get('boundary_phase')!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS:raise ValueError('invalid ACL object')
             public['acl_object']=row['acl_object']
         if row['case']=='full_engineering_regression':
+            if 'owned_tree_cleanup' in row:
+                if not isinstance(row['owned_tree_cleanup'],str) or row['owned_tree_cleanup'] not in TREE_CLEANUP:raise ValueError('invalid tree cleanup')
+                public['owned_tree_cleanup']=row['owned_tree_cleanup']
             if 'regression_phase' in row:public['regression_phase']=row['regression_phase'] if isinstance(row['regression_phase'],str) and row['regression_phase'] in REGRESSION_PHASES else 'UNKNOWN'
             if 'active_test_id' in row:
                 if not isinstance(row['active_test_id'],str) or row['active_test_id'] not in allowed or 'regression_phase' not in row:raise ValueError('invalid active test')
@@ -156,6 +159,9 @@ def annotation_case(row,allowed):
     if 'acl_object' in row:
         if row['case'] not in ('Doctor_native','Start_native','Setup_native') or row.get('boundary_phase')!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS:raise ValueError('invalid ACL object')
         value['acl_object']=row['acl_object']
+    if 'owned_tree_cleanup' in row:
+        if row['case']!='full_engineering_regression' or not isinstance(row['owned_tree_cleanup'],str) or row['owned_tree_cleanup'] not in TREE_CLEANUP:raise ValueError('invalid tree cleanup')
+        value['owned_tree_cleanup']=row['owned_tree_cleanup']
     if 'regression_phase' in row:
         if row['case']!='full_engineering_regression' or not isinstance(row['regression_phase'],str) or row['regression_phase'] not in REGRESSION_PHASES:raise ValueError('invalid regression phase')
         value['regression_phase']=row['regression_phase']
