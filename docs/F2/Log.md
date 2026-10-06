@@ -287,3 +287,8 @@ require_escalated同GitHub根无凭据HEAD审批成功200，原origin dev精确a
 ## ENG060 唯一原生测量实际结果
 
 formal HEAD200、普通push精确08cd659、唯一标准run37483067638 attempt1终态failure/job153s。native_lifecycle85.562s、native_validation17.282s均exit1无timeout且OWNED_TREE_STOPPED，regression内树亦确认回收；最终appStop0/.109s、PGStop0/.235s，安全发布成功。Start relationREFUSED/positivehealthPID，root内部stop拒绝2记录；具体身份拒绝分支未知。回归acceptance_bindings/REPORT_MISSING、count及四片耗时/覆盖UNAVAILABLE；本地CRLF checkout可严格复现接口，非native归因。详见[ENG060](ENG060-SingleNativeMeasurement.md)，无第二CI/私有logs/源码弱化/fixture改造/LIVE。固定预算/阶段门、原环境备份导航保留。
+
+
+## ENG061 本地完整性与固定拒绝原因
+
+仅本地修复：tests固定LF检出，实际HEAD/test Git blob/manifest SHA256/工作树raw bytes一致才绑定；strict Start/Stop最小固定stage/reason，主拒绝与cleanup分开；acceptance入口原子固定失败报告，非0与NOT_RUN保持。原生153秒为提前失败，根因仍UNKNOWN；不push/CI，不扩身份/权限/预算。验证与复核见[ENG061](ENG061-LocalIntegrityAndRefusal.md)；F1未签收/F2并行探索、Server非Win11、R4关闭、LIVE预算0及原环境备份保持。

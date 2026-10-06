@@ -159,3 +159,8 @@ ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合�
 ## ENG052 有界定位与Start清理拒绝记录保留
 
 正常安全CI只读复核不变，Setup/Doctor仅流程推断，Windows健康与回归根因UNKNOWN。32项既有目标八轮9.633秒通过，每次teardown自有库0/锁计数0，分类时长不相加；本地PG16.2/Unixsocket与CI PG17/TCP不同，不外推。单次Linux真实API/workerhealth1PASS，7attempt1response三条件匹配，仅Linux/非worker业务证据。受控复现Start忽略FOREIGN_REFUSED删STATE（前2FAIL2PASS），最小保留记录/主失败fix后定点138PASS2WindowsSKIP4.99秒，两审查无阻断，无身份/权限/终止扩展。见[ENG052](F2/ENG052-BoundedStartupAndDatabaseDiagnosis.md)；只本地commit，不push/CI/升600/900，下一必要观测为原通道固定health枚举/计数与累计/fixture阶段时长及少量连接边界样本，尚未实现。原门、预算/R4、环境包保持。
+
+
+## ENG061 本地完整性与固定拒绝原因
+
+仅本地修复：tests固定LF检出，实际HEAD/test Git blob/manifest SHA256/工作树raw bytes一致才绑定；strict Start/Stop最小固定stage/reason，主拒绝与cleanup分开；acceptance入口原子固定失败报告，非0与NOT_RUN保持。原生153秒为提前失败，根因仍UNKNOWN；不push/CI，不扩身份/权限/预算。验证与复核见[ENG061](F2/ENG061-LocalIntegrityAndRefusal.md)；F1未签收/F2并行探索、Server非Win11、R4关闭、LIVE预算0及原环境备份保持。

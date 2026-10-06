@@ -138,3 +138,8 @@
 ## ENG048 单次 owner/Job CI 终态：CONFIG边界停止
 
 正式require_escalated审批同根HEAD200，保持代理/身份/目标；远端8da8e4a无新提交，普通快进至ab445a9，唯一标准37457916936/attempt1精确head completed/failure，末次远端仍ab445a9且同头run仅1。Setup从SESSIONS前进至CONFIG/ACL_OWNER_MISMATCH：之前SESSIONS owner+DACL该次通过，CONFIG实际owner未观测/DACL未检查；CONFIG权限动作outscope未实施。Doctor/Start因Setup失败未运行，API/browserNOT_RUN。回归600TimeoutExpired/countsMISSING，最后pytest_call/test_preparation::test_unassigned_or_wrong_role_grant_is_not_authority仅快照不是根因。内层及外层实际原生Job均OWNED_TREE_STOPPED；外层658.296秒exit1未超900，原失败保持。四专用native例逐项结果未提供，不能PASS；PGStop独立success/exit0/.125秒。4notice404max/988total/1ID界限通过，两位只读复核确认，见[ENG048](ENG048-SingleOwnerJobCI.md)/[evidence](evidence/eng048-owner-job-ci.json)。结果docs仅本地commit不再push/CI/权限/日志下载，原阶段门/R4/预算/环境包保留。
+
+
+## ENG061 本地完整性与固定拒绝原因
+
+仅本地修复：tests固定LF检出，实际HEAD/test Git blob/manifest SHA256/工作树raw bytes一致才绑定；strict Start/Stop最小固定stage/reason，主拒绝与cleanup分开；acceptance入口原子固定失败报告，非0与NOT_RUN保持。原生153秒为提前失败，根因仍UNKNOWN；不push/CI，不扩身份/权限/预算。验证与复核见[ENG061](ENG061-LocalIntegrityAndRefusal.md)；F1未签收/F2并行探索、Server非Win11、R4关闭、LIVE预算0及原环境备份保持。
