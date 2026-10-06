@@ -207,3 +207,8 @@ Linux定向第一次30 PASS/6.22秒，补并发同Case与审核-补件竞态、G
 最终冻结全量837PASS/0FAIL/1WindowsSKIP/2既有WARN（261.69s），154完整源/142runner源hash匹配；397安全诊断函数ID，24保护文件与两份原V1源保持。真实三角色Chromium/API/worker/PG闭环及观察撤权恢复：初建缺assignment BLOCKED，fixture owner另行准备访问后四步完成，再P2—P4显式重验到revision8/events8；Case仍NEEDS_INPUT，资源/责任/回执保持。18新计划+16既有通知+23既有Case时序PASS，9张独立当前图hash匹配/320390无溢出/刷新持久。owned harness/API/worker精确PID停止，PG及历史环境/备份/证据保留。
 
 证据见[ENG037](ENG037-ControlledTemplate.md)及[evidence](evidence/eng037-controlled-template.json)。只本地commit，无push/newCI/export/LIVE/真实模型/预算。完整DAG/发布/Approval/授权epoch/AT14预览/无fixture赋权冷会话/真实履约仍欠；F1/F2未签收、R4关闭、Win11和36AT6EX NOT_RUN。最新Server37420887816仍FAIL等待已有安全JSON，未重复索图或网络/盲重跑。
+
+
+## ENG039 有界安全诊断annotations
+
+用户授权本地实现，新增固定notice白名单摘要，8条/整条2KiB含LF/总16KiB/整批25无路径测试ID。两位只读审查定位并闭合Windows CRLF实际字节P2，真实本地模拟旧2049/16392超限→二进制2048/16384。最终相关169PASS/0FAIL/0SKIP/1既有WARN8.63s，4份冻结hash一致；唯一原保护文件授权变化publisher，业务src及原ENG037拒绝路径证据保留。不改原失败/清理、权限/环境策略，不上传日志/artifacts；异常常量关闭，stdout原JSON后追加annotations。见[ENG039](ENG039-SafeAnnotations.md)。仅本地commit，无push/newCI；当前Server37420887816根因仍UNKNOWN，实际新annotations送达/nativeWindows未验证，F1F2未签收/R4关闭/36AT6EXNOT_RUN/模型预算0。

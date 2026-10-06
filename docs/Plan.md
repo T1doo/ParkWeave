@@ -102,3 +102,8 @@ ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合�
 ## ENG037 固定四步模板本地实现
 
 已批准的四个A默认落为持久固定合成计划及当前权限/来源核验，限定材料→资源→合法本人接单→回执核对。用户显式逐步CHECK，缺assignment阻塞、观察失效后须重验、实际责任/资源/回执保留。真实PG/API及三角色Chromium验证见[F2/ENG037](F2/ENG037-ControlledTemplate.md)。只本地commit，不push/newCI/export/LIVE；完整DAG/发布/冷会话/预览/真实履约及F1/F2/Windows阶段门保留。
+
+
+## ENG039 本地有界安全annotations
+
+按用户采用方案实施已有安全case投影的GitHub notice，限定数量/UTF8实际字节/全局精确测试ID并移除路径；异常关闭，原失败及always清理保持。独立审查CRLF问题修复，169相关合成测试PASS；[准确diff与示例/证据](F2/ENG039-SafeAnnotations.md)。仅本地commit不push/newCI，用户另定普通同步；原Windows37420887816根因UNKNOWN不变。

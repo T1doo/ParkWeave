@@ -4,11 +4,15 @@ import os
 from pathlib import Path
 import re
 import stat
+import sys
 from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,_allowed_tests,browser_summary
 from summary_report import SCHEMA,ROOT_PATTERN,current_binding
 
 MAX_BYTES=64*1024
 MAX_ROWS=32
+MAX_ANNOTATIONS=8
+MAX_ANNOTATION_BYTES=2048  # Entire UTF-8 workflow command, including final LF.
+MAX_ANNOTATION_TOTAL_BYTES=16*1024
 CASES=frozenset({'suite_initialization','suite_exception','lifecycle_exception','final_Stop_owned_services','full_engineering_regression','Win11_guard_refuses_Server','separate_Server_candidate_oracles','Setup_native','Setup_refuses_existing_config','config_sessions_preserved','Doctor_native','Start_native','Status_native','actual_API_worker_local_case','Stop_native','Restart_native','data_read_after_restart','native_local_browser','API_browser_restart','lifecycle_API_browser'})
 REASONS=frozenset({'OWNED_STATUS_NOT_CONFIRMED','START_FAILED','SETUP_FAILED'})
 STATES=frozenset({'UNAVAILABLE','AVAILABLE','JUNIT_PATH_REFUSED','ALLOWLIST_UNAVAILABLE','JUNIT_MISSING','JUNIT_UNREADABLE_OR_OVERSIZE','JUNIT_FORMAT_REFUSED','JUNIT_INVALID','JUNIT_CASE_LIMIT','REPORT_MISSING'})
@@ -111,6 +115,98 @@ def read_summary(source):
     except OSError:return base('SUMMARY_UNREADABLE')
 
 
+def annotation_command(value):
+    # One constant property, no file/line/location or caller-supplied title.
+    data=json.dumps(value,ensure_ascii=True,separators=(',',':'))
+    data=data.replace('%','%25').replace('\r','%0D').replace('\n','%0A')
+    return '::notice title=ParkWeave safe diagnostics::'+data
+
+
+def annotation_size(command):return len((command+'\n').encode('utf-8'))
+
+
+def annotation_case(row,allowed):
+    if not isinstance(row,dict) or row.get('case') not in CASES or row.get('status') not in ('PASS','FAIL','NOT_RUN'):raise ValueError('invalid case')
+    value={'kind':'case','case':row['case'],'status':row['status']}
+    if 'exit_code' in row:
+        n=row['exit_code']
+        if type(n) is not int or not -(2**31)<=n<2**32:raise ValueError('invalid exit')
+        value['exit_code']=n
+    for key,choices in (('phase',PHASES),('category',CATEGORIES),('reason',REASONS|{'UNKNOWN'}),('counts_state',{'MISSING','INVALID'})):
+        if key in row:
+            if not isinstance(row[key],str) or row[key] not in choices:raise ValueError('invalid enum')
+            value[key]=row[key]
+    if 'counts' in row:
+        counts=row['counts']
+        if row['case']!='full_engineering_regression' or not isinstance(counts,dict) or set(counts)!={'PASS','FAIL','SKIP'} or not all(number(n) for n in counts.values()):raise ValueError('invalid counts')
+        value['counts']=dict(counts)
+    if 'failure_diagnostics' in row:
+        d=row['failure_diagnostics'];states=STATES|{'DIAGNOSTIC_FIELDS_INVALID','DIAGNOSTIC_FIELDS_MISSING'}
+        if not isinstance(d,dict) or d.get('state') not in states:raise ValueError('invalid diagnostic')
+        ids=d.get('failed_test_ids')
+        if not isinstance(ids,list) or len(ids)>MAX_FAILURE_IDS or any(not isinstance(x,str) or x not in allowed or not re.fullmatch(r'tests/test_[a-z0-9_]+\.py::test_[A-Za-z0-9_]+',x) for x in ids):raise ValueError('invalid IDs')
+        # Stable allowlisted test identifiers, without repository/runtime paths.
+        value['diagnostic_state']=d['state']
+        value['failed_test_ids']=[x.split('::')[0].removeprefix('tests/').removesuffix('.py')+'::'+x.split('::')[1] for x in sorted(set(ids))]
+        for key in ('test_cases_seen','failed_cases','unknown_failed_cases'):
+            if key in d:
+                if not number(d[key]):raise ValueError('invalid diagnostic count')
+                value[key]=d[key]
+        if 'ids_truncated' in d:
+            if type(d['ids_truncated']) is not bool:raise ValueError('invalid truncation flag')
+            value['ids_truncated']=d['ids_truncated']
+    return value
+
+
+def annotation_commands(public):
+    """Prevalidate the entire batch; errors produce only one constant notice.
+
+    At most seven FAIL/NOT_RUN rows, 25 test IDs across the entire batch. Drop
+    whole IDs/rows with explicit omission counts, never truncate JSON or IDs.
+    These notices report observations and cannot change the native result.
+    """
+    unavailable=annotation_command({'kind':'publication','state':'ANNOTATIONS_UNAVAILABLE'})
+    try:
+        if not isinstance(public,dict) or public.get('publication_state')!='SUMMARY_AVAILABLE':return [unavailable],False
+        for key,expected in (('scope','WINDOWS_SERVER_ENGINEERING_NOT_WIN11'),('production_R4','DISABLED'),('whole_AT_EX','NOT_RUN'),('Win11','NOT_RUN')):
+            if public.get(key)!=expected:raise ValueError('invalid scope')
+        if any(type(public.get(k)) is not int or public[k]!=0 for k in ('real_model_calls','real_budget')):raise ValueError('invalid scope')
+        if public.get('report_state') not in ('IN_PROGRESS','COMPLETED') or public.get('active_phase') not in PHASES:raise ValueError('invalid stage')
+        rows=public.get('cases')
+        if not isinstance(rows,list) or len(rows)>MAX_ROWS:raise ValueError('invalid rows')
+        allowed=_allowed_tests();values=[annotation_case(row,allowed) for row in rows]
+        candidates=[row for row in values if row['status']!='PASS'];remaining=MAX_FAILURE_IDS;commands=[]
+        for row in candidates[:MAX_ANNOTATIONS-1]:
+            original=len(row.get('failed_test_ids',[]))
+            if 'failed_test_ids' in row:
+                row['failed_test_ids']=row['failed_test_ids'][:remaining]
+                row['annotation_ids_omitted']=original-len(row['failed_test_ids'])
+                row['ids_truncated']=row.get('ids_truncated',False) or row['annotation_ids_omitted']>0
+            while True:
+                command=annotation_command(row)
+                if annotation_size(command)<=MAX_ANNOTATION_BYTES:break
+                if not row.get('failed_test_ids'):raise ValueError('oversize row')
+                row['failed_test_ids'].pop();row['annotation_ids_omitted']+=1;row['ids_truncated']=True
+            remaining-=len(row.get('failed_test_ids',[]));commands.append(command)
+        header={'kind':'publication','state':'SUMMARY_AVAILABLE','report_state':public['report_state'],'active_phase':public['active_phase'],
+                'case_counts':{s:sum(row['status']==s for row in values) for s in ('PASS','FAIL','NOT_RUN')},'annotation_cases_omitted':len(candidates)-len(commands)}
+        commands.insert(0,annotation_command(header))
+        if len(commands)>MAX_ANNOTATIONS or any(annotation_size(c)>MAX_ANNOTATION_BYTES for c in commands) or sum(annotation_size(c) for c in commands)>MAX_ANNOTATION_TOTAL_BYTES:raise ValueError('oversize annotations')
+        return commands,True
+    except Exception:return [unavailable],False
+
+
+def write_annotations(commands,stream=None):
+    # Bypass Windows TextIOWrapper CRLF translation for exact UTF-8/LF limits.
+    # Flush the preceding JSON text before using the same underlying buffer.
+    if stream is None:
+        sys.stdout.flush();stream=sys.stdout.buffer
+    data=('\n'.join(commands)+'\n').encode('utf-8')
+    if len(data)>MAX_ANNOTATION_TOTAL_BYTES or any(annotation_size(c)>MAX_ANNOTATION_BYTES for c in commands):raise ValueError('oversize annotation sink')
+    if stream.write(data)!=len(data):raise OSError('incomplete annotation sink')
+    stream.flush()
+
+
 def main(source=None):
     source=os.environ if source is None else source
     public=read_summary(source);text=json.dumps(public,indent=2);console_ok=True;summary_ok=False
@@ -125,7 +221,12 @@ def main(source=None):
             with path.open('a',encoding='utf-8') as stream:stream.write('Windows Server safe engineering diagnostics (not Win11 acceptance)\n\n```json\n'+text+'\n```\n')
             summary_ok=True
     except (OSError,ValueError,TypeError,UnicodeError,RuntimeError,RecursionError):pass
-    return 0 if console_ok and summary_ok and public['publication_state']=='SUMMARY_AVAILABLE' else 1
+    # Validate everything before printing any command. A failed annotation sink
+    # must not suppress the independent safe console/Job Summary outputs.
+    commands,annotations_ok=annotation_commands(public)
+    try:write_annotations(commands)
+    except Exception:annotations_ok=False
+    return 0 if console_ok and summary_ok and annotations_ok and public['publication_state']=='SUMMARY_AVAILABLE' else 1
 
 
 if __name__=='__main__':raise SystemExit(main())

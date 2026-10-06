@@ -16,6 +16,10 @@ POISON='SYNTHETIC_PRIVATE_ERROR_ENV_DSN_PATH_TRACE'
 KNOWN='tests/test_lifecycle.py::test_config_write_is_exclusive_and_no_secret_fields'
 
 
+def console_json(text):
+    return json.loads(text.split('\n::notice title=ParkWeave safe diagnostics::',1)[0])
+
+
 @pytest.fixture
 def publication(tmp_path):
     root=tmp_path/('parkweave-server-ci-'+str(uuid4()));root.mkdir()
@@ -34,7 +38,7 @@ def test_publisher_rebuilds_only_white_fields_from_poisoned_report(publication,c
     row['failure_diagnostics'].update(raw_error=POISON,private_path=POISON)
     path.write_text(json.dumps(record),encoding='utf-8')
     assert m.main(source)==0
-    text=capsys.readouterr().out;value=json.loads(text)
+    text=capsys.readouterr().out;value=console_json(text)
     assert value['cases'][0]['phase']=='UNKNOWN' and value['cases'][0]['category']=='OTHER'
     assert value['cases'][0]['failure_diagnostics']['failed_test_ids']==[KNOWN]
     assert POISON not in text and POISON not in output.read_text(encoding='utf-8')
@@ -62,7 +66,7 @@ def test_actual_bounded_private_wrapper_then_independent_publisher(publication,t
     assert POISON in (trace/result['stdout_file']).read_text(encoding='utf-8')
     # Separate workflow step: no access to any of the private log files.
     done=subprocess.run([sys.executable,str(ROOT/'scripts/windows_ci/publish_summary.py')],env=env,capture_output=True,text=True,timeout=15)
-    public=json.loads(done.stdout)
+    public=console_json(done.stdout)
     assert POISON not in done.stdout and done.stderr=='' and POISON not in output.read_text(encoding='utf-8')
     if mode=='missing':assert done.returncode==1 and public['publication_state']=='SUMMARY_MISSING' and public['cases']==[]
     elif mode=='timeout':
@@ -153,7 +157,7 @@ def test_summary_file_failure_does_not_suppress_safe_console(publication,monkeyp
         return original(p,*a,**k)
     monkeypatch.setattr(Path,'open',denied)
     assert m.main(source)==1;printed=capsys.readouterr().out
-    assert json.loads(printed)['publication_state']=='SUMMARY_AVAILABLE' and POISON not in printed
+    assert console_json(printed)['publication_state']=='SUMMARY_AVAILABLE' and POISON not in printed
 
 
 def test_suite_report_persistence_failure_still_attempts_public_outputs(publication,monkeypatch,capsys):
@@ -192,7 +196,7 @@ def test_real_publisher_CLI_deep_json_and_path_loops_have_no_traceback(publicati
     env=minimal_environment(os.environ,**source)
     result=subprocess.run([sys.executable,str(ROOT/'scripts/windows_ci/publish_summary.py')],env=env,capture_output=True,text=True,timeout=15)
     assert result.returncode==1 and result.stderr=='' and POISON not in result.stdout
-    public=json.loads(result.stdout)
+    public=console_json(result.stdout)
     assert public['publication_state']==('SUMMARY_AVAILABLE' if mode=='output_loop' else 'SUMMARY_INVALID')
 
 
