@@ -1,6 +1,6 @@
 # ENG070 最小原生验收方案（本轮不执行）
 
-目标是两项 Job 专项的原生失败阶段，随后分别定位 SESSION/CONFIG 首次创建与真实 occupied/refused、HTTP。当前只有 Linux 与受控证据，不能替代 native PASS。执行必须另行明确授权；不用新 runner、CI、身份、权限、LIVE，不能改变既有 owner/ACL。环境必须是现有指定 managed Windows3.12 x64 venv，工作目录为同一仓库；禁止从 PATH 选其他解释器。
+目标是两项 Job 专项的原生失败阶段，随后分别定位 SESSION/CONFIG 首次创建与真实 occupied/refused、HTTP。当前只有 Linux 与受控证据，不能替代 native PASS。仅适用于可用且已授权的原生 Windows 环境；本轮环境为 Linux，明确不触发新 CI 或启用新 runner。不能改变既有 owner/ACL、身份或权限，也不调用 LIVE。环境必须是现有指定 managed Windows3.12 x64 venv，工作目录为同一仓库；禁止从 PATH 选其他解释器。
 
 ## Job：两个场景，三个独立 gold
 
@@ -106,4 +106,4 @@ raise SystemExit(0 if all(r['status']=='PASS' for r in receipts) else 1)
 - 真实port用既有test_real_loopback_refusal_and_occupied_port_are_distinct：先只观察bind失败的errno/winerror是否为已有10048/10013或UNKNOWN；permission拒绝保持，不能把10013无条件视占用或尝试SO_REUSEADDR。再测试已关闭自己的listener所对应database_connect/OperationalError。端口号不公开，不杀外来listener。
 - HTTP用LF/CRLF×legacy/current四gold的现有测试。old-default必须500、current必须200及完整UTF8 canonical bytes；真实失败分readiness/status/header/content/owned-thread-cleanup固定阶段，不能提高deadline或接受其他状态。
 
-本方案是未来明确授权的一次受控native测量，不是此次执行或CI通过证据。先取得对象/阶段，再决定是否存在产品修复；任何首次新建SERVICE_LOG/PROCESS_RECORD/FILES owner事务也超过目前session/config边界，本方案不执行该权限变更。既有对象owner/ACL仍不自动修复。
+本方案是可在原生环境复现的受控测量，不是此次执行或CI通过证据。先取得对象/阶段，再决定是否存在产品修复；任何首次新建SERVICE_LOG/PROCESS_RECORD/FILES owner事务也超过目前session/config边界，本方案不执行该权限变更。既有对象owner/ACL仍不自动修复。

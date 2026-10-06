@@ -1,5 +1,9 @@
 # F1 计划
 
+## ENG070 本地根因收敛；权限边界不扩张
+
+代码1fe2a06仅补ACL已检查附属对象FILES/PROCESS_RECORD/SERVICE_LOG到原acl_object报告；原SID/owner拒绝不变。确认session/config无替换、STATE会临时替换但正常Stop后已删除、持久新LOG是优先候选且尚非实测对象。真实CRLF HTTP旧rawbytes gold在200/UTF8后确切失败，fixture改完整canonical内容，生产API不改。owner事务无源码可证ABI错误，新增控制位变化拒绝gold；两Job原生FAIL提供可运行的5/2秒受控最小方案，primary/unrelated exactleaf/descendant各自gold，不用TreeStopped替代，本轮不执行。最终相关318PASS/6nativeSKIP、独立NO_BLOCKERS，1331收集及旧1323keys全保留/8new。服务日志/状态/FILES owner事务若需要均超当前session/config范围，本轮无此权限写。无push/newCI/LIVE，实际仍ENG069的7FAIL；F1未签收/F2并行/R4关闭/Server非Win11。见[ENG070](../F2/ENG070-RootCauseNarrowing.md).
+
 ## ENG069 唯一标准CI终态FAIL；Restart固定owner拒绝已公开
 
 普通push到c10fef1，同HEAD唯一run37511398754 attempt1失败，18分37秒。完整1323项1265/7/51，四片317/0/25、299/3/22、342/1/4、307/3/0且coverageTrue/COMPLETE、owned清理、无timeout。Start PASS；Restart private_acl/ACL_OWNER_MISMATCH、具体ACL对象UNKNOWN；两参数nativeJob仍2FAIL，与正常Stop路径推知及外层TreeStopped分列。原五个失败函数不再出现在完整列表，新增端口fixture硬编码98错误已仅本地修复2815139、独立NO_BLOCKERS/8PASS、相关90PASS，不push/新CI、不改写实测7FAIL。历史本地1297/1/9及其后模块27保留，不称全仓全绿；owner权限未扩大，F1未签收/F2并行/R4关闭/Server非Win11，预算0。见[ENG069](../F2/ENG069-SingleNativeTerminal.md).
