@@ -184,3 +184,26 @@ def test_read_reopen_race_returns_coherent_preparation_snapshot(link_fixture):
         view=reading.result();assert opening.result().status_code==200
     assert view['current']['reasons']==([] if view['preparation_revision']==parent['revision'] else ['PREPARATION_CHANGED'])
     assert get(f,parent).json()['current']['reasons']==['PREPARATION_CHANGED'] and totals(f)==[1,1]
+
+
+def test_resource_window_ends_during_case_lock_wait_rejects_new_association(link_fixture,monkeypatch):
+    import threading,time
+    f=link_fixture;parent=ready(f);g=group(f);entered=threading.Event();original=cr._resource_locks
+    def lock_sources(*a,**kw):
+        result=original(*a,**kw);entered.set();return result
+    monkeypatch.setattr(cr,'_resource_locks',lock_sources)
+    with f[1].connect() as c:
+        c.execute("UPDATE synthetic_resource_holds SET starts_at=clock_timestamp()-interval '1 hour',ends_at=clock_timestamp()+interval '1 second' WHERE id=ANY(%s)",([UUID(h['id']) for h in g['members']],))
+    data=cr.Bind(combination_id=g['id'],expected_preparation_revision=parent['revision'],expected_link_revision=0,reason='SYNTHETIC association blocked until window ended')
+    def bind():
+        try:return cr.bind(f[0],f[2]['fixture-a'],UUID(parent['preparation_id']),uuid4().hex,data)['current']['status']
+        except Conflict:return 'CONFLICT'
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        with f[1].connect() as blocker:
+            blocker.execute('SELECT id FROM cases WHERE id=%s FOR UPDATE',(UUID(parent['case_id']),))
+            future=pool.submit(bind);assert entered.wait(2)
+            time.sleep(1.1)
+        outcome=future.result(timeout=5)
+    assert outcome=='CONFLICT'
+    assert totals(f)==[0,0] and get(f,parent).json()['link_revision']==0
+    assert rc.read(f[0],f[2]['fixture-a'],UUID(g['id']))['combination']['state']=='CONFIRMED'

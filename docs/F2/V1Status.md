@@ -1,5 +1,10 @@
 # F2 与原V1计划的真实对照
 
+## ENG034 当前阶段收口审查
+
+逐项能力/原定义差距与最小下一步见[收口审查](ENG034-CloseoutReview.md)。未新增业务功能；修复现有Case资源关联在等待Case锁期间跨过资源结束仍写入的P2，最终时钟现位于锁后。ENG033 775PASS/0FAIL/1WinSKIP保持原提交历史范围；本轮仅该bug修复后冻结回归776PASS/0FAIL/1WinSKIP（225.250s），证据单独登记，不把回归数量作开发目标。唯一下一步建议是当前分派链授权站内通知及同事务Outbox，尚未实现。F1/F2、真实履约和Win11门不解除；Windows37420887816仅等待已有安全JSON，不盲重跑、不重复索图。
+
+
 ## ENG033 当前合成资料Case的本地记录闭环（仅本地）
 
 基线05a8fec，本轮仅本地commit。owner显式重新校验材料/当前接单/核对回执/Case资源依赖后关闭本地记录；真实Case仍WAITING_CONFIRMATION，目标未完成。重开保留历史与资源占用，新cycle必须重新校验；不伪造FULFILLED或真实证据。当前专员/执行者仅最小只读。三角色实际Chromium/API/worker/PG两轮5事件与reload/320/390通过，受控迟到回复23/23通过，142份源码冻结全量775PASS/0FAIL/1WindowsSKIP/2既有WARN（228.266s）见[ENG033](ENG033-LocalCaseLifecycle.md)及[证据](evidence/eng033-local-case-acceptance.json)。没有push/newCI/export/LIVE；原Server37420887816仍FAIL，具体子项等待已有安全JSON。本轮不销掉原完整Case生命周期/真实核验、接受后转派、通用CaseStep/通知/DAG/Outbox/模板/全F2缺口；F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、模型/预算0。下方旧暂停或缺本地闭环描述属于历史记录。
@@ -38,15 +43,15 @@ ENG028增加仅固定test ID、阶段、异常类别和有界统计的诊断；�
 
 新的合成诉求→Case/Run/独立worker建单→两槽资料版本/专员补正→企业追加资料→获派专员核对→企业本地确认→本人两资源预检/占位/短事务组合确认→企业明确选择并保存此资料Case的资源关联→资料重开显示需重验且不释放预约→重新人工核对确认后显式关联v2→合法获派执行者合成回执/企业纠错核对重开→reload历史→显式整组取消释放两条容量并保留关联失效原因。ENG025实际三角色UI/PG/API链及320/390记录见[证据](evidence/eng025-acceptance-summary.json)；ENG032补入内部专员分派→本人接受/拒绝→未接单撤回/原因重派→既有回执链，当前成绩见[新证据](evidence/eng032-dispatch-acceptance.json)。
 
-关联已是产品API/UI持久记录，不能继续称为ENG024时的纯测试手动ID关联。但仅当前资料服务Case与本人已确认的两资源组合；没有一般ServicePlan/DAG/Approval，跨模块不构成一个总事务。一组合永久归一个Case，换组合保留旧归属/旧占用，取消是显式独立操作。资料REOPEN独立于Case本地记录重开。ENG033对当前合成资料Case新增本地关闭（Case WAITING_CONFIRMATION）与重开（Case REOPENED）；未开始该闭环时Case仍NEEDS_INPUT。资格NOT_EVALUATED、外部NOT_SUBMITTED、线下NO_EVIDENCE不变，原FULFILLED真实证据缺口保留。
+关联已是产品API/UI持久记录，不能继续称为ENG024时的纯测试手动ID关联。但仅当前资料服务Case与本人已确认的两资源组合；已有有限DAG结构校验，但没有一般ServicePlan/DAG运行或业务Approval绑定，跨模块不构成一个总事务。一组合永久归一个Case，换组合保留旧归属/旧占用，取消是显式独立操作。资料REOPEN独立于Case本地记录重开。ENG033对当前合成资料Case新增本地关闭（Case WAITING_CONFIRMATION）与重开（Case REOPENED）；未开始该闭环时Case仍NEEDS_INPUT。资格NOT_EVALUATED、外部NOT_SUBMITTED、线下NO_EVIDENCE不变，原FULFILLED真实证据缺口保留。
 
 执行者Run assignment由测试owner显式准备已有合法访问；ENG032新增当前资料专员的内部业务分派及本人接单，业务入口不创建Runassignment/Grant。只覆盖当前合成资料Case，不是通用办理步骤或完整责任转移。回执仅SYNTHETIC来源，不能证明真实办理或关闭Case目标。角色上限/当前授权交集不变，执行者无企业资料正文或资源操作权。
 
 | 原项 | 已有真实工程成果/提交证据 | 尚未完成的原始项 |
 |---|---|---|
-| T01 服务入口与企业事实 | 合成建单、带来源候选事实/必要澄清、资料两槽/版本/补正/核对、个人待办；`5173490`、`3aa99e4`、`c285da8`，ENG024修复通用身份/迟到回填。 | 完整锁定约束/事实冲突、三类来源真实性核验、按用途授权复用。新资料/自述仍可UNKNOWN；真实样例需对应授权。 |
-| T02 ServicePlan生成与目标覆盖 | 已有类型契约/结构校验；无自动资格或外部办理。 | 书生从注册服务编排有限DAG、必需目标覆盖、责任/前置/输出/补正/不支持项及预览闭环，均未完整交付。真实模型/额度和安全门未通过。 |
-| T03 资源预检与组合确认 | `da69ea6`预检/占位/期限；`50f7c4b`单资源确认；`c2f3465`两资源同事务确认/整组取消；`2fddcca`增加当前资料Case持久关联/明确重验/失效原因。真实PG故障/并发/撤权/幂等及浏览器证据见[ENG021](evidence/eng021-acceptance-summary.json)、[ENG025](evidence/eng025-acceptance-summary.json)。 | 任意数量组合、一般Approval/ServicePlan绑定、多Case共享/归属转移、替代/完整变更影响。局部验证不能给全部AT09—11/28—29 PASS；真实资源/外部系统未接入。 |
+| T01 服务入口与企业事实 | 合成建单、有限三字段候选冲突检出/UNKNOWN/必要澄清、资料两槽/来源版本/补正/核对、个人待办；`5173490`、`3aa99e4`、`c285da8`，ENG024修复通用身份/迟到回填。 | 完整锁定约束、跨材料事实冲突核验/裁决、三类来源真实性核验、按用途授权复用。新资料/自述仍可UNKNOWN；真实样例需对应授权。 |
+| T02 ServicePlan生成与目标覆盖 | 已有有限DAG/必需目标覆盖/服务版本锁的类型与结构校验，API明确STRUCTURE_ONLY、未执行；无自动资格或外部办理。 | 书生从注册服务编排有限DAG、必需目标覆盖、责任/前置/输出/补正/不支持项及预览闭环，均未完整交付。真实模型/额度和安全门未通过。 |
+| T03 资源预检与组合确认 | `da69ea6`预检/占位/期限；`50f7c4b`单资源确认；`c2f3465`两资源同事务确认/整组取消；`2fddcca`增加当前资料Case持久关联/明确重验/失效原因。真实PG故障/并发/撤权/幂等及浏览器证据见[ENG021](evidence/eng021-acceptance-summary.json)、[ENG025](evidence/eng025-acceptance-summary.json)。 | 按声明服务需求的必需组合、Approval/ServicePlan版本绑定、透明替代及完整变更影响。原规格不要求无限数量组合；多Case共享/归属转移需另定业务规则，非默认新增门槛。局部验证不能给全部AT09—11/28—29 PASS；真实资源/外部系统未接入。 |
 | T04 角色协同与本地办理 | 企业补件/获派专员核对/确认/资料重开；`8e2195a`有来源/version/hash的获派执行者合成回执、企业核对/纠错/重开；`2fddcca`实际串联资料、Case资源关联及回执；ENG032本地专员分派/本人接受拒绝/未接单撤回/原因重派，接受事务衔接既有回执及必要历史；ENG033补入当前合成Case本地记录关闭/重开及逐轮重验。 | 通用CaseStep、接受后责任调整/回执handoff、站内通知/送达/已读、原Case完整生命周期与FULFILLED真实证据、真实核验履约。此前Operation receipt不是办理回执。 |
 | T05 事件及可靠执行回归 | F1操作账本/租约/fencing/核对/取消/outbox；资料/资源/回执局部事务、幂等/CAS/当前撤权/失败回滚；ENG025不可变关联及归属事务。 | 所有F2办理/通知与业务Outbox贯通、全流程幂等消费、失联/未知结果/变化核对/陈旧批准回归；局部PASS不等于AT16—20整体完成。 |
 | T06 办理模板与新输入 | 新Case/输入及资料/资源/回执合成样例，不复制旧材料/真实身份；多企业隔离回归。 | 审核后参数化服务包模板、完整新企业冷会话/新材料样本、版本发布和全部AT08/35。现有SYNTHETIC fixture不是授权真实样例。 |

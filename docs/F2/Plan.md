@@ -1,5 +1,10 @@
 # F2并行开发计划：本地资料准备与个人待办
 
+## ENG034 阶段收口
+
+当前逐项能力、原规格真实差距、外部事实边界和唯一下一步建议见[ENG034](ENG034-CloseoutReview.md)。仅修复现有资源关联的锁后时钟bug，无新增业务范围。ENG033的775回归保持历史范围；本轮另记修复验证。T01有限冲突检查与T02有限DAG结构校验已有，不能当完全缺失；固定两资源不足以代表全计划，原文也没有无限资源组合或默认多Case共享要求。真实Case的承诺交付/核验/授权确认工程与实际凭据均未完成，不能把本地关闭当FULFILLED。仅本地commit，不push/CI/export/LIVE；下一功能只建议，不自动启动。下方记录均保留历史范围。
+
+
 ## ENG033 当前合成资料Case的本地记录闭环（仅本地）
 
 基线05a8fec，本轮仅本地commit。owner显式重新校验材料/当前接单/核对回执/Case资源依赖后关闭本地记录；真实Case仍WAITING_CONFIRMATION，目标未完成。重开保留历史与资源占用，新cycle必须重新校验；不伪造FULFILLED或真实证据。当前专员/执行者仅最小只读。三角色实际Chromium/API/worker/PG两轮5事件与reload/320/390通过，受控迟到回复23/23通过，142份源码冻结全量775PASS/0FAIL/1WindowsSKIP/2既有WARN（228.266s）见[ENG033](ENG033-LocalCaseLifecycle.md)及[证据](evidence/eng033-local-case-acceptance.json)。没有push/newCI/export/LIVE；原Server37420887816仍FAIL，具体子项等待已有安全JSON。本轮不销掉原完整Case生命周期/真实核验、接受后转派、通用CaseStep/通知/DAG/Outbox/模板/全F2缺口；F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、模型/预算0。下方旧暂停或缺本地闭环描述属于历史记录。

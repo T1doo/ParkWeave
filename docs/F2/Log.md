@@ -181,3 +181,8 @@ Linux定向第一次30 PASS/6.22秒，补并发同Case与审核-补件竞态、G
 ## ENG033 本地Case记录关闭与重开
 
 按原V1§5.5/7完成当前合成资料Case的最小本地记录闭环：显式四项重验→本地关闭（真实Case WAITING_CONFIRMATION）→重开（REOPENED）→新cycle显式重验。保留材料/分派/回执/资源历史，不宣称真实目标FULFILLED。真实三角色浏览器2轮5事件与reload/窄屏通过，受控时序23/23，独立只读审查通过；最终冻结全量775PASS/0FAIL/1WindowsSKIP/2既有WARN（228.266s）、142份hash一致与证据见[ENG033](ENG033-LocalCaseLifecycle.md)。仅本地commit，无push/newCI/export/LIVE；最新Server37420887816仍FAIL等待已有安全JSON，不猜根因或盲重跑。F1未签收、F2准入NOT_PASSED、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0；原环境与备份保留。
+
+
+## ENG034 有边界阶段收口与现有bug修复
+
+对照原V1 T01—T07，独立只读检查资料、资源、分派/本人接单、合成回执和本地关闭重开。只新增准确能力/差距/依赖说明，下一步仅建议当前分派链授权站内通知及业务Outbox，未实现。主代理真实PG复现Case关联锁前时钟P2，旧代码1FAIL（返回NEEDS_RECHECK而非拒绝）；最小挪至最后锁后，72相关PG/API PASS（29.185s），独立资源补审确认修复。原775成绩保持ENG033历史范围；本轮bug修复后全量776PASS/0FAIL/1WindowsSKIP/2既有WARN（225.250s）、142份冻结hash一致，另记[evidence](evidence/eng034-closeout-review.json)。见[ENG034](ENG034-CloseoutReview.md)。不push/newCI/export/LIVE，不重复索图；Windows37420887816安全JSON仍未到，F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、模型/预算0。

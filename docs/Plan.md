@@ -1,5 +1,10 @@
 # ParkWeave 动态计划
 
+## ENG034 有边界阶段收口
+
+原F2逐项能力、真实未实现项、外部事实与输入边界见[F2收口审查](F2/ENG034-CloseoutReview.md)。没有新增业务功能，仅修复现有Case资源关联锁前时钟P2；旧PG负例FAIL→最小修复后72定向PASS/精确到期原因PASS，当前冻结全量776PASS/0FAIL/1WinSKIP（225.250s）。ENG033 775成绩保持历史原提交范围。唯一下一步建议是当前分派链授权站内通知与同事务业务Outbox，尚未实施；原完整计划执行/核验/模板与正式F1F2门仍未通过。仅本地commit，不push/newCI/export/LIVE，Windows37420887816只等待已有安全JSON，R4关闭、模型预算0。以下保持各轮历史。
+
+
 ## ENG032 当前最小内部分派与本人接单（本地完成）
 
 基线c5b389b，按原V1 F2-T04与产品§5.5完成最小本地内部业务分派：当前获派资料专员向已有同tenant Run访问权的执行者说明原因分派；本人拒绝、未接单撤回、原因重派及本人接受同事务衔接既有回执，保留版本历史。未新增Grant或Runassignment，不给resource_admin扩权；接受后调整待产品决定，本片暂不支持，原计划目标未改。真实PG/API定向132PASS，136份冻结源全量734PASS/0FAIL/1WindowsSKIP/2既有WARN（205.879s），实际三角色Chromium/PG/API/worker分派6事件→回执3版本/7事件及320/390PASS，受控迟到响应23/23PASS，独立只读审查通过。仅本地commit，不push/newCI/export/LIVE；原Server run37420887816仍FAIL、具体cases/counts等待新安全JSON，本地成绩不称修复Windows。F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。 见[ENG032记录](F2/ENG032-InternalDispatch.md)。下方暂停/未实现分派/旧冻结源等描述均为当轮历史；完整原计划剩余以本轮记录与下表为准。

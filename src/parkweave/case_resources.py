@@ -69,7 +69,7 @@ def bind(store,token,id,key,data):
         ids={data.combination_id,*[r['combination_id'] for r in rows]}
         groups={gid:rc._group(c,p,gid) for gid in ids};members={gid:rc._members(c,p,gid) for gid in ids}
         rules=_resource_locks(c,p,[h for hs in members.values() for h in hs],{h['resource_id'] for h in members[data.combination_id]})
-        g=rc._group(c,p,data.combination_id,lock=True);holds=rc._members(c,p,g['id']);now=rh._now(c)
+        g=rc._group(c,p,data.combination_id,lock=True);holds=rc._members(c,p,g['id'])
         c.execute('SELECT id FROM cases WHERE id=%s FOR UPDATE',(parent['case_id'],))
         old=c.execute('SELECT * FROM case_resource_links WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
         if old:
@@ -79,6 +79,9 @@ def bind(store,token,id,key,data):
         revision=rows[-1]['revision'] if rows else 0
         if data.expected_link_revision!=revision:raise Conflict('stale Case resource link revision; refresh required')
         if revision>=64:raise Conflict('Case resource link history limit reached')
+        # The final Case lock can wait across the reservation end. Sample the
+        # database clock after that wait, immediately before checking freshness.
+        now=rh._now(c)
         why=_reason(c,parent,g,holds,rules,now)
         if why!='CURRENT':raise Conflict(why)
         if rows and rows[-1]['combination_id']==g['id'] and rows[-1]['preparation_revision']==parent['revision']:raise Conflict('current Case association already recorded; no new version needed')
