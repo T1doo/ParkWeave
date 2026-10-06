@@ -20,7 +20,7 @@ from lifecycle_diagnostics import parse as lifecycle_failure
 from child_environment import command_environment
 from diagnostics import exception_row,read_report,failure_tests,browser_summary
 from summary_report import persist
-from regression_progress import read as regression_phase
+from regression_progress import read_snapshot as regression_snapshot
 
 def owned_status(stdout):
     """A successful read command alone does not prove both owned services exist."""
@@ -133,7 +133,7 @@ def main():
         else:rows[-1]['failure_diagnostics']={'state':'REPORT_MISSING','failed_test_ids':[]}
     except Exception as exc:
         row=exception_row('full_engineering_regression',exc,phase)
-        if phase=='regression_run' and 'progress' in locals():row['regression_phase']=regression_phase(progress)
+        if phase=='regression_run' and 'progress' in locals():row.update(regression_snapshot(progress))
         rows.append(row)
     try:
         phase='win11_guard';checkpoint(phase)

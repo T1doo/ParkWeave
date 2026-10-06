@@ -62,32 +62,39 @@ def acl_check_command():
     # Read only: resolve owner/rules directly as SIDs, never parse display names.
     # Errors belong to the existing rejection contract, not a successful check.
     return """$ErrorActionPreference='Stop'
+$script:AclObject=$null
+function Refuse-Acl([int]$Code) {
+    if($script:AclObject -in @('ROOT','SESSIONS','CONFIG')) { [Console]::Out.WriteLine($script:AclObject) }
+    exit $Code
+}
 try {
     $p=$env:PARKWEAVE_ACL_ROOT
     $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User
     if ($null -eq $sid -or [string]::IsNullOrWhiteSpace($sid.Value)) { throw 'SID unavailable' }
     $paths=@($p)
     foreach($name in @('files','synthetic-sessions.json','windows-config.json','windows-processes.json','windows-services.log')) {
+        $script:AclObject=if($name -eq 'synthetic-sessions.json'){'SESSIONS'}elseif($name -eq 'windows-config.json'){'CONFIG'}else{$null}
         $q=Join-Path $p $name
         if(Test-Path -LiteralPath $q){$paths+=$q}
     }
     foreach($q in $paths){
+        $script:AclObject=if($q -eq $p){'ROOT'}elseif($q -eq (Join-Path $p 'synthetic-sessions.json')){'SESSIONS'}elseif($q -eq (Join-Path $p 'windows-config.json')){'CONFIG'}else{$null}
         $acl=Get-Acl -LiteralPath $q -ErrorAction Stop
         $owner=$acl.GetOwner([System.Security.Principal.SecurityIdentifier])
         if ($null -eq $owner -or [string]::IsNullOrWhiteSpace($owner.Value)) { throw 'Owner SID unavailable' }
-        if($q -eq $p -and -not $acl.AreAccessRulesProtected){exit 4}
-        if($owner.Value -ne $sid.Value){exit 2}
+        if($q -eq $p -and -not $acl.AreAccessRulesProtected){Refuse-Acl 4}
+        if($owner.Value -ne $sid.Value){Refuse-Acl 2}
         $rules=$acl.GetAccessRules($true,$true,[System.Security.Principal.SecurityIdentifier])
         if ($null -eq $rules) { throw 'Rules unavailable' }
         foreach($rule in $rules){
             if($rule.AccessControlType -eq 'Allow'){
                 $id=$rule.IdentityReference.Value
                 if ([string]::IsNullOrWhiteSpace($id)) { throw 'Rule SID unavailable' }
-                if($id -notin @($sid.Value,'S-1-5-18','S-1-5-32-544')){exit 3}
+                if($id -notin @($sid.Value,'S-1-5-18','S-1-5-32-544')){Refuse-Acl 3}
             }
         }
     }
-} catch { exit 5 }
+} catch { Refuse-Acl 5 }
 exit 0
 """
 
@@ -95,13 +102,24 @@ exit 0
 @staged('private_acl')
 def native_acl_check(root):
     require_windows()
-    if root.is_symlink() or getattr(root,'is_junction',lambda:False)():raise BoundaryError('private root reparse point refused','REPARSE_REFUSED')
+    if root.is_symlink() or getattr(root,'is_junction',lambda:False)():
+        error=BoundaryError('private root reparse point refused','REPARSE_REFUSED')
+        error.parkweave_acl_object='ROOT'
+        raise error
     code=acl_check_command()
     result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-Command',code],
                           env=minimal_environment(os.environ,PARKWEAVE_ACL_ROOT=str(root)),capture_output=True)
     if result.returncode:
         reason={2:'ACL_OWNER_MISMATCH',3:'ACL_ALLOW_REFUSED',4:'ACL_INHERITANCE_REFUSED'}.get(result.returncode,'ACL_INSPECTION_FAILED')
-        raise BoundaryError('existing private ACL unsafe/unreadable; ask installer to adjust explicitly; nothing changed',reason)
+        error=BoundaryError('existing private ACL unsafe/unreadable; ask installer to adjust explicitly; nothing changed',reason)
+        value=getattr(result,'stdout',None)
+        if isinstance(value,bytes):
+            try:value=value.decode('ascii') if len(value)<=32 else None
+            except UnicodeError:value=None
+        if isinstance(value,str) and len(value)<=32:
+            for name in ('ROOT','SESSIONS','CONFIG'):
+                if value in (name,name+'\n',name+'\r\n'):error.parkweave_acl_object=name
+        raise error
 
 
 @staged('private_acl')

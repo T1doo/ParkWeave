@@ -232,3 +232,8 @@ ENG041普通快进push至9801259，唯一标准37444794329/attempt1 completed/fa
 ## ENG043 只读ACL检查与等待调查
 
 仅本地修复ACL元数据/SID解析：旧检查受控读取/转换错误可exit0，新检查fail-closed并保留原严格合同；Setup最终只读复查及固定有界错误沿已有协议传播，未改实际对象权限。后代测试flush竞态已修，受控ThreadPool退出等待模型不归因实际Windows600s；OWNED_REGRESSION_DESCENDANTS仍OPEN。两位只读复核无剩余阻断，最终冻结完整回归922PASS/0FAIL/1WindowsSKIP/2既有WARN/270.92s，148份源hash一致。见[ENG043](ENG043-ReadonlyACLAndWaits.md)。不push/newCI/提高600s或900s；真实Windows/PS5及具体ACL违规条件、实际超时原因未知，原阶段门/R4/预算和环境备份保留。
+
+
+## ENG044 最小对象与最后测试观测
+
+仅沿既有安全协议增加ROOT/SESSIONS/CONFIG对象及同一原子快照的白名单去参数active_test_id；称最后记录，不称确定根因。严格ACL合同、600s/900s/权限/身份不变，JobObject产品修复未混入，后代回收仍OPEN。定点264PASS及两位独立只读复核通过；用户授权连同ENG043普通推送dev并仅监测一次标准CI，实际结果待录。见[ENG044](ENG044-MinimalObservationsCI.md)。原签收门/R4/预算、环境与备份保留。

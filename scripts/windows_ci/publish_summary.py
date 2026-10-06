@@ -7,7 +7,7 @@ import stat
 import sys
 from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,_allowed_tests,browser_summary
 from summary_report import SCHEMA,ROOT_PATTERN,current_binding
-from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES
+from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES,ACL_OBJECTS
 from regression_progress import PHASES as REGRESSION_PHASES
 
 MAX_BYTES=64*1024
@@ -69,8 +69,14 @@ def project(record,binding):
             if key in row:
                 if row['case'] not in ('Doctor_native','Start_native','Setup_native'):raise ValueError('invalid lifecycle case')
                 public[key]=row[key] if isinstance(row[key],str) and row[key] in values else fallback
+        if 'acl_object' in row:
+            if row['case'] not in ('Doctor_native','Start_native','Setup_native') or row.get('boundary_phase')!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS:raise ValueError('invalid ACL object')
+            public['acl_object']=row['acl_object']
         if row['case']=='full_engineering_regression':
             if 'regression_phase' in row:public['regression_phase']=row['regression_phase'] if isinstance(row['regression_phase'],str) and row['regression_phase'] in REGRESSION_PHASES else 'UNKNOWN'
+            if 'active_test_id' in row:
+                if not isinstance(row['active_test_id'],str) or row['active_test_id'] not in allowed or 'regression_phase' not in row:raise ValueError('invalid active test')
+                public['active_test_id']=row['active_test_id']
             counts=row.get('counts')
             if isinstance(counts,dict) and set(counts)=={'PASS','FAIL','SKIP'} and all(number(v) for v in counts.values()):public['counts']=dict(counts)
             else:public['counts_state']='MISSING' if counts is None else 'INVALID'
@@ -147,9 +153,16 @@ def annotation_case(row,allowed):
         if key in row:
             if row['case'] not in ('Doctor_native','Start_native','Setup_native') or not isinstance(row[key],str) or row[key] not in choices:raise ValueError('invalid lifecycle field')
             value[key]=row[key]
+    if 'acl_object' in row:
+        if row['case'] not in ('Doctor_native','Start_native','Setup_native') or row.get('boundary_phase')!='private_acl' or not isinstance(row['acl_object'],str) or row['acl_object'] not in ACL_OBJECTS:raise ValueError('invalid ACL object')
+        value['acl_object']=row['acl_object']
     if 'regression_phase' in row:
         if row['case']!='full_engineering_regression' or not isinstance(row['regression_phase'],str) or row['regression_phase'] not in REGRESSION_PHASES:raise ValueError('invalid regression phase')
         value['regression_phase']=row['regression_phase']
+    if 'active_test_id' in row:
+        test=row['active_test_id']
+        if row['case']!='full_engineering_regression' or 'regression_phase' not in row or not isinstance(test,str) or test not in allowed or not re.fullmatch(r'tests/test_[a-z0-9_]+\.py::test_[A-Za-z0-9_]+',test):raise ValueError('invalid active test')
+        value['active_test_id']=test.removeprefix('tests/').replace('.py::','::')
     if 'counts' in row:
         counts=row['counts']
         if row['case']!='full_engineering_regression' or not isinstance(counts,dict) or set(counts)!={'PASS','FAIL','SKIP'} or not all(number(n) for n in counts.values()):raise ValueError('invalid counts')
@@ -192,16 +205,22 @@ def annotation_commands(public):
         candidates=[row for row in values if row['status']!='PASS'];remaining=MAX_FAILURE_IDS;commands=[]
         for row in candidates[:MAX_ANNOTATIONS-1]:
             original=len(row.get('failed_test_ids',[]))
+            active_original=int('active_test_id' in row)
+            active_kept=active_original if remaining else 0
+            if active_original and not active_kept:row.pop('active_test_id')
             if 'failed_test_ids' in row:
-                row['failed_test_ids']=row['failed_test_ids'][:remaining]
+                row['failed_test_ids']=row['failed_test_ids'][:remaining-active_kept]
                 row['annotation_ids_omitted']=original-len(row['failed_test_ids'])
                 row['ids_truncated']=row.get('ids_truncated',False) or row['annotation_ids_omitted']>0
+            if active_original:
+                row['annotation_ids_omitted']=row.get('annotation_ids_omitted',0)+active_original-active_kept
+                row['ids_truncated']=row.get('ids_truncated',False) or not active_kept
             while True:
                 command=annotation_command(row)
                 if annotation_size(command)<=MAX_ANNOTATION_BYTES:break
                 if not row.get('failed_test_ids'):raise ValueError('oversize row')
                 row['failed_test_ids'].pop();row['annotation_ids_omitted']+=1;row['ids_truncated']=True
-            remaining-=len(row.get('failed_test_ids',[]));commands.append(command)
+            remaining-=len(row.get('failed_test_ids',[]))+active_kept;commands.append(command)
         header={'kind':'publication','state':'SUMMARY_AVAILABLE','report_state':public['report_state'],'active_phase':public['active_phase'],
                 'case_counts':{s:sum(row['status']==s for row in values) for s in ('PASS','FAIL','NOT_RUN')},'annotation_cases_omitted':len(candidates)-len(commands)}
         commands.insert(0,annotation_command(header))

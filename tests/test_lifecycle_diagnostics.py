@@ -212,7 +212,7 @@ def test_lifecycle_and_regression_fields_survive_safe_annotation_projection():
 def test_regression_progress_atomic_binding_and_corruption_fail_closed(tmp_path,monkeypatch):
     progress=module('regression_progress');path=tmp_path/('server-regression-'+uuid.uuid4().hex+'.progress.json')
     progress.write(path,'pytest_setup');assert progress.read(path)=='pytest_setup'
-    data=json.loads(path.read_bytes());assert set(data)=={'schema','execution_id','phase'}
+    data=json.loads(path.read_bytes());assert set(data)=={'schema','execution_id','phase','active_test_id'}
     data['execution_id']=uuid.uuid4().hex;path.write_text(json.dumps(data));assert progress.read(path)=='UNKNOWN'
     for value in (POISON,'x'*513):path.write_text(value);assert progress.read(path)=='UNKNOWN'
     monkeypatch.setattr(progress.os,'replace',lambda *args:(_ for _ in ()).throw(PermissionError(POISON)))

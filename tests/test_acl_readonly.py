@@ -32,7 +32,7 @@ function Get-Acl {
  param($LiteralPath,$ErrorAction)
  $root=$LiteralPath -eq $env:PARKWEAVE_ACL_ROOT
  if(!$root -and $script:Fault -eq 'read_error'){Write-Error 'SYNTHETIC read failure';return $null}
- $owner=if(!$root -and $script:Fault -eq 'owner_mismatch'){'S-1-5-21-2000'}else{$script:CurrentSid}
+ $owner=if(!$root -and ($script:Fault -eq 'owner_mismatch' -or ($script:Fault -eq 'config_owner' -and (Split-Path -Leaf $LiteralPath) -eq 'windows-config.json'))){'S-1-5-21-2000'}else{$script:CurrentSid}
  $a=[pscustomobject]@{Owner='SYNTHETIC unresolvable display name';OwnerSid=$owner;AreAccessRulesProtected=($script:Fault -ne 'inheritance');Root=$root}
  $a | Add-Member ScriptMethod GetOwner {
   param($Type)
@@ -66,7 +66,8 @@ function Get-Acl {
 @pytest.mark.parametrize('fault,expected',[('valid',0),('system_admin',0),('empty_rules',0),('owner_mismatch',2),('allow_unknown',3),('inheritance',4),('read_error',5),('owner_read',5),('rule_read',5),('stale_sid',3)])
 def test_readonly_acl_script_direct_SIDs_and_fail_closed(tmp_path,fault,expected):
     result=powershell_fixture(tmp_path,fault,lifecycle.acl_check_command())
-    assert result.returncode==expected and result.stdout=='' and result.stderr==''
+    assert result.returncode==expected and result.stderr==''
+    assert result.stdout==('' if expected==0 else ('ROOT\n' if fault=='inheritance' else 'SESSIONS\n'))
     source=lifecycle.acl_check_command()
     assert 'Set-Acl' not in source and 'SetOwner' not in source and 'SetAccessRule' not in source
 
@@ -153,4 +154,4 @@ def test_legacy_metadata_error_can_report_success_while_new_checker_refuses(tmp_
     old=powershell_fixture(tmp_path,fault,LEGACY_CHECKER)
     new=powershell_fixture(tmp_path,fault,lifecycle.acl_check_command())
     assert old.returncode==0 and new.returncode==closed
-    assert new.stdout==new.stderr==""
+    assert new.stdout=='SESSIONS\n' and new.stderr==''
