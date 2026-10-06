@@ -1,3 +1,7 @@
+## ENG074 单一清理时钟与精确后代接线候选
+
+实际生产stop_tree终止前唯一5s时钟，原query/opt-in三个stage及finish共用；显式借用HeldDescendant同handle身份/membership，拒parent/thread/job及同parentPID替代，UNKNOWN fail保17/timeout。实际生产函数注入97PASS4nativeSKIP、相关76PASS，独立NO_BLOCKERS_LOCAL；collect1403不是全量PASS。默认CLI/CI未激活，原生后代/S4仍OPEN，owner保持暂停，无新权限/原生/push/CI/LIVE。见[ENG074](../F2/ENG074-OptInDescendantCleanup.md)。
+
 ## ENG073 只读决策包与实际本地产品体验
 
 owner保持暂停，新增LOG/STATE/原子临时对象及未启用FILES仅集中列范围与未知风险，无新权限动作或夜间提问。Job未接线三stage候选补零stage/最终deadline拒绝，65PASS4nativeSKIP；生产缺hook与精确descendant，Windows问题仍OPEN。实际Linux Chromium/API/worker/PG：同Case三角色资料→资源关联→分派接单→合成回执ACK→两轮本地关闭/重开/reload通过；另Case固定四步计划BLOCKED/失效/重验通过，均320/390无横溢出，不拼成同Case全验。新Run assignment由fixture owner在UI外准备，目标均未完成；最短体验与未完清单见[ENG073](../F2/ENG073-DecisionPackageAndProductWalk.md)。不push/CI/deploy/LIVE，预算0，F1未签收/F2并行/R4关闭/Win11未验。

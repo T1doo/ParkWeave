@@ -1,5 +1,6 @@
-"""Unwired ENG072 candidate: observe caller-verified held handles only.
+"""Opt-in ENG074 candidate: observe caller-pinned held handles only.
 
+No default CLI or CI path enables the candidate.
 The caller must keep its exact process and inner Job handles open throughout,
 and supply the original cleanup start from the same monotonic clock. This is
 one process observation, never proof that an arbitrary whole tree has stopped.
@@ -9,13 +10,34 @@ import ctypes
 import math
 import os
 import time
+from dataclasses import dataclass
 
-from .owned_job import Accounting, BOOL, DWORD, HANDLE
+if __package__:
+    from .owned_job import Accounting, BOOL, DWORD, HANDLE
+else:
+    from owned_job import Accounting, BOOL, DWORD, HANDLE
 
 MAX_SAMPLES = 8
 INTERVAL = .05
 CLEANUP_SECONDS = 5
 MAX_HANDLE = (1 << (8 * ctypes.sizeof(HANDLE))) - 1
+
+
+@dataclass(frozen=True)
+class HeldDescendant:
+    """Borrowed query/synchronize-only handle with caller-pinned expected identity.
+
+    Caller retains ownership and must keep it open until run returns or raises.
+    This descriptor grants no authority: production rechecks identity and actual
+    inner Job membership through the same held handle before accepting evidence.
+    """
+    handle: int
+    expected_pid: int
+    expected_created: float
+
+
+class FileTime(ctypes.Structure):
+    _fields_ = [('low', DWORD), ('high', DWORD)]
 
 
 class ReadOnlyBackend:
@@ -24,6 +46,8 @@ class ReadOnlyBackend:
             raise RuntimeError('WINDOWS_REQUIRED')
         self.kernel = ctypes.WinDLL('kernel32', use_last_error=True)
         declarations = {
+            'GetProcessId': ([HANDLE], DWORD),
+            'GetProcessTimes': ([HANDLE] + [ctypes.POINTER(FileTime)] * 4, BOOL),
             'IsProcessInJob': ([HANDLE, HANDLE, ctypes.POINTER(BOOL)], BOOL),
             'QueryInformationJobObject': ([HANDLE, ctypes.c_int32, ctypes.c_void_p,
                                            DWORD, ctypes.POINTER(DWORD)], BOOL),
@@ -32,6 +56,14 @@ class ReadOnlyBackend:
         for name, (args, result) in declarations.items():
             function = getattr(self.kernel, name)
             function.argtypes, function.restype = args, result
+
+    def identity(self, process):
+        pid = self.kernel.GetProcessId(process)
+        times = [FileTime() for _ in range(4)]
+        if not pid or not self.kernel.GetProcessTimes(process, *(ctypes.byref(t) for t in times)):
+            raise RuntimeError('READ_REFUSED')
+        ticks = (times[0].high << 32) | times[0].low
+        return int(pid), (ticks - 116444736000000000) / 10000000, self.signal(process)
 
     def membership(self, process, job):
         value = BOOL()
@@ -125,12 +157,12 @@ def observe(process, job, *, cleanup_started, backend, clock=time.monotonic,
 
 
 class StopObservationAdapter:
-    """Opt-in future hooks; never calls or replaces the caller's termination.
+    """Opt-in hooks; never calls or replaces the caller's termination.
 
     Construct with the single existing cleanup start, before termination. Call
     capture at BEFORE_TERMINATE, AFTER_TERMINATE and ACCOUNTING_ZERO, then finish
-    before closing either held handle. Production stop_tree currently has no
-    such hooks, so this adapter is not wired into it. PASS applies only to the
+    before closing either held handle. Production enables these hooks only for
+    an explicitly supplied HeldDescendant. PASS applies only to the
     caller-verified exact process, not job/tree completeness.
     """
     STAGES = ('BEFORE_TERMINATE', 'AFTER_TERMINATE', 'ACCOUNTING_ZERO')

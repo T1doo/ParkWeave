@@ -444,3 +444,112 @@ def test_eng073_finish_rechecks_original_deadline_after_signal():
     now[0]=15.
     row=observer.finish()
     assert row['status']=='FAIL' and row['reason']=='DEADLINE'
+
+
+@pytest.mark.parametrize('primary',[0,17,'timeout'])
+@pytest.mark.parametrize('mode',['signal_later','live','unknown','non_member','wrong_identity','parent_target','parent_identity','thread_target','job_target'])
+def test_eng074_real_stop_tree_optin_exact_handle_and_primary(tmp_path,monkeypatch,primary,mode):
+    """Actual production stop_tree + run; only kernel/read calls are injected."""
+    from scripts.windows_ci.job_stop_observation import HeldDescendant
+    now=[10.];events=[];signals=[0]
+    monkeypatch.setattr(JOB.time,'monotonic',lambda:now[0])
+    monkeypatch.setattr(JOB.time,'sleep',lambda seconds:now.__setitem__(0,now[0]+seconds))
+    class Kernel:
+        def TerminateJobObject(self,handle,code):
+            assert (handle,code)==(101,124);events.append('terminate_original_job');return 1
+        def QueryInformationJobObject(self,handle,kind,ptr,size,length):
+            assert (handle,kind,size)==(101,1,48)
+            ctypes.cast(ptr,ctypes.POINTER(JOB.Accounting)).contents.ActiveProcesses=0
+            events.append('original_query_zero');return 1
+    class Reads:
+        def identity(self,handle):
+            assert handle==909;events.append('same_handle_identity')
+            return (405 if mode=='wrong_identity' else 404),20.,'LIVE'
+        def membership(self,process,job):
+            assert (process,job)==(909,101);events.append('same_handle_membership')
+            return mode!='non_member'
+        def active_processes(self,job):events.append('readonly_accounting');return 0
+        def signal(self,process):
+            assert process==909;signals[0]+=1;events.append('same_handle_signal')
+            if mode=='unknown':return 'UNKNOWN'
+            return 'SIGNALED' if mode=='signal_later' and signals[0]>=4 else 'LIVE'
+    class Actual(JOB.WindowsBackend):
+        def __init__(self):
+            self.kernel=Kernel();self.observation_backend=Reads()
+            target_handle={'parent_target':202,'thread_target':303,'job_target':101}.get(mode,909)
+            self.observation_target=HeldDescendant(target_handle,
+                                                  321 if mode=='parent_identity' else 404,20.)
+        def create_job(self):return 101
+        def launch(self,*args):return 202,303,321
+        def bind(self,*args):events.append('bind')
+        def resume(self,*args):events.append('resume')
+        def wait(self,*args):
+            if primary=='timeout':raise subprocess.TimeoutExpired('OWNED_JOB',1)
+            return primary
+        def close(self,handle):
+            assert self.observation_receipt is not None
+            assert handle!=909 # Borrowed descendant is never closed by production.
+            events.append('close_'+str(handle))
+    backend=Actual();success=mode=='signal_later'
+    if primary=='timeout':
+        with pytest.raises(subprocess.TimeoutExpired) as failed:injected(tmp_path,backend)
+        item=failed.value
+    elif primary==0 and not success:
+        with pytest.raises(JOB.OwnedJobError) as failed:injected(tmp_path,backend)
+        item=failed.value
+    else:
+        item=injected(tmp_path,backend);assert item.returncode==primary
+    assert item.cleanup==('OWNED_TREE_STOPPED' if success else 'OWNED_TREE_STOP_UNCONFIRMED')
+    assert item.exact_process_observation['scope']=='EXACT_PROCESS_ONLY'
+    assert item.exact_process_observation['status']==('PASS' if success else 'FAIL')
+    assert events[-3:]==['close_303','close_202','close_101']
+    assert events.count('terminate_original_job')==1 and now[0]<15.
+    if mode in ('parent_target','parent_identity','thread_target','job_target'):
+        assert 'same_handle_identity' not in events
+    if success:
+        row=item.exact_process_observation
+        assert row['samples'][2]['signal']=='LIVE' and row['samples'][-1]['signal']=='SIGNALED'
+
+
+@pytest.mark.parametrize('slow_operation',['terminate','query'])
+@pytest.mark.parametrize('optin',[False,True])
+def test_eng074_real_stop_tree_single_budget_includes_native_call_cost(monkeypatch,slow_operation,optin):
+    from scripts.windows_ci.job_stop_observation import HeldDescendant
+    now=[10.];events=[]
+    monkeypatch.setattr(JOB.time,'monotonic',lambda:now[0])
+    monkeypatch.setattr(JOB.time,'sleep',lambda seconds:now.__setitem__(0,now[0]+seconds))
+    class Kernel:
+        def TerminateJobObject(self,*args):
+            events.append('terminate')
+            if slow_operation=='terminate':now[0]+=5.
+            return 1
+        def QueryInformationJobObject(self,handle,kind,ptr,size,length):
+            events.append('query')
+            if slow_operation=='query':now[0]+=5.
+            ctypes.cast(ptr,ctypes.POINTER(JOB.Accounting)).contents.ActiveProcesses=0
+            return 1
+    class Reads:
+        def identity(self,*args):return 404,20.,'LIVE'
+        def membership(self,*args):return True
+        def active_processes(self,*args):return 0
+        def signal(self,*args):return 'SIGNALED'
+    backend=JOB.WindowsBackend.__new__(JOB.WindowsBackend);backend.kernel=Kernel()
+    if optin:
+        backend.observation_target=HeldDescendant(909,404,20.)
+        backend.observation_backend=Reads()
+    with pytest.raises(JOB.OwnedJobError,match='JOB_STOP_UNCONFIRMED'):backend.stop_tree(101)
+    assert now[0]==15. and events.count('terminate')==1
+    if slow_operation=='terminate':assert 'query' not in events
+    if optin:assert backend.observation_receipt['status']=='FAIL'
+
+
+def test_eng074_default_stop_tree_remains_without_exact_target(monkeypatch):
+    monkeypatch.setattr(JOB.time,'monotonic',lambda:10.)
+    class Kernel:
+        def TerminateJobObject(self,*args):return 1
+        def QueryInformationJobObject(self,handle,kind,ptr,size,length):
+            ctypes.cast(ptr,ctypes.POINTER(JOB.Accounting)).contents.ActiveProcesses=0
+            return 1
+    backend=JOB.WindowsBackend.__new__(JOB.WindowsBackend);backend.kernel=Kernel()
+    assert backend.stop_tree(101)=='OWNED_TREE_STOPPED'
+    assert backend.observation_receipt is None

@@ -5,6 +5,7 @@ identity, breakaway, privilege adjustment, ACL changes or uncontained fallback.
 CPython's _winapi handles CreateProcessW/STARTUPINFOEX and its Unicode environment.
 """
 import ctypes
+import math
 import os
 from pathlib import Path
 import subprocess
@@ -50,12 +51,15 @@ class Accounting(ctypes.Structure):
 
 
 class WindowsBackend:
-    def __init__(self):
+    def __init__(self, *, observation_target=None, observation_backend=None):
         if os.name != 'nt':
             raise OwnedJobError('WINDOWS_REQUIRED')
         import _winapi
         import msvcrt
         self.win, self.crt = _winapi, msvcrt
+        # Optional borrowed descendant; never substitute our created parent.
+        self.observation_target = observation_target
+        self.observation_backend = observation_backend
         self.kernel = ctypes.WinDLL('kernel32', use_last_error=True)
         declarations = {
             'CreateJobObjectW': ([ctypes.c_void_p, ctypes.c_wchar_p], HANDLE),
@@ -164,18 +168,83 @@ class WindowsBackend:
         self.wait(process, 5)
 
     def stop_tree(self, job):
-        if not self.kernel.TerminateJobObject(job, 124):
-            raise OwnedJobError('JOB_TERMINATE_REFUSED')
-        deadline = time.monotonic() + 5
-        while True:
-            state = Accounting()
-            if not self.kernel.QueryInformationJobObject(job, 1, ctypes.byref(state), ctypes.sizeof(state), None):
-                raise OwnedJobError('JOB_QUERY_REFUSED')
-            if state.ActiveProcesses == 0:
-                return 'OWNED_TREE_STOPPED'
-            if time.monotonic() >= deadline:
-                raise OwnedJobError('JOB_STOP_UNCONFIRMED')
-            time.sleep(.01)
+        # One deadline includes identity reads, termination and all observations.
+        # Nonblocking API calls cannot be forcibly preempted if a backend hangs.
+        cleanup_started = time.monotonic()
+        deadline = cleanup_started + 5
+        observer = None
+        self.observation_receipt = None
+        target = getattr(self, 'observation_target', None)
+        if target is not None:
+            if __package__:
+                from .job_stop_observation import (
+                    HeldDescendant, MAX_HANDLE, ReadOnlyBackend, StopObservationAdapter)
+            else:
+                from job_stop_observation import (
+                    HeldDescendant, MAX_HANDLE, ReadOnlyBackend, StopObservationAdapter)
+            def refused(reason):
+                self.observation_receipt = {'scope': 'EXACT_PROCESS_ONLY', 'status': 'FAIL',
+                                            'reason': reason, 'sample_count': 0, 'samples': []}
+            try:
+                if (not isinstance(target, HeldDescendant)
+                        or type(target.handle) is not int or not 0 < target.handle <= MAX_HANDLE
+                        or target.handle == getattr(self, '_owned_parent_handle', None)
+                        or target.handle in getattr(self, '_owned_handles', ())
+                        or type(target.expected_pid) is not int or target.expected_pid <= 0
+                        or target.expected_pid == getattr(self, '_owned_parent_pid', None)
+                        or type(target.expected_created) not in (int, float)
+                        or not math.isfinite(target.expected_created) or target.expected_created <= 0):
+                    raise ValueError()
+                reads = getattr(self, 'observation_backend', None)
+                if reads is None:reads = ReadOnlyBackend()
+                if time.monotonic() >= deadline:
+                    refused('DEADLINE')
+                else:
+                    pid, created, signal = reads.identity(target.handle)
+                    if time.monotonic() >= deadline:
+                        refused('DEADLINE')
+                    elif (type(pid) is not int or pid != target.expected_pid
+                            or type(created) not in (int, float) or not math.isfinite(created)
+                            or created <= 0
+                            or abs(created - target.expected_created) > .00001
+                            or type(signal) is not str or signal not in ('LIVE', 'SIGNALED')):
+                        refused('IDENTITY_REFUSED')
+                    else:
+                        observer = StopObservationAdapter(target.handle, job,
+                            cleanup_started=cleanup_started, backend=reads,
+                            clock=time.monotonic, pause=time.sleep)
+                        observer.capture('BEFORE_TERMINATE')
+            except Exception:
+                refused('IDENTITY_REFUSED')
+        try:
+            # Refused observation must not prevent the original owned Job kill.
+            if not self.kernel.TerminateJobObject(job, 124):
+                raise OwnedJobError('JOB_TERMINATE_REFUSED')
+            if observer is not None:observer.capture('AFTER_TERMINATE')
+            while True:
+                if time.monotonic() >= deadline:
+                    raise OwnedJobError('JOB_STOP_UNCONFIRMED')
+                state = Accounting()
+                if not self.kernel.QueryInformationJobObject(job, 1, ctypes.byref(state), ctypes.sizeof(state), None):
+                    raise OwnedJobError('JOB_QUERY_REFUSED')
+                if time.monotonic() >= deadline:
+                    raise OwnedJobError('JOB_STOP_UNCONFIRMED')
+                if state.ActiveProcesses == 0:
+                    if observer is not None:
+                        observer.capture('ACCOUNTING_ZERO')
+                        self.observation_receipt = observer.finish()
+                    if (self.observation_receipt is not None
+                            and self.observation_receipt['status'] != 'PASS'):
+                        raise OwnedJobError('JOB_STOP_UNCONFIRMED')
+                    if time.monotonic() >= deadline:
+                        raise OwnedJobError('JOB_STOP_UNCONFIRMED')
+                    return 'OWNED_TREE_STOPPED'
+                if time.monotonic() >= deadline:
+                    raise OwnedJobError('JOB_STOP_UNCONFIRMED')
+                time.sleep(min(.01, max(0, deadline-time.monotonic())))
+        finally:
+            if observer is not None and self.observation_receipt is None:
+                self.observation_receipt = observer.finish()
 
     def close(self, handle):
         self.win.CloseHandle(handle)
@@ -196,6 +265,9 @@ def run(args, *, timeout, stdout, stderr, cwd=None, env=None, _backend=None):
     try:
         job = backend.create_job()
         process, thread, pid = backend.launch(args, cwd, env, stdout, stderr)
+        if isinstance(backend, WindowsBackend):
+            backend._owned_parent_handle, backend._owned_parent_pid = process, pid
+            backend._owned_handles = (thread, process, job)
         backend.bind(job, process, pid)
         backend.resume(thread)
         resumed = True
@@ -232,7 +304,11 @@ def run(args, *, timeout, stdout, stderr, cwd=None, env=None, _backend=None):
         primary.parkweave_owned_tree_cleanup = cleanup
         if cleanup_error is not None:
             primary.cleanup_error_category = type(cleanup_error).__name__
+        if getattr(backend, 'observation_receipt', None) is not None:
+            primary.exact_process_observation = backend.observation_receipt
         raise primary
     result = subprocess.CompletedProcess(args, code)
     result.cleanup = cleanup
+    if getattr(backend, 'observation_receipt', None) is not None:
+        result.exact_process_observation = backend.observation_receipt
     return result
