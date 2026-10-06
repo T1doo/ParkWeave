@@ -7,6 +7,8 @@ import stat
 import sys
 from diagnostics import CATEGORIES,PHASES,MAX_FAILURE_IDS,MAX_CLEANUP,_allowed_tests,browser_summary
 from summary_report import SCHEMA,ROOT_PATTERN,current_binding
+from lifecycle_diagnostics import PHASES as BOUNDARY_PHASES,REASONS as BOUNDARY_REASONS,CATEGORIES as BOUNDARY_CATEGORIES
+from regression_progress import PHASES as REGRESSION_PHASES
 
 MAX_BYTES=64*1024
 MAX_ROWS=32
@@ -63,7 +65,12 @@ def project(record,binding):
             public['exit_code']=value
         for key,values,fallback in (('phase',PHASES,'UNKNOWN'),('category',CATEGORIES,'OTHER'),('reason',REASONS,'UNKNOWN')):
             if key in row:public[key]=row[key] if isinstance(row[key],str) and row[key] in values else fallback
+        for key,values,fallback in (('boundary_phase',BOUNDARY_PHASES,'UNKNOWN'),('boundary_reason',BOUNDARY_REASONS,'DIAGNOSTIC_UNAVAILABLE'),('cleanup_category',BOUNDARY_CATEGORIES,'OTHER')):
+            if key in row:
+                if row['case'] not in ('Doctor_native','Start_native'):raise ValueError('invalid lifecycle case')
+                public[key]=row[key] if isinstance(row[key],str) and row[key] in values else fallback
         if row['case']=='full_engineering_regression':
+            if 'regression_phase' in row:public['regression_phase']=row['regression_phase'] if isinstance(row['regression_phase'],str) and row['regression_phase'] in REGRESSION_PHASES else 'UNKNOWN'
             counts=row.get('counts')
             if isinstance(counts,dict) and set(counts)=={'PASS','FAIL','SKIP'} and all(number(v) for v in counts.values()):public['counts']=dict(counts)
             else:public['counts_state']='MISSING' if counts is None else 'INVALID'
@@ -136,6 +143,13 @@ def annotation_case(row,allowed):
         if key in row:
             if not isinstance(row[key],str) or row[key] not in choices:raise ValueError('invalid enum')
             value[key]=row[key]
+    for key,choices in (('boundary_phase',BOUNDARY_PHASES),('boundary_reason',BOUNDARY_REASONS),('cleanup_category',BOUNDARY_CATEGORIES)):
+        if key in row:
+            if row['case'] not in ('Doctor_native','Start_native') or not isinstance(row[key],str) or row[key] not in choices:raise ValueError('invalid lifecycle field')
+            value[key]=row[key]
+    if 'regression_phase' in row:
+        if row['case']!='full_engineering_regression' or not isinstance(row['regression_phase'],str) or row['regression_phase'] not in REGRESSION_PHASES:raise ValueError('invalid regression phase')
+        value['regression_phase']=row['regression_phase']
     if 'counts' in row:
         counts=row['counts']
         if row['case']!='full_engineering_regression' or not isinstance(counts,dict) or set(counts)!={'PASS','FAIL','SKIP'} or not all(number(n) for n in counts.values()):raise ValueError('invalid counts')

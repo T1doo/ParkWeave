@@ -15,9 +15,12 @@ from server_candidate_probe import require_server
 
 REPO=Path(__file__).resolve().parents[2]
 sys.path.insert(0,str(REPO/'src'))
+sys.path.insert(0,str(REPO/'scripts/windows'))
+from lifecycle_diagnostics import parse as lifecycle_failure
 from child_environment import command_environment
 from diagnostics import exception_row,read_report,failure_tests,browser_summary
 from summary_report import persist
+from regression_progress import read as regression_phase
 
 def owned_status(stdout):
     """A successful read command alone does not prove both owned services exist."""
@@ -63,6 +66,8 @@ def main():
         ok=proc.returncode==expected and (required_error is None or required_error in proc.stderr)
         if ok and validate is not None:ok=validate(proc.stdout)
         rows.append({'case':label,'status':'PASS' if ok else 'FAIL','exit_code':proc.returncode})
+        if not ok and label in ('Doctor_native','Start_native'):
+            rows[-1].update(lifecycle_failure(proc.stdout,path.stem.lower()))
         if proc.returncode==expected and validate is not None and not ok:rows[-1]['reason']='OWNED_STATUS_NOT_CONFIRMED'
         checkpoint('final_stop' if label=='final_Stop_owned_services' else phase)
         # Persist no raw subprocess logs in public summary; Doctor output has safe versions.
@@ -118,14 +123,18 @@ def main():
     # Failures in one independent phase do not suppress the others.
     try:
         phase='regression_run';checkpoint(phase);report=REPO/'.runtime'/('server-regression-'+uuid.uuid4().hex+'.json');report.parent.mkdir(exist_ok=True)
-        proc=subprocess.run([str(managed),'scripts/run_acceptance.py','--report',str(report)],cwd=REPO,env=command_environment(os.environ,config,'regression'),capture_output=True,text=True,timeout=600)
+        progress=report.with_suffix('.progress.json')
+        proc=subprocess.run([str(managed),'scripts/run_acceptance.py','--progress',str(progress),'--report',str(report)],cwd=REPO,env=command_environment(os.environ,config,'regression'),capture_output=True,text=True,timeout=600)
         rows.append({'case':'full_engineering_regression','status':'PASS' if proc.returncode==0 else 'FAIL','exit_code':proc.returncode})
         if report.exists():
             phase='regression_report';checkpoint(phase);parsed,counts=read_report(report)
             rows[-1]['counts']=counts;rows[-1]['whole_AT_EX']='NOT_RUN'
             rows[-1]['failure_diagnostics']=failure_tests(REPO,parsed.get('private_junit'))
         else:rows[-1]['failure_diagnostics']={'state':'REPORT_MISSING','failed_test_ids':[]}
-    except Exception as exc:rows.append(exception_row('full_engineering_regression',exc,phase))
+    except Exception as exc:
+        row=exception_row('full_engineering_regression',exc,phase)
+        if phase=='regression_run' and 'progress' in locals():row['regression_phase']=regression_phase(progress)
+        rows.append(row)
     try:
         phase='win11_guard';checkpoint(phase)
         # Verify original Win11 entry guard really refuses Server before any mutation.

@@ -3,6 +3,9 @@ import json
 from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
+import sys
+sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'windows'))
+from lifecycle_diagnostics import CATEGORIES as LIFECYCLE_CATEGORIES
 
 MAX_REPORT_BYTES=512*1024
 MAX_JUNIT_BYTES=4*1024*1024
@@ -11,6 +14,7 @@ MAX_FAILURE_IDS=25
 MAX_CLEANUP=6
 CATEGORIES=frozenset({'AssertionError','AttributeError','KeyError','TypeError','ValueError','RuntimeError','OSError','FileNotFoundError','PermissionError','TimeoutError','ConnectionError','ConnectionRefusedError','JSONDecodeError','UnicodeDecodeError','TimeoutExpired','CalledProcessError','HTTPError','URLError','UnsupportedOperation','NotImplementedError','IndexError','ImportError','ModuleNotFoundError','BrokenPipeError','ProcessLookupError','LookupError','OverflowError','OTHER'})
 PHASES=frozenset({'UNKNOWN','configuration','managed_python','setup','existing_config','config_preservation','doctor','start','status','session_read','api_case_submit','api_case_wait','stop','stop_record_check','restart','restart_read','native_browser','final_stop','regression_run','regression_report','win11_guard','server_candidate','browser_guard','browser_driver_binding','browser_start','browser_driver_ready','browser_session','browser_navigation','browser_case_create','browser_case_read','browser_render','browser_fact_parent','browser_fact_review','browser_clarification','browser_child_review','browser_cancel','browser_cleanup'})
+CATEGORIES=CATEGORIES|LIFECYCLE_CATEGORIES
 CASES=frozenset({'suite_initialization','suite_exception','lifecycle_exception','final_Stop_owned_services','full_engineering_regression','Win11_guard_refuses_Server','separate_Server_candidate_oracles'})
 
 

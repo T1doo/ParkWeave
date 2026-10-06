@@ -10,6 +10,8 @@ import subprocess
 import sys
 import time
 import uuid
+sys.path.insert(0,str(Path(__file__).resolve().parent))
+from lifecycle_diagnostics import staged,stage,failure,command as diagnostic_command
 
 REPO = Path(__file__).resolve().parents[2]
 RUNTIME = REPO / '.runtime'
@@ -21,11 +23,14 @@ from parkweave.process_env import minimal_environment
 ACTIONS = {'doctor','setup','start','status','stop','test'}
 
 
-class BoundaryError(Exception):pass
+class BoundaryError(Exception):
+    def __init__(self,message,code='BOUNDARY_REFUSED'):
+        super().__init__(message)
+        self.parkweave_lifecycle_reason=code
 
 
 def require_windows(platform=None):
-    if (platform or os.name) != 'nt':raise BoundaryError('NOT_RUN: native Windows required')
+    if (platform or os.name) != 'nt':raise BoundaryError('NOT_RUN: native Windows required','NATIVE_PLATFORM_REQUIRED')
 
 
 def config_template(repo,python):
@@ -34,16 +39,17 @@ def config_template(repo,python):
             'private_root':str(Path(repo).resolve()/'.runtime'),'model':'DISABLED','data':'SYNTHETIC'}
 
 
+@staged('configuration')
 def validate_config(config,repo):
     expected={'project','schema','host','port','database','python','private_root','model','data'}
     if set(config)!=expected or config['project']!='ParkWeave' or config['schema']!=1:
-        raise BoundaryError('unrecognized configuration; refuse to overwrite')
+        raise BoundaryError('unrecognized configuration; refuse to overwrite','CONFIG_INVALID')
     if config['host']!='127.0.0.1' or config['database']!='parkweave' or config['model']!='DISABLED' or config['data']!='SYNTHETIC':
-        raise BoundaryError('configuration exceeds this synthetic local scope')
-    if type(config['port']) is not int or not 8765<=config['port']<=8999:raise BoundaryError('invalid local port')
+        raise BoundaryError('configuration exceeds this synthetic local scope','CONFIG_SCOPE_REFUSED')
+    if type(config['port']) is not int or not 8765<=config['port']<=8999:raise BoundaryError('invalid local port','PORT_INVALID')
     managed=Path(repo).resolve()/'.venv-windows'/'Scripts'/'python.exe'
-    if Path(config['python']).resolve()!=managed:raise BoundaryError('only managed project Python is allowed')
-    if Path(config['private_root']).resolve()!=Path(repo).resolve()/'.runtime':raise BoundaryError('private root mismatch')
+    if Path(config['python']).resolve()!=managed:raise BoundaryError('only managed project Python is allowed','PYTHON_BINDING_REFUSED')
+    if Path(config['private_root']).resolve()!=Path(repo).resolve()/'.runtime':raise BoundaryError('private root mismatch','PRIVATE_ROOT_MISMATCH')
     return config
 
 
@@ -52,6 +58,7 @@ def write_exclusive(path,value):
     with Path(path).open('x',encoding='utf-8') as f:json.dump(value,f,ensure_ascii=False,indent=2);f.write('\n')
 
 
+@staged('private_acl')
 def native_acl_check(root):
     require_windows()
     # Read-only existing ACL check. POSIX mode bits never stand in for Windows ACL.
@@ -63,12 +70,13 @@ def native_acl_check(root):
     code+="if($id -notin @($sid.Value,'S-1-5-18','S-1-5-32-544')){exit 3} } } }; exit 0"
     result=subprocess.run(['powershell.exe','-NoProfile','-NonInteractive','-Command',code],
                           env=minimal_environment(os.environ,PARKWEAVE_ACL_ROOT=str(root)),capture_output=True)
-    if result.returncode:raise BoundaryError('existing private ACL unsafe/unreadable; ask installer to adjust explicitly; nothing changed')
+    if result.returncode:raise BoundaryError('existing private ACL unsafe/unreadable; ask installer to adjust explicitly; nothing changed','ACL_REFUSED')
 
 
+@staged('private_acl')
 def protect_private_root(root):
     require_windows()
-    if root.is_symlink() or getattr(root,'is_junction',lambda:False)():raise BoundaryError('private root reparse point refused')
+    if root.is_symlink() or getattr(root,'is_junction',lambda:False)():raise BoundaryError('private root reparse point refused','REPARSE_REFUSED')
     if root.exists():native_acl_check(root);return
     root.mkdir()  # Exclusive new directory only; never rewrite user existing ACL.
     code="$p=$env:PARKWEAVE_ACL_ROOT; $sid=[System.Security.Principal.WindowsIdentity]::GetCurrent().User; "
@@ -81,30 +89,36 @@ def protect_private_root(root):
     native_acl_check(root)
 
 
+@staged('python_guard')
 def check_python(python):
     result=subprocess.run([str(python),'-c',"import sys,struct,json;print(json.dumps([sys.platform,*sys.version_info[:2],struct.calcsize('P')*8]))"],capture_output=True,text=True,env=minimal_environment(os.environ))
     if result.returncode or json.loads(result.stdout)!=['win32',3,12,64]:
-        raise BoundaryError('native Python3.12 x64 required; no automatic download/downgrade')
+        raise BoundaryError('native Python3.12 x64 required; no automatic download/downgrade','PYTHON_VERSION_REFUSED')
 
 
+@staged('dsn_parse')
 def check_dsn_scope(dsn,app=False):
     from psycopg.conninfo import conninfo_to_dict
     from parkweave.store import Store
     info=conninfo_to_dict(dsn)
     if info.get('dbname')!='parkweave' or info.get('host') not in ('127.0.0.1','localhost') or info.get('service') or info.get('hostaddr') not in (None,'127.0.0.1','::1'):
-        raise BoundaryError('explicit localhost parkweave database DSN required')
-    with Store(dsn).connect() as c:
-        row=c.execute('SELECT current_database() db,current_user usr,r.rolsuper,r.rolcreatedb,r.rolcreaterole '
-                      'FROM pg_roles r WHERE r.rolname=current_user').fetchone()
-        if row['db']!='parkweave' or (app and (row['usr']!='parkweave_app' or row['rolsuper'] or row['rolcreatedb'] or row['rolcreaterole'])):
-            raise BoundaryError('application must be a dedicated unprivileged parkweave_app role')
-        version=c.execute('SELECT version() version').fetchone()['version']
+        raise BoundaryError('explicit localhost parkweave database DSN required','DSN_SCOPE_REFUSED')
+    with stage('database_connect'):
+        connection=Store(dsn).connect()
+    with connection as c:
+        with stage('database_role'):
+            row=c.execute('SELECT current_database() db,current_user usr,r.rolsuper,r.rolcreatedb,r.rolcreaterole '
+                          'FROM pg_roles r WHERE r.rolname=current_user').fetchone()
+            if row['db']!='parkweave' or (app and (row['usr']!='parkweave_app' or row['rolsuper'] or row['rolcreatedb'] or row['rolcreaterole'])):
+                raise BoundaryError('application must be a dedicated unprivileged parkweave_app role','APP_ROLE_REFUSED')
+        with stage('database_version'):version=c.execute('SELECT version() version').fetchone()['version']
     return version
 
 
+@staged('environment_binding')
 def needed_environment(name):
     value=os.environ.get(name)
-    if not value:raise BoundaryError(name+' required from authorized session injection; not stored in config')
+    if not value:raise BoundaryError(name+' required from authorized session injection; not stored in config','ENVIRONMENT_REQUIRED')
     return value
 
 
@@ -134,6 +148,7 @@ def identify_process(proc,record,repo):
     except Exception:return False
 
 
+@staged('process_stop')
 def stop_record(record,repo,process_factory):
     import psutil
     try:proc=process_factory(record['pid'])
@@ -146,15 +161,17 @@ def stop_record(record,repo,process_factory):
     return 'STOPPED'
 
 
+@staged('configuration')
 def load_config():
-    if not CONFIG.exists():raise BoundaryError('setup not completed; run Setup.ps1 first')
+    if not CONFIG.exists():raise BoundaryError('setup not completed; run Setup.ps1 first','CONFIG_MISSING')
     return validate_config(json.loads(CONFIG.read_text(encoding='utf-8')),REPO)
 
 
+@staged('port_check')
 def port_available(port):
     with socket.socket() as sock:
         try:sock.bind(('127.0.0.1',port))
-        except OSError:raise BoundaryError('local port occupied; nothing terminated')
+        except OSError:raise BoundaryError('local port occupied; nothing terminated','PORT_OCCUPIED')
 
 
 def setup():
@@ -187,6 +204,7 @@ def setup():
     print('Setup candidate complete. Config/data protected; LIVE disabled. Run Doctor.ps1 next.')
 
 
+@staged('doctor_output')
 def doctor():
     check_python(sys.executable)
     info={'project':'ParkWeave','platform':sys.platform,'python':sys.version.split()[0],'native_windows':'UNVERIFIED_RUN',
@@ -195,45 +213,59 @@ def doctor():
     if CONFIG.exists():
         config=load_config();check_python(config['python']);info['port']=config['port']
         info['postgresql']=check_dsn_scope(needed_environment('PARKWEAVE_DSN'),app=True)
-        with __import__('parkweave.store',fromlist=['Store']).Store(needed_environment('PARKWEAVE_DSN')).connect() as c:
-            info['schema']=c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']
-        result=subprocess.run([config['python'],'-m','pip','freeze'],capture_output=True,text=True,check=True,env=minimal_environment(os.environ))
+        with stage('database_schema'):
+            with __import__('parkweave.store',fromlist=['Store']).Store(needed_environment('PARKWEAVE_DSN')).connect() as c:
+                info['schema']=c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']
+        with stage('dependency_freeze'):
+            result=subprocess.run([config['python'],'-m','pip','freeze'],capture_output=True,text=True,check=True,env=minimal_environment(os.environ))
         info['dependencies']=result.stdout.splitlines()
     print(json.dumps(info,ensure_ascii=False,indent=2))  # No DSN/session/environment dump.
 
 
+@staged('process_record')
 def start():
     import psutil
     config=load_config();check_python(config['python'])
     dsn=needed_environment('PARKWEAVE_DSN');check_dsn_scope(dsn,app=True)
-    if STATE.exists():raise BoundaryError('process record exists; run Status/Stop before restarting')
+    if STATE.exists():raise BoundaryError('process record exists; run Status/Stop before restarting','PROCESS_RECORD_EXISTS')
     port_available(config['port']);protect_private_root(RUNTIME)
     commands=[[config['python'],'-m','uvicorn','parkweave.api:configured_app','--factory','--host','127.0.0.1','--port',str(config['port'])],
               [config['python'],'-m','parkweave.worker']]
     records=[];children=[];state_written=False
-    log=(RUNTIME/'windows-services.log').open('a',encoding='utf-8')
+    with stage('service_log'):log=(RUNTIME/'windows-services.log').open('a',encoding='utf-8')
     try:
         for command in commands:
-            child=psutil.Popen(command,cwd=REPO,env=app_environment(dsn,os.environ),stdout=log,stderr=log)
+            with stage('process_spawn'):
+                child=psutil.Popen(command,cwd=REPO,env=app_environment(dsn,os.environ),stdout=log,stderr=log)
             children.append(child)
-            records.append({'pid':child.pid,'created':child.create_time(),'command':command})
-        write_exclusive(STATE,{'project':'ParkWeave','schema':1,'processes':records})
+            with stage('process_identity'):records.append({'pid':child.pid,'created':child.create_time(),'command':command})
+        with stage('process_record'):write_exclusive(STATE,{'project':'ParkWeave','schema':1,'processes':records})
         state_written=True
         import urllib.request
         opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
         for _ in range(50):
-            if any(c.poll() is not None for c in children):raise BoundaryError('managed service exited; inspect private log')
+            if any(c.poll() is not None for c in children):
+                with stage('health_readiness'):raise BoundaryError('managed service exited; inspect private log','SERVICE_EXITED')
             try:
-                with opener.open(f"http://127.0.0.1:{config['port']}/health",timeout=1) as r:
-                    health=json.load(r)
-                if health.get('execution_mode')=='LOCAL' and health.get('model')=='MODEL_MOCK' and health.get('process_id')==children[0].pid:break
+                with stage('health_readiness'):
+                    with opener.open(f"http://127.0.0.1:{config['port']}/health",timeout=1) as r:
+                        health=json.load(r)
+                with stage('health_readiness'):
+                    if health.get('execution_mode')=='LOCAL' and health.get('model')=='MODEL_MOCK' and health.get('process_id')==children[0].pid:break
             except OSError:pass
             time.sleep(.1)
-        else:raise BoundaryError('local health readiness timeout')
+        else:
+            with stage('health_readiness'):raise BoundaryError('local health readiness timeout','READINESS_TIMEOUT')
         print(f"Open http://127.0.0.1:{config['port']} ; synthetic local mode only.")
-    except Exception:
-        for record in records:stop_record(record,REPO,psutil.Process)
-        if state_written:STATE.unlink(missing_ok=True)
+    except Exception as primary:
+        # Keep the existing cleanup/exit behavior; retain the original failure's
+        # fixed metadata if a cleanup exception replaces it.
+        try:
+            for record in records:stop_record(record,REPO,psutil.Process)
+            if state_written:STATE.unlink(missing_ok=True)
+        except Exception as cleanup:
+            cleanup.parkweave_lifecycle_primary=failure(primary)
+            raise
         raise
     finally:log.close()
 
@@ -276,6 +308,9 @@ def main():
         require_windows()
         globals()[args.action]()
     except Exception as exc:
+        if args.action in ('doctor','start'):
+            try:print(diagnostic_command(args.action,exc),flush=True)
+            except Exception:pass  # Diagnostic emission never changes the exit verdict.
         # No exception/DSN/HTTP payload strings are emitted; they may contain secrets.
         print('ParkWeave '+args.action+' failed: '+(str(exc) if isinstance(exc,BoundaryError) else type(exc).__name__),file=sys.stderr)
         raise SystemExit(1)

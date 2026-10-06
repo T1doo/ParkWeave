@@ -217,3 +217,8 @@ Linux定向第一次30 PASS/6.22秒，补并发同Case与审核-补件竞态、G
 ## ENG040 普通同步与有界annotations真实送达
 
 实时远端c5b389b到8ddf139为7提交普通快进，无他人提交覆盖；唯一标准run37439323047/attempt1精确head8ddf139已completed/failure。正常API收到5新安全annotations：harness5PASS/3FAIL/1NOT_RUN、零case省略；Doctor/Start exit1、API_browser_restart因START_FAILED未运行、完整回归regression_run TimeoutExpired且counts MISSING/无pytest ID。底层Doctor/Start原因与具体测试未知；不把旧run未知猜成同因。发布器成功，PG status/stop exit0/无超时，外层native_suite693.422秒exit1未超时。见[ENG040](ENG040-SyncCI.md)。结果docs-only同步不命中唯一workflow的paths，无重跑/权限runner更改/日志下载/artifacts/模型预算；原签收门保留。
+
+
+## ENG041 Doctor/Start与回归等待最小阶段诊断
+
+再次正常API确认37439323047的Doctor/Start exit1底层原因UNKNOWN、内部regression_run TimeoutExpired；本地真实缺解释器/UTF8配置/loopback连接/端口/自有PG角色schema、pytest三阶段与父超时后代存活探针分别验证。新增仅Doctor/Start固定stdout标记与UUID绑定pytest阶段，保持判定/600s/900s/权限/环境/产品清理。203相关PASS；最终完整895PASS/0FAIL/1SKIP/271.73s、冻结一致，两位只读复核无阻断。见[ENG041](ENG041-DiagnosticBoundaries.md)。只本地commit不push/newCI，实际Windows原因/PS5送达及产品后代回收仍待验证；不改阶段门/R4/模型预算。

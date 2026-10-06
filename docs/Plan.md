@@ -112,3 +112,8 @@ ENG034建议获明确新授权后实施：业务与Outbox同事务、已有合�
 ## ENG040 dev普通同步与标准Server终态
 
 用户解除暂缓后，7个审查提交普通快进推送到8ddf139，无force/main merge。唯一标准[CI37439323047](https://github.com/T1doo/ParkWeave/actions/runs/37439323047)已FAIL，新annotations实际送达，明确Doctor/Start exit1与完整回归regression_run TimeoutExpired；单pytest ID/计数和底层启动原因仍UNKNOWN。PG停止成功。当前证据/下一有限诊断建议见[F2/ENG040](F2/ENG040-SyncCI.md)；不盲重跑/扩权限或增加模型预算，F1/F2/Win11阶段门保留。
+
+
+## ENG041 本地固定边界诊断及复核
+
+再次正常API确认37439323047的Doctor/Start exit1底层原因UNKNOWN、内部regression_run TimeoutExpired；本地真实缺解释器/UTF8配置/loopback连接/端口/自有PG角色schema、pytest三阶段与父超时后代存活探针分别验证。新增仅Doctor/Start固定stdout标记与UUID绑定pytest阶段，保持判定/600s/900s/权限/环境/产品清理。203相关PASS；最终完整895PASS/0FAIL/1SKIP/271.73s、冻结一致，两位只读复核无阻断。见[F2/ENG041](F2/ENG041-DiagnosticBoundaries.md)。只本地commit不push/newCI，实际Windows原因/PS5送达及产品后代回收仍待验证；不改阶段门/R4/模型预算。
