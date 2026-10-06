@@ -176,7 +176,7 @@ def setup():
     check_dsn_scope(needed_environment('PARKWEAVE_DSN'),app=True)
     from parkweave.store import Store
     owner=Store(needed_environment('PARKWEAVE_OWNER_DSN'));owner.migrate()
-    with owner.connect() as c:c.execute((REPO/'src/parkweave/roles.sql').read_text())
+    with owner.connect() as c:c.execute((REPO/'src/parkweave/roles.sql').read_text(encoding='utf-8'))
     protect_private_root(RUNTIME)
     sessions=RUNTIME/'synthetic-sessions.json'
     if not sessions.exists():

@@ -1,5 +1,10 @@
 # F2并行工程日志
 
+## ENG028 本地诊断与UTF-8读取修复（待同步核对）
+
+ENG028增加仅固定test ID、阶段、异常类别和有界统计的诊断；明确UTF-8读取规格、页面、SQL及结果文本。本轮为本地工程修改，尚未push或触发CI，实际Windows码页及原生失败根因仍UNKNOWN。最新已同步代码1baa2cf、docs头aae63a5；标准Server run37414981257仍FAIL，Prepare/受绑定PG停止通过，native_suite79.235秒exit1/no timeout，具体case/counts未知。新样例仅模拟格式，不是该run结果。见[ENG028本地记录](ENG028-SafeDiagnostics.md)。F1未签收/F2正式准入NOT_PASSED，R4关闭、Win11/36AT6EX NOT_RUN，真实模型/预算0。
+
+
 ## ENG024 跨模块合成验收与通用UI隔离修复（本地完成）
 
 实际恢复HEAD8e2195ad63dd19d0b7c8e3ef94f47e0c04044a6a/干净工作树与Python3.12.14，未回滚/重下旧ZIP。审计docs全部可解析.runtime PNG/hash引用，旧ENG02017+ENG0215命名图hash保持，ENG023回执10图保持；历史准备browser固定3图覆盖无法恢复，相关旧JSON追加NOT_REPRODUCIBLE，原运行成绩不改。恢复后ENG023 preparation目录3图缺失也追加明确限制，不用新图冒充。ScreenshotEvidence清单和审计script可复核，最终含本片新9图共41HASH_MATCH/3MISSING/3LEGACY_OVERWRITTEN；文字/文件存在不能替代历史hash匹配。

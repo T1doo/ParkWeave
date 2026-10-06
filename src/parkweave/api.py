@@ -46,7 +46,7 @@ def create_app(store: Store) -> FastAPI:
 
     @app.get("/", response_class=HTMLResponse)
     def index():
-        return Path(__file__).with_name("web.html").read_text()
+        return Path(__file__).with_name("web.html").read_text(encoding='utf-8')
 
     @app.get("/health")
     def health():

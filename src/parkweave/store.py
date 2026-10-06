@@ -35,44 +35,44 @@ class Store:
     def migrate(self):
         with self.connect() as c:
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
-            c.execute(Path(__file__).with_name("schema.sql").read_text())
+            c.execute(Path(__file__).with_name("schema.sql").read_text(encoding='utf-8'))
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
             if version > 14:
                 raise Conflict("database version newer than this code")
             if version < 2:
-                c.execute(Path(__file__).with_name("migration-002.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-002.sql").read_text(encoding='utf-8'))
             if version < 3:
-                c.execute(Path(__file__).with_name("migration-003.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-003.sql").read_text(encoding='utf-8'))
             if version < 4:
-                c.execute(Path(__file__).with_name("migration-004.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-004.sql").read_text(encoding='utf-8'))
             if version < 5:
-                c.execute(Path(__file__).with_name("migration-005.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-005.sql").read_text(encoding='utf-8'))
 
             if version < 6:
-                c.execute(Path(__file__).with_name("migration-006.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-006.sql").read_text(encoding='utf-8'))
 
             if version < 7:
-                c.execute(Path(__file__).with_name("migration-007.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-007.sql").read_text(encoding='utf-8'))
             if version < 8:
-                c.execute(Path(__file__).with_name("migration-008.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-008.sql").read_text(encoding='utf-8'))
 
             if version < 9:
-                c.execute(Path(__file__).with_name("migration-009.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-009.sql").read_text(encoding='utf-8'))
 
             if version < 10:
-                c.execute(Path(__file__).with_name("migration-010.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-010.sql").read_text(encoding='utf-8'))
 
             if version < 11:
-                c.execute(Path(__file__).with_name("migration-011.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-011.sql").read_text(encoding='utf-8'))
 
             if version < 12:
-                c.execute(Path(__file__).with_name("migration-012.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-012.sql").read_text(encoding='utf-8'))
 
             if version < 13:
-                c.execute(Path(__file__).with_name("migration-013.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-013.sql").read_text(encoding='utf-8'))
 
             if version < 14:
-                c.execute(Path(__file__).with_name("migration-014.sql").read_text())
+                c.execute(Path(__file__).with_name("migration-014.sql").read_text(encoding='utf-8'))
 
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""

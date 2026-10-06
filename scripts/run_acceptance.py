@@ -49,7 +49,7 @@ def main():
     parser=argparse.ArgumentParser();parser.add_argument('--report',type=Path,default=ROOT/'.runtime/engineering-acceptance.json')
     parser.add_argument('--ids',help='Optional comma-separated fixed IDs; default runs full engineering regression')
     args=parser.parse_args()
-    bindings=json.loads((ROOT/'docs/F1/ATBindings.json').read_text());spec=json.loads((ROOT/'docs/验收规格.json').read_text())
+    bindings=json.loads((ROOT/'docs/F1/ATBindings.json').read_text(encoding='utf-8'));spec=json.loads((ROOT/'docs/验收规格.json').read_text(encoding='utf-8'))
     rows=validate_bindings(bindings,spec)
     if args.ids:
         ids=set(args.ids.split(','))
@@ -63,13 +63,13 @@ def main():
         with log.open('w',encoding='utf-8') as f:
             process=subprocess.run([sys.executable,'-m','pytest','-q','--junitxml',str(junit),*selectors],cwd=ROOT,stdout=f,stderr=subprocess.STDOUT,env=minimal_environment(os.environ,**({'PARKWEAVE_TEST_OWNER_DSN':os.environ['PARKWEAVE_TEST_OWNER_DSN']} if os.name=='nt' and 'PARKWEAVE_TEST_OWNER_DSN' in os.environ else {})))
         code=process.returncode
-    if not junit.exists():junit.write_text('<testsuites/>')
+    if not junit.exists():junit.write_text('<testsuites/>',encoding='utf-8')
     report=summarize(rows,junit,code)
     report.update(environment=sys.platform,model_calls=0,native_windows='NOT_RUN: native manual gates not auto-graded',
                   full_regression=not bool(args.ids),private_log=str(log.relative_to(ROOT)),private_junit=str(junit.relative_to(ROOT)))
     source_files=sorted(p for folder in ('src/parkweave','tests','scripts') for p in (ROOT/folder).rglob('*') if p.is_file() and p.suffix in ('.py','.ps1','.psm1','.sql','.html'))
     report['tested_source_sha256']={str(p.relative_to(ROOT)):hashlib.sha256(p.read_bytes()).hexdigest() for p in source_files}
-    args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+    args.report.parent.mkdir(parents=True,exist_ok=True);args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({'whole_AT_EX':'NOT_RUN','engineering_exit_code':code,'report':str(args.report),'native_windows':'NOT_RUN','model_calls':0},ensure_ascii=False))
     raise SystemExit(code)
 

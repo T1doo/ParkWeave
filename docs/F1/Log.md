@@ -1,5 +1,10 @@
 # F1 真实日志
 
+## ENG028 本地诊断与UTF-8读取修复（待同步核对）
+
+ENG028增加仅固定test ID、阶段、异常类别和有界统计的诊断；明确UTF-8读取规格、页面、SQL及结果文本。本轮为本地工程修改，尚未push或触发CI，实际Windows码页及原生失败根因仍UNKNOWN。最新已同步代码1baa2cf、docs头aae63a5；标准Server run37414981257仍FAIL，Prepare/受绑定PG停止通过，native_suite79.235秒exit1/no timeout，具体case/counts未知。新样例仅模拟格式，不是该run结果。见[ENG028本地记录](../F2/ENG028-SafeDiagnostics.md)。F1未签收/F2正式准入NOT_PASSED，R4关闭、Win11/36AT6EX NOT_RUN，真实模型/预算0。
+
+
 ## 当前状态入口（2026-10-05）
 
 唯一CI当前状态见[WindowsServerCI当前权威状态](WindowsServerCI.md#current-status)。最新代码9a8cbc5/run37324704568：Prepare/受绑定PG启停通过，native_suite退出1/无超时，Server整体未通过；正在等待最新run JSON的FAIL/NOT_RUN cases及回归counts（如有）。原Win11guard/R4关闭不变，Win11NOT_RUN、F1IN_PROGRESS、F2正式准入NOT_PASSED、LIVE/预算0。下面迁移记录和旧日志是已发生事件，不是新的测试声明。

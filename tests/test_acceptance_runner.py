@@ -24,12 +24,12 @@ def test_whole_acceptance_never_passes_and_missing_tests_are_incomplete(tmp_path
 
 
 def test_fixed_bindings_complete_unique_and_safe():
-    bindings=json.loads((ROOT/'docs/F1/ATBindings.json').read_text());spec=json.loads((ROOT/'docs/验收规格.json').read_text())
+    bindings=json.loads((ROOT/'docs/F1/ATBindings.json').read_text(encoding='utf-8'));spec=json.loads((ROOT/'docs/验收规格.json').read_text(encoding='utf-8'))
     rows=runner.validate_bindings(bindings,spec);assert len(rows)==42
     for row in rows:
         for selector in row['engineering_selectors']:
             file,name=selector.split('::')
-            assert 'def '+name+'(' in (ROOT/file).read_text(),selector
+            assert 'def '+name+'(' in (ROOT/file).read_text(encoding='utf-8'),selector
     bad={'cases':[dict(r) for r in rows]};bad['cases'][0]['whole_status']='PASS'
     with pytest.raises(ValueError):runner.validate_bindings(bad,spec)
     bad={'cases':[dict(r) for r in rows]};bad['cases'][0]['engineering_selectors']=['../secret::test_x']
@@ -37,7 +37,7 @@ def test_fixed_bindings_complete_unique_and_safe():
 
 
 def test_sources_archive_integrity():
-    records=json.loads((ROOT/'docs/sources/V1/manifest.json').read_text())
+    records=json.loads((ROOT/'docs/sources/V1/manifest.json').read_text(encoding='utf-8'))
     assert len(records)==2
     for item in records:
         data=(ROOT/'docs/sources/V1'/item['name']).read_bytes()

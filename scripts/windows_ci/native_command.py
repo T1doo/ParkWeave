@@ -64,7 +64,7 @@ def execute(executable, arguments, phase, timeout, directory, capture=False):
             result['error_category'] = 'CaptureLimitExceeded'
         else:
             result['stdout'] = stdout_path.read_text(encoding='utf-8', errors='replace').strip()
-    (directory / (prefix + '.json')).write_text(json.dumps(result, indent=2) + '\n')
+    (directory / (prefix + '.json')).write_text(json.dumps(result, indent=2) + '\n',encoding='utf-8')
     return result
 
 

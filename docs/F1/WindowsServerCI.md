@@ -1,9 +1,13 @@
 # Windows Server CI
 
 <a id="current-status"></a>
-## 当前权威状态（2026-10-05，等待用户提供失败子项）
+## 当前权威状态（ENG028本地完成待同步核对）
 
-本节是 F1 Windows Server CI 的唯一当前状态入口；F1 Plan/Log 的当前摘要引用本节。下面历史记录中的“本轮”“当前”“未发布”“NOT_RUN”和待执行计划只描述其记录时点，不覆盖本节。
+ENG028增加仅固定test ID、阶段、异常类别和有界统计的诊断；明确UTF-8读取规格、页面、SQL及结果文本。本轮为本地工程修改，尚未push或触发CI，实际Windows码页及原生失败根因仍UNKNOWN。最新已同步代码1baa2cf、docs头aae63a5；标准Server run37414981257仍FAIL，Prepare/受绑定PG停止通过，native_suite79.235秒exit1/no timeout，具体case/counts未知。新样例仅模拟格式，不是该run结果。见[ENG028本地记录](../F2/ENG028-SafeDiagnostics.md)。F1未签收/F2正式准入NOT_PASSED，R4关闭、Win11/36AT6EX NOT_RUN，真实模型/预算0。
+
+## 历史ENG019状态快照（2026-10-05）
+
+以下是ENG019时的历史快照；其中“当前”等仅描述其记录时点，不覆盖顶部ENG028当前权威状态。
 
 最近代码提交 `9a8cbc527503ab55978a4b50612207d3bf72de26`，已普通 push 到 `dev/f1-foundation`。最新 [run 37324704568](https://github.com/T1doo/ParkWeave/actions/runs/37324704568) 已 completed/failure，job 111812341430 用时约 1m56s：
 
