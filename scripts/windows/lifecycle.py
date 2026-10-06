@@ -199,13 +199,83 @@ def identify_process(proc,record,repo):
     except Exception:return False
 
 
+def native_binding_enabled():return os.name=='nt'
+
+
+def bind_execution(root,record,pid,repo):
+    from server_identity import bind_server
+    return bind_server(root,record,pid,repo,identify=identify_process)
+
+
+def saved_child_matches(root,record,repo):
+    child=record.get('server')
+    if child is None:
+        return not native_binding_enabled() or bind_execution(root,record,record.get('pid'),repo)['relation']=='ROOT'
+    result=bind_execution(root,record,child.get('pid'),repo)
+    return result['relation']=='DIRECT_CHILD' and result['server']==child
+
+
+def save_execution_bindings(records,original):
+    # Only this Start's own metadata; CONFIG/SESSION and existing user files stay untouched.
+    if STATE.read_bytes()!=original:raise BoundaryError('process record changed; binding refused')
+    temporary=STATE.with_name('.process-binding-'+uuid.uuid4().hex+'.json')
+    try:
+        write_exclusive(temporary,{'project':'ParkWeave','schema':1,'processes':records})
+        if STATE.read_bytes()!=original:raise BoundaryError('process record changed; binding refused')
+        os.replace(temporary,STATE)
+    finally:temporary.unlink(missing_ok=True)
+
+
 @staged('process_stop')
 def stop_record(record,repo,process_factory):
     import psutil
     try:proc=process_factory(record['pid'])
-    except (ProcessLookupError,psutil.NoSuchProcess):return 'ABSENT'
+    except (ProcessLookupError,psutil.NoSuchProcess):
+        if record.get('server'):
+            try:process_factory(record['server']['pid'])
+            except (ProcessLookupError,psutil.NoSuchProcess):return 'ABSENT'
+            except Exception:pass
+            return 'FOREIGN_REFUSED'  # No orphan discovery or termination.
+        return 'ABSENT'
     except Exception:raise BoundaryError('cannot inspect recorded PID; process/record preserved') from None
     if not identify_process(proc,record,repo):return 'FOREIGN_REFUSED'
+    native_process=native_binding_enabled() and isinstance(proc,psutil.Process)
+    if native_process or record.get('server'):
+        from contextlib import ExitStack
+        from server_identity import PinnedProcess,IdentityRefused
+        try:
+            with ExitStack() as stack:
+                root_pin=stack.enter_context(PinnedProcess(record['pid'],record['created']))
+                if not identify_process(proc,record,repo):return 'FOREIGN_REFUSED'
+                # Recover only a current unique direct child of the known launcher,
+                # for failure before a health response could persist its binding.
+                if native_process and not record.get('server'):
+                    direct=proc.children(recursive=False)
+                    if len(direct)>1:return 'FOREIGN_REFUSED'
+                    if direct:
+                        bound=bind_execution(proc,record,direct[0].pid,repo)
+                        if bound['relation']!='DIRECT_CHILD':return 'FOREIGN_REFUSED'
+                        record={**record,'server':bound['server']}
+                child_record=record.get('server');child=None
+                if child_record:
+                    try:child=process_factory(child_record['pid'])
+                    except (ProcessLookupError,psutil.NoSuchProcess):pass
+                    except Exception:return 'FOREIGN_REFUSED'
+                if child is not None:
+                    child_pin=stack.enter_context(PinnedProcess(child_record['pid'],child_record['created']))
+                    if not saved_child_matches(proc,record,repo):return 'FOREIGN_REFUSED'
+                    root_pin.verify();child_pin.verify()
+                    child.terminate()
+                    child.wait(timeout=10)
+                # Its original held handle can confirm autonomous launcher exit.
+                root_pin.verify(require_live=False)
+                if not root_pin.alive:return 'STOPPED'
+                if not identify_process(proc,record,repo):return 'FOREIGN_REFUSED'
+                root_pin.verify()
+                proc.terminate();proc.wait(timeout=10)
+                return 'STOPPED'
+        except IdentityRefused:return 'FOREIGN_REFUSED'
+        except Exception:raise BoundaryError('verified execution did not stop; record preserved') from None
     proc.terminate()
     try:proc.wait(timeout=10)
     except Exception:raise BoundaryError('managed process did not stop; no force kill or unrelated PID termination')
@@ -294,6 +364,7 @@ def start():
             with stage('process_identity'):records.append({'pid':child.pid,'created':child.create_time(),'command':command})
         with stage('process_record'):write_exclusive(STATE,{'project':'ParkWeave','schema':1,'processes':records})
         state_written=True
+        original_state=STATE.read_bytes()
         import urllib.request
         opener=urllib.request.build_opener(urllib.request.ProxyHandler({}))
         for _ in range(50):
@@ -303,16 +374,40 @@ def start():
                 observation['last']='CHILD_EXITED'
                 with stage('health_readiness'):raise BoundaryError('managed service exited; inspect private log','SERVICE_EXITED')
             observation['attempts']+=1
+            request_complete=False
             try:
                 with stage('health_readiness'):
                     with opener.open(f"http://127.0.0.1:{config['port']}/health",timeout=1) as r:
                         health=json.load(r)
+                request_complete=True
                 with stage('health_readiness'):
-                    matches={'mode_matches':health.get('execution_mode')=='LOCAL','model_matches':health.get('model')=='MODEL_MOCK','process_matches':health.get('process_id')==children[0].pid}
+                    pid=health.get('process_id');valid_pid=type(pid) is int and 0<pid<=0xffffffff
+                    binding=bind_execution(children[0],records[0],pid,REPO) if native_binding_enabled() else {'relation':'ROOT' if valid_pid and pid==children[0].pid else 'REFUSED','server':None}
+                    if records[0].get('server') and binding['server']!=records[0]['server']:binding={'relation':'REFUSED','server':None}
+                    matches={'mode_matches':health.get('execution_mode')=='LOCAL','model_matches':health.get('model')=='MODEL_MOCK','process_matches':binding['relation'] in ('ROOT','DIRECT_CHILD')}
                     observation['responses']+=1;observation.update(matches)
-                    if all(matches.values()):observation['last']='HEALTH_MATCH';break
+                    if native_binding_enabled():observation.update(server_pid_valid=valid_pid,server_relation=binding['relation'])
+                    if native_binding_enabled() and binding['server'] is not None and 'server' not in records[0]:
+                        records[0]['server']=binding['server']
+                        with stage('process_record'):save_execution_bindings(records,original_state)
+                        original_state=STATE.read_bytes()
+                    if all(matches.values()):
+                        if native_binding_enabled():
+                            worker_children=children[1].children(recursive=False)
+                            if len(worker_children)>1:raise BoundaryError('worker launcher relation ambiguous; record preserved')
+                            worker_pid=worker_children[0].pid if worker_children else children[1].pid
+                            worker_binding=bind_execution(children[1],records[1],worker_pid,REPO)
+                            if worker_binding['relation'] not in ('ROOT','DIRECT_CHILD'):raise BoundaryError('worker execution identity refused; record preserved')
+                            for record,resolved in zip(records,(binding,worker_binding)):
+                                if resolved['server'] is not None:record['server']=resolved['server']
+                            if any('server' in record for record in records):
+                                with stage('process_record'):save_execution_bindings(records,original_state)
+                        observation['last']='HEALTH_MATCH';break
                     observation['mismatches']+=1;observation['last']='HEALTH_MISMATCH'
             except OSError as error:
+                # Metadata/process errors must reach fail-closed cleanup, not
+                # masquerade as a transport error and retry an unsaved binding.
+                if request_complete:raise
                 import urllib.error
                 cause=getattr(error,'reason',None)
                 if isinstance(error,urllib.error.HTTPError):key,last='http_errors','HTTP_NON_SUCCESS'
@@ -363,7 +458,7 @@ def status():
         state=json.loads(STATE.read_text(encoding='utf-8'))
         if state.get('project')!='ParkWeave':raise BoundaryError('foreign process record refused')
         for record in state['processes']:
-            try:proc=psutil.Process(record['pid']);owned=identify_process(proc,record,REPO)
+            try:proc=psutil.Process(record['pid']);owned=identify_process(proc,record,REPO) and saved_child_matches(proc,record,REPO)
             except psutil.NoSuchProcess:owned=False
             rows.append({'pid':record['pid'],'identity_matches':owned})
     print(json.dumps({'project':'ParkWeave','processes':rows,'port':config['port'],'model':'DISABLED'},indent=2))

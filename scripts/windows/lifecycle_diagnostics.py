@@ -22,7 +22,8 @@ START_MATCHES=frozenset({'mode_matches','model_matches','process_matches'})
 
 def start_observation(value):
     required=START_SMALL|START_COUNTS|START_STATE_KEYS|{'last'}
-    if not isinstance(value,dict) or not required<=set(value)<=required|START_MATCHES:raise ValueError('invalid start observation')
+    relation_keys={'server_pid_valid','server_relation'}
+    if not isinstance(value,dict) or not required<=set(value)<=required|START_MATCHES|relation_keys:raise ValueError('invalid start observation')
     if any(type(value[k]) is not int or not 0<=value[k]<=2 for k in START_SMALL):raise ValueError('invalid start count')
     if any(type(value[k]) is not int or not 0<=value[k]<=50 for k in START_COUNTS):raise ValueError('invalid request count')
     if any(not isinstance(value[k],str) or value[k] not in START_STATES for k in START_STATE_KEYS) or not isinstance(value['last'],str) or value['last'] not in START_LAST:raise ValueError('invalid start state')
@@ -31,6 +32,10 @@ def start_observation(value):
     if value['stopped']+value['absent']+value['foreign']>value['cleanup_attempted'] or value['cleanup_attempted']>value['created']:raise ValueError('inconsistent cleanup counts')
     present=START_MATCHES&set(value)
     if present!=(START_MATCHES if value['responses'] else set()) or any(type(value[k]) is not bool for k in present):raise ValueError('invalid health matching evidence')
+    if relation_keys&set(value):
+        if not relation_keys<=set(value) or not value['responses'] or type(value['server_pid_valid']) is not bool or value['server_relation'] not in ('ROOT','DIRECT_CHILD','REFUSED'):raise ValueError('invalid server relation')
+        verified=value['server_relation'] in ('ROOT','DIRECT_CHILD')
+        if verified!=value['process_matches'] or verified and not value['server_pid_valid']:raise ValueError('inconsistent server relation')
     return dict(value)
 
 
