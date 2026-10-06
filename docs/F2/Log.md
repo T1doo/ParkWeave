@@ -1,3 +1,7 @@
+## ENG075 同Case纠错新版与显式重验实际体验
+
+复用ENG073原Case/Run合法assignment，无seed/migrate/assign，前后完整assignment/grant相等。实际Chromium企业重开旧ACK回执→待审版→要求纠正→执行者新版→企业重核→旧Case snapshot失效、关闭阻塞→显式重验再本地关闭/reload通过。像素查看发现READY静态摘要误导，现明确原校验失效；同Case重跑及主线程/独立实际看图通过，320/390无横溢出。最终cycle4/revision13、回执v5、目标仍未完成。权限/业务关闭条件不变，owner暂停，无权限实验/push/CI/LIVE，预算0；Win11/全AT未验。见[ENG075](ENG075-SameCaseReceiptCorrection.md)。
+
 ## ENG074 单一清理时钟与精确后代接线候选
 
 实际生产stop_tree终止前唯一5s时钟，原query/opt-in三个stage及finish共用；显式借用HeldDescendant同handle身份/membership，拒parent/thread/job及同parentPID替代，UNKNOWN fail保17/timeout。实际生产函数注入97PASS4nativeSKIP、相关76PASS，独立NO_BLOCKERS_LOCAL；collect1403不是全量PASS。默认CLI/CI未激活，原生后代/S4仍OPEN，owner保持暂停，无新权限/原生/push/CI/LIVE。见[ENG074](ENG074-OptInDescendantCleanup.md)。

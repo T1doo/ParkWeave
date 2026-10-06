@@ -191,7 +191,8 @@ async function localCaseCall(path,method='GET',body,key,c=localCaseCtx()){
 function localCaseError(e){if(e.staleLocalCase||(e.localCaseContext&&!localCaseCurrent(e.localCaseContext)))return;if(e.status!==403&&e.localCaseContext?.draft!==undefined&&e.localCaseContext.draft!==$('local-case-reason').value)return;if(e.status===403)clearLocalCase();$('local-case-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
 function renderLocalCase(x){
  localCaseView=x;localCaseContext={...localCaseCtx(),revision:x.revision,cycle:x.cycle,sha:x.current_snapshot_sha256};$('local-case-detail').hidden=false;
- $('local-case-summary').textContent=x.goal+' · '+localCaseLabels[x.local_record_state]+' · 第'+x.cycle+'轮 / 版本'+x.revision+' · 真实Case：'+(x.case_state==='REOPENED'?'已重开':x.case_state==='WAITING_CONFIRMATION'?'等待真实确认':'待补材料');
+ const localLabel=x.local_record_state==='READY'?(x.verification_current===true?'当前一轮已显式校验':x.verification_current===false?'本轮原校验已失效，须重新校验':'本轮有校验记录'):localCaseLabels[x.local_record_state];
+ $('local-case-summary').textContent=x.goal+' · '+localLabel+' · 第'+x.cycle+'轮 / 版本'+x.revision+' · 真实Case：'+(x.case_state==='REOPENED'?'已重开':x.case_state==='WAITING_CONFIRMATION'?'等待真实确认':'待补材料');
  $('local-case-decision').hidden=x.role!=='enterprise_operator';for(const [id,key] of [['local-case-validate','can_revalidate'],['local-case-close','can_close_local_record'],['local-case-reopen','can_reopen']])$(id).disabled=!x[key];
  $('local-case-checks').replaceChildren();if(x.checks)for(const [key,issues] of Object.entries(x.checks))$('local-case-checks').append(textElement('p',localCheckLabels[key]+'：'+(issues.length?'须人工重新核对，当前依赖未满足':'当前依赖检查通过')));
  if(x.required_rechecks.length)$('local-case-checks').append(textElement('p','本轮待重新校验：'+x.required_rechecks.map(k=>localCheckLabels[k]).join('、')));
