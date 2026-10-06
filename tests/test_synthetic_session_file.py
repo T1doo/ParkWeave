@@ -104,3 +104,16 @@ def test_windows_create_new_race_and_denial_keep_distinct_gold(tmp_path,monkeypa
     monkeypatch.setattr(module.ctypes,'get_last_error',lambda:code,raising=False)
     with pytest.raises(expected):backend.create(tmp_path/'absent')
     assert len(calls)==1 and calls[0][4]==1 and calls[0][2]==0
+
+
+@pytest.mark.parametrize('bit',[0x400,0x1000,0x10])
+def test_owner_control_change_refused_with_verified_owner_and_same_dacl(bit):
+    class ChangedControl(Backend):
+        def inspect(self,handle):
+            descriptor,owner,acl,control=super().inspect(handle)
+            return descriptor,owner,acl,control^(bit if self.n==2 else 0)
+    backend=ChangedControl()
+    with pytest.raises(SessionOwnerError,match='SESSION_PERMISSIONS_CHANGED'):
+        create_synthetic_session_file('.runtime/synthetic-sessions.json',_backend=backend)
+    assert 'verify_owner' in backend.events and 'transfer' not in backend.events
+    assert backend.events[-1]=='close_exact'

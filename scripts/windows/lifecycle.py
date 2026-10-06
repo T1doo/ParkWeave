@@ -12,7 +12,7 @@ import sys
 import time
 import uuid
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from lifecycle_diagnostics import staged,stage,failure,command as diagnostic_command,start_status_command
+from lifecycle_diagnostics import staged,stage,failure,command as diagnostic_command,start_status_command,ACL_OBJECTS
 
 REPO = Path(__file__).resolve().parents[2]
 RUNTIME = REPO / '.runtime'
@@ -67,7 +67,7 @@ def acl_check_command():
     return """$ErrorActionPreference='Stop'
 $script:AclObject=$null
 function Refuse-Acl([int]$Code) {
-    if($script:AclObject -in @('ROOT','SESSIONS','CONFIG')) { [Console]::Out.WriteLine($script:AclObject) }
+    if($script:AclObject -in @('ROOT','SESSIONS','CONFIG','FILES','PROCESS_RECORD','SERVICE_LOG')) { [Console]::Out.WriteLine($script:AclObject) }
     exit $Code
 }
 try {
@@ -76,12 +76,12 @@ try {
     if ($null -eq $sid -or [string]::IsNullOrWhiteSpace($sid.Value)) { throw 'SID unavailable' }
     $paths=@($p)
     foreach($name in @('files','synthetic-sessions.json','windows-config.json','windows-processes.json','windows-services.log')) {
-        $script:AclObject=if($name -eq 'synthetic-sessions.json'){'SESSIONS'}elseif($name -eq 'windows-config.json'){'CONFIG'}else{$null}
+        $script:AclObject=if($name -eq 'synthetic-sessions.json'){'SESSIONS'}elseif($name -eq 'windows-config.json'){'CONFIG'}elseif($name -eq 'files'){'FILES'}elseif($name -eq 'windows-processes.json'){'PROCESS_RECORD'}elseif($name -eq 'windows-services.log'){'SERVICE_LOG'}else{$null}
         $q=Join-Path $p $name
         if(Test-Path -LiteralPath $q){$paths+=$q}
     }
     foreach($q in $paths){
-        $script:AclObject=if($q -eq $p){'ROOT'}elseif($q -eq (Join-Path $p 'synthetic-sessions.json')){'SESSIONS'}elseif($q -eq (Join-Path $p 'windows-config.json')){'CONFIG'}else{$null}
+        $script:AclObject=if($q -eq $p){'ROOT'}elseif($q -eq (Join-Path $p 'synthetic-sessions.json')){'SESSIONS'}elseif($q -eq (Join-Path $p 'windows-config.json')){'CONFIG'}elseif($q -eq (Join-Path $p 'files')){'FILES'}elseif($q -eq (Join-Path $p 'windows-processes.json')){'PROCESS_RECORD'}elseif($q -eq (Join-Path $p 'windows-services.log')){'SERVICE_LOG'}else{$null}
         $acl=Get-Acl -LiteralPath $q -ErrorAction Stop
         $owner=$acl.GetOwner([System.Security.Principal.SecurityIdentifier])
         if ($null -eq $owner -or [string]::IsNullOrWhiteSpace($owner.Value)) { throw 'Owner SID unavailable' }
@@ -120,7 +120,7 @@ def native_acl_check(root):
             try:value=value.decode('ascii') if len(value)<=32 else None
             except UnicodeError:value=None
         if isinstance(value,str) and len(value)<=32:
-            for name in ('ROOT','SESSIONS','CONFIG'):
+            for name in ACL_OBJECTS:
                 if value in (name,name+'\n',name+'\r\n'):error.parkweave_acl_object=name
         raise error
 

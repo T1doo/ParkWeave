@@ -36,7 +36,7 @@ def test_acl_object_roundtrip_discards_private_or_multiple_output(tmp_path,monke
     assert POISON not in marker and len((marker+'\n').encode('ascii'))<=1024
 
 
-@pytest.mark.parametrize('obj',[POISON,'FILES','UNKNOWN',True,{},['ROOT']])
+@pytest.mark.parametrize('obj',[POISON,'OUTSIDE','UNKNOWN',True,{},['ROOT']])
 def test_lifecycle_rejects_unknown_acl_objects_without_exposing_input(obj):
     row={'schema':1,'action':'doctor','boundary_phase':'private_acl','category':'BoundaryError','boundary_reason':'ACL_OWNER_MISMATCH','acl_object':obj}
     assert diagnostic.parse(diagnostic.PREFIX+json.dumps(row),'doctor')['boundary_reason']=='DIAGNOSTIC_UNAVAILABLE'
@@ -152,3 +152,29 @@ def test_valid_acl_primary_survives_cleanup_without_mixing_metadata():
     row=diagnostic.parse(diagnostic.command('start',error),'start')
     assert row=={**error.parkweave_lifecycle_primary,'cleanup_category':'PermissionError'}
     assert POISON not in repr(row)
+
+
+@pytest.mark.parametrize('name,obj,fault',[('files','FILES','files_owner'),('windows-processes.json','PROCESS_RECORD','state_owner'),('windows-services.log','SERVICE_LOG','log_owner')])
+def test_restart_acl_checked_adjunct_object_reaches_complete_safe_capture(tmp_path,monkeypatch,name,obj,fault):
+    private=tmp_path/'private';private.mkdir()
+    path=private/name
+    if name=='files':path.mkdir()
+    else:path.write_bytes(b'SYNTHETIC_EXISTING')
+    before=path.stat();original=None if name=='files' else path.read_bytes()
+    result=powershell_fixture(tmp_path,fault,lifecycle.acl_check_command())
+    assert result.returncode==2 and result.stdout==obj+'\n' and result.stderr==''
+    monkeypatch.setattr(lifecycle,'require_windows',lambda:None)
+    monkeypatch.setattr(lifecycle.subprocess,'run',lambda *a,**kw:result)
+    with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.native_acl_check(private)
+    boundary=diagnostic.parse(diagnostic.command('start',error.value),'start')
+    assert boundary['acl_object']==obj and boundary['boundary_reason']=='ACL_OWNER_MISMATCH'
+    publisher=module('publish_summary');binding={'synthetic':'binding'}
+    record=module('native_suite').summary([{'case':'Restart_native','status':'FAIL','exit_code':1,**boundary}])
+    record.update(diagnostic_schema=1,diagnostic_binding=binding,report_state='COMPLETED',active_phase='UNKNOWN')
+    public=publisher.project(record,binding);assert public['cases'][0]['acl_object']==obj
+    commands,ok=publisher.annotation_commands(public);assert ok
+    payload=json.dumps(public)+'\n'+'\n'.join(commands)+'\n'
+    assert module('native_command').publication_capture(payload.encode())==payload.rstrip('\n')
+    assert (path.stat().st_mode,path.stat().st_ino)==(before.st_mode,before.st_ino)
+    if original is not None:assert path.read_bytes()==original
+    assert 'Set-Acl' not in lifecycle.acl_check_command() and 'SetOwner' not in lifecycle.acl_check_command()

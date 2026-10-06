@@ -32,7 +32,7 @@ function Get-Acl {
  param($LiteralPath,$ErrorAction)
  $root=$LiteralPath -eq $env:PARKWEAVE_ACL_ROOT
  if(!$root -and $script:Fault -eq 'read_error'){Write-Error 'SYNTHETIC read failure';return $null}
- $owner=if(!$root -and ($script:Fault -eq 'owner_mismatch' -or ($script:Fault -eq 'config_owner' -and (Split-Path -Leaf $LiteralPath) -eq 'windows-config.json'))){'S-1-5-21-2000'}else{$script:CurrentSid}
+ $owner=if(!$root -and ($script:Fault -eq 'owner_mismatch' -or ($script:Fault -eq 'config_owner' -and (Split-Path -Leaf $LiteralPath) -eq 'windows-config.json') -or ($script:Fault -eq 'log_owner' -and (Split-Path -Leaf $LiteralPath) -eq 'windows-services.log') -or ($script:Fault -eq 'state_owner' -and (Split-Path -Leaf $LiteralPath) -eq 'windows-processes.json') -or ($script:Fault -eq 'files_owner' -and (Split-Path -Leaf $LiteralPath) -eq 'files'))){'S-1-5-21-2000'}else{$script:CurrentSid}
  $a=[pscustomobject]@{Owner='SYNTHETIC unresolvable display name';OwnerSid=$owner;AreAccessRulesProtected=($script:Fault -ne 'inheritance');Root=$root}
  $a | Add-Member ScriptMethod GetOwner {
   param($Type)
