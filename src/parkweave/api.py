@@ -200,6 +200,15 @@ def create_app(store: Store) -> FastAPI:
     def resource_combination_cancel(combination_id: UUID,data: resources.Release,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return combinations.cancel(store,token(authorization),combination_id,resource_key(idempotency_key))
 
+    from . import case_lifecycle
+    @app.get('/api/preparations/{preparation_id}/local-case')
+    def local_case_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return case_lifecycle.read(store,token(authorization),preparation_id)
+
+    @app.post('/api/preparations/{preparation_id}/local-case/commands')
+    def local_case_command(preparation_id: UUID,data: case_lifecycle.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return case_lifecycle.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
     from . import service_dispatches as dispatches
     @app.get('/api/service-dispatches/catalog')
     def dispatch_catalog(preparation_id: UUID,authorization: str | None=Header(default=None)):

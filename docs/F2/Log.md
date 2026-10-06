@@ -176,3 +176,8 @@ Linux定向第一次30 PASS/6.22秒，补并发同Case与审核-补件竞态、G
 新标准CI37414981257精确head1baa2cf已completed/failure；Prepare成功，native_suite79.235秒exit1未超时，owned临时cluster停止成功。允许check摘要/text为空，注释无具体case；case/counts/根因UNKNOWN。未重试被拒日志下载，未根据相近耗时猜旧37324704568根因，未无证据修源码/重复CI。用户信息需求更新为新run Job Summary FAIL/NOT_RUN行（安全case/status/exit/category/counts）。细节见[ENG027](ENG027-SyncCI.md)及[evidence/eng027-sync-ci.json](evidence/eng027-sync-ci.json)。
 
 结果仅追加准确docs并普通同步，源码未变，不声明CI测试了后续docs commit。当前dev成果GitHub可见，CI仍红，F1F2未签收/Win11和whole36AT6EXNOT_RUN/R4关闭；0LIVE/部署/备份/导出/Library/provider/预算。
+
+
+## ENG033 本地Case记录关闭与重开
+
+按原V1§5.5/7完成当前合成资料Case的最小本地记录闭环：显式四项重验→本地关闭（真实Case WAITING_CONFIRMATION）→重开（REOPENED）→新cycle显式重验。保留材料/分派/回执/资源历史，不宣称真实目标FULFILLED。真实三角色浏览器2轮5事件与reload/窄屏通过，受控时序23/23，独立只读审查通过；最终冻结全量775PASS/0FAIL/1WindowsSKIP/2既有WARN（228.266s）、142份hash一致与证据见[ENG033](ENG033-LocalCaseLifecycle.md)。仅本地commit，无push/newCI/export/LIVE；最新Server37420887816仍FAIL等待已有安全JSON，不猜根因或盲重跑。F1未签收、F2准入NOT_PASSED、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0；原环境与备份保留。

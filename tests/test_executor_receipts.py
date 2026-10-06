@@ -168,7 +168,7 @@ def test_permissions_migration_and_current_receipt_foreign_step_constraint(recei
     before=read(f,row).json()
     with f[1].connect() as c:c.execute('DELETE FROM schema_version WHERE version>=13')
     f[1].migrate();f[1].migrate();assert read(f,row).json()==before
-    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==15
+    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==16
 
 @pytest.mark.parametrize('mutation',[{'source_kind':'VERIFIED'},{'text':' '},{'source_label':''},{'actor_id':'fixture-a'},{'text':'x'*4001},{'reason':'cannot mix'}])
 def test_invalid_provenance_shape_has_no_effect(receipt_fixture,mutation):

@@ -296,3 +296,8 @@ Server/Win11/browser原生NOT_RUN或BLOCKED、production R4 DISABLED、whole36AT
 ## ENG027 新标准Server CI终态（非Win11）
 
 普通推送已验证远端1baa2cf93f795dbf3036245b8f2ea2ec2ce15e56（已验证54fad8c及准确授权说明）。新CI37414981257 completed/failure：PreparePASS，native_suite79.235秒exit1未超时，owned临时cluster停止PASS。允许读取的check summary/text为空，注释无case；具体失败case/counts/根因仍UNKNOWN。信息请求更新为该新run Job Summary安全FAIL/NOT_RUN行，旧37324704568根因未猜测。未访问被拒日志路径、换身份/runner/Secrets或无证据修代码重跑。详细[F2/ENG027](../F2/ENG027-SyncCI.md)。F1/Win11未通过，R4关闭，真实模型预算0。
+
+
+## ENG033 本地Case记录关闭与重开
+
+按原V1§5.5/7完成当前合成资料Case的最小本地记录闭环：显式四项重验→本地关闭（真实Case WAITING_CONFIRMATION）→重开（REOPENED）→新cycle显式重验。保留材料/分派/回执/资源历史，不宣称真实目标FULFILLED。真实三角色浏览器2轮5事件与reload/窄屏通过，受控时序23/23，独立只读审查通过；最终冻结全量775PASS/0FAIL/1WindowsSKIP/2既有WARN（228.266s）、142份hash一致与证据见[F2/ENG033](../F2/ENG033-LocalCaseLifecycle.md)。仅本地commit，无push/newCI/export/LIVE；最新Server37420887816仍FAIL等待已有安全JSON，不猜根因或盲重跑。F1未签收、F2准入NOT_PASSED、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0；原环境与备份保留。

@@ -1,5 +1,10 @@
 # F2并行开发计划：本地资料准备与个人待办
 
+## ENG033 当前合成资料Case的本地记录闭环（仅本地）
+
+基线05a8fec，本轮仅本地commit。owner显式重新校验材料/当前接单/核对回执/Case资源依赖后关闭本地记录；真实Case仍WAITING_CONFIRMATION，目标未完成。重开保留历史与资源占用，新cycle必须重新校验；不伪造FULFILLED或真实证据。当前专员/执行者仅最小只读。三角色实际Chromium/API/worker/PG两轮5事件与reload/320/390通过，受控迟到回复23/23通过，142份源码冻结全量775PASS/0FAIL/1WindowsSKIP/2既有WARN（228.266s）见[ENG033](ENG033-LocalCaseLifecycle.md)及[证据](evidence/eng033-local-case-acceptance.json)。没有push/newCI/export/LIVE；原Server37420887816仍FAIL，具体子项等待已有安全JSON。本轮不销掉原完整Case生命周期/真实核验、接受后转派、通用CaseStep/通知/DAG/Outbox/模板/全F2缺口；F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、模型/预算0。下方旧暂停或缺本地闭环描述属于历史记录。
+
+
 ## ENG032 当前最小内部分派与本人接单（本地完成）
 
 基线c5b389b，按原V1 F2-T04与产品§5.5完成最小本地内部业务分派：当前获派资料专员向已有同tenant Run访问权的执行者说明原因分派；本人拒绝、未接单撤回、原因重派及本人接受同事务衔接既有回执，保留版本历史。未新增Grant或Runassignment，不给resource_admin扩权；接受后调整待产品决定，本片暂不支持，原计划目标未改。真实PG/API定向132PASS，136份冻结源全量734PASS/0FAIL/1WindowsSKIP/2既有WARN（205.879s），实际三角色Chromium/PG/API/worker分派6事件→回执3版本/7事件及320/390PASS，受控迟到响应23/23PASS，独立只读审查通过。仅本地commit，不push/newCI/export/LIVE；原Server run37420887816仍FAIL、具体cases/counts等待新安全JSON，本地成绩不称修复Windows。F1/F2未签收、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0。 见[ENG032记录](ENG032-InternalDispatch.md)。下方暂停/未实现分派/旧冻结源等描述均为当轮历史；完整原计划剩余以本轮记录与下表为准。

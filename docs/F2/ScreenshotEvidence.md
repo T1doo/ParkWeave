@@ -13,3 +13,8 @@
 ## ENG025 增量
 
 最终14张新图使用唯一eng025-ui-verified目录，记录真实流程ID及SHA256；首轮图仍本地保留，但不充当最终冻结结果。55张登记图hash匹配（旧41+本片14），原3通用覆盖/3恢复缺图仍不可复验，详见[evidence/eng025-screenshot-audit.json](evidence/eng025-screenshot-audit.json)。未导出/上传/备份；用户视觉签收、真实设备和Win11仍未完成。
+
+
+## ENG033 增量
+
+8张真实三角色本地Case记录截图存于唯一`.runtime/eng033-screenshots-36b208acfdaa`目录，路径与SHA256见[evidence](evidence/eng033-local-case-acceptance.json)。目录创建要求不存在，旧图不覆盖、不回填。已目视核对最终桌面与320详情；仅Linux Chromium模拟viewport，不是Win11/手机实机或用户视觉签收。旧覆盖/恢复缺图限制仍保留；本轮未导出或上传。

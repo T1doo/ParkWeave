@@ -77,3 +77,8 @@ ENG-009：按F1原任务/12AT断言收敛为Convergence有限清单，单项R1�
 ENG013：对ENG012候选CI作有限PG失败/state篡改/browser超时oracle与owner/admin环境审计；原应用子进程白名单边界保留，辅助命令按phase收窄。仅本地提交，Actions访问不重试、workflow不push、runner0；Linux/static/synthetic证据不能替代Server/Win11实测，生产R4关闭/真实模型预算0。供父任务复核后另派。
 
 ENG014（新授权并行切片）：F2 PARALLEL_ENGINEERING，正式准入NOT_PASSED；F1仍IN_PROGRESS。合成企业资料整理：链接真实本地Case/Run，企业带来源版本的纯文本补件、获派专员补正/人工核对、企业确认本地资料准备与重开，旧核对自动失效/历史保留。只确认本地资料准备，不自动判断资格、外部受理或线下履约。详见F2/Plan、TestSpecification、FirstUse与Log。此新授权替代此前各轮“不进入F2”的当轮范围限制，不修改原V1阶段门或历史成绩。真实模型预算0、R4关闭、Win11未验证；本轮一次Actions复核仍Forbidden，Git分支只读查得原基线，未fetch/push/runner。
+
+
+## ENG033 本地Case记录关闭与重开
+
+按原V1§5.5/7完成当前合成资料Case的最小本地记录闭环：显式四项重验→本地关闭（真实Case WAITING_CONFIRMATION）→重开（REOPENED）→新cycle显式重验。保留材料/分派/回执/资源历史，不宣称真实目标FULFILLED。真实三角色浏览器2轮5事件与reload/窄屏通过，受控时序23/23，独立只读审查通过；最终冻结全量775PASS/0FAIL/1WindowsSKIP/2既有WARN（228.266s）、142份hash一致与证据见[F2/ENG033](F2/ENG033-LocalCaseLifecycle.md)。仅本地commit，无push/newCI/export/LIVE；最新Server37420887816仍FAIL等待已有安全JSON，不猜根因或盲重跑。F1未签收、F2准入NOT_PASSED、Win11/36AT6EX NOT_RUN、R4关闭、真实模型/预算0；原环境与备份保留。

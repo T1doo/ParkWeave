@@ -40,3 +40,7 @@ GRANT SELECT,INSERT ON resource_case_claims,case_resource_links TO parkweave_app
 GRANT SELECT,INSERT ON service_dispatches,service_dispatch_offers,service_dispatch_events TO parkweave_app;
 GRANT UPDATE(revision,current_offer_id) ON service_dispatches TO parkweave_app;
 GRANT UPDATE(state,receipt_step_id) ON service_dispatch_offers TO parkweave_app;
+
+-- ENG033 new local lifecycle ledger and immutable events only.
+GRANT SELECT,INSERT ON case_local_lifecycles,case_local_events TO parkweave_app;
+GRANT UPDATE(revision,cycle,state,verified_snapshot,verified_sha256) ON case_local_lifecycles TO parkweave_app;
