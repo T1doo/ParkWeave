@@ -203,6 +203,10 @@ def create_app(store: Store) -> FastAPI:
     from . import dispatch_notices as notices
     from . import controlled_plans as cp
     from . import request_intents as intents
+    from . import case_path
+    @app.get('/api/preparations/{preparation_id}/case-path')
+    def case_record_path(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return case_path.read(store,token(authorization),preparation_id)
     @app.post('/api/preparations/{preparation_id}/request-intent')
     def save_request_intent(preparation_id: UUID,data: intents.Save,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return intents.save(store,token(authorization),preparation_id,resource_key(idempotency_key),data)

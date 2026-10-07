@@ -135,3 +135,8 @@ fixture-a与fixture-b可共享同一资源容量，彼此只能读自己的占�
 缺少已有Runassignment时计划明确阻塞，模板不新增Grant/assignment；测试脚本的fixture owner准备不是产品入口，不证明完整新企业冷会话AT35。刷新会重验当前来源/权限并记住已观察失效；恢复后企业显式逐步CHECK，不自动复活旧核对。拒绝写请求的补记若锁忙会返回可重试409，须重试/刷新，不能声称该次标记已保存。已接单责任、旧回执与资源保留，模板不替用户撤单/释放/重派。专员/执行者只看到各自合法事项的最小计划状态。
 
 最终“四步本地记录已核对”仅确认合成协作记录；原Case目标、资格、外部受理、线下履约均未验证。真实本地演示脚本为scripts/controlled_plan_browser_smoke.py，需明确本地fixture owner环境且使用新的report/截图目录；不得把Linux浏览器成绩作Windows或全F2签收。
+
+
+## ENG091 同一产品Case只读路径与同步准备
+
+四步计划新增所属企业同Case记录/当前已有Run assignment读投影；缺合法绑定保持阻塞，不申请/复制/批准/修复访问权。刷新/切Case/身份/版本与403清旧私有视图，各命令仍独立重验。本轮实际产品PG/API/web验证与T01–T07逐项缺口/证据、797f426后准确8提交及本片第9候选见[ENG091](ENG091-SameCasePathAndSyncReadiness.md)。019/020是产品加列迁移，隔离测试已应用但部署未确认；未来权限表/函数仅未实施方案，roles/schema/workflow字节不变。未来push源码会触发现有Server独立Job测量，非完整Windows/Win11验收；本轮不push/newCI/激活，F1未签收/F2并行、R4关闭/模型预算0。
