@@ -150,6 +150,16 @@ def create_app(store: Store) -> FastAPI:
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
         return preparation.command(store,token(authorization),preparation_id,idempotency_key,data)
 
+    from . import material_reuse
+    @app.get('/api/preparations/{preparation_id}/material-reuse')
+    def material_reuse_candidates(preparation_id: UUID,source_evidence_id: UUID | None=Query(default=None),authorization: str | None=Header(default=None)):
+        return material_reuse.candidates(store,token(authorization),preparation_id,source_evidence_id)
+
+    @app.post('/api/preparations/{preparation_id}/material-reuse',status_code=201)
+    def material_reuse_copy(preparation_id: UUID,data: material_reuse.MaterialReuse,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
+        return material_reuse.reuse(store,token(authorization),preparation_id,idempotency_key,data)
+
     from . import resource_holds as resources
     def resource_key(key):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',key):raise HTTPException(422,'invalid request key')

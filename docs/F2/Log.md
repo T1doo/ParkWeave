@@ -498,3 +498,15 @@ Windows 新增默认关闭的真实 ctypes adapter 及明确分开的创建/目�
 
 
 ENG099 最终本地验证：完整 Linux **2079 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKIP / 2 WARN，500.87 秒**，2088 项 JUnit 对应当前 collection；268 个冻结源码文件零差异。恢复专项46PASS，当前原生候选 Linux fake/ABI专项150PASS，最终实际浏览器1PASS/80.91秒，15图与17产物hash已独立核对。专项不重复计入全量。当前75文件/四片529/517/534/508/953诊断ID与1968旧keys保留，预算不变。完整回归只证明该Linux源码，原生Windows、目标file-ID CAS、全量workflow/Win11、正式业务发布及外部履约仍未验收。普通推送及首次精确HEAD的CI终态由本任务最终同步运行时证据记录，不在提交前预写成功。
+
+
+## ENG100 同企业同用途材料复用与生命周期 authority 边界
+
+从 `08351cb6d97166bebe53d8498535168619758b89` 对照原 V1 §5.1、F2-T01 补足授权材料复用子条件：同一当前负责人、同园区/企业、同服务ID/版本的原确认材料目录，经显式选择/用途/理由，复制成独立新Case的全新evidence UUID/v1/UNVERIFIED。来源/目标当前权限、双revision、真实正文SHA与审核快照同事务重验，历史event保存lineage；旧诉求、审核、确认、Grant与办理结果不沿用，schema24无DDL。目标仍须自己的新诉求和原专员独立REVIEW/负责人CONFIRM；来源后续变更保留旧复制快照并明确显示历史状态。专项32PASS，既有准备兼容68PASS，最终浏览器1PASS/39.45秒/9图独审；七项权限表hash不变，开始后无setup业务写入，无assignment/resource/model。
+
+Windows完成默认关闭的CREATE_NEW代际链/精确root与进程字段/authority CAS/原key-body未知结果恢复协议候选，独立57+自有6共63PASS。测试只有FAULT_INJECTION/ISOLATED_PROTOCOL_TEST与Linux普通UUID文件；真实独立受保护authority尚不存在，同SID文件权限、DPAPI或hash链不能单独建立抗重放安全边界。保持MISSING_PROTECTED_AUTHORITY拒绝，无生产接线、原生/进程/owner/ACL动作；A线停止弱化路线并记录必需的最小新信任边界。原42项AT/EX、T06/AT08/AT35仍NOT_RUN，F1未签收/F2并行、Server非Win11、R4关闭/模型预算0。
+
+原T01–T07已实现子条件、完整链路剩余与下一优先切片见[ENG100](ENG100-V1AcceptanceAndMaterialReuse.md)，Windows见[authority候选](ENG100-WindowsGenerationAuthority.md)，机器证据见[最终证据](evidence/eng100-material-reuse-generation.json)。完整链路仍需正式ServiceRelease主体/来源/版本与精准范围、合法新Run访问批准、事实/用途/冲突合同、正式规划预览及现实独立回执/反馈；优先明确Release与单Run访问生产合同，未落实前继续默认关闭，可并行推进已授权事实合同，不再重复已有五步演示。
+
+
+ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKIP / 2 WARN，521.16秒**；2183项JUnit与当前collection一致，274冻结源码文件零差异。材料32专项、既有68兼容、Windows协议63专项及浏览器1PASS/9图不重复计入全量。当前78测试文件/四片535/549/534/565/997诊断ID、ENG099原2088精确keys全保留，预算和workflow字节不变。普通推送与首次精确HEAD的现有Server隔离Job CI由本任务最终运行时同步证据记录，不在提交前预写成功；不等同完整Windows/Win11或正式业务验收。

@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "scope": "LOCAL_ENG099_CURRENT_FULL_COLLECTION_PREFLIGHT_NOT_WINDOWS_ACCEPTANCE",
-  "source_parent_head": "0979f0d7975e622eb2fa19f62acc6817279e0300",
-  "collected_cases": 2088,
-  "collected_files": 75,
+  "scope": "LOCAL_ENG100_CURRENT_FULL_COLLECTION_PREFLIGHT_NOT_WINDOWS_ACCEPTANCE",
+  "source_parent_head": "08351cb6d97166bebe53d8498535168619758b89",
+  "collected_cases": 2183,
+  "collected_files": 78,
   "mutually_exclusive_and_complete": true,
-  "weight_source": "ENG098 file assignments retained; new ENG099 files assigned by descending actual collected case count to least populated current shard. No current Windows runtime prediction or budget extension.",
+  "weight_source": "ENG099 file assignments retained; new ENG100 files assigned by descending actual collected case count to least populated current shard. No current Windows runtime prediction or budget extension.",
   "limits": {
     "job_seconds_unchanged": 1500,
     "work_cutoff_from_anchor_seconds": 1300,
@@ -31,6 +31,7 @@
         "tests/test_create_new_readonly_candidate.py",
         "tests/test_dispatch_notices.py",
         "tests/test_lifecycle.py",
+        "tests/test_lifecycle_generation_candidate.py",
         "tests/test_minimal_observations.py",
         "tests/test_model_config.py",
         "tests/test_native_command.py",
@@ -42,7 +43,7 @@
         "tests/test_summary_publication.py",
         "tests/test_windows_ci_preparation.py"
       ],
-      "cases": 529,
+      "cases": 535,
       "historical_linux_relative_weight_seconds": 96.400539,
       "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     },
@@ -58,6 +59,7 @@
         "tests/test_executor_receipts.py",
         "tests/test_foundation.py",
         "tests/test_lifecycle_diagnostics.py",
+        "tests/test_material_reuse.py",
         "tests/test_native_creation_invariants.py",
         "tests/test_plan_handoff_chain.py",
         "tests/test_python_command.py",
@@ -68,7 +70,7 @@
         "tests/test_v1_contracts.py",
         "tests/test_worker_gateway.py"
       ],
-      "cases": 517,
+      "cases": 549,
       "historical_linux_relative_weight_seconds": 99.441546,
       "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     },
@@ -108,6 +110,7 @@
         "tests/test_create_new_readonly_native.py",
         "tests/test_descriptor_readonly_probe.py",
         "tests/test_fixture_cleanup.py",
+        "tests/test_generation_authority_invariants.py",
         "tests/test_job_schedule.py",
         "tests/test_launcher_lifecycle.py",
         "tests/test_model_chain.py",
@@ -123,7 +126,7 @@
         "tests/test_synthetic_config_file.py",
         "tests/test_template_candidate.py"
       ],
-      "cases": 508,
+      "cases": 565,
       "historical_linux_relative_weight_seconds": 99.281126,
       "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     }
@@ -157,13 +160,16 @@
     "tests/test_fault_ledger.py": "d5c3491c2ee20d696364f8be8da57613e47969544134b7abb898f5bcd24d13e2",
     "tests/test_fixture_cleanup.py": "b7704d09ab77bc2a3b72325641fd8f547cb18bffae466f3a0ab0a0f990d518ba",
     "tests/test_foundation.py": "05c8c6fdeab52f3820ad60e6024949558f5e0d45dd6f904eaec1343a3d6be967",
+    "tests/test_generation_authority_invariants.py": "5de816deaa7a49afb30978b95a83cb9e43e9681a4e7c64f46e47d02528fbe915",
     "tests/test_intern_adapter.py": "980dded3b932475ab764abc875c1c1437114b6729b15d87082df40d18d25daa6",
     "tests/test_job_budget.py": "4ce7ff9cc6d2742732159a26880b1cd225d7b71e867ee95f8d749753a2838a49",
     "tests/test_job_schedule.py": "39727cb752e895cab791f9801bb641b592d3677383702750a301de67ab304c56",
     "tests/test_launcher_lifecycle.py": "e33b18f91ad05f0c344e8b901954dc61a68384aac67345fa14658e8b65e03fbd",
     "tests/test_lifecycle.py": "02735a94cb6b170078b051b28dffc33a1ebb1eff7fd99f0735ded583a5367c94",
     "tests/test_lifecycle_diagnostics.py": "83b7dce958311bf2d26b28738b341285c6336583d28247fb8121d7300344c4f6",
+    "tests/test_lifecycle_generation_candidate.py": "aa749be343d1ba87eb372d6fe9cb912ddee23381b8586eca3b71df17a7970267",
     "tests/test_material_corrections.py": "697dac07810c01796451d7b99428973a35d296ead12b7e5333293bca19d6204d",
+    "tests/test_material_reuse.py": "f3fc3369a58aa0cab5003845765409a3d3fda528630bc5f7dcf0b4b4461fc599",
     "tests/test_minimal_observations.py": "07c262e04d2b969f87ee8c2434ca1a3d9ad3101ca0e23fe04d1655b03adfa89f",
     "tests/test_model_chain.py": "a7cbc3cc9b300984939f20b41ef8ea38033e5e2c95cf1995d4fa2c7549640626",
     "tests/test_model_config.py": "3b8ea93a7ecb176a4bfe32ff90a1b82f92774061c502bb7de28dfd1d2349ce27",
@@ -210,6 +216,7 @@
     ".gitattributes": "620de377d93cca892b533cc6b988a48e34d78882bf23195a735cdc50f0db7ea4",
     ".github/workflows/windows-server-engineering.yml": "c4db82bae30b116cbfa5f135e4685c5115bc4a124417c366cf7f027eba2a0aba",
     "scripts/dispatch_recovery_browser_smoke.py": "7f0ae1ffc0dcec84f36db3b5b073380cbe29c7396316fffe3163b41c897868da",
+    "scripts/material_reuse_browser_smoke.py": "20e0b9e2b8246daab57821e5e6e02720958bf55e85f29897cd0ddfca6ec9b774",
     "scripts/run_acceptance.py": "3ec5bba8718dd68be9e154886971f07584151f0387503fb1703be09f62431291",
     "scripts/windows/descriptor_readonly_probe.py": "18795c71bf4c39c238f873e75e7f7382ad6e7adab9806cb5f9dbd8600c07b608",
     "scripts/windows/lifecycle.py": "e4846259460743b4c904bf797db319444604c439cb9234f706ab67045b79c558",
@@ -240,19 +247,24 @@
     "scripts/windows_ci/source_bytes.py": "ae2e8bdef198be80c192c0fadc3b7d118e936e43706d52b7edd7acb172276d76",
     "scripts/windows_ci/stage_result.py": "477deae62836492662a1778571162c1c0a6e6d24f3fb0d33a01fbe41dd52afb7",
     "scripts/windows_ci/summary_report.py": "ec5864e71ec79b057b82c65896875339651fd107799a17d9b22c9c7d7c1a5fd3",
+    "src/parkweave/api.py": "b77c73c47a2fb3e02f7451b8907ce2e6493be5d035115f8ab39591f252dcf964",
     "src/parkweave/case_path.py": "98553a0cbd97c7139a3a0ddaacf753d3da7bec6ace498dd793ce7b4d53c73b1d",
+    "src/parkweave/material_reuse.py": "b394ee635694dcd82494ffe52e64263e72ae9b00705962856dbb911617d9aef7",
     "src/parkweave/migration-024.sql": "7862d396df5b8610ab2b968b89f8537991766a2846347947a2fc931fe95f53ef",
+    "src/parkweave/preparation.py": "7b47b635353c1ffb6030564a9b7bb2b5d0540df1ef3e1e8aeb4db61d84388505",
     "src/parkweave/synthetic_session_file.py": "7ff0e3ac2bd25d00710bd324c0033bd4f8045aebe3c29129a68425ee0fbceedf",
     "src/parkweave/template_candidate.py": "7fe4d92ebbf2b8631627eb993b7d12243c8f64abdc131b02af08555615d80157",
     "src/parkweave/template_candidate_api.py": "fbf44860d30c62407ee11761a9785b1f3cef7a246e05e14ba63969e1735dfea5",
     "src/parkweave/template_candidate_web.html": "9bc46eb5992b304de45df3ccb3f2fd26da37742803560837a7a2b0edac68b4b1",
     "src/parkweave/template_consumer.py": "7c2a28d551a6e057f3742a816f2ab0c887423881b65bb0763a77f5a3b2d25a22",
     "src/parkweave/template_isolated_app.py": "4141b229c29661466dfdde9b90268a4d9c820680ddc2bb65ebaa8267c71eda24",
+    "src/parkweave/web.html": "f74d60f149f852260cd62cdbc089c782bef62ebf03990ad0ad7d083570811bc1",
     "src/parkweave/windows/create_new_readonly_candidate.py": "5a2e76081cbb2376a380b66404c61e1893cee2f3f1baa8511e74824de97a08ef",
     "src/parkweave/windows/create_new_readonly_native.py": "da5e29826527f7c86e7e1905b91d9b7620f9ab4a434d33cfa7e8460ad8b46fad",
+    "src/parkweave/windows/lifecycle_generation_candidate.py": "bfe30036d93d3cea2465ec88ce2dc2b765e12c0205872f62b7d2f00fb250a4a2",
     "tests/template_candidate_support.py": "7e5ff8aa242e4cd6d95a77fd72e1b1e012be40ce6be3d0fb8b19e57e92a15fcd"
   },
-  "diagnostic_allowlist_sha256": "f0280b015fd5804363850ac6f3414e84fee3877503e53ebe12b6d930229ce22b",
+  "diagnostic_allowlist_sha256": "97f7e50747a4c17440a2446f59c29b9e7abc1aef45e85317dfd3f00606647104",
   "new_CI_runs": 0,
   "eng061_refresh": {
     "producer_parent_head": "41bcc113f7e7690a346cc79249fe76803a98bd0e",
@@ -355,38 +367,38 @@
     "new_cases_since_eng057": 55
   },
   "collection_evidence": {
-    "current_cases": 2088,
-    "current_files": 75,
-    "current_stable_collection_sha256": "ca049ce8dc0a49466460b5d0fe90b37cfcaa4bb6ba01525a9249e4b62c190fd0",
+    "current_cases": 2183,
+    "current_files": 78,
+    "current_stable_collection_sha256": "9332d76caf1bbf773ec6465bc7f05b1e9b8a8b07dbb6dee689ac1073b495b21c",
     "exact_piece_stable_multiset_matches_global": true,
     "shards": [
       {
         "shard": "S1",
-        "cases": 529,
-        "files": 18,
+        "cases": 535,
+        "files": 19,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "2951c3845d8724d8ad54bf4f87ad3ef2c29e863e8047f4316c64e1c653db5fd3"
+        "private_collection_sha256": "7302987e534b7537f3e2f863839ee8c38075e4cdfc7f618fd2e85660263b4727"
       },
       {
         "shard": "S2",
-        "cases": 517,
-        "files": 18,
+        "cases": 549,
+        "files": 19,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "b77513fc1054bc5c52ae1d2335e15cd3f8a7d0cf2cb2dec8e17bcd174cbb7aa0"
+        "private_collection_sha256": "0b5de923ccfeeb0be6af62fecbfe480e3916f13013d8ce75941b8ffab2dfc069"
       },
       {
         "shard": "S3",
         "cases": 534,
         "files": 19,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "1d060562c8808e676f57c515eb902feb2a8d9b35ec30a8230577f88760dd21c9"
+        "private_collection_sha256": "857d10abb8ae59cd9f1bd3e7102325d1facf8bd68b69a487349c883d770f667d"
       },
       {
         "shard": "S4",
-        "cases": 508,
-        "files": 20,
+        "cases": 565,
+        "files": 21,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "0f62c119b5f3ac4c6cdb5220b562a8965a96c6ee9f67b5d562caf1426e3053b5"
+        "private_collection_sha256": "bdda46999d5c67ab0c781352c5b2a227e34075add27a068e02e4e076e3d1e5c8"
       }
     ],
     "linux_collect_exit_codes": [
@@ -397,8 +409,8 @@
       0
     ],
     "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
-    "previous_eng098_exact_keys_retained": true,
-    "new_cases_since_eng098": 120
+    "previous_eng099_exact_keys_retained": true,
+    "new_cases_since_eng099": 95
   },
   "historical_eng064_collection_evidence": {
     "current_cases": 1253,
@@ -499,7 +511,7 @@
     "tests/test_safe_annotations.py": "f164246510d79e49e43ec9337c5ddc57a3c42b2f7bfbd5174fd986e52613a752",
     "tests/test_windows_ci_preparation.py": "c84003dff3b52e3c8162db922a11ee74d5bd1147fe1f7f5108f388c2c5df1aed"
   },
-  "source_binding_note": "ENG099 full test-file/raw implementation/diagnostic fingerprints refreshed after source freeze. Global and four actual Linux collect-only inventories match exact stable multiset. HEAD/blob/worktree binding must be checked after source commit; this parent HEAD does not contain new source. No Windows/full engineering execution or security changes.",
+  "source_binding_note": "ENG100 full test-file/raw implementation/diagnostic fingerprints refreshed after source freeze. Global and four actual Linux collect-only inventories match exact stable multiset. HEAD/blob/worktree binding must be checked after source commit; this parent HEAD does not contain new source. No Windows/full engineering execution or security changes.",
   "historical_eng080_collection_evidence": {
     "current_cases": 1463,
     "pieces": [
@@ -902,6 +914,161 @@
         "tests/test_template_candidate.py"
       ],
       "cases": 492,
+      "historical_linux_relative_weight_seconds": 99.281126,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    }
+  ],
+  "historical_eng099_collection_evidence": {
+    "current_cases": 2088,
+    "current_files": 75,
+    "current_stable_collection_sha256": "ca049ce8dc0a49466460b5d0fe90b37cfcaa4bb6ba01525a9249e4b62c190fd0",
+    "exact_piece_stable_multiset_matches_global": true,
+    "shards": [
+      {
+        "shard": "S1",
+        "cases": 529,
+        "files": 18,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "2951c3845d8724d8ad54bf4f87ad3ef2c29e863e8047f4316c64e1c653db5fd3"
+      },
+      {
+        "shard": "S2",
+        "cases": 517,
+        "files": 18,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "b77513fc1054bc5c52ae1d2335e15cd3f8a7d0cf2cb2dec8e17bcd174cbb7aa0"
+      },
+      {
+        "shard": "S3",
+        "cases": 534,
+        "files": 19,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "1d060562c8808e676f57c515eb902feb2a8d9b35ec30a8230577f88760dd21c9"
+      },
+      {
+        "shard": "S4",
+        "cases": 508,
+        "files": 20,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "0f62c119b5f3ac4c6cdb5220b562a8965a96c6ee9f67b5d562caf1426e3053b5"
+      }
+    ],
+    "linux_collect_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
+    "previous_eng098_exact_keys_retained": true,
+    "new_cases_since_eng098": 120
+  },
+  "historical_eng099_shards": [
+    {
+      "id": "S1",
+      "files": [
+        "tests/test_acceptance_failures.py",
+        "tests/test_acceptance_runner.py",
+        "tests/test_account_rate.py",
+        "tests/test_authorization_files.py",
+        "tests/test_ci_diagnostics.py",
+        "tests/test_create_new_readonly_candidate.py",
+        "tests/test_dispatch_notices.py",
+        "tests/test_lifecycle.py",
+        "tests/test_minimal_observations.py",
+        "tests/test_model_config.py",
+        "tests/test_native_command.py",
+        "tests/test_regression_shards.py",
+        "tests/test_request_intents.py",
+        "tests/test_rule_publication_candidate.py",
+        "tests/test_service_case_steps.py",
+        "tests/test_source_bytes.py",
+        "tests/test_summary_publication.py",
+        "tests/test_windows_ci_preparation.py"
+      ],
+      "cases": 529,
+      "historical_linux_relative_weight_seconds": 96.400539,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    },
+    {
+      "id": "S2",
+      "files": [
+        "tests/test_acl_readonly.py",
+        "tests/test_bounded_planning.py",
+        "tests/test_case_path.py",
+        "tests/test_case_resources.py",
+        "tests/test_ci_cleanup.py",
+        "tests/test_domain_bounds.py",
+        "tests/test_executor_receipts.py",
+        "tests/test_foundation.py",
+        "tests/test_lifecycle_diagnostics.py",
+        "tests/test_native_creation_invariants.py",
+        "tests/test_plan_handoff_chain.py",
+        "tests/test_python_command.py",
+        "tests/test_resource_substitution_confirm.py",
+        "tests/test_review_demo.py",
+        "tests/test_server_identity.py",
+        "tests/test_synthetic_session_file.py",
+        "tests/test_v1_contracts.py",
+        "tests/test_worker_gateway.py"
+      ],
+      "cases": 517,
+      "historical_linux_relative_weight_seconds": 99.441546,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    },
+    {
+      "id": "S3",
+      "files": [
+        "tests/test_bounded_observation.py",
+        "tests/test_candidate_review.py",
+        "tests/test_catalog_decision_validity.py",
+        "tests/test_dispatch_recovery.py",
+        "tests/test_facts_heartbeat.py",
+        "tests/test_fault_ledger.py",
+        "tests/test_intern_adapter.py",
+        "tests/test_job_budget.py",
+        "tests/test_material_corrections.py",
+        "tests/test_resource_catalog_concurrency.py",
+        "tests/test_resource_combinations.py",
+        "tests/test_resource_holds.py",
+        "tests/test_resource_plan_binding.py",
+        "tests/test_run_access_candidate.py",
+        "tests/test_safe_annotations.py",
+        "tests/test_service_dispatches.py",
+        "tests/test_template_consumer.py",
+        "tests/test_utf8_sources.py",
+        "tests/test_windows_file_candidate.py"
+      ],
+      "cases": 534,
+      "historical_linux_relative_weight_seconds": 93.848497,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    },
+    {
+      "id": "S4",
+      "files": [
+        "tests/test_case_lifecycle.py",
+        "tests/test_controlled_job_measurement.py",
+        "tests/test_controlled_plans.py",
+        "tests/test_create_new_readonly_native.py",
+        "tests/test_descriptor_readonly_probe.py",
+        "tests/test_fixture_cleanup.py",
+        "tests/test_job_schedule.py",
+        "tests/test_launcher_lifecycle.py",
+        "tests/test_model_chain.py",
+        "tests/test_owned_job.py",
+        "tests/test_plan_preview.py",
+        "tests/test_plan_revision.py",
+        "tests/test_plan_revision_waits.py",
+        "tests/test_preparation.py",
+        "tests/test_preparation_tasks.py",
+        "tests/test_readiness.py",
+        "tests/test_resource_confirm.py",
+        "tests/test_rule_publication_boundary.py",
+        "tests/test_synthetic_config_file.py",
+        "tests/test_template_candidate.py"
+      ],
+      "cases": 508,
       "historical_linux_relative_weight_seconds": 99.281126,
       "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     }

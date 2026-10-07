@@ -109,6 +109,11 @@ def snapshot(row,items):
           'materials':[{k:(str(v) if isinstance(v,UUID) else v) for k,v in item.items()} for item in items]}
     return digest(canonical(data))
 
+def _insert_evidence(c,p,row,slot,text,source_kind,source_label):
+    old=next((i for i in latest(c,row['id']) if i['slot']==slot),None)
+    version=old['version']+1 if old else 1
+    return c.execute("INSERT INTO preparation_evidence(id,preparation_id,slot,version,text,source_kind,source_label,source_sha256,actor_id,authenticity) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,'UNVERIFIED') RETURNING *",(uuid4(),row['id'],slot,version,text,source_kind,source_label,digest(text),p['id'])).fetchone()
+
 def command(store,token,id,key,data):
     # Keep fingerprints of commands created before slot correction support.
     body=data.model_dump(mode='json',exclude={'correction_slots'} if data.correction_slots is None else set())
@@ -126,8 +131,7 @@ def command(store,token,id,key,data):
         from . import material_corrections as corrections
         ledger=row.get('material_corrections')
         if data.action=='ADD_EVIDENCE':
-            old=next((i for i in items if i['slot']==data.slot),None);version=old['version']+1 if old else 1
-            added=c.execute("INSERT INTO preparation_evidence(id,preparation_id,slot,version,text,source_kind,source_label,source_sha256,actor_id,authenticity) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,'UNVERIFIED') RETURNING *",(uuid4(),id,data.slot,version,data.text,data.source_kind,data.source_label,digest(data.text),p['id'])).fetchone()
+            added=_insert_evidence(c,p,row,data.slot,data.text,data.source_kind,data.source_label)
             state='IN_PREPARATION';current_hash=snapshot(row,latest(c,id))
             if ledger:
                 ledger=corrections.submit(row,p,added)
@@ -166,7 +170,11 @@ def read(store,token,id):
         history=c.execute('SELECT revision,action,payload,created_at FROM preparation_events WHERE preparation_id=%s ORDER BY revision',(id,)).fetchall()
         if p['role']!='enterprise_operator':
             row.pop('request_intent',None)
-            for record in history:record['payload'].pop('request_intent',None)
+            for record in history:
+                record['payload'].pop('request_intent',None)
+                reuse=record['payload'].get('material_reuse')
+                if reuse:
+                    record['payload']['material_reuse']={k:reuse[k] for k in ('target_evidence_id','target_version','target_sha256','purpose','requires_independent_review','snapshot_mode')}
         return {'preparation':row,'current_materials':items,'snapshot_sha256':snapshot(row,items),
                 'material_history':c.execute('SELECT slot,version,text,source_kind,source_label,source_sha256,authenticity,created_at FROM preparation_evidence WHERE preparation_id=%s ORDER BY slot,version',(id,)).fetchall(),
                 'history':history,
