@@ -2,9 +2,12 @@
 
 ## 当前修复整合状态（2026-10-07）
 
+最新最终源码验证：浏览器1PASS/114.81秒/21图，独立查看全部截图并核验171源码与23产物hash，7权限表不变、启动后setup写0、模型/预算0；[浏览器证据](CaseFactFinalBrowserEvidence.json)。完整首轮2256PASS/1FAIL/39SKIP/589.08秒，284源码零差异。30个缺PowerShell缓存的跳过项复用原缓存精确补跑30PASS/17.59秒，剩余9项native SKIP；不是单次full PASS。唯一FAIL精确为下方外线固定名测试缺receipt接线，在Store102抛Denied。原4Grant恢复RED已全部PASS。详见[完整回归证据](CaseFactFullLinuxEvidence.json)。未向主开发分支推送，最终业务集成未签收。
+
+
 下文保留历史失败证据，不代表当前仍复现。外线 f3a90a6、bcb9a2f、cee64e1 已顺序整合，原 Grant 恢复四项全部通过。原 Store loader 在同一事务完成001–024后，验证进程内创建证明并 authorize_migration，再运行025；UUID fixture、legacy001升级与全新固定名parkweave lifecycle均由原fixture创建，票据从实际集群/DB所有权证据取得。没有新增身份、凭据或Grant。
 
-当前实际回归101 PASS/46.60秒；另一次核心与支持77 PASS、1 DESELECTED/21.46秒。集合重叠，不能相加为完整测试结果。暂未运行外线固定名核心测试：取得receipt后未赋给owner._case_fact_fixture_receipt就调用owner.migrate，需外线修正接线或显式构建24起点；不改成25预期来冒充DDL回滚验证。最终源码浏览器、full Linux、dev同步及精确HEAD CI尚待完成。
+当前实际回归101 PASS/46.60秒；另一次核心与支持77 PASS、1 DESELECTED/21.46秒。集合重叠，不能相加为完整测试结果。完整首轮实际失败的外线固定名核心测试：取得receipt后未赋给owner._case_fact_fixture_receipt就调用owner.migrate，需外线修正接线或显式构建24起点；不改成25预期来冒充DDL回滚验证。最终源码浏览器已通过，首轮full与缺运行时补测完成；外线测试接线修复、单次最终full PASS、dev同步及精确HEAD CI尚待完成。
 
 票据是本进程测试创建所有权证明，不能序列化后跨进程重建；临时SQL票据绑定当前连接和事务，commit/rollback后重新authorize。它用于防止错误迁移目标，不声称对数据库owner建立不可伪造安全边界。原生installed Windows入口没有受审适配，继续明确BLOCKED/NOT_RUN，不借库名或环境开关绕过。机器结果见[CaseFactReceiptWiringProgress.json](CaseFactReceiptWiringProgress.json)。
 

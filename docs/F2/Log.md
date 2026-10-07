@@ -515,3 +515,10 @@ ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKI
 ## ENG101 演示指南与诊断兼容
 
 体验指南集成实际浏览器1PASS/82.39秒/24图；file://被管理员策略阻止，固定只读HTTP卡验证通过。实际既有恢复流程仍为预建合成Case，最终WAITING_CONFIRMATION，无权限变化或外部履约。最终差异107PASS/4.45秒，2194collection/79文件/四片540/549/540/565/1005诊断IDs，旧2183keys保留；此轮无新完整Linux，不能累加旧2174全量。事实确认模块独立联调未签收。详见[ENG101](ENG101-DemoExperienceIntegration.md)与[实际证据](../demo/integration-evidence.json)。F1未签收/F2并行、Server非Win11、正式AT/EX仍NOT_RUN、R4关闭/预算0。
+
+
+## ENG101 事实用途集成修复进度
+
+三个外线修复 f3a90a6/bcb9a2f/cee64e1 顺序整合；Store 原迁移事务接入创建证明，真实新 UUID fixture 与固定 parkweave 临时集群 lifecycle 接线回归101PASS（含原4Grant恢复失效门禁）。核心与支持另一次77PASS/1DESELECTED，不与前组相加。最终源码实际原生浏览器1PASS/114.81秒/21图，171登记源码跑后零差异；原API前置创建2Cases，不宣称普通用户冷创建。当前Case仍WAITING_CONFIRMATION，7权限表不变，启动后setup写0/模型0/预算0。
+
+完整Linux首轮2296项：2256PASS/1FAIL/39SKIP/2WARN，589.08秒；284冻结源跑后零差异。唯一失败为外线固定名核心测试未attach receipt的原始前置缺口；其中30项PowerShell缓存缺失跳过已复用原安装缓存按精确node补跑30PASS/17.59秒，余9项原生Windows SKIP。不拼称一次完整PASS，不删测试或放宽guard。真实installed Windows入口还没有同进程创建证明适配，schema<25默认拒绝；原生/Win11、正式AT/EX、main merge/deploy仍未授权或未验收。独立检查点已普通推送9717674，主开发仍6d669b2，最终业务集成未签收。见[票据接线进度](../integration/CaseFactReceiptWiringProgress.json)。

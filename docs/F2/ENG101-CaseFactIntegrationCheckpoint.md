@@ -1,5 +1,7 @@
 # ENG101 事实用途联调检查点（未验收、未推送）
 
+当前状态见[票据接线进度](../integration/CaseFactReceiptWiringProgress.json)：三个外线修复已整合，独立检查点9717674已普通推送；接线101PASS，核心/支持77PASS另保留1未运行的外线固定名测试前置缺口。最终源码浏览器1PASS/114.81秒/21图且独审无新视觉或证据问题。完整Linux首轮2256PASS/1FAIL/39SKIP，589.08秒，284源码零差异；缺缓存30项补跑30PASS/17.59秒，余9项nativeSKIP。真实installed Windows迁移仍缺适配。下文为早期失败的历史证据，不是当前四项Grant恢复门禁结果。
+
 核心外线 `8d9e881f1d64042d6a7dfedf0d96c00e943c7a08` 已获取并在独立工作树以 `263dd05` 集成。合同基线为已公开 `686f3e1f93eed03a31915df5eac6b99da3ad7f0a`。此检查点保存可审阅适配，不宣称产品完成。
 
 本线加入正式 Store schema25 loader/package 与原 API 三个事实用途入口，准备核对/确认和 readiness、resource/P1、分派/回执、local/P5 当前事实门禁；普通未声明 Case 保持原指纹形状。声明历史存在而 ledger NULL 时仍拒绝失效账本，不能退回 legacy。专用 GET 本人来源、通用准备只公开状态/hash，后端不用本人 token 代替其他角色。
