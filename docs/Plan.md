@@ -381,4 +381,13 @@ ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKI
 
 修复原Linux启动器schema25票据缺口：显式fresh-fixture仅新自有临时集群，先capture/CREATE/record再原same-transaction loader；已有旧库/会话保留，低版本不补造票据。真实启动/关闭和旧24保护等专项7PASS/6.44秒；外线a26d99c固定名测试真实receipt接线已整合03a8230。普通用户实际网页从0业务Run/Case/资料/事实/回执，经LOCAL worker创建新Case、三事实和两材料、专员REVIEW/企业CONFIRM，到本Run无合法executor assignment的明确停点。仅修专员错误“重复确认资料”提示，ready/API/授权不变，改后新冷13图复验通过，7权限表hash不变/assignment分派回执模型记录0，CaseNEEDS_INPUT/资格NOT_EVALUATED。不是无身份/目录初始化或到真实回执的完整冷启动。
 
-当前2301collection/83文件/四片606/566/564/565/1064诊断IDs，旧2296/2194/2183keys保留，预算及workflow不变。最终冻结288源完整Linux 2292PASS/0FAIL/9原生WindowsSKIP/2WARN（578.70秒），2301实际keys与JUnit同次raw nodes精确一致，旧2296/2194/2183 keys全部保留，跑后源hash0差异；外线固定名测试已通过。开发历史合并未改变584文件字节，正常开发同步和精确HEAD Server CI尚待实际终态。见[最终全量机器证据](integration/ENG102-FinalLinuxEvidence.json)。原R0/PR0完整目标、F1未签收/F2并行、正式AT/EX与Windows installed adapter仍保留阻塞，R4关闭/真实模型预算0。详见[ENG102](F2/ENG102-UserColdEntry.md)。
+当前2301collection/83文件/四片606/566/564/565/1064诊断IDs，旧2296/2194/2183keys保留，预算及workflow不变。最终冻结288源完整Linux 2292PASS/0FAIL/9原生WindowsSKIP/2WARN（578.70秒），2301实际keys与JUnit同次raw nodes精确一致，旧2296/2194/2183 keys全部保留，跑后源hash0差异；外线固定名测试已通过。开发历史合并未改变584文件字节，81ff445已正常开发同步；首次精确HEAD Server CI 37685389893 attempt1 SUCCESS（仅原Server隔离Job测量，非完整Windows/Win11）。见[最终全量机器证据](integration/ENG102-FinalLinuxEvidence.json)。原R0/PR0完整目标、F1未签收/F2并行、正式AT/EX与Windows installed adapter仍保留阻塞，R4关闭/真实模型预算0。详见[ENG102](F2/ENG102-UserColdEntry.md)。
+
+
+## ENG103 新Run访问精确边界与只读交接
+
+新Run缺失的是授权表中精确现有执行者/Run绑定；已有READ身份不等于Run访问，资料专员不是审批人，Mock批准不能赋权。现有owner-only assign_status与app SELECT边界保留；当前没有用户申请/批准入口，legacy绑定无TTL，不能许诺自动到期。仅新增同Case只读编号核对文本和本人分派/接单/提交合成回执/企业核对顺序，不发送消息或写授权。
+
+受影响PG/API19PASS/6.70秒；实际0业务冷浏览器通过16PNG/15viewport，readonly当前Case/Run/资料版本精确，角色/事项/client注入403清空，伪造执行者真实POST403；7权限hash不变，assignment/分派/回执/模型0。当前只完成事实与双角色资料确认，实际回执仍需单Run明确授权。Windows仅创建票据接口与拒绝矩阵设计，未实现adapter或执行native/owner/ACL/security。测试/后端/workflow字节不变，2301keys与83文件/1064IDs沿用，web binding更新；未重复未变化full，81ff445全量仍仅原冻结源范围。
+
+边界与一次性最小合成范围见[F2/ENG103](F2/ENG103-RunAccessBoundary.md)，[Windows设计](F2/ENG103-InstalledWindowsReceiptDesign.md)与[机器证据](integration/ENG103-RunAccessEvidence.json)。当前普通同步/CI终态另记录；F1未签收/F2并行、完整PR0/ATEX/Win11仍未完成，R4关闭/预算0。

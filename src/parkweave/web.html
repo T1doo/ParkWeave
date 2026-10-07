@@ -565,6 +565,15 @@ async function loadCasePath(){
   box.append(textElement('p','本次只读投影，多个记录可能在读取期间变化；记录存在不代表当前验收有效。使用原办理入口逐步重验，不创建访问权；资格未知、目标未完成。'));
   for(const [name,state] of [['诉求/目标',x.request.coverage_state],['固定方案',x.plan.recorded?'已有记录，须原入口重验':'尚无记录'],['材料准备',x.materials.state+' / 当前来源评估 '+x.materials.assessment_state+' / '+x.materials.local_truth],['资源关联',x.resources.recorded?'已有记录，时段与规则须重验':'尚无记录'],['本人接单',x.dispatch.offer_state||'尚无记录'],['合成回执',x.receipt.state||'尚无记录']])box.append(textElement('article',name+'：'+state));
   box.append(textElement('p',x.existing_run_access.candidate_available?'此Case Run已有当前合法READ执行者。仍须获派专员从现有分派目录明确选择、本人接受；此读取不完成接单。':'此Case Run没有当前合法执行者assignment。保持阻塞，请已有授权负责人处理；本页不能申请、批准、复制其他Run授权或使用Mock批准。'));
+  if(!x.existing_run_access.candidate_available){
+   const label=textElement('label','供现有负责人核对的当前事项编号'),context=textElement('textarea','');
+   context.id='case-access-context';context.readOnly=true;context.rows=6;
+   context.value='仅核对本次合成事项，尚未申请或批准访问。\nCase：'+x.case_id+'\nRun：'+x.run_id+'\n资料事项：'+x.preparation_id+'\n资料版本：'+x.preparation_revision+'\n当前无合法执行者；请负责人另行核对具名现有执行者及此Run范围。';
+   label.htmlFor=context.id;box.append(label,context,textElement('p','可自行选中编号供核对；不要附上登录会话、材料正文或其他Case信息。编号记录不是授权凭证，来源变化后请重新读取。'));
+  }
+  const sequence=textElement('ol','');
+  for(const step of ['企业与获派专员在原资料入口核对当前事实来源和材料；变更后重新审核确认。','此Run已有合法执行者访问后，获派专员从原目录明确选择执行者并分派；缺少访问时在此停止。','被分派的执行者本人接受，再从该事项的回执入口提交有来源的本地合成回执。','所属企业在原回执入口核对当前版本；需纠正时退回，执行者提交新版后再核对。'])sequence.append(textElement('li',step));
+  box.append(textElement('h4','到此Case本地回执的人工顺序'),sequence,textElement('p','这些步骤不会自动执行；当前读取不验收历史回执，也不表示真实外部履约。'));
   box.append(textElement('p','本地记录：'+x.local_record_state+' · 原Case：'+x.case_state+'；不代表真实履约。'));$('case-path-error').textContent='';
  }catch(e){if(g!==casePathGeneration||!planCurrent(c))return;if(e.status===403){planError(e);return;}casePathView=null;$('case-path-result').replaceChildren();$('case-path-error').textContent=e.status===403?'当前Case访问已拒绝，旧路径已清空；请核查现有授权。':e.message;$('page-feedback').textContent=$('case-path-error').textContent;}
 }
