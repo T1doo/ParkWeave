@@ -434,16 +434,30 @@ class FixtureDatabaseEvidence:
             identity['database_oid'] != self.database_oid or
             identity['owner_name'] != self.cluster.owner or identity['session_name'] != self.cluster.owner):
             raise Denied('fixture database creation receipt does not match connection')
-        connection.execute("""CREATE TEMP TABLE IF NOT EXISTS parkweave_fixture_migration_receipt (
+        _issue_migration_ticket(connection, self.database_oid, self.database_name,
+            self.cluster.owner, self.cluster.system_identifier,
+            self.cluster.data_directory, self.cluster.postmaster_start,
+            self.cluster.nonce, self.nonce)
+
+
+def _issue_migration_ticket(connection, database_oid, database_name, owner_name,
+                            system_identifier, data_directory, postmaster_start,
+                            cluster_nonce, database_nonce):
+    """Write the original SQL ticket after a supported issuer's live checks.
+
+    This private SQL helper is not an issuer or an authorization boundary for a
+    DDL-capable owner. Store accepts only the supported receipt types, whose
+    methods independently check actual issuance and current database identity.
+    """
+    connection.execute("""CREATE TEMP TABLE IF NOT EXISTS parkweave_fixture_migration_receipt (
             database_oid oid, database_name text, owner_name text, system_identifier text,
             data_directory text, postmaster_start timestamptz, backend_pid integer,
             transaction_id bigint, cluster_nonce uuid, database_nonce uuid) ON COMMIT DROP""")
-        connection.execute('DELETE FROM pg_temp.parkweave_fixture_migration_receipt')
-        connection.execute("""INSERT INTO pg_temp.parkweave_fixture_migration_receipt
+    connection.execute('DELETE FROM pg_temp.parkweave_fixture_migration_receipt')
+    connection.execute("""INSERT INTO pg_temp.parkweave_fixture_migration_receipt
             VALUES(%s,%s,%s,%s,%s,%s,pg_backend_pid(),txid_current(),%s,%s)""",
-            (self.database_oid, self.database_name, self.cluster.owner,
-             self.cluster.system_identifier, self.cluster.data_directory,
-             self.cluster.postmaster_start, self.cluster.nonce, self.nonce))
+        (database_oid, database_name, owner_name, system_identifier,
+         data_directory, postmaster_start, cluster_nonce, database_nonce))
 
 
 def _migration_identity(connection):

@@ -1,7 +1,10 @@
 -- Candidate only: apply in the owner transaction with a verified creation ticket.
 -- Obtain it from capture_fixture_cluster BEFORE fixture CREATE DATABASE, then
 -- record_created_database and authorize_migration on this connection. Fixed
--- parkweave needs the same owned ephemeral cluster/database evidence as UUID.
+-- parkweave needs owned ephemeral evidence or the explicit synthetic native
+-- issuer's same-process successful CREATE receipt. Both use these unchanged
+-- owner/cluster/OID/backend/transaction checks. Default installed setup remains
+-- disabled for native issuance; no existing database can receive a fresh receipt.
 -- No implicit production/native install opt-in; names alone authorize nothing.
 -- No GRANT, role, identity, existing fact, material or receipt changes.
 -- Rollback before COMMIT is ordinary transaction rollback (DDL is transactional).

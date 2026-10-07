@@ -241,3 +241,12 @@ ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKI
 受影响PG/API19PASS/6.70秒；实际0业务冷浏览器通过16PNG/15viewport，readonly当前Case/Run/资料版本精确，角色/事项/client注入403清空，伪造执行者真实POST403；7权限hash不变，assignment/分派/回执/模型0。当前只完成事实与双角色资料确认，实际回执仍需单Run明确授权。Windows仅创建票据接口与拒绝矩阵设计，未实现adapter或执行native/owner/ACL/security。测试/后端/workflow字节不变，2301keys与83文件/1064IDs沿用，web binding更新；未重复未变化full，81ff445全量仍仅原冻结源范围。
 
 边界与一次性最小合成范围见[ENG103](ENG103-RunAccessBoundary.md)，[Windows设计](ENG103-InstalledWindowsReceiptDesign.md)与[机器证据](../integration/ENG103-RunAccessEvidence.json)。当前普通同步/CI终态另记录；F1未签收/F2并行、完整PR0/ATEX/Win11仍未完成，R4关闭/预算0。
+
+
+## ENG104 显式创建票据代码与精确对象核实
+
+25af47e270837aa30627d4f4dc47a2a8bf76cca8之后实现dormant native synthetic issuer：明确loopback/target/subject、拒隐式PG配置、自身实际CREATE成功后liveOID/cluster/start/owner匹配才发行processregistry/PID对象；原Store同事务接入精确两类，SQL025执行正文逐字节保持。原fixture保护、lifecycle/conftest/roles/workflow不变，无默认native启用或生产权限扩大。68adapterPASS/3.11s；原相关184PASS/69.79s；metadata101PASS/4.17s，各自独立、不拼full。2369collect/84files/四片606/566/632/565/1078ASTIDs/133bindings，旧keys/预算完整保留，独立审查无实质阻断。
+
+最后cold临时parkweave已删除，历史Run及Case不再存活；当时driver仅企业/资料专员，未初始化执行者。receipt-executor-fixture-a仅原launcher显式夹具建议，不能认作当前已有身份；本轮不创建实际新Run绑定。TTL不存在，撤销须原owner方法精确active=False且历史保留。当前路径仍只到事实和双角色资料确认。原生installed还需实际获准的维护/target/数据目录/新库范围，在暂停边界之外单独验证；本轮Linux不是Windows，TLS/GSS等v1不支持。
+
+详见[ENG104](ENG104-CreationReceiptAdapter.md)与[机器证据](../integration/ENG104-CreationReceiptEvidence.json)。普通开发同步及精确HEAD CI另留终态；F1未签收/F2并行、PR0/正式ATEX/Win11未完成，R4关闭/真实模型预算0，原环境/备份保留。

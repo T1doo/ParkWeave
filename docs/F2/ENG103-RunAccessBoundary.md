@@ -43,3 +43,8 @@ assignment开放该Run读取，并成为同Run执行者目录、本人offer读�
 界面窄改仅整理现有只读返回值及人工顺序；受影响case-path PG/API19PASS（6.70秒），实际0业务浏览器通过16PNG/15viewport，1200/390/320无页面横向溢出。390/320编号文本需框内滚动读尾部，完整值已检查；client注入403仅验证UI分支，另有伪造执行者真实POST403。7权限摘要未变/模型0，独立源码和3幅受影响像素复核无阻断，见[机器证据](../integration/ENG103-RunAccessEvidence.json)。原81ff445完整Linux2292PASS/9nativeSKIP与Server首次CI成功仍归原冻结源，不移用于新界面字节。无需重复未变化完整工程。
 
 installed Windows另见[创建票据设计](ENG103-InstalledWindowsReceiptDesign.md)：本轮不执行真实Windows owner/ACL/security操作，不伪造receipt。R4关闭、模型预算0、F1未签收/F2并行、完整PR0和正式AT/EX未完成。
+
+
+## ENG104 精确对象核实
+
+最后0业务driver实际未初始化任何执行者；它不是Linux启动器receipt-fixtures分支。该临时parkweave与历史Run已清理，目前没有存活可授权组合。不能把启动器建议主体或历史UUID当作实际已有对象，详见[ENG104对象/撤销与代码验证](ENG104-CreationReceiptAdapter.md)。本轮不写新Run绑定。

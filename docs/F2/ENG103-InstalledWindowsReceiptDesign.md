@@ -1,4 +1,6 @@
-# ENG103 Installed Windows 创建回执设计（未实施）
+# ENG103 Installed Windows 创建回执历史设计
+
+最新状态：ENG104已实现并离线测试显式adapter候选，默认installed入口仍关闭；见[代码与验证](ENG104-CreationReceiptAdapter.md)。下文保持ENG103当轮设计和未实施状态，不作当前代码状态。
 
 基线 `81ff445`。本轮仅在原离线合成边界内设计代码接口与测试，不实现或启用 native adapter，不修改 lifecycle、Store、migration025、测试、角色或权限。没有运行 PostgreSQL、Windows installed/native、浏览器或真实模型，没有执行 owner/ACL/security 写入，也没有创建凭据、身份、Grant 或数据库。本文不是部署批准、真实安装通过证据或可使用票据。
 
