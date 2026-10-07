@@ -98,6 +98,28 @@ def template(store,token):
     with store.connect() as c:sd._auth(store,c,token)
     return dict(scope=SCOPE,template=TEMPLATE,template_sha256=TEMPLATE_SHA,executed=False)
 
+def binding_catalog_known(catalog):
+    return bool(catalog and catalog['namespace']=='SYNTHETIC' and isinstance(catalog['source'],dict) and catalog['source'].get('kind')=='SYNTHETIC' and catalog['source'].get('id') and catalog['source'].get('revision'))
+
+def binding_p1(c,parent,snapshot):
+    """Shared version descriptor for checks and the read-only binding projection."""
+    result={k:snapshot.get(k) for k in ('preparation_id','case_id','run_id','service_id','service_version','preparation_revision','preparation_sha256')}
+    catalog=c.execute('SELECT service_id,version,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',(parent['park_id'],parent['service_id'],parent['service_version'])).fetchone()
+    result.update(owner_id=parent['owner_id'],reviewer_id=parent['reviewer_id'],goal=parent['goal'],
+      required_goals=intents.view(parent)['required_goals'],request_intent=parent.get('request_intent'),
+      template_sha256=TEMPLATE_SHA,service_catalog=_normal(catalog) if catalog else None)
+    result['owner_grants']={cap:bool(c.execute('SELECT 1 FROM capability_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s AND capability=%s AND active',(parent['owner_id'],parent['park_id'],parent['org_id'],cap)).fetchone()) for cap in ('READ','EXECUTE')}
+    result['owner_grants']['PREPARE']=bool(c.execute("SELECT 1 FROM preparation_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s AND capability='PREPARE' AND active",(parent['owner_id'],parent['park_id'],parent['org_id'])).fetchone())
+    if parent.get('request_intent'):result['request_intent_sha256']=_hash(parent['request_intent'])
+    return _normal(result)
+
+def binding_p2(c,parent,snapshot,holds,rules):
+    result={k:snapshot.get(k) for k in ('preparation_revision','preparation_sha256','resource_link_id','resource_link_revision','combination_id','combination_state','members')}
+    result['resource_rules']=[_normal({k:r[k] for k in ('id','revision','capacity','buffer_seconds','open_from','open_until','enabled','source','namespace','authority')}) for _,r in sorted(rules.items(),key=lambda x:str(x[0]))]
+    result['hold_sources']=[_normal({k:h[k] for k in ('id','resource_id','resource_revision','starts_at','ends_at','buffer_seconds','quantity','state','expires_at','namespace')}) for h in holds]
+    result['resource_grants']=[dict(resource_id=str(h['resource_id']),capability=cap,active=bool(c.execute('SELECT 1 FROM synthetic_resource_grants WHERE principal_id=%s AND resource_id=%s AND park_id=%s AND org_id=%s AND capability=%s AND active',(parent['owner_id'],h['resource_id'],parent['park_id'],parent['org_id'],cap)).fetchone())) for h in holds for cap in ('READ','HOLD')]
+    return _normal(result)
+
 def _sources(store,c,parent):
     # Trusted private dependency checks use the existing owner's current scope;
     # their private source data are never projected to counterpart roles.
@@ -118,11 +140,10 @@ def _sources(store,c,parent):
       'P3':{k:snap.get(k) for k in ('preparation_revision','preparation_sha256','dispatch_id','dispatch_revision','offer_id','executor_id','receipt_step_id')},
       'P4':{k:snap.get(k) for k in ('preparation_revision','preparation_sha256','receipt_step_id','receipt_step_revision','receipt_id','receipt_sha256')},
     }
-    snapshots['P1'].update(owner_id=parent['owner_id'],reviewer_id=parent['reviewer_id'])
-    if parent.get('request_intent'):
-        snapshots['P1']['request_intent_sha256']=_hash(parent['request_intent'])
-        if intents.state(parent)!='SUPPORTED_LOCAL':issues['MATERIAL_REVIEW'].append('REQUEST_GOAL_COVERAGE_REQUIRED')
-    snapshots['P2']['resource_rules']=[_normal({k:r[k] for k in ('id','revision','capacity','buffer_seconds','open_from','open_until','enabled')}) for _,r in sorted(rules.items(),key=lambda x:str(x[0]))]
+    snapshots['P1']=binding_p1(c,parent,snap)
+    if parent.get('request_intent') and intents.state(parent)!='SUPPORTED_LOCAL':issues['MATERIAL_REVIEW'].append('REQUEST_GOAL_COVERAGE_REQUIRED')
+    if not binding_catalog_known(snapshots['P1']['service_catalog']):issues['MATERIAL_REVIEW'].append('CURRENT_SERVICE_CATALOG_REQUIRED')
+    snapshots['P2']=binding_p2(c,parent,snap,holds,rules)
     return {s:sorted(set(issues[k])) for s,k in zip(STEPS,CHECKS)},_normal(snapshots)
 
 def invalidate(c,id,index):

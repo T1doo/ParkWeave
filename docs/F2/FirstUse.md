@@ -145,3 +145,8 @@ fixture-a与fixture-b可共享同一资源容量，彼此只能读自己的占�
 ## ENG092 有界依赖规划与已授权精确同步
 
 九提交普通 push 已核实远端 e03dbf7；唯一37593296690/attempt1精确同头 completed/success，仅现有独立Job元数据，不代表完整Windows/Win11。新规划切片从全部显式目标选择1–5注册依赖步骤、保留UNKNOWN/UNSUPPORTED，并以来源SHA持久化最多16条预览；仅元数据，无执行/赋权。migration021及019/020打包修复只在隔离测试应用，本片独立本地提交不再push。详见[ENG092](ENG092-BoundedPlanningAndExactSync.md)，T01–T07缺口仍按原验收标准，F1未签收/F2并行、R4关闭/预算0。
+
+
+## ENG093 资源与工程计划版本变化
+
+P1/P2共享版本descriptor纳入目录、原诉求/全部目标、组合/规则/时段/来源与当前已有权限；实际gate拒绝陈旧核对。新owner只读产品投影显示具体变化、替代比较和重验步骤，正式Approval NOT_IMPLEMENTED，不执行、不赋权、不释放旧预约。真实同Case替代/取消/改目标/刷新路径与缺口见[ENG093](ENG093-ResourcePlanVersionImpacts.md)。仅本地提交，无新增push/CI；完整T03、真实批准与ServicePlan依赖锁仍未验收。

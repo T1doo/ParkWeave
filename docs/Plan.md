@@ -307,3 +307,6 @@ GitHub日志Forbidden仅确定在已获批job-log GET流程，API/重定向位�
 
 
 ENG092：已授权精确同步 e03dbf7 及唯一独立 Job success；新增1–5注册依赖规划只持久化工程预览，独立本地提交，完整T02/AT07/AT14与原验收仍未通过。见[F2记录](F2/ENG092-BoundedPlanningAndExactSync.md)。
+
+
+ENG093：本地补资源与工程计划版本绑定和具体变更影响；实际gate拒陈旧核对，同Case替代/撤回/改目标/刷新可复核，未创建正式Approval。见[F2记录](F2/ENG093-ResourcePlanVersionImpacts.md)。

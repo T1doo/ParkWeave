@@ -311,6 +311,11 @@ def create_app(store: Store) -> FastAPI:
         except LockNotAvailable as e:raise Conflict('receipt authorization or record busy; retry same key') from e
 
     from . import case_resources as case_resources
+    from . import resource_plan_binding
+    @app.get('/api/preparations/{preparation_id}/resource-plan-binding')
+    def case_resource_plan_binding(preparation_id: UUID,candidate_combination_id: UUID | None=None,authorization: str | None=Header(default=None)):
+        return resource_plan_binding.read(store,token(authorization),preparation_id,candidate_combination_id)
+
     @app.get('/api/preparations/{preparation_id}/resource-link')
     def case_resource_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return case_resources.read(store,token(authorization),preparation_id)
