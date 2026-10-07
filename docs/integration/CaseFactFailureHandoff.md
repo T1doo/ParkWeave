@@ -59,3 +59,11 @@ AssertionError: assert ('CURRENT' == 'STALE')
 
 
 精确选择与历史重放身份已在本线真实API测试补强：末项choices的三字段ID/revision/fingerprint与实际提交完全一致，sourceSHA、决定ID/hash与原event匹配；旧key重放action/decision_ref/decision_sha等于原event，仍需当前GET。最终两项专项2PASS/0FAIL/2WARN/6.58秒，测试源码SHA256 `30511d2dd5f75ed44a78eb7966f7c051f04664b1dee2a53dd888bac61ff66073`；不与前6项或工具12项拼算完整通过。当前检查点支持UUID fixture的真实UI验证正在执行，只证明当前源码已测行为；核心三处阻塞未解，最终验收不升级。
+
+
+当前支持UUID fixture的真实UI最终检查点 **1PASS/2WARN/101.01秒/21图**，171冻结运行依赖跑后字节无差异；七项权限表hash不变，启动后setup业务写入0，模型0/预算0，测试服务与PG清理。原生DECLARE/三项选择、已提交答复丢失原key/body刷新后重试；原网页POST事实追加竞争来源令STALE/五步失效，再新明确用途、原人工REVIEW/CONFIRM、资源重绑、同执行者显式重新offer/本人新ACCEPT、独立新receipt UUID/v1 SUBMIT/ACK、本地REOPEN/cycle2及五步重验；历史只读、新加载与迟响应Case/token私密清理、专员/外企业403均真正完成。两个Case在浏览器前置通过原入口建立，不是普通用户冷创建。源事实变化不改原材料，旧/新材料reviewSHA相同是正确合同，独立事实决定/sourceSHA更新、prepRev提高、旧history保留另行验证。
+
+三次尝试保留：启动前1.83秒PATH漏已安装Node（0UI）；首次原生84.49秒18图，在第二轮完成后沿用ENG099材料变更SHA必须不同的错误harness断言失败，迟响应等剩余场景未执行；核原材料SHA合同并强化独立事实决定/来源/版本断言后最终21图通过。产品API/UI/module未为此改动。证据范围为**CHECKPOINT_BROWSER_PASS_NOT_FINAL_INTEGRATION_ACCEPTANCE**，已知四项Grant恢复失败、回滚起点、lifecycle迁移不兼容均未解决，完整Linux/最终事实主分支推送/native/formalAT尚未验收。独立图/hash审阅正在完成。
+
+
+独立只读审阅已完成：21图、4报告、三次尝试与171源码hash全部0差异，页面三种视口、STALE与重新明确选择、旧回执只读及材料SHA/事实SHA分开绑定均无检查点视觉或证据阻断。结论仅 **NO_VISUAL_OR_HASH_BLOCKER_CHECKPOINT_ONLY**；四项Grant恢复RED、schema24回滚起点和lifecycle固定库边界仍阻断最终集成签收。
