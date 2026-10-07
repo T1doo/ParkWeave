@@ -1,3 +1,9 @@
+## ENG089 单Run协作访问候选与启用决定包（仅本地）
+
+在5cbff16上实现默认关闭的独立Mock访问申请/独立审批/限定单Run service_executor READ与8h期限/撤销审计。当前角色/READ/tenant/Run与权限版本每次重验，旧版本/跨Run/过期/撤销上下文拒绝；写锁和读等待后重取时间，原资料专员不具审批权限。相关59PASS，实际Chromium全流程与1200/390/320通过，独立源码/截图审查无阻断；最终217源冻结完整Linux1556PASS/0FAIL/9nativeSKIP/2WARN（312.6秒），源hash0差异。真实assignment/Grant/身份/权限/owner未改变，P3真实冷入口仍阻塞；完整可演示链与缺口见[ENG089](ENG089-SingleRunAccessCandidate.md)，规则与Run后续明确RACI/期限/初始化和技术/真实访问扩大分别列于[一次性决定包](ENG089-ActivationDecisionPacket.md)。
+
+仅本地不push/CI/merge/deploy，R4关闭/预算0、F1未签收/F2并行与Server/Win11边界保持。下方历史条目保留原范围。
+
 ## ENG088 隔离候选规则审核发布（真实流程未启用）
 
 在31944ea上实现默认关闭的独立合成候选合同、专用SQLite、显式提交/独立审核/候选发布/撤回、来源字节与内容版本绑定、当前权限重验及过期评估。生产API、目录只读、部署schema20、角色/Grant/assignment/owner均保持。相关29PASS，实际离线Mock Chromium全流程及1200/390/320通过，独立7图复核无误导；最终211源冻结完整Linux1526PASS/0FAIL/9nativeSKIP/2WARN（315.08秒），源码hash0差异。实际发布权限和新Run审批仍待权威合同及最小权限审查，逐项方案与证据见[ENG088](ENG088-IsolatedRulePublicationCandidate.md)。
