@@ -1,3 +1,9 @@
+## ENG088 隔离候选规则审核发布（真实流程未启用）
+
+在31944ea上实现默认关闭的独立合成候选合同、专用SQLite、显式提交/独立审核/候选发布/撤回、来源字节与内容版本绑定、当前权限重验及过期评估。生产API、目录只读、部署schema20、角色/Grant/assignment/owner均保持。相关29PASS，实际离线Mock Chromium全流程及1200/390/320通过，独立7图复核无误导；最终211源冻结完整Linux1526PASS/0FAIL/9nativeSKIP/2WARN（315.08秒），源码hash0差异。实际发布权限和新Run审批仍待权威合同及最小权限审查，逐项方案与证据见[F2/ENG088](F2/ENG088-IsolatedRulePublicationCandidate.md)。
+
+不push/CI/merge/deploy，R4关闭/预算0，F1未签收/F2并行、Windows Server与Win11边界保留。下方ENG087是前轮阻塞记录；本轮新增授权仅限代码/隔离测试，不消除正式权限阻塞。
+
 ## ENG087 正式规则发布当前阻塞
 
 实际合同和独立复核均确认没有现成规则发布主体/授权合同，应用目录仅SELECT；资料核对权限不能扩大为目录审批。28项隔离PG/API验证拒绝边界，205冻结源完整回归1501PASS/0FAIL/9nativeSKIP/2WARN（310.23秒），产品源码与5822b029不变，未实现正向发布。需要明确现有授权主体/范围及代码候选范围，不能自动改Grant/角色或owner；具体可评审流程与代码/权限缺口分界见[F2/ENG087](F2/ENG087-RulePublicationAuthorityGate.md)。本轮保留ENG086既有材料流程、暂停owner、无push/CI/真实模型或新持久账户凭据。
