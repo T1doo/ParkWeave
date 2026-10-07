@@ -342,8 +342,12 @@ function renderDispatch(x,catalog){
   $('dispatch-withdraw').hidden=!reviewer;$('dispatch-accept').hidden=!executor;$('dispatch-decline').hidden=!executor;$('dispatch-accept').disabled=x.dependency!=='CURRENT';
   $('dispatch-receipt').hidden=!x.current_receipt_step_id||reviewer;
   $('dispatch-history').replaceChildren();for(const e of x.history)$('dispatch-history').append(textElement('p','版本 '+e.revision+' · '+e.action+' · '+e.payload.actor_id+'：'+e.payload.reason));
-  if(reviewer&&catalog&&!catalog.ready)$('dispatch-current').append(textElement('p',catalog.history_limit_reached?'分派记录已达本地版本上限，需人工核对。':catalog.has_receipt_step?'已存在接单或历史回执步骤；继续从回执核对，暂不转派。':current?.state==='OFFERED'?'先撤回当前未接单分派，再说明原因重新分派。':'请先核对并本地确认当前资料版本。'));
-  if(reviewer&&catalog?.ready&&!catalog.executors.length)$('dispatch-current').append(textElement('p','此运行暂无已有合法执行者；分派不会新增访问授权。'));
+  const noExistingExecutor=reviewer&&catalog&&!catalog.executors.length;
+  if(reviewer&&catalog&&!catalog.ready&&!noExistingExecutor)$('dispatch-current').append(textElement('p',catalog.history_limit_reached?'分派记录已达本地版本上限，需人工核对。':catalog.has_receipt_step?'已存在接单或历史回执步骤；继续从回执核对，暂不转派。':current?.state==='OFFERED'?'先撤回当前未接单分派，再说明原因重新分派。':'请先核对并本地确认当前资料版本。'));
+  if(noExistingExecutor){
+    $('dispatch-current').append(textElement('p','此Run当前没有可分派的既有合法执行者；本页不会申请、创建或复制Run访问权。'));
+    if(!catalog.ready)$('dispatch-current').append(textElement('p','分派目录也未确认其他前置条件已满足；请继续按当前资料与回执状态核对。'));
+  }
   if(catalog?.can_reoffer){$('dispatch-current').append(textElement('p','新版材料需重新接单：请原执行者重新确认新版材料。历史回执不会复制到新步骤。'));$('dispatch-offer-button').textContent='请原执行者重新确认新版材料';}else $('dispatch-offer-button').textContent='记录分派';
   dispatchPendingUI();$('dispatch-error').textContent=dispatchPending?'原操作结果尚未确认；请使用原操作重试。':'';$('page-feedback').textContent='';
 }

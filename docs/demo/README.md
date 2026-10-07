@@ -41,3 +41,10 @@ python tests/test_demo_preflight.py
 同用途材料复用使用原产品专用入口，须在新Case尚无任何材料时明确选择来源、用途和理由；只复制material_outline为新UUID/v1/UNVERIFIED。该Case的新need_summary、独立人工REVIEW/CONFIRM及当前Run合法访问仍需重新准备。详见[ENG100验收映射](../F2/ENG100-V1AcceptanceAndMaterialReuse.md)。
 
 本任务的受管Chromium明确阻止 file:// 导航，不能据此申领文件直接打开通过。安装者可在既有本机只读服务上以固定URL展示公开操作卡；实际测试仅该卡预读字节响应，其余路径404、不开放仓库目录或私有会话文件，不修改浏览器策略。此模式仍不请求外部网络。直接文件打开结果与本机HTTP结果分别记录。
+
+
+## 当前冷入口接线
+
+Linux启动命令须显式使用 `--fresh-fixture`（见首次体验文档）。它在系统临时目录初始化全新自有集群，在CREATE DB前读取实际集群证据，CREATE后取得同进程receipt，原Store同事务迁移001–025。就绪输出runtime_directory及已核实的本次API进程/端口；会话只存本次私有临时目录，正常结束只清理本次服务与目录。已有仓库.runtime和旧库保持；仅既有schema25允许原持久模式，低版本不补造票据、不自动迁移。
+
+普通使用者从服务目录的新资料事项入口经原Run API/LOCAL worker创建Case，再填写事实/材料、人工核对和企业确认。身份、角色、合成服务/资源目录依然由原fixture初始化，新Run的executor assignment仍未提供；无合法访问时停在分派/回执前，不能称无需准备的全业务闭环。本轮从零指0业务Case/Run/资料/事实/回执，不是无身份/目录初始化。实际验收记录在本轮证据中，不沿用旧预建Case截图结论。

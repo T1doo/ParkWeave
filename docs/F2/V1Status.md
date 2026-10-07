@@ -225,3 +225,10 @@ ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKI
 ## ENG101 演示指南与诊断兼容
 
 体验指南集成实际浏览器1PASS/82.39秒/24图；file://被管理员策略阻止，固定只读HTTP卡验证通过。实际既有恢复流程仍为预建合成Case，最终WAITING_CONFIRMATION，无权限变化或外部履约。最终差异107PASS/4.45秒，2194collection/79文件/四片540/549/540/565/1005诊断IDs，旧2183keys保留；此轮无新完整Linux，不能累加旧2174全量。事实确认模块独立联调未签收。详见[ENG101](ENG101-DemoExperienceIntegration.md)与[实际证据](../demo/integration-evidence.json)。F1未签收/F2并行、Server非Win11、正式AT/EX仍NOT_RUN、R4关闭/预算0。
+
+
+## ENG102 普通用户临时冷入口
+
+修复原Linux启动器schema25票据缺口：显式fresh-fixture仅新自有临时集群，先capture/CREATE/record再原same-transaction loader；已有旧库/会话保留，低版本不补造票据。真实启动/关闭和旧24保护等专项7PASS/6.44秒；外线a26d99c固定名测试真实receipt接线已整合03a8230。普通用户实际网页从0业务Run/Case/资料/事实/回执，经LOCAL worker创建新Case、三事实和两材料、专员REVIEW/企业CONFIRM，到本Run无合法executor assignment的明确停点。仅修专员错误“重复确认资料”提示，ready/API/授权不变，改后新冷13图复验通过，7权限表hash不变/assignment分派回执模型记录0，CaseNEEDS_INPUT/资格NOT_EVALUATED。不是无身份/目录初始化或到真实回执的完整冷启动。
+
+当前2301collection/83文件/四片606/566/564/565/1064诊断IDs，旧2296/2194/2183keys保留，预算及workflow不变。最终source full、正常开发同步和精确HEAD Server CI等待本轮实际终态记录，不预写成功。原R0/PR0完整目标、F1未签收/F2并行、正式AT/EX与Windows installed adapter仍保留阻塞，R4关闭/真实模型预算0。详见[ENG102](ENG102-UserColdEntry.md)。

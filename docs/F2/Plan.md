@@ -357,3 +357,10 @@ ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKI
 三个外线修复 f3a90a6/bcb9a2f/cee64e1 顺序整合；Store 原迁移事务接入创建证明，真实新 UUID fixture 与固定 parkweave 临时集群 lifecycle 接线回归101PASS（含原4Grant恢复失效门禁）。核心与支持另一次77PASS/1DESELECTED，不与前组相加。最终源码实际原生浏览器1PASS/114.81秒/21图，171登记源码跑后零差异；原API前置创建2Cases，不宣称普通用户冷创建。当前Case仍WAITING_CONFIRMATION，7权限表不变，启动后setup写0/模型0/预算0。
 
 完整Linux首轮2296项：2256PASS/1FAIL/39SKIP/2WARN，589.08秒；284冻结源跑后零差异。唯一失败为外线固定名核心测试未attach receipt的原始前置缺口；其中30项PowerShell缓存缺失跳过已复用原安装缓存按精确node补跑30PASS/17.59秒，余9项原生Windows SKIP。不拼称一次完整PASS，不删测试或放宽guard。真实installed Windows入口还没有同进程创建证明适配，schema<25默认拒绝；原生/Win11、正式AT/EX、main merge/deploy仍未授权或未验收。独立检查点已普通推送9717674，主开发仍6d669b2，最终业务集成未签收。见[票据接线进度](../integration/CaseFactReceiptWiringProgress.json)。
+
+
+## ENG102 普通用户临时冷入口
+
+修复原Linux启动器schema25票据缺口：显式fresh-fixture仅新自有临时集群，先capture/CREATE/record再原same-transaction loader；已有旧库/会话保留，低版本不补造票据。真实启动/关闭和旧24保护等专项7PASS/6.44秒；外线a26d99c固定名测试真实receipt接线已整合03a8230。普通用户实际网页从0业务Run/Case/资料/事实/回执，经LOCAL worker创建新Case、三事实和两材料、专员REVIEW/企业CONFIRM，到本Run无合法executor assignment的明确停点。仅修专员错误“重复确认资料”提示，ready/API/授权不变，改后新冷13图复验通过，7权限表hash不变/assignment分派回执模型记录0，CaseNEEDS_INPUT/资格NOT_EVALUATED。不是无身份/目录初始化或到真实回执的完整冷启动。
+
+当前2301collection/83文件/四片606/566/564/565/1064诊断IDs，旧2296/2194/2183keys保留，预算及workflow不变。最终source full、正常开发同步和精确HEAD Server CI等待本轮实际终态记录，不预写成功。原R0/PR0完整目标、F1未签收/F2并行、正式AT/EX与Windows installed adapter仍保留阻塞，R4关闭/真实模型预算0。详见[ENG102](ENG102-UserColdEntry.md)。
