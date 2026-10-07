@@ -53,3 +53,9 @@ AssertionError: assert ('CURRENT' == 'STALE')
 ## 独立已交付体验范围
 
 正常主开发分支演示提交 `6d669b2d3567b9e36db4c42a4813115d5ca18b53`：指南+诊断class IDs支持107差异PASS/4.45秒；真实browser1PASS/82.39秒/24图（静态指南9+原预建合成Case恢复15）。file://管理员阻止，固定只读HTTP卡通过；未重跑可选材料复用、不是用户冷创建、无本修订完整Linux或事实UI验收。首次精确HEAD Server隔离job CI37634237108 attempt1 completed/success，8步骤成功；Server非Win11。R4关闭/预算0，F1未签收/F2并行，正式AT/EX未跑。
+
+
+本环境支持自测12PASS/1WARN/0.08秒，只计工具自身；新增4真实可办理阶段与完整恢复/准备隐私共6项实际API选择测试6PASS/0FAIL/2WARN/11.02秒。四门在变化前各从原API保存允许动作、精确CAS/hash与同Case/Run前驱，再用原事实POST改变source；每项只报告对应阶段，并用包含prep/event/plan的独立oracle验证拒绝无业务效果（仅允许明确失效观察标记）。不使用闭合事项天然409证明门禁。支持独审另发现新确认辅助未比对末项choices与提交ID/rev/fingerprint，以及历史重放未核对原decision身份；本线正在真实API测试中强化，不把工具12项算产品或完整回归。机器范围与hash见 [CaseFactIntegrationCheckpointEvidence.json](CaseFactIntegrationCheckpointEvidence.json)。
+
+
+精确选择与历史重放身份已在本线真实API测试补强：末项choices的三字段ID/revision/fingerprint与实际提交完全一致，sourceSHA、决定ID/hash与原event匹配；旧key重放action/decision_ref/decision_sha等于原event，仍需当前GET。最终两项专项2PASS/0FAIL/2WARN/6.58秒，测试源码SHA256 `30511d2dd5f75ed44a78eb7966f7c051f04664b1dee2a53dd888bac61ff66073`；不与前6项或工具12项拼算完整通过。当前检查点支持UUID fixture的真实UI验证正在执行，只证明当前源码已测行为；核心三处阻塞未解，最终验收不升级。

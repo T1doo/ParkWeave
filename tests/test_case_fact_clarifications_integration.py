@@ -12,9 +12,13 @@ from uuid import uuid4
 import pytest
 
 from parkweave import controlled_plans as cp
+from scripts.case_fact_integration_contract import (
+    FactAPI, Request, capture_eligibility, verify_refusals,
+    assert_observed_invalidation, assert_recovery_generation,
+)
 from test_preparation import preparation_fixture, headers, command as prep_command, read as prep_read
 from test_executor_receipts import receipt_fixture, act as receipt_command
-from test_case_resources import link_fixture, post as resource_link
+from test_case_resources import link_fixture, group, post as resource_link
 from test_service_dispatches import offer, command as dispatch_command, REVIEWER
 from test_service_case_steps import (setup, GOALS, adopt, accepted, verified,
     read as plan_read, command as plan_command)
@@ -49,6 +53,28 @@ def preparation_records(f):
     with f[1].connect() as c:
         return {table: c.execute('SELECT * FROM ' + table + ' ORDER BY to_jsonb(' + table + ')::text').fetchall()
                 for table in ('preparations', 'preparation_events', 'preparation_evidence')}
+
+
+def normalize_preparation_observations(before, after):
+    """Permit only existing verified-step invalidation flags, preserving all proofs."""
+    normalized = deepcopy(after)
+    assert len(before['preparations']) == len(normalized['preparations'])
+    for original, observed in zip(before['preparations'], normalized['preparations']):
+        assert original['id'] == observed['id']
+        old_plan, new_plan = original['service_case_plan'], observed['service_case_plan']
+        if old_plan is None or new_plan is None:
+            assert old_plan == new_plan
+            continue
+        assert old_plan['id'] == new_plan['id'] and len(old_plan['steps']) == len(new_plan['steps'])
+        for old_step, new_step in zip(old_plan['steps'], new_plan['steps']):
+            assert old_step['id'] == new_step['id']
+            if old_step.get('invalidated') != new_step.get('invalidated'):
+                assert old_step.get('verified_sha256') and new_step.get('invalidated') is True
+                if 'invalidated' in old_step:
+                    new_step['invalidated'] = old_step['invalidated']
+                else:
+                    new_step.pop('invalidated')
+    return normalized
 
 
 def assertions(f):
@@ -115,6 +141,18 @@ def confirm(f, parent, body, key=None, user='fixture-a'):
                      headers=headers(f[2], user, key or uuid4().hex), json=body)
 
 
+def assert_latest_selection(f, parent, submitted, event):
+    """Bind the actual persisted choices to the exact owner command, without printing them."""
+    response = fact_read(f, parent)
+    assert response.status_code == 200, 'owner selection read must succeed'
+    latest = response.json()['history'][-1]
+    choices_match = latest['choices'] == submitted['choices']
+    assert choices_match, 'persisted choices must match submitted field/ID/revision/fingerprint'
+    assert latest['source_sha256'] == submitted['expected_source_sha256'], 'persisted source must match the submitted snapshot'
+    assert event['decision_ref'] == latest['id'], 'command event must identify the persisted decision'
+    assert event['decision_sha256'] == latest['decision_sha256'], 'command event must bind the persisted decision hash'
+
+
 def current_parent(f, parent):
     response = prep_read(f, parent)
     assert response.status_code == 200, response.text
@@ -153,6 +191,7 @@ def declared_and_selected(f):
     body = confirm_body(f, parent, selected)
     response = confirm(f, parent, body)
     assert response.status_code == 200, response.text
+    assert_latest_selection(f, parent, body, response.json())
     return current_parent(f, parent), selected, response.json()
 
 
@@ -195,6 +234,7 @@ def test_declared_profile_blocks_original_human_review_until_actual_fact_choices
     body = confirm_body(f, parent, selected)
     response = confirm(f, parent, body)
     assert response.status_code == 200, response.text
+    assert_latest_selection(f, parent, body, response.json())
     parent = current_parent(f, parent)
     assert parent['revision'] == old_revision + 2 and parent['state'] == 'IN_PREPARATION'
     assert prep_read(f, parent).json()['preparation']['review_sha256'] is None
@@ -235,6 +275,7 @@ def test_original_fact_append_invalidates_actual_gates_then_requires_complete_ex
     body = confirm_body(f, parent, selected)
     response = confirm(f, parent, body)
     assert response.status_code == 200, response.text
+    assert_latest_selection(f, parent, body, response.json())
     parent = current_parent(f, parent)
     assert parent['revision'] == old_parent_revision + 1 and parent['state'] == 'IN_PREPARATION'
     assert prep_read(f, parent).json()['preparation']['review_sha256'] is None
@@ -287,6 +328,10 @@ def test_original_fact_append_invalidates_actual_gates_then_requires_complete_ex
     assert authority(f) == permissions
     with f[1].connect() as c:
         assert c.execute('SELECT state FROM cases WHERE id=%s', (parent['case_id'],)).fetchone()['state'] == 'WAITING_CONFIRMATION'
+    final_run = f[3].get('/api/runs/' + parent['run_id'], headers=headers(f[2]))
+    assert final_run.status_code == 200, final_run.text
+    assert_recovery_generation(receipt_read(f, old_receipt['step']['id']),
+                               receipt_read(f, receipt['step']['id']), final_run.json())
 
 
 def test_owner_private_fact_choices_do_not_leak_through_original_shared_projections(link_fixture):
@@ -297,6 +342,10 @@ def test_owner_private_fact_choices_do_not_leak_through_original_shared_projecti
     owner = fact_read(f, parent)
     assert owner.status_code == 200, owner.text
     assert 'PRIVATE_REGION_SELECTED' in owner.text and 'PRIVATE_FACT_EXCERPT_' in owner.text
+    api = FactAPI(f[3], parent['preparation_id'], f[2]['fixture-a'])
+    private_markers = [value for row in owner.json()['sources']
+                       for value in (row['id'], row['source_excerpt'], row['value']) if isinstance(value, str)]
+    api.assert_generic_redaction([f[2]['fixture-a'], f[2][REVIEWER]], private_markers)
     for user in ('fixture-a', REVIEWER):
         response = prep_read(f, parent, user)
         assert response.status_code == 200, response.text
@@ -305,6 +354,7 @@ def test_owner_private_fact_choices_do_not_leak_through_original_shared_projecti
         assert all(value not in encoded for value in selected.values())
         assert 'PRIVATE_REGION_SELECTED' not in encoded and 'PRIVATE_FACT_EXCERPT_' not in encoded
     for user in (REVIEWER, 'executor-a', 'fixture-b', 'fixture-c'):
+        api.assert_private_read_denied(f[2][user])
         response = fact_read(f, parent, user)
         assert response.status_code == 403, response.text
         assert 'PRIVATE_' not in response.text and all(value not in response.text for value in selected.values())
@@ -320,11 +370,15 @@ def test_old_confirm_key_restores_history_without_reactivating_changed_fact_sour
     body, key = confirm_body(f, parent, selected), uuid4().hex
     first = confirm(f, parent, body, key)
     assert first.status_code == 200, first.text
+    assert_latest_selection(f, parent, body, first.json())
     parent = human_review_and_confirm(f, current_parent(f, parent))
     post_fact(f, 'service_need', 'PRIVATE_NEW_SERVICE_NEED', 'changed-after-confirmed-key')
     before, downstream, permissions = preparation_records(f), business(f), authority(f)
     replay = confirm(f, parent, body, key)
     assert replay.status_code == 200, replay.text
+    assert replay.json()['action'] == first.json()['action']
+    assert replay.json()['decision_ref'] == first.json()['decision_ref']
+    assert replay.json()['decision_sha256'] == first.json()['decision_sha256']
     assert replay.json()['recovery'] == 'HISTORICAL_COMMITTED_EVENT'
     assert not replay.json()['current_decision_restored']
     assert fact_read(f, parent).json()['state'] == 'STALE'
@@ -449,19 +503,82 @@ def test_null_ledger_cannot_downgrade_a_native_declared_preparation_to_legacy(li
     # The existing Case-step gate may persist a failed-source observation. Only
     # a verified step's invalidated flag may change from absent/false to true;
     # this must not write a command event, prep revision, source proof or receipt.
-    normalized = deepcopy(after)
-    for original, observed in zip(before['preparations'], normalized['preparations']):
-        old_plan, new_plan = original['service_case_plan'], observed['service_case_plan']
-        assert old_plan['id'] == new_plan['id']
-        for old_step, new_step in zip(old_plan['steps'], new_plan['steps']):
-            if old_step.get('invalidated') != new_step.get('invalidated'):
-                assert old_step.get('verified_sha256') and new_step.get('invalidated') is True
-                if 'invalidated' in old_step:
-                    new_step['invalidated'] = old_step['invalidated']
-                else:
-                    new_step.pop('invalidated')
+    normalized = normalize_preparation_observations(before, after)
     assert normalized == before and business(f) == downstream
     assert authority(f) == permissions and assertions(f) == facts
+
+
+@pytest.mark.parametrize('gate', ['P1_VERIFY', 'NEW_OFFER', 'OLD_SUBMIT', 'P5_CLOSE'])
+def test_actual_eligible_stage_becomes_refused_after_original_fact_append(link_fixture, gate):
+    """Each gate has its own genuinely executable stage in its own UUID database."""
+    f = link_fixture
+    parent, _, _ = declared_and_selected(f)
+    parent = human_review_and_confirm(f, parent)
+    assert adopt(f, parent).status_code == 201
+    base = '/api/preparations/' + parent['preparation_id']
+    plan_path = base + '/service-case-plan'
+    if gate == 'P1_VERIFY':
+        row = plan_read(f, parent).json()
+        step = next(item for item in row['steps'] if item['adapter_id'] == 'P1')
+        request = Request(gate, plan_path + '/commands', f[2]['fixture-a'],
+            dict(action='VERIFY', step_id=step['id'], expected_revision=row['revision'],
+                 expected_source_sha256=step['source_sha256'], reason='Verify eligible P1 before facts changed'))
+        capture_eligibility(f[3], request, plan_path)
+    elif gate == 'NEW_OFFER':
+        verified(f, parent, 'P1')
+        response = resource_link(f, parent, group(f))
+        assert response.status_code == 201, response.text
+        verified(f, parent, 'P2')
+        catalog_path = '/api/service-dispatches/catalog?preparation_id=' + parent['preparation_id']
+        response = f[3].get(catalog_path, headers=headers(f[2], REVIEWER))
+        assert response.status_code == 200, response.text
+        row = response.json()
+        assert row['ready'] and not row['has_receipt_step'] and row['dispatch_revision'] == 0
+        request = Request(gate, base + '/dispatch', f[2][REVIEWER],
+            dict(expected_preparation_revision=row['preparation_revision'],
+                 expected_dispatch_revision=row['dispatch_revision'], executor_id='executor-a',
+                 reason='Offer from a genuinely ready unaccepted Case'))
+        capture_eligibility(f[3], request, catalog_path, plan_path)
+    else:
+        _, dispatch = accepted(f, parent)
+        verified(f, parent, 'P3')
+        receipt = receipt_read(f, dispatch['receipt_step_id'], 'executor-a')
+        if gate == 'OLD_SUBMIT':
+            assert receipt['step']['state'] == 'AWAITING_RECEIPT' and receipt['current_receipt'] is None
+            receipt_path = '/api/executor-receipts/' + receipt['step']['id']
+            request = Request(gate, receipt_path + '/commands', f[2]['executor-a'],
+                dict(action='SUBMIT', expected_revision=receipt['step']['revision'],
+                     text='Genuinely new executor record for the current accepted generation',
+                     source_kind='SYNTHETIC', source_label='SYNTHETIC current executor work log'))
+            capture_eligibility(f[3], request, receipt_path, plan_path)
+        else:
+            response = receipt_command(f, receipt, 'SUBMIT')
+            assert response.status_code == 200, response.text
+            response = receipt_command(f, response.json(), 'ACKNOWLEDGE')
+            assert response.status_code == 200, response.text
+            verified(f, parent, 'P4')
+            response = local_command(f, parent, local_read(f, parent).json(), 'REVALIDATE')
+            assert response.status_code == 200, response.text
+            row = local_read(f, parent).json()
+            assert row['local_record_state'] == 'READY' and row['can_close_local_record']
+            request = Request(gate, base + '/local-case/commands', f[2]['fixture-a'],
+                dict(action='CLOSE_LOCAL_RECORD', expected_revision=row['revision'], expected_cycle=row['cycle'],
+                     expected_snapshot_sha256=row['current_snapshot_sha256'], reason='Close a genuinely ready open Case'))
+            capture_eligibility(f[3], request, base + '/local-case', plan_path)
+    api = FactAPI(f[3], parent['preparation_id'], f[2]['fixture-a'])
+    current = api.read()
+    permissions = authority(f)
+    post_fact(f, 'region', 'PRIVATE_NEW_REGION_AT_' + gate, 'eligible-stage-source-change-' + gate)
+    assert_observed_invalidation(current, api.read(), 'SOURCE')
+    baseline = preparation_records(f)
+
+    def independent_business_oracle():
+        return dict(preparation=normalize_preparation_observations(baseline, preparation_records(f)),
+                    downstream=business(f), authority=authority(f), fact_assertions=assertions(f))
+
+    before = deepcopy(independent_business_oracle())
+    assert verify_refusals(f[3], [request], independent_business_oracle, expected_checks=(gate,)) == [gate]
+    assert independent_business_oracle() == before and authority(f) == permissions
 
 
 @pytest.mark.parametrize('changed_grant', ['field_read', 'field_write', 'capability_read', 'capability_execute'])
