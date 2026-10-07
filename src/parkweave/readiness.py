@@ -62,9 +62,10 @@ def _evaluate(source):
     if facts is not None:
         truth=Truth.TRUE if facts.get('satisfied') is True else Truth.UNKNOWN
         result['local_preparation_truth']=conjunction([existence,manual,truth]).value
+        draft_stale='CURRENT_GENERATED_MATERIAL_SOURCE_REQUIRED' in facts.get('issues',[])
         result['conditions'].append({'id':'current_fact_purpose_confirmation','truth':truth.value,
-                                     'reason':'CURRENT_USER_PURPOSE_CONFIRMATION' if truth==Truth.TRUE else 'CURRENT_FACT_PURPOSE_CONFIRMATION_REQUIRED'})
-        if truth!=Truth.TRUE:result['next_actions'].append('CONFIRM_FACT_PURPOSE')
+                                     'reason':'CURRENT_USER_PURPOSE_CONFIRMATION' if truth==Truth.TRUE else 'CURRENT_GENERATED_MATERIAL_SOURCE_REQUIRED' if draft_stale else 'CURRENT_FACT_PURPOSE_CONFIRMATION_REQUIRED'})
+        if truth!=Truth.TRUE:result['next_actions'].append('REBUILD_MATERIAL_BRIEF' if draft_stale else 'CONFIRM_FACT_PURPOSE')
     return result
 
 def _view(row, source, sha):

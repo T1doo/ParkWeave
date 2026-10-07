@@ -119,15 +119,21 @@ def fact_descriptor(store,c,row):
     if not fact_enabled(c,row):return None
     from .case_fact_clarifications import source_descriptor
     source=source_descriptor(store,c,row)
+    from .material_preparation_drafts import source_status
+    draft_status=source_status(c,row,source)
+    if draft_status is not None:
+        source['material_draft_sources']=draft_status
+        if not draft_status['satisfied']:
+            source.update(satisfied=False,state='STALE',issues=sorted(set(source['issues']+['CURRENT_GENERATED_MATERIAL_SOURCE_REQUIRED'])))
+        source['descriptor_sha256']=digest(canonical({k:v for k,v in source.items() if k!='descriptor_sha256'}))
     # Private field values and source identities remain in the dedicated owner API.
     public=('enabled','state','satisfied','issues','revision','decision_ref','decision_sha256',
-            'source_sha256','profile','purpose','required_fields','qualification','authenticity','descriptor_sha256')
+            'source_sha256','profile','purpose','required_fields','qualification','authenticity','descriptor_sha256','material_draft_sources')
     return {k:source[k] for k in public if k in source}
 
 def fact_gate(store,c,row):
     if fact_enabled(c,row):
-        from .case_fact_clarifications import gate
-        if gate(store,c,row).get('satisfied') is not True:
+        if fact_descriptor(store,c,row).get('satisfied') is not True:
             raise Conflict('current fact purpose confirmation required')
 
 def _insert_evidence(c,p,row,slot,text,source_kind,source_label):
@@ -211,6 +217,8 @@ def read(store,token,id):
                 'history':history,
                 'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY','qualification':'NOT_EVALUATED',
                 'external_acceptance':'NOT_SUBMITTED','offline_fulfillment':'NO_EVIDENCE'}
+        from .material_preparation_drafts import decorate_materials
+        decorate_materials(c,row,items,history,facts)
         if facts is not None:result['fact_clarification']=facts
         return result
 

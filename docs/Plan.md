@@ -1,3 +1,11 @@
+## 企业选用事实到实际诉求摘要（原 §5.3 切片）
+
+补齐原 F2-T01/T02、AT23 的部分材料准备价值：企业在现有事项明确选择三项当前自述，查看含实际值、诉求、来源版本/指纹的摘要，明确分享给原获派专员后保存为原材料版本；原专员 REVIEW、企业 CONFIRM。原目录缺口和补正仍须人工提供。新输入改变实际正文，旧生成正文在来源变化或撤销后只留历史，重新确认事实不会使旧正文复活。无新 schema、Grant、安装、真实启用或模型调用。
+
+当前定向业务/消费端 360 PASS、0 SKIP/FAIL（186.33 秒），含新 22 项；元数据 171 PASS（5.20 秒）为另一个范围，不合成全量。当前 collect-only 2453 项不是 PASS。真实新合成夹具浏览器通过，明确分享及原 REVIEW→CONFIRM、两次同键 POST 仅一版摘要；15 张三宽度截图及独立 API 全文/hash 回读保存。独立只读代码与证据复核无实质阻断；截图没有直接展示专员正文/确认详情，精确版本依据 driver/API，503 为服务器 200 后客户端注入。源码前后字节/模式一致；业务测试后的单一 driver readiness 修正另记，不能把历史全量结果覆盖本切片。
+
+操作、来源门、未知结果重试和末次读取到 COMMIT 的局限见 [摘要流程](F2/MaterialPreparationBrief.md)，逐项结果、失败史、加载来源、哈希与清理范围见 [机器索引](integration/MaterialPreparationBriefEvidence.json)。Case 仍 NEEDS_INPUT；材料 UNVERIFIED，不判断资格或外部履约。F1 未签收/F2 并行、完整 PR0/Win11 未验收，R4 关闭/预算 0，Server 非 Win11；原环境和备份保留。普通 dev 推送及首个精确 HEAD Server CI 实际结果另记 `.runtime/material-brief-delivery.json`，不以授权代替成功。下方历史保持原范围。
+
 ## 冻结 a1e6022 的 PR0 核对与当前体验
 
 本轮保持产品、测试、脚本和 manifest 不变，逐项核对原 F2-T01–T07 / AT01–35。完整 Linux 工程回归 2422 PASS、9 native SKIP、0 FAIL、2 WARN，637.13 秒；2431 项同次 collection/JUnit 一致，292 个冻结文件字节/权限零差异，158 个主进程加载模块无来源偏离。九项 Windows 原生跳过逐项保留，正式 42 项 AT/EX 仍 NOT_RUN。原始证据与清理记录见 [机器索引](integration/PR0-a1e6022-FrozenEvidence.json)。本次 PG 数据目录已删除，退出后的 Z 条目如实记录；不清理旧环境。

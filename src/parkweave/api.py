@@ -77,6 +77,19 @@ def create_app(store: Store) -> FastAPI:
             raise Denied('isolated access decisions disabled')
         return bridge
 
+    from . import material_preparation_drafts as material_drafts
+
+    @app.get('/api/preparations/{preparation_id}/material-draft')
+    def material_draft_read(preparation_id: UUID, authorization: str | None = Header(default=None)):
+        return material_drafts.read(store, token(authorization), preparation_id)
+
+    @app.post('/api/preparations/{preparation_id}/material-draft', status_code=201)
+    def material_draft_save(preparation_id: UUID, data: material_drafts.Save,
+                            authorization: str | None = Header(default=None), idempotency_key: str = Header()):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', idempotency_key):
+            raise HTTPException(422, 'invalid request key')
+        return material_drafts.save(store, token(authorization), preparation_id, idempotency_key, data)
+
     @app.get('/api/run-access/status')
     def run_access_status(authorization: str | None = Header(default=None)):
         session = token(authorization)
