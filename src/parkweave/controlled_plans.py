@@ -53,6 +53,14 @@ class Command(BaseModel):
 def _normal(x):return json.loads(json.dumps(x,default=str))
 def _hash(x):return digest(prep.canonical(x))
 def _row(c,id):return c.execute('SELECT * FROM controlled_plans WHERE preparation_id=%s FOR UPDATE',(id,)).fetchone()
+def _creation_blockers(c,parent):
+    # Shared with CREATE under the same parent lock; historical records stay intact.
+    dependencies=(('EXISTING_CASE_RESOURCE_LINK','case_resource_links','preparation_id'),
+      ('EXISTING_DISPATCH_RECORD','service_dispatches','preparation_id'),
+      ('EXISTING_RECEIPT_RECORD','service_receipt_steps','preparation_id'))
+    return [reason for reason,table,column in dependencies
+      if c.execute('SELECT 1 FROM '+table+' WHERE '+column+'=%s',(parent['id'],)).fetchone()]
+
 def _auth(store,c,token,id,write=False):
     p=sd._auth(store,c,token)
     candidate=c.execute('SELECT * FROM preparations WHERE id=%s AND park_id=%s AND org_id=%s',(id,p['park_id'],p['org_id'])).fetchone()
@@ -176,7 +184,13 @@ def _old(c,p,id,key,fp):
 def read(store,token,id):
     with store.connect() as c:
         p,parent=_auth(store,c,token,id);_write_flag(store,c,p);row=_row(c,id)
-        if not row:return dict(scope=SCOPE,role=p['role'],preparation_id=id,plan_id=None,template_sha256=TEMPLATE_SHA,can_create=p['_plan_write'],state='NOT_STARTED',preparation_revision=parent['revision'])
+        if not row:
+            owner=p['role']=='enterprise_operator'
+            blockers=_creation_blockers(c,parent) if owner else None
+            if owner and not p['_plan_write']:blockers.append('CURRENT_EXECUTE_AUTHORITY_REQUIRED')
+            return dict(scope=SCOPE,role=p['role'],preparation_id=id,plan_id=None,template_sha256=TEMPLATE_SHA,
+              can_create=owner and p['_plan_write'] and not blockers,creation_blockers=blockers,
+              state='NOT_STARTED',preparation_revision=parent['revision'])
         row,issues,snapshots,states=_inspect(store,c,parent,row)
         return _view(c,p,parent,row,issues,snapshots,states)
 
@@ -188,7 +202,7 @@ def create(store,token,id,key,data):
         if data.template_sha256!=TEMPLATE_SHA:raise Conflict('fixed template hash mismatch')
         if not old:
             if row or parent['revision']!=data.expected_preparation_revision:raise Conflict('plan exists or preparation revision changed')
-            if any(c.execute('SELECT 1 FROM '+t+' WHERE '+col+'=%s',(id if col=='preparation_id' else parent['case_id'],)).fetchone() for t,col in [('case_resource_links','preparation_id'),('service_dispatches','preparation_id'),('service_receipt_steps','preparation_id')]):raise Conflict('start fixed template before resource association/dispatch/receipt')
+            if _creation_blockers(c,parent):raise Conflict('start fixed template before resource association/dispatch/receipt')
             row=c.execute('INSERT INTO controlled_plans(preparation_id,id,template_sha256,revision) VALUES(%s,%s,%s,1) RETURNING *',(id,uuid4(),TEMPLATE_SHA)).fetchone()
             event=_event(c,p,parent,row,key,fp,'CREATE')
         else:event=old['payload']

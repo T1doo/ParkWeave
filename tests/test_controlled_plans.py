@@ -39,6 +39,29 @@ def through(f,n=4):
 def counts(f):
     with f[1].connect() as c:return [c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] for t in ('controlled_plans','controlled_plan_events','case_resource_links','service_dispatch_events','service_step_receipts')]
 
+@pytest.mark.parametrize('record,reason',[
+    ('resource','EXISTING_CASE_RESOURCE_LINK'),('dispatch','EXISTING_DISPATCH_RECORD'),
+    ('receipt','EXISTING_RECEIPT_RECORD')])
+def test_template_readiness_matches_historical_create_rejection(link_fixture,record,reason):
+    f=link_fixture;p=ready(f)
+    if record=='resource':assert link(f,p,group(f)).status_code==201
+    elif record=='dispatch':assert offer(f,p)[0].status_code==201
+    else:assert legacy(f,p)[0].status_code==201
+    before=counts(f);row=read(f,p).json()
+    assert row['state']=='NOT_STARTED' and row['plan_id'] is None
+    assert row['creation_blockers']==[reason] and not row['can_create']
+    counterpart=read(f,p,REVIEWER).json()
+    assert counterpart['creation_blockers'] is None and not counterpart['can_create']
+    assert create(f,p).status_code==409 and counts(f)==before
+
+def test_unused_case_readiness_respects_current_execute_without_creating(link_fixture):
+    f=link_fixture;p=ready(f);before=counts(f);row=read(f,p).json()
+    assert row['can_create'] and row['creation_blockers']==[] and counts(f)==before
+    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+    row=read(f,p).json()
+    assert not row['can_create'] and row['creation_blockers']==['CURRENT_EXECUTE_AUTHORITY_REQUIRED']
+    assert create(f,p).status_code==403 and counts(f)==before
+
 def test_real_fixed_four_step_persistence_no_original_goal_fulfillment(link_fixture):
     f=link_fixture;p,g,d,s=through(f);r=read(f,p).json();assert r['state']=='LOCAL_RECORDS_CHECKED' and r['revision']==5
     assert [s['state'] for s in r['steps']]==['CURRENT']*4 and len(r['history'])==5
