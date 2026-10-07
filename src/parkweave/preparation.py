@@ -109,6 +109,27 @@ def snapshot(row,items):
           'materials':[{k:(str(v) if isinstance(v,UUID) else v) for k,v in item.items()} for item in items]}
     return digest(canonical(data))
 
+def fact_enabled(c,row):
+    """A committed declaration cannot be downgraded by removing its ledger."""
+    return row.get('fact_clarifications') is not None or bool(c.execute(
+        "SELECT 1 FROM preparation_events WHERE preparation_id=%s AND action='DECLARE_FACT_PURPOSE' LIMIT 1",
+        (row['id'],)).fetchone())
+
+def fact_descriptor(store,c,row):
+    if not fact_enabled(c,row):return None
+    from .case_fact_clarifications import source_descriptor
+    source=source_descriptor(store,c,row)
+    # Private field values and source identities remain in the dedicated owner API.
+    public=('enabled','state','satisfied','issues','revision','decision_ref','decision_sha256',
+            'source_sha256','profile','purpose','required_fields','qualification','authenticity','descriptor_sha256')
+    return {k:source[k] for k in public if k in source}
+
+def fact_gate(store,c,row):
+    if fact_enabled(c,row):
+        from .case_fact_clarifications import gate
+        if gate(store,c,row).get('satisfied') is not True:
+            raise Conflict('current fact purpose confirmation required')
+
 def _insert_evidence(c,p,row,slot,text,source_kind,source_label):
     old=next((i for i in latest(c,row['id']) if i['slot']==slot),None)
     version=old['version']+1 if old else 1
@@ -127,6 +148,7 @@ def command(store,token,id,key,data):
         if previous:return previous
         if row['revision']!=data.expected_revision:raise Conflict('stale preparation revision; refresh required')
         if row['revision']>=64:raise Conflict('bounded preparation history limit reached')
+        if data.action in ('REVIEW','CONFIRM'):fact_gate(store,c,row)
         items=latest(c,id);current_hash=snapshot(row,items);review_hash=None
         from . import material_corrections as corrections
         ledger=row.get('material_corrections')
@@ -166,8 +188,17 @@ def read(store,token,id):
         row.pop('planning_previews',None)
         row.pop('service_case_plan',None)
         row.pop('material_corrections',None)
+        facts=fact_descriptor(store,c,row)
+        row.pop('fact_clarifications',None)
         items=latest(c,id)
         history=c.execute('SELECT revision,action,payload,created_at FROM preparation_events WHERE preparation_id=%s ORDER BY revision',(id,)).fetchall()
+        for record in history:
+            if record['action'] in ('DECLARE_FACT_PURPOSE','CONFIRM_FACT_PURPOSE'):
+                public=('preparation_id','case_id','run_id','revision','state','action','actor_id','scope',
+                        'qualification','external_acceptance','offline_fulfillment','reason','fact_clarification_id',
+                        'clarification_revision','source_sha256','selection_sha256','profile','purpose','status',
+                        'decision_ref','decision_sha256','required_fields')
+                record['payload']={k:record['payload'][k] for k in public if k in record['payload']}
         if p['role']!='enterprise_operator':
             row.pop('request_intent',None)
             for record in history:
@@ -175,11 +206,13 @@ def read(store,token,id):
                 reuse=record['payload'].get('material_reuse')
                 if reuse:
                     record['payload']['material_reuse']={k:reuse[k] for k in ('target_evidence_id','target_version','target_sha256','purpose','requires_independent_review','snapshot_mode')}
-        return {'preparation':row,'current_materials':items,'snapshot_sha256':snapshot(row,items),
+        result={'preparation':row,'current_materials':items,'snapshot_sha256':snapshot(row,items),
                 'material_history':c.execute('SELECT slot,version,text,source_kind,source_label,source_sha256,authenticity,created_at FROM preparation_evidence WHERE preparation_id=%s ORDER BY slot,version',(id,)).fetchall(),
                 'history':history,
                 'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY','qualification':'NOT_EVALUATED',
                 'external_acceptance':'NOT_SUBMITTED','offline_fulfillment':'NO_EVIDENCE'}
+        if facts is not None:result['fact_clarification']=facts
+        return result
 
 def list_items(store,token):
     with store.connect() as c:

@@ -104,9 +104,12 @@ def template(store,token):
 def binding_catalog_known(catalog):
     return bool(catalog and catalog['namespace']=='SYNTHETIC' and isinstance(catalog['source'],dict) and catalog['source'].get('kind')=='SYNTHETIC' and catalog['source'].get('id') and catalog['source'].get('revision'))
 
-def binding_p1(c,parent,snapshot):
+def binding_p1(c,parent,snapshot,store=None):
     """Shared version descriptor for checks and the read-only binding projection."""
     result={k:snapshot.get(k) for k in ('preparation_id','case_id','run_id','service_id','service_version','preparation_revision','preparation_sha256')}
+    if prep.fact_enabled(c,parent):
+        if store is None:raise Conflict('current fact source context required')
+        result['fact_clarification']=prep.fact_descriptor(store,c,parent)
     catalog=c.execute('SELECT service_id,version,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',(parent['park_id'],parent['service_id'],parent['service_version'])).fetchone()
     result.update(owner_id=parent['owner_id'],reviewer_id=parent['reviewer_id'],goal=parent['goal'],
       required_goals=intents.view(parent)['required_goals'],request_intent=parent.get('request_intent'),
@@ -144,7 +147,7 @@ def _sources(store,c,parent):
       'P3':{k:snap.get(k) for k in ('preparation_revision','preparation_sha256','dispatch_id','dispatch_revision','offer_id','executor_id','receipt_step_id')},
       'P4':{k:snap.get(k) for k in ('preparation_revision','preparation_sha256','receipt_step_id','receipt_step_revision','receipt_id','receipt_sha256')},
     }
-    snapshots['P1']=binding_p1(c,parent,snap)
+    snapshots['P1']=binding_p1(c,parent,snap,store=store)
     if parent.get('request_intent') and intents.state(parent)!='SUPPORTED_LOCAL':issues['MATERIAL_REVIEW'].append('REQUEST_GOAL_COVERAGE_REQUIRED')
     if not binding_catalog_known(snapshots['P1']['service_catalog']):issues['MATERIAL_REVIEW'].append('CURRENT_SERVICE_CATALOG_REQUIRED')
     snapshots['P2']=binding_p2(c,parent,snap,holds,rules)

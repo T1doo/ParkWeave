@@ -203,7 +203,7 @@ def test_upgrade_minimal_permissions_no_legacy_backfill(link_fixture):
         roles=Path('src/parkweave/roles.sql').read_text().replace('GRANT CONNECT ON DATABASE parkweave','GRANT CONNECT ON DATABASE '+psycopg.sql.Identifier(c.info.dbname).as_string(c),1)
         c.execute(roles)
         assert c.execute('SELECT * FROM capability_grants ORDER BY principal_id,capability').fetchall()==grants
-        assert c.execute('SELECT max(version) n FROM schema_version').fetchone()['n']==24
+        assert c.execute('SELECT max(version) n FROM schema_version').fetchone()['n']==25
     assert counts(f)[:2]==[0,0] and create(f,p).status_code==409
     for sql in ('DELETE FROM controlled_plans','UPDATE controlled_plans SET template_sha256=template_sha256','UPDATE controlled_plans SET id=id','DELETE FROM controlled_plan_events','UPDATE controlled_plan_events SET payload=payload','UPDATE capability_grants SET active=active','UPDATE run_assignments SET active=active'):
         with pytest.raises(psycopg.errors.InsufficientPrivilege):

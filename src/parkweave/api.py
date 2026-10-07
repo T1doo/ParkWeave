@@ -160,6 +160,21 @@ def create_app(store: Store) -> FastAPI:
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
         return material_reuse.reuse(store,token(authorization),preparation_id,idempotency_key,data)
 
+    from . import case_fact_clarifications
+    @app.get('/api/preparations/{preparation_id}/fact-clarifications')
+    def fact_clarifications(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return case_fact_clarifications.read(store,token(authorization),preparation_id)
+
+    @app.post('/api/preparations/{preparation_id}/fact-clarifications/declare')
+    def declare_fact_purpose(preparation_id: UUID,data: case_fact_clarifications.Declare,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
+        return case_fact_clarifications.declare(store,token(authorization),preparation_id,idempotency_key,data)
+
+    @app.post('/api/preparations/{preparation_id}/fact-clarifications/confirm')
+    def confirm_fact_purpose(preparation_id: UUID,data: case_fact_clarifications.Confirm,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
+        return case_fact_clarifications.confirm(store,token(authorization),preparation_id,idempotency_key,data)
+
     from . import resource_holds as resources
     def resource_key(key):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',key):raise HTTPException(422,'invalid request key')

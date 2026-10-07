@@ -93,15 +93,18 @@ def current_step(c,parent):
     fields=('run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
     return selected if selected and all(selected[k]==parent[k] for k in fields) else None
 
-def material_current(c,parent):
+def material_current(c,parent,store=None):
     if not parent or parent['state']!='LOCAL_CONFIRMED':return False
     items=prep.latest(c,parent['id'])
-    return ({i['slot'] for i in items}==set(prep.SLOTS) and
+    current=({i['slot'] for i in items}==set(prep.SLOTS) and
             all(digest(i['text'])==i['source_sha256'] for i in items) and
             prep.snapshot(parent,items)==parent['review_sha256'])
+    if not current or not prep.fact_enabled(c,parent):return current
+    if store is None:return False
+    return prep.fact_descriptor(store,c,parent).get('satisfied') is True
 
-def _fresh(row,parent,c=None):
-    return bool(parent and parent['state']=='LOCAL_CONFIRMED' and parent['revision']==row['preparation_revision'] and parent['review_sha256']==row['preparation_sha256'] and (c is None or material_current(c,parent)))
+def _fresh(row,parent,c=None,store=None):
+    return bool(parent and parent['state']=='LOCAL_CONFIRMED' and parent['revision']==row['preparation_revision'] and parent['review_sha256']==row['preparation_sha256'] and (c is None or material_current(c,parent,store)))
 
 def _locked(c,id,write=False):
     return c.execute('SELECT * FROM service_receipt_steps WHERE id=%s '+('FOR UPDATE' if write else 'FOR SHARE'),(id,)).fetchone()
@@ -120,13 +123,13 @@ def _event(c,p,row,key,fp,action,**extra):
     c.execute('INSERT INTO service_receipt_events(id,step_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',(uuid4(),row['id'],p['id'],key,fp,row['revision'],action,Jsonb(payload)))
     return payload
 
-def _view(c,p,row,parent,event=None):
+def _view(c,p,row,parent,event=None,store=None):
     current=current_step(c,parent) if parent else None
     is_current=bool(current and current['id']==row['id'])
     return dict(scope=SCOPE,role=p['role'],step=row,current_receipt=_current(c,row),
         history=c.execute('SELECT revision,action,payload,created_at FROM service_receipt_events WHERE step_id=%s ORDER BY revision',(row['id'],)).fetchall(),
         receipt_history=c.execute('SELECT * FROM service_step_receipts WHERE step_id=%s ORDER BY version',(row['id'],)).fetchall(),
-        dependency='CURRENT' if is_current and _fresh(row,parent,c) else 'DEPENDENCY_CHANGED',event=event,
+        dependency='CURRENT' if is_current and _fresh(row,parent,c,store) else 'DEPENDENCY_CHANGED',event=event,
         is_current_step=is_current,record_mode='CURRENT_GENERATION' if is_current else 'HISTORICAL_GENERATION',
         replay_mode=('CURRENT_COMMITTED_EVENT' if is_current else 'HISTORICAL_COMMITTED_EVENT') if event else None,
         qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',case_goal_completed=False)
@@ -161,20 +164,20 @@ def create(store,token,key,data):
         old=_replay(c,p,key,fp)
         if old:
             row=_base(store,c,p,UUID(old['step_id']));row=_locked(c,row['id'])
-            return _view(c,p,row,parent,old)
+            return _view(c,p,row,parent,old,store)
         from .controlled_plans import gate
         gate(store,c,parent,3)
-        if parent['revision']!=data.expected_preparation_revision or not material_current(c,parent):raise Conflict('current locally confirmed preparation required')
+        if parent['revision']!=data.expected_preparation_revision or not material_current(c,parent,store):raise Conflict('current locally confirmed preparation required')
         if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s',(parent['id'],)).fetchone():raise Conflict('preparation already has receipt step')
         if c.execute('SELECT 1 FROM service_dispatches WHERE preparation_id=%s',(parent['id'],)).fetchone():raise Conflict('internal dispatch requires executor acceptance')
         row=_insert_step(c,parent,data.executor_id)
-        return _view(c,p,row,parent,_event(c,p,row,key,fp,'CREATE'))
+        return _view(c,p,row,parent,_event(c,p,row,key,fp,'CREATE'),store)
 
 @bounded
 def read(store,token,id):
     with store.connect() as c:
         p=_auth(store,c,token);row=_base(store,c,p,id);parent=_parent(c,row);row=_locked(c,id)
-        return _view(c,p,row,parent)
+        return _view(c,p,row,parent,store=store)
 
 @bounded
 def command(store,token,id,key,data):
@@ -189,14 +192,14 @@ def command(store,token,id,key,data):
         _key(c,p,key);row=_base(store,c,p,id)
         if p['role']=='enterprise_operator':_executor(store,c,row['executor_id'],row['run_id'])
         parent=_parent(c,row);row=_locked(c,id,write=True);old=_replay(c,p,key,fp)
-        if old:return _view(c,p,row,parent,old)
+        if old:return _view(c,p,row,parent,old,store)
         selected=current_step(c,parent)
         if not selected or selected['id']!=row['id']:raise Conflict('historical receipt generation is read-only; current executor acceptance required')
         from .controlled_plans import gate
         if data.action in ('SUBMIT','ACKNOWLEDGE'):
             full_parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()
             gate(store,c,full_parent,3)
-        if not _fresh(row,parent,c):raise Conflict('receipt preparation dependency changed; explicit replanning required')
+        if not _fresh(row,parent,c,store):raise Conflict('receipt preparation dependency changed; explicit replanning required')
         if row['revision']!=data.expected_revision:raise Conflict('stale receipt step revision; refresh required')
         if row['revision']>=64:raise Conflict('receipt history limit reached')
         current=_current(c,row);current_id=row['current_receipt_id']
@@ -220,7 +223,7 @@ def command(store,token,id,key,data):
         from .controlled_plans import invalidate
         invalidate(c,row['preparation_id'],4)
         e=_event(c,p,row,key,fp,data.action,receipt_id=str(current_id),receipt_sha256=_current(c,row)['source_sha256'],reason=data.reason)
-        return _view(c,p,row,parent,e)
+        return _view(c,p,row,parent,e,store)
 
 @bounded
 def list_steps(store,token):

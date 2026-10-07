@@ -31,6 +31,8 @@ def _sources(store, c, row, actor):
     rule = {'expression': RULE.model_dump(mode='json'), 'revision': 1, 'source': 'LOCAL_MATERIAL_CONTRACT', 'review_status': 'ENGINEERING_ONLY', 'publication_status': 'DRAFT', 'business_publication': False}
     rule['sha256'] = digest(prep.canonical(rule))
     source = {'preparation_id': str(row['id']), 'case_id': str(row['case_id']), 'revision': row['revision'], 'service': service, 'rule': rule, 'materials': items, 'manual_review': review}
+    facts=prep.fact_descriptor(store,c,row)
+    if facts is not None:source['fact_clarification']=facts
     return source, digest(prep.canonical(source))
 
 def _evaluate(source):
@@ -51,11 +53,19 @@ def _evaluate(source):
     else: reason = 'HUMAN_JUDGMENT_REQUIRED'
     if not source['service'] or source['service']['namespace'] != 'SYNTHETIC':
         manual = Truth.UNKNOWN; reason = 'SERVICE_SOURCE_UNAVAILABLE'
-    return {'local_preparation_truth': conjunction([existence, manual]).value,
+    result={'local_preparation_truth': conjunction([existence, manual]).value,
         'conditions': [{'id': 'service_need_exists', 'truth': existence.value, 'reason': 'CURRENT_RECORD_EXISTS' if existence == Truth.TRUE else 'MISSING_MATERIALS', 'material_ids': [items['need_summary']['id']] if 'need_summary' in items else []},
                        {'id': 'current_manual_material_review', 'truth': manual.value, 'reason': reason, 'material_ids': [i['id'] for i in source['materials']]}],
         'missing_slots': missing, 'next_actions': (['SUPPLY_MATERIALS'] if missing else []) + (['RESPOND_TO_CORRECTION'] if manual == Truth.FALSE else ['REQUEST_CURRENT_MANUAL_REVIEW'] if manual == Truth.UNKNOWN else []),
         'qualification_truth': Truth.UNKNOWN.value, 'qualification_decision': 'NOT_EVALUATED', 'business_publication': False, 'external_acceptance': 'NOT_SUBMITTED', 'offline_fulfillment': 'NO_EVIDENCE', 'case_goal_completed': False}
+    facts=source.get('fact_clarification')
+    if facts is not None:
+        truth=Truth.TRUE if facts.get('satisfied') is True else Truth.UNKNOWN
+        result['local_preparation_truth']=conjunction([existence,manual,truth]).value
+        result['conditions'].append({'id':'current_fact_purpose_confirmation','truth':truth.value,
+                                     'reason':'CURRENT_USER_PURPOSE_CONFIRMATION' if truth==Truth.TRUE else 'CURRENT_FACT_PURPOSE_CONFIRMATION_REQUIRED'})
+        if truth!=Truth.TRUE:result['next_actions'].append('CONFIRM_FACT_PURPOSE')
+    return result
 
 def _view(row, source, sha):
     history = row['readiness_assessments'] or []

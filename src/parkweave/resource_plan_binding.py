@@ -142,11 +142,11 @@ def current_catalog_decision(c,parent):
     return catalog_decision(c,parent,link)
 
 
-def impact_issues(c,parent,document,group,holds,rules,now):
+def impact_issues(c,parent,document,group,holds,rules,now,store=None):
     """Saved confirmation is evidence; compare its sources without rewriting it."""
     if not document:return []
     issues=[]
-    p1=cp.binding_p1(c,parent,_snapshot(parent,None,None,[]))
+    p1=cp.binding_p1(c,parent,_snapshot(parent,None,None,[]),store=store)
     if cp._normal(document['before']['source_snapshots']['P1'])!=p1:issues.append('RESOURCE_BINDING_SOURCE_CHANGED')
     p2=cp.binding_p2(c,parent,{},holds,rules)
     if cp._normal(document['after']['resource_rules'])!=p2['resource_rules']:issues.append('RESOURCE_RULE_CHANGED')
@@ -192,8 +192,11 @@ def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None
     group,holds,rules=groups[link['combination_id']] if link else (None,[],{})
     snap=_snapshot(parent,link,group,holds)
     snap['resource_catalog_decision']=catalog_decision(c,parent,link) if link else None
-    snapshots={'P1':cp.binding_p1(c,parent,snap),'P2':cp.binding_p2(c,parent,snap,holds,rules)}
+    snapshots={'P1':cp.binding_p1(c,parent,snap,store=store),'P2':cp.binding_p2(c,parent,snap,holds,rules)}
     issues={'P1':[],'P2':[]}
+    facts=snapshots['P1'].get('fact_clarification')
+    if facts is not None and facts.get('satisfied') is not True:
+        issues['P1']+=['CURRENT_FACT_PURPOSE_CONFIRMATION_REQUIRED',*facts.get('issues',[])]
     items=prep.latest(c,id)
     if parent['state']!='LOCAL_CONFIRMED' or {i['slot'] for i in items}!=set(prep.SLOTS) or prep.snapshot(parent,items)!=parent['review_sha256']:issues['P1'].append('CURRENT_MATERIAL_CONFIRMATION_REQUIRED')
     store.lock_principal(c,parent['reviewer_id'])
@@ -221,7 +224,7 @@ def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None
     for old in links:
         g,hs,rs=groups[old['combination_id']];live=rc._view(g,hs,now)
         decision=catalog_decision(c,parent,old)
-        why=_link_issues(parent,old)+_issues(c,parent,g,hs,rs,now)+impact_issues(c,parent,old['snapshot'].get('binding_impact'),g,hs,rs,now)+decision['issues']
+        why=_link_issues(parent,old)+_issues(c,parent,g,hs,rs,now)+impact_issues(c,parent,old['snapshot'].get('binding_impact'),g,hs,rs,now,store=store)+decision['issues']
         if not hold_authority[g['id']]:why.append('CURRENT_RESOURCE_AUTHORITY_REQUIRED')
         is_latest=old['id']==link['id']
         history.append(dict(revision=old['revision'],record=old,catalog_decision=decision,state='CURRENT_BINDING_RECORD' if is_latest and not why else 'NEEDS_RECHECK' if is_latest else 'HISTORICAL',issues=sorted(set(why)),binding_impact=old['snapshot'].get('binding_impact'),changes=changes(association_snapshot(old['snapshot']),live)+changes({k:old[k] for k in ('preparation_revision','preparation_sha256','service_id','service_version')},{'preparation_revision':parent['revision'],'preparation_sha256':parent['review_sha256'],'service_id':parent['service_id'],'service_version':parent['service_version']}),combination=live,execution_enabled=False))

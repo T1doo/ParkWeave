@@ -41,6 +41,12 @@ def _sources(store,c,p,parent):
         'run_id':str(parent['run_id']),'service_id':parent['service_id'],'service_version':parent['service_version'],
         'preparation_revision':parent['revision'],'preparation_sha256':parent['review_sha256']}
     items=prep.latest(c,parent['id'])
+    facts=prep.fact_descriptor(store,c,parent)
+    if facts is not None:
+        snapshot['fact_clarification']=facts
+        if facts.get('satisfied') is not True:
+            issues['MATERIAL_REVIEW'].append('CURRENT_FACT_PURPOSE_CONFIRMATION_REQUIRED')
+            issues['MATERIAL_REVIEW'].extend(facts.get('issues',[]))
     if parent['state']!='LOCAL_CONFIRMED' or {i['slot'] for i in items}!=set(prep.SLOTS) or prep.snapshot(parent,items)!=parent['review_sha256']:
         issues['MATERIAL_REVIEW'].append('CURRENT_MATERIAL_CONFIRMATION_REQUIRED')
     try:sd._party(store,c,parent,parent['reviewer_id'],'REVIEW_ASSIGNED')

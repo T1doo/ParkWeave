@@ -229,7 +229,7 @@ def test_version_15_upgrade_preserves_existing_preparation_dispatch_receipt_reso
         before=[c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] for t in ('preparations','service_dispatch_offers','service_step_receipts','case_resource_links','synthetic_resource_holds')]
     f[1].migrate()
     with f[1].connect() as c:
-        assert c.execute('SELECT max(version) n FROM schema_version').fetchone()['n']==24
+        assert c.execute('SELECT max(version) n FROM schema_version').fetchone()['n']==25
         assert before==[c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] for t in ('preparations','service_dispatch_offers','service_step_receipts','case_resource_links','synthetic_resource_holds')]
         c.execute(__import__('pathlib').Path('src/parkweave/roles.sql').read_text().replace('GRANT CONNECT ON DATABASE parkweave TO parkweave_app;',''))
     assert not any(read(f,parent).json()['checks'].values())

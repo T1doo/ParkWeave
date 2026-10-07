@@ -46,7 +46,7 @@ def _reason(c,parent,g,holds,rules,now):
     if claim and claim['case_id']!=parent['case_id']:return 'COMBINATION_BELONGS_TO_OTHER_CASE'
     return 'CURRENT'
 
-def _view(c,p,parent,rows,event=None):
+def _view(c,p,parent,rows,event=None,store=None):
     groups={r['combination_id']:rc._group(c,p,r['combination_id']) for r in rows}
     members={id:rc._members(c,p,id) for id in groups}
     rules=rc._scope_lock(c,p,[h for hs in members.values() for h in hs])
@@ -60,7 +60,7 @@ def _view(c,p,parent,rows,event=None):
         document=row['snapshot'].get('binding_impact')
         if document:
             from .resource_plan_binding import impact_issues
-            flags+=impact_issues(c,parent,document,g,holds,{h['resource_id']:rules[h['resource_id']] for h in holds},now)
+            flags+=impact_issues(c,parent,document,g,holds,{h['resource_id']:rules[h['resource_id']] for h in holds},now,store=store)
         from .resource_plan_binding import catalog_decision
         decision=catalog_decision(c,parent,row)
         flags=sorted(set(flags+decision['issues']))
@@ -73,7 +73,7 @@ def _view(c,p,parent,rows,event=None):
 def read(store,token,id):
     with store.connect() as c:
         p,parent=_parent(store,c,token,id)
-        return _view(c,p,parent,_history(c,p,parent))
+        return _view(c,p,parent,_history(c,p,parent),store=store)
 
 @bounded
 def bind(store,token,id,key,data):
@@ -95,7 +95,7 @@ def bind(store,token,id,key,data):
         g=groups[data.combination_id];holds=members[g['id']]
         case=c.execute('SELECT id,run_id FROM cases WHERE id=%s FOR UPDATE',(parent['case_id'],)).fetchone()
         if not case or case['run_id']!=parent['run_id']:raise Denied('Case Run binding unavailable')
-        if old:return _view(c,p,parent,rows,old)
+        if old:return _view(c,p,parent,rows,old,store=store)
         projection=None
         if data.expected_comparison_sha256 is not None:
             from . import resource_plan_binding as binding
@@ -139,7 +139,7 @@ def bind(store,token,id,key,data):
           VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *''',(new_id,id,parent['case_id'],parent['run_id'],p['id'],p['park_id'],p['org_id'],g['id'],revision+1,parent['revision'],parent['review_sha256'],parent['service_id'],parent['service_version'],data.reason,Jsonb(snapshot),p['id'],key,fp)).fetchone()
         from .controlled_plans import invalidate
         invalidate(c,id,2)
-        result=_view(c,p,parent,rows+[row],row)
+        result=_view(c,p,parent,rows+[row],row,store=store)
         if projection is not None and result['current']['source_status']!='CURRENT':
             # This is a first strict association, not historical-key recovery.
             # Reject a source change that this transaction has actually observed

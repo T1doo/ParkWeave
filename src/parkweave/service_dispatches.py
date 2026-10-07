@@ -58,8 +58,8 @@ def _own_offer(c, p, root):
     return c.execute('SELECT o.* FROM service_dispatch_offers o JOIN service_dispatch_events e ON e.offer_id=o.id WHERE o.dispatch_id=%s AND o.executor_id=%s ORDER BY e.revision DESC LIMIT 1', (root['id'], p['id'])).fetchone()
 
 
-def _fresh(parent, offer,c=None):
-    return parent['state'] == 'LOCAL_CONFIRMED' and parent['revision'] == offer['preparation_revision'] and parent['review_sha256'] == offer['preparation_sha256'] and (c is None or receipts.material_current(c,parent))
+def _fresh(parent, offer,c=None,store=None):
+    return parent['state'] == 'LOCAL_CONFIRMED' and parent['revision'] == offer['preparation_revision'] and parent['review_sha256'] == offer['preparation_sha256'] and (c is None or receipts.material_current(c,parent,store))
 
 
 def _latest_accepted(c,root):
@@ -75,9 +75,9 @@ def _latest_accepted(c,root):
     return row
 
 
-def _recovery(c,parent,root):
+def _recovery(c,parent,root,store=None):
     """Latest actual acceptance is the immutable predecessor of a newer preparation."""
-    if not root or not receipts.material_current(c,parent):return None
+    if not root or not receipts.material_current(c,parent,store):return None
     current=c.execute('SELECT state FROM service_dispatch_offers WHERE id=%s',(root['current_offer_id'],)).fetchone()
     if not current or current['state'] not in ('ACCEPTED','DECLINED','WITHDRAWN'):return None
     accepted=_latest_accepted(c,root)
@@ -89,8 +89,8 @@ def _recovery(c,parent,root):
     return accepted
 
 
-def _recovery_flags(c,p,parent,root):
-    predecessor=_recovery(c,parent,root)
+def _recovery_flags(c,p,parent,root,store=None):
+    predecessor=_recovery(c,parent,root,store)
     return dict(can_reoffer=bool(predecessor and p['role']=='park_specialist' and root['revision']<63),
                 reoffer_kind='NEW_MATERIAL_ACCEPTANCE_REQUIRED' if predecessor else None,
                 recovery_receipt_step_id=predecessor['receipt_step_id'] if predecessor else None)
@@ -131,7 +131,7 @@ def _event(c, p, root, offer, key, fp, action, reason, **extra):
     return payload
 
 
-def _view(c, p, parent, root, event=None):
+def _view(c, p, parent, root, event=None,store=None):
     result = dict(scope=SCOPE, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
                   service_id=parent['service_id'], service_version=parent['service_version'],
                   preparation_revision=parent['revision'], dispatch_id=root['id'] if root else None,
@@ -147,14 +147,14 @@ def _view(c, p, parent, root, event=None):
     clause = ' AND o.executor_id=%s' if executor else ''
     params = (root['id'], p['id']) if executor else (root['id'],)
     result.update(current_offer=offer, is_current_offer=offer['id'] == root['current_offer_id'],
-                  dependency='CURRENT' if _fresh(parent, offer,c) else 'DEPENDENCY_CHANGED',
+                  dependency='CURRENT' if _fresh(parent, offer,c,store) else 'DEPENDENCY_CHANGED',
                   receipt_step_id=offer['receipt_step_id'],
                   offers=c.execute('SELECT o.* FROM service_dispatch_offers o WHERE o.dispatch_id=%s' + clause + ' ORDER BY o.created_at,o.id', params).fetchall(),
                   history=c.execute('SELECT e.revision,e.action,e.payload,e.created_at FROM service_dispatch_events e JOIN service_dispatch_offers o ON o.id=e.offer_id WHERE e.dispatch_id=%s' + clause + ' ORDER BY e.revision', params).fetchall())
     # Executor projection continues to expose only its own offer lineage.
     if offer['id']==root['current_offer_id']:
         result.update(current_receipt_step_id=offer['receipt_step_id'] if offer['state']=='ACCEPTED' else None,
-                      **_recovery_flags(c,p,parent,root))
+                      **_recovery_flags(c,p,parent,root,store))
     return result
 
 
@@ -172,20 +172,20 @@ def catalog(store, token, id):
           WHERE a.run_id=%s AND a.active AND e.active AND e.role='service_executor'
           AND e.park_id=%s AND e.org_id=%s ORDER BY e.id LIMIT 100""", (parent['run_id'], p['park_id'], p['org_id'])).fetchall()
         current = _own_offer(c, p, root) if root else None
-        recovery=_recovery(c,parent,root)
+        recovery=_recovery(c,parent,root,store)
         limited = bool(root and root['revision'] >= 63)
-        ready = receipts.material_current(c,parent) and not limited and ((not existing and (not current or current['state'] in ('DECLINED', 'WITHDRAWN'))) or bool(recovery))
+        ready = receipts.material_current(c,parent,store) and not limited and ((not existing and (not current or current['state'] in ('DECLINED', 'WITHDRAWN'))) or bool(recovery))
         if recovery:rows=[r for r in rows if r['id']==recovery['executor_id']]
         return dict(scope=SCOPE, preparation_revision=parent['revision'], dispatch_revision=root['revision'] if root else 0,
                     ready=ready and bool(rows), executors=rows, has_receipt_step=existing, history_limit_reached=limited,
-                    **_recovery_flags(c,p,parent,root))
+                    **_recovery_flags(c,p,parent,root,store))
 
 
 @receipts.bounded
 def read_preparation(store, token, id):
     with store.connect() as c:
         p = _auth(store, c, token); parent = _parent(store, c, p, id)
-        return _view(c, p, parent, _root(c, parent))
+        return _view(c, p, parent, _root(c, parent),store=store)
 
 
 @receipts.bounded
@@ -195,7 +195,7 @@ def read(store, token, id):
         root = c.execute('SELECT preparation_id FROM service_dispatches WHERE id=%s', (id,)).fetchone()
         if not root: raise Denied('dispatch unavailable')
         parent = _parent(store, c, p, root['preparation_id'])
-        return _view(c, p, parent, _root(c, parent))
+        return _view(c, p, parent, _root(c, parent),store=store)
 
 
 @receipts.bounded
@@ -210,15 +210,15 @@ def offer(store, token, id, key, data):
         receipts._executor(store, c, data.executor_id, parent['run_id'])
         _party(store, c, parent, parent['owner_id'], 'PREPARE')
         old = _replay(c, p, key, fp, root)
-        if old: return _view(c, p, parent, root, old)
+        if old: return _view(c, p, parent, root, old,store)
         from .controlled_plans import gate
         gate(store,c,parent,2)
-        if not receipts.material_current(c,parent) or parent['revision'] != data.expected_preparation_revision:
+        if not receipts.material_current(c,parent,store) or parent['revision'] != data.expected_preparation_revision:
             raise Conflict('current locally confirmed preparation required')
         if (root['revision'] if root else 0) != data.expected_dispatch_revision:
             raise Conflict('stale dispatch revision; refresh required')
         existing=bool(c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s', (id,)).fetchone())
-        recovery=_recovery(c,parent,root)
+        recovery=_recovery(c,parent,root,store)
         if existing:
             if not recovery or data.recovery_receipt_step_id!=recovery['receipt_step_id']:
                 raise Conflict('new preparation acceptance requires the exact historical receipt generation')
@@ -237,7 +237,7 @@ def offer(store, token, id, key, data):
         lineage=dict(predecessor_offer_id=str(recovery['id']),predecessor_receipt_step_id=str(recovery['receipt_step_id']),
                      previous_preparation_revision=recovery['preparation_revision'],previous_preparation_sha256=recovery['preparation_sha256'],
                      accepted_preparation_revision=parent['revision'],accepted_preparation_sha256=parent['review_sha256']) if recovery else {}
-        return _view(c, p, parent, root, _event(c, p, root, offered, key, fp, action, data.reason,**lineage))
+        return _view(c, p, parent, root, _event(c, p, root, offered, key, fp, action, data.reason,**lineage),store)
 
 
 @receipts.bounded
@@ -256,7 +256,7 @@ def command(store, token, id, key, data):
             _party(store, c, parent, parent['reviewer_id'], 'REVIEW_ASSIGNED')
             _party(store, c, parent, parent['owner_id'], 'PREPARE')
         old = _replay(c, p, key, fp, root)
-        if old: return _view(c, p, parent, root, old)
+        if old: return _view(c, p, parent, root, old,store)
         if own['id'] != root['current_offer_id'] or own['state'] != 'OFFERED':
             raise Conflict('current offered dispatch required')
         if root['revision'] != data.expected_revision: raise Conflict('stale dispatch revision; refresh required')
@@ -267,7 +267,7 @@ def command(store, token, id, key, data):
         if data.action == 'ACCEPT':
             from .controlled_plans import gate
             gate(store,c,parent,2)
-            if not _fresh(parent, own,c): raise Conflict('dispatch preparation dependency changed')
+            if not _fresh(parent, own,c,store): raise Conflict('dispatch preparation dependency changed')
             existing=c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s', (parent['id'],)).fetchone()
             offered_event=c.execute("SELECT payload FROM service_dispatch_events WHERE offer_id=%s AND action IN ('OFFER','REOFFER') ORDER BY revision LIMIT 1",(own['id'],)).fetchone()
             predecessor_id=(offered_event['payload'].get('predecessor_receipt_step_id') if offered_event else None)
@@ -291,7 +291,7 @@ def command(store, token, id, key, data):
         states = {'ACCEPT':'ACCEPTED', 'DECLINE':'DECLINED', 'WITHDRAW':'WITHDRAWN'}
         own = c.execute('UPDATE service_dispatch_offers SET state=%s,receipt_step_id=%s WHERE id=%s RETURNING *', (states[data.action], step_id, own['id'])).fetchone()
         root = c.execute('UPDATE service_dispatches SET revision=revision+1 WHERE id=%s RETURNING *', (id,)).fetchone()
-        return _view(c, p, parent, root, _event(c, p, root, own, key, fp, data.action, data.reason,**lineage))
+        return _view(c, p, parent, root, _event(c, p, root, own, key, fp, data.action, data.reason,**lineage),store)
 
 
 @receipts.bounded
