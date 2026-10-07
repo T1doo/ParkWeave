@@ -167,3 +167,10 @@ P1/P2共享版本descriptor纳入目录、原诉求/全部目标、组合/规则
 在7f85abca上新增独立采用的1–5注册适配器计划、稳定CaseStep UUID、依赖门禁、真实来源核验、协调阻塞/恢复与同键未知结果恢复；沿原合法资源/分派/本人接单/回执补正合同办理，不自动执行、赋权或完成原目标。目录决定保留内容版本副本，后续已观察变化拒绝下游；最后读取至COMMIT仍需唯一目录发布者协作协议，不宣称线性化。migration022只在隔离测试应用，生产未部署确认、无新增GRANT。步骤68PASS、目录11PASS、最终同Case浏览器1PASS/12图独审；完整回归终态记录见[ENG096](ENG096-PersistentServiceCaseSteps.md)及机器证据。正式Release/Approval、任意ServiceSpec/DAG、现实履约和完整Windows/Win11仍未签收；F1未签收/F2并行、R4关闭/模型预算0。
 
 ENG096最终本地验证：完整Linux1784PASS/0FAIL/0ERROR/9nativeSKIP/2WARN（452.95秒），244冻结文件0差异；最终步骤68PASS、目录11PASS、同Case浏览器1PASS与12张真实截图/14项产物哈希独审。全部计数与SHA见机器证据，不把专项重复计入全量。
+
+
+## ENG097 逐项材料补正与 Windows 全量前置
+
+从cc4a46b对照V1重核T01–T07，保留ENG096注册1–5适配器及实际浏览器P1–P4范围，原42项AT/EX仍NOT_RUN。新增原合法双槽补正持久请求/来源/稳定编号、真实新版提交、人工核对及确认门禁，失败同键恢复；两冷会话三个新Case与两企业材料隔离，不是正式模板审核复用或全业务履约。最终33新回归+35资料兼容=68PASS，真实浏览器1PASS/53.03秒/6图；完整回归终态见[ENG097](ENG097-MaterialCorrectionLoop.md)及机器证据。schema23仅隔离迁移，无新GRANT。Windows安全可修工程项更新69文件/1826当前collection与四片453/459/458/456、hash/allowlist；owner/ACL保持、首次日志/记录对象授权、原生normal/S4与完整Windows/Win11仍阻塞，未恢复全量workflow或重试被拒日志。F1未签收/F2并行、R4关闭/模型预算0。
+
+ENG097最终：完整Linux1817PASS/0FAIL/0ERROR/9nativeSKIP/2WARN（459.89秒），249冻结文件零差异。专项33新补正+35既有兼容=68PASS，工程fixture53PASS；最终两冷会话三新Case浏览器1PASS/6图/9产物哈希独审通过。前述专项不重复计入全量，初轮失败证据保留。

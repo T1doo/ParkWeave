@@ -69,7 +69,7 @@ def test_real_isolated_local_database_scope_schema_and_role(tmp_path):
         store=Store(owner);store.migrate()
         with store.connect() as c:c.execute((ROOT/'src/parkweave/roles.sql').read_text(encoding='utf-8'))
         assert isinstance(lifecycle.check_dsn_scope(app,app=True),str)
-        with Store(app).connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==22
+        with Store(app).connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==23
         with pytest.raises(lifecycle.BoundaryError) as privileged:lifecycle.check_dsn_scope(owner,app=True)
         assert diagnostic.failure(privileged.value)['boundary_reason']=='APP_ROLE_REFUSED'
     finally:

@@ -203,6 +203,11 @@ def create_app(store: Store) -> FastAPI:
     from . import dispatch_notices as notices
     from . import controlled_plans as cp
     from . import request_intents as intents
+    from . import material_corrections
+    @app.get('/api/preparations/{preparation_id}/material-corrections')
+    def material_corrections_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return material_corrections.read(store,token(authorization),preparation_id)
+
     from . import service_case_steps as service_steps
     @app.get('/api/preparations/{preparation_id}/service-case-plan')
     def service_case_plan_read(preparation_id: UUID,authorization: str | None=Header(default=None)):

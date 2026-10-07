@@ -25,9 +25,12 @@ class PreparationCommand(BaseModel):
     source_kind: Literal['USER_STATEMENT','DOCUMENT_EXCERPT']|None=None
     source_label: str|None=Field(default=None,min_length=1,max_length=200)
     reason: str|None=Field(default=None,min_length=1,max_length=1000)
+    correction_slots: list[Literal['need_summary','material_outline']]|None=Field(default=None,min_length=1,max_length=2)
     @model_validator(mode='after')
     def shape(self):
         evidence=(self.slot,self.text,self.source_kind,self.source_label)
+        if 'correction_slots' in self.model_fields_set and self.action!='REQUEST_CHANGES':raise ValueError('correction slots apply only to REQUEST_CHANGES')
+        if self.correction_slots is not None and len(set(self.correction_slots))!=len(self.correction_slots):raise ValueError('distinct correction slots required')
         if self.action=='ADD_EVIDENCE':
             if any(x is None for x in evidence) or self.reason is not None:raise ValueError('complete evidence only')
         elif any(x is not None for x in evidence) or not self.reason:raise ValueError('explicit reason only')
@@ -107,7 +110,9 @@ def snapshot(row,items):
     return digest(canonical(data))
 
 def command(store,token,id,key,data):
-    fp=digest(canonical({'preparation_id':str(id),**data.model_dump(mode='json')}))
+    # Keep fingerprints of commands created before slot correction support.
+    body=data.model_dump(mode='json',exclude={'correction_slots'} if data.correction_slots is None else set())
+    fp=digest(canonical({'preparation_id':str(id),**body}))
     with store.connect() as c:
         p=store.auth(c,token,lock=True);key_lock(c,p,key);row=scoped(store,c,p,id,write=True)
         if data.action in ('REQUEST_CHANGES','REVIEW'):
@@ -118,24 +123,33 @@ def command(store,token,id,key,data):
         if row['revision']!=data.expected_revision:raise Conflict('stale preparation revision; refresh required')
         if row['revision']>=64:raise Conflict('bounded preparation history limit reached')
         items=latest(c,id);current_hash=snapshot(row,items);review_hash=None
+        from . import material_corrections as corrections
+        ledger=row.get('material_corrections')
         if data.action=='ADD_EVIDENCE':
             old=next((i for i in items if i['slot']==data.slot),None);version=old['version']+1 if old else 1
-            c.execute("INSERT INTO preparation_evidence(id,preparation_id,slot,version,text,source_kind,source_label,source_sha256,actor_id,authenticity) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,'UNVERIFIED')",(uuid4(),id,data.slot,version,data.text,data.source_kind,data.source_label,digest(data.text),p['id']))
+            added=c.execute("INSERT INTO preparation_evidence(id,preparation_id,slot,version,text,source_kind,source_label,source_sha256,actor_id,authenticity) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,'UNVERIFIED') RETURNING *",(uuid4(),id,data.slot,version,data.text,data.source_kind,data.source_label,digest(data.text),p['id'])).fetchone()
             state='IN_PREPARATION';current_hash=snapshot(row,latest(c,id))
+            if ledger:
+                ledger=corrections.submit(row,p,added)
+                material_by_slot={i['slot']:i for i in corrections.materials(c,id)}
+                if any(not corrections.submitted(target,material_by_slot.get(target['slot']),row['owner_id']) for target in corrections.active(ledger)):state='CHANGES_REQUESTED'
         elif data.action=='REQUEST_CHANGES':
             if row['state'] not in ('IN_PREPARATION','CHANGES_REQUESTED'):raise Conflict('reopen reviewed preparation before correction')
             state='CHANGES_REQUESTED'
+            if data.correction_slots is not None:ledger=corrections.request(row,p,data.correction_slots,data.reason,corrections.materials(c,id))
         elif data.action=='REVIEW':
             if row['state'] not in ('IN_PREPARATION','CHANGES_REQUESTED'):raise Conflict('preparation already reviewed')
             if {i['slot'] for i in items}!=set(SLOTS):raise Conflict('required material slots missing')
+            if ledger:ledger=corrections.resolve(row,p,corrections.materials(c,id),current_hash,data.reason)
             state='REVIEWED';review_hash=current_hash
         elif data.action=='CONFIRM':
+            if corrections.active(ledger):raise Conflict('requested material corrections require actual reviewer resolution before confirmation')
             if row['state']!='REVIEWED' or row['review_sha256']!=current_hash:raise Conflict('current manual material review required')
             state='LOCAL_CONFIRMED';review_hash=current_hash
         else:
             if row['state'] not in ('REVIEWED','LOCAL_CONFIRMED'):raise Conflict('reviewed preparation required for reopen')
             state='IN_PREPARATION'
-        updated=c.execute('UPDATE preparations SET state=%s,revision=revision+1,review_sha256=%s WHERE id=%s RETURNING *',(state,review_hash,id)).fetchone()
+        updated=c.execute('UPDATE preparations SET state=%s,revision=revision+1,review_sha256=%s,material_corrections=%s WHERE id=%s RETURNING *',(state,review_hash,Jsonb(ledger) if ledger is not None else None,id)).fetchone()
         from .controlled_plans import invalidate
         invalidate(c,id,1)
         return event(c,p,updated,key,fp,data.action,snapshot_sha256=current_hash,reason=data.reason)
@@ -147,6 +161,7 @@ def read(store,token,id):
         # Dedicated endpoints apply role-specific projections to these private ledgers.
         row.pop('planning_previews',None)
         row.pop('service_case_plan',None)
+        row.pop('material_corrections',None)
         items=latest(c,id)
         history=c.execute('SELECT revision,action,payload,created_at FROM preparation_events WHERE preparation_id=%s ORDER BY revision',(id,)).fetchall()
         if p['role']!='enterprise_operator':

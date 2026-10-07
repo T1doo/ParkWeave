@@ -37,7 +37,7 @@ class Store:
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
             c.execute(Path(__file__).with_name("schema.sql").read_text(encoding='utf-8'))
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
-            if version > 22:
+            if version > 23:
                 raise Conflict("database version newer than this code")
             if version < 2:
                 c.execute(Path(__file__).with_name("migration-002.sql").read_text(encoding='utf-8'))
@@ -92,6 +92,9 @@ class Store:
 
             if version < 22:
                 c.execute(Path(__file__).with_name("migration-022.sql").read_text(encoding="utf-8"))
+
+            if version < 23:
+                c.execute(Path(__file__).with_name("migration-023.sql").read_text(encoding="utf-8"))
 
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""
