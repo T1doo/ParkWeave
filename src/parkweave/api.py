@@ -211,6 +211,9 @@ def create_app(store: Store) -> FastAPI:
     @app.post('/api/preparations/{preparation_id}/controlled-plan',status_code=201)
     def fixed_plan_create(preparation_id: UUID,data: cp.Create,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return cp.create(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+    @app.post('/api/preparations/{preparation_id}/controlled-plan/preview')
+    def fixed_plan_preview(preparation_id: UUID,data: cp.Preview,authorization: str | None=Header(default=None)):
+        return cp.preview(store,token(authorization),preparation_id,data)
     @app.post('/api/preparations/{preparation_id}/controlled-plan/commands')
     def fixed_plan_command(preparation_id: UUID,data: cp.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return cp.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)

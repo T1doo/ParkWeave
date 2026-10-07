@@ -1,3 +1,9 @@
+## ENG084 当前事项方案预览（本地）
+
+从49cc268回看原设计，按价值列三项核心缺口：启用前方案/必需目标覆盖、新Run合法协作访问、审核规则准备度。首项已交付有限固定合成预览：责任/前置/产出/验收/当前输入缺口，unsupported必需目标保留PARTIAL并阻止UI启用；新UI启用绑定当前预览hash/资料版本，旧固定支持目标直建API兼容合同保留。119相关PASS/0FAIL/2WARN，真实新Case页面/worker/PG/1200/390/320与迟到身份验证通过，授权摘要不变；明确启用后CaseNEEDS_INPUT、目标未完成/P3合法Run访问缺失仍阻塞。完整F2/DAG/审核发布模板未完成，不当资格或外部履约；独立审查与证据见[ENG084](ENG084-CasePlanPreview.md)。
+
+下一步优先诉求与显式必需目标的持久覆盖关联；完整冷输入仍受合法访问入口限制，不自动赋权。仅本地、未push/CI/外网/owner操作；F1未签收/F2并行、R4关闭/模型预算0、Windows/Win11与日志边界保持。下方旧记录保留原范围。
+
 ## ENG083 精确同步与本地历史模板说明（旧记录保留各轮范围）
 
 指定6提交已审无owner/权限扩大；精确797f426隔离完整Linux1454PASS/0FAIL/9nativeSKIP后，普通快进推送并核实远端同SHA。唯一run37574021406 attempt1 completed/success仅既有独立Job测量，metadata可证步骤success，直接JSON未取得；无日志/产物/rerun，不代表完整Windows/Win11验收。

@@ -2,7 +2,7 @@
 import json
 from contextvars import ContextVar
 from uuid import uuid4
-from typing import Literal
+from typing import Literal,Annotated
 from pydantic import BaseModel,ConfigDict,Field
 from psycopg.types.json import Jsonb
 from . import preparation as prep, service_dispatches as sd, executor_receipts as er
@@ -42,6 +42,17 @@ class Create(BaseModel):
     template_sha256:str=Field(pattern='^[a-f0-9]{64}$')
     expected_preparation_revision:int=Field(ge=1,le=64)
     required_goals:list[Literal['LOCAL_SYNTHETIC_COORDINATION_RECORDS']]=Field(min_length=1,max_length=1)
+    expected_preview_sha256:str|None=Field(default=None,pattern='^[a-f0-9]{64}$')
+class Preview(BaseModel):
+    model_config=ConfigDict(extra='forbid',strict=True,str_strip_whitespace=True)
+    required_goals:list[Annotated[str,Field(min_length=1,max_length=160)]]=Field(min_length=1,max_length=8)
+
+# Describes only existing adapters, never a published business catalogue.
+PREVIEW_STEPS={
+ 'P1':dict(responsibility='企业经办人补件、获派专员人工核对、企业确认',preconditions='有来源的诉求摘要和材料目录；当前专员核对权',output='当前版本的本地确认资料包',acceptance='企业明确核对当前材料版本'),
+ 'P2':dict(responsibility='企业经办人',preconditions='P1核对有效；本人两资源组合有效且明确关联此Case',output='此Case的两资源组合关联记录',acceptance='核对时段、规则与当前材料绑定'),
+ 'P3':dict(responsibility='获派专员分派、已有合法Run访问的执行者本人接单',preconditions='P2核对有效；已有运行访问；当前材料对应的本人接单',output='当前内部接单及回执事项',acceptance='核对本人接受记录及当前运行访问'),
+ 'P4':dict(responsibility='获派执行者提交、企业经办人核对',preconditions='P3核对有效；当前材料绑定的合成回执',output='企业已核对的合成回执记录',acceptance='明确核对来源和当前回执版本；仍不证明外部履约')}
 class Command(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True,str_strip_whitespace=True)
     action:Literal['CHECK_STEP']
@@ -195,14 +206,44 @@ def read(store,token,id):
         return _view(c,p,parent,row,issues,snapshots,states)
 
 @er.bounded
+def preview(store,token,id,data):
+    with store.connect() as c:
+        p,parent=_auth(store,c,token,id)
+        if p['role']!='enterprise_operator':raise Denied('owner plan preview required')
+        return _preview(store,c,p,parent,data.required_goals)
+
+def _preview(store,c,p,parent,goals):
+    _write_flag(store,c,p)
+    blockers=_creation_blockers(c,parent)
+    if _row(c,parent['id']):blockers.append('PLAN_ALREADY_EXISTS')
+    if not p['_plan_write']:blockers.append('CURRENT_EXECUTE_AUTHORITY_REQUIRED')
+    issues,snapshots=_sources(store,c,parent)
+    goals=list(dict.fromkeys(goals))
+    unsupported=[g for g in goals if g!=TEMPLATE['goal']]
+    steps=[dict(id=s,depends_on=TEMPLATE['steps'][i]['depends_on'],**PREVIEW_STEPS[s],
+      state='NEEDS_INPUT' if issues[s] else 'INPUTS_PRESENT',issues=issues[s],source_sha256=_hash(snapshots[s])) for i,s in enumerate(STEPS)]
+    result=dict(scope=SCOPE,namespace='PREVIEW',template_review='ENGINEERING_ONLY',business_publication=False,
+      preparation_id=parent['id'],case_id=parent['case_id'],preparation_revision=parent['revision'],
+      template_sha256=TEMPLATE_SHA,required_goals=goals,unsupported_goals=unsupported,
+      supported_goals=[g for g in goals if g==TEMPLATE['goal']],creation_blockers=blockers,steps=steps,
+      can_adopt=not blockers and not unsupported and TEMPLATE['goal'] in goals,
+      state='PARTIAL' if unsupported else 'BLOCKED' if blockers else 'READY_TO_ADOPT',
+      persisted=False,executed=False,case_goal_completed=False,automatic_execution=False,new_grants=False)
+    result['preview_sha256']=_hash(_normal(result))
+    return result
+
+@er.bounded
 def create(store,token,id,key,data):
-    fp=_hash({'preparation_id':str(id),'action':'CREATE',**data.model_dump()})
+    fp=_hash({'preparation_id':str(id),'action':'CREATE',**data.model_dump(exclude_none=True)})
     with store.connect() as c:
         p,parent=_auth(store,c,token,id,write=True);p['_plan_write']=True;row=_row(c,id);old=_old(c,p,id,key,fp)
         if data.template_sha256!=TEMPLATE_SHA:raise Conflict('fixed template hash mismatch')
         if not old:
             if row or parent['revision']!=data.expected_preparation_revision:raise Conflict('plan exists or preparation revision changed')
             if _creation_blockers(c,parent):raise Conflict('start fixed template before resource association/dispatch/receipt')
+            if data.expected_preview_sha256 is not None:
+                current=_preview(store,c,p,parent,data.required_goals)
+                if not current['can_adopt'] or current['preview_sha256']!=data.expected_preview_sha256:raise Conflict('plan preview changed; preview again')
             row=c.execute('INSERT INTO controlled_plans(preparation_id,id,template_sha256,revision) VALUES(%s,%s,%s,1) RETURNING *',(id,uuid4(),TEMPLATE_SHA)).fetchone()
             event=_event(c,p,parent,row,key,fp,'CREATE')
         else:event=old['payload']
