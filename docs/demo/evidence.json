@@ -1,0 +1,115 @@
+{
+  "scope": "OFFLINE_DEMO_EXPERIENCE_PACKAGE_ONLY",
+  "reference_baseline": "08351cb6d97166bebe53d8498535168619758b89",
+  "branch": "dev/demo-acceptance-experience-20261007",
+  "platform": "Linux",
+  "python": "3.12.14",
+  "stdlib_test_command": "python tests/test_demo_preflight.py",
+  "stdlib_test_result": "......\n----------------------------------------------------------------------\nRan 6 tests in 0.094s\n\nOK\n",
+  "actual_preflight_exit_code": 2,
+  "actual_preflight": {
+    "schema": "parkweave-demo-inventory/1",
+    "scope": "OFFLINE_INVENTORY_ONLY",
+    "reference_baseline": "08351cb6d97166bebe53d8498535168619758b89",
+    "python_3_12": true,
+    "assets": [
+      {
+        "path": "docs/demo/AcceptanceWalk.html",
+        "present": true
+      },
+      {
+        "path": "docs/demo/README.md",
+        "present": true
+      },
+      {
+        "path": "scripts/linux_fixture_server.py",
+        "present": true
+      },
+      {
+        "path": "scripts/template_cold_start_browser_smoke.py",
+        "present": true
+      },
+      {
+        "path": "scripts/dispatch_recovery_browser_smoke.py",
+        "present": true
+      },
+      {
+        "path": "src/parkweave/web.html",
+        "present": true
+      },
+      {
+        "path": "pyproject.toml",
+        "present": true
+      }
+    ],
+    "dependencies": [
+      {
+        "name": "fastapi",
+        "installed_version": "0.141.1"
+      },
+      {
+        "name": "uvicorn",
+        "installed_version": "0.52.1"
+      },
+      {
+        "name": "psycopg",
+        "installed_version": null
+      },
+      {
+        "name": "pydantic",
+        "installed_version": "2.13.4"
+      },
+      {
+        "name": "httpx",
+        "installed_version": "0.28.1"
+      },
+      {
+        "name": "pgserver",
+        "installed_version": null
+      }
+    ],
+    "inventory_complete": false,
+    "missing_assets": [],
+    "missing_dependencies": [
+      "psycopg",
+      "pgserver"
+    ],
+    "runtime": "NOT_PROBED",
+    "database": "NOT_PROBED",
+    "authorization": "NOT_PROBED",
+    "cold_case_to_receipt": "BLOCKED_UNLESS_EXISTING_AUTHORIZED_RUN_ASSIGNMENT",
+    "template_publication": "ISOLATED_CANDIDATE_ONLY_NOT_FORMALLY_ENABLED",
+    "windows_native": "NOT_RUN",
+    "formal_at_ex": "NOT_RUN",
+    "model_calls_by_this_tool": 0,
+    "guide": "docs/demo/AcceptanceWalk.html"
+  },
+  "offline_browser": {
+    "status": "NOT_PASSED",
+    "attempts": 2,
+    "screenshots_generated": 0,
+    "second_attempt_timeout_seconds": 20,
+    "note": "Only local static card attempted, no product browser flow. Own first browser terminated, second bounded by timeout."
+  },
+  "product_ui": "NOT_RUN",
+  "database": "NOT_RUN",
+  "pytest_full_regression": "NOT_RUN",
+  "windows_native": "NOT_RUN",
+  "formal_at_ex": "NOT_RUN",
+  "blockers": [
+    "psycopg and pgserver missing",
+    "pytest missing",
+    "No authorized product harness prepared; existing harness seeds identities/grants, out of this line scope",
+    "New Run receipt path still requires existing authorized Run assignment"
+  ],
+  "writes": "New demo assets/tests/docs only; no src/workflow/Windows/migration/identity/grant/assignment changes",
+  "model_calls": 0,
+  "deployment": "NOT_RUN",
+  "source_sha256": {
+    "scripts/demo_preflight.py": "d74d2aef52c02a3b71618db125f51516f018ef4fec2e008138c6612678fa0cfe",
+    "tests/test_demo_preflight.py": "d59f396d7a69a9bc727c2bbc8de411bcd7d76cfe2b9d97f1725e29faf7a72cfc",
+    "docs/demo/AcceptanceWalk.html": "3c287ede873096dcfaf2157494e9d556e1bc4c705abfbca5e8148e949292d09c",
+    "docs/demo/README.md": "7d06ae49fb502fc0a75b01cef3a4160614d0364f51849858af6191c2701ef476"
+  },
+  "review": "Independent read-only review and follow-up: six stdlib tests PASS; no remaining blocking findings after visible-state/goal/history corrections. Final exact wording limits unified retries to material/dispatch/persistent-plan pages and history label to opened detail. Product UI/PG/Windows not verified."
+}
