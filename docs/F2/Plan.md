@@ -280,3 +280,8 @@ GitHub日志Forbidden仅确定在已获批job-log GET流程，API/重定向位�
 ## ENG091 同一产品Case只读路径与同步准备
 
 四步计划新增所属企业同Case记录/当前已有Run assignment读投影；缺合法绑定保持阻塞，不申请/复制/批准/修复访问权。刷新/切Case/身份/版本与403清旧私有视图，各命令仍独立重验。本轮实际产品PG/API/web验证与T01–T07逐项缺口/证据、797f426后准确8提交及本片第9候选见[ENG091](ENG091-SameCasePathAndSyncReadiness.md)。019/020是产品加列迁移，隔离测试已应用但部署未确认；未来权限表/函数仅未实施方案，roles/schema/workflow字节不变。未来push源码会触发现有Server独立Job测量，非完整Windows/Win11验收；本轮不push/newCI/激活，F1未签收/F2并行、R4关闭/模型预算0。
+
+
+## ENG092 有界依赖规划与已授权精确同步
+
+九提交普通 push 已核实远端 e03dbf7；唯一37593296690/attempt1精确同头 completed/success，仅现有独立Job元数据，不代表完整Windows/Win11。新规划切片从全部显式目标选择1–5注册依赖步骤、保留UNKNOWN/UNSUPPORTED，并以来源SHA持久化最多16条预览；仅元数据，无执行/赋权。migration021及019/020打包修复只在隔离测试应用，本片独立本地提交不再push。详见[ENG092](ENG092-BoundedPlanningAndExactSync.md)，T01–T07缺口仍按原验收标准，F1未签收/F2并行、R4关闭/预算0。

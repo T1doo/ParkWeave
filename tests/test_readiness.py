@@ -87,7 +87,7 @@ def test_reviewer_revocation_invalidates_true_snapshot(preparation_fixture):
 def test_additive_migration_preserves_history_and_authorization(preparation_fixture):
     f=preparation_fixture;p=filled(f);before=rows(f)
     with f[1].connect() as c:
-        c.execute('ALTER TABLE preparations DROP COLUMN readiness_assessments');c.execute('DELETE FROM schema_version WHERE version=20')
+        c.execute('ALTER TABLE preparations DROP COLUMN readiness_assessments');c.execute('DELETE FROM schema_version WHERE version>=20')
     f[1].migrate();f[1].migrate();after=rows(f)
     assert after==before and read(f,p).json()['state']=='NOT_ASSESSED'
 

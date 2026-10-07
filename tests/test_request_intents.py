@@ -79,7 +79,7 @@ def test_additive_v18_upgrade_and_repeat_migration_preserves_history_and_grants(
         c.execute('DELETE FROM schema_version WHERE version>=19')
     f[1].migrate();f[1].migrate()
     with f[1].connect() as c:
-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==20
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==21
         assert c.execute('SELECT * FROM preparation_events').fetchall()==history
         assert c.execute('SELECT * FROM capability_grants ORDER BY principal_id,capability').fetchall()==grants
         assert c.execute('SELECT request_intent FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['request_intent'] is None
