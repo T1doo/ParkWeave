@@ -12,6 +12,8 @@ MAX_JUNIT_BYTES=4*1024*1024
 MAX_TEST_CASES=10000
 MAX_FAILURE_IDS=25
 MAX_CLEANUP=6
+TEST_ID_PATTERN=r'tests/test_[a-z0-9_]+\.py::(?:[A-Za-z][A-Za-z0-9_]*::)?test_[A-Za-z0-9_]+'
+JUNIT_CLASS_PATTERN=r'(?:tests\.)?(test_[a-z0-9_]+)(?:\.([A-Za-z][A-Za-z0-9_]*))?'
 TREE_CLEANUP=frozenset({'NOT_STARTED','SUSPENDED_CHILD_STOPPED','OWNED_TREE_STOPPED','OWNED_TREE_STOP_UNCONFIRMED'})
 CATEGORIES=frozenset({'AssertionError','AttributeError','KeyError','TypeError','ValueError','RuntimeError','OSError','FileNotFoundError','PermissionError','TimeoutError','ConnectionError','ConnectionRefusedError','JSONDecodeError','UnicodeDecodeError','TimeoutExpired','CalledProcessError','HTTPError','URLError','UnsupportedOperation','NotImplementedError','IndexError','ImportError','ModuleNotFoundError','BrokenPipeError','ProcessLookupError','LookupError','OverflowError','OTHER'})
 PHASES=frozenset({'UNKNOWN','configuration','managed_python','setup','existing_config','config_preservation','doctor','start','status','session_read','api_case_submit','api_case_wait','stop','stop_record_check','restart','restart_read','native_browser','final_stop','regression_run','regression_report','win11_guard','server_candidate','browser_guard','browser_driver_binding','browser_start','browser_driver_ready','browser_session','browser_navigation','browser_case_create','browser_case_read','browser_render','browser_fact_parent','browser_fact_review','browser_clarification','browser_child_review','browser_cancel','browser_cleanup'})
@@ -87,7 +89,7 @@ def _allowed_tests():
     value=json.loads(_bounded_bytes(Path(__file__).with_name('diagnostic-test-ids.json'),256*1024))
     if not isinstance(value,dict) or set(value)!={'schema','test_ids'} or type(value['schema']) is not int or value['schema']!=1:raise ValueError('invalid allowlist')
     ids=value['test_ids']
-    if not isinstance(ids,list) or not 0<len(ids)<=3000 or any(not isinstance(x,str) or len(x)>256 or not re.fullmatch(r'tests/test_[a-z0-9_]+\.py::test_[A-Za-z0-9_]+',x) for x in ids) or len(set(ids))!=len(ids):raise ValueError('invalid allowlist')
+    if not isinstance(ids,list) or not 0<len(ids)<=3000 or any(not isinstance(x,str) or len(x)>256 or not re.fullmatch(TEST_ID_PATTERN,x) for x in ids) or len(set(ids))!=len(ids):raise ValueError('invalid allowlist')
     return frozenset(ids)
 
 
@@ -130,9 +132,12 @@ def failure_tests(repo,private_junit):
         name=name.split('[',1)[0]
         if len(classname)>128 or len(name)>256:
             result['unknown_failed_cases']+=1;continue
-        module=classname.removeprefix('tests.')
-        candidate='tests/'+module+'.py::'+name
-        if candidate in allowed and classname in (module,'tests.'+module):
+        identity=re.fullmatch(JUNIT_CLASS_PATTERN,classname)
+        if identity:
+            module,test_class=identity.groups()
+            candidate='tests/'+module+'.py::'+(test_class+'::' if test_class else '')+name
+        else:candidate=None
+        if candidate in allowed:
             ids.add(candidate);mapped[candidate]=mapped.get(candidate,0)+1
         else:result['unknown_failed_cases']+=1
     return finish()

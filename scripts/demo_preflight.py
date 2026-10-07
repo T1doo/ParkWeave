@@ -7,13 +7,14 @@ import json
 from pathlib import Path
 import sys
 
-BASELINE = '08351cb6d97166bebe53d8498535168619758b89'
+BASELINE = '9ab3c06567ec4d3ff2bcd8152008ba46c39089a5'
 ASSETS = (
     'docs/demo/AcceptanceWalk.html',
     'docs/demo/README.md',
     'scripts/linux_fixture_server.py',
     'scripts/template_cold_start_browser_smoke.py',
     'scripts/dispatch_recovery_browser_smoke.py',
+    'scripts/material_reuse_browser_smoke.py',
     'src/parkweave/web.html',
     'pyproject.toml',
 )

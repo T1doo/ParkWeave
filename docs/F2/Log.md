@@ -510,3 +510,8 @@ Windows完成默认关闭的CREATE_NEW代际链/精确root与进程字段/author
 
 
 ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKIP / 2 WARN，521.16秒**；2183项JUnit与当前collection一致，274冻结源码文件零差异。材料32专项、既有68兼容、Windows协议63专项及浏览器1PASS/9图不重复计入全量。当前78测试文件/四片535/549/534/565/997诊断ID、ENG099原2088精确keys全保留，预算和workflow字节不变。普通推送与首次精确HEAD的现有Server隔离Job CI由本任务最终运行时同步证据记录，不在提交前预写成功；不等同完整Windows/Win11或正式业务验收。
+
+
+## ENG101 演示指南与诊断兼容
+
+体验指南集成实际浏览器1PASS/82.39秒/24图；file://被管理员策略阻止，固定只读HTTP卡验证通过。实际既有恢复流程仍为预建合成Case，最终WAITING_CONFIRMATION，无权限变化或外部履约。最终差异107PASS/4.45秒，2194collection/79文件/四片540/549/540/565/1005诊断IDs，旧2183keys保留；此轮无新完整Linux，不能累加旧2174全量。事实确认模块独立联调未签收。详见[ENG101](ENG101-DemoExperienceIntegration.md)与[实际证据](../demo/integration-evidence.json)。F1未签收/F2并行、Server非Win11、正式AT/EX仍NOT_RUN、R4关闭/预算0。

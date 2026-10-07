@@ -54,7 +54,7 @@ def test_truncated_allowlisted_ids_preserve_failure_counts(tmp_path):
     m=module('diagnostics');ids=sorted(m._allowed_tests())[:m.MAX_FAILURE_IDS+3]
     entries=[]
     for id in ids:
-        file,name=id.split('::');entries.append((Path(file).stem,name+'['+POISON+']','failure'))
+        file,*parts=id.split('::');entries.append((Path(file).stem+('.'+parts[0] if len(parts)==2 else ''),parts[-1]+'['+POISON+']','failure'))
     path,ref=junit(tmp_path,entries);result=m.failure_tests(tmp_path,ref)
     assert result['failed_cases']==len(ids) and len(result['failed_test_ids'])==m.MAX_FAILURE_IDS and result['ids_truncated'] and result['unknown_failed_cases']==0 and POISON not in json.dumps(result)
 
@@ -84,7 +84,38 @@ def test_committed_allowlist_exactly_matches_trusted_test_functions():
     for path in (ROOT/'tests').glob('test_*.py'):
         for node in ast.parse(path.read_text(encoding='utf-8')).body:
             if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)) and node.name.startswith('test_'):expected.add(str(path.relative_to(ROOT)).replace('\\','/')+'::'+node.name)
+            elif isinstance(node,ast.ClassDef) and node.name[0].isalpha() and node.name.isascii():
+                for method in node.body:
+                    if isinstance(method,(ast.FunctionDef,ast.AsyncFunctionDef)) and method.name.startswith('test_'):
+                        expected.add(str(path.relative_to(ROOT)).replace('\\','/')+'::'+node.name+'::'+method.name)
     assert m._allowed_tests()==expected
+
+
+def test_actual_unittest_class_junit_exact_identity_and_private_parameter_redaction(tmp_path):
+    m=module('diagnostics')
+    method='test_wrong_python_not_accepted_as_ready'
+    known='tests/test_demo_preflight.py::DemoPreflightTests::'+method
+    entries=[('test_demo_preflight.DemoPreflightTests',method,'failure'),
+             ('tests.test_demo_preflight.DemoPreflightTests',method+'['+POISON+']','error'),
+             ('test_demo_preflight.DemoCardTests',method,'failure'),
+             ('test_demo_preflight',method,'failure'),
+             ('test_demo_preflight.DemoPreflightTests.'+POISON,method,'failure'),
+             ('test_demo_preflight.DemoPreflightTests['+POISON+']',method,'failure'),
+             ('test_demo_preflight.DemoPreflightTests',POISON+'['+method+']','failure')]
+    _,reference=junit(tmp_path,entries)
+    result=m.failure_tests(tmp_path,reference)
+    assert result['failed_test_ids']==[known]
+    assert result['failed_test_counts']=={known:2}
+    assert result['failed_cases']==7 and result['unknown_failed_cases']==5
+    assert POISON not in json.dumps(result)
+
+
+@pytest.mark.parametrize('suffix',['Private::Nested::test_method','_Private::test_method','Public[private]::test_method','Public::test_method[private]'])
+def test_allowlist_refuses_nested_private_or_parameterized_class_identifiers(monkeypatch,suffix):
+    m=module('diagnostics')
+    payload=json.dumps({'schema':1,'test_ids':['tests/test_demo_preflight.py::'+suffix]}).encode()
+    monkeypatch.setattr(m,'_bounded_bytes',lambda path,limit:payload)
+    with pytest.raises(ValueError,match='invalid allowlist'):m._allowed_tests()
 
 
 def test_browser_binding_failure_has_explicit_phase_without_path(tmp_path,monkeypatch):
