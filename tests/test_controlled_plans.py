@@ -97,6 +97,7 @@ def test_tenant_or_assignment_cannot_read_create_check(link_fixture,user):
 @pytest.mark.parametrize('user',[REVIEWER,'executor-a'])
 def test_counterpart_minimal_projection_and_no_check_authority(link_fixture,user):
     f=link_fixture;p,g,d,s=through(f);r=read(f,p,user).json();assert r['source_snapshots'] is None and r['goal'] is None
+    assert r['preparation_revision']==p['revision']
     assert all(x['source_sha256'] is None and x['issues'] is None and not x['can_check'] for x in r['steps'])
     assert 'SYNTHETIC explicit compatibility check' not in json.dumps(r) and g['id'] not in json.dumps(r)
     assert create(f,p,user).status_code==403 and check(f,p,'P4',user=user).status_code==403

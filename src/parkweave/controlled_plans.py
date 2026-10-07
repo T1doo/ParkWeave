@@ -148,7 +148,7 @@ def _view(c,p,parent,row,issues,snapshots,states,event=None):
     next_ready=next_step is None or not issues[next_step]
     access_blocked='EXISTING_RUN_ASSIGNMENT_REQUIRED' in issues['P3']
     state='LOCAL_RECORDS_CHECKED' if next_step is None else 'BLOCKED' if not next_ready or access_blocked else 'NEEDS_RECHECK' if any(v=='NEEDS_RECHECK' for v in states.values()) else 'IN_PROGRESS'
-    return dict(scope=SCOPE,role=p['role'],preparation_id=parent['id'],plan_id=row['id'],revision=row['revision'],
+    return dict(scope=SCOPE,role=p['role'],preparation_id=parent['id'],preparation_revision=parent['revision'],plan_id=row['id'],revision=row['revision'],
       template_sha256=row['template_sha256'],template_version=1,state=state,steps=steps,next_step=next_step,
       history=history,event=event,source_snapshots=snapshots if owner else None,
       goal=parent['goal'] if owner else None,goal_coverage='LOCAL_SYNTHETIC_RECORDS_ONLY',
