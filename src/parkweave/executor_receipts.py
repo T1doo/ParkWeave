@@ -103,8 +103,22 @@ def material_current(c,parent,store=None):
     if store is None:return False
     return prep.fact_descriptor(store,c,parent).get('satisfied') is True
 
-def _fresh(row,parent,c=None,store=None):
-    return bool(parent and parent['state']=='LOCAL_CONFIRMED' and parent['revision']==row['preparation_revision'] and parent['review_sha256']==row['preparation_sha256'] and (c is None or material_current(c,parent,store)))
+def _fresh(row,parent,c=None,store=None,*,check_execution=True):
+    base=bool(parent and parent['state']=='LOCAL_CONFIRMED' and parent['revision']==row['preparation_revision'] and parent['review_sha256']==row['preparation_sha256'] and (c is None or material_current(c,parent,store)))
+    if not base or not check_execution or c is None:return base
+    receipt=_current(c,row)
+    if _requires_local(c,row,receipt):
+        from .isolated_local_execution import current
+        return bool(store and current(store,c,row,parent,receipt))
+    return base
+
+def _requires_local(c,row,receipt=None):
+    receipt=receipt if receipt is not None else _current(c,row)
+    # SELECT * reveals whether the isolated-only column exists; normal schemas
+    # and wholly manual generations retain their original contract.
+    return bool(receipt and 'adapter_execution' in receipt and c.execute(
+        'SELECT 1 FROM service_step_receipts WHERE step_id=%s AND adapter_execution IS NOT NULL LIMIT 1',
+        (row['id'],)).fetchone())
 
 def _locked(c,id,write=False):
     return c.execute('SELECT * FROM service_receipt_steps WHERE id=%s '+('FOR UPDATE' if write else 'FOR SHARE'),(id,)).fetchone()
@@ -126,7 +140,10 @@ def _event(c,p,row,key,fp,action,**extra):
 def _view(c,p,row,parent,event=None,store=None):
     current=current_step(c,parent) if parent else None
     is_current=bool(current and current['id']==row['id'])
-    return dict(scope=SCOPE,role=p['role'],step=row,current_receipt=_current(c,row),
+    receipt=_current(c,row)
+    from .isolated_local_execution import view as execution_view
+    return dict(scope=SCOPE,role=p['role'],step=row,current_receipt=receipt,
+        local_execution=execution_view(store,c,p,row,parent,receipt,is_current),
         history=c.execute('SELECT revision,action,payload,created_at FROM service_receipt_events WHERE step_id=%s ORDER BY revision',(row['id'],)).fetchall(),
         receipt_history=c.execute('SELECT * FROM service_step_receipts WHERE step_id=%s ORDER BY version',(row['id'],)).fetchall(),
         dependency='CURRENT' if is_current and _fresh(row,parent,c,store) else 'DEPENDENCY_CHANGED',event=event,
@@ -172,15 +189,26 @@ def create(store,token,key,data):
 @bounded
 def read(store,token,id):
     with store.connect() as c:
-        p=_auth(store,c,token);row=_base(store,c,p,id);parent=_parent(c,row);row=_locked(c,id)
+        p=_auth(store,c,token);row=_base(store,c,p,id)
+        from .isolated_local_execution import provider
+        adapter=provider(store)
+        if adapter:
+            adapter.bridge._lock(c,row['run_id'])
+            store.lock_principal(c,row['executor_id'])
+        parent=_parent(c,row);row=_locked(c,id)
         return _view(c,p,row,parent,store=store)
 
 @bounded
 def command(store,token,id,key,data):
-    fp=digest(prep.canonical({'step_id':str(id),**data.model_dump(mode='json')}))
+    from .isolated_local_execution import ExecuteLocal,provider,current as execution_current
+    execute=type(data) is ExecuteLocal
+    if not execute and type(data) is not Command:raise Denied('typed receipt command required')
+    if execute and provider(store) is None:raise Denied('isolated local execution disabled')
+    action='SUBMIT' if execute else data.action
+    fp=digest(prep.canonical({'step_id':str(id),**data.model_dump(mode='json'),**({'action':'EXECUTE_LOCAL'} if execute else {})}))
     with store.connect() as c:
         p=_auth(store,c,token)
-        if data.action=='SUBMIT':
+        if action=='SUBMIT':
             if p['role']!='service_executor':raise Denied('assigned executor receipt only')
         else:
             if p['role']!='enterprise_operator':raise Denied('enterprise owner decision only')
@@ -188,28 +216,53 @@ def command(store,token,id,key,data):
         _key(c,p,key);row=_base(store,c,p,id)
         if p['role']=='enterprise_operator':_executor(store,c,row['executor_id'],row['run_id'])
         parent=_parent(c,row);row=_locked(c,id,write=True);old=_replay(c,p,key,fp)
-        if old:return _view(c,p,row,parent,old,store)
+        if old:
+            if execute and (not _fresh(row,parent,c,store) or
+                            old.get('receipt_id')!=str(row['current_receipt_id']) or
+                            not execution_current(store,c,row,parent,_current(c,row))):
+                raise Conflict('historical local execution cannot restore current receipt; execute with a fresh key')
+            if not execute and _requires_local(c,row) and (not _fresh(row,parent,c,store) or
+                    old.get('receipt_id')!=str(row['current_receipt_id'])):
+                raise Conflict('local execution no longer current')
+            return _view(c,p,row,parent,old,store)
         selected=current_step(c,parent)
         if not selected or selected['id']!=row['id']:raise Conflict('historical receipt generation is read-only; current executor acceptance required')
+        if action=='SUBMIT' and not execute and _requires_local(c,row):
+            raise Conflict('local adapter generation required; manual text cannot replace execution output')
         from .controlled_plans import gate
-        if data.action in ('SUBMIT','ACKNOWLEDGE'):
+        if action in ('SUBMIT','ACKNOWLEDGE'):
             full_parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()
             gate(store,c,full_parent,3)
-        if not _fresh(row,parent,c,store):raise Conflict('receipt preparation dependency changed; explicit replanning required')
+        if not _fresh(row,parent,c,store,check_execution=action!='SUBMIT'):raise Conflict('receipt preparation dependency changed; explicit replanning required')
+        if execute and row['revision']>=63:raise Conflict('local execution requires capacity for independent owner acknowledgement')
         if row['revision']!=data.expected_revision:raise Conflict('stale receipt step revision; refresh required')
         if row['revision']>=64:raise Conflict('receipt history limit reached')
         current=_current(c,row);current_id=row['current_receipt_id']
-        if data.action=='SUBMIT':
-            if row['state'] not in ('AWAITING_RECEIPT','CHANGES_REQUESTED'):raise Conflict('receipt step not awaiting executor')
-            version=(current['version'] if current else 0)+1;sha=digest(data.text)
-            receipt=c.execute("INSERT INTO service_step_receipts(id,step_id,version,text,source_kind,source_label,source_sha256,actor_id) VALUES(%s,%s,%s,%s,'SYNTHETIC',%s,%s,%s) RETURNING *",(uuid4(),id,version,data.text,data.source_label,sha,p['id'])).fetchone()
+        execution=None
+        if action=='SUBMIT':
+            stale_local=bool(execute and current and current.get('adapter_execution') is not None and
+                             not _fresh(row,parent,c,store))
+            if row['state'] not in ('AWAITING_RECEIPT','CHANGES_REQUESTED') and not stale_local:raise Conflict('receipt step not awaiting executor')
+            if execute:
+                adapter=provider(store)
+                if not adapter:raise Denied('isolated local execution disabled')
+                text,execution=adapter.generate(store,c,row,parent)
+                from .isolated_local_execution import ADAPTER_ID
+                source_label=ADAPTER_ID+'/1'
+            else:text,source_label=data.text,data.source_label
+            version=(current['version'] if current else 0)+1;sha=digest(text)
+            values=(uuid4(),id,version,text,source_label,sha,p['id'])
+            if execute:
+                receipt=c.execute("INSERT INTO service_step_receipts(id,step_id,version,text,source_kind,source_label,source_sha256,actor_id,adapter_execution) VALUES(%s,%s,%s,%s,'SYNTHETIC',%s,%s,%s,%s) RETURNING *",(*values,Jsonb(execution))).fetchone()
+            else:
+                receipt=c.execute("INSERT INTO service_step_receipts(id,step_id,version,text,source_kind,source_label,source_sha256,actor_id) VALUES(%s,%s,%s,%s,'SYNTHETIC',%s,%s,%s) RETURNING *",values).fetchone()
             current_id=receipt['id'];state='RECEIPT_RECORDED'
         else:
             if not current or data.receipt_sha256!=current['source_sha256']:raise Conflict('current receipt hash required')
-            if data.action=='ACKNOWLEDGE':
+            if action=='ACKNOWLEDGE':
                 if row['state']!='RECEIPT_RECORDED':raise Conflict('recorded receipt required for local acknowledgement')
                 state='LOCAL_ACKNOWLEDGED'
-            elif data.action=='REQUEST_CHANGES':
+            elif action=='REQUEST_CHANGES':
                 if row['state']!='RECEIPT_RECORDED':raise Conflict('recorded receipt required for correction')
                 state='CHANGES_REQUESTED'
             else:
@@ -218,7 +271,7 @@ def command(store,token,id,key,data):
         row=c.execute('UPDATE service_receipt_steps SET state=%s,revision=revision+1,current_receipt_id=%s WHERE id=%s RETURNING *',(state,current_id,id)).fetchone()
         from .controlled_plans import invalidate
         invalidate(c,row['preparation_id'],4)
-        e=_event(c,p,row,key,fp,data.action,receipt_id=str(current_id),receipt_sha256=_current(c,row)['source_sha256'],reason=data.reason)
+        e=_event(c,p,row,key,fp,action,receipt_id=str(current_id),receipt_sha256=_current(c,row)['source_sha256'],reason=data.reason,**({'adapter_execution':execution,'record_mode':'SERVER_GENERATED_LOCAL_EXECUTION'} if execute else {}))
         return _view(c,p,row,parent,e,store)
 
 @bounded

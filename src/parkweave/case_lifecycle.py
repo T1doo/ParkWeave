@@ -65,7 +65,7 @@ def _sources(store,c,p,parent):
         snapshot.update(dispatch_id=str(dispatch['id']),dispatch_revision=dispatch['revision'],offer_id=str(offer['id']),executor_id=offer['executor_id'])
     if not step or not receipt or step['state']!='LOCAL_ACKNOWLEDGED':
         issues['RECEIPT_RECHECK'].append('CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED')
-    elif not er._fresh(step,parent):issues['RECEIPT_RECHECK'].append('RECEIPT_PREPARATION_CHANGED_REPLAN_REQUIRED')
+    elif not er._fresh(step,parent,c,store):issues['RECEIPT_RECHECK'].append('RECEIPT_PREPARATION_CHANGED_REPLAN_REQUIRED')
     if step:
         expected=(parent['id'],parent['run_id'],parent['case_id'],parent['owner_id'],parent['park_id'],parent['org_id'],parent['service_id'],parent['service_version'])
         actual=tuple(step[k] for k in ('preparation_id','run_id','case_id','owner_id','park_id','org_id','service_id','service_version'))

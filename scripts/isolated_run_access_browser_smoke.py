@@ -125,12 +125,16 @@ def main() -> None:
         wait('document.readyState', lambda x: x == 'complete')
         # Measure only API writes after browser startup. Headers/tokens are never
         # recorded, and body values are reduced to action names only.
-        value("(()=>{window.ownedRunAccessFetch=window.fetch;window.ownedRunAccessPosts=[];window.ownedRunAccessReads=[];window.runAccessApproveProjectionInjection=[];window.injectProjectionPendingAfterRealCommit=true;window.fetch=async(path,opts)=>{"
-              "const response=await ownedRunAccessFetch(path,opts);let exposed=response;if(opts?.method&&opts.method!=='GET'){let action='';try{action=JSON.parse(opts.body||'{}').action||''}catch(_){};"
+        def install_network_tap(inject_approve: bool):
+            value("(()=>{window.ownedRunAccessFetch=window.fetch;window.ownedRunAccessPosts=[];window.ownedRunAccessReads=[];window.runAccessApproveProjectionInjection=[];window.localExecutionProjection=[];window.localExecutionAttempts=[];window.failNextLocalExecutionProjection=false;window.injectProjectionPendingAfterRealCommit=" + ("true" if inject_approve else "false") + ";window.fetch=async(path,opts)=>{"
+              "const response=await ownedRunAccessFetch(path,opts);let exposed=response;if(opts?.method&&opts.method!=='GET'){let action='';try{const parsed=JSON.parse(opts.body||'{}');action=parsed.action||((String(path).includes('/execute-local'))?'EXECUTE_LOCAL':'')}catch(_){if(String(path).includes('/execute-local'))action='EXECUTE_LOCAL'};"
+              "if(String(path).includes('/execute-local')){const key=new Headers(opts.headers||{}).get('Idempotency-Key')||'';const body=String(opts.body||'');const bytes=new TextEncoder().encode(key+'\\n'+body);const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('');let execution_id=null;try{execution_id=(await response.clone().json()).local_execution?.record?.execution_id||null}catch(_){}window.localExecutionAttempts.push({actual_server_status:response.status,request_fingerprint_sha256:digest,execution_id});if(response.ok&&window.localExecutionAttempts.length===1)window.failNextLocalExecutionProjection=true;}"
               "if(String(path).includes('/access/commands')&&action==='APPROVE'){const key=new Headers(opts.headers||{}).get('Idempotency-Key')||'';const body=String(opts.body||'');const bytes=new TextEncoder().encode(key+'\\n'+body);const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('');"
               "const inject=window.injectProjectionPendingAfterRealCommit;window.runAccessApproveProjectionInjection.push({actual_server_status:response.status,client_status:inject?409:response.status,request_fingerprint_sha256:digest});"
               "if(inject){window.injectProjectionPendingAfterRealCommit=false;exposed=new Response(JSON.stringify({decision_committed:true,projection_pending:true}),{status:409,headers:{'Content-Type':'application/json'}});}}"
-              "window.ownedRunAccessPosts.push({path:String(path),action,actual_server_status:response.status,client_status:exposed.status});}if(!opts?.method||opts.method==='GET')ownedRunAccessReads.push({path:String(path),status:response.status});return exposed};return true})()")
+              "window.ownedRunAccessPosts.push({path:String(path),action,actual_server_status:response.status,client_status:exposed.status});}else if((!opts?.method||opts.method==='GET')&&window.failNextLocalExecutionProjection&&/^\\/api\\/executor-receipts\\/[^/?]+$/.test(String(path))){window.failNextLocalExecutionProjection=false;window.localExecutionProjection.push({path:String(path),actual_server_status:response.status,client_status:503});exposed=new Response(JSON.stringify({detail:'client-side projection failure injection after actual commit'}),{status:503,headers:{'Content-Type':'application/json'}});}if(!opts?.method||opts.method==='GET')ownedRunAccessReads.push({path:String(path),actual_server_status:response.status,client_status:exposed.status});return exposed};return true})()")
+
+        install_network_tap(True)
 
         def switch(role_id: str):
             if role_id not in tokens:
@@ -352,8 +356,8 @@ def main() -> None:
         click('#refresh')
         wait('document.querySelector("#page-feedback").textContent', lambda x: bool(x))
         active_read = value('ownedRunAccessReads.filter(x=>x.path==="/api/runs/'+run_id+'").slice(-1)[0] || null')
-        if not active_read or active_read['status'] != 200:
-            raise AssertionError('Original Run read did not succeed for the approved executor')
+        if not active_read or active_read['actual_server_status'] != 200 or active_read['client_status'] != 200:
+            raise AssertionError('Original Run read must return actual and client HTTP 200 for the approved executor')
         capture('executor-access-active')
         click('#dispatch-list')
         wait('document.querySelector("#dispatch-items").textContent', lambda x: bool(x))
@@ -362,11 +366,72 @@ def main() -> None:
         wait('dispatchView.current_offer.state', lambda x: x == 'ACCEPTED')
         click('#dispatch-receipt')
         receipt = wait('receiptView', lambda x: isinstance(x, dict) and x.get('step', {}).get('id') == receipt_step_id)
-        fill('#receipt-text', 'Synthetic actual local receipt after this executor accepted the offered Run.')
-        fill('#receipt-source', 'Synthetic executor declaration v1')
-        click('#receipt-submit-button')
-        receipt = wait('receiptView', lambda x: isinstance(x, dict) and x.get('step', {}).get('state') == 'RECEIPT_RECORDED')
-        capture('executor-receipt-recorded')
+        if receipt.get('local_execution', {}).get('can_execute') is not True:
+            raise AssertionError('Accepted current executor step did not expose the server-authorized local adapter action')
+        if value('document.querySelector("#receipt-submit-button").disabled'):
+            raise AssertionError('The existing manual receipt path should remain distinct and available before adapter generation')
+        fill('#receipt-local-execution-reason', 'Generate the bounded synthetic handoff report for this accepted Run.')
+        before_local_execution = write_count('/execute-local')
+        click('#receipt-local-execution-button')
+        wait_for_write('/execute-local', before_local_execution, 'EXECUTE_LOCAL')
+        wait('document.querySelector("#receipt-local-execution-retry").hidden', lambda hidden: hidden is False)
+        if not value('document.querySelector("#receipt-current").textContent.includes("旧回执快照已隐藏")'):
+            raise AssertionError('Unknown adapter result must hide the previous receipt snapshot')
+        if not value('document.querySelector("#receipt-submit-button").disabled'):
+            raise AssertionError('Manual receipt mutation must be blocked while adapter outcome is unknown')
+        capture('executor-adapter-projection-unknown')
+        click('#receipt-local-execution-retry')
+        receipt = wait('receiptView', lambda x: isinstance(x, dict) and
+                       x.get('step', {}).get('id') == receipt_step_id and
+                       x.get('local_execution', {}).get('current') is True and
+                       x.get('local_execution', {}).get('record', {}).get('execution_id'))
+        if receipt['step']['state'] != 'RECEIPT_RECORDED':
+            raise AssertionError('Adapter execution did not produce the normal new receipt state')
+        if receipt['local_execution']['record'].get('adapter_id') != 'synthetic.accepted-handoff-report':
+            raise AssertionError('Receipt did not come from the expected server adapter')
+        if receipt['local_execution']['record'].get('case_goal_completed') is not False:
+            raise AssertionError('Adapter output must not claim Case completion')
+        if receipt.get('qualification') != 'NOT_EVALUATED' or receipt.get('offline_fulfillment') != 'NO_EVIDENCE':
+            raise AssertionError('Adapter result must not claim qualification or offline fulfillment')
+        execution_id = receipt['local_execution']['record']['execution_id']
+        generated_source_sha256 = receipt['current_receipt']['source_sha256']
+        local_projection_attempts = value('window.localExecutionProjection.slice()')
+        local_execution_attempts = value('window.localExecutionAttempts.slice()')
+        if len(local_projection_attempts) != 1 or local_projection_attempts[0]['actual_server_status'] != 200 or local_projection_attempts[0]['client_status'] != 503:
+            raise AssertionError('Expected only a client-side follow-up GET failure injected after a real committed server POST')
+        if len(local_execution_attempts) != 2 or any(x['actual_server_status'] != 200 for x in local_execution_attempts) or len({x['request_fingerprint_sha256'] for x in local_execution_attempts}) != 1 or {x['execution_id'] for x in local_execution_attempts} != {execution_id}:
+            raise AssertionError('Exact same-key/body server replay did not recover the original committed execution UUID')
+        adapter_submit_events = sum(event.get('action') == 'SUBMIT' and event.get('payload', {}).get('record_mode') == 'SERVER_GENERATED_LOCAL_EXECUTION' for event in receipt.get('history', []))
+        if adapter_submit_events != 1:
+            raise AssertionError('Same-key replay must retain exactly one adapter-generated SUBMIT event')
+        if not generated_source_sha256 or receipt['local_execution']['record'].get('external_acceptance') != 'NOT_SUBMITTED':
+            raise AssertionError('Generated receipt must retain a source digest and no external acceptance')
+        if value('document.querySelector("#receipt-text").value') or value('document.querySelector("#receipt-source").value'):
+            raise AssertionError('Adapter-generated body must not be entered through the manual receipt form')
+        if not value('document.querySelector("#receipt-submit-button").disabled'):
+            raise AssertionError('Once a local adapter report exists, the manual-submit path must remain disabled for this step')
+        if 'managed_access' in value('document.querySelector("#receipt-current").textContent') or 'CURRENT_MANAGED_EXECUTOR_LEASE' in value('document.querySelector("#receipt-current").textContent'):
+            raise AssertionError('Raw local adapter binding internals must not be dumped into the receipt UI')
+        capture('executor-adapter-report-generated')
+        # Re-open the UI without carrying in-memory views; the same executor can
+        # recover only its own committed adapter receipt from the product API.
+        observed_posts.extend(value('window.ownedRunAccessPosts.map(x=>({path:x.path,action:x.action,actual_server_status:x.actual_server_status,client_status:x.client_status}))'))
+        browser('open', base_url)
+        wait('document.readyState', lambda x: x == 'complete')
+        install_network_tap(False)
+        switch(executor_id)
+        click('[data-tab="collaboration"]')
+        click('#dispatch-list')
+        wait('document.querySelector("#dispatch-items").textContent', lambda x: goal in x)
+        offer_index = value('Array.from(document.querySelectorAll("#dispatch-items button")).findIndex(b=>b.textContent.includes(' + json.dumps(goal) + '))+1')
+        click('#dispatch-items button:nth-child(' + str(offer_index) + ')')
+        click('#dispatch-receipt')
+        persisted = wait('receiptView', lambda x: isinstance(x, dict) and
+                         x.get('local_execution', {}).get('current') is True and
+                         x.get('local_execution', {}).get('record', {}).get('execution_id') == execution_id)
+        if persisted['current_receipt']['source_sha256'] != generated_source_sha256:
+            raise AssertionError('Reload did not recover the same server-generated report source hash')
+        capture('executor-adapter-report-after-reload')
 
         switch('fixture-a')
         click('[data-tab="collaboration"]')
@@ -379,7 +444,15 @@ def main() -> None:
         receipt = wait('receiptView', lambda x: isinstance(x, dict) and x.get('step', {}).get('preparation_id') == prep_id)
         if not receipt.get('current_receipt'):
             raise AssertionError('Owner cannot read the current receipt for acknowledgement')
-        fill('#receipt-reason', 'Owner manually acknowledges the current synthetic receipt only.')
+        local_execution = receipt.get('local_execution') or {}
+        if local_execution.get('current') is not True or local_execution.get('record', {}).get('execution_id') != execution_id:
+            raise AssertionError('Owner cannot read the current adapter report independently of executor submission')
+        if value('!document.querySelector("#receipt-local-execution-form").hidden'):
+            raise AssertionError('Owner must not receive the executor-only adapter-generation form')
+        if 'managed_access' in value('document.querySelector("#receipt-local-execution-record").textContent'):
+            raise AssertionError('Owner report summary must not expose the underlying managed access binding')
+        capture('owner-current-adapter-report')
+        fill('#receipt-reason', 'Owner manually acknowledges the current server-generated synthetic report only.')
         click('#receipt-ack')
         receipt = wait('receiptView', lambda x: isinstance(x, dict) and x.get('step', {}).get('state') == 'LOCAL_ACKNOWLEDGED')
         click('#plan-from-receipt')
@@ -407,9 +480,9 @@ def main() -> None:
         fill('#run', run_id)
         click('#refresh')
         wait('document.querySelector("#page-feedback").textContent', lambda x: bool(x))
-        denied_read = wait('ownedRunAccessReads.filter(x=>x.path==="/api/runs/'+run_id+'").slice(-1)[0] || null', lambda x: isinstance(x, dict) and x['status'] != 200)
-        if denied_read['status'] != 403:
-            raise AssertionError('Expected HTTP 403 on original Run read after revoke, got: ' + str(denied_read['status']))
+        denied_read = wait('ownedRunAccessReads.filter(x=>x.path=="/api/runs/'+run_id+'").slice(-1)[0] || null', lambda x: isinstance(x, dict) and x['actual_server_status'] != 200)
+        if denied_read['actual_server_status'] != 403 or denied_read['client_status'] != 403:
+            raise AssertionError('Expected actual and client HTTP 403 on original Run read after revoke, got: ' + str(denied_read))
         click('#dispatch-list')
         wait('document.querySelector("#dispatch-items").textContent.length', lambda x: x > 0)
         # Authorized list is role-scoped; no item for the revoked Run is expected.
@@ -417,13 +490,20 @@ def main() -> None:
             raise AssertionError('Revoked executor still sees the Run in dispatch list')
         capture('executor-revoked')
 
-        post_info = value('ownedRunAccessPosts.map(x=>({path:x.path,action:x.action,actual_server_status:x.actual_server_status,client_status:x.client_status}))')
+        post_info = observed_posts + value('ownedRunAccessPosts.map(x=>({path:x.path,action:x.action,actual_server_status:x.actual_server_status,client_status:x.client_status}))')
         actions = [x['action'] for x in post_info]
         offer_post = any(x['path'].endswith('/api/preparations/'+prep_id+'/dispatch') and
                          x['actual_server_status'] == 201 for x in post_info)
         # OFFER has no action field; the route and created status identify the POST.
-        if not offer_post or not all(action in actions for action in ('REQUEST', 'ACCEPT', 'SUBMIT', 'ACKNOWLEDGE', 'REVOKE')):
-            raise AssertionError('Expected the actual product POST chain was not observed: ' + repr(actions))
+        if not offer_post or not all(action in actions for action in ('REQUEST', 'ACCEPT', 'EXECUTE_LOCAL', 'ACKNOWLEDGE', 'REVOKE')):
+            raise AssertionError('Expected the actual adapter-backed product POST chain was not observed: ' + repr(actions))
+        if 'SUBMIT' in actions:
+            raise AssertionError('The final happy path must use the server adapter, not manual receipt submission')
+        adapter_posts = [x for x in post_info if x['path'].endswith('/execute-local')]
+        if len(adapter_posts) != 2 or any(x['actual_server_status'] != 200 for x in adapter_posts):
+            raise AssertionError('Expected two successful actual server POSTs: initial execution and exact idempotent retry')
+        if [x['action'] for x in adapter_posts] != ['EXECUTE_LOCAL', 'EXECUTE_LOCAL']:
+            raise AssertionError('Both adapter requests must be recorded as EXECUTE_LOCAL')
         if not any('/access/commands' in x['path'] and x['action'] == 'REQUEST' for x in post_info):
             raise AssertionError('Expected an authenticated access request UI command')
         if not any('/access/commands' in x['path'] and x['action'] == 'APPROVE' for x in post_info):
@@ -431,7 +511,7 @@ def main() -> None:
         if not any('/access/commands' in x['path'] and x['action'] == 'REVOKE' for x in post_info):
             raise AssertionError('Expected an authenticated revoke UI command')
         report = {
-            'status': 'PASS', 'scope': 'FRESH_ZERO_BUSINESS_RUN_ACCESS_TO_ORIGINAL_RECEIPT_ACK_AND_REVOKE',
+            'status': 'PASS', 'scope': 'FRESH_ZERO_BUSINESS_RUN_ACCESS_TO_SERVER_ADAPTER_RECEIPT_ACK_AND_REVOKE',
             'runtime_directory': str(runtime), 'base_url': base_url,
             'case_id': case_id, 'run_id': run_id, 'preparation_id': prep_id,
             'receipt_step_id': receipt_step_id, 'owner_role': 'fixture-a',
@@ -440,7 +520,9 @@ def main() -> None:
             'live_owner_preparations_before_browser': 0,
             'request_state': request_view['state'], 'approval_state': approved['state'],
             'actual_access_after_approval': True, 'dispatch_state': 'ACCEPTED',
-            'receipt_state': 'LOCAL_ACKNOWLEDGED', 'revoked_state': revoked['state'],
+            'receipt_state': 'LOCAL_ACKNOWLEDGED', 'receipt_generation': 'SERVER_EXECUTE_LOCAL_ADAPTER',
+            'local_execution_id': execution_id, 'local_execution_adapter_id': 'synthetic.accepted-handoff-report',
+            'generated_receipt_source_sha256': generated_source_sha256, 'revoked_state': revoked['state'],
             'actual_access_after_revoke': False, 'owner_audit_retained': True,
             'run_read_denied_after_revoke': True, 'executor_dispatch_item_removed': True,
             'specialist_offer_route_post_confirmed': offer_post,
@@ -450,6 +532,16 @@ def main() -> None:
             'actual_assignment_write': 'EXPLICIT_MANAGED_PROJECTION_AFTER_APPROVAL_ONLY',
             'projection_pending_ui_case': 'NEGATIVE_CLIENT_ACK_INJECTED_ONLY_AFTER_REAL_SERVER_COMMIT',
             'projection_pending_retry_same_key_and_body_verified': True,
+            'manual_receipt_submit_observed': False, 'server_adapter_execution_observed': True,
+            'cold_reload_same_executor_report_recovered': True, 'owner_current_report_readable': True,
+            'followup_get_failure': 'CLIENT_INJECTED_AFTER_ACTUAL_SERVER_EXECUTE_LOCAL_COMMIT',
+            'execute_local_actual_posts': len(local_execution_attempts),
+            'execute_local_successful_server_posts': len(adapter_posts),
+            'execute_local_request_fingerprints_equal': True,
+            'adapter_generated_submit_events': adapter_submit_events,
+            'adapter_effect_count': 1,
+            'adapter_execution_id_stable_across_retry': True,
+            'executor_generated_source_sha256': generated_source_sha256,
             'lease_timeout_pending_retry_ui': 'CLIENT_TIMER_BRANCH_EXERCISED_BEFORE_REAL_LEASE_DEADLINE; SERVER_LEASE_NOT_CHANGED',
             'approval_audit_events_after_retry': sum(event.get('action') == 'APPROVE' for event in approved.get('history', [])),
             'deployment_enabled': False,

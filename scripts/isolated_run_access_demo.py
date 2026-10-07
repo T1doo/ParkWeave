@@ -123,6 +123,9 @@ def serve(root: Path, owner: Store, args: argparse.Namespace) -> None:
                                     approver_ids=set(APPROVERS), enabled_for_isolated_tests=True)
     app_store = Store(make_conninfo(owner.dsn, user='parkweave_app'), mode='LOCAL')
     bridge.attach_store(app_store)
+    if args.enable_isolated_local_execution:
+        from parkweave.isolated_local_execution import IsolatedLocalExecutor
+        IsolatedLocalExecutor(bridge, enabled_for_isolated_tests=True).attach_store(app_store)
     server = uvicorn.Server(uvicorn.Config(create_app(app_store), host='127.0.0.1', port=args.port,
                                           log_config=None, access_log=False, log_level='warning',
                                           timeout_graceful_shutdown=10))
@@ -150,6 +153,7 @@ def serve(root: Path, owner: Store, args: argparse.Namespace) -> None:
                         'api_same_process_creation_proof': True, 'port': args.port,
                         'data': 'SYNTHETIC', 'live_model': 'DISABLED', 'execution_mode': 'LOCAL',
                         'isolated_run_access_enabled': True, 'deployment_enabled': False,
+                        'isolated_local_execution_enabled': args.enable_isolated_local_execution,
                         'initial_business_counts': initial_counts, 'max_seconds': args.max_seconds}
             private_json(root / 'smoke-environment.json', evidence)
             private_json(root / 'fixture-info.json', {'environment': evidence, 'tokens': tokens,
@@ -187,6 +191,8 @@ def main() -> None:
                         help='explicitly enable the isolated synthetic bridge in this API process')
     parser.add_argument('--fresh-fixture', action='store_true',
                         help='required: create and later remove only a new private temporary fixture')
+    parser.add_argument('--enable-isolated-local-execution', action='store_true',
+                        help='explicitly enable only the owned synthetic handoff-report adapter')
     parser.add_argument('--port', type=int, default=8765)
     parser.add_argument('--max-seconds', type=int, default=3600)
     args = parser.parse_args()

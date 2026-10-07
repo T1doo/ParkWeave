@@ -385,6 +385,11 @@ def create_app(store: Store) -> FastAPI:
         try:return executor_receipts.command(store,token(authorization),step_id,resource_key(idempotency_key),data)
         except LockNotAvailable as e:raise Conflict('receipt authorization or record busy; retry same key') from e
 
+    from .isolated_local_execution import ExecuteLocal
+    @app.post('/api/executor-receipts/{step_id}/execute-local')
+    def executor_receipt_execute_local(step_id: UUID,data: ExecuteLocal,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return executor_receipts.command(store,token(authorization),step_id,resource_key(idempotency_key),data)
+
     from . import case_resources as case_resources
     from . import resource_plan_binding
     @app.get('/api/preparations/{preparation_id}/resource-plan-binding')

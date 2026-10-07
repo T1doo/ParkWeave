@@ -1,0 +1,518 @@
+{
+  "schema": 1,
+  "scope": "OWNED_FRESH_SYNTHETIC_ACCEPTED_HANDOFF_REPORT_ACTUAL_LOCAL_RECORD_AND_RECEIPT_NOT_EXTERNAL_FULFILLMENT",
+  "source_parent_head": "0e6f4494d23a1f25f575481ad4f0071d3e0c7c58",
+  "status": "ACTUAL_LOCAL_REPORT_RECEIPT_OWNER_ACK_AND_REVOKE_VERIFIED",
+  "previous_actual_endpoint": "ENG105 accepted executor manually supplied SYNTHETIC text then owner ACK; no post-accept adapter execution",
+  "new_action": {
+    "adapter_id": "synthetic.accepted-handoff-report",
+    "adapter_version": 1,
+    "effect": "LOCAL_SYNTHETIC_HANDOFF_REPORT_CREATED",
+    "defined_in_this_slice": true,
+    "output": "server-generated structured current accepted handoff consistency report persisted in original PG receipt/event transaction",
+    "manual_client_report_or_verified_input_accepted": false,
+    "material_text_returned": false,
+    "model_or_external_side_effect": false,
+    "proof_scope": "local software report record only, not service fulfillment or full PR0"
+  },
+  "code_gates": {
+    "normal_factory_enabled": false,
+    "access_bridge_alone_enables_execution": false,
+    "extra_launcher_flag": "--enable-isolated-local-execution",
+    "exact_original_owned_FixtureDatabaseEvidence_required": true,
+    "native_receipt_accepted": false,
+    "schema_change": "nullable adapter_execution JSONB on owned temporary receipt table only",
+    "production_migration_or_grant_changed": false,
+    "existing_executor_READ_own_accepted_step_only": true,
+    "current_whole_managed_lease_bound": true,
+    "missing_provider_rejected_before_database_or_plan_gate": true,
+    "same_transaction_report_receipt_event": true,
+    "manual_downgrade_blocked_after_report_contract": true,
+    "reserve_independent_ACK_slot": "new ExecuteLocal expected_revision<=62, row revision<63; original manual limit unchanged"
+  },
+  "freshness": {
+    "consumers": [
+      "executor_receipts read/command/replay",
+      "case_lifecycle RECEIPT_RECHECK",
+      "controlled_plans P4 through lifecycle source",
+      "service_case_steps P4"
+    ],
+    "P3_acceptance_preserved_independent_of_report": true,
+    "revoke_expiry_READ_version_or_new_lease_restoration": "old report remains non-current; old key/ACK cannot restore it",
+    "reopen_or_request_changes": "new explicit execution creates new UUID/version; old immutable history retained",
+    "provider_absent_or_provenance_changed": "deny current validity"
+  },
+  "source_sha256": {
+    "src/parkweave/isolated_local_execution.py": "81e4ef2e7c52dcea74483a12339403d374703bcb662d81c194f09c90478612e4",
+    "src/parkweave/executor_receipts.py": "cb01870dab9b2cfc08bbf2ef2a474094459ab74f44723d594e5a358de1d9bbed",
+    "src/parkweave/api.py": "f6f47b31f9240d36a526c9bbcabc9817799894c192b7752f57bfcd10c6e1b094",
+    "src/parkweave/case_lifecycle.py": "203132ff8ad2a2d7fee5b7db2fd87d612439ac31f0b6e1e974ac3d095661ba92",
+    "src/parkweave/service_case_steps.py": "5483044492145123647cdabde15a3b969892271a96261d98feecbb893a1d0676",
+    "src/parkweave/isolated_run_access.py": "fdc64b3f737e82c3201c53bb7d6896e516ee5555a72ad2248ff4848997bb173a",
+    "src/parkweave/store.py": "a43a716e13da8c430e1fe481bf49a872b7950bac161d01789e0b9aa34517ac22",
+    "scripts/isolated_run_access_demo.py": "0c0eeebaab3059e1c57c8e95a98a924dbe3f9988819c183d562e8113a8d6b4ef",
+    "tests/test_isolated_local_execution.py": "bf76a5efa36e91248331acefc2af9b732e79b0513709f2c35f9663b98fe37620",
+    "src/parkweave/web.html": "74ad38f91758c00a73ea5056cd885b4f87d14305d39d7ac534cf5bebbc63f7ff",
+    "scripts/isolated_run_access_browser_smoke.py": "6608f7294b9c0425c37b3324b4d83388bc7eaef91dbeeda19195c311f2044192"
+  },
+  "core_test_source_proof": {
+    "before": ".runtime/eng106-source-final-before.json",
+    "after": ".runtime/eng106-source-final-after-tests.json",
+    "core_and_UI_differences": 0,
+    "driver_changed_after_tests": "only walk-through telemetry escape/status/count fixes; actual browser separately froze final driver6608...4192"
+  },
+  "unchanged_security_source_sha256": {
+    "src/parkweave/roles.sql": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+    "src/parkweave/roles-fault-fixture.sql": "f472caee551ce691d08bc953b91f3d620df651eedb1f122620f893f49b7a47db",
+    "src/parkweave/migration-025.sql": "b6e920a803e010c6cd4012075bfecd5549677c25bd1518abaa1cf288b5e8949d",
+    ".github/workflows/windows-server-engineering.yml": "c4db82bae30b116cbfa5f135e4685c5115bc4a124417c366cf7f027eba2a0aba",
+    "src/parkweave/gateway.py": "c1c70b304326154472da3536d5c6ebaa51faed1acc78e62a099e6ef5fe3ee0aa",
+    "src/parkweave/worker.py": "46352aaf786bc2f4b6db19503b62935ec6e4f49aca67e4b53f7d5749ebaf8290",
+    "src/parkweave/run_access_candidate.py": "1c57199844b97cfbec939beb4878f0db9b0957ef9e51d919c920f0afdbe392ff",
+    "src/parkweave/installed_fixture_receipt.py": "492ab830a0d704cdcaf93794daea6e2e33e72bc3c64cfff2f82bc70fb28c275e"
+  },
+  "runs": {
+    "final_isolated_core": {
+      "passed": 62,
+      "failed": 0,
+      "errors": 0,
+      "skips": 0,
+      "warnings": 2,
+      "seconds": 25.54,
+      "artifacts": {
+        ".runtime/eng106-current-final.log": "2658c6cfd76cad6c69e1ca73f02108231fc4a3f7332748625e91ad51391d8e8c",
+        ".runtime/eng106-current-final.xml": "3fb733e170d58ccb07e42f7886e070f661c298a6b838d20f899454d148442589",
+        ".runtime/eng106-current-final-collection.json": "e1f67afd12f089293e02184267048507f6de96fea6cceabf237f6f0df154a060"
+      },
+      "exact_collection_junit_nodes": true,
+      "keys_subset_current_global": true,
+      "scope": "targeted; not full suite",
+      "composition": "29 new local-execution + 33 prior Run access"
+    },
+    "original_consumers": {
+      "passed": 231,
+      "failed": 0,
+      "errors": 0,
+      "skips": 0,
+      "warnings": 2,
+      "seconds": 129.69,
+      "artifacts": {
+        ".runtime/eng106-original-regression.log": "d720faf8a9fc6d389ba73867f636f385370fcf1730b6f6dc90b3a49adc095c8e",
+        ".runtime/eng106-original-regression.xml": "2d0cff76883f1ca535b15c3527475628ffb49843028dd1240910bb3bccd7e0e7",
+        ".runtime/eng106-original-regression-collection.json": "e6cd68ef64ef80fc634b3dda50d436602f45bf940680bdc7272e41043c476a9c"
+      },
+      "exact_collection_junit_nodes": true,
+      "keys_subset_current_global": true,
+      "scope": "targeted; not full suite",
+      "freeze_limit": "231 ran before early missing-provider guard; original Command branch byte logic unchanged by guard. Current62 verify final backend; no new full-suite claim."
+    },
+    "final_metadata": {
+      "passed": 101,
+      "failed": 0,
+      "errors": 0,
+      "skips": 0,
+      "warnings": 1,
+      "seconds": 4.54,
+      "artifacts": {
+        ".runtime/eng106-final-manifest.log": "faf11d8b5fd0e8d2aecfeaa415923c945d7dfe0ae866970a6679e7784df4cf13",
+        ".runtime/eng106-final-manifest.xml": "2ab2084acf57afeef3aaef467d74e877ef0ae3db194d4915bcfa5d7e800e5ec0",
+        ".runtime/eng106-final-manifest-collection.json": "811fb40dadd3da56a4a4aa0b67a18e80e48ad106b442b995b3e93d48aa4c9a4f"
+      },
+      "exact_collection_junit_nodes": true,
+      "keys_subset_current_global": true,
+      "scope": "targeted; not full suite"
+    }
+  },
+  "actual_key_proof": {
+    "path": ".runtime/eng106-delivery-key-verification.json",
+    "sha256": "5e7360cd685490a6172244b7744a3e2976fe2a2f6e84e94cb1f9863e700e9a4e"
+  },
+  "browser": {
+    "report_path": ".runtime/eng106-browser-run-attempt4/report.json",
+    "report_sha256": "65c66bebe9c7b044320d7ae564dfaf4f828005759fc32dd2e254d449456436ae",
+    "root_proof_path": ".runtime/eng106-browser-attempt4-root-verification.json",
+    "root_proof_sha256": "e69de838b911c3211f935995b35d311f76ac655079f96e07498ce86b56dc8e20",
+    "single_driver_invocation": true,
+    "source_differences_during_browser": 0,
+    "live_owner_preparations_before": 0,
+    "owner_preparations_after": 1,
+    "last_actual_business_step": "OWNER_ACKNOWLEDGE_OF_SERVER_GENERATED_LOCAL_REPORT_THEN_EXACT_ACCESS_REVOKED",
+    "case_id": "2ea5a720-b4d9-4e88-a308-4feae1924cb4",
+    "run_id": "b0ce1d0d-f080-4667-a6df-09dc08bd634b",
+    "step_id": "9c0fc772-47b2-4848-8edb-db1f83feefb9",
+    "execution_id": "8e513e9b-2723-41ea-b34d-ceab7bcc74ab",
+    "receipt_id": "ad796427-8b0b-441b-9a66-5adac4d5dd65",
+    "receipt_sha256": "f76547ecf6c1e54a4abe922609da1fd580752aa37ee98cb7cb04f075113fa8fe",
+    "receipt_state": "LOCAL_ACKNOWLEDGED",
+    "receipt_versions": 1,
+    "immutable_events": [
+      "CREATE",
+      "SUBMIT",
+      "ACKNOWLEDGE"
+    ],
+    "actual_execution_requests": 2,
+    "actual_committed_report_effects": 1,
+    "same_key_body_and_execution_id": true,
+    "manual_SUBMIT_used_in_happy_path": false,
+    "cold_page_executor_same_history_recovered": true,
+    "owner_independent_report_read_and_ACK": true,
+    "post_revoke_execution_current": false,
+    "original_Run_actual_and_client_status_after_revoke": 403,
+    "executor_list_item_removed": true,
+    "viewport_checks": [
+      {
+        "stage": "owner-request-pending",
+        "width": 1200,
+        "scroll": 1200
+      },
+      {
+        "stage": "owner-request-pending",
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "stage": "owner-request-pending",
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "stage": "approver-projection-pending-retry",
+        "width": 1200,
+        "scroll": 1200
+      },
+      {
+        "stage": "approver-projection-pending-retry",
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "stage": "approver-projection-pending-retry",
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "stage": "approver-approved-applied",
+        "width": 1200,
+        "scroll": 1200
+      },
+      {
+        "stage": "approver-approved-applied",
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "stage": "approver-approved-applied",
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "stage": "executor-access-active",
+        "width": 1200,
+        "scroll": 1200
+      },
+      {
+        "stage": "executor-access-active",
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "stage": "executor-access-active",
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "stage": "executor-adapter-projection-unknown",
+        "width": 1200,
+        "scroll": 1200
+      },
+      {
+        "stage": "executor-adapter-projection-unknown",
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "stage": "executor-adapter-projection-unknown",
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "stage": "executor-adapter-report-generated",
+        "width": 1200,
+        "scroll": 1200
+      },
+      {
+        "stage": "executor-adapter-report-generated",
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "stage": "executor-adapter-report-generated",
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "stage": "executor-adapter-report-after-reload",
+        "width": 1200,
+        "scroll": 1200
+      },
+      {
+        "stage": "executor-adapter-report-after-reload",
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "stage": "executor-adapter-report-after-reload",
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "stage": "owner-current-adapter-report",
+        "width": 1200,
+        "scroll": 1200
+      },
+      {
+        "stage": "owner-current-adapter-report",
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "stage": "owner-current-adapter-report",
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "stage": "owner-revoked-history",
+        "width": 1200,
+        "scroll": 1200
+      },
+      {
+        "stage": "owner-revoked-history",
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "stage": "owner-revoked-history",
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "stage": "executor-revoked",
+        "width": 1200,
+        "scroll": 1200
+      },
+      {
+        "stage": "executor-revoked",
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "stage": "executor-revoked",
+        "width": 320,
+        "scroll": 320
+      }
+    ],
+    "screenshots": [
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/approver-approved-applied-1200.png",
+        "sha256": "c200df91bde02da3670e7cb5106d9e0b21b3d8af611adcce4c92fb61322ba459"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/approver-approved-applied-320.png",
+        "sha256": "fa94ebd891e7fa1b26783f38e9e8054b8841944d9f540fedf70ea60d147c03eb"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/approver-approved-applied-390.png",
+        "sha256": "3742bb4b328485968779759dc24c60ec360c002cf5aab3b9cdc6f4bf19113f8a"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/approver-projection-pending-retry-1200.png",
+        "sha256": "66f295f88d578a8cf98771d125164b8a02bb6a44e80c2dc0ef6ae6ce78c03830"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/approver-projection-pending-retry-320.png",
+        "sha256": "09b94e2d9e2d3c72def0ab88c3eb119bfc17e9aa7440d4e7b7ba5801877c0d8a"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/approver-projection-pending-retry-390.png",
+        "sha256": "73c2426625d5248dcdd82493822bdef2f63bf15cb48e7b30b5441d18e3c9b89f"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-access-active-1200.png",
+        "sha256": "b87e0c1157368f857368a91973e70380f2d382d9cd22681242e3f7d1f965ac36"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-access-active-320.png",
+        "sha256": "bcd861324d4793f5d211be2aab567e321aca30bc8f7a4e314d54b04ac3077668"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-access-active-390.png",
+        "sha256": "b8138a3062d519ebb5c6e1bcb3a136337dba229d97552ac7f5d68fab30a32a6d"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-adapter-projection-unknown-1200.png",
+        "sha256": "aa968a5e8d7d3bb7445603b3ba56dd33e7457a7e70ab500315300ccc26052d1e"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-adapter-projection-unknown-320.png",
+        "sha256": "cdde41a6a2d12e3a9cbe9b39040c5beba0ab28d2d79d0da2cf6b54429220a99f"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-adapter-projection-unknown-390.png",
+        "sha256": "be527e06457043fedc1d304f8e254a7716f5258bda03e3a7a9ba492cc8ea9b3e"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-adapter-report-after-reload-1200.png",
+        "sha256": "e3d98f7d65289459887f524bf1295b6c683657eead93d927b9e759d7fad7ed73"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-adapter-report-after-reload-320.png",
+        "sha256": "300e3cfac6a4ee699556be5cea186c420b6760ef27a55bffa07dd38ed8d1897c"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-adapter-report-after-reload-390.png",
+        "sha256": "4d96cf51f9f2685a66f790ba6543e6406c641ff9f6e1f534d12528cfa8478f06"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-adapter-report-generated-1200.png",
+        "sha256": "ac6a88f2005a79a3713f8c99ff2a0ad69b511e0a588815c273e28d066e51ef85"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-adapter-report-generated-320.png",
+        "sha256": "5bd31c7dc389677eace37a054fd11eb80a2c505a78ab175837918795b74cc670"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-adapter-report-generated-390.png",
+        "sha256": "bfd2a5abc46e34a6e34c639204ffd9c1a504fbe0c2b44fbe9bee84bd44c696ca"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-revoked-1200.png",
+        "sha256": "20199df81e4701fb157e77a98dc683d22e45ff33daba8d8176478788a2353e6b"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-revoked-320.png",
+        "sha256": "760cb3caf76c58ef72b4b8886b29248aa85c63a34d1b5124fbd3b1025d31ec00"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/executor-revoked-390.png",
+        "sha256": "0ba7fc90ce8050c4ee05f299cce05c4fe354e3e23ef64add02d46d63a98d8b9f"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/owner-current-adapter-report-1200.png",
+        "sha256": "dae5508d9176da8dd593457259dc9609e6a5e3b68a491ba4661b4e1a9e1e77c1"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/owner-current-adapter-report-320.png",
+        "sha256": "ec336cee926375b9cb2fa3ff12f451ca3c8e904ddbf63f74db6b7e91cc4d52ef"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/owner-current-adapter-report-390.png",
+        "sha256": "9053e8efc3dd115920f60f9b33d2028fd07a5b90081b31153a51e39b218adc49"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/owner-request-pending-1200.png",
+        "sha256": "f0b7c612a2d2a216305ecd93934db33526b0ed26092d28fd33211fe55c5743f5"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/owner-request-pending-320.png",
+        "sha256": "06f0c60fb43c25671d5f83542deb8e5e72bd81eff6d80d9869383f1553e5692d"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/owner-request-pending-390.png",
+        "sha256": "5800f3247cca2ca77d1d5a002e4b1c806863d2885441b0d4f8c3dc3b41caed3c"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/owner-revoked-history-1200.png",
+        "sha256": "32563a57bb80efd11eb3db9153fb93cea46bde9e4d5e0d8aa9afce277fd42e0c"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/owner-revoked-history-320.png",
+        "sha256": "222204bf4e5067054e7a993f21b0b16419741928594cea7f158adc4580f5e1b6"
+      },
+      {
+        "path": ".runtime/eng106-browser-run-attempt4/screenshots/owner-revoked-history-390.png",
+        "sha256": "1df4dc6ed42fc5b977431308fdf1d6193653fa8e1ca5f6a8fc4ccccdb1ea1d69"
+      }
+    ],
+    "negative_UI_injections": "one client GET503 after actual server commit200; prior approval client409 and lease callback before actual deadline. These are not server failures or natural expiry.",
+    "cleanup": {
+      "api_gone": true,
+      "worker_gone": true,
+      "owned_data_gone": true,
+      "original_environment_and_backups_retained": true
+    }
+  },
+  "negative_history": {
+    "new_test_first": "22PASS/5FAIL; four owner projection expectations corrected to owner deny plus independent executor read, one constraint-invalid fault fixture fixed; original key/ACK/newUUID assertions retained",
+    "earlier_61": "Passed before final early missing-provider guard/noDB test; final62 evidence kept separately",
+    "browser_attempt1": "network-tap JS escaped newline syntax failure before business; independently zero preparations; archived and cleaned",
+    "browser_attempt2": "real REQUEST/APPROVE/OFFER/ACCEPT then old telemetry status key failure before execute; archived and cleaned",
+    "browser_attempt3": "actual adapter report/one receipt/ownerACK/revoke completed; final old one-POST assertion failed despite intended two same-key requests. Root independent business audit saved; not counted as driverPASS",
+    "raw_failure_artifacts": {
+      ".runtime/eng106-local-execution-first.log": "95a61fb9b9d3f508b29871514bb17d35effe32abaccdc34b61f4829ccd2478a7",
+      ".runtime/eng106-local-execution-first.xml": "8293424531012b3db1a788548b20133406a1774a232ab8af1c5482d49498d886",
+      ".runtime/eng106-browser-attempt1-audit.json": "6b29795d2bca115f3a44d7a151eaa3731d91f84f9fb5fe3b856c5192b769e06c",
+      ".runtime/eng106-browser-attempt2-audit.json": "7a82056fcb618e649e1f6f955d263d3e52dd7f6b0d275f069fa64316cd622dde",
+      ".runtime/eng106-browser-attempt3-business-audit.json": "53896f202f9cdb4fe69de21773c7fb78b96245180e91212ff6a3a4c15eb57b10",
+      ".runtime/eng106-browser-run-attempt1/report.json": "b0620ac23fa0c2cd382846d6671bb43464850c3bce11348e0e43b1d5c3c36896",
+      ".runtime/eng106-browser-run-attempt2/report.json": "2574856d3ad1585269cebed5864008eec90c86268f9098c9180a9827b23b306b",
+      ".runtime/eng106-browser-run-attempt3/report.json": "28a3e6a63b1b47da07eb5931573ca31f377db315a4753825c406f02edc11e108"
+    }
+  },
+  "collection": {
+    "cases": 2431,
+    "files": 86,
+    "shards": [
+      606,
+      566,
+      632,
+      627
+    ],
+    "diagnostic_AST_IDs": 1117,
+    "implementation_bindings": 137,
+    "manifest_sha256": "824ba91dbb40ee3cc67719367d3109d7bef9e9d3765940af82ff690ae3ba7216",
+    "allowlist_sha256": "999ca3690b057c6f1748a5e68bec259820a6a71d97b07b1f716323bc03081eb9",
+    "global_raw_path": ".runtime/eng106-materialguard-global-collection.json",
+    "global_raw_sha256": "cc6b58f580c24859566402ccfb2fcd25635625a1b08c215333f19d3ce2f69218",
+    "old_2430_and_2402_keys_and_previous_history_retained": true,
+    "driver_last_rebind": ".runtime/eng106-driver-request-count-rebind-proof.json"
+  },
+  "independent_review": {
+    "reviewer": "cross_module_review",
+    "result": "NO_MATERIAL_BLOCKER_CURRENT_CODE_AND_ATTEMPT4_EVIDENCE",
+    "report_sha256": "65c66bebe9c7b044320d7ae564dfaf4f828005759fc32dd2e254d449456436ae",
+    "root_proof_sha256": "e69de838b911c3211f935995b35d311f76ac655079f96e07498ce86b56dc8e20",
+    "image_hashes": 30,
+    "actual_images_viewed": 3,
+    "image_limit": "owner320 viewport shows list only, not lower report/ACK; business result independently verified by native clicks/actual API and durable receipt history",
+    "reviewer_did_not_run_tests_or_API": true
+  },
+  "delivery": {
+    "ordinary_dev_push_authorized": true,
+    "remote_precommit_verified": "0e6f4494d23a1f25f575481ad4f0071d3e0c7c58",
+    "actual_push_and_first_exact_head_CI": "post-commit .runtime/eng106-delivery.json; metadata only, no logs/artifacts"
+  },
+  "normal_activation_remaining_preconditions": [
+    "explicit auditable real authority/subject/scope contract",
+    "defined service action and independent result verification contract",
+    "authorized installed database creation/lifecycle/installation proof and least application capability",
+    "original safety/native acceptance gates; temporary synthetic permit does not confer real authority"
+  ],
+  "historical_full": "ENG102-FinalLinuxEvidence.json previous frozen2292PASS/9nativeSKIP only; this slice does not claim newfullPASS",
+  "limits": {
+    "formal_PR0": "NOT_SIGNED_OFF",
+    "F1": "UNSIGNED",
+    "F2": "PARALLEL_EXPLORATION",
+    "qualification": "NOT_EVALUATED",
+    "external_acceptance": "NOT_SUBMITTED",
+    "offline_fulfillment": "NO_EVIDENCE",
+    "case_goal_completed": false,
+    "R4": "CLOSED",
+    "model_calls": 0,
+    "budget": 0,
+    "normal_deployment_default": "CLOSED",
+    "native_Windows_or_Win11_run": false,
+    "Server_is_Win11": false,
+    "real_user_Grant_credentials_owner_ACL_changed": false,
+    "original_environment_and_backups_retained": true
+  }
+}

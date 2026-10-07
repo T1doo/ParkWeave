@@ -102,7 +102,7 @@ def current_sources(store,c,parent,plan):
         issues['P3'].append('RECEIPT_ACCEPTANCE_BINDING_CHANGED')
     if step and tuple(step[k] for k in ('preparation_id','case_id','run_id','owner_id','park_id','org_id','service_id','service_version'))!=tuple(parent[k] for k in ('id','case_id','run_id','owner_id','park_id','org_id','service_id','service_version')):
         issues['P3'].append('RECEIPT_ACCEPTANCE_BINDING_CHANGED')
-    if step and not er._fresh(step,parent):issues['P3'].append('RECEIPT_ACCEPTANCE_PREPARATION_CHANGED')
+    if step and not er._fresh(step,parent,c,store,check_execution=False):issues['P3'].append('RECEIPT_ACCEPTANCE_PREPARATION_CHANGED')
     if offer and offer['state']=='ACCEPTED' and not acceptance:issues['P3'].append('ACCEPTANCE_EVENT_REQUIRED')
     if acceptance and offer and dispatch:
         expected=dict(dispatch_id=str(dispatch['id']),offer_id=str(offer['id']),receipt_step_id=str(step['id']) if step else None,
@@ -116,6 +116,8 @@ def current_sources(store,c,parent,plan):
                          receipt_source_kind=receipt['source_kind'] if receipt else None,
                          receipt_versions=cp._normal(receipt_versions),
                          receipt_events=cp._normal(receipt_events))
+    if receipt and step and not er._fresh(step,parent,c,store):
+        issues['P4'].append('CURRENT_RECEIPT_EXECUTION_REQUIRED')
     if receipt and step and step['state']=='LOCAL_ACKNOWLEDGED':
         def matches(event,action,actor,state):
             expected=dict(step_id=str(step['id']),revision=event['revision'],action=action,actor_id=actor,
