@@ -63,10 +63,15 @@ def test_real_isolated_local_database_scope_schema_and_role(tmp_path):
     owner=make_conninfo(maintenance,dbname='parkweave')
     app=make_conninfo(owner,user='parkweave_app')
     try:
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+        cluster_evidence=capture_fixture_cluster(maintenance,data.resolve())
         with psycopg.connect(maintenance,autocommit=True) as c:
             c.execute('CREATE ROLE parkweave_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE')
             c.execute('CREATE DATABASE parkweave')
-        store=Store(owner);store.migrate()
+        store=Store(owner)
+        with store.connect() as c:
+            store._case_fact_fixture_receipt=cluster_evidence.record_created_database(c)
+        store.migrate()
         with store.connect() as c:c.execute((ROOT/'src/parkweave/roles.sql').read_text(encoding='utf-8'))
         assert isinstance(lifecycle.check_dsn_scope(app,app=True),str)
         with Store(app).connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==25

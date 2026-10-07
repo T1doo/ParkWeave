@@ -15,22 +15,12 @@ def pg(tmp_path_factory):
     if os.name=='nt':
         dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
         if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
-        from psycopg.conninfo import conninfo_to_dict
-        parsed=conninfo_to_dict(dsn)
-        if parsed.get('host') not in ('127.0.0.1','localhost') or parsed.get('dbname')!='postgres' or parsed.get('service') or parsed.get('hostaddr') not in (None,'127.0.0.1','::1'):
-            pytest.fail('explicit localhost maintenance postgres DSN required; no remote/production test reset')
-        # Explicit installed native service only. Tests create/drop UUID-prefixed
-        # fixture databases, never reset the configured parkweave application DB.
-        with psycopg.connect(dsn) as c:
-            row=c.execute("SELECT rolsuper,rolcreatedb FROM pg_roles WHERE rolname=current_user").fetchone()
-            if not any(row):pytest.fail('native test owner needs isolated database creation permission')
-            if not c.execute("SELECT 1 FROM pg_roles WHERE rolname='parkweave_app'").fetchone():pytest.fail('parkweave_app must be explicitly prepared')
-        class NativeTestServer:
-            def get_uri(self):return dsn
-        yield NativeTestServer()
-        return
+        pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
     import pgserver  # Linux evidence only; native Windows uses an installed service.
-    server = pgserver.get_server(tmp_path_factory.mktemp("parkweave-pg") / 'data', cleanup_mode='delete')
+    data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+    server = pgserver.get_server(data, cleanup_mode='delete')
+    from parkweave.case_fact_clarifications import capture_fixture_cluster
+    server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
     with psycopg.connect(server.get_uri(), autocommit=True) as c:
         c.execute("CREATE ROLE parkweave_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE")
     yield server
@@ -65,6 +55,8 @@ def fixture(pg,request):
             c.execute(psycopg.sql.SQL('CREATE DATABASE {}').format(psycopg.sql.Identifier(db)))
             created=True
         owner = Store(make_conninfo(pg.get_uri(), dbname=db))
+        with owner.connect() as c:
+            owner._case_fact_fixture_receipt=pg._case_fact_fixture_cluster.record_created_database(c)
         fixture_progress(request,'MIGRATE');owner.migrate()
         tokens = {k: secrets.token_urlsafe(32) for k in ('fixture-a','fixture-b','fixture-c')}
         fixture_progress(request,'SEED');owner.seed(tokens)

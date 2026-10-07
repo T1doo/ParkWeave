@@ -203,6 +203,8 @@ def test_upgrade_legacy_database_preserves_business_history(pg):
     with psycopg.connect(pg.get_uri(),autocommit=True) as c:
         c.execute(psycopg.sql.SQL('CREATE DATABASE {}').format(psycopg.sql.Identifier(db)))
     owner=Store(make_conninfo(pg.get_uri(),dbname=db));run,op,case=uuid.uuid4(),uuid.uuid4(),uuid.uuid4()
+    with owner.connect() as c:
+        owner._case_fact_fixture_receipt=pg._case_fact_fixture_cluster.record_created_database(c)
     receipt={'case_id':str(case),'source':'LOCAL_DATABASE','verified':True,'success_scope':'LOCAL_CASE_CREATED'}
     try:
         with owner.connect() as c:

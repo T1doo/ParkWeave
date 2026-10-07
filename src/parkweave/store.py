@@ -98,6 +98,11 @@ class Store:
             if version < 24:
                 c.execute(Path(__file__).with_name("migration-024.sql").read_text(encoding="utf-8"))
             if version < 25:
+                receipt=getattr(self,'_case_fact_fixture_receipt',None)
+                if receipt is None:raise Denied('isolated database creation receipt required for migration 025')
+                from .case_fact_clarifications import FixtureDatabaseEvidence
+                if not isinstance(receipt,FixtureDatabaseEvidence):raise Denied('issued fixture database creation evidence required')
+                receipt.authorize_migration(c)
                 c.execute(Path(__file__).with_name("migration-025.sql").read_text(encoding="utf-8"))
 
     def seed(self, identities: dict[str, str]):
