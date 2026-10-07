@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "scope": "LOCAL_ENG097_CURRENT_FULL_COLLECTION_PREFLIGHT_NOT_WINDOWS_ACCEPTANCE",
-  "source_parent_head": "cc4a46b0823fc1dfa8e5af5adf5d08d9700d780b",
-  "collected_cases": 1826,
-  "collected_files": 69,
+  "scope": "LOCAL_ENG098_CURRENT_FULL_COLLECTION_PREFLIGHT_NOT_WINDOWS_ACCEPTANCE",
+  "source_parent_head": "f34b28b2199f3c112219c99f2bfeb63b8dae9d8c",
+  "collected_cases": 1968,
+  "collected_files": 72,
   "mutually_exclusive_and_complete": true,
-  "weight_source": "Existing ENG049/Linux relative shard weights describe the pre-ENG097 original files only, not current native runtime. Original file assignments retained; 16 new files assigned by descending actual collected case count to the least populated current shard. No Windows cost prediction or budget extension.",
+  "weight_source": "ENG097 file assignments retained; new ENG098 files assigned by descending actual collected case count to least populated current shard. No current Windows runtime prediction or budget extension.",
   "limits": {
     "job_seconds_unchanged": 1500,
     "work_cutoff_from_anchor_seconds": 1300,
@@ -28,6 +28,7 @@
         "tests/test_account_rate.py",
         "tests/test_authorization_files.py",
         "tests/test_ci_diagnostics.py",
+        "tests/test_create_new_readonly_candidate.py",
         "tests/test_dispatch_notices.py",
         "tests/test_lifecycle.py",
         "tests/test_minimal_observations.py",
@@ -41,7 +42,7 @@
         "tests/test_summary_publication.py",
         "tests/test_windows_ci_preparation.py"
       ],
-      "cases": 453,
+      "cases": 529,
       "historical_linux_relative_weight_seconds": 96.400539,
       "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     },
@@ -88,10 +89,11 @@
         "tests/test_run_access_candidate.py",
         "tests/test_safe_annotations.py",
         "tests/test_service_dispatches.py",
+        "tests/test_template_consumer.py",
         "tests/test_utf8_sources.py",
         "tests/test_windows_file_candidate.py"
       ],
-      "cases": 458,
+      "cases": 488,
       "historical_linux_relative_weight_seconds": 93.848497,
       "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     },
@@ -115,9 +117,10 @@
         "tests/test_readiness.py",
         "tests/test_resource_confirm.py",
         "tests/test_rule_publication_boundary.py",
-        "tests/test_synthetic_config_file.py"
+        "tests/test_synthetic_config_file.py",
+        "tests/test_template_candidate.py"
       ],
-      "cases": 456,
+      "cases": 492,
       "historical_linux_relative_weight_seconds": 99.281126,
       "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     }
@@ -140,6 +143,7 @@
     "tests/test_ci_diagnostics.py": "3c1da701c02b2a66a7e8ed69437dc3e8456aa5b18ffd9139e700cffc5871175c",
     "tests/test_controlled_job_measurement.py": "124f330960c603a82f526f2e0ae01270d738c73144b81c98f3da4cc84dc74d2a",
     "tests/test_controlled_plans.py": "339b6b443d146cefd52dcacb8a3ce31a27d8182f38ee41783e249c0656768398",
+    "tests/test_create_new_readonly_candidate.py": "735339552c696296a49575d6a2669f432475ba17a61aab00377015f997c59d56",
     "tests/test_descriptor_readonly_probe.py": "376d2f8b3965fa8c3a097a80f9c145da5897d8abbba7f07d2a121eb98343bebb",
     "tests/test_dispatch_notices.py": "ec595eb609e188822ae0d0e857eb86132165097b21dfac250b112ad36fd7c590",
     "tests/test_domain_bounds.py": "4ac7992b1012a91abbc070fc32a820b9524240df24ffc54c3082756f8e7e4fae",
@@ -188,6 +192,8 @@
     "tests/test_summary_publication.py": "f9bccb428169426dc94d72e3ed724a8ec90e782fb76ce0b262ec40622d7de3de",
     "tests/test_synthetic_config_file.py": "2c3b09044f1f8ef21f348d1d3cc8ad229cf4280c4ef8af002d96e5a7b58f9b4c",
     "tests/test_synthetic_session_file.py": "a6d17fb3370055728fac16701015d684724e021ba0062a225b89ab7d2eb2c524",
+    "tests/test_template_candidate.py": "64b56c0c2fdbfc3b9fb5fb4fd14ccb656d6bd955d433fc2630acfb8a5f4f4e83",
+    "tests/test_template_consumer.py": "c2f96216006355da8a5bcb10c74a70362a0cd5affc812b1383c25ec5e3329df9",
     "tests/test_utf8_sources.py": "1c7f0bda51a95af7f222d5ffebc75db7960673846d23c0ac9892a9fe04bf60e2",
     "tests/test_v1_contracts.py": "406fa4454e729eb6023a66af634b6412629b3da65e0fc35c09ea694f5a820da1",
     "tests/test_windows_ci_preparation.py": "39fd4964579e0adf71ee2cce00c860f807902b0107884e129ed45ec8ef8cbd99",
@@ -195,8 +201,14 @@
     "tests/test_worker_gateway.py": "3fe2f71c086928ba8a51157313778939e394cbb16b46129024d448ad5c69f01b"
   },
   "implementation_source_sha256": {
+    ".gitattributes": "620de377d93cca892b533cc6b988a48e34d78882bf23195a735cdc50f0db7ea4",
     ".github/workflows/windows-server-engineering.yml": "c4db82bae30b116cbfa5f135e4685c5115bc4a124417c366cf7f027eba2a0aba",
     "scripts/run_acceptance.py": "3ec5bba8718dd68be9e154886971f07584151f0387503fb1703be09f62431291",
+    "scripts/windows/descriptor_readonly_probe.py": "18795c71bf4c39c238f873e75e7f7382ad6e7adab9806cb5f9dbd8600c07b608",
+    "scripts/windows/lifecycle.py": "e4846259460743b4c904bf797db319444604c439cb9234f706ab67045b79c558",
+    "scripts/windows/lifecycle_diagnostics.py": "8b3285eb189fa6d3fb7f1571c70b15f7258eda78b0a8547017cd3658426c801f",
+    "scripts/windows/owner_descriptor_observation.py": "90ff710e92d6f92ebcfa94862624b6390f0edf6621b6de2a44f466a9e4ccc04d",
+    "scripts/windows/server_identity.py": "a8a667197f58ed4c2ea4f90582f84cb0d4b7376b85c2bfcdaf6cb7e6c421d6ba",
     "scripts/windows_ci/BudgetControl.psm1": "1d9901bbfe13df108fb66e4fac0e456fec353455f542293c0c99a148ccb2440d",
     "scripts/windows_ci/ClusterControl.psm1": "c85a8c0ecbe867822acc9c0a4b8dc9da64ea47679ee6866fbff9b54cd471ac99",
     "scripts/windows_ci/Engineering.ps1": "89e8680fee3fa8113e1852c32ee24d6013515f1abc748e8c1dea18d386725ea2",
@@ -204,9 +216,13 @@
     "scripts/windows_ci/ServerFileTest.ps1": "8892ceb3f6c5dfcc61f089f3cec38b1c306df0a861a20b375a8209a7d1720353",
     "scripts/windows_ci/browser_smoke.py": "87f2b362a8028b43fea672f67bb8a69af9600587e3c3fe756689f7099a8dfd0e",
     "scripts/windows_ci/child_environment.py": "169dacc9e56087e7d1045a1e6206c37743d8663fc3be4620ba25b83013bda2fb",
+    "scripts/windows_ci/controlled_job_measurement.py": "5e9e7a5b36fd4369c00a4a380532aea695f700f00bf0a331375fb542d084909a",
     "scripts/windows_ci/diagnostics.py": "1a64b42d27e85667dc750b73ed7f22eb32f229ba993f0374838ec3fdc017769c",
     "scripts/windows_ci/job_budget.py": "5fb02a495b45c44974d56d21ec36ff590b3af6475a5f0b9a69b015ae5d340da6",
+    "scripts/windows_ci/job_stop_observation.py": "e7f7e0c81b5a5f54df8f231a357192820d05cca8ec2a48f75e5a634c30a78f26",
+    "scripts/windows_ci/minimal_native_job_oracle.py": "25a829660855aa6914b58ba897034a4c4faa785bb2f3c5b2ab05ba92ab649654",
     "scripts/windows_ci/native_command.py": "89925ed26b135b05f49081d53f9ae738b6751954d58a76c34ca6c0bda826ea7c",
+    "scripts/windows_ci/native_failure_oracles.py": "0f68802c35fb76c4a9ed2362b24ea818f30a5618ad30cb1c3f90f7d6e18459ca",
     "scripts/windows_ci/native_suite.py": "8d7dc8fa85c24fece1f032d764b99cfa1c31132a54d9b22ca3cdaea290f96767",
     "scripts/windows_ci/owned_job.py": "f21d5b41b3db35fdfd0e24bdca2495a5786e6a7f7d86f7ce42dc24311dad6b76",
     "scripts/windows_ci/publish_summary.py": "c1b0b49b2805018e92004f9d26e3d3c112830b1313c0d9d2217400c104d3db0e",
@@ -214,22 +230,19 @@
     "scripts/windows_ci/regression_progress.py": "e4fb1c5571f21b0a3c9c2f532ec819c3f64d9b4e95567448e1f8bd16396b15f0",
     "scripts/windows_ci/regression_shards.py": "1b82483244134bb1206db0ee90a294c67c7d49aaa2d5daa603e3575c83700b24",
     "scripts/windows_ci/server_candidate_probe.py": "2f127f3c47a03c863f190b79841bc256752faf7e84b96999d9593017a04ee51e",
+    "scripts/windows_ci/source_bytes.py": "ae2e8bdef198be80c192c0fadc3b7d118e936e43706d52b7edd7acb172276d76",
     "scripts/windows_ci/stage_result.py": "477deae62836492662a1778571162c1c0a6e6d24f3fb0d33a01fbe41dd52afb7",
     "scripts/windows_ci/summary_report.py": "ec5864e71ec79b057b82c65896875339651fd107799a17d9b22c9c7d7c1a5fd3",
-    ".gitattributes": "620de377d93cca892b533cc6b988a48e34d78882bf23195a735cdc50f0db7ea4",
-    "scripts/windows_ci/source_bytes.py": "ae2e8bdef198be80c192c0fadc3b7d118e936e43706d52b7edd7acb172276d76",
-    "scripts/windows/server_identity.py": "a8a667197f58ed4c2ea4f90582f84cb0d4b7376b85c2bfcdaf6cb7e6c421d6ba",
-    "scripts/windows/lifecycle.py": "e4846259460743b4c904bf797db319444604c439cb9234f706ab67045b79c558",
-    "scripts/windows/lifecycle_diagnostics.py": "8b3285eb189fa6d3fb7f1571c70b15f7258eda78b0a8547017cd3658426c801f",
     "src/parkweave/synthetic_session_file.py": "7ff0e3ac2bd25d00710bd324c0033bd4f8045aebe3c29129a68425ee0fbceedf",
-    "scripts/windows_ci/native_failure_oracles.py": "0f68802c35fb76c4a9ed2362b24ea818f30a5618ad30cb1c3f90f7d6e18459ca",
-    "scripts/windows_ci/minimal_native_job_oracle.py": "25a829660855aa6914b58ba897034a4c4faa785bb2f3c5b2ab05ba92ab649654",
-    "scripts/windows/owner_descriptor_observation.py": "90ff710e92d6f92ebcfa94862624b6390f0edf6621b6de2a44f466a9e4ccc04d",
-    "scripts/windows_ci/job_stop_observation.py": "e7f7e0c81b5a5f54df8f231a357192820d05cca8ec2a48f75e5a634c30a78f26",
-    "scripts/windows_ci/controlled_job_measurement.py": "5e9e7a5b36fd4369c00a4a380532aea695f700f00bf0a331375fb542d084909a",
-    "scripts/windows/descriptor_readonly_probe.py": "18795c71bf4c39c238f873e75e7f7382ad6e7adab9806cb5f9dbd8600c07b608"
+    "src/parkweave/template_candidate.py": "7fe4d92ebbf2b8631627eb993b7d12243c8f64abdc131b02af08555615d80157",
+    "src/parkweave/template_candidate_api.py": "fbf44860d30c62407ee11761a9785b1f3cef7a246e05e14ba63969e1735dfea5",
+    "src/parkweave/template_candidate_web.html": "9bc46eb5992b304de45df3ccb3f2fd26da37742803560837a7a2b0edac68b4b1",
+    "src/parkweave/template_consumer.py": "7c2a28d551a6e057f3742a816f2ab0c887423881b65bb0763a77f5a3b2d25a22",
+    "src/parkweave/template_isolated_app.py": "4141b229c29661466dfdde9b90268a4d9c820680ddc2bb65ebaa8267c71eda24",
+    "src/parkweave/windows/create_new_readonly_candidate.py": "5a2e76081cbb2376a380b66404c61e1893cee2f3f1baa8511e74824de97a08ef",
+    "tests/template_candidate_support.py": "7e5ff8aa242e4cd6d95a77fd72e1b1e012be40ce6be3d0fb8b19e57e92a15fcd"
   },
-  "diagnostic_allowlist_sha256": "331a4a52c84198e72e3ab4b6ded6b090bad8fe2a3e4b47ff787e6ead72fe8f14",
+  "diagnostic_allowlist_sha256": "089086750c47f96d50744fc9e1adf36223d5e0a9439d68409c815b4259ebd722",
   "new_CI_runs": 0,
   "eng061_refresh": {
     "producer_parent_head": "41bcc113f7e7690a346cc79249fe76803a98bd0e",
@@ -332,27 +345,17 @@
     "new_cases_since_eng057": 55
   },
   "collection_evidence": {
-    "scope": "ENG097_LINUX_COLLECT_ONLY_CURRENT_WORKTREE",
-    "current_cases": 1826,
-    "current_files": 69,
-    "pieces": [
-      453,
-      459,
-      458,
-      456
-    ],
+    "current_cases": 1968,
+    "current_files": 72,
+    "current_stable_collection_sha256": "3c514dc7276bcb2d60befc9ff550977096dc80ade4fac82ffb74a0ad7d0abe6b",
     "exact_piece_stable_multiset_matches_global": true,
-    "stable_case_keys_unique": true,
-    "raw_nodeids_unique": true,
-    "all_current_cases_included_once": true,
-    "current_collection_sha256": "8d0a41c935dab4d2564cc5ce3578bc1a2925f04c1de805d8c92e680fa46648f5",
-    "actual_four_shard_collect_only": [
+    "shards": [
       {
         "shard": "S1",
-        "cases": 453,
-        "files": 17,
+        "cases": 529,
+        "files": 18,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "46999a8912bddeaec8efa62f468927311d902d042c92bff64b4a915281a4e893"
+        "private_collection_sha256": "675ae14c2dd3ecbf2eab2bf823887df119cb3479e3acc13b5034f60426d0e122"
       },
       {
         "shard": "S2",
@@ -363,28 +366,29 @@
       },
       {
         "shard": "S3",
-        "cases": 458,
-        "files": 17,
+        "cases": 488,
+        "files": 18,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "66c516edc6a4de86586569f2e601b40e6ae7e504ec7d5dd396ba01d9ea5dc137"
+        "private_collection_sha256": "4f00d12efd262dfc2c8fdbaeeeaba7b6f9f33b5f232ed8a9a1c7f6a9b143ad84"
       },
       {
         "shard": "S4",
-        "cases": 456,
-        "files": 18,
+        "cases": 492,
+        "files": 19,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "18311216680ae7cb14f1c46c409fac0f58a4808656c608c17c84022391ddf3fa"
+        "private_collection_sha256": "38847ddd1b69ee6d5cf30d27ac72d637977467bbd2a545859c65eaaf166a160f"
       }
     ],
-    "historical_1463_key_comparison": "NOT_REEXECUTED_NO_HISTORICAL_PRIVATE_KEY_INVENTORY_USED",
-    "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
     "linux_collect_exit_codes": [
       0,
       0,
       0,
       0,
       0
-    ]
+    ],
+    "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
+    "previous_eng097_exact_keys_retained": true,
+    "new_cases_since_eng097": 142
   },
   "historical_eng064_collection_evidence": {
     "current_cases": 1253,
@@ -485,7 +489,7 @@
     "tests/test_safe_annotations.py": "f164246510d79e49e43ec9337c5ddc57a3c42b2f7bfbd5174fd986e52613a752",
     "tests/test_windows_ci_preparation.py": "c84003dff3b52e3c8162db922a11ee74d5bd1147fe1f7f5108f388c2c5df1aed"
   },
-  "source_binding_note": "ENG097 current 69 test-source raw fingerprints and current diagnostic allowlist hash refreshed after test freeze. Current global and four-shard Linux collect-only exact stable multiset verified. No Windows/full engineering execution. Worktree includes new uncommitted test source at this preflight: bind actual HEAD/blob/worktree only after the containing source commit, never claim the parent HEAD contains it. ENG097 full Linux initial run found one /health schema expectation still22; changed only that expected value to23. Collection IDs/counts unchanged; this file raw hash refreshed before final regression.",
+  "source_binding_note": "ENG098 full test-file/raw implementation/diagnostic fingerprints refreshed after source freeze. Global and four actual Linux collect-only inventories match exact stable multiset. HEAD/blob/worktree binding must be checked after source commit; this parent HEAD does not contain new source. No Windows/full engineering execution or security changes.",
   "historical_eng080_collection_evidence": {
     "current_cases": 1463,
     "pieces": [
@@ -580,6 +584,164 @@
       ],
       "cases": 424,
       "historical_linux_relative_weight_seconds": 99.281126
+    }
+  ],
+  "historical_eng097_collection_evidence": {
+    "scope": "ENG097_LINUX_COLLECT_ONLY_CURRENT_WORKTREE",
+    "current_cases": 1826,
+    "current_files": 69,
+    "pieces": [
+      453,
+      459,
+      458,
+      456
+    ],
+    "exact_piece_stable_multiset_matches_global": true,
+    "stable_case_keys_unique": true,
+    "raw_nodeids_unique": true,
+    "all_current_cases_included_once": true,
+    "current_collection_sha256": "8d0a41c935dab4d2564cc5ce3578bc1a2925f04c1de805d8c92e680fa46648f5",
+    "actual_four_shard_collect_only": [
+      {
+        "shard": "S1",
+        "cases": 453,
+        "files": 17,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "46999a8912bddeaec8efa62f468927311d902d042c92bff64b4a915281a4e893"
+      },
+      {
+        "shard": "S2",
+        "cases": 459,
+        "files": 17,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "2a2602b23140ca96cad9bf1ccfcf839c2ee463033eec282b623eea9d85b96913"
+      },
+      {
+        "shard": "S3",
+        "cases": 458,
+        "files": 17,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "66c516edc6a4de86586569f2e601b40e6ae7e504ec7d5dd396ba01d9ea5dc137"
+      },
+      {
+        "shard": "S4",
+        "cases": 456,
+        "files": 18,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "18311216680ae7cb14f1c46c409fac0f58a4808656c608c17c84022391ddf3fa"
+      }
+    ],
+    "historical_1463_key_comparison": "NOT_REEXECUTED_NO_HISTORICAL_PRIVATE_KEY_INVENTORY_USED",
+    "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
+    "linux_collect_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "historical_eng097_shards": [
+    {
+      "id": "S1",
+      "files": [
+        "tests/test_acceptance_failures.py",
+        "tests/test_acceptance_runner.py",
+        "tests/test_account_rate.py",
+        "tests/test_authorization_files.py",
+        "tests/test_ci_diagnostics.py",
+        "tests/test_dispatch_notices.py",
+        "tests/test_lifecycle.py",
+        "tests/test_minimal_observations.py",
+        "tests/test_model_config.py",
+        "tests/test_native_command.py",
+        "tests/test_regression_shards.py",
+        "tests/test_request_intents.py",
+        "tests/test_rule_publication_candidate.py",
+        "tests/test_service_case_steps.py",
+        "tests/test_source_bytes.py",
+        "tests/test_summary_publication.py",
+        "tests/test_windows_ci_preparation.py"
+      ],
+      "cases": 453,
+      "historical_linux_relative_weight_seconds": 96.400539,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    },
+    {
+      "id": "S2",
+      "files": [
+        "tests/test_acl_readonly.py",
+        "tests/test_bounded_planning.py",
+        "tests/test_case_path.py",
+        "tests/test_case_resources.py",
+        "tests/test_ci_cleanup.py",
+        "tests/test_domain_bounds.py",
+        "tests/test_executor_receipts.py",
+        "tests/test_foundation.py",
+        "tests/test_lifecycle_diagnostics.py",
+        "tests/test_plan_handoff_chain.py",
+        "tests/test_python_command.py",
+        "tests/test_resource_substitution_confirm.py",
+        "tests/test_review_demo.py",
+        "tests/test_server_identity.py",
+        "tests/test_synthetic_session_file.py",
+        "tests/test_v1_contracts.py",
+        "tests/test_worker_gateway.py"
+      ],
+      "cases": 459,
+      "historical_linux_relative_weight_seconds": 99.441546,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    },
+    {
+      "id": "S3",
+      "files": [
+        "tests/test_bounded_observation.py",
+        "tests/test_candidate_review.py",
+        "tests/test_catalog_decision_validity.py",
+        "tests/test_facts_heartbeat.py",
+        "tests/test_fault_ledger.py",
+        "tests/test_intern_adapter.py",
+        "tests/test_job_budget.py",
+        "tests/test_material_corrections.py",
+        "tests/test_resource_catalog_concurrency.py",
+        "tests/test_resource_combinations.py",
+        "tests/test_resource_holds.py",
+        "tests/test_resource_plan_binding.py",
+        "tests/test_run_access_candidate.py",
+        "tests/test_safe_annotations.py",
+        "tests/test_service_dispatches.py",
+        "tests/test_utf8_sources.py",
+        "tests/test_windows_file_candidate.py"
+      ],
+      "cases": 458,
+      "historical_linux_relative_weight_seconds": 93.848497,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    },
+    {
+      "id": "S4",
+      "files": [
+        "tests/test_case_lifecycle.py",
+        "tests/test_controlled_job_measurement.py",
+        "tests/test_controlled_plans.py",
+        "tests/test_descriptor_readonly_probe.py",
+        "tests/test_fixture_cleanup.py",
+        "tests/test_job_schedule.py",
+        "tests/test_launcher_lifecycle.py",
+        "tests/test_model_chain.py",
+        "tests/test_owned_job.py",
+        "tests/test_plan_preview.py",
+        "tests/test_plan_revision.py",
+        "tests/test_plan_revision_waits.py",
+        "tests/test_preparation.py",
+        "tests/test_preparation_tasks.py",
+        "tests/test_readiness.py",
+        "tests/test_resource_confirm.py",
+        "tests/test_rule_publication_boundary.py",
+        "tests/test_synthetic_config_file.py"
+      ],
+      "cases": 456,
+      "historical_linux_relative_weight_seconds": 99.281126,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     }
   ]
 }

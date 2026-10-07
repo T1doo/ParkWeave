@@ -316,3 +316,10 @@ ENG096最终本地验证：完整Linux1784PASS/0FAIL/0ERROR/9nativeSKIP/2WARN（
 从cc4a46b对照V1重核T01–T07，保留ENG096注册1–5适配器及实际浏览器P1–P4范围，原42项AT/EX仍NOT_RUN。新增原合法双槽补正持久请求/来源/稳定编号、真实新版提交、人工核对及确认门禁，失败同键恢复；两冷会话三个新Case与两企业材料隔离，不是正式模板审核复用或全业务履约。最终33新回归+35资料兼容=68PASS，真实浏览器1PASS/53.03秒/6图；完整回归终态见[ENG097](ENG097-MaterialCorrectionLoop.md)及机器证据。schema23仅隔离迁移，无新GRANT。Windows安全可修工程项更新69文件/1826当前collection与四片453/459/458/456、hash/allowlist；owner/ACL保持、首次日志/记录对象授权、原生normal/S4与完整Windows/Win11仍阻塞，未恢复全量workflow或重试被拒日志。F1未签收/F2并行、R4关闭/模型预算0。
 
 ENG097最终：完整Linux1817PASS/0FAIL/0ERROR/9nativeSKIP/2WARN（459.89秒），249冻结文件零差异。专项33新补正+35既有兼容=68PASS，工程fixture53PASS；最终两冷会话三新Case浏览器1PASS/6图/9产物哈希独审通过。前述专项不重复计入全量，初轮失败证据保留。
+
+
+## ENG098 审核候选模板与新企业冷启动
+
+从 f34b28b 新增默认关闭的独立候选模板审核发布、不可变来源/注册闭包/合同版本快照，以及明确批准 UUID 数据库与新企业范围内的原产品消费桥。真实两个冷会话/两个新企业/三个新 Case/六份新材料，分别经人工 REVIEW、企业 CONFIRM、P1 VERIFY；模板不复制旧 Case 数据、身份或 Grant，正式生产发布权限仍未启用。合同 head 持久化拒绝旧配置重启/旧活跃引擎，来源新版本拒旧发布；UNKNOWN 同页原键恢复，确定拒绝分开显示。最终模板66PASS、浏览器1PASS/36.27秒/9图和14产物独审通过。
+
+Windows 新增精确 FILE_WRITE_DATA|READ_CONTROL 的独立 backend 协议，候选76PASS、连同既有兼容122PASS/2nativeSKIP；独审已通过 fake seam，native adapter / parent provenance / CRT / 最终原子替换仍未实现。未改原暂停或全量workflow。当前全量collection1968/72文件、四片529/459/488/492和894诊断ID已刷新，旧1826keys全保留，预算不变；最终完整 Linux 1959PASS/0FAIL/0ERROR/9nativeSKIP/2WARN（472.16秒），262冻结源零差异。专项计数不重复计入全量。F1未签收/F2并行、42项原AT/EX仍NOT_RUN、Server非Win11、R4关闭/模型预算0。详见[ENG098](ENG098-TemplateColdStart.md)及[Windows候选](ENG098-CreateNewReadonlyCandidate.md)。
