@@ -87,7 +87,7 @@ def current_sources(store,c,parent,plan):
         issues['P1']=[s for s in issues['P1'] if s!='REQUEST_GOAL_COVERAGE_REQUIRED']
     dispatch=c.execute('SELECT * FROM service_dispatches WHERE preparation_id=%s',(parent['id'],)).fetchone()
     offer=c.execute('SELECT * FROM service_dispatch_offers WHERE id=%s',(dispatch['current_offer_id'],)).fetchone() if dispatch else None
-    step=c.execute('SELECT * FROM service_receipt_steps WHERE preparation_id=%s',(parent['id'],)).fetchone()
+    step=er.current_step(c,parent)
     receipt=er._current(c,step) if step else None
     acceptance=c.execute("SELECT id,dispatch_id,offer_id,revision,actor_id,action,payload FROM service_dispatch_events WHERE offer_id=%s AND action='ACCEPT' ORDER BY revision DESC LIMIT 1",(offer['id'],)).fetchone() if offer else None
     sources['P3'].update(dispatch_id=str(dispatch['id']) if dispatch else None,
@@ -196,6 +196,7 @@ def _context(store,c,token,id,write=False):
 
 def _allowed(p,step,states,binding_issues,issues,sources,revision):
     if binding_issues or revision>=LIMIT:return []
+    if p['role']=='service_executor' and (sources['P3'].get('offer_state')!='ACCEPTED' or not sources['P3'].get('receipt_step_id') or issues['P3']):return []
     adapter=step['adapter_id'];prior=all(states.get(dep)=='VERIFIED' for dep in step['depends_on'])
     if not prior:return []
     actions=[]

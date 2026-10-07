@@ -5,6 +5,7 @@ current acceptance checks; commands still revalidate independently.
 """
 from . import preparation as prep, request_intents as intents, readiness
 from .store import Denied
+from . import executor_receipts as er
 
 
 def read(store,token,id):
@@ -27,7 +28,9 @@ def read(store,token,id):
         plan=c.execute('SELECT id,revision FROM controlled_plans WHERE preparation_id=%s',(id,)).fetchone()
         link=c.execute('SELECT id FROM case_resource_links WHERE preparation_id=%s AND case_id=%s AND run_id=%s AND owner_id=%s AND park_id=%s AND org_id=%s ORDER BY revision DESC LIMIT 1',(id,parent['case_id'],run['id'],p['id'],p['park_id'],p['org_id'])).fetchone()
         dispatch=c.execute('SELECT d.id,o.state FROM service_dispatches d LEFT JOIN service_dispatch_offers o ON o.id=d.current_offer_id AND o.dispatch_id=d.id WHERE d.preparation_id=%s',(id,)).fetchone()
-        receipt=c.execute('SELECT id,state FROM service_receipt_steps WHERE preparation_id=%s AND case_id=%s AND run_id=%s AND owner_id=%s AND park_id=%s AND org_id=%s',(id,parent['case_id'],run['id'],p['id'],p['park_id'],p['org_id'])).fetchone()
+        receipt=er.current_step(c,parent)
+        if receipt and tuple(receipt[k] for k in ('case_id','run_id','owner_id','park_id','org_id'))!=(parent['case_id'],run['id'],p['id'],p['park_id'],p['org_id']):
+            receipt=None
         local=c.execute('SELECT state FROM case_local_lifecycles WHERE preparation_id=%s AND case_id=%s',(id,parent['case_id'])).fetchone()
         source,sha=readiness._sources(store,c,parent,p);material=readiness._view(parent,source,sha)
         return {'scope':'OWNER_SAME_CASE_READ_ONLY_RECORD_PATH','role':p['role'],'preparation_id':parent['id'],

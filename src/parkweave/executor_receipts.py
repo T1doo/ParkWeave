@@ -77,10 +77,31 @@ def _base(store,c,p,id):
     return row
 
 def _parent(c,row):
-    return c.execute('SELECT state,revision,review_sha256 FROM preparations WHERE id=%s FOR SHARE',(row['preparation_id'],)).fetchone()
+    return c.execute('SELECT * FROM preparations WHERE id=%s FOR SHARE',(row['preparation_id'],)).fetchone()
 
-def _fresh(row,parent):
-    return bool(parent and parent['state']=='LOCAL_CONFIRMED' and parent['revision']==row['preparation_revision'] and parent['review_sha256']==row['preparation_sha256'])
+def current_step(c,parent):
+    """The current accepted offer selects its receipt generation; history never does."""
+    root=c.execute('SELECT current_offer_id FROM service_dispatches WHERE preparation_id=%s',(parent['id'],)).fetchone()
+    if root:
+        selected=c.execute("""SELECT s.* FROM service_dispatch_offers o JOIN service_receipt_steps s
+          ON s.id=o.receipt_step_id AND s.executor_id=o.executor_id
+          AND s.preparation_revision=o.preparation_revision AND s.preparation_sha256=o.preparation_sha256
+          WHERE o.id=%s AND o.state='ACCEPTED' AND s.preparation_id=%s""",(root['current_offer_id'],parent['id'])).fetchone()
+    else:
+        rows=c.execute('SELECT * FROM service_receipt_steps WHERE preparation_id=%s LIMIT 2',(parent['id'],)).fetchall()
+        selected=rows[0] if len(rows)==1 else None
+    fields=('run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
+    return selected if selected and all(selected[k]==parent[k] for k in fields) else None
+
+def material_current(c,parent):
+    if not parent or parent['state']!='LOCAL_CONFIRMED':return False
+    items=prep.latest(c,parent['id'])
+    return ({i['slot'] for i in items}==set(prep.SLOTS) and
+            all(digest(i['text'])==i['source_sha256'] for i in items) and
+            prep.snapshot(parent,items)==parent['review_sha256'])
+
+def _fresh(row,parent,c=None):
+    return bool(parent and parent['state']=='LOCAL_CONFIRMED' and parent['revision']==row['preparation_revision'] and parent['review_sha256']==row['preparation_sha256'] and (c is None or material_current(c,parent)))
 
 def _locked(c,id,write=False):
     return c.execute('SELECT * FROM service_receipt_steps WHERE id=%s '+('FOR UPDATE' if write else 'FOR SHARE'),(id,)).fetchone()
@@ -100,10 +121,14 @@ def _event(c,p,row,key,fp,action,**extra):
     return payload
 
 def _view(c,p,row,parent,event=None):
+    current=current_step(c,parent) if parent else None
+    is_current=bool(current and current['id']==row['id'])
     return dict(scope=SCOPE,role=p['role'],step=row,current_receipt=_current(c,row),
         history=c.execute('SELECT revision,action,payload,created_at FROM service_receipt_events WHERE step_id=%s ORDER BY revision',(row['id'],)).fetchall(),
         receipt_history=c.execute('SELECT * FROM service_step_receipts WHERE step_id=%s ORDER BY version',(row['id'],)).fetchall(),
-        dependency='CURRENT' if _fresh(row,parent) else 'DEPENDENCY_CHANGED',event=event,
+        dependency='CURRENT' if is_current and _fresh(row,parent,c) else 'DEPENDENCY_CHANGED',event=event,
+        is_current_step=is_current,record_mode='CURRENT_GENERATION' if is_current else 'HISTORICAL_GENERATION',
+        replay_mode=('CURRENT_COMMITTED_EVENT' if is_current else 'HISTORICAL_COMMITTED_EVENT') if event else None,
         qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',case_goal_completed=False)
 
 @bounded
@@ -139,7 +164,7 @@ def create(store,token,key,data):
             return _view(c,p,row,parent,old)
         from .controlled_plans import gate
         gate(store,c,parent,3)
-        if parent['state']!='LOCAL_CONFIRMED' or parent['revision']!=data.expected_preparation_revision:raise Conflict('current locally confirmed preparation required')
+        if parent['revision']!=data.expected_preparation_revision or not material_current(c,parent):raise Conflict('current locally confirmed preparation required')
         if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s',(parent['id'],)).fetchone():raise Conflict('preparation already has receipt step')
         if c.execute('SELECT 1 FROM service_dispatches WHERE preparation_id=%s',(parent['id'],)).fetchone():raise Conflict('internal dispatch requires executor acceptance')
         row=_insert_step(c,parent,data.executor_id)
@@ -165,11 +190,13 @@ def command(store,token,id,key,data):
         if p['role']=='enterprise_operator':_executor(store,c,row['executor_id'],row['run_id'])
         parent=_parent(c,row);row=_locked(c,id,write=True);old=_replay(c,p,key,fp)
         if old:return _view(c,p,row,parent,old)
+        selected=current_step(c,parent)
+        if not selected or selected['id']!=row['id']:raise Conflict('historical receipt generation is read-only; current executor acceptance required')
         from .controlled_plans import gate
         if data.action in ('SUBMIT','ACKNOWLEDGE'):
             full_parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()
             gate(store,c,full_parent,3)
-        if not _fresh(row,parent):raise Conflict('receipt preparation dependency changed; explicit replanning required')
+        if not _fresh(row,parent,c):raise Conflict('receipt preparation dependency changed; explicit replanning required')
         if row['revision']!=data.expected_revision:raise Conflict('stale receipt step revision; refresh required')
         if row['revision']>=64:raise Conflict('receipt history limit reached')
         current=_current(c,row);current_id=row['current_receipt_id']

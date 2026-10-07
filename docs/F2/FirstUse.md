@@ -181,3 +181,13 @@ ENG097最终：完整Linux1817PASS/0FAIL/0ERROR/9nativeSKIP/2WARN（459.89秒）
 从 f34b28b 新增默认关闭的独立候选模板审核发布、不可变来源/注册闭包/合同版本快照，以及明确批准 UUID 数据库与新企业范围内的原产品消费桥。真实两个冷会话/两个新企业/三个新 Case/六份新材料，分别经人工 REVIEW、企业 CONFIRM、P1 VERIFY；模板不复制旧 Case 数据、身份或 Grant，正式生产发布权限仍未启用。合同 head 持久化拒绝旧配置重启/旧活跃引擎，来源新版本拒旧发布；UNKNOWN 同页原键恢复，确定拒绝分开显示。最终模板66PASS、浏览器1PASS/36.27秒/9图和14产物独审通过。
 
 Windows 新增精确 FILE_WRITE_DATA|READ_CONTROL 的独立 backend 协议，候选76PASS、连同既有兼容122PASS/2nativeSKIP；独审已通过 fake seam，native adapter / parent provenance / CRT / 最终原子替换仍未实现。未改原暂停或全量workflow。当前全量collection1968/72文件、四片529/459/488/492和894诊断ID已刷新，旧1826keys全保留，预算不变；最终完整 Linux 1959PASS/0FAIL/0ERROR/9nativeSKIP/2WARN（472.16秒），262冻结源零差异。专项计数不重复计入全量。F1未签收/F2并行、42项原AT/EX仍NOT_RUN、Server非Win11、R4关闭/模型预算0。详见[ENG098](ENG098-TemplateColdStart.md)及[Windows候选](ENG098-CreateNewReadonlyCandidate.md)。
+
+
+## ENG099 新版材料本人重新接单与原生候选
+
+从 `0979f0d7975e622eb2fa19f62acc6817279e0300` 修复已接单资料更新后的持久业务死路：原获派专员明确请求原执行者重新确认新版材料，本人新 ACCEPT 后生成新的回执世代；旧接单、回执、来源和事件不改。当前分派指针唯一选择当前回执，历史步骤只读；新提交重验真实材料正文 hash / 快照、当前权限及 P1/P2 门禁，未知分派 POST 使用原正文和原键重试。migration024 将单准备唯一约束替换为准备+版本唯一约束，只应用隔离测试，无新增 GRANT 或生产启用。完成本地核对后的原 Case 仍 WAITING_CONFIRMATION，不宣称目标完成或外部履约。
+
+Windows 新增默认关闭的真实 ctypes adapter 及明确分开的创建/目录/文件查询/替换合同；Linux ABI mock 不证明实际 NT 行为。名称替换缺少目标 file-ID CAS，默认严格模式在重命名前拒绝；只在显式新 UUID 私有候选范围提供非 CAS primitive，竞态仍未解决。原 SESSION/CONFIG、安全写操作和全量workflow保持暂停，Server 非 Win11。最终验证见 [ENG099](ENG099-DispatchMaterialRecovery.md) 与 [Windows代码候选](ENG099-WindowsNativeAdapter.md)。F1 未签收/F2并行、42项AT/EX仍NOT_RUN、正式模板发布T06/AT08/AT35仍NOT_RUN、R4关闭/模型预算0。
+
+
+ENG099 最终本地验证：完整 Linux **2079 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKIP / 2 WARN，500.87 秒**，2088 项 JUnit 对应当前 collection；268 个冻结源码文件零差异。恢复专项46PASS，当前原生候选 Linux fake/ABI专项150PASS，最终实际浏览器1PASS/80.91秒，15图与17产物hash已独立核对。专项不重复计入全量。当前75文件/四片529/517/534/508/953诊断ID与1968旧keys保留，预算不变。完整回归只证明该Linux源码，原生Windows、目标file-ID CAS、全量workflow/Win11、正式业务发布及外部履约仍未验收。普通推送及首次精确HEAD的CI终态由本任务最终同步运行时证据记录，不在提交前预写成功。

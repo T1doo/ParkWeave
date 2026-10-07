@@ -47,7 +47,7 @@ def _sources(store,c,p,parent):
     except Denied:issues['MATERIAL_REVIEW'].append('CURRENT_REVIEWER_AUTHORITY_REQUIRED')
     dispatch=sd._root(c,parent)
     offer=sd._own_offer(c,p,dispatch) if dispatch else None
-    step=c.execute('SELECT * FROM service_receipt_steps WHERE preparation_id=%s FOR SHARE',(parent['id'],)).fetchone()
+    step=er.current_step(c,parent)
     receipt=er._current(c,step) if step else None
     if not offer:
         issues['ACCEPTANCE_RECHECK'].append('LEGACY_ACCEPTANCE_MISSING' if step else 'ACCEPTED_DISPATCH_REQUIRED')
