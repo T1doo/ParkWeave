@@ -96,7 +96,7 @@ def assert_reconfirmation(event, previous_view, current_view, generic_view):
 
 
 def assert_observed_invalidation(before, after, cause):
-    require(cause in ('SOURCE', 'REQUEST', 'EXPIRED', 'WRITE_REVOKED'), 'KNOWN_INVALIDATION_CAUSE_REQUIRED')
+    require(cause in ('SOURCE', 'REQUEST', 'EXPIRED', 'WRITE_REVOKED', 'AUTHORITY_REVISION'), 'KNOWN_INVALIDATION_CAUSE_REQUIRED')
     require(before.get('state') == 'CURRENT' and before.get('satisfied') is True and after.get('state') == 'STALE' and after.get('satisfied') is False,
             'CURRENT_SELECTION_MUST_BECOME_STALE')
     require(after.get('revision') == before.get('revision') and after.get('history') == before.get('history'),
@@ -105,10 +105,10 @@ def assert_observed_invalidation(before, after, cause):
         require(after['preparation_revision'] > before['preparation_revision'], 'ORIGINAL_REQUEST_REVISION_REQUIRED')
     else:
         require(after['preparation_revision'] == before['preparation_revision'], 'OBSERVATION_MUST_NOT_BUMP_PREPARATION')
-    if cause in ('SOURCE', 'REQUEST'):
+    if cause in ('SOURCE', 'REQUEST', 'WRITE_REVOKED', 'AUTHORITY_REVISION'):
         require(after.get('source_sha256') != before.get('source_sha256'), 'ACTUAL_SOURCE_BINDING_MUST_CHANGE')
     else:
-        require(after.get('source_sha256') == before.get('source_sha256'), 'CLOCK_OR_RIGHTS_MUST_NOT_REHASH_FACT_BODY')
+        require(after.get('source_sha256') == before.get('source_sha256'), 'CLOCK_MUST_NOT_REHASH_STABLE_SOURCE_BINDING')
 
 
 def assert_recovery_generation(old_receipt, new_receipt, final_case):

@@ -1,6 +1,6 @@
 # Case事实用途模块接线核对
 
-冻结模块提交：`8d9e881f1d64042d6a7dfedf0d96c00e943c7a08`；原合同：`686f3e1f93eed03a31915df5eac6b99da3ad7f0a`。本支持分支不修改模块、Store、API、UI、迁移或旧测试。本轮正常fetch核实远端主线为`6d669b2d3567b9e36db4c42a4813115d5ca18b53`，尚无用途模块/API路由；本文及工具不表示主线接线已经通过。
+原冻结模块提交：`8d9e881f1d64042d6a7dfedf0d96c00e943c7a08`（保持不变）；模块修复顺序：`f3a90a6999bb8d75f509b7c91ea5f0e60ea49f3e`→`bcb9a2fb8ef6edd6844db1910f3800f7c507f2c6`；原合同：`686f3e1f93eed03a31915df5eac6b99da3ad7f0a`。本支持分支不修改模块、Store、API、UI、迁移或旧测试。本支持包原轮次探测基线未挂载路由；主线集成检查点`5f11ae96007f2e9f07e0c571b7e0da90f6aa6dab`已包含适配和失败回传。本文及工具不表示主线新迁移接线已经通过。
 
 ## 具体调用与锁顺序
 
@@ -8,7 +8,7 @@
 2. 原业务命令在**同一事务**完成当前角色授权、锁完整当前preparation，再调用 `gate(store,c,parent)`；此parent必须是DB完整行，不能是移除了私有字段的HTTP投影。检查 `satisfied` 后才进行新业务写入。parent至少持有FOR SHARE（新业务通常FOR UPDATE）；owner共享授权锁和稳定字段锁一直保留到该事务结束，不能拿第一次GET检查替代COMMIT所在事务检查。
 3. `source_descriptor(store,c,parent)`也调用gate。返回的hash只表示当前来源描述，并不表示条件通过。将enabled Case的descriptor加入材料快照/审核、readiness、`er.material_current`、`life._sources(MATERIAL_REVIEW)`、`cp.binding_p1`及下游源绑定。未声明legacy Case不要加入新绑定或改变旧hash。
 4. 模块新声明/确认的锁顺序为：当前actor共享授权锁→原actor-key锁→parent行锁→稳定排序的三个field锁→原plan失效→原prep.event。主线不得先持有plan行锁再反向取parent；授权等待后重验时效，事务中来源锁须与原Store.save_fact使用同一命名空间。
-5. 主线升级Store版本门至25并注册package-data/迁移；025仅允许新UUID fixture。generic preparation的单项、列表、待办、计划源投影及事件对所有角色移除私有事实账本/源值。只能owner专用GET在当前字段READ下提供完整历史。
+5. 主线升级Store版本门至25并注册package-data/迁移；025仅允许有本次集群/数据库创建证据的候选fixture；新UUID和固定parkweave名称均须真实owner、集群、OID及同事务票据匹配。无票据拒绝，不能按库名/环境/GUC自动启用。generic preparation的单项、列表、待办、计划源投影及事件对所有角色移除私有事实账本/源值。只能owner专用GET在当前字段READ下提供完整历史。
 
 ## 错误与历史映射
 
@@ -24,7 +24,7 @@
 
 合同没固定declare/confirm成功码，工具接受200或201；主线应统一API/前端期待。历史回复需要重新GET当前状态，不能把其中旧CURRENT喂回新UI。确认响应的顶层revision/state是**preparation**；用途revision/state在public_status；专用GET的revision是**用途账本**，preparation_revision单列。不要混用两个CAS。
 
-source_sha256不含动态clock：源新增/真实内容漂移/request变化改变SHA；仅到期或WRITE撤回可在SHA不变时令门STALE。观察GET不增加版本、不改旧事件。旧历史恢复也不增加版本；新显式确认同时增加用途及preparation版本，清review_sha256，置IN_PREPARATION。
+source_sha256不含动态clock：源新增/真实内容漂移/request变化、实际依赖的授权行修订变化都会改变SHA。三字段READ/WRITE六行及capability READ/EXECUTE两行以稳定范围、active、revision、有效期绑定；恢复同一行的新revision不能复活旧CURRENT。仅时间到期可在SHA不变时令门STALE。无revision的action/preparation授权不承诺不可观测的管理员往返世代。观察GET不增加版本、不改旧事件。旧历史恢复也不增加版本；新显式确认同时增加用途及preparation版本，清review_sha256，置IN_PREPARATION。
 
 ## 黑盒验收与假阳性
 
@@ -55,6 +55,14 @@ source_sha256不含动态clock：源新增/真实内容漂移/request变化改�
 
 `assert_observed_invalidation`可供主线的原API source/request变化、已批准fixture到期/撤权测试复用。READ撤回后GET应403，不能继续拿私有GET读取STALE；WRITE撤回且READ保留才可读STALE历史。撤权只在主线现有合成fixture中操作，不为本工具创建或恢复授权。再确认后用原REVIEW/CONFIRM、资源重绑、P1/P2、同原执行者recovery offer（旧step ID）、本人ACCEPT、P3、新receipt v1 SUBMIT/ACK、P4及本地REOPEN/REVALIDATE/CLOSE/P5；`assert_recovery_generation`核对原GET的新旧世代、相同Case/Run/执行者、receipt.step_id以及最终原Case/Run的WAITING_CONFIRMATION，旧资料/offer/receipt/cycle/authority由主线独立oracle比对保留。
 
-未运行主线已接线产品、完整恢复、浏览器、全量工程或Windows；模板/资格/外部履约及正式AT状态不升级。原8d9e881三文件在本分支保持逐字不变。
+未运行主线已接线产品、完整恢复、浏览器、全量工程或Windows；模板/资格/外部履约及正式AT状态不升级。原8d9e881三文件在本支持分支保持逐字不变；修订由独立模块分支提供。
 
 本支持交付自测：12项通过（工具自身、含假阳性负例），1条现有TestClient依赖弃用警告。冻结8d9e881应用的真实TestClient只读探测得到404/BLOCKED；connect哨兵禁止DB调用，未创建会话或权限。证据为环境内`/tmp/parkweave-integration-support-final.log`、对应JUnit XML及`/tmp/parkweave-integration-baseline-probe.json`。独立只读审查发现的四项假阳性缺口已修正并复审通过。
+
+## 新迁移接线顺序（由主线执行）
+
+在已有fixture本次initdb/start之后、第一次CREATE DATABASE之前，调用并保留`capture_fixture_cluster(maintenance_dsn, actual_owned_data_directory)`。成功创建新数据库后，在目标owner连接调用`cluster.record_created_database(connection)`并保留receipt。主线将receipt通过显式参数/context交给原Store loader，在它**同一owner连接、同一非autocommit事务**执行025之前调用`receipt.authorize_migration(connection)`。票据提交/回滚即消失，重复迁移须重新发票据；不可在另一连接预先发票据。
+
+此入口核对新空本地临时集群实际system identifier/data directory/start/owner、目标创建前不存在/创建后OID、真实表owner及backend/transaction。仅库名、owner、pytest环境变量或自填GUC均不足以启用。它防误用，不宣称抵抗可直接执行DDL的owner。原生已安装集群没有本次新临时集群证据时拒绝；如需支持另须受审的创建凭据适配，禁止补Grant或绕过。
+
+同步自测仍12项通过；WRITE_REVOKED/AUTHORITY_REVISION现在要求稳定SHA改变，EXPIRED保持不变。模块修复全套66项通过；主线20项API验证使用授权修复和主线原UUID迁移入口，新票据Store接线与完整工程尚待主线验证，不拼成完整验收通过。
