@@ -12,12 +12,20 @@ serializing supported Store.save_fact and revocation operations with COMMIT.
 public_status accepts a gate/read result, never a private ledger.
 """
 from copy import deepcopy
+from dataclasses import dataclass
+import os
+from pathlib import Path
+import re
+import tempfile
+from weakref import WeakValueDictionary
 from datetime import datetime
 from typing import Literal
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from psycopg.types.json import Jsonb
+import psycopg
+from psycopg.conninfo import conninfo_to_dict
 
 from . import preparation as prep
 from .store import Conflict, Denied, digest
@@ -362,3 +370,132 @@ def confirm(store, token, preparation_id, key, data: Confirm):
                 raise Conflict('current owner assertion choice binding required')
         choices = [choice.model_dump(mode='json') for choice in data.choices]
         return _persist(store, c, p, parent, ledger, key, fp, 'CONFIRM_FACT_PURPOSE', data.reason, snapshot, sha, applicable, choices)
+
+
+# Explicit test-only migration provenance. No connection comes from environment,
+# no role/GRANT is created, and no lifecycle/security policy is changed.
+# This prevents accidental migration of an existing database. A DDL-capable
+# owner can bypass SQL by definition; this is not a sandbox against that owner.
+_fixture_clusters = WeakValueDictionary()
+_fixture_databases = WeakValueDictionary()
+
+
+@dataclass(frozen=True, repr=False)
+class FixtureClusterEvidence:
+    system_identifier: str
+    data_directory: str
+    postmaster_start: datetime
+    owner: str
+    initial_databases: tuple
+    nonce: UUID
+
+    def record_created_database(self, connection):
+        """Call after this fixture's successful CREATE DATABASE, before migration.
+
+        Absence in the captured fresh cluster and presence now is creation
+        evidence. The same cluster/start/owner must still be present. Never use
+        a pre-existing target, even if named fixture_UUID or owned by this user.
+        """
+        if _fixture_clusters.get(self.nonce) is not self:
+            raise Denied('issued fixture cluster evidence required')
+        identity = _migration_identity(connection)
+        _same_cluster(self, identity)
+        name = identity['database_name']
+        if (name in dict(self.initial_databases) or
+            not (re.fullmatch(r'fixture_[0-9a-f]{32}', name) or name == 'parkweave')):
+            raise Denied('new owned test database creation evidence required')
+        if identity['owner_name'] != self.owner or identity['session_name'] != self.owner:
+            raise Denied('actual fixture database owner required')
+        result = FixtureDatabaseEvidence(self, name, identity['database_oid'], uuid4())
+        _fixture_databases[result.nonce] = result
+        return result
+
+
+@dataclass(frozen=True, repr=False)
+class FixtureDatabaseEvidence:
+    cluster: FixtureClusterEvidence
+    database_name: str
+    database_oid: int
+    nonce: UUID
+
+    def authorize_migration(self, connection):
+        """Issue the ticket in the SAME owner connection/transaction as SQL 025.
+
+        COMMIT/ROLLBACK removes it. Repeated migration needs a new ticket, using
+        this still-matching creation receipt; receipts never authorize a new OID.
+        """
+        if connection.autocommit:
+            raise Denied('explicit owner migration transaction required')
+        if _fixture_databases.get(self.nonce) is not self or _fixture_clusters.get(self.cluster.nonce) is not self.cluster:
+            raise Denied('issued fixture database creation evidence required')
+        identity = _migration_identity(connection)
+        _same_cluster(self.cluster, identity)
+        if (identity['database_name'] != self.database_name or
+            identity['database_oid'] != self.database_oid or
+            identity['owner_name'] != self.cluster.owner or identity['session_name'] != self.cluster.owner):
+            raise Denied('fixture database creation receipt does not match connection')
+        connection.execute("""CREATE TEMP TABLE IF NOT EXISTS parkweave_fixture_migration_receipt (
+            database_oid oid, database_name text, owner_name text, system_identifier text,
+            data_directory text, postmaster_start timestamptz, backend_pid integer,
+            transaction_id bigint, cluster_nonce uuid, database_nonce uuid) ON COMMIT DROP""")
+        connection.execute('DELETE FROM pg_temp.parkweave_fixture_migration_receipt')
+        connection.execute("""INSERT INTO pg_temp.parkweave_fixture_migration_receipt
+            VALUES(%s,%s,%s,%s,%s,%s,pg_backend_pid(),txid_current(),%s,%s)""",
+            (self.database_oid, self.database_name, self.cluster.owner,
+             self.cluster.system_identifier, self.cluster.data_directory,
+             self.cluster.postmaster_start, self.cluster.nonce, self.nonce))
+
+
+def _migration_identity(connection):
+    return connection.cursor(row_factory=psycopg.rows.dict_row).execute("""SELECT d.oid database_oid,d.datname database_name,
+        pg_get_userbyid(d.datdba) owner_name,current_user current_name,session_user session_name,
+        current_setting('data_directory') data_directory,pg_postmaster_start_time() postmaster_start,
+        (SELECT system_identifier::text FROM pg_control_system()) system_identifier
+        FROM pg_database d WHERE d.datname=current_database()""").fetchone()
+
+
+def _same_cluster(evidence, identity):
+    if (identity['system_identifier'] != evidence.system_identifier or
+        identity['data_directory'] != evidence.data_directory or
+        identity['postmaster_start'] != evidence.postmaster_start or
+        identity['current_name'] != evidence.owner):
+        raise Denied('owned test cluster creation evidence does not match connection')
+
+
+def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+    """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+
+    Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+    its actual owned data directory; this function performs reads only. Fixed
+    parkweave and UUID targets require the SAME proof, never a name whitelist.
+    Native installed clusters do not satisfy this ephemeral-cluster contract;
+    a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+    """
+    parsed = conninfo_to_dict(maintenance_dsn)
+    host = parsed.get('host', '')
+    if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+        parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+        not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+        raise Denied('explicit local test maintenance connection required')
+    path = Path(owned_data_directory)
+    root = Path(tempfile.gettempdir()).resolve()
+    # Evidence is the matched live cluster and before/after creation receipt,
+    # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+    if (not path.is_absolute() or path.resolve() != path or path == root or
+        not path.is_relative_to(root) or not path.is_dir() or
+        not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+        not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+        raise Denied('owned ephemeral test cluster directory evidence required')
+    with psycopg.connect(maintenance_dsn, row_factory=psycopg.rows.dict_row) as connection:
+        identity = _migration_identity(connection)
+        if (identity['database_name'] != 'postgres' or identity['data_directory'] != str(path) or
+            identity['owner_name'] != identity['current_name'] or identity['session_name'] != identity['current_name']):
+            raise Denied('owned fresh test cluster maintenance identity required')
+        databases = connection.execute('SELECT datname,oid FROM pg_database ORDER BY datname').fetchall()
+        if {item['datname'] for item in databases} != {'postgres', 'template0', 'template1'}:
+            raise Denied('fresh empty test cluster required before database creation')
+        result = FixtureClusterEvidence(identity['system_identifier'], str(path),
+            identity['postmaster_start'], identity['current_name'],
+            tuple((item['datname'], item['oid']) for item in databases), uuid4())
+        _fixture_clusters[result.nonce] = result
+        return result

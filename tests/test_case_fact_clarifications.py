@@ -23,9 +23,22 @@ MIGRATION = Path(__file__).resolve().parents[1] / 'src/parkweave/migration-025.s
 
 
 @pytest.fixture
-def f(preparation_fixture):
+def fixture_cluster_evidence(pg):
+    if not hasattr(pg, 'pgdata'):
+        pytest.skip('NOT_RUN: native installed cluster creation receipt adapter not provided')
+    return facts.capture_fixture_cluster(pg.get_uri(), pg.pgdata.resolve())
+
+
+def authorize_migration(owner, connection):
+    owner._case_fact_fixture_receipt.authorize_migration(connection)
+
+
+@pytest.fixture
+def f(fixture_cluster_evidence, preparation_fixture):
     f = preparation_fixture
     with f[1].connect() as c:
+        f[1]._case_fact_fixture_receipt = fixture_cluster_evidence.record_created_database(c)
+        authorize_migration(f[1], c)
         c.execute(MIGRATION.read_text())
     return f
 
@@ -277,7 +290,9 @@ def test_transaction_rolls_back_ledger_revision_and_event(f, monkeypatch, seam):
 
 def test_migration_transaction_rollback_and_rerun_retains_ledger(f):
     p=row(f);three(f);declare(f,p);confirm(f,p);before=business(f);permissions=authority(f)
-    with f[1].connect() as c:c.execute(MIGRATION.read_text())
+    with f[1].connect() as c:
+        authorize_migration(f[1], c)
+        c.execute(MIGRATION.read_text())
     assert business(f)==before and authority(f)==permissions
     with f[1].connect() as c:
         assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==25
@@ -388,7 +403,7 @@ def test_preparation_and_ledger_limits_refuse_new_event(f):
 
 
 @pytest.fixture
-def schema24_owner(pg):
+def schema24_owner(pg, fixture_cluster_evidence):
     """Explicit 24 starting point, independent of main Store.migrate latest version.
 
     Existing local pg fixture and UUID cleanup only; no identities or GRANTs.
@@ -402,6 +417,7 @@ def schema24_owner(pg):
         owner = Store(make_conninfo(pg.get_uri(), dbname=db))
         root = MIGRATION.parent
         with owner.connect() as c:
+            owner._case_fact_fixture_receipt = fixture_cluster_evidence.record_created_database(c)
             c.execute((root / 'schema.sql').read_text())
             for version in range(2, 25):
                 c.execute((root / f'migration-{version:03}.sql').read_text())
@@ -425,6 +441,7 @@ def test_actual_migration_025_rolls_back_all_ddl(schema24_owner):
     permissions = unchanged()
     with pytest.raises(RuntimeError, match='SYNTHETIC before migration commit'):
         with owner.connect() as c:
+            authorize_migration(owner, c)
             c.execute(MIGRATION.read_text())
             assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 25
             raise RuntimeError('SYNTHETIC before migration commit')
@@ -432,7 +449,7 @@ def test_actual_migration_025_rolls_back_all_ddl(schema24_owner):
 
 
 def test_migration_refuses_maintenance_db_and_app_role(pg, f):
-    with pytest.raises(psycopg.errors.RaiseException,match='isolated UUID'):
+    with pytest.raises(psycopg.errors.RaiseException,match='creation evidence'):
         with psycopg.connect(pg.get_uri()) as c:c.execute(MIGRATION.read_text())
     before=business(f)
     with pytest.raises(psycopg.errors.InsufficientPrivilege):
@@ -539,3 +556,87 @@ def test_restored_existing_grant_generation_requires_explicit_new_confirmation(f
     assert latest['revision'] == original['revision'] + 1
     assert confirmed['revision'] == original['preparation_revision'] + 1
     assert latest['history'][:-1] == original['history'] and authority(f) == permissions
+
+
+def test_fixed_lifecycle_name_requires_real_cluster_creation_receipt(pg, fixture_cluster_evidence):
+    """Same fixed name; genuine new owned cluster/DB, no app GRANT/setup change.
+
+    This checks migration compatibility, not native lifecycle/browser execution.
+    """
+    owner = Store(make_conninfo(pg.get_uri(), dbname='parkweave'))
+    created = False; receipt = None
+    try:
+        with psycopg.connect(pg.get_uri(), autocommit=True) as c:
+            c.execute('CREATE DATABASE parkweave'); created = True
+        with owner.connect() as c:
+            receipt = fixture_cluster_evidence.record_created_database(c)
+        owner.migrate()  # Frozen Store creates schema 24; no Store changes here.
+        with pytest.raises(psycopg.errors.RaiseException, match='creation ticket required'):
+            with owner.connect() as c: c.execute(MIGRATION.read_text())
+        with owner.connect() as c:
+            receipt.authorize_migration(c); c.execute(MIGRATION.read_text())
+            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 25
+            assert c.execute('SELECT current_database() d').fetchone()['d'] == 'parkweave'
+            assert c.execute("SELECT to_regclass('pg_temp.parkweave_fixture_migration_receipt') marker").fetchone()['marker'] is not None
+            c.commit()
+            assert c.execute("SELECT to_regclass('pg_temp.parkweave_fixture_migration_receipt') marker").fetchone()['marker'] is None
+            receipt.authorize_migration(c); c.execute(MIGRATION.read_text())
+            c.rollback()
+            assert c.execute("SELECT to_regclass('pg_temp.parkweave_fixture_migration_receipt') marker").fetchone()['marker'] is None
+        # Reissue only from the same actual creation receipt, preserving ledger.
+        with owner.connect() as c: receipt.authorize_migration(c); c.execute(MIGRATION.read_text())
+    finally:
+        if created:
+            with psycopg.connect(pg.get_uri(), autocommit=True) as c:
+                actual = c.execute("SELECT oid FROM pg_database WHERE datname='parkweave'").fetchone()
+                if receipt is not None:
+                    assert actual and actual[0] == receipt.database_oid
+                c.execute('DROP DATABASE parkweave')
+
+
+@pytest.mark.parametrize('changed', ['database_oid', 'system_identifier', 'data_directory', 'backend_pid', 'transaction_id', 'owner_name', 'null'])
+def test_migration_creation_ticket_mismatch_is_fail_closed(f, changed):
+    before = business(f); permissions = authority(f)
+    with pytest.raises(psycopg.errors.RaiseException, match='does not match'):
+        with f[1].connect() as c:
+            authorize_migration(f[1], c)
+            assignments = {'database_oid': 'database_oid=0', 'system_identifier': "system_identifier='wrong'",
+                'data_directory': "data_directory='/unowned'", 'backend_pid': 'backend_pid=0',
+                'transaction_id': 'transaction_id=0', 'owner_name': "owner_name='parkweave_app'",
+                'null': 'database_oid=NULL'}
+            c.execute('UPDATE pg_temp.parkweave_fixture_migration_receipt SET ' + assignments[changed])
+            c.execute(MIGRATION.read_text())
+    assert business(f) == before and authority(f) == permissions
+
+
+def test_uuid_name_and_database_owner_without_creation_evidence_do_not_authorize_migration(f):
+    before = business(f)
+    with f[1].connect() as c:
+        c.autocommit = True
+        with pytest.raises(Denied, match='explicit owner migration transaction'):
+            authorize_migration(f[1], c)
+    with pytest.raises(psycopg.errors.RaiseException, match='creation ticket required'):
+        with f[1].connect() as c: c.execute(MIGRATION.read_text())
+    assert business(f) == before
+    with f[1].connect() as c:
+        old = f[1]._case_fact_fixture_receipt
+        fabricated = facts.FixtureDatabaseEvidence(old.cluster, old.database_name, old.database_oid, uuid4())
+        with pytest.raises(Denied, match='issued fixture database'): fabricated.authorize_migration(c)
+
+
+def test_migration_refuses_future_version_even_with_retained_24_and_valid_receipt(f):
+    with f[1].connect() as c: c.execute('INSERT INTO schema_version VALUES(26)')
+    before = business(f)
+    with pytest.raises(psycopg.errors.RaiseException, match='schema 24 prerequisite'):
+        with f[1].connect() as c:
+            authorize_migration(f[1], c); c.execute(MIGRATION.read_text())
+    with f[1].connect() as c:
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 26
+    assert business(f) == before
+
+
+def test_fixture_cluster_capture_rejects_existing_targets_or_mismatched_directory(pg, f):
+    with pytest.raises(Denied, match='fresh empty test cluster'):
+        facts.capture_fixture_cluster(pg.get_uri(), pg.pgdata.resolve())
+    with pytest.raises(Denied, match='directory evidence'):
+        facts.capture_fixture_cluster(pg.get_uri(), pg.pgdata.parent / 'not-created-by-fixture')
