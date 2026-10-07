@@ -144,6 +144,9 @@ def read(store,token,id):
     with store.connect() as c:
         p=store.auth(c,token,lock=True);row=scoped(store,c,p,id)
         row.pop('readiness_assessments',None)
+        # Dedicated endpoints apply role-specific projections to these private ledgers.
+        row.pop('planning_previews',None)
+        row.pop('service_case_plan',None)
         items=latest(c,id)
         history=c.execute('SELECT revision,action,payload,created_at FROM preparation_events WHERE preparation_id=%s ORDER BY revision',(id,)).fetchall()
         if p['role']!='enterprise_operator':

@@ -30,6 +30,9 @@ def persist_rejected_observation(store,error):
     This separate metadata transaction cannot invalidate a later explicit CHECK:
     its plan ID/revision must still equal the rejected operation's observation.
     """
+    if getattr(error,'kind',None)=='SERVICE_CASE_PLAN':
+        from .service_case_steps import persist_rejected_observation as persist
+        return persist(store,error)
     if error.index is None:return
     with store.connect() as c:
         c.execute("SET LOCAL lock_timeout='3s'")
@@ -115,6 +118,7 @@ def binding_p1(c,parent,snapshot):
 
 def binding_p2(c,parent,snapshot,holds,rules):
     result={k:snapshot.get(k) for k in ('preparation_revision','preparation_sha256','resource_link_id','resource_link_revision','combination_id','combination_state','members')}
+    result['resource_catalog_decision']=snapshot.get('resource_catalog_decision')
     result['resource_rules']=[_normal({k:r[k] for k in ('id','revision','capacity','buffer_seconds','open_from','open_until','enabled','source','namespace','authority')}) for _,r in sorted(rules.items(),key=lambda x:str(x[0]))]
     result['hold_sources']=[_normal({k:h[k] for k in ('id','resource_id','resource_revision','starts_at','ends_at','buffer_seconds','quantity','state','expires_at','namespace')}) for h in holds]
     result['resource_grants']=[dict(resource_id=str(h['resource_id']),capability=cap,active=bool(c.execute('SELECT 1 FROM synthetic_resource_grants WHERE principal_id=%s AND resource_id=%s AND park_id=%s AND org_id=%s AND capability=%s AND active',(parent['owner_id'],h['resource_id'],parent['park_id'],parent['org_id'],cap)).fetchone())) for h in holds for cap in ('READ','HOLD')]
@@ -168,8 +172,19 @@ def _inspect(store,c,parent,row,observe=True):
     return row,issues,snapshots,states
 
 def gate(store,c,parent,through):
+    if parent.get('service_case_plan'):
+        from .service_case_steps import gate as case_step_gate
+        case_step_gate(store,c,parent,through)
     row=_row(c,parent['id'])
-    if not row:return
+    if not row:
+        # A strict immutable resource decision remains a resource prerequisite
+        # even for the older direct business routes without a fixed plan row.
+        # Binding through P1 must stay available to record a fresh decision.
+        if through>=2:
+            from .resource_plan_binding import current_catalog_decision
+            if current_catalog_decision(c,parent)['status']=='STALE':
+                raise Conflict('resource catalogue decision is stale; explicitly bind a current decision before advancing')
+        return
     row,issues,snapshots,states=_inspect(store,c,parent,row)
     observations=OBSERVATIONS.get()
     if observations is not None and row['invalidated_from'] is not None:

@@ -61,8 +61,10 @@ def _view(c,p,parent,rows,event=None):
         if document:
             from .resource_plan_binding import impact_issues
             flags+=impact_issues(c,parent,document,g,holds,{h['resource_id']:rules[h['resource_id']] for h in holds},now)
-        flags=sorted(set(flags))
-        items.append(dict(binding_impact=row['snapshot'].get('binding_impact'),record=row,status='CURRENT' if not flags else 'NEEDS_RECHECK',reasons=flags,combination=rc._view(g,holds,now)))
+        from .resource_plan_binding import catalog_decision
+        decision=catalog_decision(c,parent,row)
+        flags=sorted(set(flags+decision['issues']))
+        items.append(dict(catalog_decision=decision,binding_impact=row['snapshot'].get('binding_impact'),record=row,status='CURRENT' if not flags else 'NEEDS_RECHECK',reasons=flags,combination=rc._view(g,holds,now)))
         if document:items[-1]['source_status']='NEEDS_RECHECK' if flags else 'CURRENT'
     case=c.execute('SELECT state FROM cases WHERE id=%s',(parent['case_id'],)).fetchone()
     return dict(scope=SCOPE,case_id=parent['case_id'],case_state=case['state'],preparation_revision=parent['revision'],link_revision=rows[-1]['revision'] if rows else 0,current=items[-1] if items else None,history=items,event=event,server_time=now,offline_fulfillment='NO_EVIDENCE',external_acceptance='NOT_SUBMITTED',case_goal_completed=False,approval='NOT_IMPLEMENTED',execution_enabled=False,impact_history=[dict(link_id=i['record']['id'],revision=i['record']['revision'],source_status=i['source_status'],document=i['binding_impact']) for i in items if i['binding_impact']])
@@ -126,7 +128,8 @@ def bind(store,token,id,key,data):
         now=rh._now(c)
         why=_reason(c,parent,g,holds,rules,now)
         if why!='CURRENT':raise Conflict(why)
-        if rows and rows[-1]['combination_id']==g['id'] and rows[-1]['preparation_revision']==parent['revision']:raise Conflict('current Case association already recorded; no new version needed')
+        if rows and rows[-1]['combination_id']==g['id'] and rows[-1]['preparation_revision']==parent['revision']:
+            if projection is None or projection['current']['catalog_decision']['status']!='STALE':raise Conflict('current Case association already recorded; no new version needed')
         new_id=uuid4()
         snapshot=rc._view(g,holds,now);snapshot=json.loads(json.dumps(snapshot,default=str))
         if projection is not None:

@@ -39,7 +39,7 @@ def changes(before,after,path=''):
     if isinstance(before,dict) and isinstance(after,dict):
         return [item for key in sorted(set(before)|set(after)) for item in changes(before.get(key),after.get(key),path+'.'+key if path else key)]
     if before==after:return []
-    labels={'goal':'原诉求','required_goals':'显式目标','request_intent':'诉求版本','service_catalog':'服务目录版本','template_sha256':'模板指纹','preparation_revision':'材料版本','preparation_sha256':'材料指纹','resource_link_revision':'资源关联版本','combination_state':'资源组合状态','members':'资源组合成员与时段','resource_rules':'资源规则版本','hold_sources':'占位来源与有效期','resource_grants':'当前资源授权','owner_grants':'当前经办人授权'}
+    labels={'goal':'原诉求','required_goals':'显式目标','request_intent':'诉求版本','service_catalog':'服务目录版本','template_sha256':'模板指纹','preparation_revision':'材料版本','preparation_sha256':'材料指纹','resource_link_revision':'资源关联版本','combination_state':'资源组合状态','members':'资源组合成员与时段','resource_rules':'资源规则版本','hold_sources':'占位来源与有效期','resource_grants':'当前资源授权','owner_grants':'当前经办人授权','catalog':'目录版本绑定','resource_catalog_decision':'目录决定有效性'}
     return [dict(path=path,field=labels.get(path.split('.')[0],path),before=before,after=after)]
 
 
@@ -81,6 +81,65 @@ def _link_issues(parent,link):
     expected=(parent['id'],parent['run_id'],parent['case_id'],parent['owner_id'],parent['park_id'],parent['org_id'],parent['service_id'],parent['service_version'],parent['revision'],parent['review_sha256'])
     actual=tuple(link[k] for k in ('preparation_id','run_id','case_id','owner_id','park_id','org_id','service_id','service_version','preparation_revision','preparation_sha256'))
     return ['RESOURCE_PREPARATION_CHANGED'] if actual!=expected or parent['state']!='LOCAL_CONFIRMED' else []
+
+
+def _catalog_copy(catalog):
+    document=cp._normal(catalog)
+    source=document.get('source') if isinstance(document,dict) else None
+    return dict(document=document,source_revision=source.get('revision') if isinstance(source,dict) else None,sha256=cp._hash(document))
+
+
+def _decision_ref(document,link_id,catalog_sha256):
+    value=dict(link_id=str(link_id),comparison_sha256=document.get('comparison_sha256'),
+      catalog_sha256=catalog_sha256,preparation_id=document.get('preparation_id'),
+      case_id=document.get('case_id'),run_id=document.get('run_id'),
+      preparation_revision=document.get('preparation_revision'),
+      combination_id=document.get('after',{}).get('combination_id'))
+    return dict(link_id=str(link_id),comparison_sha256=document.get('comparison_sha256'),sha256=cp._hash(cp._normal(value)))
+
+
+def catalog_decision(c,parent,link):
+    """Validate an immutable local directory copy; never claim a published Release.
+
+    Historical impact rows already contain the complete P1 directory descriptor.
+    Derive a reference for those rows without altering them. Rows from the legacy
+    direct association route have no version-bound decision; retain that contract.
+    """
+    current=c.execute('SELECT service_id,version,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',(parent['park_id'],parent['service_id'],parent['service_version'])).fetchone()
+    now_copy=_catalog_copy(current)
+    document=link['snapshot'].get('binding_impact') if link else None
+    result=dict(status='NOT_VERSION_BOUND',decision_ref=None,saved_catalog_sha256=None,
+      current_catalog_sha256=now_copy['sha256'],source_revision=None,current_source_revision=now_copy['source_revision'],
+      catalog_snapshot=None,issues=[],formal_release=False,approval='NOT_IMPLEMENTED',execution_enabled=False)
+    if not document:return result
+    expected=tuple(parent[k] for k in ('id','case_id','run_id','owner_id','park_id','org_id'))
+    actual=tuple(link[k] for k in ('preparation_id','case_id','run_id','owner_id','park_id','org_id'))
+    if actual!=expected:
+        result.update(status='STALE',issues=['RESOURCE_CATALOG_DECISION_SCOPE_CHANGED'])
+        return result
+    saved=document.get('immutable_catalog')
+    if saved is None:
+        legacy=document.get('before',{}).get('source_snapshots',{}).get('P1',{}).get('service_catalog')
+        saved=_catalog_copy(legacy)
+    catalog=saved.get('document') if isinstance(saved,dict) else None
+    computed=_catalog_copy(catalog)
+    reference=_decision_ref(document,link['id'],computed['sha256'])
+    stored_ref=document.get('decision_ref')
+    valid_copy=bool(catalog and isinstance(catalog,dict) and catalog.get('namespace')=='SYNTHETIC' and isinstance(catalog.get('source'),dict) and catalog['source'].get('kind')=='SYNTHETIC' and catalog['source'].get('id') and catalog['source'].get('revision'))
+    valid_evidence=bool(valid_copy and saved.get('sha256')==computed['sha256'] and saved.get('source_revision')==computed['source_revision'] and (stored_ref is None or cp._normal(stored_ref)==reference))
+    # The local reference is scoped to the immutable association and its Case/Run.
+    valid_evidence=valid_evidence and all(str(document.get(key))==str(link[key]) for key in ('preparation_id','case_id','run_id','preparation_revision')) and str(document.get('after',{}).get('link_id'))==str(link['id']) and str(document.get('after',{}).get('combination_id'))==str(link['combination_id'])
+    current_match=valid_evidence and computed['sha256']==now_copy['sha256']
+    result.update(status='CURRENT' if current_match else 'STALE',decision_ref=reference,
+      saved_catalog_sha256=computed['sha256'],source_revision=computed['source_revision'],catalog_snapshot=computed)
+    if not valid_evidence:result['issues'].append('RESOURCE_CATALOG_DECISION_EVIDENCE_REQUIRED')
+    if not current_match:result['issues'].append('RESOURCE_CATALOG_DECISION_STALE')
+    return result
+
+
+def current_catalog_decision(c,parent):
+    link=c.execute('SELECT * FROM case_resource_links WHERE case_id=%s AND owner_id=%s AND park_id=%s AND org_id=%s ORDER BY revision DESC LIMIT 1',(parent['case_id'],parent['owner_id'],parent['park_id'],parent['org_id'])).fetchone()
+    return catalog_decision(c,parent,link)
 
 
 def impact_issues(c,parent,document,group,holds,rules,now):
@@ -132,6 +191,7 @@ def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None
     now=rh._now(c);link=links[-1] if links else None
     group,holds,rules=groups[link['combination_id']] if link else (None,[],{})
     snap=_snapshot(parent,link,group,holds)
+    snap['resource_catalog_decision']=catalog_decision(c,parent,link) if link else None
     snapshots={'P1':cp.binding_p1(c,parent,snap),'P2':cp.binding_p2(c,parent,snap,holds,rules)}
     issues={'P1':[],'P2':[]}
     items=prep.latest(c,id)
@@ -146,7 +206,7 @@ def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None
     if not cp.binding_catalog_known(snapshots['P1']['service_catalog']):issues['P1'].append('CURRENT_SERVICE_CATALOG_REQUIRED')
     if not link:issues['P2'].append('CURRENT_CASE_RESOURCE_LINK_REQUIRED')
     else:
-        issues['P2']+=_link_issues(parent,link)+_issues(c,parent,group,holds,rules,now)
+        issues['P2']+=_link_issues(parent,link)+_issues(c,parent,group,holds,rules,now)+snap['resource_catalog_decision']['issues']
         if not hold_authority[group['id']]:issues['P2'].append('CURRENT_RESOURCE_AUTHORITY_REQUIRED')
         claim=c.execute('SELECT 1 FROM resource_case_claims WHERE combination_id=%s AND case_id=%s AND owner_id=%s AND park_id=%s AND org_id=%s',(group['id'],parent['case_id'],p['id'],p['park_id'],p['org_id'])).fetchone()
         if not claim:issues['P2'].append('CURRENT_CASE_RESOURCE_CLAIM_REQUIRED')
@@ -160,21 +220,23 @@ def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None
     history=[]
     for old in links:
         g,hs,rs=groups[old['combination_id']];live=rc._view(g,hs,now)
-        why=_link_issues(parent,old)+_issues(c,parent,g,hs,rs,now)+impact_issues(c,parent,old['snapshot'].get('binding_impact'),g,hs,rs,now)
+        decision=catalog_decision(c,parent,old)
+        why=_link_issues(parent,old)+_issues(c,parent,g,hs,rs,now)+impact_issues(c,parent,old['snapshot'].get('binding_impact'),g,hs,rs,now)+decision['issues']
         if not hold_authority[g['id']]:why.append('CURRENT_RESOURCE_AUTHORITY_REQUIRED')
         is_latest=old['id']==link['id']
-        history.append(dict(revision=old['revision'],record=old,state='CURRENT_BINDING_RECORD' if is_latest and not why else 'NEEDS_RECHECK' if is_latest else 'HISTORICAL',issues=sorted(set(why)),binding_impact=old['snapshot'].get('binding_impact'),changes=changes(association_snapshot(old['snapshot']),live)+changes({k:old[k] for k in ('preparation_revision','preparation_sha256','service_id','service_version')},{'preparation_revision':parent['revision'],'preparation_sha256':parent['review_sha256'],'service_id':parent['service_id'],'service_version':parent['service_version']}),combination=live,execution_enabled=False))
+        history.append(dict(revision=old['revision'],record=old,catalog_decision=decision,state='CURRENT_BINDING_RECORD' if is_latest and not why else 'NEEDS_RECHECK' if is_latest else 'HISTORICAL',issues=sorted(set(why)),binding_impact=old['snapshot'].get('binding_impact'),changes=changes(association_snapshot(old['snapshot']),live)+changes({k:old[k] for k in ('preparation_revision','preparation_sha256','service_id','service_version')},{'preparation_revision':parent['revision'],'preparation_sha256':parent['review_sha256'],'service_id':parent['service_id'],'service_version':parent['service_version']}),combination=live,execution_enabled=False))
         if old['snapshot'].get('binding_impact'):history[-1]['source_status']='NEEDS_RECHECK' if why else 'CURRENT'
     candidate=None
     if candidate_combination_id:
         g,hs,rs=groups[candidate_combination_id];live=rc._view(g,hs,now)
         proposed=cp.binding_p2(c,parent,_snapshot(parent,link,g,hs),hs,rs)
+        prior_catalog=snap['resource_catalog_decision']['catalog_snapshot']['document'] if link and snap['resource_catalog_decision']['catalog_snapshot'] else None
         candidate_issues=_issues(c,parent,g,hs,rs,now)
         if not hold_authority[g['id']]:candidate_issues.append('RESOURCE_HOLD_PERMISSION_REQUIRED')
         if not owner_execute:candidate_issues.append('OWNER_EXECUTE_REQUIRED')
-        candidate=dict(combination=live,resource_rules=proposed['resource_rules'],resource_grants=proposed['resource_grants'],changes=changes({'combination':rc._view(group,holds,now) if group else None,'resource_rules':snapshots['P2']['resource_rules'],'resource_grants':snapshots['P2']['resource_grants']},{'combination':live,'resource_rules':proposed['resource_rules'],'resource_grants':proposed['resource_grants']}),issues=sorted(set(candidate_issues)),explicit_association_required=not link or link['combination_id']!=g['id'] or bool(_link_issues(parent,link)),original_plan_recheck_required=True,old_occupancy_released=False,execution_enabled=False)
+        candidate=dict(combination=live,resource_rules=proposed['resource_rules'],resource_grants=proposed['resource_grants'],changes=changes({'combination':rc._view(group,holds,now) if group else None,'resource_rules':snapshots['P2']['resource_rules'],'resource_grants':snapshots['P2']['resource_grants'],'catalog':prior_catalog},{'combination':live,'resource_rules':proposed['resource_rules'],'resource_grants':proposed['resource_grants'],'catalog':snapshots['P1']['service_catalog']}),issues=sorted(set(candidate_issues)),explicit_association_required=not link or link['combination_id']!=g['id'] or bool(_link_issues(parent,link)) or snap['resource_catalog_decision']['status']=='STALE',original_plan_recheck_required=True,old_occupancy_released=False,execution_enabled=False)
     grants=dict(READ=True,PREPARE=True,EXECUTE=owner_execute,resources=snapshots['P2']['resource_grants'])
-    result=dict(scope=SCOPE,preparation_id=id,case_id=parent['case_id'],run_id=parent['run_id'],preparation_revision=parent['revision'],approval='NOT_IMPLEMENTED',engineering_check_only=True,execution_enabled=False,business_writes=False,authorization_writes=False,new_grants=False,automatic_execution=False,current=dict(snapshot_sha256=cp._hash(snapshots),resource_rules=snapshots['P2']['resource_rules'],goal=parent['goal'],required_goals=intents.view(parent)['required_goals'],request_intent=intents.view(parent),service=snapshots['P1']['service_catalog'],template=dict(sha256=cp.TEMPLATE_SHA,version=cp.TEMPLATE['version']),plan=dict(id=plan['id'],revision=plan['revision'],template_sha256=plan['template_sha256'],invalidated_from=plan['invalidated_from']) if plan else None,preparation=dict(revision=parent['revision'],state=parent['state'],sha256=parent['review_sha256']),resource_link=history[-1] if history else None,grants=grants),checkpoints=checkpoints,history=history,candidate=candidate,association_blockers=(['OWNER_EXECUTE_REQUIRED'] if not owner_execute else [])+(['RESOURCE_HOLD_PERMISSION_REQUIRED'] if link and not hold_authority[link['combination_id']] else []),required_rechecks=list(dict.fromkeys(([s for s in ('P1','P2') if checkpoints[s]['state']!='CURRENT'])+(['P3','P4'] if any(checkpoints[s]['state']!='CURRENT' for s in ('P1','P2')) else [])+(['EXPLICIT_RESOURCE_ASSOCIATION','P2','P3','P4'] if candidate and candidate['explicit_association_required'] else []))),server_time=now,external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',case_goal_completed=False)
+    result=dict(scope=SCOPE,preparation_id=id,case_id=parent['case_id'],run_id=parent['run_id'],preparation_revision=parent['revision'],approval='NOT_IMPLEMENTED',engineering_check_only=True,execution_enabled=False,business_writes=False,authorization_writes=False,new_grants=False,automatic_execution=False,current=dict(catalog_decision=snap['resource_catalog_decision'],snapshot_sha256=cp._hash(snapshots),resource_rules=snapshots['P2']['resource_rules'],goal=parent['goal'],required_goals=intents.view(parent)['required_goals'],request_intent=intents.view(parent),service=snapshots['P1']['service_catalog'],template=dict(sha256=cp.TEMPLATE_SHA,version=cp.TEMPLATE['version']),plan=dict(id=plan['id'],revision=plan['revision'],template_sha256=plan['template_sha256'],invalidated_from=plan['invalidated_from']) if plan else None,preparation=dict(revision=parent['revision'],state=parent['state'],sha256=parent['review_sha256']),resource_link=history[-1] if history else None,grants=grants),checkpoints=checkpoints,history=history,candidate=candidate,association_blockers=(['OWNER_EXECUTE_REQUIRED'] if not owner_execute else [])+(['RESOURCE_HOLD_PERMISSION_REQUIRED'] if link and not hold_authority[link['combination_id']] else []),required_rechecks=list(dict.fromkeys(([s for s in ('P1','P2') if checkpoints[s]['state']!='CURRENT'])+(['P3','P4'] if any(checkpoints[s]['state']!='CURRENT' for s in ('P1','P2')) else [])+(['EXPLICIT_RESOURCE_ASSOCIATION','P2','P3','P4'] if candidate and candidate['explicit_association_required'] else []))),server_time=now,external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',case_goal_completed=False)
 
     result['comparison']=None
     result['impact_history']=[dict(link_id=item['record']['id'],revision=item['revision'],state=item['state'],source_status=item['source_status'],document=item['binding_impact']) for item in history if item['binding_impact']]
@@ -183,7 +245,7 @@ def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None
         blockers=list(candidate['issues'])+list(checkpoints['P1']['issues'])
         if plan and checkpoints['P1']['state']!='CURRENT':blockers.append('CURRENT_P1_CHECK_REQUIRED')
         if parent['state']!='LOCAL_CONFIRMED':blockers.append('CURRENT_MATERIAL_CONFIRMATION_REQUIRED')
-        if link and link['combination_id']==candidate_combination_id and link['preparation_revision']==parent['revision']:blockers.append('CURRENT_CASE_ASSOCIATION_ALREADY_RECORDED')
+        if link and link['combination_id']==candidate_combination_id and link['preparation_revision']==parent['revision'] and snap['resource_catalog_decision']['status']!='STALE':blockers.append('CURRENT_CASE_ASSOCIATION_ALREADY_RECORDED')
         if len(links)>=64:blockers.append('CASE_RESOURCE_LINK_HISTORY_LIMIT_REACHED')
         comparison=dict(sha256=cp._hash(document),preparation_revision=parent['revision'],link_revision=link['revision'] if link else 0,can_confirm=not blockers,blockers=sorted(set(blockers)))
         candidate['comparison']=comparison
@@ -217,14 +279,17 @@ def _comparison_document(c,p,parent,plan,link,groups,snapshots,checkpoints,candi
 def impact(projection,new_link,comparison_sha256,reason):
     """Immutable explicitly confirmed comparison evidence stored with the link."""
     candidate=projection['candidate'];current=projection['current']
-    return cp._normal(dict(scope=SCOPE,comparison_sha256=comparison_sha256,
+    document=dict(scope=SCOPE,comparison_sha256=comparison_sha256,
       preparation_id=projection['preparation_id'],case_id=projection['case_id'],run_id=projection['run_id'],
       preparation_revision=projection['preparation_revision'],reason=reason,
       before=dict(link_id=current['resource_link']['record']['id'] if current['resource_link'] else None,
         link_revision=projection['comparison']['link_revision'],combination_id=current['resource_link']['combination']['id'] if current['resource_link'] else None,
-        source_snapshots={step:value['current_snapshot'] for step,value in projection['checkpoints'].items()},plan=current['plan']),
+        source_snapshots={step:value['current_snapshot'] for step,value in projection['checkpoints'].items()},catalog_decision=current['catalog_decision'],plan=current['plan']),
       after=dict(link_id=new_link['id'],link_revision=new_link['revision'],combination_id=candidate['combination']['id'],
         combination=candidate['combination'],resource_rules=candidate['resource_rules'],resource_grants=candidate['resource_grants']),
       changes=candidate['changes'],required_rechecks=['P2','P3','P4'],
       approval='NOT_IMPLEMENTED',formal_approval='NOT_IMPLEMENTED',engineering_check_only=True,execution_enabled=False,
-      old_occupancy_released=False,new_grants=False))
+      old_occupancy_released=False,new_grants=False)
+    document['immutable_catalog']=_catalog_copy(projection['checkpoints']['P1']['current_snapshot']['service_catalog'])
+    document['decision_ref']=_decision_ref(document,new_link['id'],document['immutable_catalog']['sha256'])
+    return cp._normal(document)

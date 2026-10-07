@@ -85,6 +85,10 @@ def _sources(store,c,p,parent):
         claim=c.execute('SELECT * FROM resource_case_claims WHERE combination_id=%s',(link['combination_id'],)).fetchone()
         if not claim or (claim['case_id'],claim['owner_id'],claim['park_id'],claim['org_id'])!=(parent['case_id'],parent['owner_id'],parent['park_id'],parent['org_id']):
             issues['RESOURCE_RECHECK'].append('CURRENT_CASE_RESOURCE_CLAIM_REQUIRED')
+        from .resource_plan_binding import catalog_decision
+        decision=catalog_decision(c,parent,link)
+        issues['RESOURCE_RECHECK']+=decision['issues']
+        snapshot['resource_catalog_decision']=decision
         snapshot.update(resource_link_id=str(link['id']),resource_link_revision=link['revision'],combination_id=str(link['combination_id']))
         if group and rules:
             snapshot.update(combination_state=group['state'],members=[{k:str(h[k]) for k in ('id','resource_id','resource_revision','starts_at','ends_at','buffer_seconds','quantity','state')} for h in holds])
@@ -150,6 +154,9 @@ def command(store,token,id,key,data):
         # Reopen and historical replay must not depend on obsolete resource grants.
         old=c.execute('SELECT * FROM case_local_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
         if old and (old['fingerprint']!=fp or old['preparation_id']!=id):raise Conflict('local Case request key fingerprint mismatch')
+        if data.action!='REOPEN' and not old and parent.get('service_case_plan'):
+            from .service_case_steps import gate as case_step_gate
+            case_step_gate(store,c,parent,4)
         sources=_sources(store,c,p,parent) if data.action!='REOPEN' and not old else None
         case=c.execute('SELECT * FROM cases WHERE id=%s FOR UPDATE',(parent['case_id'],)).fetchone();row=_ledger(c,parent,write=True)
         if old:return _view(c,p,parent,case,row,event=old['payload'])

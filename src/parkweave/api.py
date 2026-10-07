@@ -203,6 +203,17 @@ def create_app(store: Store) -> FastAPI:
     from . import dispatch_notices as notices
     from . import controlled_plans as cp
     from . import request_intents as intents
+    from . import service_case_steps as service_steps
+    @app.get('/api/preparations/{preparation_id}/service-case-plan')
+    def service_case_plan_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return service_steps.read(store,token(authorization),preparation_id)
+    @app.post('/api/preparations/{preparation_id}/service-case-plan',status_code=201)
+    def service_case_plan_adopt(preparation_id: UUID,data: service_steps.Adopt,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return service_steps.adopt(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+    @app.post('/api/preparations/{preparation_id}/service-case-plan/commands')
+    def service_case_plan_command(preparation_id: UUID,data: service_steps.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return service_steps.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
     from . import bounded_planning as planning
     @app.get('/api/preparations/{preparation_id}/planning-preview')
     def planning_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
