@@ -7,6 +7,7 @@ from threading import Event
 from uuid import UUID, uuid4
 
 import psycopg
+from psycopg.conninfo import make_conninfo
 import pytest
 from pydantic import ValidationError
 from psycopg.types.json import Jsonb
@@ -16,6 +17,7 @@ from parkweave import preparation as prep
 from parkweave.domain import FactInput
 from parkweave.store import Conflict, Denied, Store
 from test_preparation import preparation_fixture, create, add, command
+from conftest import drop_owned_fixture_database
 
 MIGRATION = Path(__file__).resolve().parents[1] / 'src/parkweave/migration-025.sql'
 
@@ -385,19 +387,48 @@ def test_preparation_and_ledger_limits_refuse_new_event(f):
     assert gate(f,p)['enabled'] and not gate(f,p)['satisfied'] and business(f)==before
 
 
-def test_actual_migration_025_rolls_back_all_ddl(preparation_fixture):
-    f=preparation_fixture;permissions=authority(f)
-    with pytest.raises(RuntimeError):
-        with f[1].connect() as c:
+@pytest.fixture
+def schema24_owner(pg):
+    """Explicit 24 starting point, independent of main Store.migrate latest version.
+
+    Existing local pg fixture and UUID cleanup only; no identities or GRANTs.
+    """
+    db = 'fixture_' + uuid4().hex
+    created = False
+    try:
+        with psycopg.connect(pg.get_uri(), autocommit=True) as c:
+            c.execute(psycopg.sql.SQL('CREATE DATABASE {}').format(psycopg.sql.Identifier(db)))
+            created = True
+        owner = Store(make_conninfo(pg.get_uri(), dbname=db))
+        root = MIGRATION.parent
+        with owner.connect() as c:
+            c.execute((root / 'schema.sql').read_text())
+            for version in range(2, 25):
+                c.execute((root / f'migration-{version:03}.sql').read_text())
+            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 24
+        yield owner
+    finally:
+        if created:
+            drop_owned_fixture_database(pg, db)
+
+
+def test_actual_migration_025_rolls_back_all_ddl(schema24_owner):
+    owner = schema24_owner
+    def unchanged():
+        with owner.connect() as c:
+            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 24
+            assert not c.execute("SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='preparations' AND column_name='fact_clarifications'").fetchone()
+            constraint = c.execute("SELECT pg_get_constraintdef(oid) d FROM pg_constraint WHERE conrelid='public.preparation_events'::regclass AND conname='preparation_events_action_check'").fetchone()['d']
+            assert 'DECLARE_FACT_PURPOSE' not in constraint and 'CONFIRM_FACT_PURPOSE' not in constraint
+            return {table: c.execute('SELECT * FROM ' + table).fetchall() for table in
+                    ('principals', 'field_grants', 'capability_grants', 'action_grants', 'preparation_grants', 'run_assignments')}
+    permissions = unchanged()
+    with pytest.raises(RuntimeError, match='SYNTHETIC before migration commit'):
+        with owner.connect() as c:
             c.execute(MIGRATION.read_text())
-            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==25
+            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 25
             raise RuntimeError('SYNTHETIC before migration commit')
-    with f[1].connect() as c:
-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==24
-        assert not c.execute("SELECT 1 FROM information_schema.columns WHERE table_name='preparations' AND column_name='fact_clarifications'").fetchone()
-        constraint=c.execute("SELECT pg_get_constraintdef(oid) d FROM pg_constraint WHERE conname='preparation_events_action_check'").fetchone()['d']
-        assert 'DECLARE_FACT_PURPOSE' not in constraint and 'CONFIRM_FACT_PURPOSE' not in constraint
-    assert authority(f)==permissions
+    assert unchanged() == permissions
 
 
 def test_migration_refuses_maintenance_db_and_app_role(pg, f):
@@ -469,3 +500,42 @@ def test_declared_profile_cannot_be_removed_or_fields_unlocked(f,corruption):
 def view_revision(f,p):
     with f[1].connect() as c:
         return c.execute('SELECT revision FROM preparations WHERE id=%s',(idof(p),)).fetchone()['revision']
+
+
+@pytest.mark.parametrize('changed_grant', ['field_read', 'field_write', 'capability_read', 'capability_execute'])
+def test_restored_existing_grant_generation_requires_explicit_new_confirmation(f, changed_grant):
+    p = row(f); three(f); declare(f, p)
+    original_body = confirm_body(view(f, p)); original_key = uuid4().hex
+    original_event = confirm(f, p, original_body, original_key); original = view(f, p)
+    before_authority = authority(f)
+    kind, capability = changed_grant.split('_')
+    if kind == 'field':
+        f[1].revoke_field('fixture-a', 'region', capability.upper())
+        table, where, params = 'field_grants', 'field_name=%s AND purpose=%s AND capability=%s', ('region', facts.PURPOSE, capability.upper())
+    else:
+        f[1].revoke_capability('fixture-a', capability.upper())
+        table, where, params = 'capability_grants', 'capability=%s', (capability.upper(),)
+    with pytest.raises(Denied): confirm(f, p, original_body, original_key)
+    # Existing fixture administrator restores that same prerequisite row only.
+    # No identity or grant is created, and the application performs no restore.
+    with f[1].connect() as c:
+        f[1].lock_principal(c, 'fixture-a', exclusive=True)
+        c.execute('UPDATE ' + table + ' SET active=true,revision=revision+1 WHERE principal_id=%s AND ' + where,
+                  ('fixture-a', *params))
+    permissions = authority(f); before = business(f); current = view(f, p)
+    assert {k: len(v) for k, v in permissions.items()} == {k: len(v) for k, v in before_authority.items()}
+    assert current['state'] == 'STALE' and not current['satisfied']
+    assert 'FACT_AUTHORITY_GENERATION_CHANGED' in current['issues']
+    assert current['source_sha256'] != original['source_sha256'] and current['history'] == original['history']
+    assert current['preparation_revision'] == original['preparation_revision']
+    replay = confirm(f, p, original_body, original_key)
+    assert replay['recovery'] == 'HISTORICAL_COMMITTED_EVENT' and not replay['current_decision_restored']
+    assert replay['revision'] == original_event['revision'] and gate(f, p)['state'] == 'STALE'
+    assert business(f) == before and authority(f) == permissions
+    # New body with current SHA and both current revisions is required.
+    confirmed = confirm(f, p)
+    latest = view(f, p)
+    assert latest['state'] == 'CURRENT' and latest['satisfied']
+    assert latest['revision'] == original['revision'] + 1
+    assert confirmed['revision'] == original['preparation_revision'] + 1
+    assert latest['history'][:-1] == original['history'] and authority(f) == permissions

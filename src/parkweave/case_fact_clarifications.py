@@ -151,12 +151,30 @@ def _stored_ledger(c, parent):
     return value
 
 
+def _authority(c, p):
+    """Stable prerequisite rows, never bearer/token hashes or observation time.
+
+    A restored existing grant has a new revision. It cannot revive a decision
+    committed against the previous authority generation. Only relevant rows
+    enter this binding; unrelated capability changes do not stale this Case.
+    Tables without a revision retain their actual active/scope row snapshot;
+    unobserved direct administrator toggles of those rows are not an audit log.
+    """
+    scope = (p['id'], p['park_id'], p['org_id'])
+    return _normal(dict(
+        principal={key: p[key] for key in ('id', 'park_id', 'org_id', 'role', 'active')},
+        capabilities=c.execute("SELECT principal_id,park_id,org_id,capability,active,revision FROM capability_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s AND capability IN ('READ','EXECUTE') ORDER BY capability", scope).fetchall(),
+        fields=c.execute("SELECT principal_id,park_id,org_id,field_name,purpose,capability,active,revision,valid_until FROM field_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s AND purpose=%s AND field_name=ANY(%s) ORDER BY field_name,capability", (*scope, PURPOSE, list(FIELDS))).fetchall(),
+        preparation=c.execute("SELECT principal_id,park_id,org_id,capability,active FROM preparation_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s AND capability='PREPARE'", scope).fetchall(),
+        action=c.execute("SELECT principal_id,park_id,org_id,action,active FROM action_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s AND action='case.create'", scope).fetchall()))
+
+
 def _sources(store, c, parent, p):
     rows = store.facts_query(c, p, list(FIELDS))
     if any(sum(row['field_name'] == field for row in rows) > 16 for field in FIELDS):
         raise Conflict('bounded field source history exceeded')
     sources = sorted((_normal(row) for row in rows), key=lambda row: (row['field_name'], row['id']))
-    binding = _binding(parent)
+    binding = dict(_binding(parent), authority=_authority(c, p))
     now = c.execute('SELECT clock_timestamp() now').fetchone()['now']
     applicable = {str(row['id']): row['valid_from'] <= now < row['valid_until'] for row in rows}
     return dict(binding=binding, sources=sources), _hash(dict(binding=binding, sources=sources)), applicable
@@ -188,6 +206,8 @@ def _evaluate(parent, ledger, snapshot, sha, applicable):
     issues = []
     if latest['source_sha256'] != sha:
         issues.append('FACT_SOURCES_OR_REQUEST_CHANGED')
+        if latest.get('source_snapshot', {}).get('binding', {}).get('authority') != snapshot['binding']['authority']:
+            issues.append('FACT_AUTHORITY_GENERATION_CHANGED')
     if latest['action'] == 'DECLARE_FACT_PURPOSE':
         issues.append('FACT_PURPOSE_SELECTION_REQUIRED')
     else:
@@ -288,6 +308,8 @@ def _persist(store, c, p, parent, ledger, key, fp, action, reason, snapshot, sha
     # or source applicability changed during this transaction. Supported source
     # writers remain serialized by the field locks until COMMIT.
     _scope(store, c, p, parent)
+    if _authority(c, p) != snapshot['binding']['authority']:
+        raise Conflict('fact authority generation changed during confirmation; refresh required')
     now = c.execute('SELECT clock_timestamp() now').fetchone()['now']
     late_applicable = {row['id']: datetime.fromisoformat(row['valid_from']) <= now < datetime.fromisoformat(row['valid_until'])
         for row in snapshot['sources']}
