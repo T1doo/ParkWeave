@@ -570,7 +570,8 @@ def test_fixed_lifecycle_name_requires_real_cluster_creation_receipt(pg, fixture
             c.execute('CREATE DATABASE parkweave'); created = True
         with owner.connect() as c:
             receipt = fixture_cluster_evidence.record_created_database(c)
-        owner.migrate()  # Frozen Store creates schema 24; no Store changes here.
+        owner._case_fact_fixture_receipt = receipt
+        owner.migrate()  # Current loader issues the ticket in its own schema-25 transaction.
         with pytest.raises(psycopg.errors.RaiseException, match='creation ticket required'):
             with owner.connect() as c: c.execute(MIGRATION.read_text())
         with owner.connect() as c:
