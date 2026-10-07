@@ -20,6 +20,6 @@
 
 独立旧冷图审还发现专员在无执行者时误提示再次确认资料：catalog.ready已包含执行者非空，原无执行者文案分支不可达。仅修renderer原因提示，不改变ready、按钮可用性、API或授权；修改后另从0业务库完整复验13图通过，旧错误图保留。
 
-最终Linux验证、开发分支同步和精确HEAD Server CI另以机器证据终态记录。当前不预写通过。原R0/PR0、F1未签收/F2并行、42AT/EX及T06/AT08/AT35未验收；R4关闭，真实模型预算0，Server不等同Win11。
+最终冻结288源完整Linux 2292PASS/0FAIL/9原生WindowsSKIP/2WARN（578.70秒）；2301实际keys与同次JUnit raw nodes精确匹配，三轮旧keys全部保留，跑后源hash0差异。584文件原内容完全保留后合并已发布开发历史，支持普通push。开发分支同步和精确HEAD Server CI另以终态记录；[全量机器证据](../integration/ENG102-FinalLinuxEvidence.json)保留首轮失败历史。原R0/PR0、F1未签收/F2并行、42AT/EX及T06/AT08/AT35未验收；R4关闭，真实模型预算0，Server不等同Win11。
 
 见[当前机器证据](../integration/ENG102-ColdUserEntryEvidence.json)、[首次体验](../首次体验.md)和[用户操作卡](../demo/AcceptanceWalk.html)。旧五个浏览器复现脚本尚未适配fresh runtime，不得复制私有会话到仓库补齐。

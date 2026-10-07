@@ -1,0 +1,98 @@
+{
+  "schema": 1,
+  "scope": "CURRENT_SOURCE_FULL_LINUX_NOT_WINDOWS_ACCEPTANCE",
+  "source_head": "2f9b5881dca3887ac914a8f15de27fdf312be9cd",
+  "status": "PASS_WITH_9_NATIVE_WINDOWS_SKIPS",
+  "tests": 2301,
+  "passed": 2292,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 9,
+  "warnings": 2,
+  "junit_seconds": 578.669,
+  "native_skips": [
+    {
+      "nodeid": "tests/test_authorization_files.py::test_native_windows_file_backend_gate",
+      "reason": "NOT_RUN: native Windows reparse points, ADS, ACL and clean lifecycle require Windows11 x64"
+    },
+    {
+      "nodeid": "tests/test_owned_job.py::test_native_job_stops_owned_descendant_and_preserves_unrelated_and_primary[False]",
+      "reason": "native Windows JobObject required; Linux/mock is not coverage"
+    },
+    {
+      "nodeid": "tests/test_owned_job.py::test_native_job_stops_owned_descendant_and_preserves_unrelated_and_primary[True]",
+      "reason": "native Windows JobObject required; Linux/mock is not coverage"
+    },
+    {
+      "nodeid": "tests/test_owned_job.py::test_native_job_binding_refusal_stops_exact_suspended_child_before_body",
+      "reason": "native Windows suspended creation required"
+    },
+    {
+      "nodeid": "tests/test_owned_job.py::test_native_job_coordinator_abrupt_exit_closes_job_and_stops_tree",
+      "reason": "native Windows last-job-handle closure required"
+    },
+    {
+      "nodeid": "tests/test_server_identity.py::test_native_windows_query_current_process_handle_only",
+      "reason": "NOT_RUN: Windows read-only kernel handle validation"
+    },
+    {
+      "nodeid": "tests/test_server_identity.py::test_native_windows_popen_binding_preserves_borrowed_creation_handle",
+      "reason": "NOT_RUN: Windows actual Popen borrowed handle validation"
+    },
+    {
+      "nodeid": "tests/test_synthetic_config_file.py::test_native_config_first_creation_and_existing_bytes_protected",
+      "reason": "native Windows CONFIG owner-only creation required"
+    },
+    {
+      "nodeid": "tests/test_synthetic_session_file.py::test_native_session_owner_matches_current_user_and_existing_bytes_protected",
+      "reason": "native Windows owner-only verification required"
+    }
+  ],
+  "frozen_files": 288,
+  "source_after_run_differences": 0,
+  "source_equals_committed_head": true,
+  "actual_collection_unique": true,
+  "actual_stable_keys_equal_preflight_and_four_shards": true,
+  "junit_exact_raw_nodeids_equal_same_invocation_collection": true,
+  "retained_inventories": {
+    "eng101_fact": {
+      "cases": 2296,
+      "exact_keys_retained": true,
+      "collection_sha256": "b70857d2c7adf912aa9df4c87180d1ed0b3fe53eaafab7a375c28b27bab8997d"
+    },
+    "eng101_demo": {
+      "cases": 2194,
+      "exact_keys_retained": true,
+      "collection_sha256": "5f0d03f16f6c150bd86fcd36bb990d60961a574d8e1abce68e63cd5cdff3ecbd"
+    },
+    "eng100": {
+      "cases": 2183,
+      "exact_keys_retained": true,
+      "collection_sha256": "9332d76caf1bbf773ec6465bc7f05b1e9b8a8b07dbb6dee689ac1073b495b21c"
+    }
+  },
+  "sha256": {
+    ".runtime/eng102-final-source-freeze.json": "da2c38fa1a47a2156b97f8300ac58a1739b51a6a43ad3f91f804e7f962143842",
+    ".runtime/eng102-final-full-linux.log": "261f578844dbfc3971c17566c0fc649e50efe2dabe5da88edbf57e5f57919dae",
+    ".runtime/eng102-final-full-linux.xml": "d79a29663692390ec0f5310f5b43f2201ad650690b8195f353259d11b8276f53",
+    ".runtime/eng102-final-full-actual-collection.json": "f93784c656446c319e39bc6c2ef02688a9e237c64299fba12eb4ff803a9fead5",
+    "docs/F2/evidence/eng057-job-shards.json": "51196a867741073804fa7eba9259f6f7e399831e589546d1c33f39f4fe38ca26",
+    "scripts/windows_ci/diagnostic-test-ids.json": "8e7e7023be900b427028c5203bfe8ef27d2b6a79825742dd8026395d85b9c7e9"
+  },
+  "historical_failure_preserved": {
+    "source_head": "56a0237fb6cf1845bcd66abdd2cd8096b734b9d4",
+    "tests": 2296,
+    "passed": 2256,
+    "failures": 1,
+    "skipped": 39,
+    "reason": "Fixed lifecycle test lacked original receipt attachment; external a26d99c integrated as 03a8230. Thirty portable cache skips separately verified earlier; final run uses original installed cache.",
+    "evidence": "docs/integration/CaseFactFullLinuxEvidence.json"
+  },
+  "boundaries": [
+    "R4 closed; real model budget zero",
+    "F1 unsigned / F2 parallel exploration; PR0 incomplete",
+    "Server is not Win11",
+    "Installed Windows schema<25 receipt adapter blocked",
+    "New Run executor assignment absent; cold browser stops before dispatch/receipt"
+  ]
+}
