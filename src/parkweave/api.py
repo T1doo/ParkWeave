@@ -316,6 +316,10 @@ def create_app(store: Store) -> FastAPI:
     def case_resource_plan_binding(preparation_id: UUID,candidate_combination_id: UUID | None=None,authorization: str | None=Header(default=None)):
         return resource_plan_binding.read(store,token(authorization),preparation_id,candidate_combination_id)
 
+    @app.post('/api/preparations/{preparation_id}/resource-plan-binding/confirm',status_code=201)
+    def case_resource_plan_confirm(preparation_id: UUID,data: resource_plan_binding.Confirm,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return case_resources.bind(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
     @app.get('/api/preparations/{preparation_id}/resource-link')
     def case_resource_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return case_resources.read(store,token(authorization),preparation_id)

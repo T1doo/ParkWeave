@@ -290,3 +290,8 @@ GitHub日志Forbidden仅确定在已获批job-log GET流程，API/重定向位�
 ## ENG093 资源与工程计划版本变化
 
 P1/P2共享版本descriptor纳入目录、原诉求/全部目标、组合/规则/时段/来源与当前已有权限；实际gate拒绝陈旧核对。新owner只读产品投影显示具体变化、替代比较和重验步骤，正式Approval NOT_IMPLEMENTED，不执行、不赋权、不释放旧预约。真实同Case替代/取消/改目标/刷新路径与缺口见[ENG093](ENG093-ResourcePlanVersionImpacts.md)。仅本地提交，无新增push/CI；完整T03、真实批准与ServicePlan依赖锁仍未验收。
+
+
+## ENG094 明确替代确认 CAS 与持久影响
+
+新增严格比较确认：全版本指纹、材料/关联revision、当前已有权限和原P1 gate，首/末来源CAS；impact与既有关联同事务不可变保存。丢回执同key恢复旧event，当前来源状态独立失效；在途/未知结果UI不丢重试身份或把旧预览当可确认。无新DDL/Grant，SELECT-only目录外部管理员写无协作协议不能线性化，正式Approval仍未实现。见[ENG094](ENG094-SubstitutionVersionCAS.md)。仅本地，无push/newCI。

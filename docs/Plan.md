@@ -310,3 +310,6 @@ ENG092：已授权精确同步 e03dbf7 及唯一独立 Job success；新增1–5
 
 
 ENG093：本地补资源与工程计划版本绑定和具体变更影响；实际gate拒陈旧核对，同Case替代/撤回/改目标/刷新可复核，未创建正式Approval。见[F2记录](F2/ENG093-ResourcePlanVersionImpacts.md)。
+
+
+ENG094：严格替代版本CAS、丢回执同键恢复和不可变影响记录；原权限/确认门不降低、原预约保留，正式目录发布/Approval仍待实现。见[F2记录](F2/ENG094-SubstitutionVersionCAS.md)。
