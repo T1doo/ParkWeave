@@ -140,11 +140,7 @@ def catalog(store,token,id):
         p=_auth(store,c,token)
         if p['role']!='enterprise_operator':raise Denied('enterprise owner required')
         row=prep.scoped(store,c,p,id);store.check_capability(c,p,'EXECUTE')
-        rows=c.execute("""SELECT e.id FROM principals e JOIN run_assignments a ON a.principal_id=e.id
-          AND a.park_id=e.park_id AND a.org_id=e.org_id JOIN capability_grants g ON g.principal_id=e.id
-          AND g.park_id=e.park_id AND g.org_id=e.org_id AND g.capability='READ' AND g.active
-          WHERE a.run_id=%s AND a.active AND e.active AND e.role='service_executor'
-          AND e.park_id=%s AND e.org_id=%s ORDER BY e.id LIMIT 100""",(row['run_id'],p['park_id'],p['org_id'])).fetchall()
+        rows = store.assigned_executors(c,row['run_id'],p['park_id'],p['org_id'])
         return dict(scope=SCOPE,preparation_revision=row['revision'],ready=row['state']=='LOCAL_CONFIRMED',executors=rows)
 
 def _insert_step(c,parent,executor_id):
@@ -229,8 +225,14 @@ def command(store,token,id,key,data):
 def list_steps(store,token):
     with store.connect() as c:
         p=_auth(store,c,token);owner=p['role']=='enterprise_operator'
-        rows=c.execute("""SELECT s.id,s.goal,s.state,s.revision FROM service_receipt_steps s
+        rows=c.execute("""SELECT s.id,s.goal,s.state,s.revision,s.run_id FROM service_receipt_steps s
           WHERE s.park_id=%s AND s.org_id=%s AND s."""+('owner_id' if owner else 'executor_id')+"""=%s
           AND (SELECT principal_id FROM runs WHERE id=s.run_id) = s.owner_id
           """+('' if owner else "AND EXISTS(SELECT 1 FROM run_assignments a WHERE a.run_id=s.run_id AND a.principal_id=%s AND a.park_id=s.park_id AND a.org_id=s.org_id AND a.active)")+" ORDER BY s.created_at DESC,s.id DESC LIMIT 101",(p['park_id'],p['org_id'],p['id'],*(() if owner else (p['id'],)))).fetchall()
-        return dict(items=rows[:100],has_older_records=len(rows)>100,role=p['role'],scope=SCOPE)
+        raw_more=len(rows)>100
+        scanned=len(rows)
+        if not owner:
+            rows=[r for r in rows if store.assignment_allowed(c,p,r['run_id'])]
+        for row in rows:
+            row.pop('run_id',None)
+        return dict(items=rows[:100],has_older_records=raw_more, access_filtered=scanned-len(rows),role=p['role'],scope=SCOPE)

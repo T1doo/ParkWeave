@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "scope": "CURRENT_ENG104_NATIVE_RECEIPT_ADAPTER_COLLECTION_PREFLIGHT_NOT_PASS",
-  "source_parent_head": "25af47e270837aa30627d4f4dc47a2a8bf76cca8",
-  "collected_cases": 2369,
-  "collected_files": 84,
+  "scope": "CURRENT_ENG105_ISOLATED_RUN_ACCESS_COLLECTION_PREFLIGHT_NOT_PASS",
+  "source_parent_head": "e86e2d35207e4350f2ddc1cc30102a542a0f292d",
+  "collected_cases": 2402,
+  "collected_files": 85,
   "mutually_exclusive_and_complete": true,
-  "weight_source": "Existing file assignments retained; new native receipt adapter files assigned by descending actual collected case count to least populated current shard. No Windows runtime prediction or budget extension.",
+  "weight_source": "Existing file assignments retained; new isolated exact Run access files assigned by descending actual collected case count to least populated current shard. No Windows runtime prediction or budget extension.",
   "limits": {
     "job_seconds_unchanged": 1500,
     "work_cutoff_from_anchor_seconds": 1300,
@@ -117,6 +117,7 @@
         "tests/test_descriptor_readonly_probe.py",
         "tests/test_fixture_cleanup.py",
         "tests/test_generation_authority_invariants.py",
+        "tests/test_isolated_run_access.py",
         "tests/test_job_schedule.py",
         "tests/test_launcher_lifecycle.py",
         "tests/test_model_chain.py",
@@ -132,7 +133,7 @@
         "tests/test_synthetic_config_file.py",
         "tests/test_template_candidate.py"
       ],
-      "cases": 565,
+      "cases": 598,
       "historical_linux_relative_weight_seconds": 99.281126,
       "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     }
@@ -173,6 +174,7 @@
     "tests/test_generation_authority_invariants.py": "5de816deaa7a49afb30978b95a83cb9e43e9681a4e7c64f46e47d02528fbe915",
     "tests/test_installed_fixture_receipt.py": "b7da9b0498dba3676e7a9d3a6955bd6c4bf2c42ab3e28b5c63cf48bf1e5a31cd",
     "tests/test_intern_adapter.py": "980dded3b932475ab764abc875c1c1437114b6729b15d87082df40d18d25daa6",
+    "tests/test_isolated_run_access.py": "784682003ab2d618e9fdd4d4a0e064e5a117b735cdb62bd8c601b10f741c3d63",
     "tests/test_job_budget.py": "4ce7ff9cc6d2742732159a26880b1cd225d7b71e867ee95f8d749753a2838a49",
     "tests/test_job_schedule.py": "39727cb752e895cab791f9801bb641b592d3677383702750a301de67ab304c56",
     "tests/test_launcher_lifecycle.py": "e33b18f91ad05f0c344e8b901954dc61a68384aac67345fa14658e8b65e03fbd",
@@ -234,6 +236,8 @@
     "scripts/case_fact_integration_contract.py": "9f0568b0726f3c493d67606144c42fcc7b151735959f4b648ae702f08664c3c5",
     "scripts/demo_preflight.py": "a1d99e7ce8a0e104f1673feea5368f462f0502a086180af019d4f9c39be8e919",
     "scripts/dispatch_recovery_browser_smoke.py": "7f0ae1ffc0dcec84f36db3b5b073380cbe29c7396316fffe3163b41c897868da",
+    "scripts/isolated_run_access_browser_smoke.py": "8611cc301bac12f038af5619f167ce1861d425914daf6863be2f93bdd69ff527",
+    "scripts/isolated_run_access_demo.py": "ff6ef7f19233b99538a78d836067a2f96b1796ebfe94662693d4e9338a1a2799",
     "scripts/linux_fixture_server.py": "d924aba4bfa20f199b6d641da7063e6228b37c79ba67c312ad7adc3186d8beda",
     "scripts/material_reuse_browser_smoke.py": "20e0b9e2b8246daab57821e5e6e02720958bf55e85f29897cd0ddfca6ec9b774",
     "scripts/run_acceptance.py": "3ec5bba8718dd68be9e154886971f07584151f0387503fb1703be09f62431291",
@@ -267,18 +271,18 @@
     "scripts/windows_ci/stage_result.py": "477deae62836492662a1778571162c1c0a6e6d24f3fb0d33a01fbe41dd52afb7",
     "scripts/windows_ci/summary_report.py": "ec5864e71ec79b057b82c65896875339651fd107799a17d9b22c9c7d7c1a5fd3",
     "src/parkweave/__init__.py": "29234a2883ca112ca1c3bdac0f2891b0f132ac1ef56930107dfb73ce778b621c",
-    "src/parkweave/api.py": "84ad3efda83617447adc0559701c141d7c15e795167e8f60683da967fbd19155",
-    "src/parkweave/bounded_planning.py": "b96b8e522869e08dbe6c0d78aeaad8eea1716ce07fac1c3906941ee00888d06d",
+    "src/parkweave/api.py": "b0cf6f225a635dc0987e0897bd893f7dd2418da104619dc3a521711ad95dbbeb",
+    "src/parkweave/bounded_planning.py": "19512588c4a42b910e3e133f597ab4603a54874ad969a3c3ccb13b93cd37bbe6",
     "src/parkweave/candidate_review.py": "d79e2412865d3ac8680cf234408509ec728002f8ba2a1c6184a4ddde04f1b832",
     "src/parkweave/case_fact_clarifications.py": "1c3f462f6434856a60d8cbe05b8713aed813b346f8f1b5acabafca16b669cae0",
     "src/parkweave/case_lifecycle.py": "0a0c9a6fbde272f209b20fa4e765adabb392e274088d8e56582aaf7ecfd9f663",
-    "src/parkweave/case_path.py": "98553a0cbd97c7139a3a0ddaacf753d3da7bec6ace498dd793ce7b4d53c73b1d",
+    "src/parkweave/case_path.py": "8a7b51202e118f737d6d4efaaf5e1cab6dcf13825b363c096cf69a6b03cd5dfa",
     "src/parkweave/case_resources.py": "e2dc10cb51d289658f1752ced269aae47ba32e13120da356c12c47fa81657532",
     "src/parkweave/cli.py": "e5a80d2d909619892be463e8ac803de32db9b88d98e83a431e62cf0ba6ea6128",
-    "src/parkweave/controlled_plans.py": "fac8e97b55ef177d83fa9569fd4ed811961ace74af89bba694d44658ba6e58f7",
+    "src/parkweave/controlled_plans.py": "f40aa3fa8ceb2f2ea6ecd39030881f82170f2c71da3d6f9a25e6d3dabf8e75d5",
     "src/parkweave/dispatch_notices.py": "04c1fa8dde636821b8fa25a5180871b8b6875faa8e9df37224ee613221d357fd",
     "src/parkweave/domain.py": "1de19267313ca7e978e2e046acb924246a1ce86af24db8fed7cf5dcd7359a761",
-    "src/parkweave/executor_receipts.py": "bb45fc88134175cbda47b735dfd3d9b256b06f4e48f9f4f01a294e72dc5879d3",
+    "src/parkweave/executor_receipts.py": "dae0668086a1392b80d0edc1c40f8a13852e319e864a4adb41253d922b07d8fc",
     "src/parkweave/fact_review_store.py": "3bec10c416de262b305b8fa1515bc73011ca15e36ad354ead6132b5136a7ec97",
     "src/parkweave/fault-schema.sql": "ac073ee098b54a80c3acb645ab943bc72d44fa6ea1297e6f635fe3dc1ea40d68",
     "src/parkweave/fault_ledger.py": "cb94695218415a0b7f4d8ed0db0a04ef6a1b1234f92089506ad476a38bf0ab3c",
@@ -287,6 +291,7 @@
     "src/parkweave/http_transport.py": "732b5357bcef839c1cea68c83378cca9b5710f554b4a4ba51d425930cef46220",
     "src/parkweave/installed_fixture_receipt.py": "492ab830a0d704cdcaf93794daea6e2e33e72bc3c64cfff2f82bc70fb28c275e",
     "src/parkweave/intern_adapter.py": "b7af5c0c48212b74a5551571eb60aa2b68a13dbd557d31de156578b8e9180db0",
+    "src/parkweave/isolated_run_access.py": "fdc64b3f737e82c3201c53bb7d6896e516ee5555a72ad2248ff4848997bb173a",
     "src/parkweave/lease.py": "343c855cbfc46e07d6af212edc8f484ac43dcd95eac1c171d84d3bf4331d2daf",
     "src/parkweave/live_safety.py": "ddbd87b3bd7d664cc92292ef4d4f29182faf62ae33c5b0174e89b9a4f3644c80",
     "src/parkweave/material_corrections.py": "cc95effda6b514b7934b9efb5e289b73cde4fd00b8e0ab7594a2463b9c4fa730",
@@ -340,15 +345,15 @@
     "src/parkweave/run_access_candidate_web.html": "8e0a9dc9c3d65e474b091fca8ea18f9596f4e325310e283e67d7012defd370bb",
     "src/parkweave/schema.sql": "474a2502c27cc969744919a5dc16cb7f746df2e49ce8196eb2d1c3b3f9829652",
     "src/parkweave/service_case_steps.py": "41176475a71e7fd1cf4a446fde253b3a227058896972a63c43252eb84049584d",
-    "src/parkweave/service_dispatches.py": "0d1c0935814441cd804263d4495f82ea5c604dc4f234250ece784a940b2697a9",
-    "src/parkweave/store.py": "5410cb691737d024b46f32cee5e04920e61d846e095fb258ad0a96ec90d99e0e",
+    "src/parkweave/service_dispatches.py": "35d1f68909c150d18a00ba1b386cd51a30f11c21e869a240ba42ad48e894629e",
+    "src/parkweave/store.py": "a43a716e13da8c430e1fe481bf49a872b7950bac161d01789e0b9aa34517ac22",
     "src/parkweave/synthetic_session_file.py": "7ff0e3ac2bd25d00710bd324c0033bd4f8045aebe3c29129a68425ee0fbceedf",
     "src/parkweave/template_candidate.py": "7fe4d92ebbf2b8631627eb993b7d12243c8f64abdc131b02af08555615d80157",
     "src/parkweave/template_candidate_api.py": "fbf44860d30c62407ee11761a9785b1f3cef7a246e05e14ba63969e1735dfea5",
     "src/parkweave/template_candidate_web.html": "9bc46eb5992b304de45df3ccb3f2fd26da37742803560837a7a2b0edac68b4b1",
     "src/parkweave/template_consumer.py": "7c2a28d551a6e057f3742a816f2ab0c887423881b65bb0763a77f5a3b2d25a22",
     "src/parkweave/template_isolated_app.py": "4141b229c29661466dfdde9b90268a4d9c820680ddc2bb65ebaa8267c71eda24",
-    "src/parkweave/web.html": "73001f0f9fd5c2150d522093ee0fd91ae38f1adbc7c2ee84f1067156cd9a859f",
+    "src/parkweave/web.html": "e7b1e8afca4e64934a976817959526955795d2938abf462d9f9aab5c94745304",
     "src/parkweave/windows/__init__.py": "e6173f83aa2b6af60e640b74ec19d3603c36633ae8f715c1a5a7a8e42caf9042",
     "src/parkweave/windows/create_new_readonly_candidate.py": "5a2e76081cbb2376a380b66404c61e1893cee2f3f1baa8511e74824de97a08ef",
     "src/parkweave/windows/create_new_readonly_native.py": "da5e29826527f7c86e7e1905b91d9b7620f9ab4a434d33cfa7e8460ad8b46fad",
@@ -359,7 +364,7 @@
     "tests/conftest.py": "f660a26e7707bdfc82d2a62feda73e50a0e525d3203da45b6c7b7a5379e4cbb7",
     "tests/template_candidate_support.py": "7e5ff8aa242e4cd6d95a77fd72e1b1e012be40ce6be3d0fb8b19e57e92a15fcd"
   },
-  "diagnostic_allowlist_sha256": "5ecd5bcfdafc841bb56a4297a5cc7d9be3db46cbf25d62af893946f2e2b967a8",
+  "diagnostic_allowlist_sha256": "df83e20023f15c93d4c590c520abaea8f753501c64e6b3aa7468e198ab9ea537",
   "new_CI_runs": 0,
   "eng061_refresh": {
     "producer_parent_head": "41bcc113f7e7690a346cc79249fe76803a98bd0e",
@@ -462,9 +467,9 @@
     "new_cases_since_eng057": 55
   },
   "collection_evidence": {
-    "current_cases": 2369,
-    "current_files": 84,
-    "current_stable_collection_sha256": "65ee6c752b98d9d1c643fe86b5a963e9f35ac042ebd6e875b7819edee7ee2d5b",
+    "current_cases": 2402,
+    "current_files": 85,
+    "current_stable_collection_sha256": "6b783590fa4ceead70d4066f1c17862ea7049468b638b7e5ada536f27419090f",
     "exact_piece_stable_multiset_matches_global": true,
     "shards": [
       {
@@ -472,7 +477,7 @@
         "cases": 606,
         "files": 20,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "321f041d49f5fafe60323d0ed5382f2916ade7bd282c7c36bd7cd40b9652fec4"
+        "private_collection_sha256": "53fbafa2ca62b0e17b67c85818337f4cf3dce02860d9455878d06099c8568256"
       },
       {
         "shard": "S2",
@@ -486,14 +491,14 @@
         "cases": 632,
         "files": 22,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "33f2fa59226a1f536ea76e32b9d22f693f2e07bcdde6f5cfd3cadf2e26f87b36"
+        "private_collection_sha256": "ce6c43c0de079d46bc636c665ccbdda5cb0d5016794d7d093084ebd3b52baa67"
       },
       {
         "shard": "S4",
-        "cases": 565,
-        "files": 21,
+        "cases": 598,
+        "files": 22,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "4f0fba01f9eb92bf6b2fc2c9f3a944128a9e3d3b72a852855099ebbf50e65469"
+        "private_collection_sha256": "8dc5669a46312bf6830a275dcabd33f8fd5aca7ab53041383ee8463bb756fb39"
       }
     ],
     "linux_collect_exit_codes": [
@@ -504,12 +509,18 @@
       0
     ],
     "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
+    "previous_eng104_native_receipt_exact_keys_retained": true,
     "previous_eng102_coldstart_exact_keys_retained": true,
     "previous_eng102_full_actual_exact_keys_retained": true,
     "previous_eng101_fact_exact_keys_retained": true,
     "previous_eng101_demo_exact_keys_retained": true,
     "previous_eng100_exact_keys_retained": true,
     "previous_key_inventories": {
+      "eng104_native_receipt": {
+        "cases": 2369,
+        "exact_keys_retained": true,
+        "private_collection_sha256": "65ee6c752b98d9d1c643fe86b5a963e9f35ac042ebd6e875b7819edee7ee2d5b"
+      },
       "eng102_coldstart": {
         "cases": 2301,
         "exact_keys_retained": true,
@@ -536,7 +547,11 @@
         "private_collection_sha256": "9332d76caf1bbf773ec6465bc7f05b1e9b8a8b07dbb6dee689ac1073b495b21c"
       }
     },
-    "source_bytes_unchanged_during_collection": true
+    "source_bytes_unchanged_during_collection": true,
+    "fixed_test_core_source_bytes_unchanged_during_collection": true,
+    "provisional_ui_driver_paths": [],
+    "changed_provisional_paths_during_collection": [],
+    "final_ui_driver_binding_refreshed": true
   },
   "historical_eng064_collection_evidence": {
     "current_cases": 1253,
@@ -637,7 +652,7 @@
     "tests/test_safe_annotations.py": "f164246510d79e49e43ec9337c5ddc57a3c42b2f7bfbd5174fd986e52613a752",
     "tests/test_windows_ci_preparation.py": "c84003dff3b52e3c8162db922a11ee74d5bd1147fe1f7f5108f388c2c5df1aed"
   },
-  "source_binding_note": "ENG104 offline native receipt adapter collect-only inventories and current raw source/diagnostic hashes refreshed in worktree. Historical ENG102 coldstart, ENG101 fact integration/demo and ENG100 metadata retained under their original producer provenance; current parent HEAD is not a claim that it contains uncommitted adapter/Store/facts/migration source and its new test file. Current source is not frozen: later edits require fingerprint refresh and postcommit HEAD/blob equality. No test execution, full PASS, Windows acceptance or security changes are claimed.",
+  "source_binding_note": "ENG105 actual 2402-case/85-file global and four-shard collect-only inventories bind unchanged fixed test/core source bytes and trusted direct-body/direct-public-class-method AST IDs. After final UI/browser review, all 136 implementation fingerprints were checked and current UI/browser-driver raw hashes rebound; only those provisional paths could change, with test/diagnostic hashes unchanged. Immutable collection and historical key inventories are preserved. Parent e86e2d3 is provenance, not a claim that it contains uncommitted ENG105 source; postcommit HEAD/blob equality remains required. Final UI review evidence is separately reported by the root agent; this manifest makes no test-execution, full PASS, Windows acceptance or security-operation claim. Subsequent browser-driver-only refinement adds a live owner preparations GET empty guard before browser writes; its actual raw hash was rebound without changing test source, diagnostic IDs or collection/history evidence. Earlier 101 metadata tests precede this driver-only edit; latest binding was verified statically, with browser execution owned by root.",
   "historical_eng080_collection_evidence": {
     "current_cases": 1463,
     "pieces": [
@@ -1888,5 +1903,201 @@
       "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     }
   ],
-  "historical_eng102_coldstart_source_parent_head": "81ff445320b7a641a82c99bda0bed834f58cb061"
+  "historical_eng102_coldstart_source_parent_head": "81ff445320b7a641a82c99bda0bed834f58cb061",
+  "historical_eng104_native_receipt_collection_evidence": {
+    "current_cases": 2369,
+    "current_files": 84,
+    "current_stable_collection_sha256": "65ee6c752b98d9d1c643fe86b5a963e9f35ac042ebd6e875b7819edee7ee2d5b",
+    "exact_piece_stable_multiset_matches_global": true,
+    "shards": [
+      {
+        "shard": "S1",
+        "cases": 606,
+        "files": 20,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "321f041d49f5fafe60323d0ed5382f2916ade7bd282c7c36bd7cd40b9652fec4"
+      },
+      {
+        "shard": "S2",
+        "cases": 566,
+        "files": 21,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "37df908ad9db8f687ae4a0bfd09211ebcfba042ffb5bd139ec5f586e6914988e"
+      },
+      {
+        "shard": "S3",
+        "cases": 632,
+        "files": 22,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "33f2fa59226a1f536ea76e32b9d22f693f2e07bcdde6f5cfd3cadf2e26f87b36"
+      },
+      {
+        "shard": "S4",
+        "cases": 565,
+        "files": 21,
+        "stable_identity_matches_global_exact_multiset": true,
+        "private_collection_sha256": "4f0fba01f9eb92bf6b2fc2c9f3a944128a9e3d3b72a852855099ebbf50e65469"
+      }
+    ],
+    "linux_collect_exit_codes": [
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "execution_claim": "COLLECT_ONLY_NOT_PASS_NOT_WINDOWS_ACCEPTANCE",
+    "previous_eng102_coldstart_exact_keys_retained": true,
+    "previous_eng102_full_actual_exact_keys_retained": true,
+    "previous_eng101_fact_exact_keys_retained": true,
+    "previous_eng101_demo_exact_keys_retained": true,
+    "previous_eng100_exact_keys_retained": true,
+    "previous_key_inventories": {
+      "eng102_coldstart": {
+        "cases": 2301,
+        "exact_keys_retained": true,
+        "private_collection_sha256": "ff1462a9ac06643b287e7736a5e240f5ac7829a0f48fc571a70fa698ca950915"
+      },
+      "eng102_full_actual": {
+        "cases": 2301,
+        "exact_keys_retained": true,
+        "private_collection_sha256": "f93784c656446c319e39bc6c2ef02688a9e237c64299fba12eb4ff803a9fead5"
+      },
+      "eng101_fact": {
+        "cases": 2296,
+        "exact_keys_retained": true,
+        "private_collection_sha256": "b70857d2c7adf912aa9df4c87180d1ed0b3fe53eaafab7a375c28b27bab8997d"
+      },
+      "eng101_demo": {
+        "cases": 2194,
+        "exact_keys_retained": true,
+        "private_collection_sha256": "5f0d03f16f6c150bd86fcd36bb990d60961a574d8e1abce68e63cd5cdff3ecbd"
+      },
+      "eng100": {
+        "cases": 2183,
+        "exact_keys_retained": true,
+        "private_collection_sha256": "9332d76caf1bbf773ec6465bc7f05b1e9b8a8b07dbb6dee689ac1073b495b21c"
+      }
+    },
+    "source_bytes_unchanged_during_collection": true
+  },
+  "historical_eng104_native_receipt_shards": [
+    {
+      "id": "S1",
+      "files": [
+        "tests/test_acceptance_failures.py",
+        "tests/test_acceptance_runner.py",
+        "tests/test_account_rate.py",
+        "tests/test_authorization_files.py",
+        "tests/test_case_fact_clarifications.py",
+        "tests/test_ci_diagnostics.py",
+        "tests/test_create_new_readonly_candidate.py",
+        "tests/test_dispatch_notices.py",
+        "tests/test_lifecycle.py",
+        "tests/test_lifecycle_generation_candidate.py",
+        "tests/test_minimal_observations.py",
+        "tests/test_model_config.py",
+        "tests/test_native_command.py",
+        "tests/test_regression_shards.py",
+        "tests/test_request_intents.py",
+        "tests/test_rule_publication_candidate.py",
+        "tests/test_service_case_steps.py",
+        "tests/test_source_bytes.py",
+        "tests/test_summary_publication.py",
+        "tests/test_windows_ci_preparation.py"
+      ],
+      "cases": 606,
+      "historical_linux_relative_weight_seconds": 96.400539,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    },
+    {
+      "id": "S2",
+      "files": [
+        "tests/test_acl_readonly.py",
+        "tests/test_bounded_planning.py",
+        "tests/test_case_fact_integration_contract_support.py",
+        "tests/test_case_path.py",
+        "tests/test_case_resources.py",
+        "tests/test_ci_cleanup.py",
+        "tests/test_domain_bounds.py",
+        "tests/test_executor_receipts.py",
+        "tests/test_foundation.py",
+        "tests/test_lifecycle_diagnostics.py",
+        "tests/test_linux_fixture_startup.py",
+        "tests/test_material_reuse.py",
+        "tests/test_native_creation_invariants.py",
+        "tests/test_plan_handoff_chain.py",
+        "tests/test_python_command.py",
+        "tests/test_resource_substitution_confirm.py",
+        "tests/test_review_demo.py",
+        "tests/test_server_identity.py",
+        "tests/test_synthetic_session_file.py",
+        "tests/test_v1_contracts.py",
+        "tests/test_worker_gateway.py"
+      ],
+      "cases": 566,
+      "historical_linux_relative_weight_seconds": 99.441546,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    },
+    {
+      "id": "S3",
+      "files": [
+        "tests/test_bounded_observation.py",
+        "tests/test_candidate_review.py",
+        "tests/test_case_fact_clarifications_integration.py",
+        "tests/test_catalog_decision_validity.py",
+        "tests/test_demo_preflight.py",
+        "tests/test_dispatch_recovery.py",
+        "tests/test_facts_heartbeat.py",
+        "tests/test_fault_ledger.py",
+        "tests/test_installed_fixture_receipt.py",
+        "tests/test_intern_adapter.py",
+        "tests/test_job_budget.py",
+        "tests/test_material_corrections.py",
+        "tests/test_resource_catalog_concurrency.py",
+        "tests/test_resource_combinations.py",
+        "tests/test_resource_holds.py",
+        "tests/test_resource_plan_binding.py",
+        "tests/test_run_access_candidate.py",
+        "tests/test_safe_annotations.py",
+        "tests/test_service_dispatches.py",
+        "tests/test_template_consumer.py",
+        "tests/test_utf8_sources.py",
+        "tests/test_windows_file_candidate.py"
+      ],
+      "cases": 632,
+      "historical_linux_relative_weight_seconds": 93.848497,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    },
+    {
+      "id": "S4",
+      "files": [
+        "tests/test_case_lifecycle.py",
+        "tests/test_controlled_job_measurement.py",
+        "tests/test_controlled_plans.py",
+        "tests/test_create_new_readonly_native.py",
+        "tests/test_descriptor_readonly_probe.py",
+        "tests/test_fixture_cleanup.py",
+        "tests/test_generation_authority_invariants.py",
+        "tests/test_job_schedule.py",
+        "tests/test_launcher_lifecycle.py",
+        "tests/test_model_chain.py",
+        "tests/test_owned_job.py",
+        "tests/test_plan_preview.py",
+        "tests/test_plan_revision.py",
+        "tests/test_plan_revision_waits.py",
+        "tests/test_preparation.py",
+        "tests/test_preparation_tasks.py",
+        "tests/test_readiness.py",
+        "tests/test_resource_confirm.py",
+        "tests/test_rule_publication_boundary.py",
+        "tests/test_synthetic_config_file.py",
+        "tests/test_template_candidate.py"
+      ],
+      "cases": 565,
+      "historical_linux_relative_weight_seconds": 99.281126,
+      "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
+    }
+  ],
+  "historical_eng104_native_receipt_source_parent_head": "25af47e270837aa30627d4f4dc47a2a8bf76cca8"
 }

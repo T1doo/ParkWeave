@@ -20,11 +20,7 @@ def read(store,token,id):
         run=store.scoped_run(c,p,parent['run_id'])
         case=c.execute('SELECT id,state FROM cases WHERE id=%s AND run_id=%s',(parent['case_id'],run['id'])).fetchone()
         if not case:raise Denied('Case Run binding unavailable')
-        available=bool(c.execute("""SELECT 1 FROM run_assignments a JOIN principals e ON e.id=a.principal_id
-          AND e.park_id=a.park_id AND e.org_id=a.org_id JOIN capability_grants g ON g.principal_id=e.id
-          AND g.park_id=e.park_id AND g.org_id=e.org_id AND g.capability='READ' AND g.active
-          WHERE a.run_id=%s AND a.park_id=%s AND a.org_id=%s AND a.active AND e.active
-          AND e.role='service_executor' LIMIT 1""",(run['id'],parent['park_id'],parent['org_id'])).fetchone())
+        available=bool(store.assigned_executors(c,run['id'],parent['park_id'],parent['org_id']))
         plan=c.execute('SELECT id,revision FROM controlled_plans WHERE preparation_id=%s',(id,)).fetchone()
         link=c.execute('SELECT id FROM case_resource_links WHERE preparation_id=%s AND case_id=%s AND run_id=%s AND owner_id=%s AND park_id=%s AND org_id=%s ORDER BY revision DESC LIMIT 1',(id,parent['case_id'],run['id'],p['id'],p['park_id'],p['org_id'])).fetchone()
         dispatch=c.execute('SELECT d.id,o.state FROM service_dispatches d LEFT JOIN service_dispatch_offers o ON o.id=d.current_offer_id AND o.dispatch_id=d.id WHERE d.preparation_id=%s',(id,)).fetchone()

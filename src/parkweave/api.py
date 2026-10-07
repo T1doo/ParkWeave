@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from psycopg.errors import LockNotAvailable
 from .domain import Intake, FactInput, ClarificationInput, V1ServiceSpec, V1ServicePlan, FieldName
 from .store import Store, Denied, Conflict
+from .run_access_candidate import RunCommand
 
 
 def create_app(store: Store) -> FastAPI:
@@ -37,7 +38,10 @@ def create_app(store: Store) -> FastAPI:
 
     @app.exception_handler(Conflict)
     async def conflict(request, exc):
-        return JSONResponse({"detail": str(exc)}, status_code=409)
+        payload = {"detail": str(exc)}
+        if getattr(exc, 'decision_committed', False) is True:
+            payload.update(decision_committed=True, projection_pending=True)
+        return JSONResponse(payload, status_code=409)
 
     def token(authorization):
         if not authorization or not authorization.startswith("Bearer "):
@@ -66,6 +70,36 @@ def create_app(store: Store) -> FastAPI:
     @app.get("/api/runs/{run_id}")
     def read(run_id: UUID, authorization: str | None = Header(default=None)):
         return store.read(token(authorization), run_id)
+
+    def access_bridge():
+        bridge = getattr(store, '_isolated_run_access', None)
+        if bridge is None:
+            raise Denied('isolated access decisions disabled')
+        return bridge
+
+    @app.get('/api/run-access/status')
+    def run_access_status(authorization: str | None = Header(default=None)):
+        session = token(authorization)
+        bridge = getattr(store, '_isolated_run_access', None)
+        if bridge is None:
+            with store.connect() as c:
+                p = store.auth(c, session, lock=True)
+                store.check_capability(c, p, 'READ')
+            return {'enabled': False, 'role': p['role'], 'can_approve': False,
+                    'can_revoke': False, 'deployment_enabled': False}
+        return bridge.status(session)
+
+    @app.get('/api/runs/{run_id}/access')
+    def run_access_read(run_id: UUID, authorization: str | None = Header(default=None)):
+        return access_bridge().read(token(authorization), run_id)
+
+    @app.post('/api/runs/{run_id}/access/commands')
+    def run_access_command(run_id: UUID, data: RunCommand,
+                           authorization: str | None = Header(default=None),
+                           idempotency_key: str = Header()):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', idempotency_key):
+            raise HTTPException(422, 'invalid request key')
+        return access_bridge().command(token(authorization), run_id, idempotency_key, data)
 
     @app.get("/api/runs/{run_id}/plan-revisions")
     def plan_revisions(run_id: UUID, authorization: str | None = Header(default=None)):

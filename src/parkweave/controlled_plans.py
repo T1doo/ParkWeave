@@ -140,7 +140,7 @@ def _sources(store,c,parent):
     issues,snap,group,holds,rules=life._sources(store,c,owner,parent)
     c.execute('SELECT id FROM cases WHERE id=%s FOR SHARE',(parent['case_id'],))
     life._timed(c,issues,group,holds,rules)
-    if not c.execute("SELECT 1 FROM run_assignments a JOIN principals p ON p.id=a.principal_id JOIN capability_grants g ON g.principal_id=p.id AND g.park_id=p.park_id AND g.org_id=p.org_id WHERE a.run_id=%s AND a.active AND a.park_id=%s AND a.org_id=%s AND p.park_id=a.park_id AND p.org_id=a.org_id AND p.active AND p.role='service_executor' AND g.capability='READ' AND g.active",(parent['run_id'],parent['park_id'],parent['org_id'])).fetchone():issues['ACCEPTANCE_RECHECK'].append('EXISTING_RUN_ASSIGNMENT_REQUIRED')
+    if not store.assigned_executors(c,parent['run_id'],parent['park_id'],parent['org_id']):issues['ACCEPTANCE_RECHECK'].append('EXISTING_RUN_ASSIGNMENT_REQUIRED')
     snapshots={
       'P1':{k:snap.get(k) for k in ('preparation_id','case_id','run_id','service_id','service_version','preparation_revision','preparation_sha256')},
       'P2':{k:snap.get(k) for k in ('preparation_revision','preparation_sha256','resource_link_id','resource_link_revision','combination_id','combination_state','members')},

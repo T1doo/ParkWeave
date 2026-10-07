@@ -1,3 +1,11 @@
+## ENG105 精确 Run 访问与同 Case 隔离冷入口
+
+在 e86e2d3 上复用 ENG089 原申请/独立批准/撤销/期限与不可变审计合同，新增默认关闭的认证 API/UI 和仅全新自有合成数据库可启用的访问投影。现有资料 REVIEW 不推导审批权；显式现有夹具专员许可、现有执行者、单 Run READ 和当前租户/版本/时段逐次核对，NULL legacy 不接管。SQLite 决定先提交，PG 投影匹配才可访问；失败保持拒绝且原键重试，撤销先使来源失效。无生产迁移/Grant/角色/Windows owner 或 ACL 修改。
+
+原候选30PASS、原相关PG170PASS、最终桥接33PASS、metadata101PASS分别保留原冻结范围，不合并为新全量。实际新 Case 网页单次完成 REQUEST→独立 APPROVE→原 OFFER/ACCEPT/SUBMIT/企业 ACK→REVOKE，原 Run 403/执行者列表移除；21项1200/390/320检查通过，独立复核无实质阻断。上一轮同夹具双流程报告已排除，新实时空列表检查与事后唯一事项匹配支持最终 fresh 范围。详情与逐项证据见 [ENG105](F2/ENG105-ExactRunAccess.md)。
+
+按当前明确授权可普通推送 dev/f1-foundation 并跟踪首个精确提交 Server CI；实际推送/终态单独保存在交付记录，不以授权代替成功。只补齐隔离同 Case 访问到本地回执的缺口，正常部署仍默认关闭；F1未签收/F2仅并行、完整PR0未签收、资格未知/外部履约无证据。R4关闭、真实模型/预算0，Server不是Win11/native验收；原环境与备份保留。下方历史条目保持其原范围。
+
 ## ENG089 单Run协作访问候选与启用决定包（仅本地）
 
 在5cbff16上实现默认关闭的独立Mock访问申请/独立审批/限定单Run service_executor READ与8h期限/撤销审计。当前角色/READ/tenant/Run与权限版本每次重验，旧版本/跨Run/过期/撤销上下文拒绝；写锁和读等待后重取时间，原资料专员不具审批权限。相关59PASS，实际Chromium全流程与1200/390/320通过，独立源码/截图审查无阻断；最终217源冻结完整Linux1556PASS/0FAIL/9nativeSKIP/2WARN（312.6秒），源hash0差异。真实assignment/Grant/身份/权限/owner未改变，P3真实冷入口仍阻塞；完整可演示链与缺口见[ENG089](F2/ENG089-SingleRunAccessCandidate.md)，规则与Run后续明确RACI/期限/初始化和技术/真实访问扩大分别列于[一次性决定包](F2/ENG089-ActivationDecisionPacket.md)。

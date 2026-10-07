@@ -18,6 +18,33 @@ class Conflict(Exception):
     pass
 
 
+class _AccessConnection(psycopg.Connection):
+    """Recheck managed leases before a Store transaction commits or returns."""
+    def commit(self):
+        try:
+            for principal_id, run_id in getattr(self, '_managed_checks', ()):
+                p = self.execute('SELECT * FROM principals WHERE id=%s', (principal_id,)).fetchone()
+                store = self._access_store
+                if not p or not p['active']:
+                    raise Denied('current managed principal required')
+                store.check_capability(self, p, 'READ')
+                if not store.assignment_allowed(self, p, run_id, track=False):
+                    raise Denied('managed access expired or changed before completion')
+            super().commit()
+        except BaseException:
+            super().rollback()
+            self.close()
+            raise
+        finally:
+            self._managed_checks = set()
+
+    def rollback(self):
+        try:
+            super().rollback()
+        finally:
+            self._managed_checks = set()
+
+
 def digest(value: str) -> str:
     return hashlib.sha256(value.encode()).hexdigest()
 
@@ -30,7 +57,57 @@ class Store:
         self.file_root = file_root
 
     def connect(self):
-        return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
+        if getattr(self, '_isolated_run_access', None) is None:
+            return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
+        c = _AccessConnection.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
+        c._access_store = self
+        c._managed_checks = set()
+        return c
+
+    def assignment_allowed(self, c, p, run_id, assignment=None, *, track=True):
+        """Legacy scope is unchanged; managed scope additionally needs a live lease."""
+        a = assignment if assignment is not None else c.execute(
+            'SELECT * FROM run_assignments WHERE principal_id=%s AND run_id=%s',
+            (p['id'], run_id)).fetchone()
+        if (not a or not a['active'] or not p['active'] or
+            (a['principal_id'], str(a['run_id']), a['park_id'], a['org_id']) !=
+            (p['id'], str(run_id), p['park_id'], p['org_id'])):
+            return False
+        if a.get('managed_access') is None:
+            return True
+        if c.autocommit:
+            return False
+        bridge = getattr(self, '_isolated_run_access', None)
+        if bridge is None or not bridge.assignment_allowed(c, p, run_id, a):
+            return False
+        if track:
+            if not isinstance(c, _AccessConnection):
+                raise Denied('managed access requires guarded Store transaction')
+            c._managed_checks.add((p['id'], str(run_id)))
+        return True
+
+    def assigned_executors(self, c, run_id, park_id, org_id):
+        rows = c.execute("""SELECT e.* FROM principals e JOIN run_assignments a
+            ON a.principal_id=e.id AND a.park_id=e.park_id AND a.org_id=e.org_id
+            JOIN capability_grants g ON g.principal_id=e.id AND g.park_id=e.park_id
+            AND g.org_id=e.org_id AND g.capability='READ' AND g.active
+            WHERE a.run_id=%s AND a.active AND e.active AND e.role='service_executor'
+            AND e.park_id=%s AND e.org_id=%s ORDER BY e.id LIMIT 100""",
+            (run_id, park_id, org_id)).fetchall()
+        result = []
+        for p in rows:
+            self.lock_principal(c, p['id'])
+            current = c.execute('SELECT * FROM principals WHERE id=%s AND active', (p['id'],)).fetchone()
+            if (not current or current['role'] != 'service_executor' or
+                    (current['park_id'],current['org_id']) != (park_id,org_id)):
+                continue
+            try:
+                self.check_capability(c, current, 'READ')
+            except Denied:
+                continue
+            if self.assignment_allowed(c, current, run_id):
+                result.append({'id': current['id']})
+        return result
 
     def migrate(self):
         with self.connect() as c:
@@ -152,17 +229,14 @@ class Store:
 
     def scoped_run(self, c, p, run_id, lock=False, capability='READ'):
         self.check_capability(c,p,capability)
+        if p['role'] != 'enterprise_operator':
+            if capability != 'READ' or not self.assignment_allowed(c,p,run_id):
+                raise Denied('assigned scope required')
         sql = 'SELECT * FROM runs WHERE id=%s AND park_id=%s AND org_id=%s'
         if lock:sql += ' FOR UPDATE'
         r=c.execute(sql,(run_id,p['park_id'],p['org_id'])).fetchone()
         if r is None:raise Denied('record unavailable')
-        if p['role'] != 'enterprise_operator':
-            assignment=c.execute('SELECT 1 FROM run_assignments WHERE principal_id=%s AND run_id=%s '
-                                 'AND park_id=%s AND org_id=%s AND active',
-                                 (p['id'],run_id,p['park_id'],p['org_id'])).fetchone()
-            if capability!='READ' or not assignment:
-                raise Denied('assigned scope required')
-        elif r['principal_id'] != p['id']:
+        if p['role'] == 'enterprise_operator' and r['principal_id'] != p['id']:
             raise Denied('owner scope required')
         return r
 
@@ -194,7 +268,11 @@ class Store:
             r=c.execute('SELECT * FROM runs WHERE id=%s',(run_id,)).fetchone()
             if not p or not r or p['role']=='enterprise_operator' or (p['park_id'],p['org_id'])!=(r['park_id'],r['org_id']):
                 raise Denied('invalid assignment scope')
-            c.execute('INSERT INTO run_assignments VALUES(%s,%s,%s,%s,%s) ON CONFLICT(principal_id,run_id) '
+            old=c.execute('SELECT * FROM run_assignments WHERE principal_id=%s AND run_id=%s',
+                          (principal_id,run_id)).fetchone()
+            if old and old.get('managed_access') is not None:
+                raise Denied('managed assignment requires explicit access decision')
+            c.execute('INSERT INTO run_assignments(principal_id,run_id,park_id,org_id,active) VALUES(%s,%s,%s,%s,%s) ON CONFLICT(principal_id,run_id) '
                       'DO UPDATE SET active=excluded.active',(principal_id,run_id,p['park_id'],p['org_id'],active))
 
     def event(self, c, run_id):

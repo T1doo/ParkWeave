@@ -166,11 +166,7 @@ def catalog(store, token, id):
         parent = _parent(store, c, p, id)
         root = _root(c, parent)
         existing = bool(c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s', (id,)).fetchone())
-        rows = c.execute("""SELECT e.id FROM principals e JOIN run_assignments a ON a.principal_id=e.id
-          AND a.park_id=e.park_id AND a.org_id=e.org_id JOIN capability_grants g ON g.principal_id=e.id
-          AND g.park_id=e.park_id AND g.org_id=e.org_id AND g.capability='READ' AND g.active
-          WHERE a.run_id=%s AND a.active AND e.active AND e.role='service_executor'
-          AND e.park_id=%s AND e.org_id=%s ORDER BY e.id LIMIT 100""", (parent['run_id'], p['park_id'], p['org_id'])).fetchall()
+        rows = store.assigned_executors(c,parent['run_id'],p['park_id'],p['org_id'])
         current = _own_offer(c, p, root) if root else None
         recovery=_recovery(c,parent,root,store)
         limited = bool(root and root['revision'] >= 63)
@@ -302,5 +298,11 @@ def list_items(store, token):
         column = 'owner_id' if p['role']=='enterprise_operator' else 'reviewer_id'
         condition = 'p.' + column + '=%s' if p['role']!='service_executor' else "EXISTS(SELECT 1 FROM service_dispatch_offers o WHERE o.dispatch_id=d.id AND o.executor_id=%s) AND EXISTS(SELECT 1 FROM run_assignments a WHERE a.run_id=p.run_id AND a.principal_id=%s AND a.park_id=p.park_id AND a.org_id=p.org_id AND a.active)"
         params = (p['park_id'],p['org_id'],p['id'],p['id']) if p['role']=='service_executor' else (p['park_id'],p['org_id'],p['id'])
-        rows = c.execute('SELECT d.id,p.id preparation_id,p.goal FROM service_dispatches d JOIN preparations p ON p.id=d.preparation_id WHERE p.park_id=%s AND p.org_id=%s AND ' + condition + ' ORDER BY d.created_at DESC,d.id DESC LIMIT 101', params).fetchall()
-        return dict(scope=SCOPE, role=p['role'], items=rows[:100], has_older_records=len(rows)>100)
+        rows = c.execute('SELECT d.id,p.id preparation_id,p.goal,p.run_id FROM service_dispatches d JOIN preparations p ON p.id=d.preparation_id WHERE p.park_id=%s AND p.org_id=%s AND ' + condition + ' ORDER BY d.created_at DESC,d.id DESC LIMIT 101', params).fetchall()
+        raw_more=len(rows)>100
+        scanned=len(rows)
+        if p['role']=='service_executor':
+            rows=[r for r in rows if store.assignment_allowed(c,p,r['run_id'])]
+        for row in rows:
+            row.pop('run_id',None)
+        return dict(scope=SCOPE, role=p['role'], items=rows[:100], has_older_records=raw_more, access_filtered=scanned-len(rows))
