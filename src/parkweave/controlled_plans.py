@@ -6,7 +6,7 @@ from typing import Literal,Annotated
 from pydantic import BaseModel,ConfigDict,Field
 from psycopg.types.json import Jsonb
 from . import preparation as prep, service_dispatches as sd, executor_receipts as er
-from . import case_lifecycle as life
+from . import case_lifecycle as life, request_intents as intents
 from .store import Denied,Conflict,digest
 
 STEPS=('P1','P2','P3','P4')
@@ -45,7 +45,7 @@ class Create(BaseModel):
     expected_preview_sha256:str|None=Field(default=None,pattern='^[a-f0-9]{64}$')
 class Preview(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True,str_strip_whitespace=True)
-    required_goals:list[Annotated[str,Field(min_length=1,max_length=160)]]=Field(min_length=1,max_length=8)
+    required_goals:list[Annotated[str,Field(min_length=1,max_length=160)]]=Field(min_length=0,max_length=8)
 
 # Describes only existing adapters, never a published business catalogue.
 PREVIEW_STEPS={
@@ -69,8 +69,10 @@ def _creation_blockers(c,parent):
     dependencies=(('EXISTING_CASE_RESOURCE_LINK','case_resource_links','preparation_id'),
       ('EXISTING_DISPATCH_RECORD','service_dispatches','preparation_id'),
       ('EXISTING_RECEIPT_RECORD','service_receipt_steps','preparation_id'))
-    return [reason for reason,table,column in dependencies
+    blockers=[reason for reason,table,column in dependencies
       if c.execute('SELECT 1 FROM '+table+' WHERE '+column+'=%s',(parent['id'],)).fetchone()]
+    if intents.state(parent) not in ('NOT_RECORDED','SUPPORTED_LOCAL'):blockers.append('REQUEST_GOAL_COVERAGE_REQUIRED')
+    return blockers
 
 def _auth(store,c,token,id,write=False):
     p=sd._auth(store,c,token)
@@ -117,6 +119,9 @@ def _sources(store,c,parent):
       'P4':{k:snap.get(k) for k in ('preparation_revision','preparation_sha256','receipt_step_id','receipt_step_revision','receipt_id','receipt_sha256')},
     }
     snapshots['P1'].update(owner_id=parent['owner_id'],reviewer_id=parent['reviewer_id'])
+    if parent.get('request_intent'):
+        snapshots['P1']['request_intent_sha256']=_hash(parent['request_intent'])
+        if intents.state(parent)!='SUPPORTED_LOCAL':issues['MATERIAL_REVIEW'].append('REQUEST_GOAL_COVERAGE_REQUIRED')
     snapshots['P2']['resource_rules']=[_normal({k:r[k] for k in ('id','revision','capacity','buffer_seconds','open_from','open_until','enabled')}) for _,r in sorted(rules.items(),key=lambda x:str(x[0]))]
     return {s:sorted(set(issues[k])) for s,k in zip(STEPS,CHECKS)},_normal(snapshots)
 
@@ -168,10 +173,11 @@ def _view(c,p,parent,row,issues,snapshots,states,event=None):
     access_blocked='EXISTING_RUN_ASSIGNMENT_REQUIRED' in issues['P3']
     state='LOCAL_RECORDS_CHECKED' if next_step is None else 'BLOCKED' if not next_ready or access_blocked else 'NEEDS_RECHECK' if any(v=='NEEDS_RECHECK' for v in states.values()) else 'IN_PROGRESS'
     return dict(scope=SCOPE,role=p['role'],preparation_id=parent['id'],preparation_revision=parent['revision'],plan_id=row['id'],revision=row['revision'],
+      request_intent=intents.view(parent) if owner else None,request_coverage_state=intents.state(parent),
       template_sha256=row['template_sha256'],template_version=1,state=state,steps=steps,next_step=next_step,
       history=history,event=event,source_snapshots=snapshots if owner else None,
       goal=parent['goal'] if owner else None,goal_coverage='LOCAL_SYNTHETIC_RECORDS_ONLY',
-      required_goals=['LOCAL_SYNTHETIC_COORDINATION_RECORDS'],full_original_goal_verified=False,original_case_goal_support='NOT_VERIFIED_BY_LOCAL_TEMPLATE',automatic_execution=False,new_grants=False,
+      required_goals=intents.view(parent)['required_goals'] if owner else None,template_required_goals=['LOCAL_SYNTHETIC_COORDINATION_RECORDS'],full_original_goal_verified=False,original_case_goal_support='NOT_VERIFIED_BY_LOCAL_TEMPLATE',automatic_execution=False,new_grants=False,
       external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',case_goal_completed=False)
 
 def _write_flag(store,c,p):
@@ -201,6 +207,7 @@ def read(store,token,id):
             if owner and not p['_plan_write']:blockers.append('CURRENT_EXECUTE_AUTHORITY_REQUIRED')
             return dict(scope=SCOPE,role=p['role'],preparation_id=id,plan_id=None,template_sha256=TEMPLATE_SHA,
               can_create=owner and p['_plan_write'] and not blockers,creation_blockers=blockers,
+              request_intent=intents.view(parent) if owner else None,request_coverage_state=intents.state(parent),
               state='NOT_STARTED',preparation_revision=parent['revision'])
         row,issues,snapshots,states=_inspect(store,c,parent,row)
         return _view(c,p,parent,row,issues,snapshots,states)
@@ -219,15 +226,16 @@ def _preview(store,c,p,parent,goals):
     if not p['_plan_write']:blockers.append('CURRENT_EXECUTE_AUTHORITY_REQUIRED')
     issues,snapshots=_sources(store,c,parent)
     goals=list(dict.fromkeys(goals))
+    if parent.get('request_intent') and goals!=parent['request_intent']['required_goals']:raise Conflict('save explicit request goals before preview')
     unsupported=[g for g in goals if g!=TEMPLATE['goal']]
     steps=[dict(id=s,depends_on=TEMPLATE['steps'][i]['depends_on'],**PREVIEW_STEPS[s],
       state='NEEDS_INPUT' if issues[s] else 'INPUTS_PRESENT',issues=issues[s],source_sha256=_hash(snapshots[s])) for i,s in enumerate(STEPS)]
     result=dict(scope=SCOPE,namespace='PREVIEW',template_review='ENGINEERING_ONLY',business_publication=False,
-      preparation_id=parent['id'],case_id=parent['case_id'],preparation_revision=parent['revision'],
+      preparation_id=parent['id'],case_id=parent['case_id'],preparation_revision=parent['revision'],request_intent=intents.view(parent),
       template_sha256=TEMPLATE_SHA,required_goals=goals,unsupported_goals=unsupported,
       supported_goals=[g for g in goals if g==TEMPLATE['goal']],creation_blockers=blockers,steps=steps,
       can_adopt=not blockers and not unsupported and TEMPLATE['goal'] in goals,
-      state='PARTIAL' if unsupported else 'BLOCKED' if blockers else 'READY_TO_ADOPT',
+      state='UNKNOWN' if not goals else 'PARTIAL' if unsupported else 'BLOCKED' if blockers else 'READY_TO_ADOPT',
       persisted=False,executed=False,case_goal_completed=False,automatic_execution=False,new_grants=False)
     result['preview_sha256']=_hash(_normal(result))
     return result
@@ -240,7 +248,9 @@ def create(store,token,id,key,data):
         if data.template_sha256!=TEMPLATE_SHA:raise Conflict('fixed template hash mismatch')
         if not old:
             if row or parent['revision']!=data.expected_preparation_revision:raise Conflict('plan exists or preparation revision changed')
-            if _creation_blockers(c,parent):raise Conflict('start fixed template before resource association/dispatch/receipt')
+            blockers=_creation_blockers(c,parent)
+            if 'REQUEST_GOAL_COVERAGE_REQUIRED' in blockers:raise Conflict('explicit request goals remain unknown or unsupported')
+            if blockers:raise Conflict('start fixed template before resource association/dispatch/receipt')
             if data.expected_preview_sha256 is not None:
                 current=_preview(store,c,p,parent,data.required_goals)
                 if not current['can_adopt'] or current['preview_sha256']!=data.expected_preview_sha256:raise Conflict('plan preview changed; preview again')

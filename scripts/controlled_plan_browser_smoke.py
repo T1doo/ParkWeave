@@ -57,6 +57,7 @@ try:
     browser('open','http://127.0.0.1:8765');browser('snapshot','-i');switch(sessions['fixture-a'])
     goal='SYNTHETIC controlled template '+uuid.uuid4().hex[:8]
     click('#prep-catalog');wait('prepCatalog',lambda x:isinstance(x,dict));browser('fill','#prep-goal',goal);browser('find','role','button','click','--name','开始资料准备');browser('snapshot','-i');wait('preparationView',lambda x:isinstance(x,dict))
+    click('#plan-prepare');wait('planView',lambda x:isinstance(x,dict));revision=value('planView.preparation_revision');click('#request-local-goal');click('#request-save');wait('planView',lambda x:isinstance(x,dict) and x['preparation_revision']>revision);click('#plan-materials');wait('preparationView',lambda x:isinstance(x,dict))
     for slot,text in [('need_summary','SYNTHETIC request'),('material_outline','SYNTHETIC private material body')]:
         revision=value('preparationView.preparation.revision');browser('select','#prep-slot',slot);browser('fill','#prep-text',text);browser('fill','#prep-source-label','SYNTHETIC fixture document v1');browser('find','role','button','click','--name','追加材料版本');browser('snapshot','-i');wait('preparationView',lambda x:isinstance(x,dict) and x['preparation']['revision']>revision)
     click('[data-tab=collaboration]');switch(specialists['prep-specialist-fixture-a']);prep_select(goal);prep_act('#prep-review')

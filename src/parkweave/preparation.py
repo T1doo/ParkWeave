@@ -144,9 +144,13 @@ def read(store,token,id):
     with store.connect() as c:
         p=store.auth(c,token,lock=True);row=scoped(store,c,p,id)
         items=latest(c,id)
+        history=c.execute('SELECT revision,action,payload,created_at FROM preparation_events WHERE preparation_id=%s ORDER BY revision',(id,)).fetchall()
+        if p['role']!='enterprise_operator':
+            row.pop('request_intent',None)
+            for record in history:record['payload'].pop('request_intent',None)
         return {'preparation':row,'current_materials':items,'snapshot_sha256':snapshot(row,items),
                 'material_history':c.execute('SELECT slot,version,text,source_kind,source_label,source_sha256,authenticity,created_at FROM preparation_evidence WHERE preparation_id=%s ORDER BY slot,version',(id,)).fetchall(),
-                'history':c.execute('SELECT revision,action,payload,created_at FROM preparation_events WHERE preparation_id=%s ORDER BY revision',(id,)).fetchall(),
+                'history':history,
                 'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY','qualification':'NOT_EVALUATED',
                 'external_acceptance':'NOT_SUBMITTED','offline_fulfillment':'NO_EVIDENCE'}
 

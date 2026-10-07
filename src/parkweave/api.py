@@ -202,6 +202,10 @@ def create_app(store: Store) -> FastAPI:
 
     from . import dispatch_notices as notices
     from . import controlled_plans as cp
+    from . import request_intents as intents
+    @app.post('/api/preparations/{preparation_id}/request-intent')
+    def save_request_intent(preparation_id: UUID,data: intents.Save,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return intents.save(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
     @app.get('/api/controlled-plans/template')
     def fixed_template(authorization: str | None=Header(default=None)):
         return cp.template(store,token(authorization))

@@ -9,7 +9,7 @@ from test_controlled_plans import create as adopt
 GOAL=cp.TEMPLATE['goal']
 def preview(f,p,goals=None,user='fixture-a'):
     return f[3].post('/api/preparations/'+p['preparation_id']+'/controlled-plan/preview',
-      headers=headers(f[2],user),json={'required_goals':goals or [GOAL]})
+      headers=headers(f[2],user),json={'required_goals':[GOAL] if goals is None else goals})
 def denial_count(f):
     with f[1].connect() as c:return c.execute("SELECT count(*) n FROM authorization_audit WHERE outcome='DENIED'").fetchone()['n']
 
@@ -61,7 +61,7 @@ def test_execute_revocation_blocks_preview_adoption_without_hiding_proposal(prep
     assert adopt(f,p,expected_preview_sha256=x['preview_sha256']).status_code==403 and digest(f)==before
     assert denial_count(f)==audit+1
 
-@pytest.mark.parametrize('goals',[[],[' '],['x'*161],[GOAL]*9])
+@pytest.mark.parametrize('goals',[[' '],['x'*161],[GOAL]*9])
 def test_preview_bounded_input(preparation_fixture,goals):
     f=preparation_fixture;p,_,_=prepare(f)
     r=f[3].post('/api/preparations/'+p['preparation_id']+'/controlled-plan/preview',headers=headers(f[2]),json={'required_goals':goals})

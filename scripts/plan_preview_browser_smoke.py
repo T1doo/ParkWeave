@@ -82,14 +82,14 @@ def main():
     assert value("document.querySelector('#plan-create').hidden") and value('planPreview') is None
     guard=value("(async()=>{try{await planWrite(null);return 'UNEXPECTED';}catch(e){return e.message;}})()");assert '请先预览' in guard
     before=state_digest();versions=plan_versions()
-    browser('fill','#plan-required-goals','需要外部机构受理回执');click('#plan-preview-button');x=wait('planPreview',lambda x:isinstance(x,dict))
+    click('#request-local-goal');browser('fill','#plan-required-goals','需要外部机构受理回执');revision=value('planView.preparation_revision');click('#request-save');wait('planView',lambda x:isinstance(x,dict) and x['preparation_revision']>revision);before=state_digest();versions=plan_versions();click('#plan-preview-button');x=wait('planPreview',lambda x:isinstance(x,dict))
     assert x['state']=='PARTIAL' and x['unsupported_goals']==['需要外部机构受理回执'] and not x['can_adopt']
     assert value("document.querySelector('#plan-create').hidden") and '需要外部机构受理回执' in value("document.querySelector('#plan-preview-result').textContent")
     assert state_digest()==before and plan_versions()==versions
     for width in (1200,390,320):
         browser('set','viewport',str(width),'900' if width==1200 else '844');browser('snapshot','-i');metric=value('({width:innerWidth,scroll:document.documentElement.scrollWidth})');assert metric['scroll']<=metric['width'];viewport_checks.append(metric);screenshot('uncovered-goal-preview-'+str(width)+'.png')
     browser('set','viewport','1200','900');browser('fill','#plan-required-goals','');assert value('planPreview') is None
-    click('#plan-preview-button');x=wait('planPreview',lambda x:isinstance(x,dict));assert x['can_adopt'] and not x['unsupported_goals']
+    revision=value('planView.preparation_revision');click('#request-save');wait('planView',lambda x:isinstance(x,dict) and x['preparation_revision']>revision);before=state_digest();versions=plan_versions();click('#plan-preview-button');x=wait('planPreview',lambda x:isinstance(x,dict));assert x['can_adopt'] and not x['unsupported_goals']
     assert 'EXISTING_RUN_ASSIGNMENT_REQUIRED' in x['steps'][2]['issues'] and not x['executed'] and not x['persisted']
     assert all(k in value("document.querySelector('#plan-preview-result').textContent") for k in ('责任：','前置：','产出：','验收：','没有已有合法Run访问'))
     assert state_digest()==before and plan_versions()==versions;screenshot('supported-preview-with-blocked-acceptance.png')

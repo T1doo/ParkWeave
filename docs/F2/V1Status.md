@@ -1,3 +1,9 @@
+## ENG085 显式诉求与目标持久覆盖（仅本地）
+
+在498d5d2上追加schema19：复用资料表/事件，不增权限身份；原诉求保留，当前诉求、用户主动必需目标及覆盖结果保存/刷新恢复。空目标UNKNOWN、未覆盖PARTIAL、旧模板STALE均可见，新保存路径阻止CREATE/P1；修改使旧预览/核对失效，保留旧业务历史。旧NULL不假造固定目标，原有限直CREATE兼容；私有intent仅owner。最终冻结200源完整Linux1482PASS/0FAIL/9nativeSKIP/2WARN（302.44s），相关130PASS、修复定点92PASS；实际新Case/响应丢失同key/迟到身份/1200/390/320及独立复核通过，授权摘要不变，CaseNEEDS_INPUT/P3访问缺失保持。详情、失败记录、可发布边界及后两缺口安全下一步见[ENG085](ENG085-PersistentRequestCoverage.md)。
+
+合法新Run访问准备流程未具备，保持阻塞、不自动赋权；准备度复用已有ServiceSpec/三值结构合同冻结来源/候选审核发布/oracle，缺发布权限停该步骤。未push/新CI/外网/owner属性变更，R4关闭/模型预算0，F1未签收/F2并行及Windows/Win11旧边界保持。下方历史条目保留原范围。
+
 ## ENG084 当前事项方案预览（本地）
 
 从49cc268回看原设计，按价值列三项核心缺口：启用前方案/必需目标覆盖、新Run合法协作访问、审核规则准备度。首项已交付有限固定合成预览：责任/前置/产出/验收/当前输入缺口，unsupported必需目标保留PARTIAL并阻止UI启用；新UI启用绑定当前预览hash/资料版本，旧固定支持目标直建API兼容合同保留。119相关PASS/0FAIL/2WARN，真实新Case页面/worker/PG/1200/390/320与迟到身份验证通过，授权摘要不变；明确启用后CaseNEEDS_INPUT、目标未完成/P3合法Run访问缺失仍阻塞。完整F2/DAG/审核发布模板未完成，不当资格或外部履约；独立审查与证据见[ENG084](ENG084-CasePlanPreview.md)。

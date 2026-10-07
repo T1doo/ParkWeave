@@ -1,3 +1,6 @@
+## ENG085 当前本地评审能力
+
+显式诉求、必需目标与有限合成方案覆盖已持久关联；刷新可恢复，修改使预览/核对失效，UNKNOWN/PARTIAL不转通过。schema19仅原表新增metadata/事件action，权限身份不变。最终Linux1482PASS/0FAIL/9nativeSKIP、实际新Case窄屏/时序及独立复核通过；仅本地未push/CI。合法新Run访问与审核准备度仍缺，F1未签收/F2并行、R4关闭/预算0与Windows/Win11边界保持；可发布范围和安全下一步见[F2/ENG085](F2/ENG085-PersistentRequestCoverage.md)。
 ## ENG083 精确同步与本地历史模板说明（旧记录保留各轮范围）
 
 指定6提交已审无owner/权限扩大；精确797f426隔离完整Linux1454PASS/0FAIL/9nativeSKIP后，普通快进推送并核实远端同SHA。唯一run37574021406 attempt1 completed/success仅既有独立Job测量，metadata可证步骤success，直接JSON未取得；无日志/产物/rerun，不代表完整Windows/Win11验收。

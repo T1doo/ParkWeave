@@ -176,7 +176,7 @@ def test_current_migration_is_idempotent_preserves_existing_records(fixture):
     before=store.read(tokens['fixture-a'],run)
     owner.migrate();owner.migrate()
     assert store.read(tokens['fixture-a'],run)==before
-    assert client.get('/health').json()['schema']==18
+    assert client.get('/health').json()['schema']==19
 
 
 def test_invalid_receipt_rejected_by_actual_worker_gateway(runtime):
@@ -216,11 +216,11 @@ def test_upgrade_legacy_database_preserves_business_history(pg):
             c.execute("INSERT INTO cases VALUES(%s,%s,'park-a','org-a','合成：历史记录','NEEDS_INPUT','SYNTHETIC','NOT_SUBMITTED','NO_EVIDENCE')",(case,run))
         owner.migrate();owner.migrate()
         with owner.connect() as c:
-            assert c.execute('SELECT max(version) version FROM schema_version').fetchone()['version']==18
+            assert c.execute('SELECT max(version) version FROM schema_version').fetchone()['version']==19
             assert c.execute('SELECT id,state,receipt FROM operations').fetchone()=={'id':op,'state':'VERIFIED','receipt':receipt}
             assert c.execute('SELECT id,state FROM cases').fetchone()=={'id':case,'state':'NEEDS_INPUT'}
             assert c.execute('SELECT state,control_intent FROM runs').fetchone()=={'state':'SUCCEEDED','control_intent':'CONTINUE'}
-            c.execute('INSERT INTO schema_version VALUES(19)')
+            c.execute('INSERT INTO schema_version VALUES(20)')
         with pytest.raises(Conflict):owner.migrate()
         with owner.connect() as c:assert c.execute('SELECT count(*) n FROM cases').fetchone()['n']==1
     finally:
