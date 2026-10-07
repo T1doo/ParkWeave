@@ -1,3 +1,9 @@
+## ENG087 正式规则发布授权前置（BLOCKED）
+
+从5822b029核实正式规则审核发布：当前READ/资料REVIEW_ASSIGNED不包含服务目录审批权，app对preparation_catalog只有SELECT，V1结构校验published=false；不存在可复用发布主体/API或正式授权合同。实际隔离PG/API前置28PASS验证目录UPDATE被拒绝、客户端审核标记/人工资料核对不能产生发布或资格结论，独立复核一致；205源完整拒绝边界/既有功能回归1501PASS/0FAIL/9nativeSKIP/2WARN（310.23秒），产品源码不变。未实现正向规则发布，不把ENG086材料流程或Windows隔离CI当正式发布验收。最小候选流程/权限决策待明项见[ENG087](ENG087-RulePublicationAuthorityGate.md)。
+
+尚缺代码：来源/规则修订存储、提交/审核/发布/撤回API与UI及影响失效。尚缺授权合同：谁可提交/审核/发布/撤回、精确范围与授予/撤销/审计主体；实际扩角色能力、app目录写权或Grant属真实权限变化，本轮不做。已请求提供现成合同或明确仅代码/隔离测试候选流程范围，等待不会产生授权。仅本地测试/文档，不push/CI/owner或持久账户凭据操作；R4关闭/预算0，F1未签收/F2并行与Win11边界保持。
+
 ## ENG086 材料准备度与合法Run访问边界（仅本地）
 
 在6b647ac上复用现有受控Rule/Truth合同，保存带材料/服务来源与人工审核快照的三值材料准备度；缺证据未知、明确补正不满足、当前完整人工核对仅表示本地材料条件满足。变化使旧评估STALE/当前未知，历史与刷新恢复；规则工程草稿未业务发布，资格始终未知、Case目标未完成。schema20只新增原资料表metadata，权限身份不变。相关107PASS/闭合15PASS；最终冻结204源完整Linux1497PASS/0FAIL/9nativeSKIP/2WARN（313.88秒），实际双角色三值/修改过期/reload/来源展开/响应时序及独立复核通过；详见[ENG086](ENG086-SourceBoundMaterialReadiness.md)及证据。

@@ -1,3 +1,7 @@
+## ENG087 正式规则发布当前阻塞
+
+实际合同和独立复核均确认没有现成规则发布主体/授权合同，应用目录仅SELECT；资料核对权限不能扩大为目录审批。28项隔离PG/API验证拒绝边界，205冻结源完整回归1501PASS/0FAIL/9nativeSKIP/2WARN（310.23秒），产品源码与5822b029不变，未实现正向发布。需要明确现有授权主体/范围及代码候选范围，不能自动改Grant/角色或owner；具体可评审流程与代码/权限缺口分界见[F2/ENG087](F2/ENG087-RulePublicationAuthorityGate.md)。本轮保留ENG086既有材料流程、暂停owner、无push/CI/真实模型或新持久账户凭据。
+
 ## ENG086 本地材料准备度
 
 当前事项支持带来源/审核快照的持久三值材料准备度，修改后过期、历史和刷新恢复；工程规则未业务发布，资格保持未知/Case目标未完成。相关107PASS/闭合15PASS，最终冻结204源完整Linux1497PASS/0FAIL/9nativeSKIP/2WARN（313.88秒），实际双角色业务/来源窄屏/时序及独立复核通过，详见[F2/ENG086](F2/ENG086-SourceBoundMaterialReadiness.md)。合法新Run访问仍缺获授权的产品批准流程，未新增Grant/身份/assignment或owner变更；仅本地未push/CI，F1未签收/F2并行、R4关闭/预算0与Windows/Win11边界保持。
