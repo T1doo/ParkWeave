@@ -17,7 +17,7 @@
 <details class="engineering-record"><summary>本地运行记录 · 工程验证</summary><section><pre id="result" aria-live="polite">暂无记录</pre></section></details>
 <section id="dispatch-detail" hidden><p class="eyebrow">COLLABORATION · 内部分派</p><h2>内部分派与本人接单</h2><p id="dispatch-summary" class="status" aria-live="polite"></p><button id="dispatch-refresh" class="secondary">刷新当前分派</button><div id="dispatch-current"></div><form id="dispatch-offer" hidden><label>已有合法执行者<select id="dispatch-executor" required></select></label><label>分派或调整说明<textarea id="dispatch-offer-reason" maxlength="1000" required></textarea></label><button id="dispatch-offer-button">记录分派</button></form><form id="dispatch-decision" hidden><label>决定说明<textarea id="dispatch-decision-reason" maxlength="1000" required></textarea></label><div class="actions"><button type="button" id="dispatch-accept">接受本事项</button><button type="button" id="dispatch-decline">拒绝本事项</button><button type="button" id="dispatch-withdraw">撤回未接单分派</button></div></form><button id="plan-from-dispatch" class="secondary">查看此事项四步计划</button><button id="local-case-dispatch" class="secondary">查看此Case本地状态</button><button id="dispatch-receipt" class="secondary" hidden>进入已接单事项回执</button><p class="notice">接单后可记录合成回执，企业仍需核对。这个切片暂不处理接单后转派；分派与接单不代表外部受理、资格满足或线下履约。</p><h3>分派版本与决定历史</h3><div id="dispatch-history"></div><p id="dispatch-error" role="alert" aria-live="polite"></p></section>
 <section id="receipt-detail" hidden><p class="eyebrow">RECEIPT · 合成办理回执</p><h2>获派事项回执</h2><p id="receipt-summary" class="status" aria-live="polite"></p><button id="receipt-refresh" class="secondary">刷新当前回执</button><div id="receipt-current"></div><form id="receipt-submit"><label>合成回执内容<textarea id="receipt-text" maxlength="4000" required></textarea></label><label>合成来源与记录版本<input id="receipt-source" maxlength="200" required placeholder="合成工作记录 v1"></label><button id="receipt-submit-button">提交合成回执</button></form><form id="receipt-decisions"><label>企业核对、纠错或重开说明<textarea id="receipt-reason" maxlength="1000" required></textarea></label><div class="actions"><button type="button" id="receipt-ack">核对当前合成回执</button><button type="button" id="receipt-correct">要求纠正回执</button><button type="button" id="receipt-reopen">重开回执事项</button></div></form><p class="notice">合成文本未证明线下办理完成；本地核对不会关闭Case目标、判定资格或触发外部通知。</p><button id="plan-from-receipt" class="secondary">查看此事项四步计划</button><button id="local-case-receipt" class="secondary">查看此Case本地状态</button><h3>历次回执与人工记录</h3><div id="receipt-history"></div><p id="receipt-error" role="alert" aria-live="polite"></p></section><section id="plan-detail" hidden><p class="eyebrow">COLLABORATION · 固定合成计划</p><h2>材料、资源、分派与回执</h2><p>固定四步由原有角色逐次办理，企业明确核对每一步的当前依赖；不自动赋权、办理或履约。此模板只核对合成协作记录，原Case目标仍未核验。</p><p id="plan-summary" class="status" aria-live="polite"></p><button id="plan-refresh" class="secondary">刷新当前四步计划</button><button id="plan-create" hidden>为此新事项启用固定合成模板</button><p id="plan-next-action" class="notice" aria-live="polite"></p><div id="plan-steps"></div><label id="plan-reason-label">本次显式兼容核对说明<textarea id="plan-reason" maxlength="1000"></textarea></label><div class="actions"><button id="plan-P1">核对材料步骤</button><button id="plan-P2">核对资源步骤</button><button id="plan-P3">核对接单步骤</button><button id="plan-P4">核对回执步骤</button></div><div class="actions"><button id="plan-materials" class="secondary">返回当前资料办理</button><button id="plan-dispatch" class="secondary">进入当前分派事项</button><button id="plan-local-case" class="secondary" hidden>进入此Case本地校验与关闭</button><button id="plan-back" class="secondary">收起计划</button></div><p>上游失配时保留原责任、回执与资源；处理原业务后须显式重验，不自动撤单、释放或重派。缺少合法运行访问时阻塞，模板不新增授权。</p><div id="plan-history"></div><p id="plan-error" role="alert" aria-live="polite"></p></section>
-<section id="local-case-detail" hidden><p class="eyebrow">CASE · 本地记录</p><h2>本地记录关闭与重开</h2><p id="local-case-summary" class="status" aria-live="polite"></p><p class="notice">关闭仅整理当前合成本地记录。真实Case仍等待确认，目标未完成，外部尚未受理，线下履约无证据。重开保留历史与资源占用；新一轮须显式重新校验材料、接单、回执和资源。</p><div class="actions"><button id="local-case-refresh" class="secondary">刷新当前Case本地记录</button><button id="local-case-plan" class="secondary">返回此Case四步计划</button></div><div id="local-case-checks"></div><form id="local-case-decision"><label>本地校验、关闭或重开说明<textarea id="local-case-reason" maxlength="1000" required></textarea></label><div class="actions"><button id="local-case-validate" type="button">重新校验当前一轮</button><button id="local-case-close" type="button">关闭本地记录</button><button id="local-case-reopen" type="button">重开本地记录</button></div></form><h3>逐轮历史</h3><div id="local-case-history"></div><p id="local-case-error" role="alert" aria-live="polite"></p></section>
+<section id="local-case-detail" hidden><p class="eyebrow">CASE · 本地记录</p><h2>本地记录关闭与重开</h2><p id="local-case-summary" class="status" aria-live="polite"></p><p id="local-case-boundary" class="notice">关闭仅整理当前合成本地记录。真实Case仍等待确认，目标未完成，外部尚未受理，线下履约无证据。重开保留历史与资源占用；新一轮须显式重新校验材料、接单、回执和资源。</p><div class="actions"><button id="local-case-refresh" class="secondary">刷新当前Case本地记录</button><button id="local-case-plan" class="secondary">返回此Case四步计划</button></div><div id="local-case-checks"></div><form id="local-case-decision"><label>本地校验、关闭或重开说明<textarea id="local-case-reason" maxlength="1000" required></textarea></label><div class="actions"><button id="local-case-validate" type="button">重新校验当前一轮</button><button id="local-case-close" type="button">关闭本地记录</button><button id="local-case-reopen" type="button">重开本地记录</button></div></form><h3>逐轮历史</h3><div id="local-case-history"></div><p id="local-case-error" role="alert" aria-live="polite"></p></section>
 <script>
 const $=id=>document.getElementById(id);const show=x=>{$('result').textContent=JSON.stringify(x,null,2);$('page-feedback').dataset.tone=x.error?'error':'success';$('page-feedback').textContent=x.error||'本地运行记录已更新；外部受理与线下履约状态需分别核对。';};
 let pageGeneration=0;const pageResponses=new WeakMap();
@@ -179,10 +179,60 @@ $('case-resource-form').onsubmit=async e=>{e.preventDefault();try{const c=caseRe
 
 let localCaseView=null,localCaseId=null,localCaseGeneration=0,localCaseContext=null;const localCaseRetries=new Map();
 const localCaseLabels={NOT_STARTED:'尚未校验本地关闭条件',READY:'当前一轮已显式校验',LOCAL_RECORD_CLOSED:'本地记录已关闭',REOPENED:'本地记录已重开，等待重新校验'},localCheckLabels={MATERIAL_REVIEW:'材料确认',ACCEPTANCE_RECHECK:'执行者接单',RECEIPT_RECHECK:'企业核对回执',RESOURCE_RECHECK:'资源关联与当前约束'};
+// Explain only the current API's authorized checks. Unknown reasons never expose raw codes.
+const localCaseReasons={
+ MATERIAL_REVIEW:{
+  CURRENT_MATERIAL_CONFIRMATION_REQUIRED:'当前材料尚未确认，或材料版本已变化。获派资料专员核对当前资料后，由企业经办人在资料准备中明确确认。',
+  CURRENT_REVIEWER_AUTHORITY_REQUIRED:'当前资料核对人的授权条件未满足。请由现有负责人核查当前分工与授权；此入口不会自动赋权。'},
+ ACCEPTANCE_RECHECK:{
+  LEGACY_ACCEPTANCE_MISSING:'已有历史回执，但缺少当前分派的本人接单记录。请获派资料专员在内部分派中核对，由当前合法执行者本人接单。',
+  ACCEPTED_DISPATCH_REQUIRED:'当前分派尚未由执行者接单。请获派资料专员查看内部分派，由获派执行者本人接受；历史回执不能代替接单。',
+  CURRENT_EXECUTOR_AUTHORITY_REQUIRED:'当前执行者的授权条件未满足。请现有负责人核查当前分工与授权，保持等待。',
+  ACCEPTANCE_PREPARATION_CHANGED:'接单对应的材料已变化。请资料专员与执行者人工核对；接受后的责任调整尚未支持，不能自动重绑旧接单。'},
+ RECEIPT_RECHECK:{
+  CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED:'当前回执尚未由企业核对确认。请执行者在办理回执中提交当前版本，企业经办人核对来源与内容，必要时纠错后再明确确认。',
+  RECEIPT_PREPARATION_CHANGED_REPLAN_REQUIRED:'回执对应的是旧材料版本。请企业经办人与执行者人工核对当前材料；旧回执的自动迁移与重新规划尚未支持。',
+  RECEIPT_ACCEPTANCE_BINDING_CHANGED:'回执与当前接单记录不匹配。请资料专员、执行者与企业经办人核对来源；不会自动套用旧回执。',
+  RECEIPT_PROVENANCE_CHANGED:'回执内容或来源检查未通过。请执行者与企业经办人在办理回执中核查当前来源，保持等待。'},
+ RESOURCE_RECHECK:{
+  CURRENT_CASE_RESOURCE_LINK_REQUIRED:'此Case尚未关联当前资源组合。请企业经办人在资源工作区预检并明确确认两资源组合，再返回此事项的资源关联入口明确保存。',
+  RESOURCE_PREPARATION_CHANGED:'资源关联对应的材料已变化。请企业经办人先核对当前资料，再在此事项的资源关联入口明确重验关联；旧预约不会自动释放。',
+  CURRENT_RESOURCE_AUTHORITY_REQUIRED:'当前资源操作的授权条件未满足。请现有负责人核查当前授权，保持等待；不会自动取消预约或赋权。',
+  CURRENT_CASE_RESOURCE_CLAIM_REQUIRED:'资源归属与此Case的关联记录不匹配。请企业经办人与现有负责人核查归属；不会自动转移其他Case的资源。',
+  RESOURCE_CANCELLED:'原资源组合已取消，不能作为当前可用资源。请企业经办人预检并明确确认新的组合，再回到此事项关联。',
+  RESOURCE_WINDOW_ENDED:'原资源时段已结束，历史确认不能代表当前可用。请企业经办人在资源工作区选择有效时段，重新预检并明确确认组合，再回到此事项关联。',
+  RESOURCE_RULE_CHANGED:'资源规则版本或启用状态已变化。请企业经办人在资源工作区按当前规则重新预检，再明确确认与关联。',
+  RESOURCE_CONSTRAINT_CHANGED:'当前容量、开放时段或缓冲约束未满足。请企业经办人在资源工作区查看当前约束，预检可用时段后再明确确认与关联。'}
+};
+function renderLocalCaseGuidance(x){
+ const target=$('local-case-checks');target.replaceChildren();target.append(textElement('h3','当前办理进度与下一步'));
+ if(x.role!=='enterprise_operator'){
+  const next=x.role==='park_specialist'?'请在你的获派资料事项中人工核对当前材料。':x.role==='service_executor'?'请在你的获派办理事项中处理当前接单与回执。':'请在当前有权访问的事项中核对你的待办。';
+  target.append(textElement('p','本地关闭条件的详细核对仅供企业经办人查看。'+next+'本地记录关闭不代表真实服务完成。'));
+ }else{
+  const checks=x.checks,blocked=checks&&Object.values(checks).some(issues=>issues.length);
+  const status=x.local_record_state==='LOCAL_RECORD_CLOSED'?(x.verification_current===false?'历史本地关闭记录保留，但当前依赖已变化。若继续本地办理，请明确重开，再处理下列原因并重新校验。':'本地关闭记录已保留；真实Case仍等待确认，目标未完成。'):
+   x.can_close_local_record?'当前一轮可关闭本地记录，请填写说明后明确操作；真实办理结果仍需另行确认。':
+   x.can_revalidate?'当前依赖检查通过，请填写说明后显式重新校验；检查通过本身不会关闭本地记录。':
+   blocked?'当前依赖未满足，请由下列角色处理后刷新此Case。':'当前不能执行本地校验或关闭。请刷新并核对当前轮次与授权条件；此视图不推断具体限制原因。';
+  target.append(textElement('p',status));
+  if(!checks)target.append(textElement('p','当前回复没有详细检查结果，请刷新当前Case后核对；不能据此认定条件全部满足。'));
+  else for(const key of Object.keys(localCheckLabels)){
+   const issues=checks[key];if(!Array.isArray(issues))continue;
+   const card=textElement('article','');card.append(textElement('strong',localCheckLabels[key]+' · '+(issues.length?'待处理':'当前依赖检查通过')));
+   for(const issue of new Set(issues))card.append(textElement('p',Object.hasOwn(localCaseReasons[key],issue)?localCaseReasons[key][issue]:'当前条件未满足，请由有权角色进入对应事项刷新并人工核对。'));
+   target.append(card);
+  }
+ }
+ if(['enterprise_operator','park_specialist'].includes(x.role)){
+  const button=textElement('button',x.role==='enterprise_operator'?'打开此Case的资料与资源关联入口':'打开此Case的获派资料入口');button.className='secondary';
+  const c=localCaseCtx(),role=x.role;button.onclick=()=>{if(!localCaseCurrent(c)||localCaseView!==x)return;prepRole=role;loadPreparation(c.id).then(()=>{$('prep-detail').scrollIntoView({block:'start'});}).catch(prepError);};target.append(button);
+ }
+}
 function localCaseCtx(){return {generation:localCaseGeneration,token:$('token').value,id:localCaseId};}
 function localCaseCurrent(c){return c.generation===localCaseGeneration&&c.token===$('token').value&&c.id===localCaseId;}
 function requireLocalCase(c){if(!localCaseCurrent(c)){const e=Error('已离开原Case记录');e.staleLocalCase=true;throw e;}}
-function clearLocalCase(){clearPlan();localCaseGeneration++;localCaseId=null;localCaseView=null;localCaseContext=null;localCaseRetries.clear();$('local-case-detail').hidden=true;$('local-case-decision').reset();for(const id of ['local-case-summary','local-case-checks','local-case-history','local-case-error'])$(id).replaceChildren();}
+function clearLocalCase(){clearPlan();localCaseGeneration++;localCaseId=null;localCaseView=null;localCaseContext=null;localCaseRetries.clear();$('local-case-detail').hidden=true;$('local-case-decision').reset();for(const id of ['local-case-summary','local-case-boundary','local-case-checks','local-case-history','local-case-error'])$(id).replaceChildren();}
 async function localCaseCall(path,method='GET',body,key,c=localCaseCtx()){
  requireLocalCase(c);const headers={Authorization:'Bearer '+c.token};if(body)headers['Content-Type']='application/json';if(key)headers['Idempotency-Key']=key;
  let r,x;try{r=await fetch(path,{method,headers,body:body?JSON.stringify(body):undefined});x=await r.json();}catch(e){requireLocalCase(c);e.localCaseContext=c;throw e;}
@@ -192,10 +242,11 @@ function localCaseError(e){if(e.staleLocalCase||(e.localCaseContext&&!localCaseC
 function renderLocalCase(x){
  localCaseView=x;localCaseContext={...localCaseCtx(),revision:x.revision,cycle:x.cycle,sha:x.current_snapshot_sha256};$('local-case-detail').hidden=false;
  const localLabel=x.local_record_state==='READY'?(x.verification_current===true?'当前一轮已显式校验':x.verification_current===false?'本轮原校验已失效，须重新校验':'本轮有校验记录'):localCaseLabels[x.local_record_state];
- $('local-case-summary').textContent=x.goal+' · '+localLabel+' · 第'+x.cycle+'轮 / 版本'+x.revision+' · 真实Case：'+(x.case_state==='REOPENED'?'已重开':x.case_state==='WAITING_CONFIRMATION'?'等待真实确认':'待补材料');
+ const caseLabel=x.case_state==='REOPENED'?'已重开':x.case_state==='WAITING_CONFIRMATION'?'等待真实确认':'待补材料';
+ $('local-case-summary').textContent=x.goal+' · '+localLabel+' · 第'+x.cycle+'轮 / 版本'+x.revision+' · 真实Case：'+caseLabel;
+ $('local-case-boundary').textContent='关闭仅整理当前合成本地记录。真实Case：'+caseLabel+'；目标未完成，外部尚未受理，线下履约无证据。重开保留历史与资源占用；新一轮须显式重新校验材料、接单、回执和资源。';
  $('local-case-decision').hidden=x.role!=='enterprise_operator';for(const [id,key] of [['local-case-validate','can_revalidate'],['local-case-close','can_close_local_record'],['local-case-reopen','can_reopen']])$(id).disabled=!x[key];
- $('local-case-checks').replaceChildren();if(x.checks)for(const [key,issues] of Object.entries(x.checks))$('local-case-checks').append(textElement('p',localCheckLabels[key]+'：'+(issues.length?'须人工重新核对，当前依赖未满足':'当前依赖检查通过')));
- if(x.required_rechecks.length)$('local-case-checks').append(textElement('p','本轮待重新校验：'+x.required_rechecks.map(k=>localCheckLabels[k]).join('、')));
+ renderLocalCaseGuidance(x);
  $('local-case-history').replaceChildren();for(const e of x.history)$('local-case-history').append(textElement('p','第'+e.cycle+'轮 · 版本'+e.revision+' · '+({REVALIDATE:'显式重新校验',CLOSE_LOCAL_RECORD:'关闭本地记录',REOPEN:'重开本地记录'}[e.action])+(e.payload?.reason?'：'+e.payload.reason:'')));
  $('local-case-error').textContent='';$('page-feedback').textContent='';
 }
