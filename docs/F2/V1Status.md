@@ -1,3 +1,9 @@
+## ENG086 材料准备度与合法Run访问边界（仅本地）
+
+在6b647ac上复用现有受控Rule/Truth合同，保存带材料/服务来源与人工审核快照的三值材料准备度；缺证据未知、明确补正不满足、当前完整人工核对仅表示本地材料条件满足。变化使旧评估STALE/当前未知，历史与刷新恢复；规则工程草稿未业务发布，资格始终未知、Case目标未完成。schema20只新增原资料表metadata，权限身份不变。相关107PASS/闭合15PASS；最终冻结204源完整Linux1497PASS/0FAIL/9nativeSKIP/2WARN（313.88秒），实际双角色三值/修改过期/reload/来源展开/响应时序及独立复核通过；详见[ENG086](ENG086-SourceBoundMaterialReadiness.md)及证据。
+
+新Run仍缺获授权的产品访问准备/批准流程，应用assignment只读；先明确账号事实与单Run审批主体/撤销审计，不将当前P3阻塞归为Windows或外部账号问题。不创建Grant/身份/assignment或修改owner。本轮仅本地、不push/新CI/真实模型，预算0/R4关闭；F1未签收/F2并行、Server/Win11边界保留。下方历史记录保留原范围。
+
 ## ENG085 显式诉求与目标持久覆盖（仅本地）
 
 在498d5d2上追加schema19：复用资料表/事件，不增权限身份；原诉求保留，当前诉求、用户主动必需目标及覆盖结果保存/刷新恢复。空目标UNKNOWN、未覆盖PARTIAL、旧模板STALE均可见，新保存路径阻止CREATE/P1；修改使旧预览/核对失效，保留旧业务历史。旧NULL不假造固定目标，原有限直CREATE兼容；私有intent仅owner。最终冻结200源完整Linux1482PASS/0FAIL/9nativeSKIP/2WARN（302.44s），相关130PASS、修复定点92PASS；实际新Case/响应丢失同key/迟到身份/1200/390/320及独立复核通过，授权摘要不变，CaseNEEDS_INPUT/P3访问缺失保持。详情、失败记录、可发布边界及后两缺口安全下一步见[ENG085](ENG085-PersistentRequestCoverage.md)。

@@ -1,3 +1,7 @@
+## ENG086 本地材料准备度
+
+当前事项支持带来源/审核快照的持久三值材料准备度，修改后过期、历史和刷新恢复；工程规则未业务发布，资格保持未知/Case目标未完成。相关107PASS/闭合15PASS，最终冻结204源完整Linux1497PASS/0FAIL/9nativeSKIP/2WARN（313.88秒），实际双角色业务/来源窄屏/时序及独立复核通过，详见[F2/ENG086](F2/ENG086-SourceBoundMaterialReadiness.md)。合法新Run访问仍缺获授权的产品批准流程，未新增Grant/身份/assignment或owner变更；仅本地未push/CI，F1未签收/F2并行、R4关闭/预算0与Windows/Win11边界保持。
+
 ## ENG085 当前本地评审能力
 
 显式诉求、必需目标与有限合成方案覆盖已持久关联；刷新可恢复，修改使预览/核对失效，UNKNOWN/PARTIAL不转通过。schema19仅原表新增metadata/事件action，权限身份不变。最终Linux1482PASS/0FAIL/9nativeSKIP、实际新Case窄屏/时序及独立复核通过；仅本地未push/CI。合法新Run访问与审核准备度仍缺，F1未签收/F2并行、R4关闭/预算0与Windows/Win11边界保持；可发布范围和安全下一步见[F2/ENG085](F2/ENG085-PersistentRequestCoverage.md)。

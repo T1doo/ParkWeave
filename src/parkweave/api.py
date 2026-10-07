@@ -235,6 +235,15 @@ def create_app(store: Store) -> FastAPI:
         return notices.command(store,token(authorization),event_id,data)
 
     from . import case_lifecycle
+    from . import readiness
+    @app.get('/api/preparations/{preparation_id}/readiness')
+    def material_readiness(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return readiness.read(store,token(authorization),preparation_id)
+
+    @app.post('/api/preparations/{preparation_id}/readiness')
+    def material_assess(preparation_id: UUID,data: readiness.Assess,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return readiness.assess(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
     @app.get('/api/preparations/{preparation_id}/local-case')
     def local_case_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return case_lifecycle.read(store,token(authorization),preparation_id)
