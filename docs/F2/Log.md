@@ -435,3 +435,8 @@ formal根HEAD200、原remote41bcc11确认未变，普通push已复核f5c8667成�
 ## ENG079 本地回执读取可见反馈
 
 GitHub日志Forbidden仅确定在已获批job-log GET流程，API/重定向位置和HTTP状态码未保存，不再请求网络；独立success不替代直接JSON。复用同Case与assignment真实UI只读发现403/刷新失败提示藏在hidden详情，最小修复可见反馈及成功清除；迟到成功/错误身份隔离仍通过，receipt revision13/5版本/history/grants不变。已实际复验交付脚本、看图、77PASS，API/worker自有句柄清理与PGSTOPPED。仅本地commit，owner/完整CI/push/run暂停；见[ENG079](ENG079-ReceiptReadFeedbackAndEvidenceLimits.md)。
+
+
+## ENG090 本地可复现评审路径
+
+新增默认关闭的三进程本地入口，六份seal校验历史证据与独立Mock规则/单Run访问分开；各Case不同，不写正式状态。精确最小合成对象/两SQLite九表/Mock主体/4h默认8h上限/撤销和旧assignment零影响，与未来生产初始化和权限单列，见[ENG090](ENG090-LocalReviewPath.md)。T01–T07剩余缺项保持，F1未签收/F2并行、Server非Win11、R4关闭/模型预算0；仅本地开发测试，无push或新CI。
