@@ -1,4 +1,12 @@
-"""Explicit versioned synthetic Case/resource association; no implicit lifecycle action."""
+"""Explicit versioned synthetic Case/resource association.
+
+Current app-controlled dependencies are locked and compared before insertion.
+The catalogue is SELECT-only and has no app update/publishing route: late
+committed changes seen by the final response projection reject a first strict
+confirmation, but an uncoordinated admin can still update after that last read
+and before commit. Snapshot isolation does not close this interval. No formal
+Approval, implicit cancellation, or catalogue-publication guarantee is created.
+"""
 import json
 from uuid import UUID,uuid4
 from pydantic import BaseModel,ConfigDict,Field
@@ -128,7 +136,15 @@ def bind(store,token,id,key,data):
           VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *''',(new_id,id,parent['case_id'],parent['run_id'],p['id'],p['park_id'],p['org_id'],g['id'],revision+1,parent['revision'],parent['review_sha256'],parent['service_id'],parent['service_version'],data.reason,Jsonb(snapshot),p['id'],key,fp)).fetchone()
         from .controlled_plans import invalidate
         invalidate(c,id,2)
-        return _view(c,p,parent,rows+[row],row)
+        result=_view(c,p,parent,rows+[row],row)
+        if projection is not None and result['current']['source_status']!='CURRENT':
+            # This is a first strict association, not historical-key recovery.
+            # Reject a source change that this transaction has actually observed
+            # after the final comparison (including one during INSERT waiting).
+            # Plain SELECT cannot prevent an administrator from changing the
+            # catalogue after this projection and before the connection commits.
+            raise Conflict('resource binding source changed before commit; refresh and explicitly confirm again')
+        return result
 
 @bounded
 def candidates(store,token,id):

@@ -313,3 +313,10 @@ ENG093：本地补资源与工程计划版本绑定和具体变更影响；实�
 
 
 ENG094：严格替代版本CAS、丢回执同键恢复和不可变影响记录；原权限/确认门不降低、原预约保留，正式目录发布/Approval仍待实现。见[F2记录](F2/ENG094-SubstitutionVersionCAS.md)。
+
+
+## ENG095 目录竞争与同 Case 交接回执入口
+
+在8b4789bc上明确SELECT-only目录末读到提交的管理员竞争窗口；首次严格确认最终响应已观察来源陈旧时回滚409，旧键历史恢复不受影响，仍不能承诺完整线性化。计划页按现有角色直接进入同Case分派和已接单回执，仅GET导航，复用原接受事务/回执/P3P4核对，不新建权限或Mock成功。ENG092–094三提交已普通推送并核实远端8b4789bc；对应37603417766/attempt1 completed/success仅现有Server隔离Job，非完整Windows/Win11。最终目标、证据和缺口见[ENG095](F2/ENG095-CatalogRaceAndSameCaseHandoff.md)。
+
+ENG095最终：完整Linux1705PASS/0FAIL/0ERROR/9nativeSKIP/2WARN（390.82秒），239冻结源0差异；专项57PASS、同Case后端7PASS、最终浏览器1PASS及7图独立复核。目录COMMIT残余窗口仍OPEN，真实履约与正式Approval未签收。

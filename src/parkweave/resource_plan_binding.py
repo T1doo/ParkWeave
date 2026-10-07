@@ -2,6 +2,11 @@
 
 This projection is never an Approval or an execution authorization. Historical
 records stay intact, including the occupancy of a replaced combination.
+Catalogue reads observe committed versions at statement start under the current
+Read Committed connection default; their hashes are comparison evidence, not a
+lock or a promise that an uncoordinated administrator cannot update the catalogue
+between the last read and association commit. Repeatable Read/Serializable would
+freeze this observation snapshot, not block the catalogue writer.
 """
 from datetime import timedelta
 from uuid import UUID
