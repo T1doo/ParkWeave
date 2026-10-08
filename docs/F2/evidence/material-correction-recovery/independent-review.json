@@ -1,0 +1,74 @@
+{
+  "review_status": "PASS_READ_ONLY_REVIEW",
+  "artifact_directory": ".runtime/material-correction-browser-attempt2",
+  "run_summary": {
+    "status": "PASS",
+    "driver_exit_code": 0,
+    "screenshot_count": 27,
+    "source_file_count": 292,
+    "source_differences": [],
+    "cleanup_status": "PASS",
+    "elapsed_seconds": 29.969
+  },
+  "report_summary": {
+    "status": "PASS",
+    "scope": "USER_SELECTED_SYNTHETIC_PREPARATION_BRIEF_ONLY",
+    "correction_status": "PASS",
+    "version": 2,
+    "material_history_count": 3,
+    "manual_draft_preserved": true,
+    "auto_resolved": false,
+    "same_request_retry_posts": 2,
+    "same_request_fingerprint": true,
+    "server_post_statuses": [
+      200,
+      200
+    ],
+    "client_projection_fault": [
+      {
+        "server": 200,
+        "client": 503
+      }
+    ],
+    "unknown_ui_checks": {
+      "refresh": true,
+      "write": true,
+      "readiness": true,
+      "oldMaterialsHidden": true,
+      "oldCorrectionsHidden": true
+    },
+    "qualification": "NOT_EVALUATED",
+    "external_acceptance": "NOT_SUBMITTED",
+    "offline_fulfillment": "NO_EVIDENCE",
+    "live_model_calls": 0,
+    "resolved_by_original_review": true
+  },
+  "review_findings": [
+    "REQUESTED material-outline correction survived page reopen; owner saw the persisted reason and base version.",
+    "Existing manual draft remained unchanged when the correction slot button was clicked; owner manually cleared it, then supplied new body and source label.",
+    "Client-side GET failure was injected after a successful server ADD_EVIDENCE response; same-key/body retry returned the same event revision and exactly one new material version.",
+    "Cold read after retry showed version 2 as SUBMITTED_FOR_REVIEW and not resolved; the original reviewer then read the corrected text.",
+    "At the UNKNOWN screenshot, stale materials/correction projections were hidden and refresh, other material writes, readiness write, and brief save controls were disabled."
+  ],
+  "scope_limitations": [
+    "503 was a client-side projection failure after the actual server POST returned 200; it was not a server-generated 503.",
+    "The same-key retry occurred in the same live page. The artifact does not establish recovery of the idempotency key after a hard reload while the result is UNKNOWN.",
+    "This is a local synthetic preparation/correction flow; it does not establish qualification, external acceptance, or offline fulfillment."
+  ],
+  "sha256": {
+    "report.json": "9110371565e7452da4950cd7930a5974b2c87d0f8670bd45e7049bb44d2e304b",
+    "correction-oracle.json": "7390cd9744fa7860db42504d51ec7814af18abbea7b7836d20364c9316c400ae",
+    "summary.json": "a557557637d469d014696e2883842559215f15c153f4b6611ec8b18b8d1e6f12",
+    "web_source": "5c34c3ec74b2a96787edb0744a9cde022d65ea7974ea7f947a6384add4b8536f",
+    "screenshots": {
+      "screenshots/owner-cold-correction-request-1200.png": "6ecf887df1e43fe909becc6896833f65d860561ae609cb2d3b3207adb91d6930",
+      "screenshots/owner-correction-result-unknown-320.png": "169c86ae7e123bcd316d9c01909eb3b6b3f73e44b60c2e3a065b5c52e34ef2e0",
+      "screenshots/reviewer-actual-corrected-directory-1200.png": "951345a8f7f626fc6e9f468cb79b858f3d0c77ae59641e154b2d1343d4eb2787"
+    }
+  },
+  "visual_review": {
+    "owner_cold_correction_request_1200": "Shows the requested material slot selected and the manual body/source fields empty; the persisted request reason is established by API/UI assertions, not visible in this viewport.",
+    "owner_correction_result_unknown_320": "Shows the unknown-state status; the user-entered candidate text remains visible, while previously displayed saved materials are hidden and submission controls are disabled.",
+    "reviewer_actual_corrected_directory_1200": "Shows actual v2 corrected directory as UNVERIFIED material; the manual review action remains explicit."
+  }
+}

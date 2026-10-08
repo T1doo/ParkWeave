@@ -1,3 +1,9 @@
+## 原逐项材料补正入口与中断恢复
+
+在 ecd66ad 实际摘要基线上复用原材料/补正流程：企业从持久要求定位原槽位，已有候选拒绝覆盖，由本人手填实际新版；普通命令在 POST 后读回精确事件才清原 pending，未知时保留原参数、隐藏过时投影并拦截其他同事项写入。只有原专员 REVIEW 能解决补正，企业 CONFIRM 只确认本地准备。当前全新浏览器流程完成要求→企业冷页读请求→实际目录 v2→客户端回读 503→原键重试一版→冷页读待审核→原 REVIEW/CONFIRM；27 张三宽度图及独立实际正文/API 已保存。原键恢复限定当前文档，不声称硬重载保留 key。首轮 driver 报告失败史保留。
+
+当前冻结完整 Linux 回归 2444 PASS / 9 native SKIP / 0 FAIL / 2 WARN，648.96 秒；2453 项同次 collection/JUnit 一致，292 项字节/模式零差异，160 主进程加载模块无来源偏离/hash 不匹配，不借历史 2422 PASS 替代。范围、原政策条件缺口和原生阻塞见 [当前差距](F2/PR0-CurrentGaps.md)，操作及中断局限见 [补正流程](F2/MaterialCorrectionRecovery.md)。正式 PR0/AT/EX、Win11 未验收；Case NEEDS_INPUT，政策资格/外部履约未知，无新 schema/Grant/安装/真实启用，R4 关闭/预算 0。原始全量、浏览器和独审见 [当前证据](integration/MaterialCorrectionRecoveryEvidence.json)；普通 dev 推送与精确 Server CI 终态另记 `.runtime/material-correction-delivery.json`。全量仅核对精确 pytest 身份退出，未记录该次 PG PID；浏览器另有自有 PG/临时目录清理实证。下方历史不改范围。
+
 ## 企业选用事实到实际诉求摘要（原 §5.3 切片）
 
 补齐原 F2-T01/T02、AT23 的部分材料准备价值：企业在现有事项明确选择三项当前自述，查看含实际值、诉求、来源版本/指纹的摘要，明确分享给原获派专员后保存为原材料版本；原专员 REVIEW、企业 CONFIRM。原目录缺口和补正仍须人工提供。新输入改变实际正文，旧生成正文在来源变化或撤销后只留历史，重新确认事实不会使旧正文复活。无新 schema、Grant、安装、真实启用或模型调用。
