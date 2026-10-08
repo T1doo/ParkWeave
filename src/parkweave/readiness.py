@@ -51,7 +51,9 @@ def _evaluate(source):
         if row and review['review_sha256'] == prep.snapshot(row, source['materials']): manual = Truth.TRUE; reason = 'CURRENT_LOCAL_MANUAL_REVIEW'
         else: reason = 'MATERIAL_REVIEW_STALE'
     else: reason = 'HUMAN_JUDGMENT_REQUIRED'
-    if not source['service'] or source['service']['namespace'] != 'SYNTHETIC':
+    if (not source['service'] or source['service']['namespace'] != 'SYNTHETIC'
+            or not isinstance(source['service']['source'], dict)
+            or source['service']['source'].get('kind') != 'SYNTHETIC'):
         manual = Truth.UNKNOWN; reason = 'SERVICE_SOURCE_UNAVAILABLE'
     result={'local_preparation_truth': conjunction([existence, manual]).value,
         'conditions': [{'id': 'service_need_exists', 'truth': existence.value, 'reason': 'CURRENT_RECORD_EXISTS' if existence == Truth.TRUE else 'MISSING_MATERIALS', 'material_ids': [items['need_summary']['id']] if 'need_summary' in items else []},
@@ -68,13 +70,65 @@ def _evaluate(source):
         if truth!=Truth.TRUE:result['next_actions'].append('REBUILD_MATERIAL_BRIEF' if draft_stale else 'CONFIRM_FACT_PURPOSE')
     return result
 
+def _checklist(row, source, result, sha, correction_items):
+    """Explain existing local conditions; never invent service/policy requirements.
+
+    Read-time projection only: no new rule, evidence, assessment or authority.
+    The source hash/revision binds this candidate to the ordinary readiness view.
+    """
+    items = {i['slot']: i for i in source['materials']}
+    conditions = {i['id']: i for i in result['conditions']}
+    manual = conditions['current_manual_material_review']
+    service = source['service']
+    known = bool(service and service['namespace'] == 'SYNTHETIC'
+                 and isinstance(service['source'], dict)
+                 and service['source'].get('kind') == 'SYNTHETIC')
+    requirements = []
+    for slot in prep.SLOTS:
+        item = items.get(slot)
+        evidence = None if item is None else {k: item[k] for k in
+                    ('id', 'version', 'source_kind', 'source_label', 'source_sha256', 'authenticity', 'text')}
+        requests = []
+        for target in correction_items:
+            if target['slot'] == slot:
+                requests.append({k: target[k] for k in ('request_id', 'reason', 'base_version', 'status')})
+        # Evidence presence is separate from the complete-pack human judgment.
+        status = 'MISSING' if item is None else 'PROVIDED_UNVERIFIED'
+        if any(r['status'] == 'REQUESTED' for r in requests): status = 'CORRECTION_REQUIRED'
+        elif requests: status = 'AWAITING_REVIEW'
+        elif item and manual['truth'] == 'TRUE': status = 'CURRENT_PACK_REVIEWED'
+        requirements.append(dict(slot=slot, status=status, evidence=evidence,
+            correction_requests=requests, missing=item is None,
+            truth='TRUE' if known and item and manual['truth'] == 'TRUE' else 'UNKNOWN',
+            next_action='SUPPLY_MATERIALS' if item is None else
+                'RESPOND_TO_CORRECTION' if status == 'CORRECTION_REQUIRED' else
+                'REQUEST_CURRENT_MANUAL_REVIEW' if manual['truth'] != 'TRUE' else 'CHECK_CURRENT_REVIEW'))
+    explained = []
+    for condition in result['conditions']:
+        ids = condition.get('material_ids', [])
+        explained.append({**condition, 'evidence': [i for i in requirements
+            if i['evidence'] and i['evidence']['id'] in ids],
+            'basis': 'CURRENT_CASE_FACT_PURPOSE' if condition['id'] == 'current_fact_purpose_confirmation'
+                     else 'EXISTING_LOCAL_MATERIAL_CONTRACT',
+            'manual_decision': source['manual_review']['decision'] if condition['id'] == 'current_manual_material_review' else None,
+            'fact_basis': source.get('fact_clarification') if condition['id'] == 'current_fact_purpose_confirmation' else None})
+    return dict(scope='SYNTHETIC_HUMAN_REVIEW_CANDIDATE', preparation_revision=row['revision'],
+        source_sha256=sha, source_available=known, requirements=requirements, conditions=explained,
+        policy_requirements=dict(status='NOT_PROVIDED', truth='UNKNOWN',
+            reason='REVIEWED_REAL_POLICY_SOURCE_REQUIRED', requirements_generated=False),
+        rule_revision=source['rule']['revision'], rule_sha256=source['rule']['sha256'],
+        business_publication=False, qualification_decision='NOT_EVALUATED',
+        external_acceptance='NOT_SUBMITTED', case_goal_completed=False)
+
+
 def _view(row, source, sha):
     history = row['readiness_assessments'] or []
     latest = history[-1] if history else None
     state = 'NOT_ASSESSED' if not latest else 'CURRENT' if latest['source_sha256'] == sha else 'STALE'
+    inputs = _evaluate(source)
     return {'preparation_id': str(row['id']), 'case_id': str(row['case_id']), 'preparation_revision': row['revision'], 'source_sha256': sha,
         'state': state, 'current_truth': latest['result']['local_preparation_truth'] if state == 'CURRENT' else Truth.UNKNOWN.value,
-        'sources': source, 'current_inputs': _evaluate(source), 'latest': latest, 'history': history,
+        'sources': source, 'current_inputs': inputs, 'latest': latest, 'history': history,
         'scope': 'SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY', 'business_publication': False, 'qualification_decision': 'NOT_EVALUATED'}
 
 def _parent(store, c, p, id, write=False):
@@ -92,7 +146,10 @@ def read(store, token, id):
         c.execute("SET LOCAL lock_timeout='3s'")
         p = store.auth(c, token, lock=True); row = _parent(store, c, p, id)
         source, sha = _sources(store, c, row, p)
-        return _view(row, source, sha)
+        from . import material_corrections as corrections
+        view = _view(row, source, sha)
+        view['material_checklist'] = _checklist(row, source, view['current_inputs'], sha, corrections._view(c, p, row)['active_targets'])
+        return view
 
 def assess(store, token, id, key, data):
     fp = digest(prep.canonical({'preparation_id': str(id), **data.model_dump(mode='json')}))

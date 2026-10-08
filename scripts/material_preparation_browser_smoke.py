@@ -25,6 +25,7 @@ def main() -> None:
     parser.add_argument('--screenshots', type=Path, required=True)
     parser.add_argument('--correction-recovery', action='store_true', help='Continue with original targeted correction, cold reopen and same-key recovery')
     parser.add_argument('--hard-recovery', action='store_true')
+    parser.add_argument('--evidence-checklist', action='store_true')
     parser.add_argument('--lost-command-response', action='store_true')
     args = parser.parse_args()
     context = json.load(sys.stdin)
@@ -164,6 +165,24 @@ def main() -> None:
             click('#prep-items button:nth-child(' + str(index) + ')')
             return wait('preparationView', lambda x: isinstance(x, dict) and x['preparation']['goal'] == goal)
 
+        checklist_checks=[]
+        def check_materials(stage, statuses):
+            if not args.evidence_checklist:return
+            x=wait('readinessView',lambda v:isinstance(v,dict) and v['preparation_revision']==value('preparationView.preparation.revision'))
+            v=x['material_checklist']
+            assert [r['status'] for r in v['requirements']]==statuses,(stage,v)
+            assert v['policy_requirements']['truth']=='UNKNOWN' and not v['policy_requirements']['requirements_generated']
+            actual=value('preparationView.current_materials')
+            for r in v['requirements']:
+                if r['evidence']:
+                    m=next(m for m in actual if m['slot']==r['slot'])
+                    assert all(r['evidence'][k]==m[k] for k in ('id','version','text','source_sha256','source_label'))
+            text=value('document.querySelector("#readiness-checklist").textContent')
+            assert '真实政策条件与材料要求尚未提供' in text
+            assert all(not r['evidence'] or r['evidence']['text'] in text for r in v['requirements'])
+            checklist_checks.append(dict(stage=stage,statuses=statuses,source_sha256=v['source_sha256'],revision=v['preparation_revision'],policy_truth='UNKNOWN',actual_material_matches=True))
+            value('document.querySelector("#readiness-checklist").scrollIntoView({block:"start"})');capture(stage)
+
         goal = 'SYNTHETIC 企业咨询资料整理 ' + uuid.uuid4().hex[:8]
         # Fresh owner case: create via the product UI, then submit actual synthetic
         # facts/materials and obtain the original reviewer/owner preparation gates.
@@ -178,6 +197,7 @@ def main() -> None:
         case_id = prep['preparation']['case_id']
         run_id = prep['preparation']['run_id']
 
+        check_materials('checklist-missing',['MISSING','MISSING'])
         wait('caseFactView&& !document.querySelector("#case-fact-source-entry").hidden',lambda x:x is True)
         click('#case-fact-source-entry summary')
         now = datetime.now(timezone.utc)
@@ -235,6 +255,7 @@ def main() -> None:
         brief_faults=value('briefProjectionFailure')
         attempts=value('briefAttempts')
         if len(attempts)!=2 or any(a['actual_server_status']!=201 for a in attempts) or len({a['request_fingerprint_sha256'] for a in attempts})!=1 or len({a['evidence_id'] for a in attempts})!=1:raise AssertionError('Two identical native retries must produce one same brief')
+        check_materials('checklist-brief-only',['PROVIDED_UNVERIFIED','MISSING'])
         capture('owner-saved-unverified-brief')
         before_revision=value('preparationView.preparation.revision');before_evidence=write_count('/api/preparations/','ADD_EVIDENCE')
         select('#prep-slot','material_outline');fill('#prep-text','SYNTHETIC 企业明确提供的咨询问题目录；真实政策证明要求待合法来源确认')
@@ -258,6 +279,7 @@ def main() -> None:
             if value('document.querySelector("#prep-text").value')!='SYNTHETIC existing owner draft':raise AssertionError('Response entry overwrote manual draft')
             fill('#prep-text','');fill('#prep-source-label','');click('[data-correction-respond]')
             if value('document.querySelector("#prep-slot").value')!='material_outline':raise AssertionError('Response entry must select requested slot')
+            check_materials('checklist-correction-required',['PROVIDED_UNVERIFIED','CORRECTION_REQUIRED'])
             capture('owner-cold-correction-request')
             value("(()=>{window.correctionFetch=window.fetch;window.correctionPosts=[];window.correctionFaults=[];window.failCorrectionRead=false;window.fetch=async(path,opts)=>{const r=await correctionFetch(path,opts);if(opts?.method==='POST'&&String(path).endsWith('/commands')){const body=JSON.parse(opts.body);if(body.action==='ADD_EVIDENCE'){const key=new Headers(opts.headers).get('Idempotency-Key');const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(key+'\\n'+opts.body)))).map(x=>x.toString(16).padStart(2,'0')).join('');const committed=await r.clone().json();correctionPosts.push({status:r.status,fingerprint:digest,revision:committed.revision});if(r.ok&&correctionPosts.length===1){if(window.loseCorrectionResponse){correctionFaults.push({server:r.status,client:503,phase:'POST'});return new Response(JSON.stringify({detail:'client lost committed command response'}),{status:503,headers:{'Content-Type':'application/json'}});}failCorrectionRead=true;}}}else if(failCorrectionRead&&/^\\/api\\/preparations\\/[^/?]+$/.test(String(path))){failCorrectionRead=false;correctionFaults.push({server:r.status,client:503});return new Response(JSON.stringify({detail:'client correction readback fault'}),{status:503,headers:{'Content-Type':'application/json'}});}return r};return true})()")
             value('window.loseCorrectionResponse='+('true' if args.lost_command_response else 'false'))
@@ -304,6 +326,7 @@ def main() -> None:
             after=wait('materialCorrectionsView',lambda x:isinstance(x,dict) and x['active_targets'][0]['status']=='SUBMITTED_FOR_REVIEW')
             directory=next(m for m in pack['current_materials'] if m['slot']=='material_outline')
             if directory['text']!=corrected or directory['version']!=2 or len(pack['material_history'])!=3 or after['can_review']:raise AssertionError('Cold read must show one actual submitted version, not resolved/owner reviewed')
+            check_materials('checklist-awaiting-review',['PROVIDED_UNVERIFIED','AWAITING_REVIEW'])
             capture('owner-cold-submitted-correction')
             correction_result=dict(hard_recovery=recovery_checks,target_id=target['id'],reason=reason,actual_text=corrected,text_sha256=directory['source_sha256'],posts=posts,faults=faults,unknown_checks=unknown,cold_requested=True,cold_submitted=True,version=2,material_history_count=3,auto_resolved=False,manual_draft_preserved=True)
             switch('prep-specialist-fixture-a');pack=open_prep(goal)
@@ -314,13 +337,17 @@ def main() -> None:
         wait('preparationView.preparation.state',lambda x:x=='REVIEWED')
         switch('fixture-a');pack=open_prep(goal);fill('#prep-reason','Owner confirms exact independently reviewed synthetic material versions, not fulfillment');click('#prep-confirm')
         pack=wait('preparationView',lambda x:isinstance(x,dict) and x['preparation']['state']=='LOCAL_CONFIRMED')
+        check_materials('checklist-current-reviewed',['CURRENT_PACK_REVIEWED','CURRENT_PACK_REVIEWED'])
+        switch('fixture-b');click('[data-tab="collaboration"]');click('#prep-list');wait('document.querySelector("#prep-items").textContent',lambda t:'当前身份暂无' in t)
+        if args.evidence_checklist:assert not value('document.querySelector("#readiness-checklist").textContent')
+        switch('fixture-a');pack=open_prep(goal)
         capture('owner-reviewed-pack-confirmed')
         if pack['qualification']!='NOT_EVALUATED' or pack['external_acceptance']!='NOT_SUBMITTED' or pack['offline_fulfillment']!='NO_EVIDENCE':raise AssertionError('Business completion boundaries required')
         if correction_result:
             resolved=wait('materialCorrectionsView',lambda x:isinstance(x,dict) and x['correction_state']=='RESOLVED')
             if not resolved['items'][0]['current_review_valid']:raise AssertionError('Exact reviewer correction resolution required')
             correction_result['resolved_by_original_review']=True
-        report=dict(correction_recovery=correction_result,status='PASS',scope='USER_SELECTED_SYNTHETIC_PREPARATION_BRIEF_ONLY',case_id=case_id,run_id=run_id,preparation_id=prep_id,evidence_id=material['id'],text_sha256=material['source_sha256'],actual_text=candidate['draft']['text'],successful_brief_posts=2,brief_effect_count=1,request_fingerprints_equal=True,unknown_projection_checks=negative,projection_failure=brief_faults,viewport_checks=metrics,reviewed_material_versions=[dict(slot=m['slot'],version=m['version'],sha256=m['source_sha256']) for m in pack['current_materials']],qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',live_model_calls=0,policy_requirements_generated=False)
+        report=dict(material_checklist_checks=checklist_checks,correction_recovery=correction_result,status='PASS',scope='USER_SELECTED_SYNTHETIC_PREPARATION_BRIEF_ONLY',case_id=case_id,run_id=run_id,preparation_id=prep_id,evidence_id=material['id'],text_sha256=material['source_sha256'],actual_text=candidate['draft']['text'],successful_brief_posts=2,brief_effect_count=1,request_fingerprints_equal=True,unknown_projection_checks=negative,projection_failure=brief_faults,viewport_checks=metrics,reviewed_material_versions=[dict(slot=m['slot'],version=m['version'],sha256=m['source_sha256']) for m in pack['current_materials']],qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',live_model_calls=0,policy_requirements_generated=False)
         args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
         print(json.dumps({'status':'PASS','scope':report['scope'],'report':str(args.report),'screenshots':len(metrics)}))
     finally:

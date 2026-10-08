@@ -1,5 +1,7 @@
 # PR0 当前差距与实际工程验证边界
 
+最终冻结 Linux 全量 **2463PASS / 9nativeSKIP / 0FAIL / 2WARN，665.95秒**；2472项同次collection/JUnit精确一致，294源文件字节/模式零变化，162主进程加载模块无来源/hash偏离。最终相关108PASS/43.52秒；两修复后浏览器各45图，独立回读/窄屏补充/自有清理通过。全量只核对精确pytest退出，未记录该次PG PID；浏览器PG清理独立有据。见[当前机器证据](../integration/ConditionMaterialChecklistEvidence.json)；普通dev推送/精确Server CI另记私有`.runtime/checklist-delivery.json`。
+
 最终冻结 Linux 全量 **2455 PASS / 9 native SKIP / 0 FAIL / 2 WARN，658.73 秒**；2464 项同次 collection/JUnit 完全一致，293 个源文件字节/模式零变化，161 个主进程加载模块无 hash/来源偏离。精确 pytest 进程已退出；该次未捕获 PG PID，浏览器自有 PG 清理另有证据。四条最终浏览器流程共120张图，源码均与本次全量一致。机器证据见 [当前核对记录](../integration/HardRefreshMaterialRecoveryEvidence.json)。普通 dev 推送及精确 Server CI 终态另记私有 `.runtime/hard-recovery-delivery.json`。
 
 本清单在 `ecc2ce309f0d9055a104d9bd2e3296531237e25b` 基线上更新；当前硬刷新切片以 [精确机器证据](../integration/HardRefreshMaterialRecoveryEvidence.json) 的源码字节和后续交付 SHA 为准。沿用 [原需求映射](PR0-CoverageAt-a1e6022.md)，不改原 AT/EX oracle 或正式 NOT_RUN 状态。F1 未签收，F2 并行探索；Server 非 Win11。
@@ -19,4 +21,4 @@
 
 上一补正冻结 `ecc2ce3` 的2444PASS/9nativeSKIP只属于上一源码。本轮第一次全量在发现403句柄生命周期问题后主动中止，693PASS/1SKIP仅是部分记录；当前最终源码已重新冻结全量并通过，精确终态见本页顶部，不继承上一结果。每次Server CI只确认精确HEAD的controlled Job测量，不能覆盖完整应用回归或Win11验收。
 
-下一关键原合同缺口仍是经审核发布的有限服务条件、材料要求和逐条件证据判断；目前合成目录无资格条件、规则仍工程草案。可以另行做离线可审查候选合同，但真实发布/启用不得由合成目录替代。当前恢复切片不引入这些未获审核的条件，不扩大任何持久访问权或安装权限。模型预算0、R4关闭；原环境和备份保留。
+当前新切片已在原readiness页面提供合成工程材料合同的逐条件依据与缺口候选，复用现有事实用途、双槽版本和原补正/人工核对；详见[清单候选](ConditionMaterialChecklist.md)。该候选不生成真实政策条件或证明。关键原业务缺口仍是经许可且已审核发布的有限服务条件、正式材料要求与现实证明；合成目录无资格条件、规则仍工程草案，真实发布/启用不得由工程候选替代。不扩大任何持久访问权或安装权限。模型预算0、R4关闭；原环境和备份保留。

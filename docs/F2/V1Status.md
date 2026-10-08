@@ -1,3 +1,9 @@
+## 逐条件材料依据与缺口候选
+
+最终冻结 Linux 全量 **2463PASS / 9nativeSKIP / 0FAIL / 2WARN，665.95秒**；2472项同次collection/JUnit精确一致，294源文件字节/模式零变化，162主进程加载模块无来源/hash偏离。最终相关108PASS/43.52秒；两修复后浏览器各45图，独立回读/窄屏补充/自有清理通过。全量只核对精确pytest退出，未记录该次PG PID；浏览器PG清理独立有据。见[当前机器证据](../integration/ConditionMaterialChecklistEvidence.json)；普通dev推送/精确Server CI另记私有`.runtime/checklist-delivery.json`。
+
+沿原产品§5.3/F3-T01/AT21–23，复用原readiness与双槽材料，以只读清单展示实际来源版本、缺少/补正/待审、逐条件依据和下一步；仅工程合成服务，不造真实政策。最终修复后专项108PASS（新8，含原Case路径兼容），首轮全量13FAIL/528PASS/1SKIP中止保留；最终全量及浏览器证据另记本轮机器记录。真实审核发布政策材料未提供，资格/外部办理仍未知，不扩schema/Grant/角色或持久访问。见 [范围与验收](ConditionMaterialChecklist.md)。F1未签收/F2并行，R4关闭/预算0，Server非Win11。下方保留历史各自来源范围。
+
 ## 补正材料提交后的硬刷新恢复
 
 最终冻结 Linux 全量 **2455 PASS / 9 native SKIP / 0 FAIL / 2 WARN，658.73 秒**；2464 项同次 collection/JUnit 完全一致，293 个源文件字节/模式零变化，161 个主进程加载模块无 hash/来源偏离。精确 pytest 进程已退出；该次未捕获 PG PID，浏览器自有 PG 清理另有证据。四条最终浏览器流程共120张图，源码均与本次全量一致。机器证据见 [当前核对记录](../integration/HardRefreshMaterialRecoveryEvidence.json)。普通 dev 推送及精确 Server CI 终态另记私有 `.runtime/hard-recovery-delivery.json`。

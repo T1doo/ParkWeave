@@ -1,11 +1,11 @@
 {
   "schema": 1,
-  "scope": "CURRENT_HARD_RELOAD_EVIDENCE_RECOVERY_COLLECTION_PREFLIGHT_NOT_PASS",
-  "source_parent_head": "ecc2ce309f0d9055a104d9bd2e3296531237e25b",
-  "collected_cases": 2464,
-  "collected_files": 88,
+  "scope": "CURRENT_CONDITION_MATERIAL_CHECKLIST_COLLECTION_PREFLIGHT_NOT_PASS",
+  "source_parent_head": "d1f32f4581df47b1ab7c6ff1fb32b9864cb811b5",
+  "collected_cases": 2472,
+  "collected_files": 89,
   "mutually_exclusive_and_complete": true,
-  "weight_source": "All prior file assignments retained; new recovery test file assigned to previously lightest S2. Collect-only counts, not Windows runtime prediction or budget/security change.",
+  "weight_source": "All prior file assignments retained; new checklist test file assigned to lightest existing shard. Collect-only counts, not Windows runtime prediction or budget/security change.",
   "limits": {
     "job_seconds_unchanged": 1500,
     "work_cutoff_from_anchor_seconds": 1300,
@@ -68,6 +68,7 @@
         "tests/test_plan_handoff_chain.py",
         "tests/test_preparation_command_recovery.py",
         "tests/test_python_command.py",
+        "tests/test_readiness_checklist.py",
         "tests/test_resource_substitution_confirm.py",
         "tests/test_review_demo.py",
         "tests/test_server_identity.py",
@@ -75,7 +76,7 @@
         "tests/test_v1_contracts.py",
         "tests/test_worker_gateway.py"
       ],
-      "cases": 599,
+      "cases": 607,
       "historical_linux_relative_weight_seconds": 99.441546,
       "historical_weight_scope": "PRE_ENG097_ORIGINAL_FILES_ONLY_NOT_CURRENT_SHARD_COST"
     },
@@ -204,6 +205,7 @@
     "tests/test_preparation_tasks.py": "120f1307684117f41b6345862cbde6d0f57c15360331de8ee810d3ca51a18c93",
     "tests/test_python_command.py": "23fe9aef4ed13e6e2c3fb5270cf4edff670b83650055f41e91395fe7bbf7a78b",
     "tests/test_readiness.py": "f1fdcd52b7388cbfb093a14d5e5f45e952c5a7162c3c5c048fd53320b0101275",
+    "tests/test_readiness_checklist.py": "1fee73ad3df7a1abf73858cc86934ee117cdfb5ff4c15803c28a9f961bfefb5a",
     "tests/test_regression_shards.py": "14613b3d0c2608db920b353a0bd7598ea384e045cbd85993d99bdf4d8c9d7909",
     "tests/test_request_intents.py": "d19f5e79f34cc2deea706755913c56b9c565086eb4db7420dcde9caab2971af6",
     "tests/test_resource_catalog_concurrency.py": "708fb9a77d52df23c37718bffd1ef6cbcc6fbf78dd75f2d224d4c64705c9e281",
@@ -245,7 +247,7 @@
     "scripts/isolated_run_access_browser_smoke.py": "6608f7294b9c0425c37b3324b4d83388bc7eaef91dbeeda19195c311f2044192",
     "scripts/isolated_run_access_demo.py": "0c0eeebaab3059e1c57c8e95a98a924dbe3f9988819c183d562e8113a8d6b4ef",
     "scripts/linux_fixture_server.py": "d924aba4bfa20f199b6d641da7063e6228b37c79ba67c312ad7adc3186d8beda",
-    "scripts/material_preparation_browser_smoke.py": "c283e8083c2d908c4a0d8b3df2db6948dc1e837d624cdfa0e060e8e1ff86cb94",
+    "scripts/material_preparation_browser_smoke.py": "0bb6f24427fac71b412879c905e60848e2d2df85614a0eb2c0637c53a638bc21",
     "scripts/material_reuse_browser_smoke.py": "20e0b9e2b8246daab57821e5e6e02720958bf55e85f29897cd0ddfca6ec9b774",
     "scripts/run_acceptance.py": "3ec5bba8718dd68be9e154886971f07584151f0387503fb1703be09f62431291",
     "scripts/windows/descriptor_readonly_probe.py": "18795c71bf4c39c238f873e75e7f7382ad6e7adab9806cb5f9dbd8600c07b608",
@@ -337,7 +339,7 @@
     "src/parkweave/process_env.py": "7b4215d88ce4cd2b48c18280dd09c1f5c7e6c855fdeb477f9f497266f81bf55f",
     "src/parkweave/quota.py": "d7e3a44681b4cf36c3cfb5bff90ae42e8c12d55cb49249dda38b52deb4ab8b31",
     "src/parkweave/quota.sql": "5a96f0dcfaad15aa5cad0cf6a5a3b5d2e94c36d7bba7be109c49ace845a76d96",
-    "src/parkweave/readiness.py": "8b6f2b3ccb53a684a8f4b709ac04d2b1cf66d7c003d3505d2c51e7e05251ec25",
+    "src/parkweave/readiness.py": "eb5f3a7987cb0de6e8c39cac23932a09c2078b8ce9b68c2d99283a4443cb573e",
     "src/parkweave/request_intents.py": "6db94b61f1b9488f41ce934b6f69352bb108e351419d2b2ca7d710b5a7efef40",
     "src/parkweave/resource_combinations.py": "acd0060d92531318eb49aca40bf5c9144918cdca55cff2d9c6e0d1be7fad2dff",
     "src/parkweave/resource_holds.py": "b2e40e9f79678fada39b24b62c1a682fc210c0fe8aecfb69e9134588f18b8405",
@@ -362,7 +364,7 @@
     "src/parkweave/template_candidate_web.html": "9bc46eb5992b304de45df3ccb3f2fd26da37742803560837a7a2b0edac68b4b1",
     "src/parkweave/template_consumer.py": "7c2a28d551a6e057f3742a816f2ab0c887423881b65bb0763a77f5a3b2d25a22",
     "src/parkweave/template_isolated_app.py": "4141b229c29661466dfdde9b90268a4d9c820680ddc2bb65ebaa8267c71eda24",
-    "src/parkweave/web.html": "9e6dcbfc601e23c2de839151812aa043fb39117d782764dcf587490d633780c2",
+    "src/parkweave/web.html": "2efa0e07e91a6d1a997243d166649a343c8492f2714f58072534fb00301393ef",
     "src/parkweave/windows/__init__.py": "e6173f83aa2b6af60e640b74ec19d3603c36633ae8f715c1a5a7a8e42caf9042",
     "src/parkweave/windows/create_new_readonly_candidate.py": "5a2e76081cbb2376a380b66404c61e1893cee2f3f1baa8511e74824de97a08ef",
     "src/parkweave/windows/create_new_readonly_native.py": "da5e29826527f7c86e7e1905b91d9b7620f9ab4a434d33cfa7e8460ad8b46fad",
@@ -373,7 +375,7 @@
     "tests/conftest.py": "f660a26e7707bdfc82d2a62feda73e50a0e525d3203da45b6c7b7a5379e4cbb7",
     "tests/template_candidate_support.py": "7e5ff8aa242e4cd6d95a77fd72e1b1e012be40ce6be3d0fb8b19e57e92a15fcd"
   },
-  "diagnostic_allowlist_sha256": "a3749dac91b6861aaf2c08231330760f937d0bf7275c9344961cfbafeba36a80",
+  "diagnostic_allowlist_sha256": "d174a874f32e58e275f795afab0c51ea7561f9cc2bc6195d8da6ff85fcc5ea51",
   "new_CI_runs": 0,
   "eng061_refresh": {
     "producer_parent_head": "41bcc113f7e7690a346cc79249fe76803a98bd0e",
@@ -476,9 +478,9 @@
     "new_cases_since_eng057": 55
   },
   "collection_evidence": {
-    "current_cases": 2464,
-    "current_files": 88,
-    "current_stable_collection_sha256": "cb0d8f071e632af498bc0a0434c8e7249ac7fc839d3761dbe5be6d08fb532c73",
+    "current_cases": 2472,
+    "current_files": 89,
+    "current_stable_collection_sha256": "2789b0c62055a9a2071c7f854fbbf9fa7689d64f5d49efa154115173bb56c6de",
     "exact_piece_stable_multiset_matches_global": true,
     "shards": [
       {
@@ -486,28 +488,28 @@
         "cases": 606,
         "files": 20,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "9cf482a9069e9fa64ac15e2d8c4ba39488b745d1c23267f4f55105b70c9fcadb"
+        "private_collection_sha256": "c93176d2da915b4c3e4a7dd7cd3e85f46b49dacb0c0498a87c5bd2c741847554"
       },
       {
         "shard": "S2",
-        "cases": 599,
-        "files": 23,
+        "cases": 607,
+        "files": 24,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "a9e355502aafa7f47a0552851bada61856e80293e0f7891c1bdc2825fd057360"
+        "private_collection_sha256": "5dace51b0d89beef1664391b658564c423e4cf4cb23f8904bc059850bab43896"
       },
       {
         "shard": "S3",
         "cases": 632,
         "files": 22,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "c255608f5261030d3fa3d1737498f3e7bedbe2034e96f3349b19b1785ba2028c"
+        "private_collection_sha256": "f699be8927c1b8b974b063debfa643b331da086ec59b61b4e067e4f964f2d32e"
       },
       {
         "shard": "S4",
         "cases": 627,
         "files": 23,
         "stable_identity_matches_global_exact_multiset": true,
-        "private_collection_sha256": "9496e4d7812b6f548b99cdf1c9daf1ceeec5aaae110c1f77a1591a1fbc8479a6"
+        "private_collection_sha256": "6941136fc1209e924401c1e34d436e99b08adfb0a7398fd27ddd63b8a3f48709"
       }
     ],
     "linux_collect_exit_codes": [
