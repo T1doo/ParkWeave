@@ -1,3 +1,7 @@
+## 恢复句柄清理微补丁（在冻结清单交付之后）
+
+仅清理原localStorage无效JSON/空字符串/非对象条目，保留有效句柄和原八条容量/24h边界。API34PASS/14.21秒；最终实际浏览器PASS47.221秒/45图、294源前后0差异、独审无阻断；当前浏览器/独审/源码指纹另见[微补丁范围](RecoveryStorageCleanup.md)。下方2463全量明确仅属于此前冻结0a185d8，不能覆盖微补丁新web/driver字节。不改权限、规则、R4或预算，真实政策材料与正式PR0/Win11缺口仍在。
+
 ## 逐条件材料依据与缺口候选
 
 最终冻结 Linux 全量 **2463PASS / 9nativeSKIP / 0FAIL / 2WARN，665.95秒**；2472项同次collection/JUnit精确一致，294源文件字节/模式零变化，162主进程加载模块无来源/hash偏离。最终相关108PASS/43.52秒；两修复后浏览器各45图，独立回读/窄屏补充/自有清理通过。全量只核对精确pytest退出，未记录该次PG PID；浏览器PG清理独立有据。见[当前机器证据](../integration/ConditionMaterialChecklistEvidence.json)；普通dev推送/精确Server CI另记私有`.runtime/checklist-delivery.json`。

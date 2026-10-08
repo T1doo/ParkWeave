@@ -26,6 +26,7 @@ def main() -> None:
     parser.add_argument('--correction-recovery', action='store_true', help='Continue with original targeted correction, cold reopen and same-key recovery')
     parser.add_argument('--hard-recovery', action='store_true')
     parser.add_argument('--evidence-checklist', action='store_true')
+    parser.add_argument('--recovery-storage-check', action='store_true')
     parser.add_argument('--lost-command-response', action='store_true')
     args = parser.parse_args()
     context = json.load(sys.stdin)
@@ -126,6 +127,24 @@ def main() -> None:
         browser('open',base_url);browser_opened=True
         wait('document.readyState',lambda x:x=='complete')
         value("(()=>{window.briefFetch=window.fetch;window.ownedRunAccessPosts=[];window.briefAttempts=[];window.briefProjectionFailure=[];window.failBriefProjection=false;window.fetch=async(path,opts)=>{const r=await briefFetch(path,opts);if(opts?.method==='POST'){let action='';try{action=JSON.parse(opts.body||'{}').action||''}catch(_){};ownedRunAccessPosts.push({path:String(path),action,actual_server_status:r.status});if(String(path).endsWith('/material-draft')){const key=new Headers(opts.headers||{}).get('Idempotency-Key')||'';const raw=new TextEncoder().encode(key+'\\n'+String(opts.body||''));const h=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',raw))).map(x=>x.toString(16).padStart(2,'0')).join('');const result=await r.clone().json();briefAttempts.push({actual_server_status:r.status,request_fingerprint_sha256:h,evidence_id:result.material_draft?.evidence_id});if(r.ok&&briefAttempts.length===1)failBriefProjection=true;}}else if(failBriefProjection&&/^\\/api\\/preparations\\/[^/?]+$/.test(String(path))){failBriefProjection=false;briefProjectionFailure.push({actual_server_status:r.status,client_status:503});return new Response(JSON.stringify({detail:'client projection failure after actual brief commit'}),{status:503,headers:{'Content-Type':'application/json'}});}return r};return true})()")
+        storage_checks=None
+        if args.recovery_storage_check:
+            storage_checks=value("""(()=>{
+              const own=[];const id=()=>crypto.randomUUID();const put=(caseId,raw)=>{const n=prepRecoveryStorage+caseId;own.push(n);localStorage.setItem(n,raw);return n};
+              const marker=(caseId)=>({v:1,id:caseId,key:id(),revision:1,expires:Date.now()+3600000});
+              const makePending=(m)=>({context:{id:m.id},key:m.key,body:{action:'ADD_EVIDENCE',expected_revision:1}});
+              const valid=marker(id()),raw=JSON.stringify(valid),validName=put(valid.id,raw),unrelated='owned-storage-probe-'+id();localStorage.setItem(unrelated,'keep');
+              try{
+                for(const malformed of ['','{broken','null','false','0','[]']){const caseId=id(),name=put(caseId,malformed);if(readPrepRecovery(caseId)!==null||localStorage.getItem(name)!==null)throw Error('invalid recovery entry remained');}
+                if(localStorage.getItem(validName)!==raw||localStorage.getItem(unrelated)!=='keep')throw Error('valid or unrelated entry changed');
+                for(let n=0;n<8;n++)put(id(),'{broken');const next=marker(id());own.push(prepRecoveryStorage+next.id);rememberPrepRecovery(makePending(next));
+                if(!readPrepRecovery(next.id)||Object.keys(localStorage).filter(n=>n.startsWith(prepRecoveryStorage)).length!==2)throw Error('garbage still consumed capacity');
+                for(let n=0;n<6;n++){const m=marker(id());put(m.id,JSON.stringify(m));}
+                const before=Object.fromEntries(Object.keys(localStorage).filter(n=>n.startsWith(prepRecoveryStorage)).map(n=>[n,localStorage.getItem(n)])),ninth=marker(id());let blocked=false;try{rememberPrepRecovery(makePending(ninth));}catch(e){blocked=true;}
+                if(!blocked||Object.keys(before).some(n=>localStorage.getItem(n)!==before[n])||localStorage.getItem(prepRecoveryStorage+ninth.id)!==null)throw Error('valid capacity boundary failed');
+                return {malformed_and_null_removed:true,valid_handle_bytes_preserved:true,unrelated_storage_preserved:true,garbage_capacity_reclaimed:true,eight_valid_preserved_ninth_blocked:true,automatic_posts:0};
+              }finally{for(const name of own)localStorage.removeItem(name);localStorage.removeItem(unrelated);}
+            })()""")
         def switch(role_id: str):
             if role_id not in tokens:
                 raise RuntimeError('Requested demo role is missing from private fixture info')
@@ -347,7 +366,7 @@ def main() -> None:
             resolved=wait('materialCorrectionsView',lambda x:isinstance(x,dict) and x['correction_state']=='RESOLVED')
             if not resolved['items'][0]['current_review_valid']:raise AssertionError('Exact reviewer correction resolution required')
             correction_result['resolved_by_original_review']=True
-        report=dict(material_checklist_checks=checklist_checks,correction_recovery=correction_result,status='PASS',scope='USER_SELECTED_SYNTHETIC_PREPARATION_BRIEF_ONLY',case_id=case_id,run_id=run_id,preparation_id=prep_id,evidence_id=material['id'],text_sha256=material['source_sha256'],actual_text=candidate['draft']['text'],successful_brief_posts=2,brief_effect_count=1,request_fingerprints_equal=True,unknown_projection_checks=negative,projection_failure=brief_faults,viewport_checks=metrics,reviewed_material_versions=[dict(slot=m['slot'],version=m['version'],sha256=m['source_sha256']) for m in pack['current_materials']],qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',live_model_calls=0,policy_requirements_generated=False)
+        report=dict(recovery_storage_checks=storage_checks,material_checklist_checks=checklist_checks,correction_recovery=correction_result,status='PASS',scope='USER_SELECTED_SYNTHETIC_PREPARATION_BRIEF_ONLY',case_id=case_id,run_id=run_id,preparation_id=prep_id,evidence_id=material['id'],text_sha256=material['source_sha256'],actual_text=candidate['draft']['text'],successful_brief_posts=2,brief_effect_count=1,request_fingerprints_equal=True,unknown_projection_checks=negative,projection_failure=brief_faults,viewport_checks=metrics,reviewed_material_versions=[dict(slot=m['slot'],version=m['version'],sha256=m['source_sha256']) for m in pack['current_materials']],qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',live_model_calls=0,policy_requirements_generated=False)
         args.report.write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
         print(json.dumps({'status':'PASS','scope':report['scope'],'report':str(args.report),'screenshots':len(metrics)}))
     finally:
