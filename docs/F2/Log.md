@@ -1,3 +1,7 @@
+## 已审材料文本包正常整合（旧a823修复未迁移）
+
+独审限定通过的b20a929d正常no-ff合并cf648b82，产品字节不变；整合实际页面/PG同次21PASS/0FAIL/0SKIP/3WARN（38.63秒）。父任务独审首轮34PASS/2驱动计数FAIL、修正后另次6PASS含4新增，不合称同次40PASS。范围、来源和证据见[整合记录](MaterialPreparationTextPackIntegration.md)。旧a823a28 Windows Job/accounting仍在旧实例、未恢复未覆盖；未来授权传递后须从604祖先正常合并核冲突。普通push dev实际SHA另记录，不改main/权限/凭据/部署/LIVE；正式政策、真实履约、Windows与全仓验收保持pending。下方候选及历史条目保留原时点范围。
+
 ## 独立候选：当前材料准备与补正文本包（待审，未合入dev）
 
 基线604f722，候选 `candidate/material-preparation-text-pack-20261008`。沿原§5.3/F2-T01/F3-T01/AT23，仅整理已分享的当前双槽材料、缺口和原补正说明，生成/复制/下载均原GET重新授权与版本/指纹复读，不改变业务状态。最终相关91PASS/0FAIL/0SKIP/2WARN（87.23秒），13项真实HTTP/Chromium/PG与78项原API/PG同次范围；非完整回归或正式AT/原生签收。精确源码、失败史与快照限制见[最小合同和证据](MaterialPreparationTextPack.md)。缺失a823a28未恢复、不改Windows Job/accounting；正式政策和真实履约PENDING，R4/LIVE关闭。仅独立候选普通push交审，不合入dev/main；旧实例与备份保留。
