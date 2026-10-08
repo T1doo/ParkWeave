@@ -77,6 +77,27 @@ def event(c,p,row,key,fp,action,**extra):
     c.execute('INSERT INTO preparation_events(id,preparation_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',(uuid4(),row['id'],p['id'],key,fp,row['revision'],action,Jsonb(payload)))
     return payload
 
+def recover_evidence_command(store,token,id,key):
+    """Read an owner's exact original evidence event; a handle grants no access.
+
+    No command replay/body retention or grants: current auth and preparation READ
+    scope are required, and the event is selected by the authenticated actor.
+    Absence is an observation, never proof that a delayed request cannot arrive.
+    """
+    with store.connect() as c:
+        c.execute("SET LOCAL lock_timeout='3s'")
+        p=store.auth(c,token,lock=True)
+        if p['role']!='enterprise_operator':raise Denied('original enterprise owner required')
+        key_lock(c,p,key)
+        row=scoped(store,c,p,id)
+        record=c.execute('SELECT preparation_id,action,payload FROM preparation_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+        if record and (record['preparation_id']!=id or record['action']!='ADD_EVIDENCE'):
+            raise Conflict('original evidence recovery scope mismatch')
+        return dict(preparation_id=str(id),status='COMMITTED' if record else 'NOT_OBSERVED',
+                    event=record['payload'] if record else None,current_revision=row['revision'],
+                    historical_only=True,automatically_replayed=False,
+                    qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
+
 def create(store,token,key,data):
     fp=digest(canonical(data.model_dump(mode='json')))
     with store.connect() as c:

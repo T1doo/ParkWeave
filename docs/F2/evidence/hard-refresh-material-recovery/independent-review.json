@@ -1,0 +1,330 @@
+{
+  "review": "INDEPENDENT_READ_ONLY",
+  "artifact_scope": "material-command-hard-refresh-recovery",
+  "verdict": "NO_BLOCKER_FOUND_FOR_FINALSOURCE_READ3_POST2_DENIAL2_NAVIGATION2",
+  "limitations": [
+    "This is an independent review of the material-command hard-refresh recovery slice, not full product acceptance.",
+    "Injected client-side 503/403 responses follow real server 200 responses; these validate client uncertainty/denial handling and are not server-side projection or authorization failures.",
+    "read2, post1, and navigation1 used the earlier web source and remain historical. read3, post2, denial2, and navigation2 match the lifecycle-fix app source.",
+    "The final full regression is excluded from this review; no tests or browser runs were started by the reviewer."
+  ],
+  "browser": {
+    "status": "PASS: read3, post2, denial2, navigation2 on current lifecycle-fix source; read2, post1, navigation1 are historical pre-fix runs",
+    "screenshot_viewports_have_no_horizontal_overflow": true,
+    "post1_reviewed_images": [
+      "owner-hard-reload-read-only-recovery-1200.png",
+      "owner-hard-reload-read-only-recovery-320.png",
+      "owner-correction-result-unknown-320.png",
+      "reviewer-actual-corrected-directory-1200.png",
+      "owner-reviewed-pack-confirmed-1200.png"
+    ],
+    "cleanup": "PASS in both runs",
+    "owned_processes_absent_and_temporary_directories_removed": true,
+    "navigation1_reviewed_images": [
+      "owner-hard-reload-read-only-recovery-1200.png",
+      "owner-hard-reload-read-only-recovery-320.png",
+      "owner-reviewed-pack-confirmed-1200.png"
+    ],
+    "navigation2_reviewed_images": [
+      "owner-hard-reload-read-only-recovery-1200.png",
+      "owner-hard-reload-read-only-recovery-320.png"
+    ]
+  },
+  "recovery_checks": {
+    "hard_reload_owner_private_view_initially_empty": true,
+    "local_storage_handle_fields": [
+      "expires",
+      "id",
+      "key",
+      "revision",
+      "v"
+    ],
+    "request_body_and_token_absent_from_handle": true,
+    "recovery_read_statuses": [
+      200,
+      200,
+      200
+    ],
+    "automatic_post_count": 0,
+    "original_post_count": 1,
+    "manual_draft_preserved": true,
+    "recovery_marker_cleared_on_release": true,
+    "unknown_projection_blocks": [
+      "refresh",
+      "write",
+      "readiness"
+    ],
+    "old_materials_hidden_while_unknown": true,
+    "old_corrections_hidden_while_unknown": true,
+    "actual_committed_material_directory_version": "v2",
+    "original_review_and_confirmation_completed_after_recovery": true,
+    "recovery_is_read_only_and_does_not_auto_replay": true,
+    "cross_document_navigation": {
+      "separate_document_open_cleared_token": true,
+      "back_cleared_token": true,
+      "forward_cleared_token": true,
+      "reload_required_fresh_authentication": true,
+      "released_handle_not_restored": true,
+      "browser_navigation_test_script": ".runtime/hard_recovery_navigation_probe.py",
+      "script_sha256": "f0bb14007f00c101e5e2efcf9df5ae2956527c4e5327a69711117217dcb58b23",
+      "final_source_probe": {
+        "artifact": "navigation2",
+        "status": "PASS",
+        "open_back_forward_token_empty": true,
+        "reload_token_empty_until_fresh_authentication": true,
+        "released_handle_not_restored": true
+      }
+    },
+    "lifecycle_fix": {
+      "commit_observed_prevents_deleting_handle_after_followup_error": true,
+      "403_denial_probe_is_ui_injected_after_server_200": true,
+      "403_probe_clears_private_material_view": true,
+      "403_probe_retains_only_opaque_handle_for_later_owner_recovery": true
+    }
+  },
+  "independent_artifact_sha256": {
+    "read2/report.json": "d40cd5903da46c916457bd427d0aba8389d0c0ddcbf351d00f86ed1779f0b0b0",
+    "read2/summary.json": "07df3db3e862a0fc2ba39b699c8e5dea7ba0cbe3a4eddb488e55bd13cdb3378b",
+    "post1/report.json": "7aade2c56bd4893692593ec449e4e25501bb6d7ad19d9e4693007037fa46837c",
+    "post1/summary.json": "15117878753d7f9e2a903335d8e39d31bdda43fbc0f0d7904bddc4da49aed3bf",
+    "post1/correction-oracle.json": "648fcd99126b791149629ef503b02ae7b0d2de457e06f209f93c8563f6c33506",
+    "post1/independent-api-oracle.json": "097a49f093102f3fd6f700b2d907518d04868997368b831e50a2146a000a3ea8",
+    "navigation1/report.json": "87ca707a0c76a5db1f6c995be7e6cc6e235888f73bd0c18fdb527012322e09cf",
+    "navigation1/summary.json": "28a5d979fcf7781127f30ba012ac6e86f118f10e2959a3e3ee873001511d4126",
+    "navigation1/correction-oracle.json": "74fda7f99744593cff351cde2ea3eedbf6380b80b7ce761f6a01fe5984c1693f",
+    "navigation1/independent-api-oracle.json": "bc308e63a30619f1e5137b752645621ed2c0970a5771b75a517de5ec2b992d54",
+    "navigation_probe.py": "f0bb14007f00c101e5e2efcf9df5ae2956527c4e5327a69711117217dcb58b23",
+    "read3/report.json": "52c6579d121b38b57576bca71f7bac4236da94d596d156a4292c0dfed447a23b",
+    "read3/summary.json": "2693e63c8ac1bbf4e8a5af4c36b5030151e641a4935045d0e5a463c886cbca36",
+    "post2/report.json": "e0588eff8c0947eff7b076d8baa5ac0752360946ad52966794a002e6764bdd7a",
+    "post2/summary.json": "57fa190efe71f6bc47e87c357f38b0a51cde0da3ec1b03b2326ac59c62f1362b",
+    "denial2/report.json": "1f92a941e6ed548443261a9e2032868c0d2ba8144b2ffe30b9a5b97bcd99260d",
+    "denial2/summary.json": "6ec9f2631209049f883d781f6c69261877a2aca5ba735a5de509ca8af5a65431",
+    "current/web.html": "9e6dcbfc601e23c2de839151812aa043fb39117d782764dcf587490d633780c2",
+    "navigation2/report.json": "8fd2dbf2b32bbb3bd5f28b10b41598b79187caf3bafc161c6e6fd3d90f4a04b4",
+    "navigation2/summary.json": "1ef65e66efcb1e2752f26aaaa0231316dc31bd53aa25204ecb82b2095fe592de"
+  },
+  "source_stability": {
+    "src/parkweave/api.py": "3801473ce42fde58529933714be6c37f08580b62c541b63b849b872f82eab7f7",
+    "src/parkweave/preparation.py": "2bb6266eb6247e3b68a5a0de9e06d9f1596da4288f5a67ded686da39bf835326",
+    "tests/test_preparation_command_recovery.py": "3d3103d4ad853cd350d6e9f72a44392a40e303ccecdc49402bfa1257a364e1f7",
+    "all_match_source_before_and_after": true,
+    "source_file_count": 293,
+    "navigation1_source_manifest_equals_post1": true,
+    "all_three_current_runs_same_app_source": true,
+    "current_web_sha256": "9e6dcbfc601e23c2de839151812aa043fb39117d782764dcf587490d633780c2",
+    "earlier_read2_post1_navigation1_are_historical_for_pre_fix_web_source": true,
+    "current_api_sha256": "3801473ce42fde58529933714be6c37f08580b62c541b63b849b872f82eab7f7",
+    "current_preparation_sha256": "2bb6266eb6247e3b68a5a0de9e06d9f1596da4288f5a67ded686da39bf835326",
+    "navigation2_source_manifest_equals_post1": false,
+    "historical_pre_fix_web_sha256": "83acd984b350d6bc63889dbaedb39e69d1492bcb5e230e1b0860e0514ef25c0f",
+    "current_source_runs_same_app_source": [
+      "read3",
+      "post2",
+      "denial2",
+      "navigation2"
+    ],
+    "historical_pre_fix_source_runs": [
+      "read2",
+      "post1",
+      "navigation1"
+    ],
+    "navigation2_source_manifest_equals_post2": true,
+    "current_source_manifest_equals_navigation2": true,
+    "api_and_preparation_match_current_runs": true
+  },
+  "static_contract_review": {
+    "recovery_is_read_only": true,
+    "requires_current_owner_scope_and_read_prepare_authority": true,
+    "event_lookup_scoped_to_authenticated_actor_key_and_preparation": true,
+    "event_and_actual_pack_revisions_cross_checked_before_render": true,
+    "not_observed_is_not_treated_as_failure_or_finality": true,
+    "no_auto_replay_or_access_grant": true,
+    "unknown_backend_status_message_wording": "Could be made more defensive: only COMMITTED and NOT_OBSERVED are expected; unexpected status currently follows the NOT_OBSERVED display branch while remaining unobserved/locked. Nonblocking under the current typed backend contract.",
+    "only_expected_recovery_statuses": "COMMITTED and NOT_OBSERVED are returned by current backend contract; unknown status would remain unobserved/locked although UI message wording would be less precise. Nonblocking under current contract."
+  },
+  "browser_runs": {
+    "read2": {
+      "artifact_directory": ".runtime/hard-recovery-browser-read2",
+      "status": "PASS",
+      "driver_exit_code": 0,
+      "elapsed_seconds": 36.486,
+      "screenshots": 30,
+      "source_file_count": 293,
+      "source_differences": [],
+      "cleanup": "PASS",
+      "owned_temporary_directory_absent": true,
+      "report_sha256": "d40cd5903da46c916457bd427d0aba8389d0c0ddcbf351d00f86ed1779f0b0b0",
+      "summary_sha256": "07df3db3e862a0fc2ba39b699c8e5dea7ba0cbe3a4eddb488e55bd13cdb3378b",
+      "fault_phase": "response after server commit; client observed 503",
+      "original_post_count": 1,
+      "automatic_post_count": 0,
+      "recovery_read_statuses": [
+        200,
+        200,
+        200
+      ],
+      "evidence_status": "HISTORICAL_PRE_LIFECYCLE_FIX_SOURCE",
+      "source_web_sha256": "83acd984b350d6bc63889dbaedb39e69d1492bcb5e230e1b0860e0514ef25c0f"
+    },
+    "post1": {
+      "artifact_directory": ".runtime/hard-recovery-browser-post1",
+      "status": "PASS",
+      "driver_exit_code": 0,
+      "elapsed_seconds": 36.861,
+      "screenshots": 30,
+      "source_file_count": 293,
+      "source_differences": [],
+      "cleanup": "PASS",
+      "owned_temporary_directory_absent": true,
+      "report_sha256": "7aade2c56bd4893692593ec449e4e25501bb6d7ad19d9e4693007037fa46837c",
+      "summary_sha256": "15117878753d7f9e2a903335d8e39d31bdda43fbc0f0d7904bddc4da49aed3bf",
+      "fault_phase": "POST response: server 200 committed, client observed 503",
+      "original_post_count": 1,
+      "automatic_post_count": 0,
+      "recovery_read_statuses": [
+        200,
+        200,
+        200
+      ],
+      "followed_by_original_review_resolution": true,
+      "evidence_status": "HISTORICAL_PRE_LIFECYCLE_FIX_SOURCE",
+      "source_web_sha256": "83acd984b350d6bc63889dbaedb39e69d1492bcb5e230e1b0860e0514ef25c0f"
+    },
+    "navigation1": {
+      "artifact_directory": ".runtime/hard-recovery-browser-navigation1",
+      "status": "PASS",
+      "driver_exit_code": 0,
+      "elapsed_seconds": 42.709,
+      "screenshots": 30,
+      "source_file_count": 293,
+      "source_differences": [],
+      "cleanup": "PASS",
+      "owned_temporary_directory_absent": true,
+      "report_sha256": "87ca707a0c76a5db1f6c995be7e6cc6e235888f73bd0c18fdb527012322e09cf",
+      "summary_sha256": "28a5d979fcf7781127f30ba012ac6e86f118f10e2959a3e3ee873001511d4126",
+      "driver_sha256": "f0bb14007f00c101e5e2efcf9df5ae2956527c4e5327a69711117217dcb58b23",
+      "same_source_manifest_as_post1": true,
+      "cross_document_open_back_forward_each_required_empty_token": true,
+      "hard_reload_requires_fresh_authentication": true,
+      "original_post_count": 1,
+      "automatic_post_count": 0,
+      "recovery_read_statuses": [
+        200,
+        200,
+        200
+      ],
+      "evidence_status": "HISTORICAL_PRE_LIFECYCLE_FIX_SOURCE",
+      "source_web_sha256": "83acd984b350d6bc63889dbaedb39e69d1492bcb5e230e1b0860e0514ef25c0f"
+    },
+    "read3": {
+      "artifact_directory": ".runtime/hard-recovery-browser-read3",
+      "status": "PASS",
+      "driver_exit_code": 0,
+      "elapsed_seconds": 42.59,
+      "screenshots": 30,
+      "source_file_count": 293,
+      "source_differences": [],
+      "cleanup": "PASS",
+      "report_sha256": "52c6579d121b38b57576bca71f7bac4236da94d596d156a4292c0dfed447a23b",
+      "summary_sha256": "2693e63c8ac1bbf4e8a5af4c36b5030151e641a4935045d0e5a463c886cbca36",
+      "fault": "real server 200 followed by injected client 503; phase not separately identified in report",
+      "original_post_count": 1,
+      "automatic_post_count": 0,
+      "recovery_read_statuses": [
+        200,
+        200,
+        200
+      ],
+      "source_web_sha256": "9e6dcbfc601e23c2de839151812aa043fb39117d782764dcf587490d633780c2",
+      "evidence_status": "CURRENT_LIFECYCLE_FIX_SOURCE"
+    },
+    "post2": {
+      "artifact_directory": ".runtime/hard-recovery-browser-post2",
+      "status": "PASS",
+      "driver_exit_code": 0,
+      "elapsed_seconds": 42.399,
+      "screenshots": 30,
+      "source_file_count": 293,
+      "source_differences": [],
+      "cleanup": "PASS",
+      "report_sha256": "e0588eff8c0947eff7b076d8baa5ac0752360946ad52966794a002e6764bdd7a",
+      "summary_sha256": "57fa190efe71f6bc47e87c357f38b0a51cde0da3ec1b03b2326ac59c62f1362b",
+      "fault": "POST server 200 committed, injected client 503",
+      "original_post_count": 1,
+      "automatic_post_count": 0,
+      "recovery_read_statuses": [
+        200,
+        200,
+        200
+      ],
+      "source_web_sha256": "9e6dcbfc601e23c2de839151812aa043fb39117d782764dcf587490d633780c2",
+      "evidence_status": "CURRENT_LIFECYCLE_FIX_SOURCE"
+    },
+    "denial2": {
+      "artifact_directory": ".runtime/hard-recovery-browser-denial2",
+      "status": "PASS",
+      "driver_exit_code": 0,
+      "elapsed_seconds": 46.154,
+      "screenshots": 30,
+      "source_file_count": 293,
+      "source_differences": [],
+      "cleanup": "PASS",
+      "report_sha256": "1f92a941e6ed548443261a9e2032868c0d2ba8144b2ffe30b9a5b97bcd99260d",
+      "summary_sha256": "6ec9f2631209049f883d781f6c69261877a2aca5ba735a5de509ca8af5a65431",
+      "fault": "GET server 200 followed by injected client 403; UI clears private projection and retains opaque recovery handle",
+      "original_post_count": 1,
+      "automatic_post_count": 0,
+      "recovery_read_statuses": [
+        200,
+        200,
+        200
+      ],
+      "source_web_sha256": "9e6dcbfc601e23c2de839151812aa043fb39117d782764dcf587490d633780c2",
+      "evidence_status": "CURRENT_LIFECYCLE_FIX_SOURCE"
+    },
+    "navigation2": {
+      "artifact_directory": ".runtime/hard-recovery-browser-navigation2",
+      "status": "PASS",
+      "driver_exit_code": 0,
+      "elapsed_seconds": 44.428,
+      "screenshots": 30,
+      "source_file_count": 293,
+      "source_differences": [],
+      "cleanup": "PASS",
+      "report_sha256": "8fd2dbf2b32bbb3bd5f28b10b41598b79187caf3bafc161c6e6fd3d90f4a04b4",
+      "summary_sha256": "1ef65e66efcb1e2752f26aaaa0231316dc31bd53aa25204ecb82b2095fe592de",
+      "same_source_manifest_as_post1": false,
+      "cross_document_open_back_forward_each_required_empty_token": true,
+      "hard_reload_requires_fresh_authentication": true,
+      "original_post_count": 1,
+      "automatic_post_count": 0,
+      "recovery_read_statuses": [
+        200,
+        200,
+        200
+      ],
+      "fault": "POST server 200 committed, injected client 503",
+      "evidence_status": "CURRENT_LIFECYCLE_FIX_SOURCE",
+      "same_source_manifest_as_post2": true
+    }
+  },
+  "lifecycle_fix_review": {
+    "current_web_sha256": "9e6dcbfc601e23c2de839151812aa043fb39117d782764dcf587490d633780c2",
+    "commit_observed_set_after_successful_post_response": true,
+    "opaque_handle_preserved_on_403": true,
+    "opaque_handle_preserved_on_409_or_422_when_commit_observed": true,
+    "private_body_cleared_on_error": true,
+    "current_web_sha_matches_read3_post2_denial2_snapshots": true,
+    "behavior_verified_by_runs": [
+      "read3",
+      "post2",
+      "denial2"
+    ]
+  },
+  "regression_status": {
+    "independent_review": "NOT_RUN",
+    "full_regression": "EXCLUDED_FROM_THIS_REVIEW"
+  },
+  "review_scope_note": "Source comparisons were recomputed directly from the per-run source-before manifests. navigation2 exactly matches post2 (293 files); it does not match post1 because web.html changed in the lifecycle fix."
+}
