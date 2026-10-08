@@ -1,3 +1,7 @@
+## 独立候选：当前材料准备与补正文本包（待审，未合入dev）
+
+基线604f722，候选 `candidate/material-preparation-text-pack-20261008`。沿原§5.3/F2-T01/F3-T01/AT23，仅整理已分享的当前双槽材料、缺口和原补正说明，生成/复制/下载均原GET重新授权与版本/指纹复读，不改变业务状态。最终相关91PASS/0FAIL/0SKIP/2WARN（87.23秒），13项真实HTTP/Chromium/PG与78项原API/PG同次范围；非完整回归或正式AT/原生签收。精确源码、失败史与快照限制见[最小合同和证据](MaterialPreparationTextPack.md)。缺失a823a28未恢复、不改Windows Job/accounting；正式政策和真实履约PENDING，R4/LIVE关闭。仅独立候选普通push交审，不合入dev/main；旧实例与备份保留。
+
 ## Win11首次安装最短路径：暂停前置拒绝
 
 原F1-T01/AT01、34：本轮只修已知native创建暂停下Setup仍先venv/pip/迁移的入口问题。Setup现在在这些副作用前固定拒绝；Doctor前置只读检查成功后显示新安装BLOCKED；指南停止在只读Doctor，不扩安装/权限授权。最小设备/人工签收、owner/附属对象/受保护authority、Job/S4、真实模型与政策来源缺口分列于[剩余清单](<../F1/Win11FirstUseRemaining.md>)。最终相关420PASS/4SKIP/2WARN（18.39秒），424项同次collection/JUnit精确一致，294源前后零变化；本轮不新跑full，旧2463full不覆盖本轮，Server非Win11、F1未签收/R4关闭/模型0。
