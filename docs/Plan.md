@@ -1,3 +1,7 @@
+## Win11首次安装最短路径：暂停前置拒绝
+
+原F1-T01/AT01、34：本轮只修已知native创建暂停下Setup仍先venv/pip/迁移的入口问题。Setup现在在这些副作用前固定拒绝；Doctor前置只读检查成功后显示新安装BLOCKED；指南停止在只读Doctor，不扩安装/权限授权。最小设备/人工签收、owner/附属对象/受保护authority、Job/S4、真实模型与政策来源缺口分列于[剩余清单](<F1/Win11FirstUseRemaining.md>)。最终相关420PASS/4SKIP/2WARN（18.39秒），424项同次collection/JUnit精确一致，294源前后零变化；本轮不新跑full，旧2463full不覆盖本轮，Server非Win11、F1未签收/R4关闭/模型0。
+
 ## 恢复句柄清理微补丁（在冻结清单交付之后）
 
 仅清理原localStorage无效JSON/空字符串/非对象条目，保留有效句柄和原八条容量/24h边界。API34PASS/14.21秒；最终实际浏览器PASS47.221秒/45图、294源前后0差异、独审无阻断；当前浏览器/独审/源码指纹另见[微补丁范围](F2/RecoveryStorageCleanup.md)。下方2463全量明确仅属于此前冻结0a185d8，不能覆盖微补丁新web/driver字节。不改权限、规则、R4或预算，真实政策材料与正式PR0/Win11缺口仍在。

@@ -1,0 +1,133 @@
+{
+  "review_type": "INDEPENDENT_READ_ONLY",
+  "verdict": "NO_BLOCKER_FOUND_TARGETED_REGRESSION_ONLY",
+  "baseline_commit": "72f2312",
+  "scope": "Final read-only review of the corrected Doctor caveat, Win11 remaining-scope note, and same-invocation targeted pytest collection/JUnit/source verification. This is a targeted regression, not the global full suite and not native Windows acceptance.",
+  "source_sha256": {
+    "scripts/windows/lifecycle.py": "49826c31570a0233b8e9d0d71f86291098ac2bb125a3e8edbf278c1d5cf081e7",
+    "scripts/windows/lifecycle_diagnostics.py": "c767297038f2586a9be8d83f676b6e7c77916fdcaf1a9c09924a53bc7d070954",
+    "tests/test_lifecycle.py": "c3293e334c78ce72c1e29b1c01f1bccbb8f42ab08e84567ceaf51506fdb35bc2",
+    "scripts/windows_ci/diagnostic-test-ids.json": "d72ce1f390cb7a90aaec24c55604b7640d63592eabda0ca969b78be31e917707",
+    "docs/首次体验.md": "a0347458d139b4fa14acc4f42f9abca4f512016555c1874398a6bfbfa98c255a",
+    "docs/F1/Win11FirstUseRemaining.md": "b4a209b569f2ca80dea887ce5ef147911e60a0ca7042a3ef03c51257b76752d4"
+  },
+  "setup_order": {
+    "existing_configuration": "setup() returns the existing-configuration protection refusal before invoking setup readiness; it does not overwrite.",
+    "new_configuration": "require_setup_readiness() immediately follows the CONFIG.exists() guard and is before check_python, venv creation, pip, DSN/environment lookup, database migration, roles.sql, runtime ACL creation, session seeding, and config creation.",
+    "fixed_result": {
+      "status": "BLOCKED",
+      "reason": "OWNER_MUTATION_PAUSED",
+      "native_acceptance": "NOT_ACCEPTED"
+    },
+    "override_found": false
+  },
+  "preservation_and_doctor": {
+    "existing_incomplete_environment": "Refused without reinstall/delete; readiness precedes check_python and install paths.",
+    "existing_runtime_or_sessions": "No mutation before fixed setup refusal.",
+    "existing_configuration": "Protected from Setup overwrite; documented Doctor/Start path remains separate.",
+    "fresh_doctor": "Reports new_setup BLOCKED when its ordinary Python and any existing-runtime readonly checks complete; it does not need DSN/dependency install on a clean fresh runtime.",
+    "doctor_scope_caveat": "Doctor calls check_python before building/outputting its report, then may perform existing .runtime ACL checks and, for an existing CONFIG, the normal read-only health checks. Failures in those checks can stop output before new_setup is printed. Documentation should phrase BLOCKED output as conditional on those ordinary readonly prechecks succeeding."
+  },
+  "diagnostics": {
+    "reason_added": "OWNER_MUTATION_PAUSED",
+    "accepted_by_fixed_reason_enum": true,
+    "schema_changed": false,
+    "secret_or_path_dump_added": false,
+    "safe_cli_failure_nonzero": true,
+    "test_id_registration": {
+      "added_test_function_names": 3,
+      "meaning": "Name allowlist for diagnostic projection only; does not grant application, OS, permission, or execution authority.",
+      "stable_collection_preserved": true
+    }
+  },
+  "documents": {
+    "claims_checked": [
+      "Setup refuses before venv/pip/DSN/database writes",
+      "Doctor is a read-only preflight and not native acceptance",
+      "existing installs are not re-Setup or erased",
+      "Win11/ACL/PG/Job/S4 remain not accepted"
+    ],
+    "native_acceptance_claimed": false,
+    "overclaim_note": "The new_setup status is fixed, but Doctor output depends on its preceding ordinary read-only checks succeeding.",
+    "doctor_scope_caveat": "Addressed: docs/首次体验.md now conditions new_setup BLOCKED output on Doctor’s Python and existing-private-directory readonly prechecks succeeding. Win11FirstUseRemaining.md also says prior readonly checks may stop output before JSON; it clearly separates this targeted code fix from actual Win11/ACL/PG/native acceptance.",
+    "remaining_scope_review": {
+      "Win11_first_install_and_real_browser": "NOT_ACCEPTED; requires authorized user device and manual acceptance.",
+      "native_owner_acl_pg_job_s4": "NOT_RUN/NOT_ACCEPTED; docs do not infer native success from Linux tests.",
+      "model": "DISABLED; no model calls or budget used.",
+      "older_full_suite": "The earlier 2463-pass global result applies to its previous frozen source only; it is not reused as coverage for this delta."
+    }
+  },
+  "tests_reviewed_not_executed": {
+    "new_cases_seen": 6,
+    "coverage": [
+      "empty/incomplete environment/runtime/config preservation",
+      "fresh Doctor does not read DSN or install dependencies",
+      "CLI emits fixed nonzero pause before side effects"
+    ],
+    "actual_Windows_execution_claimed": false
+  },
+  "reviewer_actions": {
+    "tests_run": false,
+    "pg_started": false,
+    "native_actions_run": false,
+    "browser_run": false,
+    "files_edited": false,
+    "private_review_record_updated": true
+  },
+  "targeted_regression": {
+    "verification_json": ".runtime/win11-preflight-final-full-verification.json",
+    "verification_json_sha256": "dcce72c1fe3b93fd1d23d1cf9075f06c03ff28409d4151c801725071fcfa3989",
+    "junit_xml": ".runtime/win11-preflight-final-full.xml",
+    "junit_sha256": "6c671e04516704d59df383bc92d14d1439cd76f7b74a31fcdc7901eded09fea4",
+    "log": ".runtime/win11-preflight-final-full.log",
+    "log_sha256": "e63d1bd8d705f0142e2c66db3392afcbcc940130b0018c2cef65bf7bd66339dc",
+    "collection_json": ".runtime/win11-preflight-final-full-collection.json",
+    "collection_sha256": "11ca3c5d15f3fbc7c6484f462decf1bd47dcd7b5bb38ab11c58224a33e0cc96a",
+    "cases_collected": 424,
+    "outcomes": {
+      "PASS": 420,
+      "SKIP": 4
+    },
+    "junit_counts": {
+      "tests": 424,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 4,
+      "seconds": 18.378
+    },
+    "elapsed_seconds_log": 19.163,
+    "source_files": 294,
+    "source_differences": [],
+    "junit_and_collection_same_invocation": true,
+    "stable_keys_preserved": true,
+    "loaded_modules": 38,
+    "loaded_parkweave_modules": 18,
+    "unexpected_loaded_sources": [],
+    "loaded_hash_mismatches": [],
+    "pytest_exit": 0,
+    "native_skips": [
+      {
+        "nodeid": "tests/test_synthetic_session_file.py::test_native_session_owner_matches_current_user_and_existing_bytes_protected",
+        "message": "native Windows owner-only verification required"
+      },
+      {
+        "nodeid": "tests/test_synthetic_config_file.py::test_native_config_first_creation_and_existing_bytes_protected",
+        "message": "native Windows CONFIG owner-only creation required"
+      },
+      {
+        "nodeid": "tests/test_server_identity.py::test_native_windows_query_current_process_handle_only",
+        "message": "NOT_RUN: Windows read-only kernel handle validation"
+      },
+      {
+        "nodeid": "tests/test_server_identity.py::test_native_windows_popen_binding_preserves_borrowed_creation_handle",
+        "message": "NOT_RUN: Windows actual Popen borrowed handle validation"
+      }
+    ],
+    "scope": "Targeted 14-module regression for this slice. Not a global full regression."
+  },
+  "earlier_attempts": {
+    "initial_wrong_test_filename": "exit 4, no tests executed; retained.",
+    "first_related_run": "202 passed, 1 failed, 2 skipped; failure was stale diagnostic AST name allowlist after adding tests; retained and not treated as final.",
+    "final_targeted_run": "420 passed, 4 skipped, 2 warnings, exit 0; 424 collected cases. This is targeted only."
+  }
+}

@@ -1,3 +1,7 @@
+## Win11首次安装最短路径：暂停前置拒绝
+
+原F1-T01/AT01、34：本轮只修已知native创建暂停下Setup仍先venv/pip/迁移的入口问题。Setup现在在这些副作用前固定拒绝；Doctor前置只读检查成功后显示新安装BLOCKED；指南停止在只读Doctor，不扩安装/权限授权。最小设备/人工签收、owner/附属对象/受保护authority、Job/S4、真实模型与政策来源缺口分列于[剩余清单](<Win11FirstUseRemaining.md>)。最终相关420PASS/4SKIP/2WARN（18.39秒），424项同次collection/JUnit精确一致，294源前后零变化；本轮不新跑full，旧2463full不覆盖本轮，Server非Win11、F1未签收/R4关闭/模型0。
+
 ## ENG083 精确同步与本地历史模板说明（旧记录保留各轮范围）
 
 指定6提交已审无owner/权限扩大；精确797f426隔离完整Linux1454PASS/0FAIL/9nativeSKIP后，普通快进推送并核实远端同SHA。唯一run37574021406 attempt1 completed/success仅既有独立Job测量，metadata可证步骤success，直接JSON未取得；无日志/产物/rerun，不代表完整Windows/Win11验收。

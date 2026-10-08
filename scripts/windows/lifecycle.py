@@ -358,8 +358,28 @@ def port_available(port,retry_seconds=0,*,clock=time.monotonic,pause=time.sleep)
         pause(min(.05,remaining))
 
 
+def setup_readiness():
+    """Read-only first-install status; no override for the native creation pause.
+
+    SESSION and CONFIG creation in synthetic_session_file are still paused.
+    Report that prerequisite before venv/pip or maintenance database work.
+    Existing installations remain subject to the ordinary Doctor/Start checks.
+    """
+    return {'status': 'BLOCKED', 'reason': 'OWNER_MUTATION_PAUSED',
+            'next_step': 'New native setup is paused. Keep existing files/data; review the native creation prerequisite before Setup.',
+            'native_acceptance': 'NOT_ACCEPTED'}
+
+
+@staged('configuration')
+def require_setup_readiness():
+    readiness = setup_readiness()
+    if readiness['status'] != 'READY':
+        raise BoundaryError(readiness['next_step'], readiness['reason'])
+
+
 def setup():
     if CONFIG.exists():raise BoundaryError('existing configuration protected; use Doctor/Start, not overwrite setup')
+    require_setup_readiness()
     check_python(sys.executable)
     managed=REPO/'.venv-windows'
     python=managed/'Scripts'/'python.exe'
@@ -393,7 +413,8 @@ def setup():
 def doctor():
     check_python(sys.executable)
     info={'project':'ParkWeave','platform':sys.platform,'python':sys.version.split()[0],'native_windows':'UNVERIFIED_RUN',
-          'model':'DISABLED','file_backend':'NOT_RUN: native backend disabled','cwd':str(REPO)}
+          'model':'DISABLED','file_backend':'NOT_RUN: native backend disabled','cwd':str(REPO),
+          'new_setup': setup_readiness()}
     if RUNTIME.exists():native_acl_check(RUNTIME);info['private_acl']='CHECKED_READ_ONLY: native run evidence only'
     if CONFIG.exists():
         config=load_config();check_python(config['python']);info['port']=config['port']
