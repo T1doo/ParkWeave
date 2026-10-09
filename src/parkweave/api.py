@@ -280,6 +280,17 @@ def create_app(store: Store) -> FastAPI:
     from . import dispatch_notices as notices
     from . import controlled_plans as cp
     from . import request_intents as intents
+    from . import material_objections
+    @app.get('/api/preparations/{preparation_id}/material-objections')
+    def material_objections_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return material_objections.read(store,token(authorization),preparation_id)
+    @app.get('/api/preparations/{preparation_id}/material-objections/recovery/{request_key}')
+    def material_objections_recovery(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return material_objections.recover(store,token(authorization),preparation_id,resource_key(request_key))
+    @app.post('/api/preparations/{preparation_id}/material-objections')
+    def material_objections_command(preparation_id: UUID,data: material_objections.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return material_objections.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
     from . import material_corrections
     @app.get('/api/preparations/{preparation_id}/material-corrections')
     def material_corrections_read(preparation_id: UUID,authorization: str | None=Header(default=None)):

@@ -160,6 +160,9 @@ def command(store,token,id,key,data):
         # Reopen and historical replay must not depend on obsolete resource grants.
         old=c.execute('SELECT * FROM case_local_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
         if old and (old['fingerprint']!=fp or old['preparation_id']!=id):raise Conflict('local Case request key fingerprint mismatch')
+        if data.action!='REOPEN' and not old:
+            from .material_objections import gate
+            gate(store,c,parent)
         if data.action!='REOPEN' and not old and parent.get('service_case_plan'):
             from .service_case_steps import gate as case_step_gate
             case_step_gate(store,c,parent,4)

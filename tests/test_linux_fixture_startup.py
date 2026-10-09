@@ -36,7 +36,7 @@ def test_fresh_database_real_receipt_schema25_and_cleanup_preserves_existing_sta
         assert runtime != old and temporary.is_dir()
         assert owner._case_fact_fixture_receipt.database_name == 'parkweave'
         with owner.connect() as c:
-            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 25
+            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 26
             assert c.execute('SELECT count(*) n FROM cases').fetchone()['n'] == 0
             assert c.execute('SELECT count(*) n FROM run_assignments').fetchone()['n'] == 0
     assert not temporary.exists()
@@ -134,7 +134,7 @@ def test_actual_fresh_launcher_reports_own_ready_api_and_stops_all_owned_service
             health = json.loads(response.read())
             connection.close()
             assert response.status == 200 and health['process_id'] == evidence['api_pid']
-            assert health['schema'] == 25 and health['execution_mode'] == 'LOCAL'
+            assert health['schema'] == 26 and health['execution_mode'] == 'LOCAL'
             # Existing original synthetic seed only, scoped to the new temporary DB.
             sessions = json.loads((runtime/'synthetic-sessions.json').read_text())
             connection = HTTPConnection('127.0.0.1', port, timeout=2)

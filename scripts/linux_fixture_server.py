@@ -46,7 +46,7 @@ def demo_database(fresh=False):
     """A fresh temporary demo is issued real in-process creation evidence.
 
     Existing persistent state is never renamed, reset or retroactively given
-    creation evidence. Only an already schema-25 demo may use the old path.
+    creation evidence. Only an already schema-25/26 demo may use the old path.
     """
     if sys.platform != "linux":raise Denied("Linux synthetic demo only; Windows installed adapter remains blocked")
     base=Path(tempfile.mkdtemp(prefix="parkweave-demo-")) if fresh else None
@@ -78,9 +78,9 @@ def demo_database(fresh=False):
             with owner.connect() as c:
                 table=c.execute("SELECT to_regclass('public.schema_version') t").fetchone()["t"]
                 version=c.execute("SELECT max(version) v FROM schema_version").fetchone()["v"] if table else None
-                if version != 25:
+                if version not in (25,26):
                     raise Denied("Existing demo migration has no creation receipt; preserve it and use --fresh-fixture")
-        owner.migrate()
+        if fresh or version==26:owner.migrate()
         yield root,owner
     except DemoStopUnconfirmed:
         preserve=True
@@ -167,7 +167,7 @@ def serve(root,owner,args):
                     connection.request('GET','/health')
                     response=connection.getresponse()
                     health=json.loads(response.read()) if response.status==200 else None
-                    if health and health.get('process_id')==api.pid and health.get('schema')==25 and health.get('data')=='SYNTHETIC' and health.get('execution_mode')==mode:
+                    if health and health.get('process_id')==api.pid and health.get('schema') in (25,26) and health.get('data')=='SYNTHETIC' and health.get('execution_mode')==mode:
                         break
                 except (OSError,ValueError):pass
                 finally:connection.close()

@@ -69,12 +69,12 @@ def replay(c,p,key,fingerprint,preparation_id=None):
         if event['fingerprint']!=fingerprint or (preparation_id and event['preparation_id']!=preparation_id):raise Conflict('idempotency key fingerprint mismatch')
         return event['payload']
 
-def event(c,p,row,key,fp,action,**extra):
+def event(c,p,row,key,fp,action,event_id=None,**extra):
     payload={'preparation_id':str(row['id']),'case_id':str(row['case_id']),'run_id':str(row['run_id']),
              'revision':row['revision'],'state':row['state'],'action':action,'actor_id':p['id'],
              'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY','qualification':'NOT_EVALUATED',
              'external_acceptance':'NOT_SUBMITTED','offline_fulfillment':'NO_EVIDENCE',**extra}
-    c.execute('INSERT INTO preparation_events(id,preparation_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',(uuid4(),row['id'],p['id'],key,fp,row['revision'],action,Jsonb(payload)))
+    c.execute('INSERT INTO preparation_events(id,preparation_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',(event_id or uuid4(),row['id'],p['id'],key,fp,row['revision'],action,Jsonb(payload)))
     return payload
 
 def recover_evidence_command(store,token,id,key):
@@ -196,6 +196,8 @@ def command(store,token,id,key,data):
             if ledger:ledger=corrections.resolve(row,p,corrections.materials(c,id),current_hash,data.reason)
             state='REVIEWED';review_hash=current_hash
         elif data.action=='CONFIRM':
+            from .material_objections import gate
+            gate(store,c,row)
             if corrections.active(ledger):raise Conflict('requested material corrections require actual reviewer resolution before confirmation')
             if row['state']!='REVIEWED' or row['review_sha256']!=current_hash:raise Conflict('current manual material review required')
             state='LOCAL_CONFIRMED';review_hash=current_hash
@@ -220,6 +222,7 @@ def read(store,token,id):
         items=latest(c,id)
         history=c.execute('SELECT revision,action,payload,created_at FROM preparation_events WHERE preparation_id=%s ORDER BY revision',(id,)).fetchall()
         for record in history:
+            record['payload'].pop('objection',None)
             if record['action'] in ('DECLARE_FACT_PURPOSE','CONFIRM_FACT_PURPOSE'):
                 public=('preparation_id','case_id','run_id','revision','state','action','actor_id','scope',
                         'qualification','external_acceptance','offline_fulfillment','reason','fact_clarification_id',

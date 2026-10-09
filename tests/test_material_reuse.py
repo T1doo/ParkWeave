@@ -121,7 +121,7 @@ def test_reuse_is_new_unverified_evidence_and_target_needs_own_request_and_human
     assert read(f, source).json() == original_source
     assert authority(f) == permissions
     with f[1].connect() as c:
-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 25
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 26
         assert c.execute('SELECT count(*) n FROM runs').fetchone()['n'] == 2
 
 

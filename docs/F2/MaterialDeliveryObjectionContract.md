@@ -8,6 +8,8 @@
 
 存储只使用现有 preparations 的 revision 更新与 preparation_events 的 INSERT（同事务）；无新增角色/Grant/通知/模型/外部副作用。schema26 仅扩展事件 action CHECK，沿用 schema25 的已验证新建隔离数据库 receipt，普通已有数据库不得自动安装。应用角色没有事件 UPDATE/DELETE 权限；以事件折叠读回异议，禁止覆写历史。每事项最多8个异议、32个异议事件，且沿用总64资料 revision上限；说明1–1000字符。不可变指事件在应用角色下不可改，owner 仍为数据库信任边界。
 
-幂等键使用现有 actor/key 排他锁和事件唯一约束，原键/原body重试返回原事件；同键异body冲突；权限先于重放。只读 recovery 仅查当前有权原 actor 的原 key，不重放、不提交；NOT_OBSERVED 不代表未提交。页面仅持久保存原 Case/key/actor 会话指纹句柄，不保存 token/说明/body；冷刷新后重新输入本人会话只读核对。403清私有视图，迟到身份/Case/generation响应丢弃；未知时禁新写，未核实 absence 保持未知。
+幂等键使用现有 actor/key 排他锁和事件唯一约束，原键/原body重试返回原事件；同键异body冲突；权限先于重放。只读 recovery 仅查当前有权原 actor 的原 key，不重放、不提交；NOT_OBSERVED 不代表未提交。页面仅持久保存原 Case/key/actor 编号句柄，不保存 token/说明/body；冷刷新后重新输入本人会话只读核对。403清私有视图，迟到身份/Case/generation响应丢弃；未知时禁新写，未核实 absence 保持未知。
 
 未决或失效异议阻止原 CONFIRM 和本地 Case关闭；回应、其他材料命令或来源更新不消除未决。Case实际状态仍沿原合同。验证使用隔离新建 PostgreSQL、当前普通API与原页面真实HTTP/Chromium，包含冷恢复、撤权、越权、跨企业、换版、并发、迟到、重复、隐私负例。Windows/LIVE/完整42 AT/EX仍未签收；不修改main/强推/部署/网络凭据配置。
+
+实现细化：绑定另保留原人工 REVIEW 事件 UUID/revision、目录来源 hash 与事实用途 descriptor hash；资料重开再审核不会复活旧回应。schema26只由既有 Linux 新建隔离库 receipt 安装；原 native receipt 路径仍止于25，原25读者兼容，异议写入关闭。目录只有既有owner合成初始化来源，应用角色仅SELECT；没有为了读锁新增UPDATE权限，owner来源变更仍须与事项/主体锁协作，越过锁的DB owner为信任边界。
