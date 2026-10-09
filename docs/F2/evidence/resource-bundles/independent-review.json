@@ -1,0 +1,108 @@
+{
+  "reviewed_sha": "20c9a387e821dac4481a46c40cc2b7fc1400cf5b",
+  "base_sha": "5a168116e52afbc360ba7178207f0d3f61318866",
+  "contract_sha": "67d59ceab8abfda673f98fff82a5931522382c39",
+  "conclusion": "LIMITED_PASS_SYNTHETIC_BOUNDED_RESOURCE_BUNDLE",
+  "blocking_findings": [],
+  "scope": "Existing 3-8 owned hold UUIDs under current original actor READ/EXECUTE and all-member resource READ/HOLD; synthetic local PostgreSQL only. No grants/schema/deployment changes.",
+  "tests": {
+    "targeted": {
+      "tests": "111",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "69.401",
+      "log_path": "/workspace/ParkWeave/.runtime/independent-resource-bundle-review/targeted.log",
+      "log_sha256": "2cbdac8172435bef5f67590b5083fcc6f6f7f5de1e70f62979c9028626da5f04",
+      "junit_path": "/workspace/ParkWeave/.runtime/independent-resource-bundle-review/targeted.xml",
+      "junit_sha256": "c21abb22e76b97b1647c4aa05a8d810aeab8e91c7bdc6c72ec4a233cb0803407"
+    },
+    "edges": {
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "7.283",
+      "log_path": "/workspace/ParkWeave/.runtime/independent-resource-bundle-review/edges.log",
+      "log_sha256": "fb4817441e8cfd5a8a39061c164fecaaac536c53b30ea09c5e48a2fffd3ad477",
+      "junit_path": "/workspace/ParkWeave/.runtime/independent-resource-bundle-review/edges.xml",
+      "junit_sha256": "9c845cb8722a46bcab994d6cfe45f88cb1971cc9aec90acdb7564f0e7ccd523d"
+    },
+    "edges-initial": {
+      "tests": "5",
+      "failures": "1",
+      "errors": "0",
+      "skipped": "0",
+      "time": "6.874",
+      "log_path": "/workspace/ParkWeave/.runtime/independent-resource-bundle-review/edges-initial.log",
+      "log_sha256": "561ad854242b21781134a4b33a875a3a4ad118ed98c73b1a6349b9d5f7e8b545",
+      "junit_path": "/workspace/ParkWeave/.runtime/independent-resource-bundle-review/edges-initial.xml",
+      "junit_sha256": "4f6b5488f6d4c3d22c4eb30a7d15133ba7db69337afd3dbcef80f27c9450a8c6"
+    }
+  },
+  "independent_targeted_modules": {
+    "test_resource_bundles": 34,
+    "test_resource_bundles_browser": 14,
+    "test_resource_combinations": 33,
+    "test_case_resources": 30
+  },
+  "verified_behaviors": [
+    {
+      "topic": "All-member atomic confirmation/cancellation",
+      "evidence": "Targeted suite verifies capacity/version/window/expiry/disabled/released/grant failure, lock wait expiry, confirm/cancel receipt fault rollback, same/different key concurrency, single release competition and dual cancellation. No partial group effects."
+    },
+    {
+      "topic": "Sorted locking and immutable manifest",
+      "evidence": "Stable distinct resource UUID locks plus stable member locks; original scoped CONFIRM manifest includes sorted hold/resource IDs, resource revisions, windows and quantities. App UPDATE/DELETE on member/receipt denied; corrupted/missing proof rejects read/cancel."
+    },
+    {
+      "topic": "Original-actor cross-contract idempotency",
+      "evidence": "Order-equivalent bundle replay returns original receipt/current group. Independent extra confirms original hold or pair keys conflict on bundle confirm/recovery, and bundle cancel key conflicts with pair cancel. Cancelled confirm replay does not reoccupy."
+    },
+    {
+      "topic": "Current privacy and recovery authority",
+      "evidence": "Targeted READ revocation/cross-enterprise/park/role cases deny private read/write/replay or omit entire group from list. EXECUTE/HOLD withdrawal permits only retained READ recovery. Bundle proof stores no purpose body; browser localStorage contains opaque handles without token/body/member plan."
+    },
+    {
+      "topic": "Actual HTTP and cold/late recovery",
+      "evidence": "14 original Chromium/loopback PG tests pass including 3/8 members, 320/390/1200 widths, independent API process restart, lost confirm response, corrupt/NOT_OBSERVED/8-handle lock and revocation. Two extra real-page tests prove lost cancel response cold refresh GET-only recovery and late GET identity switch retaining original handle with no private view restore."
+    },
+    {
+      "topic": "Same resource overlapping members",
+      "evidence": "Independent 3 and 8 member cases all use one existing resource, with two holds overlapping per interval at peak capacity 2. Confirmation succeeds, further overlapping HOLD fails409, whole cancellation releases capacity and new HOLD succeeds."
+    },
+    {
+      "topic": "Case/original pair compatibility",
+      "evidence": "33 original pair and 30 Case tests pass; bundle-specific Case association includes all members, whole cancellation yields NEEDS_RECHECK with no completed Case. Existing source/P1/P2 implementation loops over every member and uses validated rc._members."
+    }
+  ],
+  "frozen_source_files": 304,
+  "source_drift": [],
+  "tracked_worktree_status": "",
+  "remote_refs": {
+    "refs/heads/candidate/bounded-resource-bundles-20261009": "20c9a387e821dac4481a46c40cc2b7fc1400cf5b",
+    "refs/heads/dev/f1-foundation": "5a168116e52afbc360ba7178207f0d3f61318866",
+    "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+  },
+  "warnings": [
+    "Existing Starlette/httpx deprecation",
+    "Existing XDG runtime directory fallback",
+    "Private runner preimports browser module as required, causing benign pytest anyio assert-rewrite warning"
+  ],
+  "extra_driver_failure": "Initial independent extra run: 4PASS/1FAIL because review test tried to create a pair in a window already at capacity; helper raised KeyError after correct API409. Test-only runtime driver moved pair to an available interval; rerun 5PASS. Initial logs/JUnit preserved, no product change.",
+  "remaining_limits": [
+    "Limited synthetic engineering slice, not full F2-T03/product5.4/formal acceptance.",
+    "Database owner and existing cooperative principal/resource locks plus source-to-commit time window remain trusted; no uncoordinated admin or external atomicity guarantee.",
+    "Historical confirmed/cancelled group recovery does not approve current resource versions or real reservation.",
+    "Full repository NOT_PASSED_NOT_COMPLETED; Windows/native/42 AT/EX not accepted. No real fulfillment/model calls/external notification/policy approval."
+  ],
+  "operations": {
+    "source_test_docs_edits": false,
+    "git_mutation": false,
+    "merge_deploy": false,
+    "install_permission_credential_network_changes": false,
+    "outputs": "Private runtime only; browser OUT redirected before pytest collection."
+  },
+  "public_report_safe": true,
+  "raw_logs_private_may_contain_synthetic_session": true
+}
