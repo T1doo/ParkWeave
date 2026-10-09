@@ -27,6 +27,17 @@ def create_app(store: Store) -> FastAPI:
     def delivery_recovery(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
         return delivery.recover(store,token(authorization),preparation_id,resource_key(request_key))
 
+    from . import case_opportunities as opportunities
+    @app.get('/api/preparations/{preparation_id}/opportunities')
+    def opportunity_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return opportunities.read(store,token(authorization),preparation_id)
+    @app.post('/api/preparations/{preparation_id}/opportunities/commands')
+    def opportunity_command(preparation_id: UUID,data: opportunities.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return opportunities.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+    @app.get('/api/preparations/{preparation_id}/opportunities/recovery/{request_key}')
+    def opportunity_recovery(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return opportunities.recover(store,token(authorization),preparation_id,resource_key(request_key))
+
     @app.middleware("http")
     async def boundary(request: Request, call_next):
         # Count actual bytes as well as declared Content-Length; limit before JSON parsing.

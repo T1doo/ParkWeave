@@ -36,7 +36,7 @@ def test_fresh_database_real_receipt_schema25_and_cleanup_preserves_existing_sta
         assert runtime != old and temporary.is_dir()
         assert owner._case_fact_fixture_receipt.database_name == 'parkweave'
         with owner.connect() as c:
-            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 26
+            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 27
             assert c.execute('SELECT count(*) n FROM cases').fetchone()['n'] == 0
             assert c.execute('SELECT count(*) n FROM run_assignments').fetchone()['n'] == 0
     assert not temporary.exists()
@@ -134,7 +134,7 @@ def test_actual_fresh_launcher_reports_own_ready_api_and_stops_all_owned_service
             health = json.loads(response.read())
             connection.close()
             assert response.status == 200 and health['process_id'] == evidence['api_pid']
-            assert health['schema'] == 26 and health['execution_mode'] == 'LOCAL'
+            assert health['schema'] == 27 and health['execution_mode'] == 'LOCAL'
             # Existing original synthetic seed only, scoped to the new temporary DB.
             sessions = json.loads((runtime/'synthetic-sessions.json').read_text())
             connection = HTTPConnection('127.0.0.1', port, timeout=2)
@@ -152,3 +152,33 @@ def test_actual_fresh_launcher_reports_own_ready_api_and_stops_all_owned_service
     with pytest.raises(OSError):
         with socket.create_connection(('127.0.0.1', port), timeout=.5):
             pytest.fail('owned API must stop with its launcher')
+
+
+@pytest.mark.parametrize('retained_version',[25,26,27])
+def test_existing_supported_linux_demo_is_read_without_upgrade_or_state_reset(tmp_path,monkeypatch,retained_version):
+    from parkweave.store import Store
+    from parkweave.case_fact_clarifications import capture_fixture_cluster
+    monkeypatch.chdir(tmp_path)
+    data=tmp_path/'.runtime/smoke-pg';data.parent.mkdir()
+    server=pgserver.get_server(data,cleanup_mode='stop')
+    try:
+        cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+        with psycopg.connect(server.get_uri(),autocommit=True) as c:
+            c.execute('CREATE DATABASE parkweave')
+            c.execute('CREATE ROLE parkweave_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE')
+        owner=Store(make_conninfo(server.get_uri(),dbname='parkweave'))
+        with owner.connect() as c:owner._case_fact_fixture_receipt=cluster.record_created_database(c)
+        owner.migrate()
+        with owner.connect() as c:
+            # Isolated old-marker/column fixture. No installed/native DB touched.
+            c.execute('DELETE FROM schema_version WHERE version>%s',(retained_version,))
+            if retained_version<27:c.execute('ALTER TABLE preparations DROP COLUMN opportunities')
+            before=c.execute('SELECT version FROM schema_version ORDER BY version').fetchall()
+        server.cleanup();server=None
+        with demo.demo_database(False) as (runtime,reopened):
+            assert runtime==tmp_path/'.runtime'
+            with reopened.connect() as c:
+                assert c.execute('SELECT version FROM schema_version ORDER BY version').fetchall()==before
+                assert bool(c.execute("SELECT 1 FROM information_schema.columns WHERE table_name='preparations' AND column_name='opportunities'").fetchone())==(retained_version==27)
+    finally:
+        if server is not None:server.cleanup()

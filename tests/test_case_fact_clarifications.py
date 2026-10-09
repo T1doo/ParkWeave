@@ -39,7 +39,7 @@ def f(fixture_cluster_evidence, preparation_fixture):
     with f[1].connect() as c:
         f[1]._case_fact_fixture_receipt = fixture_cluster_evidence.record_created_database(c)
         authorize_migration(f[1], c)
-        c.execute(MIGRATION.with_name('migration-026.sql').read_text())
+        c.execute(MIGRATION.with_name('migration-027.sql').read_text())
     return f
 
 
@@ -292,10 +292,10 @@ def test_migration_transaction_rollback_and_rerun_retains_ledger(f):
     p=row(f);three(f);declare(f,p);confirm(f,p);before=business(f);permissions=authority(f)
     with f[1].connect() as c:
         authorize_migration(f[1], c)
-        c.execute(MIGRATION.with_name('migration-026.sql').read_text())
+        c.execute(MIGRATION.with_name('migration-027.sql').read_text())
     assert business(f)==before and authority(f)==permissions
     with f[1].connect() as c:
-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==26
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==27
         assert c.execute("SELECT pg_get_constraintdef(oid) d FROM pg_constraint WHERE conname='preparation_events_action_check'").fetchone()['d'].count('CONFIRM_FACT_PURPOSE')==1
     # Test a clean DDL rollback on this same isolated fixture, not a production downgrade.
     with f[1].connect() as c:
@@ -575,17 +575,17 @@ def test_fixed_lifecycle_name_requires_real_cluster_creation_receipt(pg, fixture
         with pytest.raises(psycopg.errors.RaiseException, match='creation ticket required'):
             with owner.connect() as c: c.execute(MIGRATION.read_text())
         with owner.connect() as c:
-            receipt.authorize_migration(c); c.execute(MIGRATION.with_name('migration-026.sql').read_text())
-            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 26
+            receipt.authorize_migration(c); c.execute(MIGRATION.with_name('migration-027.sql').read_text())
+            assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 27
             assert c.execute('SELECT current_database() d').fetchone()['d'] == 'parkweave'
             assert c.execute("SELECT to_regclass('pg_temp.parkweave_fixture_migration_receipt') marker").fetchone()['marker'] is not None
             c.commit()
             assert c.execute("SELECT to_regclass('pg_temp.parkweave_fixture_migration_receipt') marker").fetchone()['marker'] is None
-            receipt.authorize_migration(c); c.execute(MIGRATION.with_name('migration-026.sql').read_text())
+            receipt.authorize_migration(c); c.execute(MIGRATION.with_name('migration-027.sql').read_text())
             c.rollback()
             assert c.execute("SELECT to_regclass('pg_temp.parkweave_fixture_migration_receipt') marker").fetchone()['marker'] is None
         # Reissue only from the same actual creation receipt, preserving ledger.
-        with owner.connect() as c: receipt.authorize_migration(c); c.execute(MIGRATION.with_name('migration-026.sql').read_text())
+        with owner.connect() as c: receipt.authorize_migration(c); c.execute(MIGRATION.with_name('migration-027.sql').read_text())
     finally:
         if created:
             with psycopg.connect(pg.get_uri(), autocommit=True) as c:
@@ -626,13 +626,13 @@ def test_uuid_name_and_database_owner_without_creation_evidence_do_not_authorize
 
 
 def test_migration_refuses_future_version_even_with_retained_24_and_valid_receipt(f):
-    with f[1].connect() as c: c.execute('INSERT INTO schema_version VALUES(27)')
+    with f[1].connect() as c: c.execute('INSERT INTO schema_version VALUES(28)')
     before = business(f)
     with pytest.raises(psycopg.errors.RaiseException, match='schema 24 prerequisite'):
         with f[1].connect() as c:
             authorize_migration(f[1], c); c.execute(MIGRATION.read_text())
     with f[1].connect() as c:
-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 27
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 28
     assert business(f) == before
 
 

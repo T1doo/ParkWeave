@@ -150,8 +150,8 @@ def test_bounded_shape_rejects_without_mutation(preparation_fixture,alter):
 
 def test_existing_database_migration_requires_receipt(preparation_fixture):
     f=preparation_fixture
-    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==26
-    # Version 26 is restart-compatible without rerunning migration or fresh receipt.
+    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==27
+    # Current Linux version 27 is restart-compatible without rerunning migration or fresh receipt.
     Store(f[1].dsn).migrate()
 
 from test_case_resources import link_fixture
@@ -213,6 +213,7 @@ def test_schema26_cannot_be_installed_without_real_ticket_and_ddl_rolls_back(pre
         with f[1].connect() as c:c.execute(sql)
     with f[1].connect() as c:
         f[1]._case_fact_fixture_receipt.authorize_migration(c)
+        c.execute('DELETE FROM schema_version WHERE version=27')  # isolated prior-26 replay, fully rolled back
         c.execute(sql);c.rollback()
     assert rows(f)==before
     with f[1].connect() as c:

@@ -222,6 +222,9 @@ def read(store,token,id):
         row.pop('material_corrections',None)
         facts=fact_descriptor(store,c,row)
         row.pop('fact_clarifications',None)
+        # Private opportunity imports have their own current owner authorization;
+        # assigned reviewers and ordinary preparation reads never carry them.
+        row.pop('opportunities',None)
         items=latest(c,id)
         history=c.execute('SELECT revision,action,payload,created_at FROM preparation_events WHERE preparation_id=%s ORDER BY revision',(id,)).fetchall()
         for record in history:
