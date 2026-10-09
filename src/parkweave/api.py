@@ -261,6 +261,27 @@ def create_app(store: Store) -> FastAPI:
         return resources.release(store,token(authorization),hold_id,resource_key(idempotency_key))
 
     from . import resource_combinations as combinations
+    from . import resource_bundles as bundles
+    @app.post('/api/resource-bundles',status_code=201)
+    def bundle_confirm(data: bundles.Bundle,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return bundles.confirm(store,token(authorization),resource_key(idempotency_key),data)
+
+    @app.get('/api/resource-bundles')
+    def bundle_list(authorization: str | None=Header(default=None)):
+        return bundles.list_items(store,token(authorization))
+
+    @app.get('/api/resource-bundles/recovery/{request_key}')
+    def bundle_recovery(request_key: str,authorization: str | None=Header(default=None)):
+        return bundles.recover(store,token(authorization),resource_key(request_key))
+
+    @app.get('/api/resource-bundles/{bundle_id}')
+    def bundle_read(bundle_id: UUID,authorization: str | None=Header(default=None)):
+        return bundles.read(store,token(authorization),bundle_id)
+
+    @app.post('/api/resource-bundles/{bundle_id}/cancel')
+    def bundle_cancel(bundle_id: UUID,data: resources.Release,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return bundles.cancel(store,token(authorization),bundle_id,resource_key(idempotency_key))
+
     @app.post('/api/resource-combinations',status_code=201)
     def resource_combination_confirm(data: combinations.Combination,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return combinations.confirm(store,token(authorization),resource_key(idempotency_key),data)

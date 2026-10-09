@@ -32,8 +32,14 @@ def _group(c,p,id,lock=False):
 def _members(c,p,id,lock=False):
     rows=c.execute('SELECT hold_id FROM synthetic_resource_combination_members WHERE combination_id=%s ORDER BY hold_id',(id,)).fetchall()
     holds=[rh._own(c,p,row['hold_id'],lock=lock) for row in rows]
-    if len(holds)!=2 or len({h['resource_id'] for h in holds})!=2:raise Conflict('combination integrity conflict')
-    return sorted(holds,key=lambda h:str(h['resource_id']))
+    from .resource_bundles import SCOPE as BUNDLE_SCOPE, validate_manifest
+    receipt=c.execute("SELECT payload FROM synthetic_resource_combination_receipts WHERE combination_id=%s AND action='CONFIRM'",(id,)).fetchall()
+    bundle=bool(receipt and receipt[0]['payload'].get('scope')==BUNDLE_SCOPE)
+    if bundle:
+        if len(receipt)!=1:raise Conflict('bundle confirmation proof conflict')
+        validate_manifest(receipt[0]['payload'],holds)
+    elif len(holds)!=2 or len({h['resource_id'] for h in holds})!=2:raise Conflict('combination integrity conflict')
+    return sorted(holds,key=lambda h:(str(h['resource_id']),str(h['id'])))
 
 
 def _scope_lock(c,p,holds,write=False):
@@ -50,21 +56,23 @@ def _view(g,holds,now):
             'members':[rh._public(h,now) for h in holds]}
 
 
-def _receipt(c,p,g,key,fp,action,now):
-    payload={'combination_id':str(g['id']),'action':action,'observed_state':g['state'],'at':now.isoformat(),'scope':SCOPE}
+def _receipt(c,p,g,key,fp,action,now,scope=SCOPE,**extra):
+    payload={'combination_id':str(g['id']),'action':action,'observed_state':g['state'],'at':now.isoformat(),'scope':scope,**extra}
     c.execute('INSERT INTO synthetic_resource_combination_receipts VALUES(%s,%s,%s,%s,%s,%s,%s)',(uuid4(),g['id'],p['id'],key,fp,action,Jsonb(payload)))
     return payload
 
 
-def confirm(store,token,key,data):
-    fp=rh._fingerprint('COMBINATION_CONFIRM',UUID(int=0),data)
+def confirm(store,token,key,data,*,bundle=False):
+    from . import resource_bundles as rb
+    scope=rb.SCOPE if bundle else SCOPE
+    fp=rh._fingerprint('RESOURCE_BUNDLE_CONFIRM' if bundle else 'COMBINATION_CONFIRM',UUID(int=0),data)
     with store.connect() as c:
         p=rh._auth(store,c,token,write=True)
         holds=[rh._own(c,p,m.hold_id) for m in data.members]
-        if len({h['resource_id'] for h in holds})!=2:raise Conflict('two different resources required')
+        if not bundle and len({h['resource_id'] for h in holds})!=2:raise Conflict('two different resources required')
         for h in holds:rh._scope(c,p,h['resource_id'],write=True)
         rh._key(c,p,key);rules=_scope_lock(c,p,holds,write=True)
-        holds=sorted([rh._own(c,p,m.hold_id,lock=True) for m in data.members],key=lambda h:str(h['resource_id']))
+        holds=[rh._own(c,p,m.hold_id,lock=True) for m in data.members]
         now=rh._now(c);receipt=rh._replay(c,p,key,fp)
         if receipt:
             g=_group(c,p,UUID(receipt['combination_id']));holds=_members(c,p,g['id'])
@@ -74,7 +82,7 @@ def confirm(store,token,key,data):
             for h in holds:
                 r=rules[h['resource_id']]
                 if h.get('combination_id') or h['state']!='HELD' or h['expires_at']<=now:
-                    raise Conflict('combination requires two valid unconfirmed holds')
+                    raise Conflict('combination requires valid unconfirmed holds')
                 if revisions[h['id']]!=h['resource_revision'] or revisions[h['id']]!=r['revision']:
                     raise Conflict('combination resource revision changed; release and preview again')
                 lo,hi=rh._window(r,rh.Preview(starts_at=h['starts_at'],ends_at=h['ends_at'],quantity=h['quantity']),now)
@@ -84,21 +92,30 @@ def confirm(store,token,key,data):
             for h in holds:
                 c.execute("UPDATE synthetic_resource_holds SET state='CONFIRMED' WHERE id=%s",(h['id'],))
                 c.execute('INSERT INTO synthetic_resource_combination_members VALUES(%s,%s)',(g['id'],h['id']))
-            holds=_members(c,p,g['id']);receipt=_receipt(c,p,g,key,fp,'CONFIRM',now)
-        return rh._boundary(confirmation_scope=SCOPE,combination=_view(g,holds,now),receipt=receipt,server_time=now)
+            proof=rb.manifest(holds) if bundle else {}
+            receipt=_receipt(c,p,g,key,fp,'CONFIRM',now,scope=scope,**proof)
+            holds=_members(c,p,g['id'])
+        # The principal/resource mutex protocol is the existing authority boundary.
+        for h in holds:rh._scope(c,p,h['resource_id'],write=True)
+        return rh._boundary(confirmation_scope=scope,combination=_view(g,holds,now),receipt=receipt,server_time=now)
 
 
 def read(store,token,id):
     with store.connect() as c:
         p=rh._auth(store,c,token);g=_group(c,p,id);holds=_members(c,p,id)
+        from .resource_bundles import require_kind
+        require_kind(c,id,False)
         _scope_lock(c,p,holds);g=_group(c,p,id);holds=_members(c,p,id);now=rh._now(c)
         return rh._boundary(confirmation_scope=SCOPE,combination=_view(g,holds,now),server_time=now)
 
 
-def cancel(store,token,id,key):
-    fp=rh._fingerprint('COMBINATION_CANCEL',id,rh.Release())
+def cancel(store,token,id,key,*,bundle=False):
+    from . import resource_bundles as rb
+    scope=rb.SCOPE if bundle else SCOPE
+    fp=rh._fingerprint('RESOURCE_BUNDLE_CANCEL' if bundle else 'COMBINATION_CANCEL',id,rh.Release())
     with store.connect() as c:
         p=rh._auth(store,c,token,write=True);g=_group(c,p,id);holds=_members(c,p,id)
+        rb.require_kind(c,id,bundle)
         for h in holds:rh._scope(c,p,h['resource_id'],write=True)
         rh._key(c,p,key);_scope_lock(c,p,holds,write=True)
         g=_group(c,p,id,lock=True);holds=_members(c,p,id,lock=True);now=rh._now(c)
@@ -108,14 +125,16 @@ def cancel(store,token,id,key):
                 for h in holds:c.execute("UPDATE synthetic_resource_holds SET state='RELEASED' WHERE id=%s",(h['id'],))
                 g=c.execute("UPDATE synthetic_resource_combinations SET state='CANCELLED' WHERE id=%s RETURNING *",(id,)).fetchone()
                 holds=_members(c,p,id)
-            receipt=_receipt(c,p,g,key,fp,'CANCEL',now)
-        return rh._boundary(confirmation_scope=SCOPE,combination=_view(g,holds,now),receipt=receipt,server_time=now)
+            receipt=_receipt(c,p,g,key,fp,'CANCEL',now,scope=scope)
+        for h in holds:rh._scope(c,p,h['resource_id'],write=True)
+        return rh._boundary(confirmation_scope=scope,combination=_view(g,holds,now),receipt=receipt,server_time=now)
 
 
 def list_combinations(store,token):
     with store.connect() as c:
         p=rh._auth(store,c,token)
         groups=c.execute("""SELECT g.* FROM synthetic_resource_combinations g WHERE principal_id=%s AND park_id=%s AND org_id=%s
+          AND (SELECT count(*) FROM synthetic_resource_combination_members m WHERE m.combination_id=g.id)=2
           AND (SELECT count(*) FROM synthetic_resource_combination_members m JOIN synthetic_resource_holds h ON h.id=m.hold_id
             JOIN synthetic_resources r ON r.id=h.resource_id AND r.park_id=h.park_id
             JOIN synthetic_resource_grants a ON a.resource_id=h.resource_id AND a.principal_id=h.principal_id AND a.park_id=h.park_id AND a.org_id=h.org_id

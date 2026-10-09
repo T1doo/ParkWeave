@@ -154,7 +154,8 @@ def candidates(store,token,id):
     with store.connect() as c:
         p,parent=_parent(store,c,token,id)
         groups=c.execute('''SELECT g.* FROM synthetic_resource_combinations g WHERE principal_id=%s AND park_id=%s AND org_id=%s
-           AND (SELECT count(*) FROM synthetic_resource_combination_members m JOIN synthetic_resource_holds h ON h.id=m.hold_id JOIN synthetic_resource_grants a ON a.resource_id=h.resource_id AND a.principal_id=h.principal_id AND a.park_id=h.park_id AND a.org_id=h.org_id WHERE m.combination_id=g.id AND a.capability='READ' AND a.active)=2
+           AND (SELECT count(*) FROM synthetic_resource_combination_members m WHERE m.combination_id=g.id) BETWEEN 2 AND 8
+           AND (SELECT count(*) FROM synthetic_resource_combination_members m JOIN synthetic_resource_holds h ON h.id=m.hold_id JOIN synthetic_resource_grants a ON a.resource_id=h.resource_id AND a.principal_id=h.principal_id AND a.park_id=h.park_id AND a.org_id=h.org_id WHERE m.combination_id=g.id AND a.capability='READ' AND a.active)=(SELECT count(*) FROM synthetic_resource_combination_members m WHERE m.combination_id=g.id)
            ORDER BY created_at DESC,id DESC LIMIT 101''',(p['id'],p['park_id'],p['org_id'])).fetchall()
         members={g['id']:rc._members(c,p,g['id']) for g in groups[:100]};rules=rc._scope_lock(c,p,[h for hs in members.values() for h in hs]);now=rh._now(c)
         items=[]
