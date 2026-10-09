@@ -11,3 +11,5 @@ COMMITTED返回原回执与单独当前视图；后续重开、资料换版、�
 本切片不代表Case FULFILLED、正式Release/Approval、42项AT/EX、全仓、Win11、真实业务或模型验收；正式权限主体合同仍缺失。既有协作锁及可信管理员边界保持，不声称directory-at-COMMIT或外部原子性。资料包导出已完成且未重做，旧未推送Windows Job修复未迁移、未验收。
 
 最终冻结源码主测324 PASS、0 FAIL/ERROR/SKIP，227.951秒；独立审查`2a32195ca720731d21f58938ec32d7dd94e75bf0`，90项目标/兼容加10项独立边界全部通过，106.111秒，LIMITED_PASS无阻塞。独立初次补充测试因未加载fixture出现10个setup error，测试包装修复后通过；故障原日志保全。NOT_OBSERVED只返回已授权Case/Run边界及本actor/key尚未观察，不披露历史/当前资源数据，可在原owner READ/PREPARE下返回；披露原回执与当前视图之前仍强制资源READ。未观察不证明未提交。
+
+独立审查通过后，证据候选`877939645f48b69e623a8a728407256018390396`已普通FF及推送`dev/f1-foundation`，远端实核同SHA；main仍`31e7acb7e53bb1ab6465b9daae59de28757f7583`。本集成记录为后续纯文档提交，310源码冻结哈希无漂移。无跟踪的未推送成果；私有故障原日志/独立测试包装及临时UI草稿留本机，未推送。
