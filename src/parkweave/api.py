@@ -397,6 +397,10 @@ def create_app(store: Store) -> FastAPI:
     def local_case_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return case_lifecycle.read(store,token(authorization),preparation_id)
 
+    @app.get('/api/preparations/{preparation_id}/local-case/recovery/{request_key}')
+    def local_case_recovery(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return case_lifecycle.recover(store,token(authorization),preparation_id,resource_key(request_key))
+
     @app.post('/api/preparations/{preparation_id}/local-case/commands')
     def local_case_command(preparation_id: UUID,data: case_lifecycle.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return case_lifecycle.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)

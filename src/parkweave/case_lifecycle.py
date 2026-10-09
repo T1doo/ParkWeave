@@ -1,5 +1,6 @@
 """Bounded closure of local synthetic records, never fulfillment of the Case goal."""
 import json
+import re
 from datetime import timedelta
 from uuid import UUID, uuid4
 from typing import Literal
@@ -130,7 +131,7 @@ def _view(c,p,parent,case,row,issues=None,snapshot=None,event=None):
     if not owner:
         history=[{k:v for k,v in e.items() if k!='payload'} for e in history];event=None
     state=row['state'] if row else 'NOT_STARTED'
-    return dict(scope=SCOPE,role=p['role'],preparation_id=parent['id'],case_id=parent['case_id'],goal=parent['goal'],case_state=case['state'],
+    return dict(scope=SCOPE,actor_id=p['id'],role=p['role'],preparation_id=parent['id'],case_id=parent['case_id'],goal=parent['goal'],case_state=case['state'],
         local_record_state=state,revision=row['revision'] if row else 0,cycle=cycle,
         verification_current=current,current_snapshot_sha256=current_sha if owner else None,
         verified_snapshot_sha256=row['verified_sha256'] if owner and row else None,
@@ -145,10 +146,76 @@ def _view(c,p,parent,case,row,issues=None,snapshot=None,event=None):
 def read(store,token,id):
     with store.connect() as c:
         p,parent=_auth(store,c,token,id)
-        sources=_sources(store,c,p,parent) if p['role']=='enterprise_operator' else None
-        case=c.execute('SELECT * FROM cases WHERE id=%s FOR SHARE',(parent['case_id'],)).fetchone();row=_ledger(c,parent)
-        if sources:_timed(c,sources[0],*sources[2:])
-        return _view(c,p,parent,case,row,*(sources[:2] if sources else (None,None)))
+        return _read_locked(store,c,p,parent)
+
+
+def _read_locked(store,c,p,parent):
+    # The original result checks, shared by ordinary read and cold recovery.
+    sources=_sources(store,c,p,parent) if p['role']=='enterprise_operator' else None
+    case=c.execute('SELECT * FROM cases WHERE id=%s FOR SHARE',(parent['case_id'],)).fetchone();row=_ledger(c,parent)
+    if sources:_timed(c,sources[0],*sources[2:])
+    return _view(c,p,parent,case,row,*(sources[:2] if sources else (None,None)))
+
+
+def _recovery_read_scope(c,p,parent,snapshot):
+    ids={UUID(m['resource_id']) for m in (snapshot or {}).get('members',[])}
+    link=c.execute('SELECT combination_id FROM case_resource_links WHERE case_id=%s ORDER BY revision DESC LIMIT 1',(parent['case_id'],)).fetchone()
+    if link:
+        rc._group(c,p,link['combination_id'])
+        ids.update(h['resource_id'] for h in rc._members(c,p,link['combination_id']))
+    # Current grants are protected by the original principal lock protocol.
+    # Do not acquire shared resource mutexes here then upgrade in _sources.
+    for resource_id in sorted(ids,key=str):rh._scope(c,p,resource_id)
+
+
+@er.bounded
+def recover(store,token,id,key):
+    with store.connect() as c:
+        p,parent=_auth(store,c,token,id)
+        if p['role']!='enterprise_operator' or parent['owner_id']!=p['id']:
+            raise Denied('original enterprise actor recovery required')
+        c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('case-local-key:'+p['id']+':'+key,))
+        old=c.execute('SELECT * FROM case_local_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+        boundary=dict(scope=SCOPE,actor_id=p['id'],preparation_id=id,case_id=parent['case_id'],run_id=parent['run_id'],
+            historical_only=True,automatically_replayed=False,case_goal_completed=False)
+        if not old:return dict(**boundary,status='NOT_OBSERVED')
+        if old['preparation_id']!=id:raise Conflict('original local Case request scope mismatch')
+        payload=old['payload'];snapshot=old['snapshot'];action=old['action']
+        if not isinstance(old['fingerprint'],str) or not re.fullmatch('[a-f0-9]{64}',old['fingerprint']):
+            raise Conflict('original local Case fingerprint proof required')
+        states={'REVALIDATE':('READY','WAITING_CONFIRMATION'),'CLOSE_LOCAL_RECORD':('LOCAL_RECORD_CLOSED','WAITING_CONFIRMATION'),'REOPEN':('REOPENED','REOPENED')}
+        if (not isinstance(payload,dict) or action not in states or
+            any(payload.get(k)!=old[k] for k in ('action','revision','cycle','actor_id')) or payload.get('scope')!=SCOPE or
+            (payload.get('local_record_state'),payload.get('case_state'))!=states[action]):
+            raise Conflict('original local Case event proof mismatch')
+        if action=='REOPEN':
+            if snapshot is not None or payload.get('verified_snapshot_sha256') is not None:
+                raise Conflict('original reopened Case proof mismatch')
+        elif (not isinstance(snapshot,dict) or any(snapshot.get(k)!=str(parent[v]) for k,v in
+            (('preparation_id','id'),('case_id','case_id'),('run_id','run_id'))) or
+            _sha(snapshot,old['cycle'])!=payload.get('verified_snapshot_sha256')):
+            raise Conflict('original local Case source proof mismatch')
+        if action!='REOPEN':
+            # Successful original validation/close inputs have the exact saved
+            # source SHA. REOPEN historically permits an ignored optional SHA,
+            # so its complete original body cannot be reconstructed here.
+            try:
+                original=Command(action=action,expected_revision=old['revision']-1,expected_cycle=old['cycle'],
+                    reason=payload['reason'],expected_snapshot_sha256=payload['verified_snapshot_sha256'])
+                fp=digest(prep.canonical({'preparation_id':str(id),**original.model_dump(mode='json')}))
+                if fp!=old['fingerprint']:raise ValueError()
+            except (KeyError,TypeError,ValueError):raise Conflict('original local Case request proof mismatch')
+        try:_recovery_read_scope(c,p,parent,snapshot)
+        except (TypeError,KeyError,ValueError,AttributeError):raise Conflict('original local Case resource proof mismatch')
+        current=_read_locked(store,c,p,parent)
+        matches=[e for e in current['history'] if e['revision']==old['revision']]
+        if (len(matches)!=1 or matches[0]['payload']!=payload or matches[0]['cycle']!=old['cycle'] or
+            current['revision']<old['revision'] or current['cycle']<old['cycle']):
+            raise Conflict('original local Case history mismatch')
+        receipt=dict(id=old['id'],request_key=key,actor_id=p['id'],action=action,revision=old['revision'],cycle=old['cycle'],
+            original_expected_revision=old['revision']-1,original_expected_cycle=old['cycle']-(action=='REOPEN'),event=payload)
+        return dict(**boundary,status='COMMITTED',receipt=receipt,current=current,
+            original_is_current_version=old['revision']==current['revision'])
 
 
 @er.bounded
