@@ -1,0 +1,77 @@
+{
+  "reviewed_sha": "027709da07f7557ea0baeb23c5cd078d327fac5b",
+  "base": "88403af18b95b361114b303c3fae636f286d91b4",
+  "conclusion": "BLOCKED",
+  "tests": {
+    "specialist": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "72",
+      "time": "83.475",
+      "timestamp": "2026-10-09T16:36:15.480012+00:00",
+      "log_sha256": "5ca7b3add0896874d247ba3e8165f866cf2aad1d6328b094f889baea0525bc7f",
+      "xml_sha256": "ea09dfdb2df327c9d7cc970c775ad1507cc443c41524ae4c90e8feb4d3ca8835"
+    },
+    "edges": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "5",
+      "skipped": "0",
+      "tests": "5",
+      "time": "2.506",
+      "timestamp": "2026-10-09T16:36:58.018194+00:00",
+      "log_sha256": "c2469cb7714d0391ca2e15e771fdf13dc680d519be49df3c0f88202204eebced",
+      "xml_sha256": "536346dee44c7cb2d001569a643b894cf8777a5b1909339e7d9e5cd6decdbc35"
+    },
+    "http-edges": {
+      "name": "pytest",
+      "errors": "0",
+      "failures": "2",
+      "skipped": "0",
+      "tests": "2",
+      "time": "5.156",
+      "timestamp": "2026-10-09T16:37:52.840661+00:00",
+      "log_sha256": "8b6849131fa2408af5bf9ea30be9afcf7a31c1ed92dd40c4fed3e0c156ddbb34",
+      "xml_sha256": "a0825223becec99ebfd546cdea7c880349a52f198c436a89b0c80ce54a3897f9"
+    }
+  },
+  "frozen_files": 300,
+  "source_drift_at_completed_test": [],
+  "findings": [
+    {
+      "priority": "P1",
+      "file": "src/parkweave/material_objections.py",
+      "lines": [
+        43,
+        49,
+        75,
+        77
+      ],
+      "issue": "Existing PREPARE/REVIEW_ASSIGNED and principals.active revoke/restore cycles are not versioned in binding; the identical binding and response become current again and original ACCEPT_RESPONSE commits without REBIND/new RESPOND. Four original-actor variants reproduced on isolated PG; representative reviewer preparation-grant variant reproduced through real loopback HTTP/Chromium."
+    },
+    {
+      "priority": "P1",
+      "file": "src/parkweave/material_objections.py",
+      "lines": [
+        55,
+        58,
+        147,
+        149
+      ],
+      "support": "src/parkweave/preparation.py:128-132",
+      "issue": "Catalog source change under current principal/preparation locks leaves the old manual REVIEW UUID and review_valid true. REBIND commits before any new REVIEW although the frozen contract requires manual recheck after source change. Reproduced on isolated PG and real loopback HTTP/Chromium."
+    }
+  ],
+  "remaining_limits": [
+    "Full repository NOT_PASSED_NOT_COMPLETED",
+    "Windows/native not accepted",
+    "42 AT/EX not accepted",
+    "No LIVE/real fulfillment/model invocation review"
+  ],
+  "private_logs_may_contain_synthetic_sessions": true,
+  "source_edits": false,
+  "commit_push_merge_deploy": false,
+  "original_private_report_sha256": "a13a7c35194624072ea939697f4d61646413d7b44f6cb6fd03671c8f837ab576"
+}

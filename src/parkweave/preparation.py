@@ -176,7 +176,7 @@ def command(store,token,id,key,data):
         if row['revision']!=data.expected_revision:raise Conflict('stale preparation revision; refresh required')
         if row['revision']>=64:raise Conflict('bounded preparation history limit reached')
         if data.action in ('REVIEW','CONFIRM'):fact_gate(store,c,row)
-        items=latest(c,id);current_hash=snapshot(row,items);review_hash=None
+        items=latest(c,id);current_hash=snapshot(row,items);review_hash=None;review_source=None
         from . import material_corrections as corrections
         ledger=row.get('material_corrections')
         if data.action=='ADD_EVIDENCE':
@@ -194,6 +194,8 @@ def command(store,token,id,key,data):
             if row['state'] not in ('IN_PREPARATION','CHANGES_REQUESTED'):raise Conflict('preparation already reviewed')
             if {i['slot'] for i in items}!=set(SLOTS):raise Conflict('required material slots missing')
             if ledger:ledger=corrections.resolve(row,p,corrections.materials(c,id),current_hash,data.reason)
+            from .material_objections import review_source as delivery_review_source
+            review_source=delivery_review_source(store,c,row)
             state='REVIEWED';review_hash=current_hash
         elif data.action=='CONFIRM':
             from .material_objections import gate
@@ -207,7 +209,8 @@ def command(store,token,id,key,data):
         updated=c.execute('UPDATE preparations SET state=%s,revision=revision+1,review_sha256=%s,material_corrections=%s WHERE id=%s RETURNING *',(state,review_hash,Jsonb(ledger) if ledger is not None else None,id)).fetchone()
         from .controlled_plans import invalidate
         invalidate(c,id,1)
-        return event(c,p,updated,key,fp,data.action,snapshot_sha256=current_hash,reason=data.reason)
+        extra={'delivery_review_source':review_source} if review_source is not None else {}
+        return event(c,p,updated,key,fp,data.action,snapshot_sha256=current_hash,reason=data.reason,**extra)
 
 def read(store,token,id):
     with store.connect() as c:

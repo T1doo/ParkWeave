@@ -111,7 +111,8 @@ def test_source_changes_require_explicit_rebind_new_response(preparation_fixture
         new=responded
     stale=checked(get(f,p));assert stale['items'][0]['state']=='STALE'
     assert post(f,p,body(stale,'ACCEPT_RESPONSE',stale['items'][0])).status_code==409
-    if change!='catalog':new=checked(command(f,new,'REVIEW',SPECIALIST,reason='SYNTHETIC new independent source review'))
+    if change=='catalog':new=checked(command(f,new,'REOPEN',reason='SYNTHETIC changed catalog requires new review'))
+    new=checked(command(f,new,'REVIEW',SPECIALIST,reason='SYNTHETIC new independent source review'))
     v=checked(get(f,p));rebound=checked(post(f,p,body(v,'REBIND',v['items'][0])))
     assert checked(get(f,p))['items'][0]['history'][:2]==history
     v=checked(get(f,p));d=body(v,'ACCEPT_RESPONSE',v['items'][0]);d['response_id']=history[-1]['event_id']
@@ -197,6 +198,9 @@ def test_restored_capability_generation_requires_explicit_rebind(preparation_fix
         c.execute('UPDATE capability_grants SET active=true,revision=revision+1 WHERE principal_id=%s AND capability=%s',(user,cap))
     v=checked(get(f,p));assert v['items'][0]['state']=='STALE'
     assert post(f,p,body(v,'ACCEPT_RESPONSE',v['items'][0])).status_code==409
+    parent=checked(read(f,p))['preparation'];current={'preparation_id':p['preparation_id'],'revision':parent['revision']}
+    current=checked(command(f,current,'REOPEN',reason='SYNTHETIC new authority generation'))
+    checked(command(f,current,'REVIEW',SPECIALIST,reason='SYNTHETIC current authority independent review'))
     act(f,p,'REBIND');act(f,p,'RESPOND',SPECIALIST);act(f,p,'ACCEPT_RESPONSE')
     assert not checked(get(f,p))['unresolved']
 
