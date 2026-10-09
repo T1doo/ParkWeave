@@ -1,5 +1,5 @@
 """Original F3-T02 bounded Case opportunity business path over actual PG/API."""
-import json,hashlib
+import json,hashlib,shutil,subprocess,sys,zipfile
 from copy import deepcopy
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -8,6 +8,51 @@ import pytest,psycopg
 from parkweave.store import Store
 from parkweave import case_opportunities as op
 from test_preparation import preparation_fixture,filled,add,headers
+
+def test_actual_wheel_installed_new_fixture_migrates_with_packaged_027(pg,tmp_path):
+ """An installed wheel must carry the SQL read by Store, not just source-tree SQL."""
+ root=Path(__file__).resolve().parents[1];project=tmp_path/'project';project.mkdir()
+ shutil.copyfile(root/'pyproject.toml',project/'pyproject.toml')
+ shutil.copytree(root/'src'/'parkweave',project/'src'/'parkweave',ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+ wheel_dir=tmp_path/'wheels';wheel_dir.mkdir()
+ build=subprocess.run([sys.executable,'-c',"import setuptools, setuptools.build_meta as b; assert setuptools.__version__=='80.9.0'; b.build_wheel('"+str(wheel_dir)+"')"],cwd=project,text=True,capture_output=True,timeout=60)
+ assert build.returncode==0,build.stderr
+ wheels=list(wheel_dir.glob('*.whl'));assert len(wheels)==1
+ installed=tmp_path/'installed';installed.mkdir()
+ with zipfile.ZipFile(wheels[0]) as z:
+  for resource in (root/'src'/'parkweave').glob('migration-*.sql'):
+   assert z.read('parkweave/'+resource.name)==resource.read_bytes()
+  z.extractall(installed)
+ script='''import json,sys,uuid,pathlib,psycopg
+from psycopg.conninfo import make_conninfo
+cfg=json.load(sys.stdin)
+sys.path.insert(0,cfg['installed'])
+from parkweave.store import Store
+from parkweave.case_fact_clarifications import capture_fixture_cluster
+import parkweave.store
+assert pathlib.Path(parkweave.store.__file__).is_relative_to(cfg['installed'])
+cluster=capture_fixture_cluster(cfg['dsn'],pathlib.Path(cfg['data']).resolve())
+name='fixture_'+uuid.uuid4().hex
+created=False
+try:
+ with psycopg.connect(cfg['dsn'],autocommit=True) as c:
+  c.execute(psycopg.sql.SQL('CREATE DATABASE {}').format(psycopg.sql.Identifier(name)))
+  created=True
+ owner=Store(make_conninfo(cfg['dsn'],dbname=name))
+ with owner.connect() as c:owner._case_fact_fixture_receipt=cluster.record_created_database(c)
+ owner.migrate();owner.migrate()
+ with owner.connect() as c:
+  assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==27
+  assert c.execute("SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='preparations' AND column_name='opportunities'").fetchone()['data_type']=='jsonb'
+ print(json.dumps({'wheel_installed':True,'fixture_schema':27,'opportunity_column':'jsonb','migration_repeated':True}))
+finally:
+ if created:
+  with psycopg.connect(make_conninfo(cfg['dsn'],connect_timeout=2,options='-c lock_timeout=1000 -c statement_timeout=5000'),autocommit=True) as c:
+   c.execute(psycopg.sql.SQL('DROP DATABASE {}').format(psycopg.sql.Identifier(name)))
+'''
+ result=subprocess.run([sys.executable,'-c',script],input=json.dumps(dict(installed=str(installed),dsn=pg.get_uri(),data=str(pg.pgdata))),cwd=tmp_path,text=True,capture_output=True,timeout=60)
+ assert result.returncode==0,result.stderr
+ assert json.loads(result.stdout)==dict(wheel_installed=True,fixture_schema=27,opportunity_column='jsonb',migration_repeated=True)
 
 def get(f,p,user='fixture-a'):
  return f[3].get('/api/preparations/'+p['preparation_id']+'/opportunities',headers=headers(f[2],user))

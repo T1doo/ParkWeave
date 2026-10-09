@@ -14,6 +14,6 @@ GET只读并重验active原owner、READ/PREPARE；POST还需EXECUTE，精确ledg
 
 本片是AT-24有限合成Case子集，不签收原完整AT-24、一般企业/政策匹配或全部42AT/EX。一般FactBundle三类来源/多目的、一般依赖图、正式Release/Approval主体、真实来源许可、真实模型和Win11仍缺；不把Linux工程/原生边界Mock等同真实验收。没有新角色/Grant/模型/外部通知、后台在线、Case完成、部署或安全网络/凭据变化。资料包导出未重做。
 
-最终冻结314条源码/测试/脚本hash，前后无漂移；最后受影响完整模块137项通过（34 API、22真实HTTP/页面、14 worker、8 Linux启动、59诊断），JUnit107.949秒，无失败/错误/跳过。此前862项扩大回归为857通过、4失败、1原生Windows跳过；修正窗口270项为269通过、1旧health版本断言失败，之后已修正并在最终完整worker模块复测。各轮源码manifest与失败原因单独保全，不把较早范围合并宣称全862或全仓通过。最终三宽度截图与两个实际独立API进程同PG恢复证据随存。
+首候选冻结314条源码/测试/脚本hash，前后无漂移；首候选受影响完整模块137项通过（34 API、22真实HTTP/页面、14 worker、8 Linux启动、59诊断），JUnit107.949秒，无失败/错误/跳过。此前862项扩大回归为857通过、4失败、1原生Windows跳过；修正窗口270项为269通过、1旧health版本断言失败，之后已修正并在最终完整worker模块复测。各轮源码manifest与失败原因单独保全，不把较早范围合并宣称全862或全仓通过。最终三宽度截图与两个实际独立API进程同PG恢复证据随存。
 
-候选普通推送后的精确SHA独立审查尚待完成；未经限定通过不合入dev。
+首候选086d637c9f5be1f5367fe712687ba494decd0f84经独立实际wheel检查被BLOCKED：027未列入package-data，安装后读027实际FileNotFoundError。安全阻断报告随存，未合dev。已补027并在test extra固定既有build backend setuptools80.9.0，新增wheel构建/解包后独立Python进程实际新库迁移及重复迁移测试（包含全部Store migration资源字节比对，不宣称其它fault模块包验收）。重新冻结314源路径，诊断AST1284；完整受影响138通过：35 API、22 HTTP/页面、14 worker、8 Linux启动、59诊断，JUnit111.588秒，无失败/错误/跳过。新精确SHA独立审查尚待完成；未经限定通过不合dev。

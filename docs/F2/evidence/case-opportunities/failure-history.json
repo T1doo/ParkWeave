@@ -129,10 +129,55 @@
       "tests.test_linux_fixture_startup": 8,
       "tests.test_ci_diagnostics": 59
     },
+    "source_manifest": "pre-review-source.json",
+    "source_count": 314,
+    "source_drift": [],
+    "private_raw_logs_preserved": true,
+    "scope": "Earlier137 source window before packaging fix; retained in pre-review-final.log/xml."
+  },
+  {
+    "event": "independent review blocked initial candidate",
+    "candidate_sha": "086d637c9f5be1f5367fe712687ba494decd0f84",
+    "verdict": "BLOCKED",
+    "cause": "Actual wheel omitted migration027, installed module read raised FileNotFoundError. No old-candidate independent pytest passes claimed.",
+    "safe_evidence": "initial-independent-blocked-review.json",
+    "fix": "Added027 package-data and declared pinned build backend in test extra; added actual wheel-installed new fixture migration test."
+  },
+  {
+    "event": "build backend local cache write failed",
+    "cause": "uv default cache under read-only home; used task-specific /tmp cache with existing default network; no credential/security change.",
+    "tests_executed": false
+  },
+  {
+    "window": "wheel",
+    "tests": 1,
+    "passed": 0,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "private_raw_logs_preserved": true,
+    "cause": "Initial packaging regression asserted allSQL including unrelated fault-schema resource; narrowed to actual migrations needed by Store. No fault-module package acceptance claim.",
+    "seconds": 1.203
+  },
+  {
+    "window": "package-final",
+    "tests": 138,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 138,
+    "seconds": 111.588,
+    "modules": {
+      "tests.test_case_opportunities": 35,
+      "tests.test_case_opportunities_browser": 22,
+      "tests.test_worker_gateway": 14,
+      "tests.test_linux_fixture_startup": 8,
+      "tests.test_ci_diagnostics": 59
+    },
     "source_manifest": "frozen-source.json",
     "source_count": 314,
     "source_drift": [],
     "private_raw_logs_preserved": true,
-    "scope": "Complete new34 API +22 HTTP/browser,14 worker,8 Linux startup,59 diagnostic tests. No whole862-pass claim."
+    "scope": "All138 affected tests including actual wheel installed migration/new fixture with pinned80.9.0 backend; no full repository acceptance."
   }
 ]
