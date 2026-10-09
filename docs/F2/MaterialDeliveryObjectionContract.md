@@ -13,3 +13,5 @@
 未决或失效异议阻止原 CONFIRM 和本地 Case关闭；回应、其他材料命令或来源更新不消除未决。Case实际状态仍沿原合同。验证使用隔离新建 PostgreSQL、当前普通API与原页面真实HTTP/Chromium，包含冷恢复、撤权、越权、跨企业、换版、并发、迟到、重复、隐私负例。Windows/LIVE/完整42 AT/EX仍未签收；不修改main/强推/部署/网络凭据配置。
 
 实现细化：绑定另保留原人工 REVIEW 事件 UUID/revision、目录来源 hash 与事实用途 descriptor hash；资料重开再审核不会复活旧回应。schema26只由既有 Linux 新建隔离库 receipt 安装；原 native receipt 路径仍止于25，原25读者兼容，异议写入关闭。目录只有既有owner合成初始化来源，应用角色仅SELECT；没有为了读锁新增UPDATE权限，owner来源变更仍须与事项/主体锁协作，越过锁的DB owner为信任边界。
+
+独审修订（027709d 被阻断后、修复实现前冻结）：现有无revision的 principals、preparation_grants 和 preparation_catalog 也必须绑定 PostgreSQL 实际行世代；仅 active/正文hash相同不能抵御撤销恢复或目录ABA。使用当前行 xmin 的只读指纹，无新增字段、触发器、Grant或身份写入；任何行重写保守失效。人工 REVIEW 事件须记录当时目录来源/行世代与授权指纹，异议当前有效性必须与该真实审核证明一致。旧无证明REVIEW不升级为当前交付审核；需企业原流程重开及原专员新审核。绑定epoch是此隔离PG内的保守写入门，不是外部身份系统/全局永久世代保证；数据库owner仍为信任边界。禁止以撤权恢复、改回相同目录正文或旧response UUID复活异议决定。
