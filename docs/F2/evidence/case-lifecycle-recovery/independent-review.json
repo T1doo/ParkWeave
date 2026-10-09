@@ -1,0 +1,82 @@
+{
+  "reviewed_sha": "2a32195ca720731d21f58938ec32d7dd94e75bf0",
+  "verdict": "LIMITED_PASS",
+  "blockers": [],
+  "base_dev_sha": "6d78f52f9a2c896ccdd9d108799b2713ba778c84",
+  "remote_candidate_verified": "2a32195ca720731d21f58938ec32d7dd94e75bf0",
+  "remote_dev_unchanged": "6d78f52f9a2c896ccdd9d108799b2713ba778c84",
+  "remote_main_unchanged": "31e7acb7e53bb1ab6465b9daae59de28757f7583",
+  "source_files": 310,
+  "source_manifest_sha256": "a417d53caf17d94a7967f10598a33c0c2045a854e31a970b73c2c870b40216d2",
+  "source_matches_before_and_after": true,
+  "tracked_worktree_clean": true,
+  "read_only_review": true,
+  "tracked_files_edited": false,
+  "checkout_merge_push_deployment_performed": false,
+  "test_windows": [
+    {
+      "name": "targeted",
+      "passed": 90,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 86.59,
+      "log_sha256": "a597789934a275177a8187b2a39481a867a3c67d6de313b91e26d0c18b5df458",
+      "junit_sha256": "84b68d023f31f5970dcab8c9016eee045bce591127293ddab059780c979ce35b"
+    },
+    {
+      "name": "edges-final",
+      "passed": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 19.521,
+      "log_sha256": "70a251f00f321a0d23e80a1cb974f82f004fdbe3469591f37948f4ea7ab2e1c6",
+      "junit_sha256": "7346001dd57305ec3c1d3a5cd1fc439a5d82afd0d3c429db8ff92f680f41cf3e"
+    }
+  ],
+  "final_tests_total": 100,
+  "final_passed": 100,
+  "final_failures": 0,
+  "final_errors": 0,
+  "final_skipped": 0,
+  "targeted_scope": "29 new PG/API recovery + 20 actual HTTP/Chromium recovery + 41 existing lifecycle compatibility tests",
+  "independent_edges": [
+    "original actor/key lock_timeout returns409, keeps unknown and performs no business-row change; later GET recovers original receipt",
+    "legacy REOPEN ignored optional SHA restores original event with EXECUTE revoked, while original POST replay remains403",
+    "recomputed source hashes/fingerprints with wrong Case, Run or preparation remain409",
+    "five browser cases: missing receipt, missing history, wrong original key, wrong current actor, missing event retain unknown handle and disable new writes; valid retry is GET only"
+  ],
+  "findings": [
+    "No blocker in the reviewed bounded synthetic role and contract scope.",
+    "Active original owner READ/PREPARE and current historical/current resource READ precede disclosure of original receipt/current state; EXECUTE and HOLD remain write/current-validity boundaries.",
+    "GET uses existing original actor/key lock and original current-source/read checks. Historical COMMITTED and current verification are separate, with no new business writes or automatic POST.",
+    "UI persists only bounded opaque actor/preparation/key before explicit POST; unknown/corrupt/failed storage, cold reload and restart, stale identity/Case/draft replies, and current403 negative cases passed.",
+    "No new schema, grants, roles, Case completion, Release/Approval, notifications or model calls in candidate diff."
+  ],
+  "interpretations": {
+    "not_observed": "Acceptable under existing authenticated original owner READ/PREPARE: returns only already-authorized Case/Run boundary and absence of this actor/key, without historical receipt, current view, or resource identifiers. Resource READ gates apply before those data are disclosed. NOT_OBSERVED is not proof of non-commit.",
+    "legacy_reopen": "Original REOPEN historically accepts ignored optional SHA; complete original body fingerprint cannot be reconstructed. Recovery relies on actual immutable original event and exact history, not a claim to detect every trusted-administrator mutation."
+  },
+  "harness_history": [
+    {
+      "attempt": "initial independent extras collected outside tests directory",
+      "result": "10 fixture setup errors, no product tests ran",
+      "cause": "tests/conftest fixture support was not loaded",
+      "resolution": "read-only wrapper registered existing conftest as pytest plugin; final10 tests passed",
+      "raw_log_preserved": "edges.log"
+    }
+  ],
+  "warnings": [
+    "Existing Starlette/httpx deprecation",
+    "XDG_RUNTIME_DIR fallback",
+    "pytest anyio assertion-rewrite warning from read-only wrapper"
+  ],
+  "limits": [
+    "Linux PostgreSQL16/API/Chromium synthetic fixture evidence only.",
+    "No full repository, all42AT/EX, Windows11, real business, physical fulfillment, model, or production deployment acceptance.",
+    "Existing cooperative principal locks and trusted administrator/source catalogue boundaries remain.",
+    "Independent suite demonstrates business-row snapshots unchanged on tested recovery paths; it is not a proof of absence of all possible side effects outside the reviewed source scope."
+  ],
+  "evidence_files_untracked_private": true
+}
