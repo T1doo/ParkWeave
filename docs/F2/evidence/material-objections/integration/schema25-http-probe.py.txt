@@ -1,0 +1,89 @@
+"""Extra integration probe: real legacy25 PG + existing application role + HTTP/Chromium.
+
+No source upgrade, permission extension, external model, or native acceptance.
+"""
+import json
+import secrets
+import socket
+import threading
+import time
+from pathlib import Path
+from uuid import uuid4
+
+import psycopg
+from psycopg.conninfo import make_conninfo
+from fastapi.testclient import TestClient
+import uvicorn
+from playwright.sync_api import sync_playwright
+
+from parkweave.api import create_app
+from parkweave.store import Store, Denied
+from parkweave import preparation
+from test_installed_fixture_receipt import installed_tcp_cluster, native_database
+from test_preparation import filled, command, headers, read
+
+ROOT=Path(__file__).resolve().parents[2]
+
+def test_schema25_original_http_pg_browser_and_no_upgrade(native_database):
+    receipt, maintenance, target=native_database
+    owner=Store(target);owner._case_fact_fixture_receipt=receipt;owner.migrate()
+    with psycopg.connect(maintenance,autocommit=True) as c:
+        c.execute('CREATE ROLE parkweave_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE')
+    tokens={name:secrets.token_urlsafe(32) for name in ('fixture-a','fixture-b','fixture-c')}
+    owner.seed(tokens)
+    tokens.update({'prep-specialist-'+name:secrets.token_urlsafe(32) for name in ('fixture-a','fixture-b','fixture-c')})
+    preparation.seed_synthetic(owner,tokens)
+    with owner.connect() as c:
+        c.execute((ROOT/'src/parkweave/roles.sql').read_text())
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==25
+        before=c.execute('SELECT pg_get_constraintdef(oid) d FROM pg_constraint WHERE conrelid=\'preparation_events\'::regclass AND contype=\'c\' ORDER BY oid').fetchall()
+    store=Store(make_conninfo(target,user='parkweave_app'))
+    with TestClient(create_app(store)) as api:
+        f=(store,owner,tokens,api);p=filled(f)
+        p=command(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC legacy review').json()
+        assert p['state']=='REVIEWED'
+        listener=socket.socket();listener.bind(('127.0.0.1',0));port=listener.getsockname()[1]
+        server=uvicorn.Server(uvicorn.Config(create_app(store),host='127.0.0.1',port=port,log_level='warning',access_log=False))
+        thread=threading.Thread(target=server.run,kwargs={'sockets':[listener]},daemon=True);thread.start()
+        try:
+            end=time.monotonic()+10
+            while not server.started and thread.is_alive() and time.monotonic()<end:time.sleep(.02)
+            assert server.started
+            with sync_playwright() as pw:
+                browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+                context=browser.new_context();page=context.new_page();errors=[]
+                page.on('pageerror',lambda e:errors.append(str(e)))
+                page.goto(f'http://127.0.0.1:{port}/')
+                health=page.request.get(f'http://127.0.0.1:{port}/health').json();assert health['schema']==25
+                path=f'http://127.0.0.1:{port}/api/preparations/'+p['preparation_id']+'/material-objections'
+                h=headers(tokens,key=uuid4().hex)
+                with owner.connect() as c:n=c.execute('SELECT count(*) n FROM preparation_events').fetchone()['n']
+                assert page.request.get(path,headers=h).status==409
+                result=page.request.post(path,headers=h,data={'action':'RAISE','expected_preparation_revision':p['revision'],'expected_version':0,'binding_sha256':'0'*64,'reason':'SYNTHETIC unavailable at25'})
+                assert result.status==409
+                with owner.connect() as c:assert c.execute('SELECT count(*) n FROM preparation_events').fetchone()['n']==n
+                page.locator('#token').fill(tokens['fixture-a']);page.locator('#token').dispatch_event('change')
+                page.locator('[data-tab="collaboration"]').click()
+                page.locator('#prep-list').click()
+                page.locator('#prep-items button').first.click()
+                page.wait_for_function('()=>preparationView?.preparation?.state==="REVIEWED"')
+                assert page.locator('#objection-raise').is_disabled()
+                assert page.locator('#prep-confirm').is_enabled()
+                page.locator('#prep-reason').fill('SYNTHETIC legacy explicit owner confirmation')
+                page.locator('#prep-confirm').click()
+                page.wait_for_function('()=>preparationView?.preparation?.state==="LOCAL_CONFIRMED"')
+                assert read(f,p).json()['preparation']['state']=='LOCAL_CONFIRMED'
+                assert not errors
+                context.close();browser.close()
+        finally:
+            server.should_exit=True;thread.join(timeout=10);listener.close();assert not thread.is_alive()
+    # A new Store cannot reconstruct a receipt or silently upgrade the existing25 DB.
+    try:Store(target).migrate()
+    except Denied:pass
+    else:raise AssertionError('existing25 unexpectedly upgraded without creation receipt')
+    with owner.connect() as c:
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==25
+        after=c.execute('SELECT pg_get_constraintdef(oid) d FROM pg_constraint WHERE conrelid=\'preparation_events\'::regclass AND contype=\'c\' ORDER BY oid').fetchall()
+        assert before==after
+        assert c.execute("SELECT count(*) n FROM preparation_events WHERE action='MATERIAL_OBJECTION'").fetchone()['n']==0
+    (ROOT/'.runtime/material-objections-integration/schema25-http.json').write_text(json.dumps({'schema':25,'http_pg_chromium':True,'existing_roles_sql_unchanged':True,'get_post_objection':409,'original_review_confirm':'LOCAL_CONFIRMED','receipt_reconstruction':'DENIED','ddl_unchanged':True,'external_model_calls':0},indent=2)+'\n')

@@ -1,0 +1,13 @@
+from pathlib import Path
+import sys
+root=Path(__file__).resolve().parents[2]
+out=root/'.runtime/material-objections-integration'
+sys.path.insert(0,str(root));sys.path.insert(0,str(root/'tests'))
+import pytest
+class Redirect:
+    def pytest_collection_modifyitems(self,items):
+        for item in items:
+            m=item.module
+            if m.__name__=='test_material_objections_browser':m.OUT=out/'objection-browser'
+            if m.__name__=='test_material_text_pack_browser':m.EVIDENCE=out/'pack-browser'
+raise SystemExit(pytest.main(sys.argv[1:],plugins=[Redirect()]))
