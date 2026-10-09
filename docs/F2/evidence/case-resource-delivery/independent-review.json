@@ -1,0 +1,112 @@
+{
+  "result": "LIMITED_PASS",
+  "reviewed_sha": "79500d0c75fd1f8a883188cefdc19d1fa87b41cc",
+  "branch": "candidate/case-resource-delivery-20261010",
+  "base_dev_sha": "92f08839ddde699cca61c276dd0b20a984fc8aa3",
+  "contract_sha": "5c1d93cdac74143c756cc8d42f0ce8f9244284ae",
+  "remote_verification": {
+    "refs/heads/candidate/case-resource-delivery-20261010": "79500d0c75fd1f8a883188cefdc19d1fa87b41cc",
+    "refs/heads/dev/f1-foundation": "92f08839ddde699cca61c276dd0b20a984fc8aa3",
+    "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+  },
+  "tracked_worktree_clean": true,
+  "known_88403_ancestor_verified": true,
+  "source_freeze": {
+    "files": 308,
+    "drift": [],
+    "manifest_sha256": "edb71f3ec27bd773a395de01278239625c38e3d3cab0cad71ee5d9e3d4eb50d8",
+    "start_record_utc": "2026-10-09T18:40:51.547953+00:00",
+    "end_record_utc": "2026-10-09T18:43:55.141889+00:00",
+    "frozen_window_closed": true
+  },
+  "actual_tests": {
+    "targeted": {
+      "tests": 150,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 150,
+      "junit_seconds": 108.311,
+      "modules": {
+        "tests.test_case_resource_delivery": 42,
+        "tests.test_case_resource_delivery_browser": 13,
+        "tests.test_resource_combinations": 33,
+        "tests.test_case_resources": 30,
+        "tests.test_resource_plan_binding": 29,
+        ".runtime.independent-case-resource-delivery-review.recheck-79500d0.test_review_edges": 3
+      }
+    },
+    "diagnostic": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "passed": 1,
+      "junit_seconds": 0.305,
+      "modules": {
+        "tests.test_ci_diagnostics": 1
+      }
+    }
+  },
+  "actual_total": {
+    "passed": 151,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "warnings": {
+    "targeted": 3,
+    "diagnostic": 1,
+    "categories": [
+      "pytest preimport assertion rewriting warning caused by private browser OUT redirection",
+      "existing Starlette/httpx deprecation",
+      "XDG_RUNTIME_DIR fallback"
+    ]
+  },
+  "closed_blockers": [
+    {
+      "previous_sha": "ea29a2499db83c803067e11fc88cc31f796a9eef",
+      "previous_report_sha256": "1a88f0d1acefd37f069f3c4cb70c23306d2d658b8b8c4ef691cc06714253fed7",
+      "issue": "First delivery could commit after original preview/hold expiry while waiting for final Case row lock.",
+      "fix_location": "src/parkweave/case_resource_delivery.py:185",
+      "review": "Final clock_timestamp is sampled after actual-row CURRENT verification and all Case binding waits, before new delivery returns from its transaction. Equality or expiry raises Conflict; psycopg transaction context rolls back all writes. Replay returns at line160 and GET remains a separate read path.",
+      "independent_evidence": "Unchanged private Case FOR SHARE probe reaches binder after confirmation, waits beyond 1.1-second source expiry and releases; now returns Conflict, all five effect totals zero and all three holds remain HELD."
+    }
+  ],
+  "verified_behaviors": [
+    "Final42 delivery API cases passed, including malformed/empty/blank reason422, source/revision/plan/P1/hold/capacity/grant/expiry rejection, first Case CAS and same/different key concurrency.",
+    "Receipt/claim/link insert fault injection rolls back all confirmation and association effects; application immutable-row privileges remain enforced.",
+    "Current write authority precedes exact-key replay; READ/PREPARE and all-member READ remain necessary for recovery, while recovery does not require revoked EXECUTE/HOLD.",
+    "Historical committed exact-key replay and GET survive original preview/hold TTL without duplicate effects; changed source remains historical receipt with current NEEDS_RECHECK.",
+    "Thirteen real loopback HTTP/PostgreSQL/Chromium tests passed: 3/8 members, 1200/390/320 widths, committed lost-response GET-only cold recovery, private-body/token absence in localStorage, unknown/corrupt handles retain write lock, revoked READ clears private view, late Case/identity/draft response suppressed, actual owned API process restart retains DB history.",
+    "Unchanged private all-five-required-goals probe passed: original required goals retained and P2 independently verifies actual resource source; later goals remain unverified.",
+    "Unchanged private different-Cases/same-members concurrency probe passed: exactly one complete combination/receipt/claim/link and the other transaction rejected.",
+    "Original pair33, Case30 and strict binding29 compatibility passed on final candidate bytes.",
+    "Diagnostic exact AST allowlist passed; all1238 old IDs retained, four additions produce1242; schema and diagnostic oracle unchanged."
+  ],
+  "blockers": [],
+  "limits": [
+    "This is finite isolated synthetic PostgreSQL/API/loopback HTTP/Linux Chromium engineering acceptance only.",
+    "No full repository run or full566-test window was performed by this reviewer on final candidate; historical296 review was on rejected ea29 and is not claimed as current evidence.",
+    "Formal ServiceRelease/Approval remains NOT_IMPLEMENTED; 42AT, Win11/native Windows/CI, actual business/model/external fulfillment and deployment acceptance were not run.",
+    "Database owner coordinated source updates and last-observed-clock-to-COMMIT window remain the existing trust boundary.",
+    "Reviewer made no source/tests/docs/git mutation and did not merge or push; only private runtime drivers/logs/report were written."
+  ],
+  "evidence_sha256": {
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/runner.py": "2468bcf4a69322e12eb9710c6e1118ba33f31860a57b1c23c959c6923aff3d16",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/test_review_edges.py": "2fd4d8eea1f86d22dc6ab2e8a228ca6b3ddfdc34dd58c203eb359194af4160c0",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/pre-source-check.json": "b3ece63704a099c12826619f56faf4e3c8bab443141849ab91937a95159b5e53",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/targeted.log": "7171b75116f4fde213df3de548ed9412f2a73242ed19d5e31a9f838a3a1d6442",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/targeted.xml": "a4228e1223da4e99c72cc18fd0ffe0548c77ff953f13f25f869e64c051d2d8ae",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/diagnostic.log": "136ef1992cae3bab5a285bf700fc4efa14d44ffffa89505fd74a8e4fece57f18",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/diagnostic.xml": "5438c03b93b31231911d57f7e066f90069120909a66b77c0aa9599a23a4ee29a",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/delivery-browser/api-restart.json": "733c1083271d7c21eee612a1a353653ce16358570ac5f3f7181655c9df6559dc",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/delivery-browser/case-3-1200.png": "4032eda7d8b11ca8e579ef121ca67bb39327a8617a7ca95d748e6711be0c1069",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/delivery-browser/case-3-320.png": "59cbefe6a82eb148be919169d995d2f0aed9086b3437895539117beeceaf9738",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/delivery-browser/case-3-390.png": "b1b2bebd867152604c73294b4b6400a4eeeebeb0d4485c429476f5b390d78adc",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/delivery-browser/case-8-1200.png": "30990b2390554a67f845f2bade09c852bb3a875c8c674569eb9230fac3d2b305",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/delivery-browser/case-8-320.png": "39bde910e51bd5717249442490a3432c85bcde1896eabe913341a9e78d597b3f",
+    ".runtime/independent-case-resource-delivery-review/recheck-79500d0/delivery-browser/case-8-390.png": "5de5fe879bda32be93a121fecc05c5d1ece73c885d2f4f78b7a6f9919f5d225a"
+  },
+  "privacy": "This JSON is suitable for public copying. Keep raw logs/XML private; test failures or process logs may include synthetic credentials. Existing rejected report and evidence retained unchanged."
+}

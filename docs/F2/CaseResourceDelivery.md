@@ -22,3 +22,5 @@
 第一候选ea29a249独立296 PASS、额外2 PASS/1 FAIL，结论BLOCKED：最终Case行锁升级等待可能跨原预检/hold期限。修正为仅首次新交付在独立实际行核对后再采DB时点，`now >= valid_until`则整事务回滚；历史回放与GET不重验TTL，原CONFIRMED占用保留。已纳入同Case共享行锁后段等待、多目标保留、不同Case争同成员和期限后原键恢复回归。旧候选与失败日志保全，不合开发分支。
 
 当前修正版：最后时点守卫和必要兼容205 PASS / 0 FAIL / 0 ERROR / 0 SKIP（106.745秒）；随后仅增加空白理由的请求层拒绝及负例，最终真实API/PG/HTTP页面55 PASS（71.882秒），308源码hash无漂移。旧566/86与独审296窗口作为第一候选的历史证据保留，不能代替修正版独立复审。正式42AT/EX、Win11和全仓仍未通过。
+
+修正版独立复审：`79500d0c75fd1f8a883188cefdc19d1fa87b41cc`，LIMITED_PASS。150 PASS / 0 FAIL / 0 ERROR / 0 SKIP（108.311秒），另精确诊断映射1 PASS（0.305秒），308源码无漂移；原Case共享行锁后段等锁过期探针Conflict且全部回滚。公开脱敏结论为`evidence/case-resource-delivery/independent-review.json`，SHA256 `52194390521a8c4e095a61cacf3cf4eeae2cbe56bd4fdd21ac0c44a006ed9f70`；原BLOCKED结论/原日志完整保全。随后仅证据文档更新，运行源码与被审SHA一致。
