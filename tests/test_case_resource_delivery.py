@@ -4,12 +4,12 @@ from copy import deepcopy
 from uuid import UUID, uuid4
 import pytest, psycopg
 
-from parkweave import case_resource_delivery as delivery, preparation as prep
+from parkweave import case_resource_delivery as delivery, preparation as prep, case_resources as cr
 from parkweave.store import Store, Conflict
 from test_case_resources import link_fixture
 from test_resource_bundles import bundle, states, totals, cancel, write as bundle_write
 from test_preparation import preparation_fixture, headers, command as material_command
-from test_executor_receipts import receipt_fixture
+from test_executor_receipts import receipt_fixture, ready
 from test_service_case_steps import setup, adopt, verified, read as plan_read, command as plan_command
 
 
@@ -164,7 +164,7 @@ def test_recovery_rejects_missing_or_corrupt_original_proof(link_fixture,bad):
     before=effects(f);r=recover(f,p,key);assert r.status_code==409,r.text;assert effects(f)==before
 
 
-@pytest.mark.parametrize('field,value',[('formal_approval',True),('expected_plan_revision',0),('valid_until','2026-10-09T00:00:00'),('members',[])])
+@pytest.mark.parametrize('field,value',[('reason',' '),('reason',''),('formal_approval',True),('expected_plan_revision',0),('valid_until','2026-10-09T00:00:00'),('members',[])])
 def test_strict_write_body_never_accepts_invented_approval_or_unbounded_input(link_fixture,field,value):
     f=link_fixture;p=prepared(f);hs,d=bundle(f);body=quoted(f,p,d)
     r=submit(f,p,{**body,field:value});assert r.status_code==422,r.text
@@ -184,3 +184,66 @@ def test_lock_wait_expiry_rechecks_database_clock_without_partial_writes(link_fi
     with f[1].connect() as c:
         c.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(p['preparation_id'],));worker=threading.Thread(target=run);worker.start();assert started.wait(2);time.sleep(1.2)
     worker.join(8);assert not worker.is_alive() and result==['EXPIRED'] and effects(f)==[0]*5
+
+from datetime import datetime, timedelta, timezone
+import threading, time
+from test_service_case_steps import GOALS
+from test_request_intents import save
+
+
+def test_case_row_wait_past_original_hold_quote_expiry_rolls_back(link_fixture,monkeypatch):
+    f=link_fixture;p=prepared(f);hs,d=bundle(f)
+    with f[1].connect() as c:
+        c.execute('UPDATE synthetic_resource_holds SET expires_at=clock_timestamp()+interval \'1.1 second\' WHERE id=ANY(%s)',([UUID(h['id']) for h in hs],))
+    body=quoted(f,p,d);at_bind=threading.Event();original=cr._bind_locked
+    def observe(*args,**kwargs):at_bind.set();return original(*args,**kwargs)
+    monkeypatch.setattr(cr,'_bind_locked',observe)
+    def run():
+        try:return delivery.deliver(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,delivery.Deliver(**body))
+        except Conflict:return 'CONFLICT'
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        with f[1].connect() as c:
+            c.execute('SELECT id FROM cases WHERE id=%s FOR SHARE',(p['case_id'],))
+            future=pool.submit(run);assert at_bind.wait(2),'did not reach Case binding after capacity confirmation'
+            time.sleep(1.3)
+        result=future.result(timeout=8)
+    assert result=='CONFLICT'
+    assert effects(f)==[0]*5 and states(f,hs)==['HELD']*3
+
+
+def test_multi_required_goals_survive_delivery_and_p2_verify(link_fixture):
+    f=link_fixture;p=ready(f)
+    r=save(f,p,goals=GOALS,text='SYNTHETIC all original adapter goals');assert r.status_code==200
+    p={**p,'revision':r.json()['revision']}
+    p=material_command(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC all-goal review').json()
+    p=material_command(f,p,'CONFIRM',reason='SYNTHETIC all-goal confirmation').json()
+    assert adopt(f,p).status_code==201;verified(f,p,'P1')
+    hs,d=bundle(f);body=quoted(f,p,d);key=uuid4().hex;r=submit(f,p,body,key);assert r.status_code==201,r.text
+    current=plan_read(f,p).json();assert current['required_goals']==GOALS
+    assert next(s for s in current['steps'] if s['adapter_id']=='P2')['state']!='VERIFIED'
+    verified(f,p,'P2');current=plan_read(f,p).json();assert current['required_goals']==GOALS
+    assert any(s['state']!='VERIFIED' for s in current['steps'][2:])
+    assert recover(f,p,key).json()['independent_check']['status']=='CURRENT'
+
+
+def test_distinct_cases_competing_same_members_keep_one_exact_claim(link_fixture):
+    f=link_fixture;p1=prepared(f);p2=prepared(f);hs,d=bundle(f);b1=quoted(f,p1,d);b2=quoted(f,p2,d)
+    def run(item):
+        p,b=item
+        try:return delivery.deliver(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,delivery.Deliver(**b))
+        except Conflict:return 'CONFLICT'
+    with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(run,[(p1,b1),(p2,b2)]))
+    assert results.count('CONFLICT')==1
+    result=next(r for r in results if isinstance(r,dict));assert effects(f)==[1,3,1,1,1]
+    assert str(result['link']['case_id']) in (p1['case_id'],p2['case_id']) and states(f,hs)==['CONFIRMED']*3
+
+
+def test_committed_original_key_recovers_after_preview_and_source_hold_ttl(link_fixture):
+    f=link_fixture;p=prepared(f);hs,d=bundle(f)
+    with f[1].connect() as c:c.execute("UPDATE synthetic_resource_holds SET expires_at=clock_timestamp()+interval '1.3 second'")
+    body=quoted(f,p,d);key=uuid4().hex;r=submit(f,p,body,key);assert r.status_code==201,r.text
+    original=r.json()['receipt'];time.sleep(1.5)
+    for current in (submit(f,p,body,key),recover(f,p,key)):
+        assert current.status_code in (200,201),current.text
+        assert current.json()['receipt']==original and current.json()['independent_check']['status']=='CURRENT'
+    assert effects(f)==[1,3,1,1,1] and states(f,hs)==['CONFIRMED']*3

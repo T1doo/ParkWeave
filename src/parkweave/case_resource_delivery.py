@@ -24,6 +24,12 @@ class Deliver(rb.Bundle):
     valid_until: AwareDatetime = Field(strict=False)
     reason: str = Field(min_length=1, max_length=1000)
 
+    @field_validator('reason')
+    @classmethod
+    def explicit_reason(cls, value):
+        if not value.strip(): raise ValueError('explicit nonblank delivery reason required')
+        return value
+
     @field_validator('valid_until')
     @classmethod
     def utc(cls, value):
@@ -172,6 +178,12 @@ def deliver(store, token, id, key, data):
         # Its comparison evidence is independently checked together with actual rows.
         current = _verify(store,c,p,parent,result['receipt'])
         if current['independent_check']['status'] != 'CURRENT': raise Conflict('delivery changed before commit')
+        # Binding can wait for the final Case row upgrade after confirming the
+        # holds. This is still a first write: expired consent must roll it all
+        # back. Historical replay and GET returned above deliberately retain
+        # their original event, rather than re-executing an expired hold.
+        if rh._now(c) >= data.valid_until:
+            raise Conflict('delivery preview expired during final Case binding; refresh required')
         return current
 
 

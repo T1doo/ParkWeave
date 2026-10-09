@@ -27,5 +27,16 @@
   "resolution": "new trusted delivery path validates existing adopted registered plan and P1; old routes retain original rule",
   "third": "26 passes",
   "fourth": "35 passes before additional concurrency/corrupt-proof/strict-body/expiry and process restart tests",
-  "no_failures_erased": true
+  "no_failures_erased": true,
+  "independent_first_candidate": {
+    "sha": "ea29a2499db83c803067e11fc88cc31f796a9eef",
+    "result": "BLOCKED",
+    "known_targeted": "296PASS/0FAIL/0ERROR/0SKIP;216.871s",
+    "additional_probes": "2PASS/1FAIL;4.318s",
+    "cause": "Case FOR SHARE allows early reads but delays final FOR UPDATE; quote/hold expires while waiting and first write commits CURRENT",
+    "raw_private_directory": ".runtime/independent-case-resource-delivery-review",
+    "safe_report": "rejected-review.json",
+    "fix": "new delivery only, DB clock after final actual-row check < original valid_until, else complete rollback; historical replay/GET retain original event",
+    "prior_probe_driver": "initial FOR UPDATE prevented early shared read reaching binder; driver error preserved separately"
+  }
 }

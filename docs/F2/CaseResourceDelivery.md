@@ -18,4 +18,7 @@
 
 冻结合同见[CaseResourceDeliveryContract.md](CaseResourceDeliveryContract.md)；测试、源码冻结、失败历史及独立审查证据将记录在`docs/F2/evidence/case-resource-delivery/`。
 
-实际验证：后端与必要兼容冻结回归566 PASS / 0 FAIL / 0 ERROR / 0 SKIP（304.919秒）。其后仅页面状态/句柄类型与相应页面负例变更，最终页面及诊断86 PASS（78.169秒）；后端源码一致，最终308源码文件无漂移。独立审查尚待候选推送后执行，不代表正式42AT/EX或Windows验收。
+
+第一候选ea29a249独立296 PASS、额外2 PASS/1 FAIL，结论BLOCKED：最终Case行锁升级等待可能跨原预检/hold期限。修正为仅首次新交付在独立实际行核对后再采DB时点，`now >= valid_until`则整事务回滚；历史回放与GET不重验TTL，原CONFIRMED占用保留。已纳入同Case共享行锁后段等待、多目标保留、不同Case争同成员和期限后原键恢复回归。旧候选与失败日志保全，不合开发分支。
+
+当前修正版：最后时点守卫和必要兼容205 PASS / 0 FAIL / 0 ERROR / 0 SKIP（106.745秒）；随后仅增加空白理由的请求层拒绝及负例，最终真实API/PG/HTTP页面55 PASS（71.882秒），308源码hash无漂移。旧566/86与独审296窗口作为第一候选的历史证据保留，不能代替修正版独立复审。正式42AT/EX、Win11和全仓仍未通过。

@@ -1,0 +1,92 @@
+{
+  "result": "BLOCKED",
+  "reviewed_sha": "ea29a2499db83c803067e11fc88cc31f796a9eef",
+  "base_dev_sha": "92f08839ddde699cca61c276dd0b20a984fc8aa3",
+  "contract_sha": "5c1d93cdac74143c756cc8d42f0ce8f9244284ae",
+  "remote_candidate_verified": true,
+  "remote_dev_unchanged": true,
+  "remote_main_sha": "31e7acb7e53bb1ab6465b9daae59de28757f7583",
+  "known_88403_ancestor_verified": true,
+  "tracked_worktree_clean": true,
+  "source_freeze": {
+    "files": 308,
+    "drift": []
+  },
+  "actual_tests": {
+    "targeted": {
+      "tests": 296.0,
+      "failures": 0.0,
+      "errors": 0.0,
+      "skipped": 0.0,
+      "time": 216.871
+    },
+    "edges": {
+      "tests": 3.0,
+      "failures": 1.0,
+      "errors": 0.0,
+      "skipped": 0.0,
+      "time": 4.318
+    },
+    "edges-initial": {
+      "tests": 3.0,
+      "failures": 1.0,
+      "errors": 0.0,
+      "skipped": 0.0,
+      "time": 5.129
+    }
+  },
+  "targeted_scope": "36 delivery API, 13 delivery real HTTP/PG/Chromium, 34 bundles API, 14 bundles real HTTP/PG/Chromium, 33 original pairs, 30 Case, 29 strict binding, 68 service Case steps, 33 controlled plans, 6 catalogue concurrency; total 296 PASS, zero FAIL/ERROR/SKIP",
+  "independent_probes": {
+    "passed": [
+      "All five original required goals retained across new delivery; P2 separately verified from actual current resource source, later steps remain unverified",
+      "Different Cases competing for identical three holds produce one complete exact claim/link and one rejected transaction"
+    ],
+    "failed": "Owner Case FOR SHARE allows preflight/confirmation but blocks final Case FOR UPDATE; release after original preview/hold expiry produces CURRENT and committed effects instead of Conflict/rollback"
+  },
+  "blockers": [
+    {
+      "priority": "P1",
+      "title": "First delivery commits after original preview and hold expiry during final Case lock wait",
+      "locations": [
+        "src/parkweave/case_resource_delivery.py:156",
+        "src/parkweave/case_resource_delivery.py:170",
+        "src/parkweave/case_resource_delivery.py:173",
+        "src/parkweave/case_resources.py:108"
+      ],
+      "evidence": {
+        "actual_status": "CURRENT",
+        "quote_expired": true,
+        "committed_effects": {
+          "combination": 1,
+          "members": 3,
+          "receipt": 1,
+          "claim": 1,
+          "link": 1
+        },
+        "original_hold_lifetime_seconds": 1.1,
+        "late_case_lock_wait_seconds": 1.3
+      },
+      "cause": "valid_until is checked before binder waits on Case FOR UPDATE. Final independent verification permits confirmed historical TTL and does not recheck first-delivery valid_until.",
+      "required_fix": "For new nonreplay first delivery, sample final database clock after late waits and reject when original valid_until has elapsed, rolling back all writes. Preserve historical actor/key recovery TTL semantics."
+    }
+  ],
+  "driver_correction": "Initial independent probe used Case FOR UPDATE and blocked early Case FOR SHARE before reaching binder; its timeout is a private driver failure, not another product defect. Final probe uses Case FOR SHARE and reproduces the late window.",
+  "evidence_sha256": {
+    ".runtime/independent-case-resource-delivery-review/runner.py": "6bd3656b72b083a5960d2e4addc86ac913fd89c34d6b212eaf9d773b8f667db7",
+    ".runtime/independent-case-resource-delivery-review/test_review_edges.py": "2fd4d8eea1f86d22dc6ab2e8a228ca6b3ddfdc34dd58c203eb359194af4160c0",
+    ".runtime/independent-case-resource-delivery-review/targeted.log": "ce3d6574735d4826bc9418731c26db3112621e7e735f767b6c44cd43a0ec61ac",
+    ".runtime/independent-case-resource-delivery-review/targeted.xml": "cecc583f86f0086d7f58186a18c6f4b03d04188d1345348fc243720aef75b3c4",
+    ".runtime/independent-case-resource-delivery-review/edges.log": "76aaaf8ad1f967e731c383cdd4e335c289a84291287fa71bd539b37ce959feb9",
+    ".runtime/independent-case-resource-delivery-review/edges.xml": "d45ee25854f9e02400950bcec2fec0cd1239b0dfe744fdce4672b74d304cc91e",
+    ".runtime/independent-case-resource-delivery-review/edges-initial.log": "8b332f1cdcb2bab4e26e25e4271e6453d6b636bfd33a863a0a422e025c3e983e",
+    ".runtime/independent-case-resource-delivery-review/edges-initial.xml": "67943e75768f5f271d0b8440e1f18b0d590d9c6e808494e7aa8a1ce851e959fb"
+  },
+  "privacy": "Only this report is suitable for public copying. Raw logs/XML may contain random synthetic fixture credentials and must remain private.",
+  "limits": [
+    "Finite isolated synthetic PostgreSQL/API/HTTP/Chromium engineering review; no real business fulfillment",
+    "No complete repository suite, native Windows/CI, formal 42AT or deployment acceptance",
+    "Formal Release/Approval remains NOT_IMPLEMENTED",
+    "No source/test/docs/git mutation by reviewer; only private runtime reports/drivers/logs"
+  ],
+  "frozen_window_closed": true
+}
