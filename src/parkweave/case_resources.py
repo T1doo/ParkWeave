@@ -80,74 +80,81 @@ def bind(store,token,id,key,data):
     fp=digest(json.dumps({'preparation_id':str(id),**data.model_dump(mode='json',exclude_none=True)},ensure_ascii=False,sort_keys=True,separators=(',',':')))
     with store.connect() as c:
         p,parent=_parent(store,c,token,id,write=True)
-        c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('case-resource-key:'+p['id']+':'+key,))
-        old=c.execute('SELECT * FROM case_resource_links WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
-        if old and (old['fingerprint']!=fp or old['preparation_id']!=id):raise Conflict('case resource request key fingerprint mismatch')
-        rows=_history(c,p,parent)
-        # Lock every previously referenced resource too: a response is one coherent snapshot.
-        ids={data.combination_id,*[r['combination_id'] for r in rows]}
-        groups={gid:rc._group(c,p,gid) for gid in ids};members={gid:rc._members(c,p,gid) for gid in ids}
-        rules=_resource_locks(c,p,[h for hs in members.values() for h in hs],{h['resource_id'] for h in members[data.combination_id]})
-        # Group and hold row locks cover direct concurrent source changes too.
-        for gid in sorted(ids,key=str):
-            groups[gid]=rc._group(c,p,gid,lock=True)
-            members[gid]=rc._members(c,p,gid,lock=True)
-        g=groups[data.combination_id];holds=members[g['id']]
-        case=c.execute('SELECT id,run_id FROM cases WHERE id=%s FOR UPDATE',(parent['case_id'],)).fetchone()
-        if not case or case['run_id']!=parent['run_id']:raise Denied('Case Run binding unavailable')
-        if old:return _view(c,p,parent,rows,old,store=store)
-        projection=None
-        if data.expected_comparison_sha256 is not None:
-            from . import resource_plan_binding as binding
-            # The catalogue has SELECT-only app scope and no supported publishing
-            # route. Do not manufacture UPDATE authority merely to obtain a row
-            # lock: compare its complete current version again after the gate.
-            comparison_plan=c.execute('SELECT * FROM controlled_plans WHERE preparation_id=%s FOR UPDATE',(id,)).fetchone()
-            projection=binding.proposal(store,c,p,parent,data.combination_id)
-            comparison=projection['comparison']
-            if comparison['sha256']!=data.expected_comparison_sha256:raise Conflict('resource comparison changed; refresh and explicitly confirm again')
-            if data.expected_preparation_revision!=comparison['preparation_revision'] or data.expected_link_revision!=comparison['link_revision']:raise Conflict('resource comparison revision changed; refresh and explicitly confirm again')
-            if not comparison['can_confirm']:raise Conflict('resource comparison prerequisites require correction and recheck')
-        from .controlled_plans import gate
-        gate(store,c,parent,1)
-        if projection is not None:
-            # Gate locks its current dependencies and may persist an observation
-            # that an already stale downstream check needs revalidation. That is
-            # this transaction's own effect, not a concurrent plan edit. Bind the
-            # final comparison to the locked plan before this observation while
-            # resampling every source, state, permission, and time-derived issue.
-            final=binding.proposal(store,c,p,parent,data.combination_id,comparison_plan=comparison_plan)
-            if final['comparison']['sha256']!=data.expected_comparison_sha256 or not final['comparison']['can_confirm']:
-                raise Conflict('resource comparison changed during confirmation; refresh and explicitly confirm again')
-        if parent['state']!='LOCAL_CONFIRMED' or parent['revision']!=data.expected_preparation_revision:raise Conflict('current locally confirmed preparation required')
-        revision=rows[-1]['revision'] if rows else 0
-        if data.expected_link_revision!=revision:raise Conflict('stale Case resource link revision; refresh required')
-        if revision>=64:raise Conflict('Case resource link history limit reached')
-        # The final Case lock can wait across the reservation end. Sample the
-        # database clock after that wait, immediately before checking freshness.
-        now=rh._now(c)
-        why=_reason(c,parent,g,holds,rules,now)
-        if why!='CURRENT':raise Conflict(why)
-        if rows and rows[-1]['combination_id']==g['id'] and rows[-1]['preparation_revision']==parent['revision']:
-            if projection is None or projection['current']['catalog_decision']['status']!='STALE':raise Conflict('current Case association already recorded; no new version needed')
-        new_id=uuid4()
-        snapshot=rc._view(g,holds,now);snapshot=json.loads(json.dumps(snapshot,default=str))
-        if projection is not None:
-            snapshot['binding_impact']=binding.impact(projection,dict(id=new_id,revision=revision+1),data.expected_comparison_sha256,data.reason)
-        c.execute('INSERT INTO resource_case_claims(combination_id,case_id,owner_id,park_id,org_id) VALUES(%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING',(g['id'],parent['case_id'],p['id'],p['park_id'],p['org_id']))
-        row=c.execute('''INSERT INTO case_resource_links(id,preparation_id,case_id,run_id,owner_id,park_id,org_id,combination_id,revision,preparation_revision,preparation_sha256,service_id,service_version,reason,snapshot,actor_id,request_key,fingerprint)
-          VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *''',(new_id,id,parent['case_id'],parent['run_id'],p['id'],p['park_id'],p['org_id'],g['id'],revision+1,parent['revision'],parent['review_sha256'],parent['service_id'],parent['service_version'],data.reason,Jsonb(snapshot),p['id'],key,fp)).fetchone()
-        from .controlled_plans import invalidate
-        invalidate(c,id,2)
-        result=_view(c,p,parent,rows+[row],row,store=store)
-        if projection is not None and result['current']['source_status']!='CURRENT':
-            # This is a first strict association, not historical-key recovery.
-            # Reject a source change that this transaction has actually observed
-            # after the final comparison (including one during INSERT waiting).
-            # Plain SELECT cannot prevent an administrator from changing the
-            # catalogue after this projection and before the connection commits.
-            raise Conflict('resource binding source changed before commit; refresh and explicitly confirm again')
-        return result
+        return _bind_locked(store,c,p,parent,id,key,data,fp)
+
+
+def _bind_locked(store,c,p,parent,id,key,data,fp,*,delivery_binding=None):
+    """Trusted composition; the existing public route retains its own authentication."""
+    if c.autocommit:raise Conflict('transactional Case resource binding required')
+    c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('case-resource-key:'+p['id']+':'+key,))
+    old=c.execute('SELECT * FROM case_resource_links WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+    if old and (old['fingerprint']!=fp or old['preparation_id']!=id):raise Conflict('case resource request key fingerprint mismatch')
+    rows=_history(c,p,parent)
+    # Lock every previously referenced resource too: a response is one coherent snapshot.
+    ids={data.combination_id,*[r['combination_id'] for r in rows]}
+    groups={gid:rc._group(c,p,gid) for gid in ids};members={gid:rc._members(c,p,gid) for gid in ids}
+    rules=_resource_locks(c,p,[h for hs in members.values() for h in hs],{h['resource_id'] for h in members[data.combination_id]})
+    # Group and hold row locks cover direct concurrent source changes too.
+    for gid in sorted(ids,key=str):
+        groups[gid]=rc._group(c,p,gid,lock=True)
+        members[gid]=rc._members(c,p,gid,lock=True)
+    g=groups[data.combination_id];holds=members[g['id']]
+    case=c.execute('SELECT id,run_id FROM cases WHERE id=%s FOR UPDATE',(parent['case_id'],)).fetchone()
+    if not case or case['run_id']!=parent['run_id']:raise Denied('Case Run binding unavailable')
+    if old:return _view(c,p,parent,rows,old,store=store)
+    projection=None
+    if data.expected_comparison_sha256 is not None:
+        from . import resource_plan_binding as binding
+        # The catalogue has SELECT-only app scope and no supported publishing
+        # route. Do not manufacture UPDATE authority merely to obtain a row
+        # lock: compare its complete current version again after the gate.
+        comparison_plan=c.execute('SELECT * FROM controlled_plans WHERE preparation_id=%s FOR UPDATE',(id,)).fetchone()
+        projection=binding.proposal(store,c,p,parent,data.combination_id,delivery_plan=delivery_binding is not None)
+        comparison=projection['comparison']
+        if comparison['sha256']!=data.expected_comparison_sha256:raise Conflict('resource comparison changed; refresh and explicitly confirm again')
+        if data.expected_preparation_revision!=comparison['preparation_revision'] or data.expected_link_revision!=comparison['link_revision']:raise Conflict('resource comparison revision changed; refresh and explicitly confirm again')
+        if not comparison['can_confirm']:raise Conflict('resource comparison prerequisites require correction and recheck')
+    from .controlled_plans import gate
+    gate(store,c,parent,1)
+    if projection is not None:
+        # Gate locks its current dependencies and may persist an observation
+        # that an already stale downstream check needs revalidation. That is
+        # this transaction's own effect, not a concurrent plan edit. Bind the
+        # final comparison to the locked plan before this observation while
+        # resampling every source, state, permission, and time-derived issue.
+        final=binding.proposal(store,c,p,parent,data.combination_id,comparison_plan=comparison_plan,delivery_plan=delivery_binding is not None)
+        if final['comparison']['sha256']!=data.expected_comparison_sha256 or not final['comparison']['can_confirm']:
+            raise Conflict('resource comparison changed during confirmation; refresh and explicitly confirm again')
+    if parent['state']!='LOCAL_CONFIRMED' or parent['revision']!=data.expected_preparation_revision:raise Conflict('current locally confirmed preparation required')
+    revision=rows[-1]['revision'] if rows else 0
+    if data.expected_link_revision!=revision:raise Conflict('stale Case resource link revision; refresh required')
+    if revision>=64:raise Conflict('Case resource link history limit reached')
+    # The final Case lock can wait across the reservation end. Sample the
+    # database clock after that wait, immediately before checking freshness.
+    now=rh._now(c)
+    why=_reason(c,parent,g,holds,rules,now)
+    if why!='CURRENT':raise Conflict(why)
+    if rows and rows[-1]['combination_id']==g['id'] and rows[-1]['preparation_revision']==parent['revision']:
+        if projection is None or projection['current']['catalog_decision']['status']!='STALE':raise Conflict('current Case association already recorded; no new version needed')
+    new_id=uuid4()
+    snapshot=rc._view(g,holds,now);snapshot=json.loads(json.dumps(snapshot,default=str))
+    if delivery_binding is not None:snapshot['delivery_binding']=delivery_binding
+    if projection is not None:
+        snapshot['binding_impact']=binding.impact(projection,dict(id=new_id,revision=revision+1),data.expected_comparison_sha256,data.reason)
+    c.execute('INSERT INTO resource_case_claims(combination_id,case_id,owner_id,park_id,org_id) VALUES(%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING',(g['id'],parent['case_id'],p['id'],p['park_id'],p['org_id']))
+    row=c.execute('''INSERT INTO case_resource_links(id,preparation_id,case_id,run_id,owner_id,park_id,org_id,combination_id,revision,preparation_revision,preparation_sha256,service_id,service_version,reason,snapshot,actor_id,request_key,fingerprint)
+      VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *''',(new_id,id,parent['case_id'],parent['run_id'],p['id'],p['park_id'],p['org_id'],g['id'],revision+1,parent['revision'],parent['review_sha256'],parent['service_id'],parent['service_version'],data.reason,Jsonb(snapshot),p['id'],key,fp)).fetchone()
+    from .controlled_plans import invalidate
+    invalidate(c,id,2)
+    result=_view(c,p,parent,rows+[row],row,store=store)
+    if projection is not None and result['current']['source_status']!='CURRENT':
+        # This is a first strict association, not historical-key recovery.
+        # Reject a source change that this transaction has actually observed
+        # after the final comparison (including one during INSERT waiting).
+        # Plain SELECT cannot prevent an administrator from changing the
+        # catalogue after this projection and before the connection commits.
+        raise Conflict('resource binding source changed before commit; refresh and explicitly confirm again')
+    return result
 
 @bounded
 def candidates(store,token,id):

@@ -13,6 +13,19 @@ from .run_access_candidate import RunCommand
 
 def create_app(store: Store) -> FastAPI:
     app = FastAPI(title="ParkWeave synthetic foundation", version="0.1.0")
+    from . import case_resource_delivery as delivery, resource_bundles as bundles
+
+    @app.post('/api/preparations/{preparation_id}/resource-delivery/preview')
+    def delivery_preview(preparation_id: UUID,data: bundles.Bundle,authorization: str | None=Header(default=None)):
+        return delivery.preview(store,token(authorization),preparation_id,data)
+
+    @app.post('/api/preparations/{preparation_id}/resource-delivery',status_code=201)
+    def delivery_submit(preparation_id: UUID,data: delivery.Deliver,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return delivery.deliver(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
+    @app.get('/api/preparations/{preparation_id}/resource-delivery/recovery/{request_key}')
+    def delivery_recovery(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return delivery.recover(store,token(authorization),preparation_id,resource_key(request_key))
 
     @app.middleware("http")
     async def boundary(request: Request, call_next):

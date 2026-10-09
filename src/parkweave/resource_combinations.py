@@ -68,37 +68,43 @@ def confirm(store,token,key,data,*,bundle=False):
     fp=rh._fingerprint('RESOURCE_BUNDLE_CONFIRM' if bundle else 'COMBINATION_CONFIRM',UUID(int=0),data)
     with store.connect() as c:
         p=rh._auth(store,c,token,write=True)
-        holds=[rh._own(c,p,m.hold_id) for m in data.members]
-        if not bundle and len({h['resource_id'] for h in holds})!=2:raise Conflict('two different resources required')
-        for h in holds:rh._scope(c,p,h['resource_id'],write=True)
-        rh._key(c,p,key);rules=_scope_lock(c,p,holds,write=True)
-        holds=[rh._own(c,p,m.hold_id,lock=True) for m in data.members]
-        now=rh._now(c);receipt=rh._replay(c,p,key,fp)
-        if receipt:
-            g=_group(c,p,UUID(receipt['combination_id']));holds=_members(c,p,g['id'])
-        else:
-            revisions={m.hold_id:m.expected_revision for m in data.members}
-            # All checks precede every mutation; resource mutexes stay held to commit.
-            for h in holds:
-                r=rules[h['resource_id']]
-                if h.get('combination_id') or h['state']!='HELD' or h['expires_at']<=now:
-                    raise Conflict('combination requires valid unconfirmed holds')
-                if revisions[h['id']]!=h['resource_revision'] or revisions[h['id']]!=r['revision']:
-                    raise Conflict('combination resource revision changed; release and preview again')
-                lo,hi=rh._window(r,rh.Preview(starts_at=h['starts_at'],ends_at=h['ends_at'],quantity=h['quantity']),now)
-                if rh._peak(c,h['resource_id'],lo,hi,now,exclude=h['id'])+h['quantity']>r['capacity']:
-                    raise Conflict('combination resource capacity conflict')
-            g=c.execute("INSERT INTO synthetic_resource_combinations VALUES(%s,%s,%s,%s,'CONFIRMED',%s) RETURNING *",(uuid4(),p['id'],p['park_id'],p['org_id'],now)).fetchone()
-            for h in holds:
-                c.execute("UPDATE synthetic_resource_holds SET state='CONFIRMED' WHERE id=%s",(h['id'],))
-                c.execute('INSERT INTO synthetic_resource_combination_members VALUES(%s,%s)',(g['id'],h['id']))
-            proof=rb.manifest(holds) if bundle else {}
-            receipt=_receipt(c,p,g,key,fp,'CONFIRM',now,scope=scope,**proof)
-            holds=_members(c,p,g['id'])
-        # The principal/resource mutex protocol is the existing authority boundary.
-        for h in holds:rh._scope(c,p,h['resource_id'],write=True)
-        return rh._boundary(confirmation_scope=scope,combination=_view(g,holds,now),receipt=receipt,server_time=now)
+        return _confirm_locked(store,c,p,key,data,fp,scope,bundle=bundle)
 
+
+def _confirm_locked(store,c,p,key,data,fp,scope,*,bundle=False,receipt_extra=None):
+    """Trusted composition only; caller already authenticates within this transaction."""
+    from . import resource_bundles as rb
+    if c.autocommit:raise Conflict('transactional resource confirmation required')
+    holds=[rh._own(c,p,m.hold_id) for m in data.members]
+    if not bundle and len({h['resource_id'] for h in holds})!=2:raise Conflict('two different resources required')
+    for h in holds:rh._scope(c,p,h['resource_id'],write=True)
+    rh._key(c,p,key);rules=_scope_lock(c,p,holds,write=True)
+    holds=[rh._own(c,p,m.hold_id,lock=True) for m in data.members]
+    now=rh._now(c);receipt=rh._replay(c,p,key,fp)
+    if receipt:
+        g=_group(c,p,UUID(receipt['combination_id']));holds=_members(c,p,g['id'])
+    else:
+        revisions={m.hold_id:m.expected_revision for m in data.members}
+        # All checks precede every mutation; resource mutexes stay held to commit.
+        for h in holds:
+            r=rules[h['resource_id']]
+            if h.get('combination_id') or h['state']!='HELD' or h['expires_at']<=now:
+                raise Conflict('combination requires valid unconfirmed holds')
+            if revisions[h['id']]!=h['resource_revision'] or revisions[h['id']]!=r['revision']:
+                raise Conflict('combination resource revision changed; release and preview again')
+            lo,hi=rh._window(r,rh.Preview(starts_at=h['starts_at'],ends_at=h['ends_at'],quantity=h['quantity']),now)
+            if rh._peak(c,h['resource_id'],lo,hi,now,exclude=h['id'])+h['quantity']>r['capacity']:
+                raise Conflict('combination resource capacity conflict')
+        g=c.execute("INSERT INTO synthetic_resource_combinations VALUES(%s,%s,%s,%s,'CONFIRMED',%s) RETURNING *",(uuid4(),p['id'],p['park_id'],p['org_id'],now)).fetchone()
+        for h in holds:
+            c.execute("UPDATE synthetic_resource_holds SET state='CONFIRMED' WHERE id=%s",(h['id'],))
+            c.execute('INSERT INTO synthetic_resource_combination_members VALUES(%s,%s)',(g['id'],h['id']))
+        proof=rb.manifest(holds) if bundle else {}
+        receipt=_receipt(c,p,g,key,fp,'CONFIRM',now,scope=scope,**proof,**(receipt_extra or {}))
+        holds=_members(c,p,g['id'])
+    # The principal/resource mutex protocol is the existing authority boundary.
+    for h in holds:rh._scope(c,p,h['resource_id'],write=True)
+    return rh._boundary(confirmation_scope=scope,combination=_view(g,holds,now),receipt=receipt,server_time=now)
 
 def read(store,token,id):
     with store.connect() as c:

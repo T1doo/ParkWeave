@@ -178,7 +178,7 @@ def read(store,token,id,candidate_combination_id=None):
         return proposal(store,c,p,parent,candidate_combination_id)
 
 
-def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None):
+def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None,*,delivery_plan=False):
     """One connection's current comparison; no mutation or hidden revalidation."""
     id=parent['id']
     plan=c.execute('SELECT * FROM controlled_plans WHERE preparation_id=%s',(id,)).fetchone()
@@ -205,7 +205,16 @@ def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None
         try:prep.grant(store,c,reviewer,'REVIEW_ASSIGNED')
         except Denied:reviewer=None
     if not reviewer:issues['P1'].append('CURRENT_REVIEWER_AUTHORITY_REQUIRED')
-    if parent.get('request_intent') and intents.state(parent)!='SUPPORTED_LOCAL':issues['P1'].append('REQUEST_GOAL_COVERAGE_REQUIRED')
+    if delivery_plan:
+        from . import service_case_steps as case_steps
+        adopted=parent.get('service_case_plan')
+        if not adopted:
+            issues['P1'].append('ADOPTED_RESOURCE_PLAN_REQUIRED')
+        else:
+            changed, _, _, _, states, _=case_steps._inspect(store,c,parent,adopted,observe=False)
+            if changed or not case_steps._supported(parent) or adopted['required_goals']!=(parent.get('request_intent') or {}).get('required_goals') or states.get('P1')!='VERIFIED' or not any(s['adapter_id']=='P2' for s in adopted['steps']):
+                issues['P1'].append('CURRENT_PLAN_P1_REQUIRED')
+    elif parent.get('request_intent') and intents.state(parent)!='SUPPORTED_LOCAL':issues['P1'].append('REQUEST_GOAL_COVERAGE_REQUIRED')
     if not cp.binding_catalog_known(snapshots['P1']['service_catalog']):issues['P1'].append('CURRENT_SERVICE_CATALOG_REQUIRED')
     if not link:issues['P2'].append('CURRENT_CASE_RESOURCE_LINK_REQUIRED')
     else:
