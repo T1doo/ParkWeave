@@ -6,4 +6,4 @@
 
 首轮310PASS/1FAIL/7SKIP是诊断AST白名单未登记此前异议/组合及本轮新测试，守卫保持，按现有AST精确刷新1147→1221ID，全部旧ID保留；原失败日志在私有`.runtime/job-accounting-length/first.log/xml`。没有删测试/增跳过或弱化oracle，也未刷新/恢复完整Windows workflow、增加预算或称全仓PASS。
 
-[JUnit](evidence/job-accounting-length/frozen.xml)、[日志](evidence/job-accounting-length/frozen.log)、[源指纹](evidence/job-accounting-length/source.json)、[机器记录及跳过原因](evidence/job-accounting-length/verification.json)。候选普通推送后独立只读审查，终态后补；未审不合dev。Linux注入只证明拒绝协议，真实Windows返回长度/Job后代终态、Win11安装信任、protected authority、42AT/EX及完整全仓仍未验收。底座未签收，不能由此声称月底完整V1已完成。
+[JUnit](evidence/job-accounting-length/frozen.xml)、[日志](evidence/job-accounting-length/frozen.log)、[源指纹](evidence/job-accounting-length/source.json)、[机器记录及跳过原因](evidence/job-accounting-length/verification.json)。候选 `2bed062a6b365ae7c4c27cccb70ac2ed222d345b` 已普通推送并[独立限定通过](evidence/job-accounting-length/independent-review.json)，无阻断：独立352PASS/14SKIP/0FAIL/0ERROR（8.458秒）和额外5PASS（0.024秒），305hash零漂移；各计数不相加当全仓。14项Windows/PowerShell跳过原原因保持。按用户现有正常dev推送授权继续FF集成，实际终态另补。Linux注入只证明拒绝协议，真实Windows返回长度/Job后代终态、Win11安装信任、protected authority、42AT/EX及完整全仓仍未验收。底座未签收，不能由此声称月底完整V1已完成。

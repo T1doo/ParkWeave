@@ -1,0 +1,179 @@
+{
+  "reviewed_sha": "2bed062a6b365ae7c4c27cccb70ac2ed222d345b",
+  "base_sha": "b6db56256df1c29c155faa67acf8463def87f5b9",
+  "contract_sha": "5953aa821fffa256d633ff728d84356b2572c4ed",
+  "metadata_contract_sha": "3e545c5a2f7fa412e0d00d0a25dde321d0868999",
+  "conclusion": "LIMITED_PASS_OFFLINE_WINDOWS_JOB_ACCOUNTING_LENGTH",
+  "blocking_findings": [],
+  "tests": {
+    "targeted": {
+      "tests": "366",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "14",
+      "time": "8.458",
+      "log_path": "/workspace/ParkWeave/.runtime/independent-job-accounting-review/targeted.log",
+      "log_sha256": "529e0babb671278a19c22067cd5e46d5930850eb4e956a8dcc74058d05af0561",
+      "junit_path": "/workspace/ParkWeave/.runtime/independent-job-accounting-review/targeted.xml",
+      "junit_sha256": "cbe6cdf6b9ad2a96036604db18da9318f70b609fd0e101360b0bc548f2e3acf2"
+    },
+    "edges": {
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "0.024",
+      "log_path": "/workspace/ParkWeave/.runtime/independent-job-accounting-review/edges.log",
+      "log_sha256": "0e96d7ca7406320840ee2e704cbada03e2fe4b6d6aea1d667b4f685b07e7e24d",
+      "junit_path": "/workspace/ParkWeave/.runtime/independent-job-accounting-review/edges.xml",
+      "junit_sha256": "981777a4d62e6cd4e8a2f86cc84f6297ffc471b02aebf413860c6155950afdb0"
+    }
+  },
+  "scope": "Linux ABI and injected production WindowsBackend.stop_tree/run control flow, borrowed exact-process observation, measurement/budget/scheduling/native-command/diagnostic/sharding compatibility; no real Windows execution.",
+  "targeted_modules": [
+    "test_job_accounting_length",
+    "test_owned_job",
+    "test_controlled_job_measurement",
+    "test_job_budget",
+    "test_job_schedule",
+    "test_native_command",
+    "test_ci_diagnostics",
+    "test_regression_shards",
+    "test_bounded_observation",
+    "test_minimal_observations"
+  ],
+  "skipped_cases": [
+    {
+      "module": "tests.test_owned_job",
+      "name": "test_native_job_stops_owned_descendant_and_preserves_unrelated_and_primary[False]",
+      "reason": "native Windows JobObject required; Linux/mock is not coverage"
+    },
+    {
+      "module": "tests.test_owned_job",
+      "name": "test_native_job_stops_owned_descendant_and_preserves_unrelated_and_primary[True]",
+      "reason": "native Windows JobObject required; Linux/mock is not coverage"
+    },
+    {
+      "module": "tests.test_owned_job",
+      "name": "test_native_job_binding_refusal_stops_exact_suspended_child_before_body",
+      "reason": "native Windows suspended creation required"
+    },
+    {
+      "module": "tests.test_owned_job",
+      "name": "test_native_job_coordinator_abrupt_exit_closes_job_and_stops_tree",
+      "reason": "native Windows last-job-handle closure required"
+    },
+    {
+      "module": "tests.test_job_budget",
+      "name": "test_portable_job_clock_shares_prepare_and_stage_cutoff",
+      "reason": "portable PowerShell unavailable"
+    },
+    {
+      "module": "tests.test_job_budget",
+      "name": "test_portable_publication_sink_keeps_exact_utf8_lf_boundary",
+      "reason": "portable PowerShell unavailable"
+    },
+    {
+      "module": "tests.test_native_command",
+      "name": "test_powershell_bridge_preserves_arguments_and_public_phase_metadata",
+      "reason": "portable PowerShell bridge oracle; native Server separate"
+    },
+    {
+      "module": "tests.test_minimal_observations",
+      "name": "test_powershell_readonly_object_is_fixed_and_reason_keeps_exit_contract[inheritance-ROOT-4]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "module": "tests.test_minimal_observations",
+      "name": "test_powershell_readonly_object_is_fixed_and_reason_keeps_exit_contract[owner_mismatch-SESSIONS-2]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "module": "tests.test_minimal_observations",
+      "name": "test_powershell_readonly_object_is_fixed_and_reason_keeps_exit_contract[config_owner-CONFIG-2]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "module": "tests.test_minimal_observations",
+      "name": "test_identity_read_failure_does_not_misattribute_an_acl_object",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "module": "tests.test_minimal_observations",
+      "name": "test_restart_acl_checked_adjunct_object_reaches_complete_safe_capture[files-FILES-files_owner]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "module": "tests.test_minimal_observations",
+      "name": "test_restart_acl_checked_adjunct_object_reaches_complete_safe_capture[windows-processes.json-PROCESS_RECORD-state_owner]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "module": "tests.test_minimal_observations",
+      "name": "test_restart_acl_checked_adjunct_object_reaches_complete_safe_capture[windows-services.log-SERVICE_LOG-log_owner]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    }
+  ],
+  "verified_behaviors": [
+    {
+      "topic": "WinAPI output contract and ABI",
+      "evidence": "DWORD is 4 bytes, Accounting is 48 bytes, ActiveProcesses offset40. Production signature now uses POINTER(DWORD). Every query initializes a new zero length/output and consumes ActiveProcesses only after nonzero API success, original deadline and exact48 output length."
+    },
+    {
+      "topic": "Refusal and no inherited query state",
+      "evidence": "New14 candidate tests pass for missing/zero/short/long/MAXDWORD lengths, API failure despite a complete zero payload, nonzero-to-zero wait, subsequent missing length, and primary0/17/timeout handle closure."
+    },
+    {
+      "topic": "Independent combined fault edges",
+      "evidence": "Additional5 tests pass: complete length48 Active0/1 at original deadline refuse without pause/reterminate; length49 Active99 refuses immediately; absent/44-byte output with borrowed handle909 and primary17 yields unconfirmed cleanup, non-PASS exact-process receipt, exactly two observation stages, original thread303/parent202/job101 close order and no borrowed handle close."
+    },
+    {
+      "topic": "Metadata exactness and retained oracle",
+      "evidence": "Diagnostic schema1 unchanged;1147 old IDs all retained,74 added,1221 current AST IDs exact including unittest class paths. Failure privacy and count caps exercised by existing diagnostic/sharding tests. No production budget/oracle/workflow or permission changes."
+    }
+  ],
+  "abi": {
+    "dword_bytes": 4,
+    "accounting_bytes": 48,
+    "active_processes_offset": 40
+  },
+  "diagnostic_ids": {
+    "old": 1147,
+    "new": 1221,
+    "removed": [],
+    "exact_current_ast_match": true,
+    "schema_unchanged": true
+  },
+  "sources": [
+    {
+      "title": "Microsoft QueryInformationJobObject: class1 and returned bytes",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/jobapi2/nf-jobapi2-queryinformationjobobject"
+    },
+    {
+      "title": "Microsoft JOBOBJECT_BASIC_ACCOUNTING_INFORMATION layout",
+      "url": "https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_basic_accounting_information"
+    }
+  ],
+  "frozen_files": 305,
+  "source_drift": [],
+  "tracked_worktree_status": "",
+  "remote_refs": {
+    "refs/heads/candidate/job-accounting-length-20261010": "2bed062a6b365ae7c4c27cccb70ac2ed222d345b",
+    "refs/heads/dev/f1-foundation": "b6db56256df1c29c155faa67acf8463def87f5b9",
+    "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+  },
+  "remaining_limits": [
+    "All independent execution is offline/Linux with injected kernel/read backends; successful native returned length and real descendant terminal states remain NOT_RUN_NOT_ACCEPTED.",
+    "Original Win11 installation/protected authority/nativeJob/PowerShell/fullCI and42AT/EX acceptance remain unavailable or unaccepted.",
+    "Full repository NOT_PASSED_NOT_COMPLETED; previous resource461 and its independent111+5 belong to that earlier reviewed source only.",
+    "Original nonpreemptible native calls and borrowed-handle trust boundaries remain; exact-length validation does not certify arbitrary tree completion."
+  ],
+  "operations": {
+    "source_tests_docs_git_mutation": false,
+    "permissions_install_network_configuration_changed": false,
+    "real_windows_ci_model_execution": false,
+    "outputs": "Private runtime only"
+  },
+  "public_report_safe": true,
+  "raw_logs_private": true
+}
