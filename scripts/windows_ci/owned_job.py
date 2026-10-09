@@ -69,7 +69,7 @@ class WindowsBackend:
             'GetProcessId': ([HANDLE], DWORD),
             'ResumeThread': ([HANDLE], DWORD),
             'TerminateJobObject': ([HANDLE, ctypes.c_uint32], BOOL),
-            'QueryInformationJobObject': ([HANDLE, ctypes.c_int32, ctypes.c_void_p, DWORD, ctypes.c_void_p], BOOL),
+            'QueryInformationJobObject': ([HANDLE, ctypes.c_int32, ctypes.c_void_p, DWORD, ctypes.POINTER(DWORD)], BOOL),
         }
         for name, (args, result) in declarations.items():
             function = getattr(self.kernel, name)
@@ -224,11 +224,13 @@ class WindowsBackend:
             while True:
                 if time.monotonic() >= deadline:
                     raise OwnedJobError('JOB_STOP_UNCONFIRMED')
-                state = Accounting()
-                if not self.kernel.QueryInformationJobObject(job, 1, ctypes.byref(state), ctypes.sizeof(state), None):
+                state, length = Accounting(), DWORD()
+                if not self.kernel.QueryInformationJobObject(job, 1, ctypes.byref(state), ctypes.sizeof(state), ctypes.byref(length)):
                     raise OwnedJobError('JOB_QUERY_REFUSED')
                 if time.monotonic() >= deadline:
                     raise OwnedJobError('JOB_STOP_UNCONFIRMED')
+                if length.value != ctypes.sizeof(state):
+                    raise OwnedJobError('JOB_QUERY_REFUSED')
                 if state.ActiveProcesses == 0:
                     if observer is not None:
                         observer.capture('ACCOUNTING_ZERO')

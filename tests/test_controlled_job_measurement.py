@@ -53,7 +53,9 @@ class Kernel:
         return 1
     def QueryInformationJobObject(self,handle,kind,ptr,size,length):
         if not self.unrelated and self.state.mode=='query_fail':raise job.OwnedJobError('JOB_QUERY_REFUSED')
-        ctypes.cast(ptr,ctypes.POINTER(job.Accounting)).contents.ActiveProcesses=0;return 1
+        ctypes.cast(ptr,ctypes.POINTER(job.Accounting)).contents.ActiveProcesses=0
+        ctypes.cast(length,ctypes.POINTER(job.DWORD)).contents.value=size
+        return 1
 
 
 class Primary(measurement.MeasurementBackend):

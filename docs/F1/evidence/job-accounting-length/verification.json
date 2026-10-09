@@ -1,0 +1,87 @@
+{
+  "base_sha": "b6db56256df1c29c155faa67acf8463def87f5b9",
+  "contract_sha": "5953aa821fffa256d633ff728d84356b2572c4ed",
+  "metadata_contract_sha": "3e545c5a2f7fa412e0d00d0a25dde321d0868999",
+  "tests": {
+    "tests": "318",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "7",
+    "time": "7.275"
+  },
+  "passed": 311,
+  "by_module": {
+    "tests.test_job_accounting_length": 14,
+    "tests.test_owned_job": 101,
+    "tests.test_controlled_job_measurement": 44,
+    "tests.test_job_budget": 18,
+    "tests.test_job_schedule": 34,
+    "tests.test_native_command": 6,
+    "tests.test_ci_diagnostics": 59,
+    "tests.test_regression_shards": 42
+  },
+  "skipped": [
+    {
+      "module": "tests.test_owned_job",
+      "test": "test_native_job_stops_owned_descendant_and_preserves_unrelated_and_primary[False]",
+      "reason": "native Windows JobObject required; Linux/mock is not coverage"
+    },
+    {
+      "module": "tests.test_owned_job",
+      "test": "test_native_job_stops_owned_descendant_and_preserves_unrelated_and_primary[True]",
+      "reason": "native Windows JobObject required; Linux/mock is not coverage"
+    },
+    {
+      "module": "tests.test_owned_job",
+      "test": "test_native_job_binding_refusal_stops_exact_suspended_child_before_body",
+      "reason": "native Windows suspended creation required"
+    },
+    {
+      "module": "tests.test_owned_job",
+      "test": "test_native_job_coordinator_abrupt_exit_closes_job_and_stops_tree",
+      "reason": "native Windows last-job-handle closure required"
+    },
+    {
+      "module": "tests.test_job_budget",
+      "test": "test_portable_job_clock_shares_prepare_and_stage_cutoff",
+      "reason": "portable PowerShell unavailable"
+    },
+    {
+      "module": "tests.test_job_budget",
+      "test": "test_portable_publication_sink_keeps_exact_utf8_lf_boundary",
+      "reason": "portable PowerShell unavailable"
+    },
+    {
+      "module": "tests.test_native_command",
+      "test": "test_powershell_bridge_preserves_arguments_and_public_phase_metadata",
+      "reason": "portable PowerShell bridge oracle; native Server separate"
+    }
+  ],
+  "frozen_files": 305,
+  "source_drift": [],
+  "diagnostic_ids": {
+    "before": 1147,
+    "current": 1221,
+    "added": 74,
+    "removed": 0
+  },
+  "review": "PENDING_AFTER_ORDINARY_CANDIDATE_PUSH",
+  "native": "NOT_RUN_NOT_ACCEPTED",
+  "full": "NOT_PASSED_NOT_COMPLETED",
+  "formal42": "NOT_RUN",
+  "source_permissions_environment_workflow_changes": false,
+  "first_run": {
+    "passed": 310,
+    "failed": 1,
+    "skipped": 7,
+    "reason": "exact diagnostic AST allowlist correctly rejected missing IDs from prior integrated features and current new tests",
+    "log_sha256": "b95f3479d7ce27d7cf7b4d96078c79b03412a0a906a9f86ab82adfedcfb39c9f",
+    "private_log_retained": true
+  },
+  "baseline_reproduction": {
+    "mode": "OFFLINE_INJECTED_API_SUCCESS_NO_DATA",
+    "return_length_parameter": "NULL",
+    "result": "OWNED_TREE_STOPPED",
+    "real_windows_observation": false
+  }
+}

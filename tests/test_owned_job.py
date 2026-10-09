@@ -460,6 +460,7 @@ def test_eng074_real_stop_tree_optin_exact_handle_and_primary(tmp_path,monkeypat
         def QueryInformationJobObject(self,handle,kind,ptr,size,length):
             assert (handle,kind,size)==(101,1,48)
             ctypes.cast(ptr,ctypes.POINTER(JOB.Accounting)).contents.ActiveProcesses=0
+            ctypes.cast(length,ctypes.POINTER(JOB.DWORD)).contents.value=size
             events.append('original_query_zero');return 1
     class Reads:
         def identity(self,handle):
@@ -527,6 +528,7 @@ def test_eng074_real_stop_tree_single_budget_includes_native_call_cost(monkeypat
             events.append('query')
             if slow_operation=='query':now[0]+=5.
             ctypes.cast(ptr,ctypes.POINTER(JOB.Accounting)).contents.ActiveProcesses=0
+            ctypes.cast(length,ctypes.POINTER(JOB.DWORD)).contents.value=size
             return 1
     class Reads:
         def identity(self,*args):return 404,20.,'LIVE'
@@ -549,6 +551,7 @@ def test_eng074_default_stop_tree_remains_without_exact_target(monkeypatch):
         def TerminateJobObject(self,*args):return 1
         def QueryInformationJobObject(self,handle,kind,ptr,size,length):
             ctypes.cast(ptr,ctypes.POINTER(JOB.Accounting)).contents.ActiveProcesses=0
+            ctypes.cast(length,ctypes.POINTER(JOB.DWORD)).contents.value=size
             return 1
     backend=JOB.WindowsBackend.__new__(JOB.WindowsBackend);backend.kernel=Kernel()
     assert backend.stop_tree(101)=='OWNED_TREE_STOPPED'
