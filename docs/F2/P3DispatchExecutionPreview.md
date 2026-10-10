@@ -4,7 +4,7 @@
 
 在实际原P1资料确认与P2资源关联成功后，实际调用原service_dispatches.offer、command ACCEPT/DECLINE、executor_receipts CREATE step/event及dispatch_notices.enqueue。27个专属临时影子表，search_path只pg_temp，封闭代理只接受79个精确SQL；未知SQL、公有表回退、commit、P4写入和通知消费被拒绝。复制本轮实际P1/P2的Case/Run/preparation、双槽证据、确认hash和资源关联/组合receipt关系；使用新的模拟角色/UUID和影子资格，原人没有批准。原READ/EXECUTE/PREPARE/HOLD、原获派专员REVIEW_ASSIGNED、精确Run唯一当前executor及managed bridge继续判定，运行时不补正式Grant或指派。
 
-ACCEPT实际留下OFFER/ACCEPT事件和一个AWAITING_RECEIPT step及CREATE事件，没有回执正文；DECLINE留下OFFER/DECLINE且step为零，明确尚未接单。原enqueue实际生成4条未消费PENDING outbox，无delivered notice；换版后原接受拒绝保留OFFER及2条PENDING，无伪造ACCEPT。每个自有PG连接finally rollback/close，仅独立0700根/0600 SQLite的不可变预览及proof持久。全部public逐值和旧P1/P2 SQLite整文件不变（授权拒绝允许原authorization_audit），正式分派/回执/通知业务写入为零；预览UUID不能被正式分派或回执入口消费。
+ACCEPT实际留下OFFER/ACCEPT事件和一个AWAITING_RECEIPT step及CREATE事件，没有回执正文；DECLINE留下OFFER/DECLINE且step为零，明确尚未接单。原enqueue实际生成4条未消费PENDING outbox，无delivered notice；换版后原接受拒绝保留OFFER及2条PENDING，无伪造ACCEPT。每个自有PG连接finally rollback/close，仅独立0700根/0600 SQLite的不可变预览及proof持久。除原authorization_audit诊断表外，全部public业务表逐值和旧P1/P2 SQLite整文件不变，正式分派/回执/通知业务写入为零；预览UUID不能被正式分派或回执入口消费。
 
 独立scope保留Case、资料revision、双槽ID/version/hash、请求revision、P1/P2/P3注册合同、资源和原参与者资格generation绑定；当前授权先于历史，源CAS、同key幂等/异body拒绝、并发和提交前租约重验继续沿用。源变更保留旧STALE历史，只有明确新预演才重绑定。独立proof锚完整artifact/state/decision及全目标，单独改正文并重hash不能更改决定、actor、outbox、目标或receipt。基础设施503不伪装领域FAILED；提交后丢响应只GET核对原key。
 
