@@ -7,7 +7,7 @@ from psycopg.types.json import Jsonb
 from parkweave import controlled_plans as cp, registered_dependencies as deps
 from parkweave import resource_holds as rh
 from parkweave.api import create_app
-from test_service_case_steps import (link_fixture,receipt_fixture,preparation_fixture,read,step,
+from test_service_case_steps import (link_fixture,receipt_fixture,preparation_fixture,read,step,setup,
     verified,adopt,adopt_body,command,business,GOALS,resource_link)
 from test_service_plan_manual_lock import lock,stored
 from test_case_goal_results import complete,get,snapshot
@@ -249,3 +249,20 @@ def test_saved_local_adoption_stays_readable_when_current_declaration_version_ch
     assert command(f,p,'P4').status_code==409
     for adapter in ('P1','P2','P3','P4'):verified(f,p,adapter)
     assert read(f,p).json()['state']=='VERIFIED' and business(f)==old_business
+
+
+def test_real_initial_overflow_pending_step_is_affected_until_explicit_known_adoption(http_f):
+    f=http_f;p=setup(f,GOALS[3]);optional=[add_resource(f) for _ in range(130)]
+    r=adopt(f,p);assert r.status_code==201;original=stored(f,p)
+    assert original['dependency_manifest']['collections']['resources']['known'] is False
+    assert original['dependency_manifest']['collections']['resources']['count']==257
+    assert original['steps'][0]['verified_sha256'] is None
+    with f[1].connect() as c:c.execute('DELETE FROM synthetic_resource_grants WHERE principal_id=%s AND resource_id=ANY(%s)',('fixture-a',optional))
+    old_business=business(f);x=read(f,p).json();expected_impact(x,('P1','P2','P3','P4'),())
+    assert x['change_impact']['unknown_scope']=='THIS_CASE' and x['local_revision_required'] and x['can_adopt']
+    assert command(f,p,'P1').status_code==409 and recover(f,p,original['events'][0]['request_key']).json()['status']=='COMMITTED'
+    assert stored(f,p)['events']==original['events'] and business(f)==old_business
+    result=patch(f,p);assert result.status_code==201,result.text;now=stored(f,p)
+    assert now['id']==original['id'] and now['events'][:-1]==original['events']
+    assert set(now['events'][-1]['local_revision']['affected'])=={s['id'] for s in original['steps']} and not now['events'][-1]['local_revision']['preserved']
+    assert now['steps']==original['steps'] and business(f)==old_business

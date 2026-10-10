@@ -284,7 +284,7 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
                           manually_locked=bool(step.get('manual_lock'))))
     status='VERIFIED' if all(v=='VERIFIED' for v in states.values()) else 'BLOCKED' if binding_issues or any(v in ('BLOCKED','REPORTED_BLOCKED','LOCK_CONFLICT') for v in states.values()) else 'NEEDS_RECHECK' if any(v=='NEEDS_RECHECK' for v in states.values()) else 'ACTIVE'
     direct=[s['id'] for s in plan['steps'] if s.get('verified_sha256') and (set(issues[s['adapter_id']])-{'DEPENDENCY_REVISION_REQUIRES_EXPLICIT_ADOPT'} or s['verified_sha256']!=cp._hash(sources[s['adapter_id']]))]
-    affected=[s['id'] for s in plan['steps'] if binding_issues or s.get('invalidated') or states[s['adapter_id']] in ('BLOCKED','LOCK_CONFLICT')]
+    affected=[s['id'] for s in plan['steps'] if binding_issues or s['adapter_id'] in dependency_affected or s.get('invalidated') or states[s['adapter_id']] in ('BLOCKED','LOCK_CONFLICT')]
     impact=dict(scope='REGISTERED_CASE_CHAIN',unknown_scope='THIS_CASE' if binding_issues or dependency_unknown else None,
                 directly_changed=direct,affected=affected,preserved=[s['id'] for s in plan['steps'] if s['id'] not in affected])
     events=plan['events'] if owner else [{k:e[k] for k in ('id','revision','action','step_id')} for e in plan['events']]
