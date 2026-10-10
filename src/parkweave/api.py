@@ -356,6 +356,9 @@ def create_app(store: Store) -> FastAPI:
     @app.get('/api/preparations/{preparation_id}/service-case-plan')
     def service_case_plan_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return service_steps.read(store,token(authorization),preparation_id)
+    @app.get('/api/preparations/{preparation_id}/service-case-plan/command-recovery')
+    def service_case_plan_recover(preparation_id: UUID,authorization: str | None=Header(default=None),idempotency_key: str | None=Header(default=None)):
+        return service_steps.recover(store,token(authorization),preparation_id,resource_key(idempotency_key) if idempotency_key is not None else None)
     @app.post('/api/preparations/{preparation_id}/service-case-plan',status_code=201)
     def service_case_plan_adopt(preparation_id: UUID,data: service_steps.Adopt,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return service_steps.adopt(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
