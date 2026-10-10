@@ -1,0 +1,298 @@
+{
+  "candidate_sha": "23f9a2f9285366a9cd6f3192ec159fc148d84f21",
+  "baseline_sha": "32879934025bb2148156797f39b91d22075e895e",
+  "original_contract_sha": "ae9fa1381732664d6f86f967c0955c59ddafea83",
+  "hot_expiry_supplement_contract_sha": "6274afd0000067ed73e1909682a11d15551d28be",
+  "minimal_projection_supplement_contract_sha": "894911dfb0fe23aa566802d30c33abf0caa84f16",
+  "manifest_sha256": "8689a60548cb3969de8a28c01f4de47461fe384f9c507367a307f02ac29e8bde",
+  "decision": "LIMITED_PASS",
+  "status": "completed",
+  "previous_reviews": [
+    {
+      "candidate": "d5efa52fea45a8b76c8cb084b468b02332ed910f",
+      "decision": "BLOCKED",
+      "report_sha256": "90919ddff0f14f80a1af7c3f5d22fd3e4869b41c7ce1593ecf3afe99fa104c63",
+      "untouched": true,
+      "counts_not_reused": true
+    },
+    {
+      "candidate": "92d6f491209e166ec61f6471232c5491feaaac4e",
+      "decision": "BLOCKED",
+      "report_sha256": "bf6ded63cd913124b72d2456e98a0657f17c79b8e95f01a7287a56263c38661b",
+      "untouched": true,
+      "counts_not_reused": true
+    }
+  ],
+  "resolved_findings": [
+    {
+      "id": "HOT_HANDLE_TTL",
+      "independent_current_sha_retests": 3,
+      "result": "PASS",
+      "scenarios": [
+        "Original expired hot recovery button no longer sends original-key GET.",
+        "Original expired servicePlanWrite recovery guard does not replay or query original key.",
+        "Actual server recovery 200 delivered after expiry is rejected."
+      ]
+    },
+    {
+      "id": "MINIMAL_INVALID_VIEW_RAW_EVENT",
+      "independent_current_sha_retests": 2,
+      "result": "PASS",
+      "scenarios": [
+        "Actual successful original BEGIN private reason, then later original REPORT_FAILURE saved with lost response, then handle expiry: raw event removed.",
+        "Actual successful original VERIFY_P1 private reason/source snapshot, then later original BEGIN_P2 saved with lost response, then handle expiry: raw event and source snapshot removed."
+      ],
+      "observations": [
+        "event-privacy-BEGIN.json",
+        "event-privacy-VERIFY.json"
+      ]
+    }
+  ],
+  "findings": [],
+  "independent_probe": {
+    "module_count": 4,
+    "junit": {
+      "tests": "23",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "63.776"
+    },
+    "passed": 23,
+    "product_contract_failures": 0,
+    "observer_failures": 0,
+    "checks": [
+      "All original three TTL and two event privacy failure scenarios independently rerun on this exact candidate.",
+      "Delayed original ADOPT after NOT_OBSERVED can commit; the page never replays it.",
+      "Cold unknown plus current EXECUTE revocation denies recovery and delayed original submission.",
+      "Second-generation ADOPT recovery stays bound to the previous generation after third adoption.",
+      "Explicit invalid key headers are rejected without business state changes.",
+      "Hot retry/release refuses missing or changed stored handles without deleting a valid same-name replacement.",
+      "Changed stored metadata while actual GET is in flight refuses the old 200; current actual 403 clears private memory first.",
+      "Additional unlisted private properties on view, step, event and history, plus private binding_issues, disappear from expired/missing/changed fallback projection. Drafts and PostgreSQL history are preserved.",
+      "Three repeated valid original-key GETs retain the exact original expires and storage bytes, with no POST or business writes.",
+      "Actual original POST403 takes precedence over expiry and clears private views and draft while keeping original opaque storage."
+    ],
+    "same_sha_window": true
+  },
+  "code_review": {
+    "change_scope": "The actual product change since 92 is limited to invalidateServicePlanRecovery constructing a positive whitelist, with no spread of the view or any step object. No API/database/schema/grant/protocol change.",
+    "minimal_projection": "The fallback contains only authenticated caller references, preparation/Case/Run/plan revisions, minimal step/dependency/event/history IDs and explicit unverified/read-only flags. event, command_receipt, binding, binding_issues, current_preview, goal coverage, source hashes and snapshots are cleared. Unknown properties cannot pass through the whitelist.",
+    "expiry_and_storage": "The existing corrected strict stored-handle checks remain before hot GET, after GET and original POST, and before release; all eleven metadata values and the original expiry must match. Invalid state does not automatically POST or call ordinary observation-writing plan GET.",
+    "auth_context_priority": "Current 403 clears private memory and DOM before handling expired or changed local storage. Original generation/preparation/token fencing rejects stale responses; selected original page regressions run again on this exact SHA.",
+    "readonly_backend": "The backend recovery remains unchanged and calls _view with event=None, observe=False and fresh_clock=True, followed by minimal source/event/history redaction. Current authority, source replacement, CAS/idempotency, lock waits and real resource/Run expiry tests are rerun in the related API module.",
+    "scope": "Original synthetic roles and business contracts only. No new business command, real data, model call, notification, deployment, formal service publication, Case completion, main change, credentials or security network configuration."
+  },
+  "related_range_reason": "The fix changes only a browser fallback projection. Independently rerun recovery API and full recovery browser modules, goal-results browser for shared read-only/navigation/context guards, and CI diagnostic consistency. Previously passed broader modules are historical and their counts are not used as current acceptance.",
+  "remaining_limits": [
+    "LIMITED_PASS applies only to this bounded original synthetic service-plan unknown-command recovery slice and the explicitly rerun current-SHA ranges.",
+    "Formal business publication, real fulfillment, Case FULFILLED authority/criteria and multi-purpose sharing require separate authorized business scope.",
+    "Only isolated synthetic PostgreSQL, loopback HTTP and Linux Chromium are exercised. Native Windows, real mobile/Mac, original full AT/EX and the full repository are not accepted.",
+    "Earlier unpushed a823a28 Windows changes are not migrated or accepted.",
+    "The original two BLOCKED reports and failed logs remain immutable and private; their passing counts are not reused for this candidate."
+  ],
+  "completed_at_utc": "2026-10-10T06:03:11.004244+00:00",
+  "source_before": {
+    "head": "23f9a2f9285366a9cd6f3192ec159fc148d84f21",
+    "manifest_sha256": "8689a60548cb3969de8a28c01f4de47461fe384f9c507367a307f02ac29e8bde",
+    "source_count": 323,
+    "drift": [],
+    "status": ""
+  },
+  "source_after": {
+    "head": "23f9a2f9285366a9cd6f3192ec159fc148d84f21",
+    "manifest_sha256": "8689a60548cb3969de8a28c01f4de47461fe384f9c507367a307f02ac29e8bde",
+    "source_count": 323,
+    "drift": [],
+    "status": "",
+    "private_directory_mode": "0o700"
+  },
+  "remote_verified": {
+    "refs/heads/candidate/service-plan-cold-recovery-20261010": "23f9a2f9285366a9cd6f3192ec159fc148d84f21",
+    "refs/heads/dev/f1-foundation": "32879934025bb2148156797f39b91d22075e895e",
+    "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+  },
+  "remote_final_verification": {
+    "first_python_subprocess_attempt": {
+      "returncode": 128,
+      "safe_error": "could not read Username for https://github.com: No such device or address",
+      "fault_retained": "remote-final-fault.json"
+    },
+    "default_shell_retry": {
+      "returncode": 0,
+      "actual_refs_verified": {
+        "refs/heads/candidate/service-plan-cold-recovery-20261010": "23f9a2f9285366a9cd6f3192ec159fc148d84f21",
+        "refs/heads/dev/f1-foundation": "32879934025bb2148156797f39b91d22075e895e",
+        "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+      },
+      "stdout": "remote-final-stdout.log",
+      "stderr": "remote-final-stderr.log"
+    },
+    "credentials_or_network_configuration_modified": false
+  },
+  "ancestry": {
+    "88403af18b95b361114b303c3fae636f286d91b4": true,
+    "32879934025bb2148156797f39b91d22075e895e": true,
+    "894911dfb0fe23aa566802d30c33abf0caa84f16": true
+  },
+  "independent_related_regression": {
+    "module_count": 4,
+    "modules": [
+      "tests/test_service_plan_recovery.py",
+      "tests/test_service_plan_recovery_browser.py",
+      "tests/test_case_goal_results_browser.py",
+      "tests/test_ci_diagnostics.py"
+    ],
+    "junit": {
+      "tests": "184",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "317.771"
+    },
+    "by_module": {
+      "tests.test_service_plan_recovery": {
+        "tests": 30,
+        "passed": 30,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_service_plan_recovery_browser": {
+        "tests": 67,
+        "passed": 67,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_case_goal_results_browser": {
+        "tests": 28,
+        "passed": 28,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_ci_diagnostics": {
+        "tests": 59,
+        "passed": 59,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      }
+    },
+    "result": "PASS",
+    "actual_postgresql_http_chromium": true,
+    "minimal_subprocess_environment": true,
+    "counts_belong_only_to_exact_current_sha": true
+  },
+  "artifacts": {
+    "--report-progress.json": {
+      "sha256": "8361338a096e8cd85141a6d3d04662c77d98735071b64f53e6f4f94eb1a946d2",
+      "private_raw_failure": false
+    },
+    "after.json": {
+      "sha256": "07f79a5957303c76869c3684f8161d6eb4fa3db4efd71597a92a6dc2c78189c0",
+      "private_raw_failure": false
+    },
+    "ancestry.json": {
+      "sha256": "cd562ad22fddd1743dc1fa791aef7b61421897eb2c359eef634efe5a386a4034",
+      "private_raw_failure": false
+    },
+    "before.json": {
+      "sha256": "d9e54fe08130e7679b31c8990f4dfd59dad1a929bd54f0df4a993aa5018344b3",
+      "private_raw_failure": false
+    },
+    "event-privacy-BEGIN.json": {
+      "sha256": "9c18d4b5bf1a531b5101eb8938327715af3c7cf435e7476c2933176f151b5488",
+      "private_raw_failure": false
+    },
+    "event-privacy-VERIFY.json": {
+      "sha256": "a406112820ce734271a9f3dc7c3d7430d9e4ac62661717ee0e8578cf3fddec16",
+      "private_raw_failure": false
+    },
+    "hot-expiry-button.json": {
+      "sha256": "404b7101f3564e388853626a2e9eb31fbed96e97f9bc4511b249334519b6780e",
+      "private_raw_failure": false
+    },
+    "hot-expiry-programmatic_write_guard.json": {
+      "sha256": "404b7101f3564e388853626a2e9eb31fbed96e97f9bc4511b249334519b6780e",
+      "private_raw_failure": false
+    },
+    "inflight-expiry.json": {
+      "sha256": "703e592d48dec7bf30fb29bfec95d23a107ae4f6740277e1a876a53d45fef98d",
+      "private_raw_failure": false
+    },
+    "probe-execution.json": {
+      "sha256": "13166600c0798f7baebf9b1bc8924111e69557e4139a6edd00796f2d94ca35c9",
+      "private_raw_failure": false
+    },
+    "probe-junit.xml": {
+      "sha256": "e8d034f26da419726ec4e095f7728e4e69c43d3ec68e8fbd50b7d830980a7a61",
+      "private_raw_failure": false
+    },
+    "probe-progress.json": {
+      "sha256": "dadfbc12452d0745a3aa9877a405784fb611665dfe33d1f1e4af7491d0bc30a8",
+      "private_raw_failure": false
+    },
+    "probe-pytest.log": {
+      "sha256": "84fc75dd493e40c1da7dee67d8b53ce102720b4300f64a72e83bde4e546ccde6",
+      "private_raw_failure": false
+    },
+    "related-execution.json": {
+      "sha256": "e848ce0d937474d36102c6e8e84798664f800affc662814b0ea020ab4f6e6494",
+      "private_raw_failure": false
+    },
+    "related-junit.xml": {
+      "sha256": "b062aa505a912394a7a46bc81f4ad69c0edf5f77012076bee14548572db64009",
+      "private_raw_failure": false
+    },
+    "related-progress.json": {
+      "sha256": "76b63f1171228d9fad87c334611421e4f8ed7ad2a0875f6905344196b42070ce",
+      "private_raw_failure": false
+    },
+    "related-pytest.log": {
+      "sha256": "20ac3326ea6ed9c0483411fe30fb3244d2f00dc34f4dd6fa53d44928396cb26f",
+      "private_raw_failure": false
+    },
+    "remote-final-fault.json": {
+      "sha256": "5ee0b04a3d83fdcfeb3e01ac4ea3f9b5879f44daa7e5cd161c4c4ae13535dbe9",
+      "private_raw_failure": false
+    },
+    "remote-final-stderr.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "private_raw_failure": false
+    },
+    "remote-final-stdout.log": {
+      "sha256": "b9259e95a26c7ee161395d3fb7676aaaef3081d7591e43c850e88486c006ace1",
+      "private_raw_failure": false
+    },
+    "remote.json": {
+      "sha256": "1ca52663e24e84b24c4c9812178381cd90c00e20613643bce37eaed6ef35b2cf",
+      "private_raw_failure": false
+    },
+    "run.py": {
+      "sha256": "ce39af9c5df43df4da8d392ee09a0220975a8174c3d0c0ef5080b0b22b99df94",
+      "private_raw_failure": false
+    },
+    "test_independent_extra.py": {
+      "sha256": "f4bc9434a1a72d68a5c9729121700d03f44aa3d943c707cba42dc9cbd04ee229",
+      "private_raw_failure": false
+    },
+    "test_independent_inflight_expiry.py": {
+      "sha256": "ffcecd71d6a858175fed0ca5012f386b7277e6d467ff301c60992b4d3121c86c",
+      "private_raw_failure": false
+    },
+    "test_independent_probe.py": {
+      "sha256": "7ff7d6ae1cbdf7cc100fbff837eda2c214172f38cd9eba3f3bb19f82b4d4726f",
+      "private_raw_failure": false
+    },
+    "test_independent_whitelist.py": {
+      "sha256": "75426e93f12f54d4781e89a04e77b058e44baf2fb7428c1e2668986053b175a3",
+      "private_raw_failure": false
+    },
+    "wrapper.py": {
+      "sha256": "91a51e2708e5f671a20397ac4d848c51ecec87b19744535e57fc3d0d1ff86ce7",
+      "private_raw_failure": false
+    }
+  }
+}

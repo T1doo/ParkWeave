@@ -1,0 +1,266 @@
+{
+  "candidate_sha": "92d6f491209e166ec61f6471232c5491feaaac4e",
+  "baseline_sha": "32879934025bb2148156797f39b91d22075e895e",
+  "original_contract_sha": "ae9fa1381732664d6f86f967c0955c59ddafea83",
+  "hot_expiry_supplement_contract_sha": "6274afd0000067ed73e1909682a11d15551d28be",
+  "manifest_sha256": "4ebf5467901ce4daf7047ee5ff9cabf13aa0a408e656df0ed500784bf04ec5de",
+  "decision": "BLOCKED",
+  "status": "completed",
+  "prior_review": {
+    "candidate": "d5efa52fea45a8b76c8cb084b468b02332ed910f",
+    "report_sha256": "90919ddff0f14f80a1af7c3f5d22fd3e4869b41c7ce1593ecf3afe99fa104c63",
+    "untouched": true,
+    "counts_not_reused": true
+  },
+  "prior_finding_resolution": {
+    "HOT_HANDLE_TTL": "The three independent original failure scenarios now pass on this exact candidate: expired hot retry, expired write guard, and a real recovery response arriving after expiry."
+  },
+  "findings": [
+    {
+      "id": "MINIMAL_INVALID_VIEW_RAW_EVENT",
+      "severity": "contract_blocker",
+      "file": "src/parkweave/web.html",
+      "function": "invalidateServicePlanRecovery",
+      "reproduction": [
+        "Use actual UI and loopback HTTP to save original BEGIN with a private reason, or VERIFY_P1 with a private reason and sources.",
+        "Issue the next legitimate REPORT_FAILURE_P1 or BEGIN_P2 and intentionally lose its actual saved HTTP response.",
+        "Advance only browser Date.now beyond the original handle expiry, then use hot recovery.",
+        "The expiry guard correctly rejects without any new GET/POST, discards pending and handle and preserves a read-only view.",
+        "The read-only view was made by spreading the old full view; its raw event remains, including the previous private reason. The VERIFY scenario also retains the full event.sources snapshot."
+      ],
+      "impact": "The invalid-handle fallback violates the frozen minimum projection and privacy contract. This is retained private data in servicePlanView, not an observed new unauthorized read, external disclosure, repeated submission or database write.",
+      "safe_observations": [
+        "event-privacy-BEGIN.json",
+        "event-privacy-VERIFY.json"
+      ],
+      "minimal_fix": "Construct the invalidated minimum projection using explicit safe fields, including event:null and minimal step/event/history fields. Preserve drafts and existing history references, but do not retain previous raw body/source objects. Add real page tests after a previously successful BEGIN/VERIFY."
+    }
+  ],
+  "independent_probe": {
+    "module_count": 3,
+    "junit": {
+      "tests": "18",
+      "failures": "2",
+      "errors": "0",
+      "skipped": "0",
+      "time": "42.142"
+    },
+    "passed": 16,
+    "product_contract_failures": 2,
+    "observer_failures": 0,
+    "checks": [
+      "Original three TTL failures independently rerun and passed.",
+      "Delayed original ADOPT after NOT_OBSERVED can commit; the page still never replays it.",
+      "Cold unknown plus current EXECUTE revocation denies recovery and delayed original submission.",
+      "Second generation ADOPT recovery stays bound to its previous generation after third adoption.",
+      "Explicit invalid key headers are rejected without business state changes.",
+      "Hot retry/release rejects missing or changed localStorage and retains a valid same-name replacement.",
+      "Stored handle mutation while an actual GET is in flight refuses the old 200; a current actual 403 takes priority and clears private views.",
+      "Previous successful original BEGIN and VERIFY raw event privacy both fail."
+    ],
+    "same_sha_window": true
+  },
+  "code_review": {
+    "new_change_scope": "The backend recovery, original CAS and event proof logic are unchanged from d5. The new product changes are confined to browser validation and fallback projection; no new business command/table/migration/grant.",
+    "expiry_and_storage": "Hot GET, response acceptance, original POST response acceptance and release reread the strict stored handle and compare all eleven fields. Same-name valid changed metadata is preserved. Invalid state does not automatically POST or call the ordinary observation-writing plan GET.",
+    "auth_context_priority": "Current 403 remains prior to storage invalidation; stale context is rejected by the original generation/preparation/token fence before responses are accepted. Independent current-403 plus stored-key-change test passed.",
+    "readonly_backend": "Backend recovery still calls _view with event=None, observe=False and fresh_clock=True and then minimizes events/history and sources. No matching raw event field is introduced in the server recovery response. Independently rerun business snapshots and authority/deadline cases are in the related regression.",
+    "fallback_privacy": "The invalid-handle client projection is incomplete because object spread retains raw event. This blocks the candidate despite the fixed original TTL scenarios."
+  },
+  "remaining_limits": [
+    "Do not merge this candidate into dev until repaired, normally pushed and independently re-reviewed.",
+    "This review uses synthetic PostgreSQL, loopback HTTP and Linux Chromium only; native Windows, original full AT/EX and the full repository are not accepted.",
+    "Formal business publication, real fulfillment, Case completion authority/criteria and multi-purpose sharing remain their separate business scope.",
+    "No real data, models, external notifications, new policy permissions, deployment, main modification, credential or security network changes.",
+    "Raw failed logs/JUnit remain private; publish only safe structured findings and observations."
+  ],
+  "completed_at_utc": "2026-10-10T05:51:27.750456+00:00",
+  "source_before": {
+    "head": "92d6f491209e166ec61f6471232c5491feaaac4e",
+    "manifest_sha256": "4ebf5467901ce4daf7047ee5ff9cabf13aa0a408e656df0ed500784bf04ec5de",
+    "source_count": 323,
+    "drift": [],
+    "status": ""
+  },
+  "source_after": {
+    "head": "92d6f491209e166ec61f6471232c5491feaaac4e",
+    "manifest_sha256": "4ebf5467901ce4daf7047ee5ff9cabf13aa0a408e656df0ed500784bf04ec5de",
+    "source_count": 323,
+    "drift": [],
+    "status": "",
+    "private_directory_mode": "0o700"
+  },
+  "remote_verified": {
+    "refs/heads/candidate/service-plan-cold-recovery-20261010": "92d6f491209e166ec61f6471232c5491feaaac4e",
+    "refs/heads/dev/f1-foundation": "32879934025bb2148156797f39b91d22075e895e",
+    "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+  },
+  "independent_related_regression": {
+    "module_count": 8,
+    "modules": [
+      "tests/test_service_plan_recovery.py",
+      "tests/test_service_plan_recovery_browser.py",
+      "tests/test_service_case_steps.py",
+      "tests/test_bounded_planning.py",
+      "tests/test_case_goal_results.py",
+      "tests/test_case_goal_results_browser.py",
+      "tests/test_isolated_run_access.py",
+      "tests/test_preparation.py"
+    ],
+    "junit": {
+      "tests": "326",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "391.338"
+    },
+    "by_module": {
+      "tests.test_service_plan_recovery": {
+        "tests": 30,
+        "passed": 30,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_service_plan_recovery_browser": {
+        "tests": 59,
+        "passed": 59,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_service_case_steps": {
+        "tests": 68,
+        "passed": 68,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_bounded_planning": {
+        "tests": 29,
+        "passed": 29,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_case_goal_results": {
+        "tests": 44,
+        "passed": 44,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_case_goal_results_browser": {
+        "tests": 28,
+        "passed": 28,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_isolated_run_access": {
+        "tests": 33,
+        "passed": 33,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_preparation": {
+        "tests": 35,
+        "passed": 35,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      }
+    },
+    "result": "PASS",
+    "actual_postgresql_http_chromium": true,
+    "minimal_subprocess_environment": true,
+    "counts_belong_only_to_exact_current_sha": true
+  },
+  "artifacts": {
+    "after.json": {
+      "sha256": "6fc27735c26d64940052646c73a602bc1939a4aae456fcc18a6502356b82a36b",
+      "private_raw_failure": false
+    },
+    "before.json": {
+      "sha256": "e95d7a7a3e4784495d52cbfe2acbc8b104326c7336c8b9f736253c1bb6daf121",
+      "private_raw_failure": false
+    },
+    "event-privacy-BEGIN.json": {
+      "sha256": "3e75c9ba860fa9ff1efbb9b2be50f2bf93ba3cc53436dbff64a742b19b6dcf0f",
+      "private_raw_failure": false
+    },
+    "event-privacy-VERIFY.json": {
+      "sha256": "c7d8f486e70c0c4e8d5dd76dedb3248e20ffa1e7509b425463b71a8f087c4da3",
+      "private_raw_failure": false
+    },
+    "hot-expiry-button.json": {
+      "sha256": "404b7101f3564e388853626a2e9eb31fbed96e97f9bc4511b249334519b6780e",
+      "private_raw_failure": false
+    },
+    "hot-expiry-programmatic_write_guard.json": {
+      "sha256": "404b7101f3564e388853626a2e9eb31fbed96e97f9bc4511b249334519b6780e",
+      "private_raw_failure": false
+    },
+    "inflight-expiry.json": {
+      "sha256": "703e592d48dec7bf30fb29bfec95d23a107ae4f6740277e1a876a53d45fef98d",
+      "private_raw_failure": false
+    },
+    "probe-execution.json": {
+      "sha256": "a5910ddc727f85a41b68555b762800e3e63526491fc045b82a3919336cb80d14",
+      "private_raw_failure": false
+    },
+    "probe-junit.xml": {
+      "sha256": "963bda4d2b3f1b3b933c3249af7030b959726279d2df56c4f675558a7f8ce479",
+      "private_raw_failure": true
+    },
+    "probe-progress.json": {
+      "sha256": "ad4515d5a9068c14f0dbb3e474151c68dd7973291e18a9dc1bf6d6da59c460b8",
+      "private_raw_failure": false
+    },
+    "probe-pytest.log": {
+      "sha256": "6c162e9c4dc2514794d13ea2a4e2eab5953f4ac7f262ae7f8135474d0b36fff7",
+      "private_raw_failure": true
+    },
+    "related-execution.json": {
+      "sha256": "1f8cfb021e185397152c2e97625d0bf07088ffea2a0cf7d4b3cf645ddc5205f5",
+      "private_raw_failure": false
+    },
+    "related-junit.xml": {
+      "sha256": "f915624c0e473ddfe754a4664a646f3d4f8aa633cdc3dcdc7bad7e3b672e01e3",
+      "private_raw_failure": false
+    },
+    "related-progress.json": {
+      "sha256": "4f3100c01b3b53921ffdd7b5c5f738bbe4dea5e7a918435d0eec79d70ea24287",
+      "private_raw_failure": false
+    },
+    "related-pytest.log": {
+      "sha256": "11b7488acc20a3afdd66ad77e81626683593fef9985472f5b0a51a1d6ea379f8",
+      "private_raw_failure": false
+    },
+    "remote.json": {
+      "sha256": "43d190a5152e81b52d772ec919fab256755e402f58f4132b918158845aa020fa",
+      "private_raw_failure": false
+    },
+    "run.py": {
+      "sha256": "f7ad2fb85426ac216d548b00e3a237b65ebfc0cc77cb1ba09b1bcf1f143d3c94",
+      "private_raw_failure": false
+    },
+    "test_independent_extra.py": {
+      "sha256": "e9cbb690ed192bdf20451a9e85d9c5e72449fad633464179c551cd1b89696605",
+      "private_raw_failure": false
+    },
+    "test_independent_inflight_expiry.py": {
+      "sha256": "5eff329820c991d23976b483fd5e1cf87a45c8e65ae31ea942c081ca9c427e11",
+      "private_raw_failure": false
+    },
+    "test_independent_probe.py": {
+      "sha256": "65a633349bc95ca21205c3c8bfb40eec3fc09bdc5d09ea5eb2162ec20a3fa7c7",
+      "private_raw_failure": false
+    },
+    "wrapper.py": {
+      "sha256": "95695d3e42ba3320d13c947ba8f8c1d5299c0ccf8bd31c04d942aadc68f58332",
+      "private_raw_failure": false
+    }
+  }
+}

@@ -1,0 +1,322 @@
+{
+  "candidate_sha": "d5efa52fea45a8b76c8cb084b468b02332ed910f",
+  "baseline_sha": "32879934025bb2148156797f39b91d22075e895e",
+  "contract_sha": "ae9fa1381732664d6f86f967c0955c59ddafea83",
+  "manifest_sha256": "3e0e48d869996d858eb0ddc652780e29f8ca8783a80a9b9946e800bbe98133ea",
+  "decision": "BLOCKED",
+  "status": "completed",
+  "findings": [
+    {
+      "id": "HOT_HANDLE_TTL",
+      "severity": "contract_blocker",
+      "file": "src/parkweave/web.html",
+      "line": 888,
+      "reproduction": [
+        "Actual original BEGIN saved through loopback HTTP, response intentionally lost; original opaque handle persisted.",
+        "Advance only browser Date.now to original expires+1; current identity and server authorizations remain unchanged.",
+        "Click original unknown recovery button, or call the existing servicePlanWrite recovery guard.",
+        "Both issue one original-key GET and accept COMMITTED with observed=true; expired handle remains stored.",
+        "Separately, start a valid GET, hold its actual server 200, advance browser Date.now beyond original expiry, then deliver; expired response is accepted."
+      ],
+      "impact": "The original 24-hour maximum is only enforced by the cold localStorage reader, while hot in-memory recovery and response delivery bypass expiry. No duplicate POST, business write, or unauthorized read was observed in these reproductions.",
+      "minimal_fix": "Revalidate the strict stored handle and exact original metadata before each hot recovery, after each recovery response, and before explicit release. Expired or damaged handles may be cleared without claiming the original submission failed; do not automatically POST or invoke ordinary plan GET observation writes."
+    }
+  ],
+  "code_review": {
+    "readonly_get": "The recovery path deep-copies the plan and passes observe=False. It never calls ordinary plan read/replay commands. No bounded PlanBlocked observation is emitted on the inspected recovery call graph. GET SQL business snapshots remain unchanged in independently executed tests.",
+    "original_authority": "Current READ and original owner PREPARE/EXECUTE, assigned specialist scope, executor scoped Run plus current own offer are enforced; final context authentication occurs after source locks. This retains the existing authorization contract.",
+    "proof_and_history": "Original ADOPT/command fingerprints, event sequence/type bounds, Case/Run bindings, previous plan revision, actor/key boundary and minimal history projection are checked. Fingerprints are consistency evidence within the existing trusted database contract, not administrator signatures.",
+    "source_deadlines": "fresh_clock=True samples current sources again after possible waits; final authentication and Store managed access checks enforce Run deadlines. Relevant actual expiry tests are part of the independent regression window.",
+    "storage_bounds": "Initial save and cold read enforce eleven metadata fields, eight handles, 640 bytes and 24h, with stable expiry on matching repeat save. Hot expiry is the blocker above.",
+    "ui_context": "Response handling checks service plan generation, preparation and token; stale 200/403/POST response regressions are included. Current 403 forces private in-memory and DOM clearing without deleting original opaque storage.",
+    "scope": "No new table/migration/grant, business execution, real data, model call, notification, deployment, Case completion or main write."
+  },
+  "window_accounting": [
+    {
+      "window": "probe",
+      "tests_collected": 0,
+      "result": "HARNESS_ERROR",
+      "cause": "Independent pytest plugin used an unsupported hook argument name; original log/source retained."
+    },
+    {
+      "window": "probe-corrected-harness",
+      "module_count": 1,
+      "tests": 9,
+      "passed": 5,
+      "failures": 4,
+      "seconds": 15.469,
+      "failure_classification": {
+        "product_contract": 2,
+        "independent_observer": 2
+      },
+      "probe_source": "test_independent_probe_window1.py"
+    },
+    {
+      "window": "probe-observer-correction",
+      "module_count": 1,
+      "selected_tests": 5,
+      "passed": 5,
+      "failures": 0,
+      "seconds": 4.624,
+      "note": "Current preparation revision was supplied for the third generation, and an empty header was set explicitly instead of silently omitted by an old helper. These are selected checks, not a full rerun.",
+      "probe_source": "test_independent_probe.py"
+    },
+    {
+      "window": "inflight-expiry",
+      "module_count": 1,
+      "tests": 1,
+      "passed": 0,
+      "failures": 1,
+      "seconds": 5.216,
+      "failure_classification": {
+        "product_contract": 1
+      },
+      "probe_source": "test_independent_inflight_expiry.py"
+    }
+  ],
+  "remaining_limits": [
+    "This candidate must not merge into dev until repaired, separately pushed and independently re-reviewed.",
+    "Only synthetic local PostgreSQL/loopback HTTP/Linux Chromium evidence; no native Windows, real mobile/Mac, full repository or original full AT/EX acceptance.",
+    "Formal publication, real fulfillment, Case FULFILLED authority/criteria and multi-purpose sharing require their separate business scope.",
+    "Earlier unpushed Windows a823a28 changes were not migrated or accepted.",
+    "Raw failed logs/JUnit include synthetic fixture tokens and remain private; only this safe structured report and safe reproductions may be published."
+  ],
+  "remote_verified": {
+    "candidate": "d5efa52fea45a8b76c8cb084b468b02332ed910f",
+    "dev": "32879934025bb2148156797f39b91d22075e895e",
+    "main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+  },
+  "completed_at_utc": "2026-10-10T05:39:50.902284+00:00",
+  "source_before": {
+    "head": "d5efa52fea45a8b76c8cb084b468b02332ed910f",
+    "manifest_sha256": "3e0e48d869996d858eb0ddc652780e29f8ca8783a80a9b9946e800bbe98133ea",
+    "source_count": 323,
+    "drift": [],
+    "status": ""
+  },
+  "source_after": {
+    "head": "d5efa52fea45a8b76c8cb084b468b02332ed910f",
+    "manifest_sha256": "3e0e48d869996d858eb0ddc652780e29f8ca8783a80a9b9946e800bbe98133ea",
+    "source_count": 323,
+    "drift": [],
+    "status": "",
+    "private_directory_mode": "0o700"
+  },
+  "ancestry": {
+    "88403af18b95b361114b303c3fae636f286d91b4": true,
+    "32879934025bb2148156797f39b91d22075e895e": true,
+    "ae9fa1381732664d6f86f967c0955c59ddafea83": true
+  },
+  "independent_related_regression": {
+    "module_count": 8,
+    "modules": [
+      "tests/test_service_plan_recovery.py",
+      "tests/test_service_plan_recovery_browser.py",
+      "tests/test_service_case_steps.py",
+      "tests/test_bounded_planning.py",
+      "tests/test_case_goal_results.py",
+      "tests/test_case_goal_results_browser.py",
+      "tests/test_isolated_run_access.py",
+      "tests/test_preparation.py"
+    ],
+    "junit": {
+      "tests": "306",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0",
+      "time": "334.218"
+    },
+    "by_module": {
+      "tests.test_service_plan_recovery": {
+        "tests": 30,
+        "passed": 30,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_service_plan_recovery_browser": {
+        "tests": 39,
+        "passed": 39,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_service_case_steps": {
+        "tests": 68,
+        "passed": 68,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_bounded_planning": {
+        "tests": 29,
+        "passed": 29,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_case_goal_results": {
+        "tests": 44,
+        "passed": 44,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_case_goal_results_browser": {
+        "tests": 28,
+        "passed": 28,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_isolated_run_access": {
+        "tests": 33,
+        "passed": 33,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      },
+      "tests.test_preparation": {
+        "tests": 35,
+        "passed": 35,
+        "failed": 0,
+        "error": 0,
+        "skipped": 0
+      }
+    },
+    "result": "PASS",
+    "actual_postgresql_http_chromium": true,
+    "minimal_subprocess_environment": true
+  },
+  "supplemental_unique_checks": {
+    "passed": 7,
+    "product_contract_failures": 3,
+    "note": "Unique supplemental scenarios across separate windows; no aggregation into an all-pass test run."
+  },
+  "artifacts": {
+    "after.json": {
+      "sha256": "3ac8b6bba2e6391af93c917a10719ca2bb12b5d53f4d70c8ba63dfe8b3d4ff5d",
+      "private_raw_failure": false
+    },
+    "ancestry.json": {
+      "sha256": "0c12b98d49bf2c6df824addd7e991a5db16d892452c976447c3b95bd75382fa0",
+      "private_raw_failure": false
+    },
+    "before.json": {
+      "sha256": "7b602f8c37995f7bcb23423489bf8b5598a33345207f6e68ecdab8777cffacb7",
+      "private_raw_failure": false
+    },
+    "hot-expiry-button.json": {
+      "sha256": "cade030632271df84ccc62240a8491bd0213d300ac745844c703daab22c7b61f",
+      "private_raw_failure": false
+    },
+    "hot-expiry-programmatic_write_guard.json": {
+      "sha256": "cade030632271df84ccc62240a8491bd0213d300ac745844c703daab22c7b61f",
+      "private_raw_failure": false
+    },
+    "inflight-expiry-execution.json": {
+      "sha256": "978ae31393de1d4ae818a2c95ec38316ca542b140470f709714fc7fc5fb244c3",
+      "private_raw_failure": false
+    },
+    "inflight-expiry-junit.xml": {
+      "sha256": "534b04a2981354e6ed07ad85e2dea3b1d36d9172f102a9edfceb05108e79c89d",
+      "private_raw_failure": true
+    },
+    "inflight-expiry-progress.json": {
+      "sha256": "bb04b142e260d5a4b1c8be2c144c523995a6c19b8cc467100ba52d8b972dc9ec",
+      "private_raw_failure": false
+    },
+    "inflight-expiry-pytest.log": {
+      "sha256": "f0603af27988122f4e7c56dbc3f212c1b9fb0be1f30d04449853e575a7e949b0",
+      "private_raw_failure": true
+    },
+    "inflight-expiry.json": {
+      "sha256": "43fe32d55cefcb0a9207d3d157a56e8b5b85f9899b40a466c0fa00f1156557e7",
+      "private_raw_failure": false
+    },
+    "probe-corrected-harness-execution.json": {
+      "sha256": "4ae7bd198537415ede6adad1a4698e7c18b14ff13a621b423d6ac7f289d43f50",
+      "private_raw_failure": false
+    },
+    "probe-corrected-harness-junit.xml": {
+      "sha256": "c78f2aabbb087adaf1658c2255547aa4c97a8e3d6a836f7067850d9d1088cb9e",
+      "private_raw_failure": true
+    },
+    "probe-corrected-harness-progress.json": {
+      "sha256": "1f6f3d7116b2681b64fc9f11b6edc4d4f98ea47b4c98df558d3c7873972de02f",
+      "private_raw_failure": false
+    },
+    "probe-corrected-harness-pytest.log": {
+      "sha256": "2406ad126f9652437b772d5014849991a79cc40782e7dd560910358c9c6374fa",
+      "private_raw_failure": true
+    },
+    "probe-execution.json": {
+      "sha256": "0d5e61bd591a7827b570aa01c89f76407c0335fec31dcb3d339fefb6b502b94e",
+      "private_raw_failure": false
+    },
+    "probe-observer-correction-execution.json": {
+      "sha256": "d8f4c9738a3e1808c4c3d888e7ba1d7faead4ebb01ab63b2eccf093a72b9af50",
+      "private_raw_failure": false
+    },
+    "probe-observer-correction-junit.xml": {
+      "sha256": "9bce9cbf92dfbf8cb45ea3f194165b48a3802c52c130c6e5cf98035828bc5083",
+      "private_raw_failure": false
+    },
+    "probe-observer-correction-progress.json": {
+      "sha256": "629a0369cf39d830f4ea101c9f370154d492bdbd3af836e88e95f95ed6720636",
+      "private_raw_failure": false
+    },
+    "probe-observer-correction-pytest.log": {
+      "sha256": "05994b2eb31318dc5d7c97a0101bbf7e361973cd10d1aae5a60386a9948bc785",
+      "private_raw_failure": false
+    },
+    "probe-pytest.log": {
+      "sha256": "b9aeb6ca1587a6a47e2529f2c191ecbbff5b903ccdd495b3d087e715dd5a6cb0",
+      "private_raw_failure": true
+    },
+    "related-execution.json": {
+      "sha256": "4cbaff8e0d7a0578cd9430083118ca90897f92da2cce3e6943518176b8a5a9e6",
+      "private_raw_failure": false
+    },
+    "related-junit.xml": {
+      "sha256": "a25126ea3e1f06ec5dda3f5a776851a9f1151a6fde324cfc159dd06050b0ebf8",
+      "private_raw_failure": false
+    },
+    "related-progress.json": {
+      "sha256": "6508ca354d828b49c78921520785867de475a261018daaed9b4b98a41ee870a2",
+      "private_raw_failure": false
+    },
+    "related-pytest.log": {
+      "sha256": "7fa8d81b5628057b741ff0fcc6cccb374d375e08f4e6f5129583006bbdd2629b",
+      "private_raw_failure": false
+    },
+    "run.py": {
+      "sha256": "495a94a145f6b0c2a96d71240909e747be8c4dd4553ce0a971c488274a38fd33",
+      "private_raw_failure": false
+    },
+    "test_independent_inflight_expiry.py": {
+      "sha256": "bfd4d70428ae540a15f00de20f91a1a7945d2069439be1c914441af0beea5e71",
+      "private_raw_failure": false
+    },
+    "test_independent_probe.py": {
+      "sha256": "b72e4e8390e9ccdee6b8473f6dcd8390b3e83dd24732106b3eeb0a554288b80b",
+      "private_raw_failure": false
+    },
+    "test_independent_probe_initial.py": {
+      "sha256": "dbf551ddd2f08d1cc7d892e36c1f4b38c2fee916c8cdc9107f357182a2b2eff2",
+      "private_raw_failure": false
+    },
+    "test_independent_probe_window1.py": {
+      "sha256": "7a7f7748f9c0cb33dc5291bc3a7b16e267287abe0e028677692343bcda2016f9",
+      "private_raw_failure": false
+    },
+    "wrapper-initial-plugin-error.py": {
+      "sha256": "b5cd7c5356b40908fa2aa63349580ddbd1ee82a1c57cf523ab88a88dedb4eab1",
+      "private_raw_failure": false
+    },
+    "wrapper.py": {
+      "sha256": "3ad95f4fde861477f5ca484ebc2b29f0991b236a18cd5002ea84a76d66420f7c",
+      "private_raw_failure": false
+    }
+  }
+}
