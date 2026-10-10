@@ -1,0 +1,15 @@
+# 原注册步骤人工锁正常整合
+
+基线dev `9bc4ed59ed5156ee3a2a84c2023500eca355c426`；独立候选candidate/service-plan-manual-lock-20261010，未在main开发。d6ebf7ee9c61c1eca8ccfca1b5a7b4076e72a23e先冻结合同，daff05e9410e6fd6f52afe5d5a9a80744e62365b先冻结活动锁解锁额度；0c2e5fa0e5f8276cb783aa5a7c37fd10051882bb实现后独审BLOCKED，未合dev。ef5e3735cf1f7eaadf665f2c70ec88f757c7b27a先补原目标结果兼容/证明合同，最终源码1a8d95e8cf532affc8e5b8c8503866c63b29d4c7修复。
+
+1a8精确最终LIMITED_PASS：根7完整相关模块285PASS/0FAIL/ERROR/SKIP，JUnit452.467秒、受控454.075491秒；独审8完整相关模块353PASS/511.171秒、受控512.727002秒。独立额外原15oracle28.648秒、新11负例23.710秒、加强源READ期限1例7.391秒，27唯一检查全部通过；初始同期限1PASS6.854秒为重复历史窗口。首0c2根363PASS、独审345PASS不能作最终验收；原五产品失败已逐项独立复验通过。开发角色误用、独审夹具/动作误用及进度读取观察器故障原样私有保全。
+
+325源首尾及整合零漂移，manifest SHA4deb8f25a98bb265c9b990f76d0fdb33c7d112490c042fd69156d25d92e45046，诊断AST1387。最终独审报告SHAff54c373bc84b3ee9e5e901f6084a1539155e9c38353c3ec0ba0294e7c46304f，原BLOCKED f5bd6aeb6fceebac4996eca043610558448637253e8610f33393eb9f4671cb5d保持。真实HTTP/PostgreSQL/Chromium1200/390/320及LOCK/UNLOCK各自实际同origin API重启已验；原五动作、goal-results相关完整模块兼容通过。真实executor源READ期限跨最后lifecycle行锁等待后403、业务快照不变；owner本人managed期限原合同不适用，不扩Grant或自造owner租约。
+
+安全证据8976a43baec301798768de7ef6c662c25f2ceb65普通推送后，导出复核发现误带四份失败窗口简短日志（无栈/token/连接串）；a348a69066dc00c06cc33c285ca0a84b8387d414普通提交从当前公共树移除，原件及哈希私有保全，已推历史未重写。普通fetch及实际ls-remote确认候选a348、dev仍9bc、main31e7acb7e53bb1ab6465b9daae59de28757f7583；88403af18b95b361114b303c3fae636f286d91b4为祖先，Git干净、无挂起merge/rebase/cherry/revert/普通index.lock，平台空未持有锁保留。
+
+仅在最终精确独审通过后，正常--ff-only将dev快进a348，普通push实际成功；随后实际ls-remote确认dev和候选均a348、main保持31e7。本文及integration.json为随后纯文档提交，最终dev文档SHA以交付回复和私有final-remote-verification.json末尾核验为准，避免递归自引用。无本地main分支、无强推/部署/凭据/安全网络变更。
+
+仅原授权合成注册链；无新schema/迁移/Grant/角色/模型/外部通知/政策审批/真实业务，Case不自动完成。一般DAG、全仓、原完整AT25–27/EX、Windows未签收，Server CI未查询，旧a823a28未迁移；已完成资料包导出和原资料异议闭环不重做。正式ServiceRelease/Approval/在途兼容协议缺口见[只读盘点](ServiceReleaseApprovalInventory.md)，这些不阻止已授权常规开发，真实发布/履约/Case完成/对外分享仍需对应业务授权。
+
+入口：[范围](ServicePlanManualLock.md)、[合同](ServicePlanManualLockContract.md)、[最终机器核验](evidence/service-plan-manual-lock/verification.json)、[最终独审](evidence/service-plan-manual-lock/independent-review/report.json)、[整合机器记录](evidence/service-plan-manual-lock/integration.json)、[167私有工件快照](evidence/service-plan-manual-lock/private-artifacts.json)。最终未推送本任务文件只为忽略.runtime原始日志/XML、harness/probe/草稿/截图及最终远端辅助记录；源码与公共证据/文档普通推送。后续辅助记录不追加进此前167工件快照。
