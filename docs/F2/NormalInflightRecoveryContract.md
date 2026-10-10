@@ -4,7 +4,7 @@
 
 原正常路径已实现：数据库时钟过期后claim以行锁/SKIP LOCKED换worker/fence；locked_execution核当前fence/state/DB租约，当前EXECUTE/动作授权重新核；LeaseKeeper独立线程/短连接续租。Case、Operation回执、Run终态、outbox同一事务；已提交终态不再领取，连续worker按原outbox去重消费。本轮首先直接实现该路径的真实进程故障验收，不另建预演运行器，不为了改源码新增协议；发现真实产品缺陷才修原路径，并冻结新源码重审。
 
-测试仅自建Linux SYNTHETIC数据库及原fixture-a/b/c权限，正常configured_app、普通LOCAL模式与原连续worker，无fixture adapter/issued preview registry/复制proof/model-fixture/真实模型；原合法新库creation receipt只作初始化，之后不seed/migrate/改Grant或手改Run/lease/Case/operation。模型等待只用原已有CLI mock等待，纯本地不请求模型。租约用原CLI合法1秒边界；按DB clock真实过期，不UPDATE时间。
+测试仅自建Linux SYNTHETIC数据库及原fixture-a/b/c权限，正常configured_app、普通LOCAL模式与原连续worker，无fixture adapter/issued preview registry/复制proof/model-fixture/真实模型；原合法新库creation receipt只作初始化，之后不seed/migrate/新增或恢复Grant或手改Run/lease/Case/operation；仅第4切片按原owner路径撤EXECUTE。模型等待只用原已有CLI mock等待，纯本地不请求模型。租约用原CLI合法1秒边界；按DB clock真实过期，不UPDATE时间。
 
 最小故障切片：
 1. 旧worker实际领取并连续heartbeat；第二普通连续worker不能抢有效租约。按已知Popen PID+create_time暂停旧worker全进程（含heartbeat），原租约自然过期，新worker合法接管并唯一建单；恢复旧进程触发原Conflict，原cached fence的heartbeat/prepare_dispatch/finish均拒绝，不污染新结果。
