@@ -364,6 +364,11 @@ def create_app(store: Store) -> FastAPI:
         return service_steps.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
 
     from . import bounded_planning as planning
+    from . import case_goal_results
+    @app.get('/api/preparations/{preparation_id}/goal-results')
+    def goal_results_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return case_goal_results.read(store,token(authorization),preparation_id)
+
     @app.get('/api/preparations/{preparation_id}/planning-preview')
     def planning_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return planning.read(store,token(authorization),preparation_id)
