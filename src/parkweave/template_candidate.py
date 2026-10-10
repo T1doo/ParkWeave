@@ -244,6 +244,7 @@ class TemplateEngine:
                     contract_revision=self._config.revision,isolated_principals=personas,isolated_personas=personas,
                     example_definition=draft_for_goals('合成材料准备模板','新企业以自己的新资料办理材料准备。',['LOCAL_MATERIAL_PREPARATION'],source).model_dump(mode='json'),
                     parameter_schema=deepcopy(PARAMETER_SCHEMA),registered_goals=list(planning.GOALS),
+                    goal_adapters=deepcopy(planning.GOALS),
                     registered_steps=[dict(id=s['id'],adapter_revision=s['revision'],depends_on=s['depends_on']) for s in planning.REGISTRY])
 
     def _row(self,c,scope):return c.execute('SELECT * FROM template_drafts WHERE scope=?',(canonical(scope.model_dump()),)).fetchone()
