@@ -8,19 +8,19 @@
 
 原动作函数preparation.command实际执行两次ADD_EVIDENCE、独立合成reviewer的REVIEW、合成owner的CONFIRM。输入为当前两槽实际文本/来源种类/标签，不接受任意路径、Grant、角色、命名空间或生成动作。动作的授权与CAS/幂等/缺槽/审核hash检查仍运行；不把预览reviewer冒称原获派真人或正式审核。预览对象/Case/Run/actor/材料/event全部新UUID，与原对象只存只读绑定关系。
 
-执行用新专属PG连接，在一个事务创建只含所需固定表的pg_temp影子表、无FK/正式触发器；执行search_path仅pg_temp（pg_catalog隐式），没有public回落。原Store动作通过只持该连接的代理运行；代理禁止显式schema、DDL、事务提交、任意SQL，未知新表拒绝。临时角色/READ/EXECUTE/PREPARE/REVIEW_ASSIGNED仅本预览生成，真实principals/Grant不复制/写入。既有app TEMP数据库能力缺失即拒绝，不补权限。无资源/Approval/dispatch/notice/正式成果表影子或执行能力。正式源连接仅认证/只读来源核验，原授权锁和父行锁保持到隔离产物提交；没有正式Case、材料、计划/preview metadata或其他业务UPDATE。
+执行用新专属PG连接，在一个事务创建只含所需固定表的pg_temp影子表、无FK/正式触发器；执行search_path仅pg_temp（pg_catalog隐式），没有public回落。原Store动作通过只持该连接的代理运行；代理只接受本原动作实际使用的18条精确SQL模板，禁止显式schema、DDL、事务提交、未知SQL与set_config/advisory-unlock等SELECT副作用；不能借函数修改search_path回落正式表。临时角色/READ/EXECUTE/PREPARE/REVIEW_ASSIGNED仅本预览生成，真实principals/Grant不复制/写入。既有app TEMP数据库能力缺失即拒绝，不补权限。无资源/Approval/dispatch/notice/正式成果表影子或执行能力。正式源连接仅认证/只读来源核验，原授权锁和父行锁保持到隔离产物提交；提交SQLite前再次读取规划来源，执行期间观察到的目录/registry变化即409不保存产物。原principal/父行协作锁保护原资料与撤权协议；目录/registry最后一次取样之后的无协作写入不承诺跨SQLite/PostgreSQL原子线性化，下一GET按当前来源标记STALE，历史产物不变。没有正式Case、材料、计划/preview metadata或其他业务UPDATE。
 
 每次执行结束均显式ROLLBACK/close该临时连接。真实隔离材料、不可变动作事件与原snapshot hash由实际SQL读回，写入专属本地SQLite预览命名空间；SQL临时写是真执行，持久结果仅预览产物，不是原材料/Case成果。不启动worker、模型、网络外部调用、资源占位/释放、政策批准、Case完成或通知。
 
 ## 有界持久化、幂等与恢复
 
-明确本地合成配置才attach该存储；默认configured API无预览存储/执行能力，读状态disabled，不建文件/表，不自动创建/恢复授权。存储根为显式新建0700私有普通目录、DB0600；拒绝symlink/foreign目录/外来schema，既有本类库须严格marker/schema核对，不自动迁移/清空/chmod。完整预览实例UUID/版本化合同/原数据库身份绑定，跨库拒绝attach。SQLite独立事务BEGIN IMMEDIATE；最多128结果、每Case最多16，max document64KiB，超限拒绝。不得将该库接入业务读者、Case结果核验或正式动作。
+明确本地合成配置才attach该存储；默认configured API无预览存储/执行能力，读状态disabled，不建文件/表，不自动创建/恢复授权。存储根为显式新建0700私有普通目录、DB0600；拒绝symlink/foreign目录/外来schema，既有本类库须严格marker/schema核对，不自动迁移/清空/chmod。完整预览实例UUID/版本化合同/原数据库身份绑定，以current_database/pg_database OID/pg_control_system.system_identifier三者绑定，Unix socket没有端口也不能混用另一实际cluster；该只读函数须既有app可用，否则拒绝，绝不补Grant。跨库拒绝attach。SQLite独立事务BEGIN IMMEDIATE；最多128结果、每Case最多16，max document64KiB，超限拒绝。不得将该库接入业务读者、Case结果核验或正式动作。
 
 命令body仅expected_preparation_revision、expected_request_revision、expected_source_sha256，原actor/Case/Run/两槽ID/version/hash/完整目标/登记动作指纹由服务端绑定；idempotency key与owner+原Case+完整body指纹绑定。当前READ/PREPARE/EXECUTE先于历史重放及恢复。相同key/body仅返回原结果；不同body/Case409，未知keyGET为NOT_OBSERVED，不能据此认定原命令失败；并发不同key各自独立预演，不写正式对象，相同key至多一持久结果/事件链。
 
 原动作产生已知领域Conflict时回滚临时事务，保存FAILED结果与已有隔离事件/材料副本（明确未CONFIRMED），不会把部分执行变为正式成功。修补原输入后由用户明确新key/当前来源重跑，旧FAILED/history保持；来源变化只显示STALE，不改旧产物。基础设施/存储中断不保存虚假成功；事务回滚，GET核对后由本人明确决定重试，禁止自动POST、自动续写部分步骤或通知。
 
-页面沿原bounded-planning区增加明确执行按钮和原结果/历史/只读恢复控件，不新检查页。关闭/换Case/身份/编辑/403清旧私有投影，迟到回复不得复活。丢响应仅存最多8条、24h不透明句柄：资料ID/key/原revision/原sourcehash/到期；无token、正文、理由、姓名/角色/Grant或完整产物。重新认证后GET恢复，失权清私有视图；结果显示PREVIEW_EXECUTION、SIMULATED_ROLES_ONLY、正式写0、Case目标未完成，显式释放核对后才允许新预演。
+页面沿原bounded-planning区增加明确执行按钮和原结果/历史/只读恢复控件，不新检查页。关闭/换Case/身份/编辑/403清旧私有投影，迟到回复不得复活。丢响应仅存最多8条、24h不透明句柄：资料ID/key/原revision/原sourcehash/到期；第9条活跃句柄拒绝新POST，不能FIFO淘汰未核对旧请求；GET/POST回复及明确释放前均重验持久句柄的全部五字段和TTL，变化拒绝显示/删除，须再次只读核对。无token、正文、理由、姓名/角色/Grant或完整产物。重新认证后GET恢复，失权清私有视图；结果显示PREVIEW_EXECUTION、SIMULATED_ROLES_ONLY、正式写0、Case目标未完成，显式释放核对后才允许新预演。
 
 ## 冻结独立oracle
 
