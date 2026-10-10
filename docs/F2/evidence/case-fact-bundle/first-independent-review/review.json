@@ -1,0 +1,195 @@
+{
+  "status": "BLOCKED",
+  "reviewed_head": "3b5785b453169f8197a3df0e3563e45a09a83c97",
+  "runtime_source_commit": "3f878c8f838b165a68a75902038bf95bb172acac",
+  "baseline_dev": "84af2948abc32415aaf6d7a4439e0596e0014405",
+  "baseline_main": "31e7acb7e53bb1ab6465b9daae59de28757f7583",
+  "remote_refs_final": {
+    "refs/heads/candidate/case-fact-bundle-20261010": "3b5785b453169f8197a3df0e3563e45a09a83c97",
+    "refs/heads/dev/f1-foundation": "84af2948abc32415aaf6d7a4439e0596e0014405",
+    "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+  },
+  "repository_module_results": {
+    "tests": 347,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 347,
+    "complete_modules": 9,
+    "modules": {
+      "tests/test_case_fact_bundle.py": {
+        "passed": 40
+      },
+      "tests/test_case_fact_bundle_browser.py": {
+        "passed": 24
+      },
+      "tests/test_material_preparation_drafts.py": {
+        "passed": 22
+      },
+      "tests/test_case_fact_clarifications.py": {
+        "passed": 66
+      },
+      "tests/test_case_fact_clarifications_integration.py": {
+        "passed": 24
+      },
+      "tests/test_case_opportunities.py": {
+        "passed": 35
+      },
+      "tests/test_linux_fixture_startup.py": {
+        "passed": 9
+      },
+      "tests/test_installed_fixture_receipt.py": {
+        "passed": 68
+      },
+      "tests/test_ci_diagnostics.py": {
+        "passed": 59
+      }
+    },
+    "phase_junit_seconds": 174.267,
+    "phase_includes_four_initial_private_probe_setup_errors": true
+  },
+  "independent_probe_results": {
+    "tests": 5,
+    "failures": 1,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 4,
+    "junit_seconds": 5.352,
+    "probe_names": [
+      "test_independent_six_same_key_http_commits_once_then_cold_history_and_cross_case_refusal",
+      "test_independent_six_distinct_keys_http_dual_cas_yields_one_effect",
+      "test_independent_real_http_locked_withdraw_replace_and_authorization_fail_closed",
+      "test_independent_real_http_foreign_material_utf16_and_fake_typed_values_no_effect",
+      "test_independent_existing_sql_event_cannot_be_downgraded_to_nonnull_empty_json"
+    ]
+  },
+  "initial_harness_failure_history": {
+    "setup_errors": 4,
+    "reason": "Own ignored test file was outside tests/conftest fixture subtree",
+    "business_probe_executed": false,
+    "repair": "Own probe imports real conftest.pg and conftest.fixture; no source/test/contract or receipt checks changed",
+    "raw_private_retained": true
+  },
+  "blockers": [
+    {
+      "id": "CFB-EMPTY-LEDGER-DOWNGRADE",
+      "severity": "HIGH",
+      "location": "src/parkweave/case_fact_bundle.py:87",
+      "observed": {
+        "existing_sql_events_before": 1,
+        "nonnull_empty_json_read_status": 200,
+        "get_read_only": true,
+        "empty_json_returned_revision": 0,
+        "new_command_status": 200,
+        "new_bundle_revision": 1,
+        "existing_and_new_sql_event_count": 2,
+        "original_key_recovery_status": 409,
+        "expected": "GET and new POST reject partial storage corruption; existing history must not silently reset"
+      },
+      "impact": "Partial JSON storage corruption silently loses visible source history and allows a new source-bundle chain despite retained SQL receipts; historical original key cannot recover",
+      "boundary": "Trusted administrator can rewrite all records; this finding concerns detectable partial corruption, not protection from a synchronous malicious database rewrite",
+      "required": "Reject non-NULL empty/downgraded bundle when persisted FACT_BUNDLE_COMMAND receipt history exists, and independently test the invariant on a new exact candidate",
+      "integration_decision": "Do not merge or advance dev from this reviewed candidate"
+    }
+  ],
+  "passing_additional_probes": [
+    "Six same-key actual HTTP requests return six identical receipts with one event; cold historical/current split and cross-Case key refusal",
+    "Six distinct-key actual HTTP requests at one dual-CAS basis yield one 200 and five 409, exactly one effect; rejected keys NOT_OBSERVED and GET is read-only",
+    "Actual HTTP rejects locked withdrawal; replacement retains historical lock and invalidates source; specialist and revoked READ deny private recovery/write without effects",
+    "Actual HTTP rejects foreign material, UTF-16-equivalent offset, leading-zero and non-ASCII integer excerpts; exact Python-codepoint text excerpt accepted"
+  ],
+  "code_inspected": [
+    "case_fact_bundle.py",
+    "case_fact_clarifications.py",
+    "material_preparation_drafts.py",
+    "preparation.py",
+    "api.py routes",
+    "web.html fact-bundle/material-draft consumers",
+    "migration-028.sql",
+    "store.py migration boundary",
+    "linux_fixture_server.py startup",
+    "pyproject.toml package resources"
+  ],
+  "source_integrity": {
+    "frozen_paths": 318,
+    "initial_and_final_match_frozen": true,
+    "drift_paths": [],
+    "head_unchanged": true,
+    "worktree_clean": true,
+    "roles_unchanged_from_baseline": true,
+    "roles_sha256": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+    "reviewer_source_test_contract_writes": false,
+    "reviewer_git_writes": false
+  },
+  "execution_boundary": {
+    "minimal_environment": true,
+    "pytest_basetemp": "Separate reviewer-owned /tmp directories for each phase; never workspace",
+    "postgresql": "Actual owned pgserver clusters and new databases with actual creation receipts",
+    "http": "Actual uvicorn loopback HTTP for browser and independent probes",
+    "browser": "Actual Chromium/Playwright; own1200/390/320 screenshots visually checked for credentials and overflow",
+    "root_artifacts_overwritten": false,
+    "model_calls": 0,
+    "external_notifications": 0,
+    "real_business": false
+  },
+  "safe_artifacts": {
+    "safe-main-junit.xml": "d3ed7b8207b9ca4cabb15843bd2f4fa75171d33201ec162850727853c4109bbe",
+    "safe-probes-junit.xml": "a7e590041d38d12bd1f95c0acbf9ac69c50e872482a79a2fd978b6b1a483216e",
+    "safe-pytest.log": "b8427211cf6d30368880ee1710b38489b714f16cea96733e580a49c78b7e57ca",
+    "empty-ledger-probe.json": "6ea286ccf3e2e554865c214ce7d0d8a71c13a2d1141b184230e2753c5fffcbdc",
+    "initial-source.json": "ed020191d95852e7a8a255c88c3fd694c5a85de2e2aaadfcba86c5a1b248e825",
+    "final-source.json": "ed020191d95852e7a8a255c88c3fd694c5a85de2e2aaadfcba86c5a1b248e825",
+    "git-and-boundary.json": "5dd5b5acce7364d157fe22c9583c36838264d5250fabbf12a2900d77ac66101b",
+    "run_review.py": "5e00478b643cf8b113584f35d9947a97534756915c8bc8c5e5b47e796e0d0ddf",
+    "pytest_wrapper.py": "4236a271515286990d57d500e7a7aca453cb02bcee7ce003ff5ff8a8ee82de58",
+    "test_independent_probes.py": "8d4b91ff0b6f76d3aedadeb059b0f89c624ac29e494e23d8046ea8aaafe7c9e2",
+    "run_probes.py": "62122534ff5ceec5dbbe75cf90096279c36f006337f12e8838a91400719fc5c1",
+    "browser/api-restart.json": "0c87e10513ae9df90835bc737a734dbdc1dd001ba36650d66a364b8f3e7a8cbb",
+    "browser/full-1200.png": "741a6e09782f87747ba9a38539b3953c487a78bfe53f39def71d1b433a65d761",
+    "browser/full-320.png": "7d2cc17ea7d73421833eea732980028ca78195e05dba118e4aab81ca1771ff9b",
+    "browser/full-390.png": "16d0e52f3666bc02d7428aa2b7f8c830df144563774fa7300221d4fb86ce9d70"
+  },
+  "safe_artifact_pattern_scan": {
+    "safe-main-junit.xml": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "safe-probes-junit.xml": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "safe-pytest.log": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "empty-ledger-probe.json": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    }
+  },
+  "private_artifacts_retained": [
+    "first-private-junit.xml",
+    "first-private-pytest.log",
+    "first-progress.json",
+    "private-probes-junit.xml",
+    "private-probes.log",
+    "progress.json",
+    "execution.json"
+  ],
+  "limitations": [
+    "Exact candidate only; nine specified complete repository modules and five independent probes, not whole-repository acceptance",
+    "Parent earlier 971-case source window is not combined into current-byte review",
+    "Linux synthetic fixture and Chromium viewports only; no Windows/native/Mac/mobile-device acceptance",
+    "No general FactBundle, multi-purpose/cross-service sharing, formal Approval/Release, Case completion or original full AT06/AT26/42AT/EX acceptance",
+    "JSON hash chain is a trusted application/admin boundary, not a signature or immutability against administrator rewrites",
+    "No merge/dev push/deployment performed; new exact-SHA review required after source correction"
+  ]
+}
