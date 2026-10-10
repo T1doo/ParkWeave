@@ -34,7 +34,7 @@ def structure(plan):
             if (type(event['revision']) is not int or event['revision']!=i or event['plan_id']!=plan['id'] or event['id'] in event_ids or
                 (event['actor_id'],event['request_key']) in keys or not re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or not re.fullmatch('[a-f0-9]{64}',event['fingerprint']) or
                 event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK') or
-                (i==1)!=(event['action']=='ADOPT') or (event['step_id'] is None if i==1 else event['step_id'] in ids) is not True):raise ValueError()
+                (i==1 and event['action']!='ADOPT') or (event['step_id'] is None if event['action']=='ADOPT' else event['step_id'] in ids) is not True):raise ValueError()
             keys.add((event['actor_id'],event['request_key']));event_ids.add(event['id'])
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('adopted goal result plan proof invalid')
 
@@ -111,12 +111,14 @@ def read(store,token,id):
         intent=parent.get('request_intent') or {};goals=intent.get('required_goals',[]);plan=deepcopy(parent.get('service_case_plan'));rows=[];binding_issues=[];states={};proofs={};out={};sources={};issues={}
         if plan:
             structure(plan);binding_issues=steps._binding_issues(c,parent,plan)
+            steps.dependencies.plan_proof(parent,plan)
             if any(e['action'] in ('LOCK','UNLOCK') for e in plan['events']) or any(s.get('manual_lock') is not None for s in plan['steps']):steps._recovery_proofs(parent)
             if plan['required_goals']!=goals:binding_issues.append('PLAN_REQUIRED_GOALS_CHANGED')
             # First acquire the original source/fixed-plan/lifecycle locks.
             # Then recapture timed validity after their last possible wait.
             steps.current_sources(store,c,parent,plan)
             issues,sources,actual=steps.current_sources(store,c,parent,plan);out=outputs(store,c,parent,plan,issues,sources)
+            steps.dependency_impact(store,c,parent,plan,issues)
             for step in plan['steps']:
                 a=step['adapter_id'];proof=verification(parent,plan,step);proofs[a]=proof
                 lock=steps._manual_lock(plan,step)

@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from psycopg.types.json import Jsonb
 
 from . import bounded_planning as planning, controlled_plans as cp
-from . import preparation as prep, case_lifecycle as life, executor_receipts as er
+from . import preparation as prep, case_lifecycle as life, executor_receipts as er, registered_dependencies as dependencies
 from .store import Conflict, Denied
 
 SCOPE='SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN'
@@ -30,6 +30,12 @@ class Adopt(BaseModel):
     expected_plan_revision:int=Field(default=0,ge=0,le=64)
     required_goals:list[Annotated[str,Field(min_length=1,max_length=160)]]=Field(min_length=1,max_length=8)
     reason:str=Field(min_length=1,max_length=1000)
+    local_revision:Literal[True]|None=None
+
+
+def _adopt_request(data):
+    # Missing optional extension must preserve every historical fingerprint.
+    return data.model_dump(exclude_none=True)
 
 
 class Command(BaseModel):
@@ -141,13 +147,25 @@ def current_sources(store,c,parent,plan):
         if not local or local['state'] not in ('READY','LOCAL_RECORD_CLOSED') or local['verified_sha256']!=life._sha(snapshot,local['cycle']):
             issues['P5'].append('CURRENT_LOCAL_CASE_REVALIDATION_REQUIRED')
         sources['P5']=dict(local_lifecycle=cp._normal(local),sources=snapshot)
+    values=dependencies.collections(store,c,parent)
+    if plan.get('dependency_manifest') is not None:
+        sources['P2']['resource_collection']=values['resources']
+        sources['P3']['run_access_collection']=values['existing_access']
     return {k:sorted(set(v)) for k,v in issues.items()},cp._normal(sources),actual
 
 
 def _invalidate(plan,index):
+    reached=dependencies.closure(plan['steps'],{'P'+str(index)})
     for step in plan['steps']:
-        if int(step['adapter_id'][1:])>=index and step.get('verified_sha256'):
+        if step['adapter_id'] in reached and step.get('verified_sha256'):
             step['invalidated']=True
+
+
+def dependency_impact(store,c,parent,plan,issues=None):
+    current,affected,unknown=dependencies.inspect(plan,dependencies.collections(store,c,parent))
+    if issues is not None:
+        for adapter in affected:issues[adapter]=sorted(set(issues[adapter]+['DEPENDENCY_REVISION_REQUIRES_EXPLICIT_ADOPT']))
+    return current,affected,unknown
 
 
 def _manual_lock(plan,step):
@@ -180,11 +198,14 @@ def persist_rejected_observation(store,error):
 
 
 def _inspect(store,c,parent,plan,observe=True,fresh_clock=False):
+    dependencies.plan_proof(parent,plan)
     if any(e['action'] in ('LOCK','UNLOCK') for e in plan['events']) or any(s.get('manual_lock') is not None for s in plan['steps']):
         _recovery_proofs(parent)
     binding_issues=_binding_issues(c,parent,plan)
     issues,sources,actual=current_sources(store,c,parent,plan)
     if fresh_clock:issues,sources,actual=current_sources(store,c,parent,plan)
+    _,dependency_affected,_=dependency_impact(store,c,parent,plan,issues)
+    for a in dependency_affected:_invalidate(plan,int(a[1:]))
     states={};bad=None
     for step in plan['steps']:
         adapter=step['adapter_id'];prior=all(states.get(dep)=='VERIFIED' for dep in step['depends_on'])
@@ -199,7 +220,7 @@ def _inspect(store,c,parent,plan,observe=True,fresh_clock=False):
         elif step.get('invalidated'):state='NEEDS_RECHECK'
         elif step.get('verified_sha256') and not issues[adapter]:state='VERIFIED'
         states[adapter]=state
-    if observe and bad:
+    if observe and (bad or dependency_affected):
         c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),parent['id']))
     return binding_issues,issues,sources,actual,states,bad
 
@@ -247,6 +268,7 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
                  current_preview=planning._proposal(store,c,p,parent) if owner else None)
     if not plan:return dict(**context,scope=SCOPE,state='NOT_ADOPTED',plan_id=None,revision=0,steps=[],history=[],events=[],can_adopt=owner and p.get('_plan_write') and context['current_preview']['state']=='COVERED_PREVIEW_ONLY',new_grants=False,automatic_execution=False,case_goal_completed=False)
     binding_issues,issues,sources,actual,states,bad=_inspect(store,c,parent,plan,observe=observe,fresh_clock=fresh_clock)
+    dependency_basis,dependency_affected,dependency_unknown=dependency_impact(store,c,parent,plan)
     steps=[]
     for step in plan['steps']:
         adapter=step['adapter_id']
@@ -261,23 +283,28 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
                           verified_sha256=step.get('verified_sha256') if owner else None,
                           manually_locked=bool(step.get('manual_lock'))))
     status='VERIFIED' if all(v=='VERIFIED' for v in states.values()) else 'BLOCKED' if binding_issues or any(v in ('BLOCKED','REPORTED_BLOCKED','LOCK_CONFLICT') for v in states.values()) else 'NEEDS_RECHECK' if any(v=='NEEDS_RECHECK' for v in states.values()) else 'ACTIVE'
-    direct=[s['id'] for s in plan['steps'] if s.get('verified_sha256') and (issues[s['adapter_id']] or s['verified_sha256']!=cp._hash(sources[s['adapter_id']]))]
+    direct=[s['id'] for s in plan['steps'] if s.get('verified_sha256') and (set(issues[s['adapter_id']])-{'DEPENDENCY_REVISION_REQUIRES_EXPLICIT_ADOPT'} or s['verified_sha256']!=cp._hash(sources[s['adapter_id']]))]
     affected=[s['id'] for s in plan['steps'] if binding_issues or s.get('invalidated') or states[s['adapter_id']] in ('BLOCKED','LOCK_CONFLICT')]
-    impact=dict(scope='REGISTERED_CASE_CHAIN',unknown_scope='THIS_CASE' if binding_issues else None,
+    impact=dict(scope='REGISTERED_CASE_CHAIN',unknown_scope='THIS_CASE' if binding_issues or dependency_unknown else None,
                 directly_changed=direct,affected=affected,preserved=[s['id'] for s in plan['steps'] if s['id'] not in affected])
     events=plan['events'] if owner else [{k:e[k] for k in ('id','revision','action','step_id')} for e in plan['events']]
     receipt=None
     if event and event['actor_id']==p['id']:
         plans=plan.get('history',[])+[plan];index=next(i for i,item in enumerate(plans) if item['id']==event['plan_id'])
-        previous=plans[index-1] if index and event['action']=='ADOPT' else None
+        local=event['action']=='ADOPT' and event['revision']>1
+        previous=plans[index-1] if index and event['action']=='ADOPT' and not local else None
         receipt=dict(id=event['id'],plan_id=event['plan_id'],revision=event['revision'],action=event['action'],step_id=event['step_id'],
-                     request_key=event['request_key'],actor_ref=context['actor_ref'],expected_revision=previous['revision'] if previous else 0 if event['action']=='ADOPT' else event['revision']-1,
-                     previous_plan_id=previous['id'] if previous else None)
+                     request_key=event['request_key'],actor_ref=context['actor_ref'],expected_revision=event['revision']-1 if local else previous['revision'] if previous else 0 if event['action']=='ADOPT' else event['revision']-1,
+                     previous_plan_id=plan['id'] if local else previous['id'] if previous else None)
     return dict(**context,scope=SCOPE,plan_id=plan['id'],revision=plan['revision'],state=status,steps=steps,
                 binding=plan['binding'] if owner else None,binding_issues=binding_issues if owner else None,
                 required_goals=plan['required_goals'] if owner else None,goal_coverage=plan['goal_coverage'] if owner else None,
                 history=plan.get('history',[]) if owner else [],events=events,event=event if owner else None,command_receipt=receipt,
-                can_adopt=owner and p.get('_plan_write') and bool(binding_issues) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8 and context['current_preview']['state']=='COVERED_PREVIEW_ONLY',
+                can_adopt=owner and p.get('_plan_write') and context['current_preview']['state']=='COVERED_PREVIEW_ONLY' and (
+                    bool(binding_issues) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8 or
+                    not binding_issues and bool(dependency_affected) and plan['revision']+1+sum(bool(s.get('manual_lock')) for s in plan['steps'])<=LIMIT and
+                    not any(s.get('manual_lock') and s['adapter_id'] in dependency_affected for s in plan['steps']) and not any(not v['known'] for v in dependency_basis['collections'].values())),
+                local_revision_required=not binding_issues and bool(dependency_affected),
                 change_impact=impact if owner else None,
                 new_grants=False,automatic_execution=False,case_goal_completed=False,
                 external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
@@ -333,6 +360,7 @@ def _recovery_proofs(parent):
                 UUID(step['id'])
                 if step['id'] in step_ids or step['adapter_id'] not in ROLES:raise ValueError()
                 step_ids.add(step['id'])
+            latest_dependencies=None
             for revision,event in enumerate(plan['events'],1):
                 UUID(event['id'])
                 legacy_adoption_key = (revision == 1 and event['action'] == 'ADOPT' and
@@ -349,7 +377,23 @@ def _recovery_proofs(parent):
                     expected=previous['revision'] if previous else 0
                     data=Adopt(expected_preparation_revision=plan['adoption_preparation_revision'],expected_request_revision=plan['binding']['request_intent']['revision'],
                                expected_plan_revision=expected,expected_source_sha256=plan['adoption_preview']['source_sha256'],required_goals=plan['required_goals'],reason=event['reason'])
-                    fp=cp._hash(dict(preparation_id=str(parent['id']),action='ADOPT',**data.model_dump()))
+                    fp=cp._hash(dict(preparation_id=str(parent['id']),action='ADOPT',**_adopt_request(data)))
+                    latest_dependencies=event.get('dependencies')
+                    if latest_dependencies is not None:dependencies.validate(latest_dependencies)
+                elif event['action']=='ADOPT':
+                    if event['step_id'] is not None or event['actor_id']!=parent['owner_id']:raise ValueError()
+                    expected=revision-1
+                    patch=event['local_revision'];data=Adopt.model_validate(patch['request'])
+                    if (data.local_revision is not True or data.expected_plan_revision!=expected or
+                        data.required_goals!=plan['required_goals'] or
+                        data.expected_request_revision!=plan['binding']['request_intent']['revision'] or
+                        data.reason!=event['reason'] or patch['previous_sha256']!=(latest_dependencies['sha256'] if latest_dependencies else None) or
+                        set(patch)!={'request','previous_sha256','affected','preserved'} or
+                        not isinstance(patch['affected'],list) or not isinstance(patch['preserved'],list) or
+                        not patch['affected'] or len(set(patch['affected']+patch['preserved']))!=len(step_ids) or
+                        set(patch['affected']+patch['preserved'])!=step_ids):raise ValueError()
+                    latest_dependencies=event['dependencies'];dependencies.validate(latest_dependencies)
+                    fp=cp._hash(dict(preparation_id=str(parent['id']),action='ADOPT',**_adopt_request(data)))
                 else:
                     if event['step_id'] not in step_ids or event['action']=='ADOPT':raise ValueError()
                     expected=revision-1
@@ -361,6 +405,7 @@ def _recovery_proofs(parent):
                 if event['fingerprint']!=fp or event['coordination_only']!=(event['action']!='VERIFY'):raise ValueError()
                 if event['action'] not in ('VERIFY','LOCK') and (event['source_sha256'] is not None or event['sources'] is not None):raise ValueError()
                 proofs.append((plan,event,expected,previous))
+            if latest_dependencies!=plan.get('dependency_manifest'):raise ValueError()
         return proofs
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('original service plan recovery proof invalid')
 
@@ -386,7 +431,7 @@ def recover(store,token,id,key=None):
                 if p['role']!='enterprise_operator':raise Denied('original owner plan action required')
             elif not step or p['role'] not in ROLES[step['adapter_id']]:raise Denied('original adapter actor required')
             original=dict(id=event['id'],plan_id=plan['id'],revision=event['revision'],action=event['action'],step_id=event['step_id'],
-                          expected_revision=expected,previous_plan_id=previous['id'] if previous and event['action']=='ADOPT' else None,
+                          expected_revision=expected,previous_plan_id=plan['id'] if event['action']=='ADOPT' and event['revision']>1 else previous['id'] if previous and event['action']=='ADOPT' else None,
                           actor_ref=cp._hash(dict(actor_id=p['id'])),request_key=key,historical_only=True,
                           current_plan=plan['id']==parent['service_case_plan']['id'])
         if key is not None and p['role']=='service_executor':
@@ -411,7 +456,7 @@ def adopt(store,token,id,key,data):
         p,parent=_context(store,c,token,id,True)
         if p['role']!='enterprise_operator':raise Denied('owner adopted plan required')
         prep.key_lock(c,p,'service-case-plan:'+key)
-        fp=cp._hash(dict(preparation_id=str(id),action='ADOPT',**data.model_dump()))
+        fp=cp._hash(dict(preparation_id=str(id),action='ADOPT',**_adopt_request(data)))
         old=_replay(c,p,parent,key,fp);prior=deepcopy(parent.get('service_case_plan'))
         if old:return _view(store,c,p,parent,prior,old)
         intent=parent.get('request_intent')
@@ -425,6 +470,26 @@ def adopt(store,token,id,key,data):
         if cp._hash(binding['catalog'])!=current['catalog_sha256'] or cp._hash(binding['registry'])!=current['registry_sha256']:
             raise Conflict('catalog or registry changed during service plan adoption')
         if (prior['revision'] if prior else 0)!=data.expected_plan_revision:raise Conflict('service plan revision changed')
+        if data.local_revision:
+            if not prior:raise Conflict('existing registered plan required for local revision')
+            _recovery_proofs(parent)
+            if _binding_issues(c,parent,prior):raise Conflict('changed request or service contract requires original explicit replacement')
+            basis,affected,unknown=dependency_impact(store,c,parent,prior)
+            if not affected or any(not v['known'] for v in basis['collections'].values()):raise Conflict('known current dependency patch required')
+            if basis!=dependencies.manifest(prior['steps'],current['dependency_collections']):raise Conflict('dependency collection changed during local adoption')
+            locks=[s for s in prior['steps'] if _manual_lock(prior,s)]
+            if any(s['adapter_id'] in affected for s in locks):raise Conflict('affected locked decisions require explicit unlock')
+            if prior['revision']+1+len(locks)>LIMIT:raise Conflict('event capacity reserved for explicit unlocks')
+            before=prior.get('dependency_manifest')
+            for a in affected:_invalidate(prior,int(a[1:]))
+            prior['dependency_manifest']=basis;prior['revision']+=1
+            event=_event(prior,p,key,fp,'ADOPT',data.reason)
+            event['dependencies']=basis
+            event['local_revision']=dict(request=_adopt_request(data),previous_sha256=before['sha256'] if before else None,
+                                        affected=[s['id'] for s in prior['steps'] if s['adapter_id'] in affected],
+                                        preserved=[s['id'] for s in prior['steps'] if s['adapter_id'] not in affected])
+            _context(store,c,token,id,True);_save(c,parent,prior)
+            return _view(store,c,p,parent,prior,event)
         history=[]
         if prior:
             if any(e['action'] in ('LOCK','UNLOCK') for e in prior['events']):_recovery_proofs(parent)
@@ -438,7 +503,9 @@ def adopt(store,token,id,key,data):
         plan=dict(id=str(uuid4()),revision=1,required_goals=list(data.required_goals),goal_coverage=current['goal_coverage'],
                   binding=binding,adoption_preparation_revision=parent['revision'],
                   adoption_preview=current,steps=steps,events=[],history=history)
+        plan['dependency_manifest']=dependencies.manifest(steps,current['dependency_collections'])
         event=_event(plan,p,key,fp,'ADOPT',data.reason)
+        event['dependencies']=deepcopy(plan['dependency_manifest'])
         _save(c,parent,plan)
         return _view(store,c,p,parent,plan,event)
 
