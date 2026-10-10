@@ -1,0 +1,276 @@
+{
+  "status": "LIMITED_PASS",
+  "reviewed_head": "282e0be4a0e4ae74139a642c7eb8e13a11197105",
+  "runtime_source_commit": "dded6b0e450dfcabda0baef0ace3cbfd386b7fa1",
+  "baseline_dev": "84af2948abc32415aaf6d7a4439e0596e0014405",
+  "baseline_main": "31e7acb7e53bb1ab6465b9daae59de28757f7583",
+  "remote_refs_final": {
+    "refs/heads/candidate/case-fact-bundle-20261010": "282e0be4a0e4ae74139a642c7eb8e13a11197105",
+    "refs/heads/dev/f1-foundation": "84af2948abc32415aaf6d7a4439e0596e0014405",
+    "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+  },
+  "review_scope": "Linux synthetic owner-only Case source bundle, source receipt consistency and existing fact choice/review/confirm/P1 plus specified compatibility modules",
+  "actual_results": {
+    "tests": 365,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "passed": 365,
+    "junit_seconds": 188.51,
+    "controlled_subprocess_wall_seconds": 190.34,
+    "repository_complete_modules": 9,
+    "repository_tests": 354,
+    "repository_modules": {
+      "tests/test_case_fact_bundle.py": {
+        "passed": 47
+      },
+      "tests/test_case_fact_bundle_browser.py": {
+        "passed": 24
+      },
+      "tests/test_material_preparation_drafts.py": {
+        "passed": 22
+      },
+      "tests/test_case_fact_clarifications.py": {
+        "passed": 66
+      },
+      "tests/test_case_fact_clarifications_integration.py": {
+        "passed": 24
+      },
+      "tests/test_case_opportunities.py": {
+        "passed": 35
+      },
+      "tests/test_linux_fixture_startup.py": {
+        "passed": 9
+      },
+      "tests/test_installed_fixture_receipt.py": {
+        "passed": 68
+      },
+      "tests/test_ci_diagnostics.py": {
+        "passed": 59
+      }
+    },
+    "independent_probe_tests": 11,
+    "independent_probe_modules": {
+      ".runtime/independent-case-fact-bundle-rereview/test_independent_probes.py": {
+        "passed": 11
+      }
+    }
+  },
+  "additional_probes": [
+    "Six same-key actual HTTP requests: six identical receipts, exactly one event; cold historical/current state split and cross-Case key rejection",
+    "Six distinct-key actual HTTP requests: one200/five409, exactly one effect; rejected keys NOT_OBSERVED and read-only recovery",
+    "Locked withdrawal409; material replacement keeps original lock while source becomes ineligible; original receipt survives; specialist and revoked READ403 without source effects",
+    "Foreign Case evidence, UTF-16-equivalent offset and noncanonical employee integer excerpts409 without effects; exact codepoint excerpt accepted",
+    "Existing SQL event plus nonNULL empty JSON: bundleGET/original-key/unknown-key/newPOST all409 with unchanged persistent snapshots",
+    "Valid hash-chain prefix truncation: bundleGET/original-key/unknown-key/newPOST/original-factGET all409 with unchanged persistent snapshots",
+    "SQL-only CaseID, receiptSHA, key, missing event or changed action: all five read/recovery/write paths409 with unchanged persistent snapshots"
+  ],
+  "corruption_observations": {
+    "empty-ledger-probe": {
+      "existing_sql_events_before": 1,
+      "nonnull_empty_json_read_status": 409,
+      "original_key_recovery_status": 409,
+      "unknown_key_recovery_status": 409,
+      "new_command_status": 409,
+      "no_effects": true
+    },
+    "partial-corruption-sql-action": {
+      "damage": "sql-action",
+      "bundle_get": 409,
+      "original_key": 409,
+      "unknown_key": 409,
+      "new_post": 409,
+      "original_fact_get": 409,
+      "no_effects": true
+    },
+    "partial-corruption-sql-case-id": {
+      "damage": "sql-case-id",
+      "bundle_get": 409,
+      "original_key": 409,
+      "unknown_key": 409,
+      "new_post": 409,
+      "original_fact_get": 409,
+      "no_effects": true
+    },
+    "partial-corruption-sql-key": {
+      "damage": "sql-key",
+      "bundle_get": 409,
+      "original_key": 409,
+      "unknown_key": 409,
+      "new_post": 409,
+      "original_fact_get": 409,
+      "no_effects": true
+    },
+    "partial-corruption-sql-missing": {
+      "damage": "sql-missing",
+      "bundle_get": 409,
+      "original_key": 409,
+      "unknown_key": 409,
+      "new_post": 409,
+      "original_fact_get": 409,
+      "no_effects": true
+    },
+    "partial-corruption-sql-receipt-sha": {
+      "damage": "sql-receipt-sha",
+      "bundle_get": 409,
+      "original_key": 409,
+      "unknown_key": 409,
+      "new_post": 409,
+      "original_fact_get": 409,
+      "no_effects": true
+    },
+    "partial-corruption-valid-prefix": {
+      "damage": "valid-prefix",
+      "bundle_get": 409,
+      "original_key": 409,
+      "unknown_key": 409,
+      "new_post": 409,
+      "original_fact_get": 409,
+      "no_effects": true
+    }
+  },
+  "first_review": {
+    "status": "BLOCKED",
+    "head": "3b5785b453169f8197a3df0e3563e45a09a83c97",
+    "report_sha256": "35d5b8396c454aa72c0bc52e909747843231cd324fea236908fc0443b2ac7d71",
+    "report_and_all_own_artifacts_preserved": true,
+    "repository_tests": 347,
+    "repository_passed": 347,
+    "additional_probes": {
+      "passed": 4,
+      "failed": 1
+    },
+    "initial_probe_setup_errors": 4,
+    "reason": "Initial own test file did not inherit tests/conftest fixture subtree; fixed own imports, private records retained",
+    "blocker": "CFB-EMPTY-LEDGER-DOWNGRADE",
+    "current_resolution": "New exact candidate rejects empty, prefix and SQL-only partial corruption; independently verified",
+    "old_evidence_not_counted_as_current_pass": true
+  },
+  "source_integrity": {
+    "manifest_sha256": "1e1c99412ab152e6145c6c0eda4cefe0322cc3fb1ae7ea1ec4bf76cf6789bd59",
+    "frozen_paths": 318,
+    "initial_and_final_match_frozen": true,
+    "drift_paths": [],
+    "head_unchanged": true,
+    "worktree_clean": true,
+    "roles_unchanged_from_baseline": true,
+    "roles_sha256": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+    "reviewer_source_test_contract_writes": false,
+    "reviewer_git_writes": false
+  },
+  "code_inspection": {
+    "prior_full_core_review_retained": true,
+    "repair_diff_inspected": true,
+    "source_changes_since_blocked_candidate": [
+      "src/parkweave/case_fact_bundle.py",
+      "tests/test_case_fact_bundle.py"
+    ],
+    "repair": "Persistent nonNULL revision1..32; JSON/SQL receipt counts and actor/key/fingerprint/parent revision/Case/Run/bundle metadata/SHA match; unknown-key recovery validates ledger first",
+    "expiration_test": "Uses real PostgreSQL clock crossing recorded expiry; no historical JSON rewrite"
+  },
+  "execution_boundary": {
+    "minimal_environment": true,
+    "pytest_basetemp": "Unique reviewer-owned /tmp directory; not workspace",
+    "postgresql": "Actual newly owned pgserver cluster/databases with actual creation receipts; no fake receipt or weakened checks",
+    "http": "Actual loopback uvicorn HTTP and Playwright requests",
+    "browser": "Actual Chromium; own1200/390/320 screenshots visually checked, no credential or horizontal overflow",
+    "root_or_prior_review_artifacts_overwritten": false,
+    "remaining_owned_postmaster_pid_files": 0,
+    "model_calls": 0,
+    "external_notifications": 0,
+    "real_business": false
+  },
+  "safe_artifacts": {
+    "safe-junit.xml": "8c9d3afb69b426b0043ad45691c553b29a179994080293a9af6d58bed41332aa",
+    "safe-pytest.log": "7e3120f991e0e29bbc6c56c0bc550f22b74e01396fe022992490249726510a6b",
+    "initial-source.json": "1e1c99412ab152e6145c6c0eda4cefe0322cc3fb1ae7ea1ec4bf76cf6789bd59",
+    "final-source.json": "1e1c99412ab152e6145c6c0eda4cefe0322cc3fb1ae7ea1ec4bf76cf6789bd59",
+    "git-and-boundary.json": "a27700870e67dde64905ab1cf825b809017fa366ecd04ee5ed7bcf02f7bf61cb",
+    "run_review.py": "8f9e772140fb86709400b4c8b4004461d29139bb6878c359536b72b32a799843",
+    "pytest_wrapper.py": "349ba853b94bf1be363279be6d879eef6bc92be65ba481268e38e6f1937cab6c",
+    "test_independent_probes.py": "3bae14b08a42053ed5c41a965c003d2e15cf63d25e2dc751746cc4dcf55821e0",
+    "partial-corruption-sql-action.json": "343ad4e45e9ccf60d61041718b46f44ecc2c85b99aefccfa2091bdd69005bdfc",
+    "partial-corruption-sql-case-id.json": "4f8cfc0b4c6ecfc09c7a55d8753c9e1805121a1f80c08120f42d52395066a006",
+    "partial-corruption-sql-key.json": "0ca39173d0f240fe4149ccd84e093a7d2fd81dbc72736108d684383bf659a563",
+    "partial-corruption-sql-missing.json": "63a51496308b8fd83c7f31c6394e08402bfc06b995652c2d9addb458c3814f75",
+    "partial-corruption-sql-receipt-sha.json": "dc912d717b5b948a9b95bf72c8b198b27ce34f69d361d21ee26af5e001f8c36d",
+    "partial-corruption-valid-prefix.json": "ff734854c05699064e48e18d387904d1f9cf4407229a533160c9ef6d245abbf0",
+    "empty-ledger-probe.json": "573a97999bd7c33d2a2ce9215002d8e91a97ae3754ff07d16d6bb9288eefe99e",
+    "browser/api-restart.json": "0c87e10513ae9df90835bc737a734dbdc1dd001ba36650d66a364b8f3e7a8cbb",
+    "browser/full-1200.png": "01a16e812f2d47292fd7b220623ebb0a5f72ee6fc919bfa260267cfe4187ac21",
+    "browser/full-320.png": "7d2cc17ea7d73421833eea732980028ca78195e05dba118e4aab81ca1771ff9b",
+    "browser/full-390.png": "38a65f4acf2d087a371d414f6316fe33579e44eaf12edb5d61a4aa21e4b5c3a8"
+  },
+  "safe_artifact_pattern_scan": {
+    "safe-junit.xml": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "safe-pytest.log": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "partial-corruption-sql-action.json": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "partial-corruption-sql-case-id.json": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "partial-corruption-sql-key.json": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "partial-corruption-sql-missing.json": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "partial-corruption-sql-receipt-sha.json": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "partial-corruption-valid-prefix.json": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    },
+    "empty-ledger-probe.json": {
+      "connection_uri": false,
+      "bearer_header": false,
+      "password_assignment": false,
+      "token_assignment": false
+    }
+  },
+  "private_artifacts_retained": [
+    "private-pytest.log",
+    "private-junit.xml",
+    "execution.json",
+    "progress.json"
+  ],
+  "blockers": [],
+  "limitations": [
+    "Exact reviewed candidate and listed complete modules/probes only; not full-repository acceptance",
+    "Parent earlier971/424/431 source-window test counts are not combined into these independent results",
+    "Linux synthetic PostgreSQL/HTTP/Chromium viewports only; no Windows/native/Mac/mobile-device acceptance",
+    "Not full general FactBundle, multi-purpose/cross-service sharing, formal Approval/Release, Case completion, or original full AT06/AT26/42AT/EX acceptance",
+    "JSON/SQL consistency detects partial storage corruption within trusted application/admin boundary; no signature or resistance to synchronous administrator rewrite of all records",
+    "No merge/dev push/deployment or permission/credential changes performed"
+  ],
+  "completed_at": "2026-10-10T03:46:40.931662+00:00"
+}

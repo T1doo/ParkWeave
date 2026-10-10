@@ -1,3 +1,7 @@
+## 已审有界 Case 事实来源与人工锁
+
+从84af2948已推基线继续，原资料导出与资料异议闭环保留。本片沿原§5.1/F2-T01/AT06/F3-T03/AT26，用本Case实际材料摘录、独立待核假设、显式LOCK/UNLOCK进入原用途确认与专员REVIEW/企业CONFIRM/P1；固定原owner和OWNER_CASE_USE_ONLY，无新Grant。根最终431PASS/270.782秒；精确候选282e0be4独审354仓库项+11真实HTTP/PG探针全部通过、188.510秒。首轮空账本降级BLOCKED已修复并重新验真，318源零漂移。仅限定Linux合成范围，无完整FactBundle/多用途分享/全仓/原AT/Win11签收；旧a823a28未迁移。见[合同、失败史与实际证据](CaseFactBundle.md)，实际正常dev整合另记；下方历史保留各自时点范围。
+
 ## 已审材料文本包正常整合（旧a823修复未迁移）
 
 独审限定通过的b20a929d正常no-ff合并cf648b82，产品字节不变；整合实际页面/PG同次21PASS/0FAIL/0SKIP/3WARN（38.63秒）。父任务独审首轮34PASS/2驱动计数FAIL、修正后另次6PASS含4新增，不合称同次40PASS。范围、来源和证据见[整合记录](MaterialPreparationTextPackIntegration.md)。旧a823a28 Windows Job/accounting仍在旧实例、未恢复未覆盖；未来授权传递后须从604祖先正常合并核冲突。普通push dev实际SHA另记录，不改main/权限/凭据/部署/LIVE；正式政策、真实履约、Windows与全仓验收保持pending。下方候选及历史条目保留原时点范围。

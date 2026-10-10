@@ -1,3 +1,7 @@
+## 已审有界 Case 事实来源与人工锁
+
+从84af2948已推基线继续，原资料导出与资料异议闭环保留。本片沿原§5.1/F2-T01/AT06/F3-T03/AT26，用本Case实际材料摘录、独立待核假设、显式LOCK/UNLOCK进入原用途确认与专员REVIEW/企业CONFIRM/P1；固定原owner和OWNER_CASE_USE_ONLY，无新Grant。根最终431PASS/270.782秒；精确候选282e0be4独审354仓库项+11真实HTTP/PG探针全部通过、188.510秒。首轮空账本降级BLOCKED已修复并重新验真，318源零漂移。仅限定Linux合成范围，无完整FactBundle/多用途分享/全仓/原AT/Win11签收；旧a823a28未迁移。见[合同、失败史与实际证据](F2/CaseFactBundle.md)，实际正常dev整合另记；下方历史保留各自时点范围。
+
 ## Win11首次安装最短路径：暂停前置拒绝
 
 原F1-T01/AT01、34：本轮只修已知native创建暂停下Setup仍先venv/pip/迁移的入口问题。Setup现在在这些副作用前固定拒绝；Doctor前置只读检查成功后显示新安装BLOCKED；指南停止在只读Doctor，不扩安装/权限授权。最小设备/人工签收、owner/附属对象/受保护authority、Job/S4、真实模型与政策来源缺口分列于[剩余清单](<F1/Win11FirstUseRemaining.md>)。最终相关420PASS/4SKIP/2WARN（18.39秒），424项同次collection/JUnit精确一致，294源前后零变化；本轮不新跑full，旧2463full不覆盖本轮，Server非Win11、F1未签收/R4关闭/模型0。

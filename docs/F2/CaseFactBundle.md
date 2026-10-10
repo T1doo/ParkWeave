@@ -21,3 +21,5 @@ fixture migration028只新增preparations.fact_bundle JSON与原preparation_even
 最终修复源码dded6b0e450dfcabda0baef0ace3cbfd386b7fa1，冻结318路径/诊断AST1312；12个最终完整受影响模块431PASS/0FAIL/0ERROR/0SKIP，JUnit270.782秒，前后源码无漂移，含47项新真实PG/API、24项真实HTTP/Chromium、原事实/集成/摘要/机会/wheel/迁移/启动/诊断。此前424PASS为pre-storage-fix旧字节窗口；29模块971项为970PASS/1nativeSKIP，524.009秒，属于更早pre-consumer-source。各次独立列出，不能合称最终全仓通过。
 
 首轮精确候选3b5785b453169f8197a3df0e3563e45a09a83c97独审347PASS及5个额外真实HTTP/PG探针4PASS/1FAIL，结论BLOCKED：非NULL空JSON账本可使保留SQL回执的可见历史重置。保全报告后，在85b21ba先冻结存储一致性合同；修复现在逐条交验SQL/JSON总数、actor/key/fingerprint、父revision及Case/Run/bundle动作/修订/回执SHA，空包/有效前缀截断/部分SQL损坏均409且无写，未知键恢复也先验证账本。旧过期测试直接改JSON的46PASS/1FAIL窗口私有保全，已改真实PG时钟越过期限。新SHA普通候选推送后重新独审，尚未审的修复不合dev。
+
+新精确候选282e0be4a0e4ae74139a642c7eb8e13a11197105独立复审LIMITED_PASS：9完整模块354PASS，加11独立真实HTTP/PG探针11PASS，同次365项0FAIL/ERROR/SKIP，JUnit188.510秒、受控运行190.340秒；首尾318路径、HEAD与roles无变化。空账本、合法hash前缀截断、SQL单侧CaseID/SHA/key/事件缺失/action变化，对来源GET、原键/未知键恢复、新POST及原事实GET均拒绝且快照不变；并发、跨Case、撤权、锁及Unicode负例另行实核。首轮BLOCKED与原故障仍保留，不把旧窗口测试合入本次计数。随后仅证据/计划文档更新，源码仍与获审冻结哈希一致；实际开发分支整合另见CaseFactBundleIntegration.md。
