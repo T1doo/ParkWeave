@@ -1,5 +1,7 @@
 # 实施前冻结：F2-T06 / §7.5 逐实例模板升级检查
 
+首轮真实开发验证后的桥接合同补充（先于修复）：原 consumer 的计划采纳 stage key 为 `tc:<canonical实例UUID>:ADOPT_PLAN`，原计划历史证明却仅接受 `[A-Za-z0-9_-]`，导致已形成的真实旧实例检查和原LOCK拒绝。新建 stage 使用 `tc_<UUIDhex>_<注册stage>` 规范键；已有 stage/key/body不改写。原计划历史核验仅额外识别 revision1/actionADOPT 的精确旧键形状，仍核对原owner/Case/完整事件、原采纳参数与fingerprint。不是允许任意分隔键、复制fixture凭证或放宽新进程写门。首轮21FAIL/1PASS原日志/XML私有保全，不算最终验收。
+
 基线 dev `b496f6a4da7022c10c906ff722fd3279f4536f71`，main `31e7acb7e53bb1ab6465b9daae59de28757f7583` 保持。唯一源码/Git写入者；候选分支独立开发。现代码已有默认关闭的合成模板审核/发布、不可变 SQLite Release、原 PG 新企业消费和不可变实例绑定；没有逐旧实例升级检查。旧版本不可用仍禁止继续消费，不能由检查重新开启。
 
 最小有用切片是检查与明确选择的独立有界审计记录，不是迁移执行器。只显式组合到原隔离 consumer 工厂，精确同 consumer/engine/store、原 fixture 数据库和已有企业范围。默认生产 API 不挂载，没有新身份、Grant、fixture 凭证复制或新进程写门适配。
