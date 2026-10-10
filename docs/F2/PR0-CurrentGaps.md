@@ -1,3 +1,7 @@
+## 已审来源明确的只读合成办理期限（正式停表仍缺）
+
+精确 `9e0d7cf5f76ba768f98c77121f7bc0f7923ecb97` 独审LIMITED_PASS：根13完整模块458PASS/346.841秒，独审13模块458PASS/355.827秒，另44/1/2三个独立窗各自通过；340源零漂移。原事项页默认UNKNOWN，仅明确自有合成源逐日完整日历/时区/目标计算；缺源/缺日/时区或适用依据UNKNOWN，换材料/请求/目录xmin须显式重绑。无业务停表授权，非空暂停声明UNKNOWN、写路径405；Run暂停/待补不能停表。新API默认UNKNOWN，实PG重启旧enabled provider403，未重签proof/新Grant或迁移。正式日历/SLA、合法停表/持久时钟与全部AT29仍NOT_RUN；原ENG098/Approval新PID/Windows等边界保留。见[范围与机器证据](HandlingDeadlineReadOnly.md)、[先行合同](HandlingDeadlineReadOnlyContract.md)。旧通过数仅各自历史。
+
 ## 已审新企业冷会话的新输入到当前本地产物
 
 `6d79dc0a7bcbdacb60d9487ed5d9858af80cb402`精确独审LIMITED_PASS：根20完整相关模块650PASS/492.952秒，独审20模块650PASS/488.934秒，另16自有反例50.272秒独立通过；337路径零漂移。原模板多LOCAL目标选择及REVIEW嵌套来源的jsonb回读两处实际阻断已修；原fixture-a/b已有范围中新Case/双槽资料/显式Run READ申请批准/原Approval消费/本人接单/真实本地报告/企业ACK/P1–P5 VERIFY/6当前产物实际串通，同模板第三输入保留首历史。literal ENG098两企业实际只到材料P1，resource[]/executor[]/Approval403缺口保留，不新Grant或身份、不自动Run权；Case WAITING_CONFIRMATION非FULFILLED。根旧observer临时改4个证据文件后保全并精确恢复，不能称shared窗口Git始终clean；末尾Gitclean。正式Release/真实业务/未消费ApprovalnewPID写/fullAT/全仓/Windows仍未验，旧a823未迁移，原异议/导出不重做。见[范围与真实证据](NewEnterpriseLocalChain.md)、[先行合同](NewEnterpriseLocalChainContract.md)。以下历史仅保留各自原SHA范围。

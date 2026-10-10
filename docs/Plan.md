@@ -1,3 +1,7 @@
+## 已审来源明确的只读合成办理期限（正式停表仍缺）
+
+精确 `9e0d7cf5f76ba768f98c77121f7bc0f7923ecb97` 独审LIMITED_PASS：根13完整模块458PASS/346.841秒，独审13模块458PASS/355.827秒，另44/1/2三个独立窗各自通过；340源零漂移。原事项页默认UNKNOWN，仅明确自有合成源逐日完整日历/时区/目标计算；缺源/缺日/时区或适用依据UNKNOWN，换材料/请求/目录xmin须显式重绑。无业务停表授权，非空暂停声明UNKNOWN、写路径405；Run暂停/待补不能停表。新API默认UNKNOWN，实PG重启旧enabled provider403，未重签proof/新Grant或迁移。正式日历/SLA、合法停表/持久时钟与全部AT29仍NOT_RUN；原ENG098/Approval新PID/Windows等边界保留。见[范围与机器证据](F2/HandlingDeadlineReadOnly.md)、[先行合同](F2/HandlingDeadlineReadOnlyContract.md)。旧通过数仅各自历史。
+
 ## 已审原注册步骤人工锁与来源影响
 
 从已推9bc4ed59基线沿原§8/F3-T03，只为原P1–P5核验增加显式LOCK/UNLOCK；来源变化保留原决定/历史，LOCK_CONFLICT阻塞，解锁不重验，活动锁预留64事件内解锁额度。原目标结果兼容并校验锁证明，丢响应热/冷/API重启只GET。首轮五产品FAIL独审BLOCKED，先补合同后修复；1a8d95e8cf532affc8e5b8c8503866c63b29d4c7精确LIMITED_PASS，根7完整相关模块285PASS/452.467秒，独审8模块353PASS/511.171秒，另27唯一probe分窗15+11+1全部通过，325源零漂移。只有限原合成注册Case链，不作全仓/原AT/Windows/一般DAG验收；原异议与导出不重做，无新Grant/模型/通知/真实完成。见[范围与证据](F2/ServicePlanManualLock.md)、[正式发布/审批只读缺口](F2/ServiceReleaseApprovalInventory.md)、[正常整合](F2/ServicePlanManualLockIntegration.md)。真实发布/履约/Case完成/分享未授权；这些不阻止已授权常规开发。以下历史保留各自原时点范围。
