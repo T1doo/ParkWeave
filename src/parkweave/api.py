@@ -247,6 +247,13 @@ def create_app(store: Store) -> FastAPI:
     def preparation_record(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return preparation.read(store,token(authorization),preparation_id)
 
+    @app.get('/api/preparations/{preparation_id}/handling-deadline')
+    def handling_deadline_read(preparation_id: UUID,request: Request,authorization: str | None=Header(default=None)):
+        from .handling_deadline import read
+        if request.query_params:
+            raise HTTPException(422, 'deadline observation uses server time only')
+        return read(store,token(authorization),preparation_id)
+
     @app.get('/api/preparations/{preparation_id}/command-recovery')
     def preparation_command_recovery(preparation_id: UUID,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         if not re.fullmatch(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',idempotency_key):raise HTTPException(422,'invalid recovery handle')
