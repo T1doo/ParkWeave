@@ -112,3 +112,34 @@ def test_owned_api_process_restart_same_pg_recovers_output_references_with_get_o
    OUT.mkdir(parents=True,exist_ok=True);(OUT/'api-restart.json').write_text(json.dumps(dict(different_owned_processes=True,same_persistent_postgresql=True,goal_result_reads_get_only=True,duplicate_business_writes=0),indent=2)+'\n')
   finally:
    if active is not None and active.poll() is None:active.terminate();active.wait(5)
+
+@pytest.mark.parametrize('kind',['objection','material'])
+@pytest.mark.parametrize('denied',[False,True])
+def test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle(goal_page,kind,denied):
+ f,page,errors=goal_page;p=start(f);verified(f,p,'P1');open_case(page,f,p);read_page(page);page.evaluate("async()=>{await servicePlanOpen('materials')}");page.wait_for_function('()=>objectionView!==null&&preparationView!==null')
+ assert page.locator('#goal-results-panel').is_visible();held=[]
+ def delay(route):held.append((route,None if denied else route.fetch()))
+ page.route('**/api/preparations/'+p['preparation_id']+'/goal-results',delay);page.locator('#goal-results-read').click();wait_held(page,held)
+ def lose(route):
+  if route.request.method!='POST':route.continue_();return
+  response=route.fetch();assert response.status==200;route.abort('failed')
+ suffix='/material-objections' if kind=='objection' else '/commands';page.route('**/api/preparations/'+p['preparation_id']+suffix,lose)
+ if kind=='objection':
+  page.locator('#objection-reason').fill('SYNTHETIC PRIVATE_INTERLEAVED_OBJECTION');page.locator('#objection-raise').click();page.wait_for_function('()=>objectionPending!==null&&!objectionBusy')
+ else:
+  page.locator('#prep-slot').select_option('material_outline');page.locator('#prep-text').fill('SYNTHETIC PRIVATE_INTERLEAVED_MATERIAL');page.locator('#prep-source-label').fill('SYNTHETIC interleaved v2');page.locator('#prep-evidence button').click();page.wait_for_function('()=>prepCommandPending?.state==="UNKNOWN"')
+ stored=page.evaluate('JSON.stringify({...localStorage})');assert stored!='{}' and 'PRIVATE_INTERLEAVED' not in stored and f[2]['fixture-a'] not in stored
+ if denied:
+  with f[1].connect() as c:
+   f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute("UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND capability='READ'")
+ before=snapshot(f);route,response=held[0]
+ if denied:response=route.fetch();assert response.status==403
+ else:assert response.status==200 and response.json()['state']=='LOCAL_OUTPUTS_VERIFIED'
+ route.fulfill(response=response);page.wait_for_timeout(150);assert page.evaluate('goalResultView') is None and not errors and snapshot(f)==before
+ assert page.evaluate('JSON.stringify({...localStorage})')==stored
+ if denied:
+  assert page.evaluate('preparationView===null&&objectionView===null&&prepCommandPending===null&&objectionPending===null') and page.locator('#prep-detail').is_hidden() and page.locator('#goal-results-panel').is_hidden();assert page.locator('#objection-reason').input_value()=='' and page.locator('#prep-text').input_value()=='' and '访问权已失效' in page.locator('#page-feedback').inner_text()
+ else:
+  assert page.locator('#goal-results-items').inner_text()=='' and '保持未核验' in page.locator('#goal-results-error').inner_text() and page.locator('#prep-detail').is_visible()
+  if kind=='objection':assert page.evaluate('objectionPending!==null') and 'PRIVATE_INTERLEAVED_OBJECTION' in page.locator('#objection-reason').input_value()
+  else:assert page.evaluate('prepCommandPending?.state==="UNKNOWN"') and 'PRIVATE_INTERLEAVED_MATERIAL' in page.locator('#prep-text').input_value()
