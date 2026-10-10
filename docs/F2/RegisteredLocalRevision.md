@@ -21,7 +21,7 @@
 
 各窗均自然exit0，不相加成一次全量；最终一行投影修复未重跑原12/13/27完整相关模块。真实HTTP/PostgreSQL/Chromium覆盖资源新增/移除/未选规则/容量、既有访问集合变化、回执换代、实际本地产物重验、未受影响锁保留/受影响锁拒绝、两键CAS与同键重放/异body拒绝、撤权/越权/跨企业、迟到响应、丢响应冷热只读恢复、损坏证明与隐私负例。独审真实独占PG停启记录不同postmaster/API PID，保持数据库身份/数据和原恢复句柄，旧键COMMITTED且无读路径业务写；不是重签fixture能力。新PID默认关闭探针仅验证schema-valid APPROVE返回403、无安装/业务写，未重验未消费Approval账本或完整生命周期。
 
-冻结清单SHA-256 `1c8d0bb193e82ed236b4185e40ac7f9cba6185fb4166a3ddfa874cccc280ce46`；1499个CI函数ID与实际源AST对应。独审报告SHA-256 `449785c57cf290763d17c0e9cb91b449285efe58909743952ec5ee12b8f17bda`。见[机器核验](evidence/registered-local-revision/verification.json)、[独审原报告](evidence/registered-local-revision/independent-review/report.json)、[公开文件hash](evidence/registered-local-revision/artifact-hashes.json)及[真实原页320截图](evidence/registered-local-revision/independent-review/browser/independent-boundaries4/test_independent_boundaries/fresh-all-case-320.png)。公开63份安全文件、62个hash锚；未公开其他截图和任何失败原始日志，原报告路径与公开映射均保留。
+冻结清单SHA-256 `1c8d0bb193e82ed236b4185e40ac7f9cba6185fb4166a3ddfa874cccc280ce46`；1499个CI函数ID与实际源AST对应。独审报告SHA-256 `449785c57cf290763d17c0e9cb91b449285efe58909743952ec5ee12b8f17bda`。见[机器核验](evidence/registered-local-revision/verification.json)、[独审原报告](evidence/registered-local-revision/independent-review/report.json)、[公开文件hash](evidence/registered-local-revision/artifact-hashes.json)及[真实原页320截图](evidence/registered-local-revision/independent-review/browser/independent-boundaries4/test_independent_boundaries/fresh-all-case-320.png)。独审证据封存时公开63份安全文件、62个hash锚；未公开其他截图和任何失败原始日志，原报告路径与公开映射均保留。
 
 ## 失败史与限制
 
@@ -31,4 +31,4 @@
 
 开发期所有失败XML/log、首个未启动pytest的launcher拒绝及三轮BLOCKED报告在忽略的0700 `.runtime/registered-local-revision` 与对应独审目录保全，不覆盖、不公开可能含合成令牌的原始失败诊断。未来VERSION探针中普通owner GET可以按原规划观察合同保存失效标志；并非所有普通GET均零SQL更新，但不可变历史/步骤正文/业务产物保持。恢复/冷GET无业务重放另有真实快照证据。
 
-LIMITED_PASS仅签收原合成注册适配器切片；一般动态图/完整依赖类型、全仓/fullAT25、正式Release/真实履约/Case完成、Windows仍NOT_RUN或未签收。没有新角色/Grant/Schema/政策审批、自动资源释放/停表、模型调用、真实业务或外部通知；没有main改动、强推、部署、凭据/安全网络配置修改。原冻结[覆盖映射](PR0-CoverageAt-a1e6022.md)不改。正常整合及实际远端引用另记于整合记录。
+LIMITED_PASS仅签收原合成注册适配器切片；一般动态图/完整依赖类型、全仓/fullAT25、正式Release/真实履约/Case完成、Windows仍NOT_RUN或未签收。没有新角色/Grant/Schema/政策审批、自动资源释放/停表、模型调用、真实业务或外部通知；没有main改动、强推、部署、凭据/安全网络配置修改。原冻结[覆盖映射](PR0-CoverageAt-a1e6022.md)不改。正常整合及实际远端引用见[整合记录](RegisteredLocalRevisionIntegration.md)。
