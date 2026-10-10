@@ -1,0 +1,658 @@
+{
+  "decision": "LIMITED_PASS",
+  "exact_sha": "cadc7a34ecece7d77d793c4676e1b552838f41cc",
+  "candidate_branch": "candidate/preview-commit-protection-20261010",
+  "reviewer": "independent reviewer; source and Git read-only",
+  "scope": {
+    "scope": "P1 synthetic isolated preview commit protection and immutable v2 cold recovery",
+    "excluded": [
+      "Complete AT14",
+      "Full repository",
+      "Windows",
+      "Real business or external fulfillment",
+      "P2-P5 execution",
+      "Case completion",
+      "New Grants",
+      "Model calls",
+      "All-source atomic commit guarantee",
+      "WAL reader exclusion guarantee"
+    ],
+    "prior_BLOCKED_sha": "791c518da37ef6048156029d67d6141ef80bee99",
+    "prior_BLOCKED_report_sha256": "357196add885cf1ba7ff5bbf89115ddde85f8814ca8ed0419c2f7d41d84e937b",
+    "remaining_limits": [
+      "Factory-created rollback-journal reader exclusion only; WAL reader and COMMIT behavior separately observed",
+      "Time and disk I/O are not frozen by locks",
+      "Cooperative writer protection does not cover uncooperative owner direct SQL, missing/future rows, collections, dynamic registry or all sources",
+      "SNAPSHOT_MATCH is a comparison at read/sample time and does not imply current or atomic source validity",
+      "Post-commit response resampling failure can return 503 while original key GET recovers committed artifact"
+    ],
+    "platform_notification": "Parent reported prior turn interruption; current authorized local commands and windows worked, not counted as a test outcome"
+  },
+  "windows": [
+    {
+      "window": "reader-expiry-priority",
+      "natural_exit": true,
+      "returncode": 0,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 2.708,
+      "controlled_seconds": 3.761393785,
+      "start_utc": "2026-10-10T14:59:35.904026+00:00",
+      "end_utc": "2026-10-10T14:59:39.665419+00:00",
+      "pytest_args": [
+        ".runtime/independent-preview-commit-protection-fixed-review/test_reader_expiry_priority.py"
+      ],
+      "minimal_environment": true,
+      "failure_classification": null
+    },
+    {
+      "window": "independent-boundaries",
+      "natural_exit": true,
+      "returncode": 1,
+      "passed": 7,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 13.098,
+      "controlled_seconds": 14.488119602,
+      "start_utc": "2026-10-10T15:02:24.154032+00:00",
+      "end_utc": "2026-10-10T15:02:38.642151+00:00",
+      "pytest_args": [
+        ".runtime/independent-preview-commit-protection-fixed-review/test_independent_boundaries.py"
+      ],
+      "minimal_environment": true,
+      "failure_classification": "OBSERVER_API_CLASS_TYPE_MISMATCH"
+    },
+    {
+      "window": "legacy-v2-corrected",
+      "natural_exit": true,
+      "returncode": 0,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 2.535,
+      "controlled_seconds": 3.649551392,
+      "start_utc": "2026-10-10T15:06:20.751536+00:00",
+      "end_utc": "2026-10-10T15:06:24.401088+00:00",
+      "pytest_args": [
+        ".runtime/independent-preview-commit-protection-fixed-review/test_legacy_v2_corrected.py::test_real_legacy_5c25_created_v2_cold_read_without_migration"
+      ],
+      "minimal_environment": true,
+      "failure_classification": null
+    },
+    {
+      "window": "related-ten",
+      "natural_exit": true,
+      "returncode": 0,
+      "passed": 268,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 159.952,
+      "controlled_seconds": 161.810235739,
+      "start_utc": "2026-10-10T15:06:49.633968+00:00",
+      "end_utc": "2026-10-10T15:09:31.444204+00:00",
+      "pytest_args": [
+        "tests/test_preview_commit_protection.py",
+        "tests/test_preview_commit_protection_browser.py",
+        "tests/test_isolated_execution_preview.py",
+        "tests/test_isolated_execution_preview_browser.py",
+        "tests/test_catalog_approval_coordination.py",
+        "tests/test_isolated_run_access.py",
+        "tests/test_bounded_planning.py",
+        "tests/test_preparation.py",
+        "tests/test_request_intents.py",
+        "tests/test_ci_diagnostics.py"
+      ],
+      "minimal_environment": true,
+      "failure_classification": null
+    },
+    {
+      "window": "independent-page-and-restart",
+      "natural_exit": true,
+      "returncode": 0,
+      "passed": 3,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 14.741,
+      "controlled_seconds": 16.300522804,
+      "start_utc": "2026-10-10T15:09:44.400128+00:00",
+      "end_utc": "2026-10-10T15:10:00.700650+00:00",
+      "pytest_args": [
+        ".runtime/independent-preview-commit-protection-fixed-review/test_independent_browser.py",
+        ".runtime/independent-preview-commit-protection-fixed-review/test_independent_restart.py"
+      ],
+      "minimal_environment": true,
+      "failure_classification": null
+    }
+  ],
+  "windows_not_aggregated_as_single_run": true,
+  "root_counts_not_transferred": true,
+  "product_failures_on_this_sha": 0,
+  "observer_failures_on_this_sha": 1,
+  "observer_failure_preserved_not_relabelled_pass": true,
+  "observer_correction_separate_window": "legacy-v2-corrected",
+  "prior_product_BLOCKED_report_retained": {
+    "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/report.json",
+    "sha256": "357196add885cf1ba7ff5bbf89115ddde85f8814ca8ed0419c2f7d41d84e937b"
+  },
+  "source_before": {
+    "sha": "cadc7a34ecece7d77d793c4676e1b552838f41cc",
+    "paths": 348,
+    "manifest_sha256": "4d180df651434d42401f4892bd83ca22c3a02ef0f86a74c06bcb355bb90df794",
+    "drift": [],
+    "runtime_started": false
+  },
+  "source_after": {
+    "sha": "cadc7a34ecece7d77d793c4676e1b552838f41cc",
+    "paths": 348,
+    "manifest_sha256": "4d180df651434d42401f4892bd83ca22c3a02ef0f86a74c06bcb355bb90df794",
+    "drift": [],
+    "git_status": "",
+    "actual_refs": "cadc7a34ecece7d77d793c4676e1b552838f41cc\trefs/heads/candidate/preview-commit-protection-20261010\na0bfbf1ed78485bf4c9fb50a32bbc688cfbb698b\trefs/heads/dev/f1-foundation\n31e7acb7e53bb1ab6465b9daae59de28757f7583\trefs/heads/main\n",
+    "remote_error_bytes": 0,
+    "all_windows_naturally_ended": true
+  },
+  "remote_read": {
+    "method": "actual git ls-remote origin",
+    "refs": {
+      "refs/heads/candidate/preview-commit-protection-20261010": "cadc7a34ecece7d77d793c4676e1b552838f41cc",
+      "refs/heads/dev/f1-foundation": "a0bfbf1ed78485bf4c9fb50a32bbc688cfbb698b",
+      "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+    },
+    "stderr_bytes": 0
+  },
+  "git_clean_at_verified_start_and_end": true,
+  "git_clean_throughout_claimed": false,
+  "tracked_files_written_by_reviewer": false,
+  "uncommitted_tracked_files": [],
+  "private_ignored_deliverables": true,
+  "all_test_windows_naturally_closed": true,
+  "owned_api_resources_remaining": [],
+  "owned_restart_cluster_cleanup_asserted": true,
+  "proofs": {
+    "reader-exclusive-expiry": {
+      "actual_http": true,
+      "actual_owned_postgresql": true,
+      "actual_separate_sqlite_shared_reader": true,
+      "actual_begin_exclusive_trace_observed": true,
+      "request_waiting_before_first_guard": true,
+      "source_observed_valid_managed_dependency": true,
+      "clock_crossed_issued_10minute_deadline_during_initial_reader_wait": true,
+      "guard_attempts_after_clock_change": 1,
+      "http_status": 403,
+      "persisted_rows": 0,
+      "persisted_state": null,
+      "recovery_http": 200,
+      "recovery_status": "NOT_OBSERVED",
+      "recovery_methods": [
+        "GET"
+      ],
+      "formal_public_values_unchanged": true,
+      "expected_persisted_rows": 0,
+      "expected_response": 403,
+      "expected_recovery": "NOT_OBSERVED",
+      "no_permission_reissued": true,
+      "model_calls": 0
+    },
+    "late-reader": {
+      "last_guard_passed": true,
+      "separate_late_reader_select": "LOCKED",
+      "post": 201,
+      "reader_cannot_insert_commit_wait": true,
+      "source_state": "SNAPSHOT_MATCH",
+      "source_atomicity": false,
+      "formal_public_values_unchanged": true
+    },
+    "reader-timeout": {
+      "timeout_http": 503,
+      "wait_seconds": 3.0657219360000454,
+      "recovery": "NOT_OBSERVED",
+      "recovery_methods": [
+        "GET"
+      ],
+      "explicit_same_key_after_get": 201,
+      "preview_rows": 1,
+      "formal_public_values_unchanged": true
+    },
+    "fault-before_commit": {
+      "http": 503,
+      "persisted_rows_at_fault": 0,
+      "cold_recovery": "NOT_OBSERVED",
+      "cold_methods": [
+        "GET"
+      ],
+      "exact_body_and_proof_retained": false,
+      "explicit_retry_only": true,
+      "formal_public_values_unchanged": true
+    },
+    "fault-after_commit": {
+      "http": 503,
+      "persisted_rows_at_fault": 1,
+      "cold_recovery": "COMMITTED",
+      "cold_methods": [
+        "GET"
+      ],
+      "exact_body_and_proof_retained": true,
+      "explicit_retry_only": false,
+      "formal_public_values_unchanged": true
+    },
+    "noncooperative-late-source": {
+      "owner_direct_source_change": true,
+      "post": 201,
+      "source_state": "STALE",
+      "source_atomicity": false,
+      "all_other_public_values_unchanged": true,
+      "not_atomic_all_sources": true
+    },
+    "cooperative-writer-rollback": {
+      "actual_pg_advisory_not_granted": true,
+      "publisher_waited_before_preview_rollback": true,
+      "preview": 503,
+      "preview_rows": 0,
+      "publish_revision_after_release": 2,
+      "all_other_public_values_unchanged": true
+    },
+    "legacy-5c25-cold-v2": {
+      "original_module_sha": "5c25aa08c7ab499764bc2aa145dd932ee8a2a417",
+      "module_file_sha256": "dbe3c4ca95305457358eb2c1358e2af7fae808a6de437a82cf0f632f0dcc5dc8",
+      "old_class_created_actual_sqlite_v2_artifact": true,
+      "same_current_owned_pg_fixture": true,
+      "execution_contract_hash_equal": true,
+      "old_document_and_independent_proof_exact": true,
+      "whole_sqlite_file_bytes_unchanged": true,
+      "no_migration_or_permissions_reissued": true,
+      "cold_key_recovery": "COMMITTED",
+      "cold_network": [
+        "GET"
+      ],
+      "source_state": "SNAPSHOT_MATCH",
+      "source_atomicity": false,
+      "formal_public_values_unchanged": true
+    },
+    "wal-observation": {
+      "classification": "BOUNDARY_OBSERVATION_NOT_ROLLBACK_MODE_ACCEPTANCE",
+      "private_owner_changed_only_journal_mode": true,
+      "wal_late_reader_select_allowed": true,
+      "wal_commit_not_blocked_by_reader": true,
+      "post": 201,
+      "source_atomicity": false,
+      "formal_public_values_unchanged": true,
+      "rollback_mode_reader_exclusion_not_claimed_for_wal": true
+    },
+    "observer-classification": {
+      "window": "independent-boundaries",
+      "natural_exit": 1,
+      "actual_pass": 7,
+      "actual_fail": 1,
+      "product_failures": 0,
+      "observer_failures": [
+        {
+          "node": "test_real_legacy_5c25_created_v2_cold_read_without_migration",
+          "reason": "Exact API type gate rejects privately loaded old class before artifact creation",
+          "observed_http": 403,
+          "correction": "Original old class direct authenticated execute then current class HTTP GET",
+          "corrected_window": "legacy-v2-corrected",
+          "corrected_pass": 1
+        }
+      ],
+      "original_log_sha256": "d3689a330ce194a2487a6dd143c6e1cd03303a5c8ef49329e2b46553ada5aa83",
+      "original_xml_sha256": "0abd359a07b6cf76d0145da2ba249ee1f179b6306d6a0d72240df40cb7cb6eb6",
+      "raw_failures_private": true
+    },
+    "browser-never-observed": {
+      "cold_actual_original_page": true,
+      "status": "NOT_OBSERVED",
+      "network_after_reload": [
+        "GET"
+      ],
+      "server_post_count": 0,
+      "automatic_retry_count": 0,
+      "opaque_handle_kept": true,
+      "run_disabled": true,
+      "formal_values_unchanged": true
+    },
+    "browser-stale-original-goals": {
+      "cold_actual_original_page": true,
+      "status": "COMMITTED",
+      "source_state": "STALE",
+      "full_old_goals_kept": 2,
+      "other_steps_kept": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "network_after_reload": [
+        "GET"
+      ],
+      "viewport": 320,
+      "private_material_and_token_absent": true,
+      "formal_values_unchanged": true,
+      "model_calls": 0
+    },
+    "owned-pg-api-restart": {
+      "api_pids": [
+        1629246,
+        1629405,
+        1629410
+      ],
+      "old_pg_pid": 1629220,
+      "new_pg_pid": 1629396,
+      "postmaster_start_changed": true,
+      "system_identifier_and_database_oid_retained": true,
+      "explicit_same_namespace_v2_configuration": true,
+      "default_new_process_get_and_post": 403,
+      "original_key_cold_page_get_only": true,
+      "artifact_and_complete_goal_proof_unchanged": true,
+      "sqlite_bytes_unchanged": true,
+      "formal_public_values_unchanged": true,
+      "no_permission_reissued": true,
+      "model_calls": 0
+    }
+  },
+  "actual_restart_scope": "Owned temporary PostgreSQL postmaster stop/start and three distinct API process IDs; fresh default configured API refused GET/POST403, explicit same v2 namespace cold GET only; no capability or Grant reissue",
+  "legacy_creation_scope": "Exact original 5c25 module directly executes its original authenticated method in current owned fixture; current API rejects foreign class by design; current class subsequently cold reads via real HTTP GET",
+  "signature_boundary": "Only exact runtime tree approved within stated P1 synthetic and rollback-journal scope; parent remains sole Git writer, no review merge/push",
+  "artifact_hashes": {
+    "browser/related-ten/test_isolated_execution_preview_browser/actual-api-restart.json": {
+      "sha256": "53ec35af686c58da8ae279d6977cbf94f3a6e7f3ca8607abcd5403703c3497f7",
+      "bytes": 282,
+      "raw_failure_private": false
+    },
+    "browser/related-ten/test_isolated_execution_preview_browser/execution-preview-1200.png": {
+      "sha256": "fbdfab797eec5576a1ae66c5fe695260c701ee7b5c728f66d8a7f039dcf91b10",
+      "bytes": 113113,
+      "raw_failure_private": false
+    },
+    "browser/related-ten/test_isolated_execution_preview_browser/execution-preview-320.png": {
+      "sha256": "6fbc16da9e2f52c076af4d49ae6697250a323c609fe95b5c221dca3c566235dd",
+      "bytes": 114176,
+      "raw_failure_private": false
+    },
+    "browser/related-ten/test_isolated_execution_preview_browser/execution-preview-390.png": {
+      "sha256": "452636d82424fd6903ea18adaf6add8a9a8ad3b2b1adec06b1c8edcc2193abbe",
+      "bytes": 114543,
+      "raw_failure_private": false
+    },
+    "browser/related-ten/test_isolated_execution_preview_browser/original-page-recovery.json": {
+      "sha256": "46b0dca1fa2250928b9fbaee1c5f91abfc0ec89082761278fe07714bdfe4d415",
+      "bytes": 296,
+      "raw_failure_private": false
+    },
+    "browser-never-observed-safe.json": {
+      "sha256": "72b6b60dcba6ec8a48367161a00b34677700c7e7d228ce8b1f97c3af501d12c5",
+      "bytes": 256,
+      "raw_failure_private": false
+    },
+    "browser-stale-original-goals-safe.json": {
+      "sha256": "89911d994b182c973ff9229463c2c7049ec64f4d2071dd84b371ff907d6ef8bd",
+      "bytes": 350,
+      "raw_failure_private": false
+    },
+    "cooperative-writer-rollback-safe.json": {
+      "sha256": "742e0a1abd32dcb12a7334ab91f4b165fd1fc9a57bc563c118b6caa4bf3fb669",
+      "bytes": 220,
+      "raw_failure_private": false
+    },
+    "fault-after_commit-safe.json": {
+      "sha256": "835a75a80107b6980cb098cb1ee179aabd2df0f0ccdab52649ad9e653bc34114",
+      "bytes": 232,
+      "raw_failure_private": false
+    },
+    "fault-before_commit-safe.json": {
+      "sha256": "f6c5e22c04d13ae86cb95f7a635f7c9eb4a325c23b01257b87792ad9f863d4af",
+      "bytes": 235,
+      "raw_failure_private": false
+    },
+    "frozen-source.json": {
+      "sha256": "4d180df651434d42401f4892bd83ca22c3a02ef0f86a74c06bcb355bb90df794",
+      "bytes": 37722,
+      "raw_failure_private": false
+    },
+    "git-status-final.raw": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "raw_failure_private": false
+    },
+    "head-final.raw": {
+      "sha256": "a164b339d9542446e627824dd4f8b3fef77237e04cf7e59ebd63883497d39824",
+      "bytes": 41,
+      "raw_failure_private": false
+    },
+    "independent-boundaries-execution.json": {
+      "sha256": "92e606b836a90fe117a55723080e76a3f108ecc84714c6f8f2ff0c026b44bf73",
+      "bytes": 350,
+      "raw_failure_private": false
+    },
+    "independent-boundaries-junit.xml": {
+      "sha256": "0abd359a07b6cf76d0145da2ba249ee1f179b6306d6a0d72240df40cb7cb6eb6",
+      "bytes": 3569,
+      "raw_failure_private": true
+    },
+    "independent-boundaries-progress.json": {
+      "sha256": "576779bbcce9b313e85c1ef306ae67938586eda068b0f15b0a07dab5407ab4a8",
+      "bytes": 2261,
+      "raw_failure_private": false
+    },
+    "independent-boundaries-pytest.log": {
+      "sha256": "d3689a330ce194a2487a6dd143c6e1cd03303a5c8ef49329e2b46553ada5aa83",
+      "bytes": 3176,
+      "raw_failure_private": true
+    },
+    "independent-history-320.png": {
+      "sha256": "860be96a2e0bc077b3c67522f12f4c6f36257b024121f3060d827dab15ea96f2",
+      "bytes": 116001,
+      "raw_failure_private": false
+    },
+    "independent-owned-restart-api.log": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "raw_failure_private": false
+    },
+    "independent-page-and-restart-execution.json": {
+      "sha256": "4fb1cc4866543334033e35bb34ee6a332dc88a55d69eb4e19d76d878930873af",
+      "bytes": 535,
+      "raw_failure_private": false
+    },
+    "independent-page-and-restart-junit.xml": {
+      "sha256": "ce41d2ef2867a048762e31ba8312a22ac7f8aad5740d5b2764fffbbbc59d2bfc",
+      "bytes": 843,
+      "raw_failure_private": false
+    },
+    "independent-page-and-restart-progress.json": {
+      "sha256": "b92ed5da0a50ffb9cd50d1a970c928af3a674735fa8b92a0f44c73433a5d05e5",
+      "bytes": 882,
+      "raw_failure_private": false
+    },
+    "independent-page-and-restart-pytest.log": {
+      "sha256": "a3a8b4655e8e90015b23848bab99e92a72d72d3fb69fa18bc60c9ba6b3ba9eba",
+      "bytes": 1182,
+      "raw_failure_private": false
+    },
+    "late-reader-safe.json": {
+      "sha256": "e13256bc9f7d2a5aeb782f8a48d1dc0417634a6b1b2bfdc9055a9739e3837806",
+      "bytes": 241,
+      "raw_failure_private": false
+    },
+    "legacy-5c25-cold-v2-safe.json": {
+      "sha256": "e4332679399501367a66ea490c9ad97a27237ce91da4057ad5a6d26a7c4fb6c2",
+      "bytes": 624,
+      "raw_failure_private": false
+    },
+    "legacy-v2-corrected-execution.json": {
+      "sha256": "4cefc52e1303a3faf8c37b2713b1c628990a3faa9f3ad3c18c9e08990f60bb55",
+      "bytes": 310,
+      "raw_failure_private": false
+    },
+    "legacy-v2-corrected-junit.xml": {
+      "sha256": "8c9bee76f6eed74c4b093751566dfc5857dea9afa3d27423708f3055376fc408",
+      "bytes": 438,
+      "raw_failure_private": false
+    },
+    "legacy-v2-corrected-progress.json": {
+      "sha256": "c75bc149c29a137e9af545c0510a0c43be5f5e725ad249f83853b04e9f0d92fb",
+      "bytes": 323,
+      "raw_failure_private": false
+    },
+    "legacy-v2-corrected-pytest.log": {
+      "sha256": "7674d9cfe301a9c2cb6c29c0f0e478c10b7dd8d1d8421e0e79983d076cab629e",
+      "bytes": 1178,
+      "raw_failure_private": false
+    },
+    "legacy_5c25_isolated_execution_preview.py": {
+      "sha256": "dbe3c4ca95305457358eb2c1358e2af7fae808a6de437a82cf0f632f0dcc5dc8",
+      "bytes": 29207,
+      "raw_failure_private": false
+    },
+    "noncooperative-late-source-safe.json": {
+      "sha256": "80ba6e74bfab85e74277bf98000474f9da31b71e9822c5f1d2ccf96f991e9aa2",
+      "bytes": 191,
+      "raw_failure_private": false
+    },
+    "observer-classification-safe.json": {
+      "sha256": "f20da3b8232aa6062ec4c601c9286b6680ade761162e550053dd5ac9dec725d4",
+      "bytes": 766,
+      "raw_failure_private": false
+    },
+    "owned-pg-api-restart-safe.json": {
+      "sha256": "50b923be1e9c9d77bd769decc8f44877700825c398632b702c2c248a4c86fa80",
+      "bytes": 525,
+      "raw_failure_private": false
+    },
+    "reader-exclusive-expiry-safe.json": {
+      "sha256": "4b05382a7b1c1b82949d9bd1e03aeadd1a2aa988ae74e2c28df343336f8e420d",
+      "bytes": 742,
+      "raw_failure_private": false
+    },
+    "reader-expiry-priority-execution.json": {
+      "sha256": "a1d6e202bad16346817dee05034e9400a2f226b619f7271a240d9ca135f5c200",
+      "bytes": 351,
+      "raw_failure_private": false
+    },
+    "reader-expiry-priority-junit.xml": {
+      "sha256": "1199958c04e085c16ba5486c130c35b85304f1a82435ab193d18f885135d71f2",
+      "bytes": 444,
+      "raw_failure_private": false
+    },
+    "reader-expiry-priority-progress.json": {
+      "sha256": "ccc86a96db788606bb41f021a8621ccf8f990464afba793f345510f1826b8eb5",
+      "bytes": 329,
+      "raw_failure_private": false
+    },
+    "reader-expiry-priority-pytest.log": {
+      "sha256": "b4bf2fe424daf6f9192515e7957ff88b138197b604a9ceff84ff58aa36b01f11",
+      "bytes": 1184,
+      "raw_failure_private": false
+    },
+    "reader-timeout-safe.json": {
+      "sha256": "3e7f17403238cd7bdb26a20f3cb18fba6fbc9b25d8e0777350ebf8d50b43a921",
+      "bytes": 234,
+      "raw_failure_private": false
+    },
+    "related-ten-execution.json": {
+      "sha256": "51bc5c7254a4b24f4033e54fb1df4c3fdf13135afa72bafc761f0dd94608b6a9",
+      "bytes": 1038,
+      "raw_failure_private": false
+    },
+    "related-ten-junit.xml": {
+      "sha256": "7fb60da10cb8dc0c4919509a4a38835ea4e6c7f03941d4a90c6d46f5524f080a",
+      "bytes": 40149,
+      "raw_failure_private": false
+    },
+    "related-ten-progress.json": {
+      "sha256": "41cae997fd473668c8c05a7a7c5cfb5baf032356e736f77bc7189b55aa8cdae8",
+      "bytes": 61139,
+      "raw_failure_private": false
+    },
+    "related-ten-pytest.log": {
+      "sha256": "1646c5c1507c1820d2fcda9b40af0993fe97585c513deaf5c0a0f162c6f4ec2f",
+      "bytes": 1410,
+      "raw_failure_private": false
+    },
+    "remote-after.raw": {
+      "sha256": "8eee184c827a4701ca121c81ca5bce5221d091d925b3493ae75c18b5b912d19d",
+      "bytes": 224,
+      "raw_failure_private": false
+    },
+    "remote-after.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "raw_failure_private": false
+    },
+    "remote-before.raw": {
+      "sha256": "8eee184c827a4701ca121c81ca5bce5221d091d925b3493ae75c18b5b912d19d",
+      "bytes": 224,
+      "raw_failure_private": false
+    },
+    "remote-before.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "raw_failure_private": false
+    },
+    "run.py": {
+      "sha256": "798488b92f8ab4b20abb35a0ff5ad7340fbfc24f4d0264271db6a78a346280ad",
+      "bytes": 1034,
+      "raw_failure_private": false
+    },
+    "scope-prepared-safe.json": {
+      "sha256": "443e18d1203899397d7fa7ce087d03aa513ebc2839bbdb1cb5e10d2d9596a5d6",
+      "bytes": 1271,
+      "raw_failure_private": false
+    },
+    "source-after-preliminary.json": {
+      "sha256": "242eecf70013840ae2e52e796900bf79e3465542c2b3ae0ed00d555ce9a41b25",
+      "bytes": 474,
+      "raw_failure_private": false
+    },
+    "source-after.json": {
+      "sha256": "fe9c70da1f1395ad6a5fe3abd1ed1e293fe0de32035d1823f050dd926c829b97",
+      "bytes": 513,
+      "raw_failure_private": false
+    },
+    "source-before.json": {
+      "sha256": "23fa49ba4594a2a72f5753cbb586e807bdfd9da41ac04b9f11e1769c27e1a548",
+      "bytes": 204,
+      "raw_failure_private": false
+    },
+    "test_independent_boundaries.py": {
+      "sha256": "49e19224c1fec2960dfad339fd5b1395be525c706b0aa0982ce72d5afc6c452e",
+      "bytes": 11787,
+      "raw_failure_private": false
+    },
+    "test_independent_browser.py": {
+      "sha256": "b0f275336e7ffe14324f1b5faa90b9f6973481c51fb24f6063a541d203bc192a",
+      "bytes": 3875,
+      "raw_failure_private": false
+    },
+    "test_independent_restart.py": {
+      "sha256": "3f6f67c04374cd1723f25a9536d79518c4ce6ca7b2699494fba6ee2c211ad1eb",
+      "bytes": 6019,
+      "raw_failure_private": false
+    },
+    "test_legacy_v2_corrected.py": {
+      "sha256": "62d0eb1cd773379ad6e922c273477944742e959ee96edfaf73e09dbfef5f9bb9",
+      "bytes": 11844,
+      "raw_failure_private": false
+    },
+    "test_reader_expiry_priority.py": {
+      "sha256": "8b772e47bb4010fe6f5493d7c4b5362e6060a19bfab688c8650b8f588390d6db",
+      "bytes": 4136,
+      "raw_failure_private": false
+    },
+    "wal-observation-safe.json": {
+      "sha256": "5956439e27cb0e48d014a48f4a87b98f5ec829ff23af0cfe11e321e30e66e132",
+      "bytes": 361,
+      "raw_failure_private": false
+    },
+    "wrapper.py": {
+      "sha256": "deb827834851e1af701682cf092ba44bcc715ded453be04dd6f2defac307b0de",
+      "bytes": 1452,
+      "raw_failure_private": false
+    }
+  }
+}

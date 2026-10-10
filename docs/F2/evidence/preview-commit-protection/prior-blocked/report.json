@@ -1,0 +1,181 @@
+{
+  "artifacts": {
+    "commit-reader-expiry-safe.json": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/commit-reader-expiry-safe.json",
+      "private_only": true,
+      "sha256": "0cac5fd4bcb64c4cf75127933885386e4f4b8024c7a178bede46535ecc762d5f"
+    },
+    "commit-reader-priority-execution.json": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/commit-reader-priority-execution.json",
+      "private_only": true,
+      "sha256": "ad0f9994ac1864b8ad4fbee3303df7cc1f2eb31d7ab2c9d3402ff630ac0387c1"
+    },
+    "commit-reader-priority-junit.xml": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/commit-reader-priority-junit.xml",
+      "private_only": true,
+      "sha256": "65b554ed652e2dfb66e99051936b878f2b33eba712a252e47f2bdadc3f06638c"
+    },
+    "commit-reader-priority-progress.json": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/commit-reader-priority-progress.json",
+      "private_only": true,
+      "sha256": "d5aa17245f55647aeab0833ec10bd97a6f72efc3a918837292956adc7ff1e303"
+    },
+    "commit-reader-priority-pytest.log": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/commit-reader-priority-pytest.log",
+      "private_only": true,
+      "sha256": "0274b1dbe6d75b30d189c55cb0e475795831b1c4db6d4b3822c40d940f832f31"
+    },
+    "frozen-source.json": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/frozen-source.json",
+      "private_only": true,
+      "sha256": "0408c6979041995b15ac782baa4045e76a5cd90fce58e130ee0931075b99299d"
+    },
+    "git-after.raw": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/git-after.raw",
+      "private_only": true,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "head-after.raw": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/head-after.raw",
+      "private_only": true,
+      "sha256": "a8df1424a1c23a05f6e7a9258f71c347510195de55a5d136137eceb82498930b"
+    },
+    "remote-after.raw": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/remote-after.raw",
+      "private_only": true,
+      "sha256": "739829d425b736caceb430cfab6ebd4feaf16c674eca9048bbc87c95f41377ab"
+    },
+    "remote-after.stderr": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/remote-after.stderr",
+      "private_only": true,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "remote-before.raw": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/remote-before.raw",
+      "private_only": true,
+      "sha256": "739829d425b736caceb430cfab6ebd4feaf16c674eca9048bbc87c95f41377ab"
+    },
+    "remote-before.stderr": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/remote-before.stderr",
+      "private_only": true,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "run.py": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/run.py",
+      "private_only": true,
+      "sha256": "47bee3505e20475a44f3a9643a6a0e2ddca9b5f18401da4e690adae5bf568b12"
+    },
+    "source-after.json": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/source-after.json",
+      "private_only": true,
+      "sha256": "51d5b0db15dbe19eb3e554dace7f15cd3c83c1cbce31b489c924fb7d88c3c55d"
+    },
+    "source-before.json": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/source-before.json",
+      "private_only": true,
+      "sha256": "eef9ba70057ae3ad88d8dfe35ee7b08d048c50311e61ddea2dffc2041c19f561"
+    },
+    "test_commit_reader_priority.py": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/test_commit_reader_priority.py",
+      "private_only": true,
+      "sha256": "db0b082b74b5aaa87ba2d2d565f018a6b017f5feafe986fc32da92bcbcea963f"
+    },
+    "wrapper.py": {
+      "path": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/wrapper.py",
+      "private_only": true,
+      "sha256": "4ac2184d550460d39c671e6f23015943420f00bf5b528f4f12726d8cddb35aae"
+    }
+  },
+  "blockers": [
+    {
+      "cause": "BEGIN IMMEDIATE permits a separate reader SHARED lock; COMMIT waits after final guard, allowing durable SQLite preview before outer PostgreSQL managed completion check rejects",
+      "evidence": {
+        "actual_commit_trace_observed": true,
+        "actual_http": true,
+        "actual_owned_postgresql": true,
+        "actual_separate_sqlite_shared_reader": true,
+        "clock_crossed_issued_10minute_deadline_during_commit_wait": true,
+        "expected_persisted_rows": 0,
+        "expected_recovery": "NOT_OBSERVED",
+        "expected_response": 403,
+        "formal_public_values_unchanged": true,
+        "guard_checks_before_clock_change": 3,
+        "http_status": 403,
+        "last_guard_valid_managed_dependency": true,
+        "model_calls": 0,
+        "no_permission_reissued": true,
+        "persisted_rows": 1,
+        "persisted_state": "SUCCEEDED",
+        "recovery_http": 200,
+        "recovery_methods": [
+          "GET"
+        ],
+        "recovery_status": "COMMITTED",
+        "request_waiting_after_last_guard": true
+      },
+      "id": "MANAGED_EXPIRY_DURING_SQLITE_COMMIT_WAIT"
+    }
+  ],
+  "contract_sha": "18cdbe541d94d91db9c68d57b222d9d78e3e9748",
+  "decision": "BLOCKED",
+  "exact_sha": "791c518da37ef6048156029d67d6141ef80bee99",
+  "git_clean_after": true,
+  "git_clean_before": true,
+  "may_unfreeze_after_report_sealed": true,
+  "merge_eligible": false,
+  "owned_api_and_pg_closed": true,
+  "owned_runtime_all_naturally_exited": true,
+  "raw_failures_private_preserved": true,
+  "remaining_limits": [
+    "No complete related regression started after one real blocker",
+    "Cooperative/uncooperative publisher, lock ordering, browser, old v2 read, additional interruption scopes pending fixed exact SHA independent review",
+    "Snapshot comparison does not establish atomic protection for all sources",
+    "Full AT14 NOT_RUN",
+    "Full repository NOT_RUN",
+    "Windows NOT_RUN",
+    "Real fulfillment/Case completion/model/external notification NOT_RUN"
+  ],
+  "root_counts_not_transferred": true,
+  "scope": "P1 cooperative commit protection and already-observed managed expiry during actual SQLite COMMIT reader wait",
+  "source_after": {
+    "drift": [],
+    "git_clean": true,
+    "manifest_sha256": "0408c6979041995b15ac782baa4045e76a5cd90fce58e130ee0931075b99299d",
+    "paths": 348,
+    "remote_actual": {
+      "refs/heads/candidate/preview-commit-protection-20261010": "791c518da37ef6048156029d67d6141ef80bee99",
+      "refs/heads/dev/f1-foundation": "a0bfbf1ed78485bf4c9fb50a32bbc688cfbb698b",
+      "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+    },
+    "sha": "791c518da37ef6048156029d67d6141ef80bee99"
+  },
+  "source_before": {
+    "drift": [],
+    "manifest_sha256": "0408c6979041995b15ac782baa4045e76a5cd90fce58e130ee0931075b99299d",
+    "paths": 348,
+    "runtime_started": false,
+    "sha": "791c518da37ef6048156029d67d6141ef80bee99"
+  },
+  "source_or_git_writes_by_reviewer": false,
+  "windows": [
+    {
+      "classification": "PRODUCT_BLOCKED",
+      "controlled_seconds": 3.8866665363311768,
+      "end_epoch": 1791643837.7265,
+      "errors": 0,
+      "failed": 1,
+      "junit_seconds": 2.58,
+      "log": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/commit-reader-priority-pytest.log",
+      "minimal_environment": true,
+      "name": "commit-reader-priority",
+      "natural_exit": true,
+      "passed": 0,
+      "probe": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/test_commit_reader_priority.py",
+      "returncode": 1,
+      "skipped": 0,
+      "start_epoch": 1791643833.8398335,
+      "tests": 1,
+      "xml": "/workspace/ParkWeave/.runtime/independent-preview-commit-protection-review/commit-reader-priority-junit.xml"
+    }
+  ]
+}

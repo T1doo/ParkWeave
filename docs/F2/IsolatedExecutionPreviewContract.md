@@ -1,5 +1,7 @@
 # 原P1注册材料链的隔离执行预览合同
 
+后续提交保护修复见[PreviewCommitProtectionContract](PreviewCommitProtectionContract.md)和[实际独审结果](PreviewCommitProtection.md)：原BEGIN IMMEDIATE改为BEGIN EXCLUSIVE；历史比较统一SNAPSHOT_MATCH/STALE。下文保留原实现冻结与历史验收，不将原末次采样保证外推为当前全来源原子性。
+
 基线 `f5f187fb1a390e724a3b471f82243425349b4f85`，原§6.3/F2-T02/AT14。原controlled-plan/preview仅结构与来源检查、planning-preview仅确定性子图与元数据持久化，均executed=false。原冻结覆盖表保持NOT_RUN，不把已有SYNTHETIC业务链当隔离执行。先冻结本合同，再实现。
 
 ## 最小实际执行与边界

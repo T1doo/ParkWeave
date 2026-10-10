@@ -1,5 +1,7 @@
 # 原P1注册材料链的隔离执行预览
 
+后续获审提交保护源码 `cadc7a34ecece7d77d793c4676e1b552838f41cc` 和实际剩余边界见[PreviewCommitProtection](PreviewCommitProtection.md)。下文的5c25验收与OPEN记录是历史窗口；当前不再输出CURRENT强保证，原v2不可变产物保持兼容。
+
 仅原§6.3/F2-T02/AT14的P1合成隔离范围获得LIMITED_PASS。获审运行SHA `5c25aa08c7ab499764bc2aa145dd932ee8a2a417`；修复前合同SHA `959c020cc7c8221f60028a956e9460ea13b158af`；基线dev `f5f187fb1a390e724a3b471f82243425349b4f85`。原冻结覆盖表AT14仍NOT_RUN，不将本局部预览签为完整隔离工程执行。
 
 原controlled-plan preview仍只做结构与来源检查，planning-preview仍只保存确定性规划元数据。新入口沿原bounded-planning区明确执行原 `preparation.command` 的ADD_EVIDENCE×双槽、REVIEW、CONFIRM；缺槽实际进入原REVIEW产生FAILED。专属PG连接创建固定八个pg_temp影子表，search_path仅pg_temp，代理只允许原18条精确SQL模板，结束始终ROLLBACK/close。独立新UUID资料/Case/Run/材料/事件与带新UUID命名空间的合成actor用于SIMULATED_ROLES_ONLY；原获派真人、正式材料审核和Case目标不被替代。持久结果仅专属SQLite v2预览库，默认API未attach，明确合成配置才可运行，不创建真实权限。
