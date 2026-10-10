@@ -118,6 +118,15 @@ def test_actual_cold_author_enterprise_reviewer_executor_whole_original_page_cha
             requested=reviewer.evaluate('runAccessView.request.requested_validity')
             reviewer.locator('#run-access-approved-from').fill(requested['valid_from'].replace('+00:00','Z'));reviewer.locator('#run-access-approved-until').fill(requested['valid_until'].replace('+00:00','Z'))
             reviewer.locator('#run-access-decision-reason').fill('SYNTHETIC independent explicit single Run approval');reviewer.locator('#run-access-approve').click();reviewer.wait_for_function('()=>runAccessPending===null&&runAccessView?.state==="APPROVED"')
+            # The enterprise must explicitly adopt this changed collection in the original panel.
+            operator.evaluate('(id)=>loadServiceCasePlan(id)',row['preparation_id']);operator.wait_for_function('()=>servicePlanView?.local_revision_required===true')
+            before_plan=operator.evaluate('servicePlanView');assert before_plan['can_adopt']
+            operator.locator('#service-plan-reason').fill('SYNTHETIC enterprise explicitly adopts original approved Run access')
+            operator.locator('#service-plan-adopt').click();operator.wait_for_function('()=>servicePlanPending===null&&servicePlanView?.local_revision_required===false')
+            after_plan=operator.evaluate('servicePlanView');assert after_plan['plan_id']==before_plan['plan_id'] and after_plan['events'][:-1]==before_plan['events']
+            ids={s['adapter_id']:s['id'] for s in before_plan['steps']};local_patch=after_plan['events'][-1]['local_revision']
+            assert set(local_patch['affected'])=={ids['P3'],ids['P4'],ids['P5']} and set(local_patch['preserved'])=={ids['P1'],ids['P2']}
+            assert after_plan['steps'][0]==before_plan['steps'][0]
             hs=create_three_holds(operator,u,owner);operator.locator('#delivery-case').fill(row['preparation_id']);operator.locator('#delivery-preview').click();operator.wait_for_function('()=>deliveryQuote!==null')
             approve_page(operator)
             # At 320, lose the actual committed delivery reply and recover after cold reload.

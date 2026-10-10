@@ -141,7 +141,7 @@ def test_unaffected_lock_survives_patch_affected_lock_waits_for_explicit_unlock(
     assert stored(f,p)['steps'][0]['manual_lock']==old['steps'][0]['manual_lock'] and step(r.json(),'P1')['state']=='VERIFIED'
 
 
-@pytest.mark.parametrize('unknown',['legacy','declaration','overflow'])
+@pytest.mark.parametrize('unknown',['legacy','declaration','saved-overflow','overflow'])
 def test_unknown_expands_case_recheck_without_rewriting_body_or_history(http_f,monkeypatch,unknown):
     f=http_f;p,g,d,s=complete(f)
     if unknown=='overflow':monkeypatch.setattr(deps,'COLLECTION_LIMIT',1)
@@ -158,7 +158,8 @@ def test_unknown_expands_case_recheck_without_rewriting_body_or_history(http_f,m
                         st=next(z for z in plan['steps'] if z['id']==e['step_id']);e['sources']=deepcopy(st['verified_sources']);e['source_sha256']=st['verified_sha256']
                         e['fingerprint']=cp._hash(dict(preparation_id=p['preparation_id'],action='VERIFY',step_id=e['step_id'],expected_revision=e['revision']-1,expected_source_sha256=e['source_sha256'],reason=e['reason']))
             else:
-                plan['dependency_manifest']['declarations']['P2'].append('UNKNOWN_DYNAMIC_SOURCE')
+                if unknown=='saved-overflow':plan['dependency_manifest']['collections']['resources'].update(known=False,count=257)
+                else:plan['dependency_manifest']['declarations']['P2'].append('UNKNOWN_DYNAMIC_SOURCE')
                 value=plan['dependency_manifest'];value['sha256']=cp._hash({k:v for k,v in value.items() if k!='sha256'});plan['events'][0]['dependencies']=deepcopy(value)
             c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),p['preparation_id']))
     before=stored(f,p);x=read(f,p).json();expected_impact(x,('P1','P2','P3','P4'),());assert x['change_impact']['unknown_scope']=='THIS_CASE'
@@ -201,13 +202,22 @@ def test_unrelated_owner_resource_and_other_run_do_not_invalidate_plan(http_f):
     assert x['state']=='VERIFIED' and not x['local_revision_required'] and stored(f,p)==old and snapshot(f)==before
 
 
-@pytest.mark.parametrize('damage',['manifest','previous','request','partition','event-basis'])
+@pytest.mark.parametrize('damage',['manifest','previous','request','partition','event-basis','valid-partition','event-revision','plan-revision','event-id','plan-id','event-key','adopt-actor'])
 def test_damaged_dependency_journal_is_rejected_without_observation_writes(http_f,damage):
     f=http_f;p,g,d,s=complete(f);add_resource(f);assert patch(f,p).status_code==201;plan=stored(f,p)
     if damage=='manifest':plan['dependency_manifest']['sha256']='0'*64
     elif damage=='previous':plan['events'][-1]['local_revision']['previous_sha256']='0'*64
     elif damage=='request':plan['events'][-1]['local_revision']['request']['reason']='SYNTHETIC forged'
     elif damage=='partition':plan['events'][-1]['local_revision']['affected']=[str(uuid4())]
+    elif damage=='valid-partition':
+        part=plan['events'][-1]['local_revision'];p1=plan['steps'][0]['id'];p2=plan['steps'][1]['id']
+        part['affected']=[p1 if x==p2 else x for x in part['affected']];part['preserved']=[p2 if x==p1 else x for x in part['preserved']]
+    elif damage=='event-revision':plan['events'][-1]['revision']+=7
+    elif damage=='plan-revision':plan['revision']=True
+    elif damage=='event-id':plan['events'][-1]['id']=plan['events'][0]['id']
+    elif damage=='plan-id':plan['events'][-1]['plan_id']=str(uuid4())
+    elif damage=='event-key':plan['events'][-1]['request_key']=plan['events'][0]['request_key']
+    elif damage=='adopt-actor':plan['events'][0]['actor_id']='prep-specialist-fixture-a'
     else:plan['events'][-1]['dependencies']['collections']['resources']['sha256']='0'*64
     with f[1].connect() as c:c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),p['preparation_id']))
     before=snapshot(f);assert read(f,p).status_code==409 and recover(f,p).status_code==409 and get(f,p).status_code==409 and snapshot(f)==before

@@ -137,6 +137,30 @@ def verify(u,row,adapter,owner='fixture-a'):
     return result
 
 
+def adopt_existing_access_change(u,row,owner='fixture-a'):
+    """Owner explicitly adopts the original approved Run collection; never implicit."""
+    path='/api/preparations/'+row['preparation_id']+'/service-case-plan'
+    before=call(u,path,actor=owner);assert before['local_revision_required'] and before['can_adopt']
+    original=original_rows(u,row)
+    q=before['current_preview'];body=dict(expected_preparation_revision=before['preparation_revision'],
+        expected_request_revision=before['request_revision'],expected_plan_revision=before['revision'],
+        expected_source_sha256=q['source_sha256'],required_goals=q['required_goals'],local_revision=True,
+        reason='SYNTHETIC owner explicitly adopts existing approved Run access change')
+    after=call(u,path,actor=owner,data=body,expected=201)
+    assert after['plan_id']==before['plan_id'] and after['revision']==before['revision']+1
+    assert after['events'][:-1]==before['events']
+    event=after['events'][-1]['local_revision'];ids={s['adapter_id']:s['id'] for s in before['steps']}
+    assert set(event['affected'])=={ids['P3'],ids['P4'],ids['P5']} and set(event['preserved'])=={ids['P1'],ids['P2']}
+    assert after['steps'][0]==before['steps'][0]
+    current=original_rows(u,row)
+    for table in original:
+        if table=='preparations':
+            for old,new in zip(original[table],current[table]):
+                assert {k:v for k,v in old.items() if k!='service_case_plan'}=={k:v for k,v in new.items() if k!='service_case_plan'}
+        else:assert current[table]==original[table]
+    return after
+
+
 def request_access(u,row,owner='fixture-a',action='REQUEST'):
     path='/api/runs/'+row['run_id']+'/access'
     actor='prep-specialist-'+owner if action=='APPROVE' else owner
@@ -197,6 +221,7 @@ def finish_chain(u,row,owner='fixture-a',offset=0):
     catalog=call(u,'/api/service-dispatches/catalog?preparation_id='+row['preparation_id'],actor='prep-specialist-'+owner)
     assert catalog['executors']==[] and not catalog['ready']
     request_access(u,row,owner);request_access(u,row,owner,'APPROVE')
+    adopt_existing_access_change(u,row,owner)
     hs,data=holds(u,owner,offset);sent,key=delivery(u,row,data,owner);verify(u,row,'P2',owner)
     dispatch=acceptance(u,row,owner);verify(u,row,'P3',owner);ack=report_and_ack(u,row,dispatch,owner);verify(u,row,'P4',owner)
     path='/api/preparations/'+row['preparation_id'];local=call(u,path+'/local-case',actor=owner)

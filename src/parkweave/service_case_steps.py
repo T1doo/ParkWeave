@@ -406,6 +406,7 @@ def _recovery_proofs(parent):
                 if event['action'] not in ('VERIFY','LOCK') and (event['source_sha256'] is not None or event['sources'] is not None):raise ValueError()
                 proofs.append((plan,event,expected,previous))
             if latest_dependencies!=plan.get('dependency_manifest'):raise ValueError()
+            dependencies.plan_proof(parent,plan)
         return proofs
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('original service plan recovery proof invalid')
 

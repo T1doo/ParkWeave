@@ -1,5 +1,6 @@
 """Versioned declarations for the existing adapter subgraph, never new authority."""
 from copy import deepcopy
+from uuid import UUID
 import re
 from . import controlled_plans as cp
 from .store import Conflict
@@ -76,6 +77,12 @@ def plan_proof(parent,plan):
     try:
         from .service_case_steps import Adopt,_adopt_request
         latest=None;step_ids={s['id'] for s in plan['steps']}
+        UUID(plan['id'])
+        if (type(plan['revision']) is not int or not 1<=plan['revision']<=64 or
+            not isinstance(plan['events'],list) or len(plan['events'])!=plan['revision'] or
+            not 1<=len(plan['steps'])<=5 or len(step_ids)!=len(plan['steps'])):raise ValueError()
+        for id in step_ids:UUID(id)
+        event_ids=set();keys=set()
         if plan.get('dependency_manifest') is not None:
             original=plan['adoption_preview']['steps']
             if len(original)!=len(plan['steps']):raise ValueError()
@@ -84,7 +91,20 @@ def plan_proof(parent,plan):
                     (step['adapter_id'],step['adapter'],step['adapter_revision'],step['depends_on'])!=
                     (source['id'],source['adapter'],source['revision'],source['depends_on'])):raise ValueError()
         for n,event in enumerate(plan['events'],1):
+            UUID(event['id'])
+            legacy_key=(n==1 and event['action']=='ADOPT' and isinstance(event['request_key'],str) and
+                        re.fullmatch(r'tc:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:ADOPT_PLAN',event['request_key']))
+            if (type(event['revision']) is not int or event['revision']!=n or event['plan_id']!=plan['id'] or
+                event['id'] in event_ids or type(event['actor_id']) is not str or type(event['request_key']) is not str or
+                (event['actor_id'],event['request_key']) in keys or not (re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or legacy_key) or
+                not isinstance(event['fingerprint'],str) or not re.fullmatch('[a-f0-9]{64}',event['fingerprint']) or
+                type(event['coordination_only']) is not bool or type(event['reason']) is not str or not 1<=len(event['reason'])<=1000 or
+                event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK') or
+                (n==1 and event['action']!='ADOPT') or (event['step_id'] is None if event['action']=='ADOPT' else event['step_id'] in step_ids) is not True):raise ValueError()
+            event_ids.add(event['id']);keys.add((event['actor_id'],event['request_key']))
             if event['action']!='ADOPT':continue
+            if (event['actor_id']!=parent['owner_id'] or event['coordination_only'] is not True or
+                event['source_sha256'] is not None or event['sources'] is not None):raise ValueError()
             value=event.get('dependencies')
             if value is not None:validate(value)
             if n>1:
@@ -99,17 +119,29 @@ def plan_proof(parent,plan):
                     set(patch)!={'request','previous_sha256','affected','preserved'} or
                     not isinstance(patch['affected'],list) or not isinstance(patch['preserved'],list) or not patch['affected'] or
                     len(patch['affected']+patch['preserved'])!=len(step_ids) or set(patch['affected']+patch['preserved'])!=step_ids or value is None):raise ValueError()
+                affected,_=impact_between(plan['steps'],latest,value)
+                if (value!=manifest(plan['steps'],value['collections']) or any(not v['known'] for v in value['collections'].values()) or
+                    set(patch['affected'])!={s['id'] for s in plan['steps'] if s['adapter_id'] in affected} or
+                    set(patch['preserved'])!={s['id'] for s in plan['steps'] if s['adapter_id'] not in affected}):raise ValueError()
             latest=value
         if latest!=plan.get('dependency_manifest'):raise ValueError()
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('registered dependency journal proof invalid')
 
 
-def inspect(plan,values):
-    current=manifest(plan['steps'],values);saved=plan.get('dependency_manifest')
+def impact_between(steps,saved,current):
+    """Rebuild the decision from both immutable manifests, including uncertainty."""
     if saved is not None:validate(saved)
+    validate(current)
     unknown=bool(saved is None or any(not v['known'] for v in current['collections'].values()) or
+                 any(not v['known'] for v in saved['collections'].values()) or
                  any(saved[k]!=current[k] for k in ('version','declarations','edges')))
     roots=set(DECLARATIONS) if unknown else {COLLECTION_ROOTS[name] for name,value in current['collections'].items() if saved['collections'].get(name)!=value}
     # Extra/missing collection declarations are an uncertainty, not an empty match.
     if saved is not None and set(saved['collections'])!=set(current['collections']):unknown=True;roots=set(DECLARATIONS)
-    return current,closure(plan['steps'],roots),unknown
+    return closure(steps,roots),unknown
+
+
+def inspect(plan,values):
+    current=manifest(plan['steps'],values)
+    affected,unknown=impact_between(plan['steps'],plan.get('dependency_manifest'),current)
+    return current,affected,unknown
