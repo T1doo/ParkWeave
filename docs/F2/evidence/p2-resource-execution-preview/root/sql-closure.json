@@ -1,0 +1,78 @@
+{
+  "baseline": "24c6a9d2bfc2842fcbe2323b69f76f8117170f69",
+  "functions": {
+    "resource_holds.py": [
+      "_auth",
+      "_scope",
+      "_key",
+      "_now",
+      "_peak",
+      "_replay",
+      "_receipt",
+      "_own",
+      "preview",
+      "create"
+    ],
+    "resource_combinations.py": [
+      "_group",
+      "_members",
+      "_receipt",
+      "_confirm_locked"
+    ],
+    "case_resources.py": [
+      "_history",
+      "_reason",
+      "_view",
+      "_bind_locked"
+    ],
+    "preparation.py": [
+      "grant"
+    ],
+    "store.py": [
+      "auth",
+      "check_capability",
+      "scoped_run"
+    ],
+    "controlled_plans.py": [
+      "_row",
+      "invalidate"
+    ]
+  },
+  "templates": [
+    "INSERT INTO case_resource_links(id,preparation_id,case_id,run_id,owner_id,park_id,org_id,combination_id,revision,preparation_revision,preparation_sha256,service_id,service_version,reason,snapshot,actor_id,request_key,fingerprint)\n      VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *",
+    "INSERT INTO resource_case_claims(combination_id,case_id,owner_id,park_id,org_id) VALUES(%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING",
+    "INSERT INTO synthetic_resource_combination_members VALUES(%s,%s)",
+    "INSERT INTO synthetic_resource_combination_receipts VALUES(%s,%s,%s,%s,%s,%s,%s)",
+    "INSERT INTO synthetic_resource_combinations VALUES(%s,%s,%s,%s,'CONFIRMED',%s) RETURNING *",
+    "INSERT INTO synthetic_resource_holds(id,resource_id,principal_id,park_id,org_id,\n                resource_revision,starts_at,ends_at,quantity,buffer_seconds,purpose,state,created_at,expires_at,namespace)\n                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'HELD',%s,%s,'SYNTHETIC') RETURNING *",
+    "INSERT INTO synthetic_resource_receipts VALUES(%s,%s,%s,%s,%s,%s,%s)",
+    "SELECT * FROM case_resource_links WHERE actor_id=%s AND request_key=%s",
+    "SELECT * FROM case_resource_links WHERE case_id=%s AND owner_id=%s AND park_id=%s AND org_id=%s ORDER BY revision",
+    "SELECT * FROM controlled_plans WHERE preparation_id=%s FOR UPDATE",
+    "SELECT * FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s",
+    "SELECT * FROM preparations WHERE id=%s AND park_id=%s AND org_id=%s FOR UPDATE",
+    "SELECT * FROM principals WHERE token_hash=%s AND active",
+    "SELECT * FROM runs WHERE id=%s AND park_id=%s AND org_id=%s",
+    "SELECT * FROM synthetic_resource_combinations WHERE id=%s AND principal_id=%s AND park_id=%s AND org_id=%s",
+    "SELECT * FROM synthetic_resource_combinations WHERE id=%s AND principal_id=%s AND park_id=%s AND org_id=%s FOR UPDATE",
+    "SELECT * FROM synthetic_resources WHERE id=%s AND park_id=%s",
+    "SELECT 1 FROM capability_grants WHERE principal_id=%s AND capability=%s AND park_id=%s AND org_id=%s AND active",
+    "SELECT 1 FROM preparation_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s AND capability=%s AND active",
+    "SELECT 1 FROM synthetic_resource_grants WHERE principal_id=%s AND resource_id=%s AND park_id=%s AND org_id=%s AND capability=%s AND active",
+    "SELECT case_id FROM resource_case_claims WHERE combination_id=%s",
+    "SELECT clock_timestamp() AS now",
+    "SELECT h.*,m.combination_id,r.name AS resource_name FROM synthetic_resource_holds h JOIN synthetic_resources r ON r.id=h.resource_id LEFT JOIN synthetic_resource_combination_members m ON m.hold_id=h.id WHERE h.id=%s AND h.principal_id=%s AND h.park_id=%s AND h.org_id=%s",
+    "SELECT h.*,m.combination_id,r.name AS resource_name FROM synthetic_resource_holds h JOIN synthetic_resources r ON r.id=h.resource_id LEFT JOIN synthetic_resource_combination_members m ON m.hold_id=h.id WHERE h.id=%s AND h.principal_id=%s AND h.park_id=%s AND h.org_id=%s FOR UPDATE OF h",
+    "SELECT hold_id FROM synthetic_resource_combination_members WHERE combination_id=%s ORDER BY hold_id",
+    "SELECT id,run_id FROM cases WHERE id=%s FOR UPDATE",
+    "SELECT payload FROM synthetic_resource_combination_receipts WHERE combination_id=%s AND action='CONFIRM'",
+    "SELECT payload,fingerprint FROM synthetic_resource_receipts WHERE actor_id=%s AND request_key=%s UNION ALL SELECT payload,fingerprint FROM synthetic_resource_combination_receipts WHERE actor_id=%s AND request_key=%s",
+    "SELECT pg_advisory_xact_lock(hashtextextended(%s,0))",
+    "SELECT pg_advisory_xact_lock_shared(hashtextextended(%s,0))",
+    "SELECT starts_at,ends_at,buffer_seconds,quantity FROM synthetic_resource_holds\n        WHERE resource_id=%s AND ((state='HELD' AND expires_at>%s) OR state='CONFIRMED')\n        AND (%s::uuid IS NULL OR id<>%s::uuid)\n        AND starts_at-make_interval(secs=>buffer_seconds)<%s\n        AND ends_at+make_interval(secs=>buffer_seconds)>%s",
+    "SELECT state FROM cases WHERE id=%s",
+    "SET LOCAL lock_timeout='3s'",
+    "UPDATE controlled_plans SET invalidated_from=least(coalesce(invalidated_from,%s),%s),invalidated_at=coalesce(invalidated_at,clock_timestamp()) WHERE preparation_id=%s",
+    "UPDATE synthetic_resource_holds SET state='CONFIRMED' WHERE id=%s"
+  ]
+}

@@ -1,5 +1,7 @@
 # P2 原资源适配器隔离执行冻结合同
 
+实现后精确源码、独立分窗结果及未签收边界见[P2ResourceExecutionPreview](P2ResourceExecutionPreview.md)。本合同保留实现前冻结，不将局部预演外推为完整AT14或正式资源可用量。
+
 基线 `24c6a9d2bfc2842fcbe2323b69f76f8117170f69`。root 单源码/Git写入者；正常fetch和远端HEAD已核实，无待合并操作，不碰main、权限、凭据或网络配置。先冻结本合同再实现；旧P1 v2产物及入口保持兼容。原AT14继续按局部预演报告，不签全AT。
 
 新显式合成factory、独立0700目录/0600 SQLite、不同scope绑定原cluster/database；复用已审rollback-journal BEGIN EXCLUSIVE、当前权限优先于历史、不可变proof、有界128/每Case16/正文及proof64KiB、同key CAS/幂等和503后GET-only恢复。不迁移、清空或修改旧P1库。原Case/Run、资料revision、请求revision、双槽ID/version/hash、完整目标及P1/P2精确注册合同和两条既有授权资源规则hash均绑定。来源变化保留历史标STALE，匹配仅SNAPSHOT_MATCH/source_atomicity=false。

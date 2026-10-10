@@ -1,5 +1,7 @@
 # 原P1注册材料链的隔离执行预览
 
+后续原P2资源链的独立合成预演见[P2ResourceExecutionPreview](P2ResourceExecutionPreview.md)。下文保留原P1历史验收，不将P2局部通过签为完整AT14或正式资源执行。
+
 后续获审提交保护源码 `cadc7a34ecece7d77d793c4676e1b552838f41cc` 和实际剩余边界见[PreviewCommitProtection](PreviewCommitProtection.md)。下文的5c25验收与OPEN记录是历史窗口；当前不再输出CURRENT强保证，原v2不可变产物保持兼容。
 
 仅原§6.3/F2-T02/AT14的P1合成隔离范围获得LIMITED_PASS。获审运行SHA `5c25aa08c7ab499764bc2aa145dd932ee8a2a417`；修复前合同SHA `959c020cc7c8221f60028a956e9460ea13b158af`；基线dev `f5f187fb1a390e724a3b471f82243425349b4f85`。原冻结覆盖表AT14仍NOT_RUN，不将本局部预览签为完整隔离工程执行。
