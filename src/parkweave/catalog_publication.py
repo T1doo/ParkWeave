@@ -161,6 +161,7 @@ class IsolatedCatalogPublication:
             # for a consumer's shared advisory key.
             keys=sorted(set(self.parents.values()))
             for key in keys:lock(c,key,exclusive=True)
+            c.execute('LOCK TABLE preparation_catalog IN ACCESS EXCLUSIVE MODE')
             exists=c.execute("SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='preparation_catalog' AND column_name=%s",(COL,)).fetchone()
             if not exists:
                 c.execute('ALTER TABLE preparation_catalog ADD COLUMN candidate_catalog_revisions jsonb, ADD COLUMN candidate_catalog_head jsonb')

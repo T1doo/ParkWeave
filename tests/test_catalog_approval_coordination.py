@@ -251,3 +251,52 @@ def test_first_installation_takes_catalog_key_before_ddl_and_consumer_cannot_dea
     else:
         assert outcomes['consumer']=='COMMITTED' and ledger(f,p)['revision']==3
         assert states(f,hs)==['CONFIRMED']*3
+
+
+@pytest.mark.parametrize('same_key',[False,True])
+def test_original_catalog_initializers_serialize_schema_and_never_duplicate_ddl(link_fixture,monkeypatch,same_key):
+    from test_preparation import create
+    f=link_fixture;pa,_,_=create(f);pb,_,_=create(f,user='fixture-a' if same_key else 'fixture-c')
+    ba=enable(f,pa);bb=enable(f,pb)
+    with f[1].connect() as c:
+        ka=pub.key_of(c.execute('SELECT * FROM preparations WHERE id=%s',(pa['preparation_id'],)).fetchone())
+        kb=pub.key_of(c.execute('SELECT * FROM preparations WHERE id=%s',(pb['preparation_id'],)).fetchone())
+    assert (ka==kb)==same_key
+    entered=Event();release=Event();pids=Queue();schema=pub.IsolatedCatalogPublication._schema;old_lock=pub.lock
+    def pause(self,c):
+        result=schema(self,c)
+        if self.approval is ba:entered.set();assert release.wait(8)
+        return result
+    def observed(c,key,exclusive=False):
+        if exclusive and (key==kb):pids.put(c.execute('SELECT pg_backend_pid() pid').fetchone()['pid'])
+        return old_lock(c,key,exclusive)
+    monkeypatch.setattr(pub.IsolatedCatalogPublication,'_schema',pause);monkeypatch.setattr(pub,'lock',observed)
+    def activate(bridge):
+        try:pub.IsolatedCatalogPublication(bridge,enabled_for_isolated_tests=True);return 'ACTIVATED'
+        except Exception as e:return type(e).__name__
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        a=pool.submit(activate,ba)
+        try:
+            assert entered.wait(5)
+            if same_key:pids.get(timeout=5) # first owner's key equals second key
+            b=pool.submit(activate,bb);pid=pids.get(timeout=5);end=time.monotonic()+5
+            while time.monotonic()<end:
+                with f[1].connect() as c:
+                    waiting=c.execute('SELECT locktype,mode,granted FROM pg_locks WHERE pid=%s',(pid,)).fetchall()
+                if any(x['locktype']==('advisory' if same_key else 'relation') and not x['granted'] for x in waiting):break
+                time.sleep(.02)
+            else:raise AssertionError('actual second initializer wait not observed')
+            assert not b.done() and effects(f)==[0]*5
+        finally:release.set()
+        outcomes=[a.result(timeout=12),b.result(timeout=12)]
+    assert outcomes==['ACTIVATED','ACTIVATED'],outcomes
+    with f[1].connect() as c:before=[pub.proof(pub.row(c,key)) for key in [ka,kb]]
+    assert all(x['revision']==1 and x['state']=='ACTIVE' for x in before)
+    # Repeating valid setup reads the installed schema and existing INIT; it does
+    # not rewrite source or append another immutable initial publication.
+    monkeypatch.setattr(pub.IsolatedCatalogPublication,'_schema',schema)
+    assert activate(ba)==activate(bb)=='ACTIVATED'
+    with f[1].connect() as c:
+        assert [pub.proof(pub.row(c,key)) for key in [ka,kb]]==before
+        assert not c.execute("SELECT has_table_privilege('parkweave_app','preparation_catalog','UPDATE') allowed").fetchone()['allowed']
+    assert effects(f)==[0]*5 and ledger(f,pa) is None and ledger(f,pb) is None
