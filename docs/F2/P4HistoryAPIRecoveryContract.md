@@ -11,3 +11,5 @@
 测试必须两个真正不同API PID：旧只读API读取既有已提交历史、确认退出/不存在后启动新API读取，原issuer PID明确仍存活且与两个API均不同。单独报告这一范围，不将同进程重建对象或403拒绝称为跨PID恢复成功。合法ACK及REQUEST_CHANGES历史、重复GET/并发、来源换版、原key未知、撤权/到期/缺provider/proof/错误身份/跨企业、篡改正文proof/socket/issuer死亡、禁POST、无自动执行、原P4/RunAccess及旧P1–P3字节和正式业务零写；真实HTTP/PG及原页面冷GET另有窗口。原完整P4相关模块回归、精确源码冻结/独立审查、故障窗口保全；获审后普通dev推送和实际远端核验。
 
 原发行/权威进程终止后的完整冷启动、PG重启/WAL、真实材料服务交付、P5/Case完成、真人许可、正式Grant或新权限、通知消费/外部效果、模型调用、完整AT14/全仓/Windows均不在本片。遇真实权限/安全拒绝停相关动作，不模拟证明或绕过；代理不可用保持拒绝。main不改、无强推/部署；旧Windows修复延后。本方案是新API客户端在原合法存活权威下的历史只读恢复，不是原证明跨进程迁移。
+
+独审首候选2c964296488e42f2b162589b12e919647c96c13f实际发现浏览器可把另一原key的合法已提交历史响应显示为当前未知key的结果，候选阻断且故障保全；597项回归通过不能抵消。修复前明确回复相关性：客户端和页面均仅接受COMMITTED或NOT_OBSERVED；COMMITTED必须有精确当前原key、同namespace/scope/preparation绑定、正式写入0的原文档，且在回复history中唯一逐值相等；NOT_OBSERVED必须result=null。页面只接受只读transport标识及automatically_replayed=false，未知状态/跨key/绑定失配均保持空私密视图与明确错误；客户端失配503，不回退、重新执行或放宽原资格。测试用原权威对另一实际原key执行合法GET的完整真实回复模拟响应错配，不伪造报告正文/hash/proof。首SHA独审BLOCK及原自然窗口永久保留，新SHA须重新冻结与独立复审。
