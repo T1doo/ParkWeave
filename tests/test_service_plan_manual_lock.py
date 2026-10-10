@@ -9,6 +9,7 @@ from test_service_case_steps import (link_fixture,receipt_fixture,preparation_fi
     adopt_body,read,step,command,verified,business,accepted,GOALS,save,resource_link)
 from test_preparation import command as preparation_act
 from test_service_plan_recovery import recover,snapshot
+from test_case_goal_results import get as goal_results
 
 
 def start(f,goal=GOALS[0]):
@@ -134,7 +135,7 @@ def test_damaged_lock_cannot_downgrade_to_unlocked_or_replace_original_decision(
         elif damage=='overwritten-decision':s['verified_sources']={'SYNTHETIC':'forged'}
         else:row['events'][-1]['fingerprint']='0'*64
         c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(row),p['preparation_id']))
-    before=snapshot(f);assert read(f,p).status_code==409 and recover(f,p).status_code==409 and snapshot(f)==before
+    before=snapshot(f);assert read(f,p).status_code==409 and recover(f,p).status_code==409 and goal_results(f,p).status_code==409 and snapshot(f)==before
 
 
 def test_lock_rejects_stale_hash_and_foreign_step_without_side_effect(link_fixture):
@@ -173,3 +174,36 @@ def test_concurrent_unlock_has_one_event_and_keeps_original_locked_snapshot(link
     with ThreadPoolExecutor(2) as pool:rs=list(pool.map(lambda _:command(f,p,'P1','UNLOCK',row=row,key=key if same_key else uuid4().hex),range(2)))
     assert sorted(r.status_code for r in rs)==([200,200] if same_key else [200,409]);now=stored(f,p)
     assert now['revision']==old['revision']+1 and now['events'][:-1]==old['events'] and now['steps'][0]['verified_sources']==old['steps'][0]['verified_sources']
+
+
+@pytest.mark.parametrize('action',['LOCK','UNLOCK'])
+def test_legal_lock_events_keep_original_goal_result_current_without_becoming_new_verification(link_fixture,action):
+    f=link_fixture;p=start(f);original=goal_results(f,p).json();assert lock(f,p).status_code==200
+    if action=='UNLOCK':assert command(f,p,'P1','UNLOCK').status_code==200
+    before=snapshot(f);r=goal_results(f,p);assert r.status_code==200,r.text;x=r.json();assert x['state']=='LOCAL_OUTPUTS_VERIFIED' and snapshot(f)==before
+    assert x['results'][0]['historical_verification']==original['results'][0]['historical_verification'] and x['results'][0]['actual_output']==original['results'][0]['actual_output']
+    assert x['plan_revision']>original['plan_revision'] and not x['automatically_verified'] and not x['case_goal_completed']
+
+
+def test_goal_get_after_real_source_change_is_read_only_conflict_without_downgrading_lock(link_fixture):
+    f=link_fixture;p=start(f);original=goal_results(f,p).json();assert lock(f,p).status_code==200
+    assert preparation_act(f,p,'REOPEN',reason='SYNTHETIC changed actual source').status_code==200
+    before=snapshot(f);r=goal_results(f,p);assert r.status_code==200,r.text;x=r.json();assert snapshot(f)==before
+    row=x['results'][0];assert row['state']=='NEEDS_RECHECK' and row['next_action']=='READ_ORIGINAL_STEP_AND_UNLOCK' and 'MANUAL_LOCK_CONFLICT_REQUIRES_EXPLICIT_UNLOCK' in row['issues']
+    assert row['historical_verification']['id']==original['results'][0]['historical_verification']['id'] and not row['historical_verification']['current'] and row['actual_output'] is None
+    assert stored(f,p)['steps'][0]['manual_lock'] and command(f,p,'P1').status_code==409
+    assert command(f,p,'P1','UNLOCK').status_code==200;before=snapshot(f);r=goal_results(f,p);assert r.status_code==200 and r.json()['state']=='UNVERIFIED' and snapshot(f)==before
+
+
+def test_goal_results_after_unlock_and_new_adoption_keep_original_plan_history(link_fixture):
+    f=link_fixture;p=start(f);assert lock(f,p).status_code==200;old=stored(f,p)
+    assert save(f,p,goals=[GOALS[0],GOALS[1]],text='SYNTHETIC explicit new request').status_code==200
+    before=snapshot(f);r=goal_results(f,p);assert r.status_code==200 and r.json()['results'][0]['state']=='NEEDS_NEW_PLAN' and snapshot(f)==before
+    assert command(f,p,'P1','UNLOCK').status_code==200;x=read(f,p).json();body=adopt_body(f,{**p,'revision':x['preparation_revision']});body['expected_plan_revision']=x['revision'];assert adopt(f,p,body).status_code==201
+    before=snapshot(f);r=goal_results(f,p);assert r.status_code==200 and r.json()['historical_plans'][0]['id']==old['id'] and r.json()['state']=='UNVERIFIED' and snapshot(f)==before
+
+
+def test_distinct_original_actors_same_literal_key_do_not_break_locked_goal_proof(link_fixture):
+    f=link_fixture;p=setup(f,GOALS[0]);assert adopt(f,p).status_code==201;key=uuid4().hex
+    assert command(f,p,'P1','BEGIN',user='prep-specialist-fixture-a',key=key).status_code==200;verified(f,p,'P1');assert lock(f,p,key=key).status_code==200
+    before=snapshot(f);r=goal_results(f,p);assert r.status_code==200 and r.json()['state']=='LOCAL_OUTPUTS_VERIFIED' and snapshot(f)==before

@@ -7,6 +7,7 @@ from test_service_plan_manual_lock import (link_fixture,receipt_fixture,preparat
     command,read,step,stored,GOALS,save,snapshot,preparation_act)
 from test_service_plan_recovery_browser import (goal_page,open_case,lost,wait_recovered,wait_held,
     damage_handle,assert_handle_refused)
+from test_case_goal_results_browser import read_page
 OUT=Path('.runtime/service-plan-manual-lock/browser')
 
 
@@ -34,7 +35,7 @@ def test_actual_conflict_shows_history_and_requires_explicit_unlock_before_new_p
     assert stored(f,p)['steps'][0]['verified_sources']==old['steps'][0]['verified_sources']
     OUT.mkdir(parents=True,exist_ok=True)
     for width in (1200,390,320):
-        page.set_viewport_size({'width':width,'height':1000});page.locator('#service-case-plan-detail').scroll_into_view_if_needed();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.screenshot(path=str(OUT/f'lock-conflict-{width}.png'))
+        page.set_viewport_size({'width':width,'height':1000});page.locator('[data-service-adapter="P1"]').scroll_into_view_if_needed();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.screenshot(path=str(OUT/f'lock-conflict-{width}.png'))
     before=snapshot(f);requests=[];page.on('request',lambda r:requests.append(r.method));page.reload();open_case(page,f,p)
     assert page.evaluate('servicePlanView.steps[0].state')=='LOCK_CONFLICT' and snapshot(f)==before and set(requests)=={'GET'}
     page.locator('#service-plan-reason').fill('SYNTHETIC explicit unlock for changed request');page.locator('[data-service-action="UNLOCK"]').click();page.wait_for_function('()=>servicePlanPending===null&&servicePlanView.can_adopt')
@@ -106,3 +107,25 @@ def test_owned_api_restart_same_origin_pg_preserves_original_lock_unknown_get_on
             OUT.mkdir(parents=True,exist_ok=True);(OUT/('api-restart-'+action.lower()+'.json')).write_text(json.dumps(dict(different_owned_processes=True,same_origin=True,same_persistent_postgresql=True,action=action,unknown_command_get_only=True,duplicate_business_writes=0),indent=2)+'\n')
         finally:
             if active is not None and active.poll() is None:active.terminate();active.wait(5)
+
+
+@pytest.mark.parametrize('action',['LOCK','UNLOCK'])
+def test_original_goal_page_after_lock_or_unlock_still_reads_original_verification_get_only(goal_page,action):
+    f,page,errors=goal_page;p=start(f)
+    if action=='UNLOCK':assert lock(f,p).status_code==200
+    open_case(page,f,p);page.locator('#service-plan-reason').fill('SYNTHETIC explicit goal decision '+action);page.locator('[data-service-action="'+action+'"]').click()
+    page.wait_for_function('(action)=>servicePlanPending===null&&servicePlanView.event?.action===action',arg=action)
+    before=snapshot(f);requests=[];page.on('request',lambda r:requests.append(r.method));read_page(page)
+    assert page.locator('[data-goal-state="LOCAL_OUTPUT_VERIFIED"]').count()==1 and set(requests)=={'GET'} and snapshot(f)==before
+    assert page.evaluate('goalResultView.results[0].historical_verification.revision')==2 and not errors
+    page.reload();open_case(page,f,p);read_page(page);assert page.locator('[data-goal-state="LOCAL_OUTPUT_VERIFIED"]').count()==1 and set(requests)=={'GET'} and snapshot(f)==before
+
+
+def test_goal_page_source_change_shows_explicit_lock_conflict_and_never_writes_on_read(goal_page):
+    f,page,errors=goal_page;p=start(f);assert lock(f,p).status_code==200
+    assert preparation_act(f,p,'REOPEN',reason='SYNTHETIC actual material source changed').status_code==200
+    open_case(page,f,p);before=snapshot(f);requests=[];page.on('request',lambda r:requests.append(r.method));read_page(page)
+    assert page.locator('[data-goal-state="NEEDS_RECHECK"]').count()==1 and '请先在原步骤明确解锁' in page.locator('#goal-results-items').inner_text()
+    assert page.locator('[data-service-action="UNLOCK"]').count()==1 and page.locator('[data-service-action="VERIFY"]').count()==0 and snapshot(f)==before and set(requests)=={'GET'} and not errors
+    page.locator('#service-plan-reason').fill('SYNTHETIC explicit resolve original conflict');page.locator('[data-service-action="UNLOCK"]').click();page.wait_for_function('()=>servicePlanPending===null&&!servicePlanView.steps[0].manually_locked')
+    before=snapshot(f);requests.clear();read_page(page);assert page.locator('[data-goal-state="NEEDS_RECHECK"]').count()==1 and snapshot(f)==before and set(requests)=={'GET'} and not errors

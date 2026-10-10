@@ -32,10 +32,10 @@ def structure(plan):
         for i,event in enumerate(plan['events'],1):
             UUID(event['id'])
             if (type(event['revision']) is not int or event['revision']!=i or event['plan_id']!=plan['id'] or event['id'] in event_ids or
-                event['request_key'] in keys or not re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or not re.fullmatch('[a-f0-9]{64}',event['fingerprint']) or
-                event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY') or
+                (event['actor_id'],event['request_key']) in keys or not re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or not re.fullmatch('[a-f0-9]{64}',event['fingerprint']) or
+                event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK') or
                 (i==1)!=(event['action']=='ADOPT') or (event['step_id'] is None if i==1 else event['step_id'] in ids) is not True):raise ValueError()
-            keys.add(event['request_key']);event_ids.add(event['id'])
+            keys.add((event['actor_id'],event['request_key']));event_ids.add(event['id'])
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('adopted goal result plan proof invalid')
 
 
@@ -111,6 +111,7 @@ def read(store,token,id):
         intent=parent.get('request_intent') or {};goals=intent.get('required_goals',[]);plan=deepcopy(parent.get('service_case_plan'));rows=[];binding_issues=[];states={};proofs={};out={};sources={};issues={}
         if plan:
             structure(plan);binding_issues=steps._binding_issues(c,parent,plan)
+            if any(e['action'] in ('LOCK','UNLOCK') for e in plan['events']) or any(s.get('manual_lock') is not None for s in plan['steps']):steps._recovery_proofs(parent)
             if plan['required_goals']!=goals:binding_issues.append('PLAN_REQUIRED_GOALS_CHANGED')
             # First acquire the original source/fixed-plan/lifecycle locks.
             # Then recapture timed validity after their last possible wait.
@@ -118,12 +119,14 @@ def read(store,token,id):
             issues,sources,actual=steps.current_sources(store,c,parent,plan);out=outputs(store,c,parent,plan,issues,sources)
             for step in plan['steps']:
                 a=step['adapter_id'];proof=verification(parent,plan,step);proofs[a]=proof
+                lock=steps._manual_lock(plan,step)
                 deps=all(states.get(x)=='LOCAL_OUTPUT_VERIFIED' for x in step['depends_on'])
                 reasons=list(issues[a])+binding_issues
                 if not deps:reasons.append('CURRENT_PREDECESSOR_OUTPUT_VERIFICATION_REQUIRED')
                 if step['coordination_state']=='REPORTED_BLOCKED':reasons.append('REPORTED_OBSTACLE_REQUIRES_EXPLICIT_RETRY')
                 if step.get('verified_sha256') and not proof:reasons.append('OWNER_VERIFY_EVENT_PROOF_INVALID')
                 current=bool(proof and step['verified_sha256']==cp._hash(sources[a]) and not step.get('invalidated') and step['coordination_state']=='VERIFIED')
+                if lock and (not current or reasons):reasons.append('MANUAL_LOCK_CONFLICT_REQUIRES_EXPLICIT_UNLOCK')
                 state='LOCAL_OUTPUT_VERIFIED' if current and not reasons else 'NEEDS_RECHECK' if proof or step.get('verified_sha256') else 'WAITING_DEPENDENCY' if not deps else 'WAITING_OUTPUT' if issues[a] else 'AWAITING_OWNER_VERIFICATION'
                 states[a]=state
                 step['_result_reasons']=sorted(set(reasons));step['_output_readable']=not issues[a] and not binding_issues and deps
@@ -135,7 +138,7 @@ def read(store,token,id):
                              issues=sorted(set(binding_issues+(step.get('_result_reasons',[]) if step else ['ADOPT_CURRENT_SUPPORTED_PLAN'] if adapter else ['NO_REGISTERED_LOCAL_CAPABILITY']))),
                              actual_output=out.get(adapter) if step and step['_output_readable'] else None,
                              historical_verification=dict(id=proof['id'],revision=proof['revision'],actor_id=proof['actor_id'],current=state=='LOCAL_OUTPUT_VERIFIED') if proof else None,
-                             next_action='READ_ORIGINAL_STEP_AND_VERIFY' if state=='AWAITING_OWNER_VERIFICATION' else 'USE_ORIGINAL_ADAPTER_TO_RECHECK' if state not in ('LOCAL_OUTPUT_VERIFIED','UNSUPPORTED') else 'MANUAL_SERVICE_CONTRACT_REQUIRED' if state=='UNSUPPORTED' else None))
+                             next_action='READ_ORIGINAL_STEP_AND_UNLOCK' if step and step.get('manual_lock') and state!='LOCAL_OUTPUT_VERIFIED' else 'READ_ORIGINAL_STEP_AND_VERIFY' if state=='AWAITING_OWNER_VERIFICATION' else 'USE_ORIGINAL_ADAPTER_TO_RECHECK' if state not in ('LOCAL_OUTPUT_VERIFIED','UNSUPPORTED') else 'MANUAL_SERVICE_CONTRACT_REQUIRED' if state=='UNSUPPORTED' else None))
         return dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(id),case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],
                     request_revision=intent.get('revision',0),current_request=intent.get('request_text',parent['goal']),original_request=parent['goal'],plan_id=plan['id'] if plan else None,plan_revision=plan['revision'] if plan else 0,
                     state='UNKNOWN' if not rows else 'LOCAL_OUTPUTS_VERIFIED' if all(r['state']=='LOCAL_OUTPUT_VERIFIED' for r in rows) else 'UNVERIFIED',
