@@ -204,10 +204,10 @@ def _inspect(store,c,parent,plan,observe=True,fresh_clock=False):
     return binding_issues,issues,sources,actual,states,bad
 
 
-def gate(store,c,parent,through):
+def gate(store,c,parent,through,*,observe=True):
     plan=deepcopy(parent.get('service_case_plan'))
     if not plan:return
-    binding_issues,issues,sources,actual,states,bad=_inspect(store,c,parent,plan)
+    binding_issues,issues,sources,actual,states,bad=_inspect(store,c,parent,plan,observe=observe)
     required=[s for s in plan['steps'] if int(s['adapter_id'][1:])<=through]
     failed=next((s for s in required if states[s['adapter_id']]!='VERIFIED'),None)
     if binding_issues or failed:

@@ -22,6 +22,8 @@ class _AccessConnection(psycopg.Connection):
     """Recheck managed leases before a Store transaction commits or returns."""
     def commit(self):
         try:
+            for check in getattr(self, '_plan_approval_checks', ()):
+                self._approval_store._isolated_plan_approval.recheck(self._approval_store, self, check)
             for principal_id, run_id in getattr(self, '_managed_checks', ()):
                 p = self.execute('SELECT * FROM principals WHERE id=%s', (principal_id,)).fetchone()
                 store = self._access_store
@@ -37,12 +39,14 @@ class _AccessConnection(psycopg.Connection):
             raise
         finally:
             self._managed_checks = set()
+            self._plan_approval_checks = []
 
     def rollback(self):
         try:
             super().rollback()
         finally:
             self._managed_checks = set()
+            self._plan_approval_checks = []
 
 
 def digest(value: str) -> str:
@@ -57,11 +61,13 @@ class Store:
         self.file_root = file_root
 
     def connect(self):
-        if getattr(self, '_isolated_run_access', None) is None:
+        if getattr(self, '_isolated_run_access', None) is None and getattr(self, '_isolated_plan_approval', None) is None:
             return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
         c = _AccessConnection.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
         c._access_store = self
         c._managed_checks = set()
+        c._approval_store = self
+        c._plan_approval_checks = []
         return c
 
     def assignment_allowed(self, c, p, run_id, assignment=None, *, track=True):

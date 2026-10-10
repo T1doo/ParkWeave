@@ -105,6 +105,12 @@ def catalog_decision(c,parent,link):
     Derive a reference for those rows without altering them. Rows from the legacy
     direct association route have no version-bound decision; retain that contract.
     """
+    if link and link['snapshot'].get('delivery_binding'):
+        receipts=c.execute("SELECT payload FROM synthetic_resource_combination_receipts WHERE combination_id=%s AND action='CONFIRM'",(link['combination_id'],)).fetchall()
+        if len(receipts)!=1: raise Denied('original Case delivery receipt required')
+        if receipts[0]['payload'].get('plan_approval') is not None or link['snapshot'].get('plan_approval') is not None:
+            from .service_plan_approval import verify_receipt
+            verify_receipt(parent,receipts[0]['payload'],link['snapshot'].get('plan_approval'))
     current=c.execute('SELECT service_id,version,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',(parent['park_id'],parent['service_id'],parent['service_version'])).fetchone()
     now_copy=_catalog_copy(current)
     document=link['snapshot'].get('binding_impact') if link else None

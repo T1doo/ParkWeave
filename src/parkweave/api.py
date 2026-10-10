@@ -15,6 +15,37 @@ def create_app(store: Store) -> FastAPI:
     app = FastAPI(title="ParkWeave synthetic foundation", version="0.1.0")
     from . import case_resource_delivery as delivery, resource_bundles as bundles
 
+    from . import service_plan_approval as plan_approval
+
+    def approval_candidate():
+        candidate = getattr(store, '_isolated_plan_approval', None)
+        if candidate is None: raise Denied('isolated plan Approval disabled')
+        return candidate
+
+    @app.get('/api/plan-approval/status')
+    def approval_status(authorization: str | None=Header(default=None)):
+        with store.connect() as c:
+            p=store.auth(c,token(authorization),lock=True)
+            store.check_capability(c,p,'READ')
+        return dict(enabled=getattr(store,'_isolated_plan_approval',None) is not None,
+            production_execution_enabled=False,formal_release=False,role=p['role'])
+
+    @app.get('/api/preparations/{preparation_id}/plan-approval')
+    def approval_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return approval_candidate().read(store,token(authorization),preparation_id)
+
+    @app.post('/api/preparations/{preparation_id}/plan-approval/proposals',status_code=201)
+    def approval_propose(preparation_id: UUID,data: plan_approval.Proposal,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return approval_candidate().propose(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
+    @app.post('/api/preparations/{preparation_id}/plan-approval/commands')
+    def approval_command(preparation_id: UUID,data: plan_approval.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return approval_candidate().command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
+    @app.get('/api/preparations/{preparation_id}/plan-approval/recovery/{request_key}')
+    def approval_recovery(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return approval_candidate().read(store,token(authorization),preparation_id,resource_key(request_key))
+
     @app.post('/api/preparations/{preparation_id}/resource-delivery/preview')
     def delivery_preview(preparation_id: UUID,data: bundles.Bundle,authorization: str | None=Header(default=None)):
         return delivery.preview(store,token(authorization),preparation_id,data)

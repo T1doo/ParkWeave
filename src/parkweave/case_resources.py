@@ -83,7 +83,7 @@ def bind(store,token,id,key,data):
         return _bind_locked(store,c,p,parent,id,key,data,fp)
 
 
-def _bind_locked(store,c,p,parent,id,key,data,fp,*,delivery_binding=None):
+def _bind_locked(store,c,p,parent,id,key,data,fp,*,delivery_binding=None,plan_approval=None):
     """Trusted composition; the existing public route retains its own authentication."""
     if c.autocommit:raise Conflict('transactional Case resource binding required')
     c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('case-resource-key:'+p['id']+':'+key,))
@@ -139,6 +139,7 @@ def _bind_locked(store,c,p,parent,id,key,data,fp,*,delivery_binding=None):
     new_id=uuid4()
     snapshot=rc._view(g,holds,now);snapshot=json.loads(json.dumps(snapshot,default=str))
     if delivery_binding is not None:snapshot['delivery_binding']=delivery_binding
+    if plan_approval is not None:snapshot['plan_approval']=plan_approval
     if projection is not None:
         snapshot['binding_impact']=binding.impact(projection,dict(id=new_id,revision=revision+1),data.expected_comparison_sha256,data.reason)
     c.execute('INSERT INTO resource_case_claims(combination_id,case_id,owner_id,park_id,org_id) VALUES(%s,%s,%s,%s,%s) ON CONFLICT DO NOTHING',(g['id'],parent['case_id'],p['id'],p['park_id'],p['org_id']))

@@ -18,6 +18,7 @@ def _boundary(**extra):
 
 
 class Deliver(rb.Bundle):
+    approval_id: UUID | None = Field(default=None, strict=False)
     expected_preparation_revision: int = Field(ge=1, le=64)
     expected_plan_revision: int = Field(ge=1, le=64)
     expected_source_sha256: str = Field(pattern='^[a-f0-9]{64}$')
@@ -68,13 +69,13 @@ def _context(store, c, p, parent):
     return context, sorted(set(issues))
 
 
-def _candidate(store, c, p, parent, data):
+def _candidate(store, c, p, parent, data, *, observe=True):
     hs = [rh._own(c, p, m.hold_id) for m in data.members]
     rules = rc._scope_lock(c, p, hs, write=True)
     hs = [rh._own(c, p, m.hold_id, lock=True) for m in data.members]
     context, issues = _context(store, c, p, parent)
     if issues: raise Conflict(';'.join(issues))
-    cp.gate(store, c, parent, 1)
+    cp.gate(store, c, parent, 1, observe=observe)
     if cr._history(c, p, parent): raise Conflict('first Case resource delivery only; use existing rebind/substitution')
     now = rh._now(c)
     for h, m in zip(hs, data.members):
@@ -101,10 +102,13 @@ def preview(store, token, id, data):
         return _boundary(actor_id=p['id'], context=context,
             expected_preparation_revision=parent['revision'], expected_plan_revision=parent['service_case_plan']['revision'],
             source_sha256=cp._hash(dict(source=sha,valid_until=expiry.isoformat())), valid_until=expiry,
-            members=[rh._public(h, now) for h in hs], formal_approval='NOT_IMPLEMENTED', formal_release=False)
+            members=[rh._public(h, now) for h in hs], formal_approval='NOT_IMPLEMENTED', formal_release=False,
+            synthetic_plan_approval_required=getattr(store,'_isolated_plan_approval',None) is not None)
 
 
 def _verify(store, c, p, parent, receipt):
+    from .service_plan_approval import verify_receipt
+    verify_receipt(parent, receipt)
     proof = receipt.get('delivery_binding')
     if not isinstance(proof, dict) or proof.get('scope') != SCOPE: raise Conflict('original delivery proof required')
     expected = proof.get('context')
@@ -133,7 +137,8 @@ def _verify(store, c, p, parent, receipt):
     if len(matches) != 1: raise Conflict('delivery immutable association missing')
     link = matches[0]
     if (link['combination_id'] != gid or link['fingerprint'] != proof['fingerprint'] or
-        link['snapshot'].get('delivery_binding') != proof): raise Conflict('delivery association proof mismatch')
+        link['snapshot'].get('delivery_binding') != proof or
+        link['snapshot'].get('plan_approval') != receipt.get('plan_approval')): raise Conflict('delivery association proof mismatch')
     claim = c.execute('SELECT * FROM resource_case_claims WHERE combination_id=%s',(gid,)).fetchone()
     if not claim or any(claim[k] != link[k] for k in ('case_id','owner_id','park_id','org_id')):
         raise Conflict('delivery Case claim mismatch')
@@ -151,13 +156,17 @@ def _verify(store, c, p, parent, receipt):
 
 @bounded
 def deliver(store, token, id, key, data):
-    fp = digest(prep.canonical(dict(preparation_id=str(id), action='CASE_RESOURCE_DELIVERY', **data.model_dump(mode='json'))))
+    fp = digest(prep.canonical(dict(preparation_id=str(id), action='CASE_RESOURCE_DELIVERY', **data.model_dump(mode='json', exclude_none=True))))
     with store.connect() as c:
         p, parent = cr._parent(store, c, token, id, write=True)
         for m in data.members: rh._scope(c, p, rh._own(c,p,m.hold_id)['resource_id'], write=True)
         rh._key(c, p, key)
         prior = rh._replay(c, p, key, fp)
         if prior: return _verify(store, c, p, parent, prior)
+        approval = getattr(store, '_isolated_plan_approval', None)
+        if approval is None and data.approval_id is not None:
+            from .store import Denied
+            raise Denied('isolated plan Approval disabled')
         context, sha, hs, now = _candidate(store, c, p, parent, data)
         if (parent['revision'] != data.expected_preparation_revision or parent['service_case_plan']['revision'] != data.expected_plan_revision
             or cp._hash(dict(source=sha,valid_until=data.valid_until.isoformat())) != data.expected_source_sha256
@@ -166,14 +175,19 @@ def deliver(store, token, id, key, data):
             raise Conflict('delivery preview expired or source/revision changed')
         proof = dict(scope=SCOPE, context=context, approved_plan_revision=data.expected_plan_revision,
             preview_source_sha256=data.expected_source_sha256, valid_until=data.valid_until.isoformat(), request_key=key, fingerprint=fp)
-        result = rc._confirm_locked(store,c,p,key,data,fp,rb.SCOPE,bundle=True,receipt_extra={'delivery_binding':proof})
+        approval_proof = approval.before_delivery(store,c,p,parent,key,data,fp) if approval else None
+        extra = {'delivery_binding':proof}
+        if approval_proof: extra['plan_approval'] = approval_proof
+        result = rc._confirm_locked(store,c,p,key,data,fp,rb.SCOPE,bundle=True,receipt_extra=extra)
+        if approval:
+            parent = approval.consume(store,c,p,parent,key,data,fp,approval_proof,result['receipt'])
         gid = result['combination']['id']
         comparison = binding.proposal(store,c,p,parent,gid,delivery_plan=True)['comparison']
         if not comparison['can_confirm']: raise Conflict(';'.join(comparison['blockers']))
         link_data = cr.Bind(combination_id=gid,expected_preparation_revision=parent['revision'],expected_link_revision=0,
             reason=data.reason,expected_comparison_sha256=comparison['sha256'])
         # Existing binder owns claim, strict catalogue decision and immutable link.
-        cr._bind_locked(store,c,p,parent,id,key,link_data,fp,delivery_binding=proof)
+        cr._bind_locked(store,c,p,parent,id,key,link_data,fp,delivery_binding=proof,plan_approval=approval_proof)
         # Snapshot is INSERT-only: the binder receives the proof before insertion.
         # Its comparison evidence is independently checked together with actual rows.
         current = _verify(store,c,p,parent,result['receipt'])

@@ -174,10 +174,10 @@ def _inspect(store,c,parent,row,observe=True):
         prior=verified
     return row,issues,snapshots,states
 
-def gate(store,c,parent,through):
+def gate(store,c,parent,through,*,observe=True):
     if parent.get('service_case_plan'):
         from .service_case_steps import gate as case_step_gate
-        case_step_gate(store,c,parent,through)
+        case_step_gate(store,c,parent,through,observe=observe)
     row=_row(c,parent['id'])
     if not row:
         # A strict immutable resource decision remains a resource prerequisite
@@ -188,7 +188,7 @@ def gate(store,c,parent,through):
             if current_catalog_decision(c,parent)['status']=='STALE':
                 raise Conflict('resource catalogue decision is stale; explicitly bind a current decision before advancing')
         return
-    row,issues,snapshots,states=_inspect(store,c,parent,row)
+    row,issues,snapshots,states=_inspect(store,c,parent,row,observe=observe)
     observations=OBSERVATIONS.get()
     if observations is not None and row['invalidated_from'] is not None:
         observations.append(PlanBlocked(parent,row))
