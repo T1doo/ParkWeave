@@ -15,3 +15,5 @@
 跨进程证据采用独立子进程configured_app（最小环境，127.0.0.1，现有应用角色）和自有临时PG实际stop/start：记录API不同PID、PG不同PID/启动时间及同system_identifier/database OID，持久Approval账本/head/原消费回执/关联/效果不变；浏览器冷认证后原交付GET核对消费证明，P2/goal验证仍依据持久账本，篡改则拒绝。不用新Store/App代替重启，不传递/重签/伪造issued fixture nonce，不扩通用权限框架。未消费Approval的新进程专用端点仍403，原fixture写capability在PG重启后拒绝，不自动继续执行；这部分继续明示未验收。只重启测试本身新建、确证自有的临时PG，禁止共享pg fixture和真实数据库。
 
 先精确冻结运行源码、相关真实HTTP/PG/browser回归、普通候选推送后独立审查；BLOCKED不合dev，LIMITED_PASS后仅正常快进/推送，main不动，不强推、不部署、不改凭据或安全网络。所有受控子进程用minimal_environment，故障原日志/XML私有保全；报告精确SHA、独立与根分窗计数/时间、未通过限制、实际远端和未推送文件。正式发布/独立审批主体/真实业务/通知/分享/模型/Case完成、fullrepo/fullAT/Windows与旧a823a28均不在本片签收。
+
+冻结后的旁路检查补充（先于相应修复）：所有启用的原Approval源采样/消费都取同一shared目录键，包含尚未启用publisher的原目录；共同目录一旦有publication指针，缺少对应显式fixture protocol的Approval bridge必须失败关闭，不能换一个原bridge绕开共同锁。INIT也由owner取exclusive键，保护协作激活时点；默认无Approval的其它资源路由仍不在本片协作保证范围。ec05为初次运行源码冻结但尚未验收/独审，最终验收只用修复后新SHA及完整相关窗口。
