@@ -15,3 +15,5 @@ ACCEPT须真实生成OFFER/ACCEPT事件和CREATE receipt-step（AWAITING_RECEIPT
 页面在原bounded-planning增设P3明确ACCEPT/DECLINE预演，独立五字段不透明24h/8条恢复句柄，无token/资料正文/完整产物；上下文切换、身份/草稿变化及403清私有视图、拒绝迟到回复，不自动POST。显示实际P1/P2/P3、DECLINED未接单、P4/P5未预演、正式写0/模拟角色/Case未完成及全目标。独立proof锚完整artifact/state/decision/来源与目标，单独重hash正文不能改事件或判定。
 
 验证真实HTTP/PostgreSQL/SQLite/Chromium：实际原函数、关系与PENDING outbox闭包、全部public表前后值和旧P1/P2字节；ACCEPT/DECLINE、OFFER后原ADD_EVIDENCE换版拒绝；精确Run撤权/错Run/跨企业/身份/READ/获派专员/managed资格；CAS/同key并发/异body、SQL逃逸/未知模板/P4写入/UUID消费、来源变化旧历史、持久proof篡改、丢响应GET冷热恢复/实际API进程重启、320/390/1200布局与隐私/迟到回复。保全所有失败日志并分窗报告实际计数。候选普通推送后精确SHA独审，未审不得合dev。main/凭据/权限/安全网络配置不改，不部署。
+
+实现期间闭包修订：初始77模板漏掉原executor_receipts._insert_step/_event的两个INSERT；封闭代理拒绝并返回403，未提交产物，没有public回退。开发诊断日志保留。先修订本合同及闭包到79模板，再扩大代理至这两个原CREATE步骤/事件模板；仍无SUBMIT/ACK或notice消费SQL。既有Run指派表无managed_access列时以原SELECT行形状兼容读取，原assignment_allowed仍负责资格，有受管理标记时继续bridge复核。

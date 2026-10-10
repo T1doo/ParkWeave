@@ -38,6 +38,8 @@
     "INSERT INTO service_dispatch_events(id,dispatch_id,offer_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)",
     "INSERT INTO service_dispatch_offers(id,dispatch_id,executor_id,preparation_revision,preparation_sha256,reason,state) VALUES(%s,%s,%s,%s,%s,%s,'OFFERED') RETURNING *",
     "INSERT INTO service_dispatches(id,preparation_id,revision,current_offer_id) VALUES(%s,%s,1,%s) RETURNING *",
+    "INSERT INTO service_receipt_events(id,step_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)",
+    "INSERT INTO service_receipt_steps(id,preparation_id,run_id,case_id,owner_id,executor_id,park_id,org_id,service_id,service_version,\n          preparation_revision,preparation_sha256,goal,state,revision,namespace)\n          VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'AWAITING_RECEIPT',1,'SYNTHETIC') RETURNING *",
     "INSERT INTO synthetic_resource_combination_members VALUES(%s,%s)",
     "INSERT INTO synthetic_resource_combination_receipts VALUES(%s,%s,%s,%s,%s,%s,%s)",
     "INSERT INTO synthetic_resource_combinations VALUES(%s,%s,%s,%s,'CONFIRMED',%s) RETURNING *",
