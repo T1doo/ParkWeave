@@ -1,3 +1,9 @@
+## 已审原首次资源交付持久方案 Approval
+
+沿原产品§7.4/F2-T03/T05，在原owner已有权限和原首次同Case合成资源事务内增加明确PROPOSE/APPROVE/REVOKE/CONSUME；绑定Case/Run/plan UUID与修订/hash、服务/来源/双槽资料/成员/原请求、原执行身份/当前授权/期限，变更后恢复不复活旧批准。独立UUID、不可变事件/head、CAS/幂等与原效果同事务；丢响应冷热只GET，原P2/goal检查实际消费证明。默认关闭、仅已签发自有临时PG和原范围，不新增Grant/角色或生产迁移。
+
+11b756db4e164fafb7756ec63bffb286178e0a73精确独审LIMITED_PASS：根14完整模块524PASS/540.769秒；独审11模块443PASS/415.815秒、额外17API/33.576秒及8浏览器/27.655秒全部通过，328路径零漂移。8对象合法24事件边界实测，不把64配置上限称完整耗尽验收。newPID候选API/PG重启不签收，来源publisher最后读取到COMMIT窗口仍OPEN；正式Release/独立业务审批主体、真实履约/fullrepo/fullAT/Windows仍未验收。原资料异议和导出不重做，无真实业务/模型/通知/Case完成。见[范围与证据](ServicePlanApproval.md)、[正常整合](ServicePlanApprovalIntegration.md)。下方历史保留各自原范围。
+
 ## 已审原注册步骤人工锁与来源影响
 
 从已推9bc4ed59基线沿原§8/F3-T03，只为原P1–P5核验增加显式LOCK/UNLOCK；来源变化保留原决定/历史，LOCK_CONFLICT阻塞，解锁不重验，活动锁预留64事件内解锁额度。原目标结果兼容并校验锁证明，丢响应热/冷/API重启只GET。首轮五产品FAIL独审BLOCKED，先补合同后修复；1a8d95e8cf532affc8e5b8c8503866c63b29d4c7精确LIMITED_PASS，根7完整相关模块285PASS/452.467秒，独审8模块353PASS/511.171秒，另27唯一probe分窗15+11+1全部通过，325源零漂移。只有限原合成注册Case链，不作全仓/原AT/Windows/一般DAG验收；原异议与导出不重做，无新Grant/模型/通知/真实完成。见[范围与证据](ServicePlanManualLock.md)、[正式发布/审批只读缺口](ServiceReleaseApprovalInventory.md)、[正常整合](ServicePlanManualLockIntegration.md)。真实发布/履约/Case完成/分享未授权；这些不阻止已授权常规开发。以下历史保留各自原时点范围。

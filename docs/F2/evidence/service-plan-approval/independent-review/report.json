@@ -1,0 +1,279 @@
+{
+  "decision": "LIMITED_PASS",
+  "reviewed_at_utc": "2026-10-10T08:03:48.981573+00:00",
+  "exact_head": "11b756db4e164fafb7756ec63bffb286178e0a73",
+  "branch": "candidate/service-plan-approval-20261010",
+  "reviewer": "independent_service_plan_manual_lock_review",
+  "scope": "bounded synthetic persistent original-owner CASE_RESOURCE_DELIVERY plan Approval; isolated same-process issued FixtureDatabaseEvidence only",
+  "source_freeze": {
+    "paths": 328,
+    "baseline_manifest": ".runtime/independent-service-plan-approval-review/frozen-source.json",
+    "manifest_sha256": "48c99bad9420ddd3976fa3498b7d4ef5d65fc40be2a5a14d3bbe428956d188ec",
+    "baseline_root_manifest": ".runtime/service-plan-approval/frozen-source.json",
+    "final_drift_paths": [],
+    "baseline_and_final_exact_candidate": true
+  },
+  "git_final": {
+    "head": "11b756db4e164fafb7756ec63bffb286178e0a73",
+    "branch": "candidate/service-plan-approval-20261010",
+    "porcelain_status_empty": true,
+    "reviewer_source_or_git_writes": false,
+    "remote_actual": {
+      "read_at_utc": "2026-10-10T08:03:48.981573+00:00",
+      "command": "git ls-remote --heads origin candidate/service-plan-approval-20261010 dev/f1-foundation main",
+      "returncode": 0,
+      "exact_sha_by_ref": {
+        "refs/heads/candidate/service-plan-approval-20261010": "11b756db4e164fafb7756ec63bffb286178e0a73",
+        "refs/heads/dev/f1-foundation": "3406fd9c62bf1f28fd1e7ef62932d8acd1b3a386",
+        "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+      },
+      "raw_sha256": "f87883958f7a6ba550b4239866a68049e4e0d1e55d166f891126c3766427becf",
+      "stderr_bytes": 0
+    }
+  },
+  "windows": [
+    {
+      "window": "complete",
+      "modules": [
+        "tests/test_service_plan_approval.py",
+        "tests/test_service_plan_approval_browser.py",
+        "tests/test_case_resource_delivery.py",
+        "tests/test_case_resources.py",
+        "tests/test_resource_plan_binding.py",
+        "tests/test_service_case_steps.py",
+        "tests/test_case_goal_results.py",
+        "tests/test_case_goal_results_browser.py",
+        "tests/test_service_plan_manual_lock.py",
+        "tests/test_isolated_run_access.py",
+        "tests/test_ci_diagnostics.py"
+      ],
+      "counts": {
+        "tests": 443,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "pass": 443,
+      "junit_seconds": 415.815,
+      "controlled_seconds": 417.424641,
+      "start_utc": "2026-10-10T07:50:57.558188+00:00",
+      "end_utc": "2026-10-10T07:57:54.982829+00:00",
+      "returncode": 0,
+      "minimal_environment": true,
+      "log": ".runtime/independent-service-plan-approval-review/complete-pytest.log",
+      "xml": ".runtime/independent-service-plan-approval-review/complete-junit.xml",
+      "execution": ".runtime/independent-service-plan-approval-review/complete-execution.json"
+    },
+    {
+      "window": "independent-api",
+      "modules": [
+        ".runtime/independent-service-plan-approval-review/test_approval_independent.py"
+      ],
+      "counts": {
+        "tests": 17,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "pass": 17,
+      "junit_seconds": 33.576,
+      "controlled_seconds": 34.890835,
+      "start_utc": "2026-10-10T07:55:28.317411+00:00",
+      "end_utc": "2026-10-10T07:56:03.208246+00:00",
+      "returncode": 0,
+      "minimal_environment": true,
+      "log": ".runtime/independent-service-plan-approval-review/independent-api-pytest.log",
+      "xml": ".runtime/independent-service-plan-approval-review/independent-api-junit.xml",
+      "execution": ".runtime/independent-service-plan-approval-review/independent-api-execution.json"
+    },
+    {
+      "window": "independent-browser",
+      "modules": [
+        ".runtime/independent-service-plan-approval-review/test_approval_browser_independent.py"
+      ],
+      "counts": {
+        "tests": 8,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "pass": 8,
+      "junit_seconds": 27.655,
+      "controlled_seconds": 28.961214,
+      "start_utc": "2026-10-10T07:59:39.645091+00:00",
+      "end_utc": "2026-10-10T08:00:08.606304+00:00",
+      "returncode": 0,
+      "minimal_environment": true,
+      "log": ".runtime/independent-service-plan-approval-review/independent-browser-pytest.log",
+      "xml": ".runtime/independent-service-plan-approval-review/independent-browser-junit.xml",
+      "execution": ".runtime/independent-service-plan-approval-review/independent-browser-execution.json"
+    }
+  ],
+  "total_independent_pass": 468,
+  "independent_oracles": {
+    "api_count": 17,
+    "browser_count": 8,
+    "api": [
+      "eight concurrently approved alternatives; consume one original command, explicitly revoke remaining seven; exact business effect set [1,3,1,1,1], holds all CONFIRMED, preserved first 16 immutable events",
+      "five separate application SQL head/header/history/null/tamper writes rejected and all state rolled back",
+      "six retained ledger/consumption receipt corruptions rejected by original delivery recovery, P2 and goal reads; confirmed original history preserved",
+      "principal, PREPARE and resource grant no-visible-change row versions invalidate approval without delivery effects",
+      "changed resource source GET and unknown-key GET leave source observation, Approval/head and business tables unchanged",
+      "same canonical exact delivery with reversed member order replays original single receipt and consumption"
+    ],
+    "browser": [
+      "six actual committed PROPOSE/APPROVE/REVOKE response waits plus Case or identity replacement preserve new context, reject stale original responses, retain exact opaque saved handle and leave effects zero",
+      "actual recovery GET wait crosses original local saved-handle TTL; no POST, no private DOM/view acceptance, effects zero",
+      "localStorage write failure prevents proposal POST and all effects"
+    ]
+  },
+  "complete_module_verified_boundaries": [
+    "original owner HTTP/Run/auth, purpose/Case/plan UUID-revision-hash/material double-slot/source/member/exact-command binding",
+    "source and authority revoke/restore ABA, unauthorized roles and cross enterprise/Case, CAS/replay/concurrent approve/revoke/consume, immutable SQL prefix and separate generated head",
+    "real final Case lock wait across deadline with whole-transaction rollback, failure at later receipt/claim/link stages with no partial effects",
+    "new Store attach to same issued fixture evidence; browser cold GET-only PROPOSE/APPROVE/REVOKE recovery and consumed original delivery recovery",
+    "P2/goal retained consumption proof, stripped receipt and owner-cleared journal/head negative fixtures, browser privacy/late responses/revocation/changed handle and narrow width pages"
+  ],
+  "actual_object_event_boundary": {
+    "objects": 8,
+    "events_observed": 24,
+    "states_after_one_consumption_and_seven_revocations": {
+      "CONSUMED": 1,
+      "REVOKED": 7
+    },
+    "configured_event_ceiling": 64,
+    "ceiling_reachable_with_valid_graph": false,
+    "reason": "eight objects with at most three phases each yield at most 24 legal events"
+  },
+  "product_failures": [],
+  "observer_or_harness_fault_windows": [],
+  "visual_evidence": {
+    "viewed": "browser/test_service_plan_approval_browser/approved-390.png",
+    "width": 390,
+    "observation": "actual original-owner approved history and explicit revoke/recovery controls render within narrow page; synthetic binding metadata remains readable"
+  },
+  "limitations": [
+    "default-off candidate; authorization limited to existing synthetic original owner and this exact resource-delivery purpose",
+    "newPID candidate API restart and PostgreSQL restart NOT_RUN / not accepted: issued fixture evidence is same-process; new Store and browser cold tested",
+    "noncooperative catalog/directory publisher last source read to COMMIT window remains OPEN",
+    "does not establish a separate formal approving subject, ServiceRelease, real publication or fulfillment, Case completion, external sharing/notification, deployment or model use",
+    "does not claim protection against a trusted database owner rewriting all retained anchor records",
+    "64-event exhaustion not tested as a reachable legal state; eight-object legal graph max24 tested",
+    "full repository/full AT/Windows not accepted; prior unpushed a823 Windows work not migrated or asserted"
+  ],
+  "unpublished_files": {
+    "git_tracked_or_nonignored_untracked": [],
+    "private_ignored_review_artifacts": ".runtime/independent-service-plan-approval-review",
+    "raw_logs_and_xml": "retained privately; safe report contains paths, counts and hashes only"
+  },
+  "artifacts": {
+    ".runtime/independent-service-plan-approval-review/browser/test_case_goal_results_browser/api-restart.json": {
+      "sha256": "d00099987e687264efc15e25182aa295014c269e1f17296f284548e886f4cf3c",
+      "bytes": 150
+    },
+    ".runtime/independent-service-plan-approval-review/browser/test_case_goal_results_browser/goals-1200.png": {
+      "sha256": "13a1217f707fec56347f2c068ec3d8fb14ba5160f23e281e84ee5ca64cbd1b2a",
+      "bytes": 115451
+    },
+    ".runtime/independent-service-plan-approval-review/browser/test_case_goal_results_browser/goals-320.png": {
+      "sha256": "0be68c2b68f9e1536a4946f2d01c68301da78981d176497c6f31dd30c49f77b5",
+      "bytes": 89082
+    },
+    ".runtime/independent-service-plan-approval-review/browser/test_case_goal_results_browser/goals-390.png": {
+      "sha256": "98e57e625781e8e027a8840838ed724a1cd7e874a286fa85b21e5836c0915076",
+      "bytes": 100755
+    },
+    ".runtime/independent-service-plan-approval-review/browser/test_service_plan_approval_browser/approved-1200.png": {
+      "sha256": "eb7b45c171f8bc866421add3fdd5b5d8b4108ec1f02ede5d0d6be5c3b3ccacf9",
+      "bytes": 162255
+    },
+    ".runtime/independent-service-plan-approval-review/browser/test_service_plan_approval_browser/approved-320.png": {
+      "sha256": "b97743b308bd23b7594b0f415cdc703de302f6b8f8bb83cede85ce46cefc9284",
+      "bytes": 80624
+    },
+    ".runtime/independent-service-plan-approval-review/browser/test_service_plan_approval_browser/approved-390.png": {
+      "sha256": "332e1703a4a73f6fa75ae9ba1d1f69cbbe7cf33c14e77f54c6639fc0b28f4596",
+      "bytes": 89760
+    },
+    ".runtime/independent-service-plan-approval-review/complete-execution.json": {
+      "sha256": "ea1861acd2f66ada055f83cd06a165984685c2eb96a2bbcaf8693a91a6ae724c",
+      "bytes": 1086
+    },
+    ".runtime/independent-service-plan-approval-review/complete-junit.xml": {
+      "sha256": "37943631efcc6bab0e0d1ed8170acd74046faae467977ebbcdde4ca91931e508",
+      "bytes": 67701
+    },
+    ".runtime/independent-service-plan-approval-review/complete-progress.json": {
+      "sha256": "c81c5cf23321b9ace351021b673d3a7e0fc1a5e8fe67068b7040e2288afa832a",
+      "bytes": 102294
+    },
+    ".runtime/independent-service-plan-approval-review/complete-pytest.log": {
+      "sha256": "b696700b060ba87a00e59d4b3ff014a583bf23d914a52083a66f17f7ff039f3c",
+      "bytes": 1391
+    },
+    ".runtime/independent-service-plan-approval-review/frozen-source.json": {
+      "sha256": "48c99bad9420ddd3976fa3498b7d4ef5d65fc40be2a5a14d3bbe428956d188ec",
+      "bytes": 35450
+    },
+    ".runtime/independent-service-plan-approval-review/independent-api-execution.json": {
+      "sha256": "99d76596f76546f43c463dd77ecc58f6ae08b0d4e36cb123abbf89f367a29985",
+      "bytes": 352
+    },
+    ".runtime/independent-service-plan-approval-review/independent-api-junit.xml": {
+      "sha256": "d1ec897cd08d2289a3f8308df1ec47331cadbe048f59d858bd71a9e308405167",
+      "bytes": 3671
+    },
+    ".runtime/independent-service-plan-approval-review/independent-api-progress.json": {
+      "sha256": "ef054de03139e73c6720606743b9b256cbc1cd4ec134cd91e5bd8279dd80d634",
+      "bytes": 4795
+    },
+    ".runtime/independent-service-plan-approval-review/independent-api-pytest.log": {
+      "sha256": "a216d29a333a7777e2b85cdd600afad4ebff9c26ea51da89f762079f584281ba",
+      "bytes": 894
+    },
+    ".runtime/independent-service-plan-approval-review/independent-browser-execution.json": {
+      "sha256": "ec65c69d1212ddfac9493cd419ee3e9a5eef925b88e21437032bdcf295070187",
+      "bytes": 369
+    },
+    ".runtime/independent-service-plan-approval-review/independent-browser-junit.xml": {
+      "sha256": "79989c42215ce8eb4e451a9c481c67c010589043de9b52fbc2421803faaf09d4",
+      "bytes": 2002
+    },
+    ".runtime/independent-service-plan-approval-review/independent-browser-progress.json": {
+      "sha256": "b07d1d2dd1bc9407944a075c6f51bf2be40fa86de0dd8fcf57809903c555746b",
+      "bytes": 2429
+    },
+    ".runtime/independent-service-plan-approval-review/independent-browser-pytest.log": {
+      "sha256": "9136cc56e30911a23a5ec48cc48e295604f5447974a68f78a3506f7254769003",
+      "bytes": 909
+    },
+    ".runtime/independent-service-plan-approval-review/remote-final.json": {
+      "sha256": "2c7dd5ed2fca16ac4657f98ce097326024089c7c561267a733b7d740276c10ae",
+      "bytes": 567
+    },
+    ".runtime/independent-service-plan-approval-review/remote-final.raw": {
+      "sha256": "f87883958f7a6ba550b4239866a68049e4e0d1e55d166f891126c3766427becf",
+      "bytes": 220
+    },
+    ".runtime/independent-service-plan-approval-review/remote-final.stderr": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    ".runtime/independent-service-plan-approval-review/run.py": {
+      "sha256": "1756216ad61ddce3187a2381310762a312e1e8e216837037c62cf71484e593e5",
+      "bytes": 1041
+    },
+    ".runtime/independent-service-plan-approval-review/test_approval_browser_independent.py": {
+      "sha256": "1852c4ffac4fbfc33e463dc47e142aa45c22139af1f89c5341e7453ab31d7055",
+      "bytes": 4055
+    },
+    ".runtime/independent-service-plan-approval-review/test_approval_independent.py": {
+      "sha256": "8a4cfe20ba45cc91a4329ebd61f38c1002054b50ca17272fd2fa9c401f878095",
+      "bytes": 7311
+    },
+    ".runtime/independent-service-plan-approval-review/wrapper.py": {
+      "sha256": "e664e0c8bd8ba1c838aed4f7accf2f1953f53098856d504cffa84835eec88b12",
+      "bytes": 1052
+    }
+  }
+}
