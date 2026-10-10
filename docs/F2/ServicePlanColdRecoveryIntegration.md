@@ -1,0 +1,13 @@
+# 原持久步骤未知操作正常整合记录
+
+从已推dev32879934025bb2148156797f39b91d22075e895e继续，不在main开发。先ae9fa1381732664d6f86f967c0955c59ddafea83冻结合同，再d5efa52fea45a8b76c8cb084b468b02332ed910f实现。首次独审BLOCKED热/在途24h漏检，6274afd0000067ed73e1909682a11d15551d28be先补合同、92d6f491209e166ec61f6471232c5491feaaac4e修复；次轮独审BLOCKED失效单event理由/来源残留，894911dfb0fe23aa566802d30c33abf0caa84f16先补合同、23f9a2f9285366a9cd6f3192ec159fc148d84f21改正面白名单。两轮BLOCKED未合dev，原失败日志/栈保持私有，安全报告与明确passing subset公开保留。
+
+23精确最终LIMITED_PASS：根6完整相关模块246PASS/0FAIL/ERROR/SKIP、JUnit396.249秒/受控397.769329秒；独审4完整相关模块184PASS/317.771秒，另4自有probe模块23PASS/63.776秒，均零失败/跳过。原五条实际TTL/event隐私失败均独立复验通过。根最终6模块只验证本片、原目标结果/异议页面及诊断；最终独审4模块与23probe是各自窗口，不相加当全仓。d5根18模块697PASS/543.150秒、92根16模块649PASS/580.775秒只属两次历史BLOCKED源码，不能覆盖最终23。开发专项首25窗23PASS/2观察器FAIL、另10窗4PASS/6观察器FAIL分别纠正选中2/6通过；独审首probe有harness及两观察器故障，实质期限和隐私失败均分窗保全，不删除或改写为首窗PASS。
+
+323源首尾及整合后零漂移，manifest SHA8689a60548cb3969de8a28c01f4de47461fe384f9c507367a307f02ac29e8bde，诊断AST1361。最终独审报告SHA3d43fac2d72645b6610c44baa3829fcee0face6ff0bead8b040a7f2a9e4b7d93；首次90919ddff0f14f80a1af7c3f5d22fd3e4869b41c7ce1593ecf3afe99fa104c63与二次bf6ded63cd913124b72d2456e98a0657f17c79b8e95f01a7287a56263c38661b不变。独审末尾Python子进程Git128认证上下文故障私有保全后，默认工具shell只读重试实际成功；没有改凭据/安全网络配置。真实Chromium1200/390/320无横向溢出，最终截图及同origin自有API进程重启/同PG/GET-only恢复证据公开。原旧smoke driver调整为17次业务写，但该整段driver未运行，不作原完整AT签收。
+
+安全证据普通候选push到e2a3887d3c799871b1ba7d76ce9b0282596c22a7后正常fetch，实际dev仍328、main仍31e7acb7e53bb1ab6465b9daae59de28757f7583，已知88403af18b95b361114b303c3fae636f286d91b4为祖先。Git干净、无挂起merge/rebase/cherry-pick/revert、无普通index.lock；平台codex-index-refresh.lock为空，/proc/locks无持有者，未删除。正常--ff-only整合dev、普通push后实际ls-remote确认dev与候选均e2a3887；main未变。本环境无本地main分支，没有创建/修改main。本文及integration.json随后纯文档提交，最终dev文档SHA和末尾本地/追踪/远端核验以交付回复及私有final-remote-verification.json为准，不构造递归自引用。
+
+仅原合成步骤协调/来源核对范围：无新业务写命令/表/迁移/Grant、真实业务/模型/外部通知/政策审批/部署/强推。原材料异议→原获派专员回应→企业明确复核及资料包导出已完成，未重做；Case真实完成不由本片证明。正式ServiceRelease/Approval发布主体与用途/在途版本协议、真实承诺产物和独立核验、Case FULFILLED权限/判据、多用途资料分享仍需要独立业务授权。Windows/fullrepo/原AT/EX未由本片验收，既有Server CI未查询，不称Windows通过，旧a823a28未迁移。
+
+证据入口：[范围](ServicePlanColdRecovery.md)、[最终核验](evidence/service-plan-cold-recovery/verification.json)、[最终独审](evidence/service-plan-cold-recovery/independent-review/report.json)、[整合机器记录](evidence/service-plan-cold-recovery/integration.json)、[真实窗口](evidence/service-plan-cold-recovery/window-history.json)、[174私有工件快照](evidence/service-plan-cold-recovery/private-artifacts.json)。最终未推送本任务文件仅忽略.runtime原始日志/XML、harness/probe/草稿、截图及最终远端辅助记录；源码与公共文档已正常推送。记录阶段之后的辅助文件不追加进此前174工件快照，原故障日志仍保全。
