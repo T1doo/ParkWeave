@@ -116,9 +116,15 @@ class TemplateUpgradeChecker:
         for revision, row in enumerate(rows, 1):
             try:
                 event = json.loads(row['payload']); UUID(event['id'])
-                valid = (event['scope'] == scope and row['revision'] == event['revision'] == revision and
+                body = Selection(target_release_id=event['check']['target_release_id'],
+                    expected_target_sha256=event['check']['target_release_sha256'],
+                    expected_check_sha256=event['check_sha256'], expected_revision=revision-1,
+                    choice=event['choice'], reason=event['reason']).model_dump(mode='json')
+                original_fp = sha(dict(instance_id=scope['instance_id'], **body))
+                valid = (type(event['revision']) is int and event['scope'] == scope and row['revision'] == event['revision'] == revision and
                          event['previous_sha256'] == previous and event['request_key'] == row['key'] and
-                         event['request_sha256'] == row['fp'] and sha(event) == row['hash'] and
+                         event['request_sha256'] == row['fp'] == original_fp and body['reason'] == event['reason'] and
+                         all(type(event.get(k)) is type(v) and event[k] == v for k,v in FLAGS.items()) and sha(event) == row['hash'] and
                          event['check_sha256'] == sha(event['check']) and event['choice'] in event['check']['allowed_choices'])
             except (ValueError, TypeError, KeyError): valid = False
             if not valid: raise Conflict('immutable upgrade history proof changed')

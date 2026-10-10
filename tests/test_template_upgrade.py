@@ -303,3 +303,25 @@ def test_actual_case_lock_wait_crossing_target_expiry_refuses_choice(upgrade_cas
     assert response.status_code==403,response.text
     with u['repository'].connect() as c:assert c.execute('SELECT count(*) FROM upgrade_events').fetchone()[0]==0
     assert snapshot(u)==before
+
+
+@pytest.mark.parametrize('damage',['reason','choice','flags','revision-type'])
+def test_original_request_anchor_rejects_rehashed_last_event_without_rewriting_history(upgrade_case,damage):
+    import json
+    from parkweave.template_candidate import sha
+    from parkweave.template_consumer import canonical
+    u=upgrade_case;row,_=instance(u);target=publication(u);x=check(u,row,target).json();key=uuid4().hex
+    original=choose(u,row,x,key=key).json()['event'];before=snapshot(u)
+    event=deepcopy(original);event.pop('event_sha256')
+    if damage=='reason':event['reason']='Changed reason without the original request'
+    elif damage=='choice':event['choice']='ACK_COMPATIBLE'
+    elif damage=='flags':event['migration_performed']=True
+    else:event['revision']=True
+    with sqlite3.connect(u['repository'].path) as c:
+        c.execute('DROP TRIGGER upgrade_no_update')
+        c.execute('UPDATE upgrade_events SET payload=?,hash=?',(canonical(event),sha(event)))
+        c.execute(u['repository'].TRIGGERS['UPDATE'])
+        saved=c.execute('SELECT * FROM upgrade_events').fetchall()
+    for r in [recover(u,row,key),choose(u,row,x,key=key),check(u,row,target)]:assert r.status_code==409,r.text
+    with sqlite3.connect(u['repository'].path) as c:assert c.execute('SELECT * FROM upgrade_events').fetchall()==saved
+    assert snapshot(u)==before
