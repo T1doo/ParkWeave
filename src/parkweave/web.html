@@ -1260,6 +1260,7 @@ document.addEventListener('change',e=>{if(e.target.matches('[data-combination-ho
 
 
 let receiptHistoryGeneration=0;
+function receiptHistoryCanonical(x){if(Array.isArray(x))return '['+x.map(receiptHistoryCanonical).join(',')+']';if(x!==null&&typeof x==='object')return '{'+Object.keys(x).sort().map(k=>JSON.stringify(k)+':'+receiptHistoryCanonical(x[k])).join(',')+'}';return JSON.stringify(x);}
 function clearReceiptHistory(){receiptHistoryGeneration++;$('receipt-history-result').replaceChildren();$('receipt-history-error').textContent='';$('receipt-history-read').disabled=false;}
 for(const id of ['token','receipt-history-preparation','receipt-history-key'])$(id).addEventListener('input',clearReceiptHistory);
 $('receipt-history-read').onclick=async()=>{
@@ -1271,9 +1272,10 @@ $('receipt-history-read').onclick=async()=>{
   const response=await fetch('/api/preparations/'+encodeURIComponent(c.id)+'/receipt-execution-history/recovery/'+encodeURIComponent(c.key),{headers:{Authorization:'Bearer '+c.token}}),x=await response.json();
   if(!current())return;
   if(!response.ok)throw Error(response.status===403?'当前原授权不可用，历史保持不可读。':response.status===409?'原历史证明无法核对，保持未知。':'只读核对暂不可用，请检查原服务后再次读取。');
-  if(x.read_only!==true||x.preparation_id!==c.id||x.scope!=='ISOLATED_REGISTERED_P4_RECEIPT_EXECUTION_PREVIEW'||x.automatically_replayed!==false)throw Error('原历史响应无法核对。');
+  if(x.read_only!==true||x.history_transport!=='ISOLATED_P4_LIVE_ISSUER_HISTORY_GET_V1'||x.preparation_id!==c.id||x.scope!=='ISOLATED_REGISTERED_P4_RECEIPT_EXECUTION_PREVIEW'||x.formal_writes!==0||x.automatically_replayed!==false)throw Error('原历史响应无法核对。');
   const box=$('receipt-history-result');
-  if(x.status==='NOT_OBSERVED'){box.append(textElement('p','原请求尚未观察到提交，保持未决；不会自动重放。'));return;}
+  if(x.status==='NOT_OBSERVED'){if(x.result!==null)throw Error('原请求响应无法核对。');box.append(textElement('p','原请求尚未观察到提交，保持未决；不会自动重放。'));return;}
+  if(x.status!=='COMMITTED'||!x.result||x.result.request_key!==c.key||x.result.scope!==x.scope||x.result.namespace!==x.namespace||x.result.binding?.preparation_id!==c.id||x.result.formal_writes!==0||!Array.isArray(x.history)||x.history.filter(v=>receiptHistoryCanonical(v.document)===receiptHistoryCanonical(x.result)).length!==1)throw Error('原请求编号与历史响应无法核对，保持未知。');
   const d=x.result,a=d.artifact,old=x.history.find(v=>v.document.id===d.id),r=a.p4_receipts[0],report=r?.adapter_execution?.report;
   box.append(textElement('strong','原报告 '+a.p4_state+' · '+(old?.source_state||'UNKNOWN')),textElement('p','企业决定 '+d.review_decision+' · 原事件 '+a.p4_events.map(v=>v.action).join('→')));
   if(report)box.append(textElement('p','执行编号 '+report.execution_id+' · 回执版本 '+r.version+' · hash '+r.source_sha256));

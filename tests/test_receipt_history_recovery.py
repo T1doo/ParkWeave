@@ -56,6 +56,9 @@ def test_owned_issuer(receipt_preview_fixture):
      if command['gate']=='lease':a[3][0]+=timedelta(minutes=11)
      elif command['gate']=='provider':f[0]._isolated_local_execution=None
      elif command['gate']=='proof':a[2].proof=None
+     elif command['gate']=='other_key_response':
+      original_reply=authority._reply
+      authority._reply=lambda request:original_reply({**request,'key':key})
      else:raise ValueError('closed observer control')
      seen=command['id'];private('control-ack.json',dict(id=seen))
    time.sleep(.02)
@@ -148,6 +151,19 @@ def note(case,name,data):(case/(name+'-safe.json')).write_text(json.dumps(data,i
 def schema(data):
     with Store(data['owner_dsn']).connect() as c:
         return ep._normal({n:c.execute(q).fetchall() for n,q in dict(columns="SELECT table_name,column_name,data_type,is_nullable,column_default FROM information_schema.columns WHERE table_schema='public' ORDER BY table_name,ordinal_position",indexes="SELECT tablename,indexname,indexdef FROM pg_indexes WHERE schemaname='public' ORDER BY tablename,indexname",grants="SELECT grantee,table_name,privilege_type FROM information_schema.table_privileges WHERE table_schema='public' ORDER BY grantee,table_name,privilege_type").items()})
+
+
+def test_actual_http_rejects_another_legitimate_original_key_reply(issuer):
+    base,d,authority,case=issuer;before=business(d);saved=bytes_all(d)
+    id=uuid4().hex;(base/'control.json').write_text(json.dumps(dict(id=id,gate='other_key_response')))
+    wait_for(lambda:(base/'control-ack.json').exists() and json.loads((base/'control-ack.json').read_text())['id']==id,authority)
+    with api_process(issuer) as (client,api,_,network):
+        assert get(client,d,d['key']).json()['result']==d['result']
+        response=get(client,d,'never-sent')
+        assert response.status_code==503 and 'result' not in response.json() and 'history' not in response.json()
+        assert {line.split()[0] for line in network.read_text().splitlines()}=={'GET'}
+    assert bytes_all(d)==saved and business(d)==before
+    note(case,'wrong-key-response',dict(actual_http=True,original_authority_legitimate_other_key_reply=True,report_hash_or_proof_fabrication=False,unknown_key_status=503,no_result_leak=True,five_logs_and_business_unchanged=True))
 
 @pytest.mark.parametrize('issuer',['ACKNOWLEDGE','REQUEST_CHANGES'],indirect=True)
 def test_actual_old_api_exits_new_pid_reads_exact_history_no_proof_transfer(issuer):

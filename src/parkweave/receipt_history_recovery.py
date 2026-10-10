@@ -19,6 +19,7 @@ from . import receipt_execution_preview as p4, isolated_execution_preview as ep
 from . import isolated_local_execution as local
 from .isolated_run_access import IsolatedRunAccessBridge
 from .store import Denied, Conflict
+from .preparation import canonical
 
 SCOPE = 'ISOLATED_P4_LIVE_ISSUER_HISTORY_GET_V1'
 REQUEST_LIMIT = 4096
@@ -27,7 +28,8 @@ TIMEOUT = 3
 FIELDS = {'version', 'operation', 'preparation', 'key', 'token', 'binding'}
 CONTRACT = ep._sha(dict(scope=SCOPE, version=1, operation='READ', fields=sorted(FIELDS),
     request_limit=REQUEST_LIMIT, response_limit=RESPONSE_LIMIT, socket_timeout=TIMEOUT,
-    backlog=8, proof_scope='ORIGINAL_LIVE_ISSUER_ONLY', p4=p4.CONTRACT))
+    backlog=8, proof_scope='ORIGINAL_LIVE_ISSUER_ONLY',
+    response_correlation='EXACT_ORIGINAL_KEY_AND_UNIQUE_HISTORY_DOCUMENT_V1', p4=p4.CONTRACT))
 
 
 def process_generation(pid):
@@ -260,8 +262,27 @@ class ReceiptHistoryClient:
             if (set(answer) != {'status', 'binding', 'view'} or answer['binding'] != self.binding or
                     type(view) is not dict or view.get('scope') != p4.SCOPE or
                     view.get('namespace') != self.binding['namespace'] or
-                    view.get('preparation_id') != request['preparation'] or view.get('formal_writes') != 0):
+                    view.get('preparation_id') != request['preparation'] or
+                    type(view.get('formal_writes')) is not int or view['formal_writes'] != 0):
                 raise ValueError()
+            if request['key'] is not None:
+                if view.get('automatically_replayed') is not False:
+                    raise ValueError()
+                if view.get('status') == 'NOT_OBSERVED':
+                    if view.get('result') is not None:
+                        raise ValueError()
+                elif view.get('status') == 'COMMITTED':
+                    doc = view.get('result')
+                    if (type(doc) is not dict or doc.get('request_key') != request['key'] or
+                            doc.get('scope') != view['scope'] or doc.get('namespace') != view['namespace'] or
+                            type(doc.get('binding')) is not dict or
+                            doc['binding'].get('preparation_id') != request['preparation'] or
+                            type(doc.get('formal_writes')) is not int or doc['formal_writes'] != 0 or type(view.get('history')) is not list or
+                            any(type(entry) is not dict for entry in view['history']) or
+                            sum(canonical(entry.get('document')) == canonical(doc) for entry in view['history']) != 1):
+                        raise ValueError()
+                else:
+                    raise ValueError()
             return {**view, 'history_transport': SCOPE, 'read_only': True}
         except (OSError, ValueError, TypeError, KeyError):
             raise ep.Unavailable('read-only history transport unavailable') from None

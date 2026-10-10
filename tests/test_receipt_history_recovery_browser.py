@@ -16,6 +16,29 @@ def fill(page,d):
     page.locator('#receipt-history-read').click()
     page.wait_for_function('()=>!document.getElementById("receipt-history-read").disabled')
 
+
+@pytest.mark.parametrize('reply',['different_key','reordered_history_keys'])
+def test_original_page_rejects_other_saved_key_for_unknown_request(issuer,reply):
+    _,d,_,case=issuer;before=business(d);saved=bytes_all(d);unknown='never-sent' if reply=='different_key' else d['key']
+    with api_process(issuer) as (client,_,port,_),sync_playwright() as pw:
+        browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);context=browser.new_context();page=context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
+        try:
+            assert get(client,d,unknown).json()['status']==('NOT_OBSERVED' if reply=='different_key' else 'COMMITTED')
+            def other_key(route):
+                response=route.fetch(url=route.request.url.rsplit('/',1)[0]+'/'+d['key'])
+                assert response.status==200 and response.json()['result']==d['result']
+                if reply=='different_key':route.fulfill(response=response)
+                else:
+                    view=response.json();view['history'][0]['document']=dict(reversed(list(view['history'][0]['document'].items())))
+                    route.fulfill(status=response.status,json=view)
+            page.route('**/receipt-execution-history/recovery/'+unknown,other_key);page.goto(f'http://127.0.0.1:{port}/');fill(page,{**d,'key':unknown})
+            if reply=='different_key':assert page.locator('#receipt-history-result').inner_text()=='' and '编号' in page.locator('#receipt-history-error').inner_text()
+            else:assert page.locator('#receipt-history-result').inner_text() and page.locator('#receipt-history-error').inner_text()==''
+            assert not errors
+            assert page.locator('#receipt-history-key').input_value()==unknown and bytes_all(d)==saved and business(d)==before
+            note(case,'response-correlation-page',dict(actual_chromium=True,response_fault=reply,no_forged_body_or_proof=True,wrong_key_rejected=reply=='different_key',same_document_reordered_object_keys_accepted=reply=='reordered_history_keys',five_logs_and_business_unchanged=True))
+        finally:context.close();browser.close()
+
 @pytest.mark.parametrize('issuer',['REQUEST_CHANGES'],indirect=True)
 def test_original_page_cold_get_after_old_api_pid_exits(issuer):
     _,d,authority,case=issuer;errors=[];requests=[]
