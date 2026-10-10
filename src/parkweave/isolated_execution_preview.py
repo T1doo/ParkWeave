@@ -110,6 +110,9 @@ def _sha(value):
 
 
 class IsolatedExecutionPreview:
+    storage_scope = SCOPE
+    attachment_attribute = '_isolated_execution_preview'
+
     def __init__(self, store, root, *, enabled_for_synthetic_preview=False):
         if enabled_for_synthetic_preview is not True:
             raise Denied('explicit synthetic execution preview required')
@@ -133,11 +136,11 @@ CREATE TABLE previews(owner TEXT NOT NULL, preparation TEXT NOT NULL, request_ke
  fingerprint TEXT NOT NULL, document TEXT NOT NULL, proof TEXT NOT NULL, PRIMARY KEY(owner,request_key));
 CREATE TRIGGER immutable_update BEFORE UPDATE ON previews BEGIN SELECT RAISE(ABORT,'immutable preview'); END;
 CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABORT,'immutable preview'); END;''')
-                db.execute('INSERT INTO meta VALUES(?)', (prep.canonical(dict(scope=SCOPE, version=VERSION, id=str(uuid4()), database=self.database_identity)),))
+                db.execute('INSERT INTO meta VALUES(?)', (prep.canonical(dict(scope=self.storage_scope, version=VERSION, id=str(uuid4()), database=self.database_identity)),))
         self._check_files()
         with self._database() as db:
             meta = json.loads(db.execute('SELECT value FROM meta').fetchone()[0])
-            if (set(meta) != {'scope','version','id','database'} or meta['scope'] != SCOPE or
+            if (set(meta) != {'scope','version','id','database'} or meta['scope'] != self.storage_scope or
                     meta['version'] != VERSION or meta['database'] != self.database_identity):
                 raise Denied('preview storage identity unavailable')
             UUID(meta['id'])
@@ -190,7 +193,7 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
                 raw=db.execute('SELECT value FROM meta').fetchone()[0]
                 if len(raw.encode())>4096:raise ValueError()
                 meta=json.loads(raw)
-                if (set(meta)!={'scope','version','id','database'} or meta['scope']!=SCOPE or
+                if (set(meta)!={'scope','version','id','database'} or meta['scope']!=self.storage_scope or
                         type(meta['version']) is not int or meta['version']!=VERSION or meta['database']!=self.database_identity or
                         (getattr(self,'namespace',meta['id'])!=meta['id'])):
                     raise ValueError()
@@ -211,12 +214,12 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
     def attach_store(self, store):
         if _identity(store) != self.database_identity:
             raise Denied('preview original database required')
-        store._isolated_execution_preview = self
+        setattr(store, self.attachment_attribute, self)
         return store
 
     def _source(self, store, c, token, id):
         identity=c.execute(IDENTITY_SQL).fetchone()
-        if getattr(store,'_isolated_execution_preview',None) is not self or identity != self.database_identity:
+        if getattr(store,self.attachment_attribute,None) is not self or identity != self.database_identity:
             raise Denied('attached original preview database required')
         p, parent = planning._context(store, c, token, id, True)
         # Cooperating catalogue writers take this exact key exclusively before
