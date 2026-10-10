@@ -143,3 +143,34 @@ def test_inflight_goal_read_interleaved_with_committed_lost_material_write_prese
   assert page.locator('#goal-results-items').inner_text()=='' and '保持未核验' in page.locator('#goal-results-error').inner_text() and page.locator('#prep-detail').is_visible()
   if kind=='objection':assert page.evaluate('objectionPending!==null') and 'PRIVATE_INTERLEAVED_OBJECTION' in page.locator('#objection-reason').input_value()
   else:assert page.evaluate('prepCommandPending?.state==="UNKNOWN"') and 'PRIVATE_INTERLEAVED_MATERIAL' in page.locator('#prep-text').input_value()
+ if kind=='material':
+  handle=next(iter(json.loads(stored).values()));handle=json.loads(handle);assert set(handle)=={'v','id','key','revision','expires'}
+  assert page.evaluate('(expires)=>expires>Date.now()&&expires<=Date.now()+86400000',handle['expires'])
+  if denied:
+   with f[1].connect() as c:
+    f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute("UPDATE capability_grants SET active=true,revision=revision+1 WHERE principal_id='fixture-a' AND capability='READ'")
+  before=snapshot(f);requests=[];recoveries=[];page.on('request',lambda r:requests.append(r.method));page.on('response',lambda r:recoveries.append(r.json()) if r.url.endswith('/command-recovery') and r.status==200 else None)
+  page.reload();assert page.locator('#token').input_value()=='';assert page.evaluate('preparationView===null&&prepCommandPending===null')
+  page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadPreparation(id,{role:"enterprise_operator"})',p['preparation_id']);page.wait_for_function('()=>prepRecoveryHandle?.observed&&!prepRecoveryChecking')
+  assert page.evaluate('prepRecoveryHandle.key')==handle['key'] and page.evaluate('prepRecoveryHandle.expires')==handle['expires'] and page.evaluate('JSON.stringify({...localStorage})')==stored
+  assert recoveries and recoveries[-1]['status']=='COMMITTED' and recoveries[-1]['event']['action']=='ADD_EVIDENCE' and recoveries[-1]['event']['revision']==handle['revision']+1
+  assert page.evaluate('preparationView.current_materials.find(x=>x.slot==="material_outline").version')==2 and requests and set(requests)=={'GET'} and snapshot(f)==before and not errors
+  page.locator('#prep-text').fill('SYNTHETIC newer unsent draft');page.locator('#prep-recovery-read').click();page.wait_for_function('()=>!prepRecoveryChecking');assert page.locator('#prep-text').input_value()=='SYNTHETIC newer unsent draft' and snapshot(f)==before
+  page.locator('#prep-recovery-release').click();assert page.evaluate('JSON.stringify({...localStorage})')=='{}' and page.locator('#prep-text').input_value()=='SYNTHETIC newer unsent draft' and snapshot(f)==before
+
+def test_original_material_handle_bounds_exact_retry_and_expiry_in_actual_browser(goal_page):
+ f,page,errors=goal_page;before=snapshot(f);requests=[];page.on('request',lambda r:requests.append(r.method))
+ observed=page.evaluate('''()=>{
+  const id=crypto.randomUUID(),key=crypto.randomUUID(),pending={context:{id},key,body:{action:'ADD_EVIDENCE',expected_revision:1}},name=prepRecoveryStorage+id;
+  rememberPrepRecovery(pending);const first=localStorage.getItem(name),x=readPrepRecovery(id);
+  if(!x||Object.keys(x).sort().join(',')!=='expires,id,key,revision,v'||x.expires<=Date.now()||x.expires>Date.now()+86400000)throw Error('original bounds');
+  rememberPrepRecovery(pending);if(localStorage.getItem(name)!==first)throw Error('retry extended expiry');
+  let blocked=false;try{rememberPrepRecovery({...pending,body:{action:'ADD_EVIDENCE',expected_revision:2}})}catch(e){blocked=true}if(!blocked||localStorage.getItem(name)!==first)throw Error('revision changed');
+  for(const bad of [{...x,expires:Date.now()-1},{...x,expires:Date.now()+86460000},{v:1,id,key,revision:1},{...x,body:'private'},{...x,revision:64}]){localStorage.setItem(name,JSON.stringify(bad));if(readPrepRecovery(id)!==null||localStorage.getItem(name)!==null)throw Error('invalid accepted');}
+  localStorage.setItem(name,'x'.repeat(401));if(readPrepRecovery(id)!==null||localStorage.getItem(name)!==null)throw Error('oversized accepted');
+  const unrelated='SYNTHETIC unrelated';localStorage.setItem(unrelated,'keep');
+  for(let n=0;n<8;n++){const next=crypto.randomUUID();rememberPrepRecovery({context:{id:next},key:crypto.randomUUID(),body:{action:'ADD_EVIDENCE',expected_revision:1}})}
+  const saved=JSON.stringify({...localStorage});blocked=false;try{rememberPrepRecovery(pending)}catch(e){blocked=true}if(!blocked||JSON.stringify({...localStorage})!==saved)throw Error('capacity changed');
+  for(const name of Object.keys(localStorage).filter(n=>n.startsWith(prepRecoveryStorage)))localStorage.removeItem(name);if(localStorage.getItem(unrelated)!=='keep')throw Error('unrelated deleted');localStorage.removeItem(unrelated);
+  return {exact_retry:true,expiry_preserved:true,invalid_rejected:true,eight_retained_ninth_rejected:true};
+ }''');assert all(observed.values()) and requests==[] and snapshot(f)==before and not errors
