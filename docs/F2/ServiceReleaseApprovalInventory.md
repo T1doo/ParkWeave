@@ -17,3 +17,5 @@
 目录协作与真实已消费证明重启范围见[CatalogApprovalCoordination](CatalogApprovalCoordination.md)，根/独审18模块均按实际两窗分列，不改旧11b验收时点。
 
 逐原实例检查与明确选择的范围、失败史及真实API/PG/页面证据见[TemplateUpgradeCheck](TemplateUpgradeCheck.md)，不替代正式发布或迁移审批。
+
+本轮6d79精确独审仅串通原fixture-a/b已有授权的冷LOCAL链与第三输入，root20/独审20各650PASS、另16反例，337源不变；没有建立正式ServiceRelease/ParkInstance或新的Approval主体。literal ENG098两新企业仅材料P1，原资源/执行者权限缺口实际为空/403，未补Grant；未消费ApprovalnewPID写仍关闭。根旧观察器证据改写已保全并恢复，既有正式缺口全保留。见[NewEnterpriseLocalChain](NewEnterpriseLocalChain.md)。

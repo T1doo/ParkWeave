@@ -1,3 +1,7 @@
+## 已审新企业冷会话的新输入到当前本地产物
+
+`6d79dc0a7bcbdacb60d9487ed5d9858af80cb402`精确独审LIMITED_PASS：根20完整相关模块650PASS/492.952秒，独审20模块650PASS/488.934秒，另16自有反例50.272秒独立通过；337路径零漂移。原模板多LOCAL目标选择及REVIEW嵌套来源的jsonb回读两处实际阻断已修；原fixture-a/b已有范围中新Case/双槽资料/显式Run READ申请批准/原Approval消费/本人接单/真实本地报告/企业ACK/P1–P5 VERIFY/6当前产物实际串通，同模板第三输入保留首历史。literal ENG098两企业实际只到材料P1，resource[]/executor[]/Approval403缺口保留，不新Grant或身份、不自动Run权；Case WAITING_CONFIRMATION非FULFILLED。根旧observer临时改4个证据文件后保全并精确恢复，不能称shared窗口Git始终clean；末尾Gitclean。正式Release/真实业务/未消费ApprovalnewPID写/fullAT/全仓/Windows仍未验，旧a823未迁移，原异议/导出不重做。见[范围与真实证据](NewEnterpriseLocalChain.md)、[先行合同](NewEnterpriseLocalChainContract.md)。以下历史仅保留各自原SHA范围。
+
 ## 已审逐实例模板版本升级检查与明确选择
 
 沿原F2-T06/§7.5，只比较本人原合成模板实例的新旧不可变修订、当前Case/资料/请求/计划/锁与实际依赖，区分兼容、需重验、人工锁冲突、破坏性拒绝。明确KEEP_CURRENT/REQUEST_RECHECK/ACK_COMPATIBLE仅追加最多64条独立不可变选择事件，CAS/幂等/原key只GET恢复；不迁移、重绑、重写旧Case、预约、回执或历史，未决不自动解决。默认关闭、原身份范围，无新Grant/角色/生产迁移或fixture凭证复制；旧consumer首ADOPT历史键精确兼容，原字节保留。

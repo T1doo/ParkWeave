@@ -1,3 +1,7 @@
+## 已审新企业冷会话的新输入到当前本地产物
+
+`6d79dc0a7bcbdacb60d9487ed5d9858af80cb402`精确独审LIMITED_PASS：根20完整相关模块650PASS/492.952秒，独审20模块650PASS/488.934秒，另16自有反例50.272秒独立通过；337路径零漂移。原模板多LOCAL目标选择及REVIEW嵌套来源的jsonb回读两处实际阻断已修；原fixture-a/b已有范围中新Case/双槽资料/显式Run READ申请批准/原Approval消费/本人接单/真实本地报告/企业ACK/P1–P5 VERIFY/6当前产物实际串通，同模板第三输入保留首历史。literal ENG098两企业实际只到材料P1，resource[]/executor[]/Approval403缺口保留，不新Grant或身份、不自动Run权；Case WAITING_CONFIRMATION非FULFILLED。根旧observer临时改4个证据文件后保全并精确恢复，不能称shared窗口Git始终clean；末尾Gitclean。正式Release/真实业务/未消费ApprovalnewPID写/fullAT/全仓/Windows仍未验，旧a823未迁移，原异议/导出不重做。见[范围与真实证据](NewEnterpriseLocalChain.md)、[先行合同](NewEnterpriseLocalChainContract.md)。以下历史仅保留各自原SHA范围。
+
 ## 当前新增有界§7.5检查，正式升级执行仍未验收
 
 076625a357fe9631cccb923132dad3cd224db48e只验本人原合成模板实例的升级分类与明确选择审计：根10模块318PASS，独审10模块318PASS、另API15与页面7各自三窗通过，335源码零漂移。真实64/CAS/丢响应冷热GET/迟到提交/撤权和body锚损坏反例有据；旧e830两项产品FAIL保留，不能以旧相关PASS抵消。正式ServiceRelease/ParkInstance、在途迁移与回退责任、完整新企业F2、原AT27迁移/fullAT/全仓/Windows仍未签收，原Approval未消费newPID写仍关闭，不新Grant/通知/模型/真实履约/Case完成。原冻结需求映射不改，下方2463/2455等全量仅属于各自历史源码，不能覆盖076。见[范围与机器证据](TemplateUpgradeCheck.md)、[发布审批缺口](ServiceReleaseApprovalInventory.md)。
