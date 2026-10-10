@@ -236,6 +236,17 @@ def create_app(store: Store) -> FastAPI:
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
         return material_reuse.reuse(store,token(authorization),preparation_id,idempotency_key,data)
 
+    from . import case_fact_bundle as fact_bundle
+    @app.get('/api/preparations/{preparation_id}/fact-bundle')
+    def fact_bundle_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return fact_bundle.read(store,token(authorization),preparation_id)
+    @app.post('/api/preparations/{preparation_id}/fact-bundle/commands')
+    def fact_bundle_command(preparation_id: UUID,data: fact_bundle.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return fact_bundle.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+    @app.get('/api/preparations/{preparation_id}/fact-bundle/recovery/{request_key}')
+    def fact_bundle_recovery(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return fact_bundle.recover(store,token(authorization),preparation_id,resource_key(request_key))
+
     from . import case_fact_clarifications
     @app.get('/api/preparations/{preparation_id}/fact-clarifications')
     def fact_clarifications(preparation_id: UUID,authorization: str | None=Header(default=None)):

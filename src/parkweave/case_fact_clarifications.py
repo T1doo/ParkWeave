@@ -181,10 +181,15 @@ def _sources(store, c, parent, p):
     rows = store.facts_query(c, p, list(FIELDS))
     if any(sum(row['field_name'] == field for row in rows) > 16 for field in FIELDS):
         raise Conflict('bounded field source history exceeded')
+    from . import case_fact_bundle as bundle
+    extra, extra_applicable, bundle_descriptor = bundle.source_state(c, parent) if 'fact_bundle' in parent else ([], {}, None)
+    rows = list(rows) + extra
     sources = sorted((_normal(row) for row in rows), key=lambda row: (row['field_name'], row['id']))
     binding = dict(_binding(parent), authority=_authority(c, p))
+    if bundle_descriptor is not None:binding['fact_bundle'] = bundle_descriptor
     now = c.execute('SELECT clock_timestamp() now').fetchone()['now']
-    applicable = {str(row['id']): row['valid_from'] <= now < row['valid_until'] for row in rows}
+    applicable = {row['id']: datetime.fromisoformat(row['valid_from']) <= now < datetime.fromisoformat(row['valid_until']) for row in sources}
+    applicable.update(extra_applicable)
     return dict(binding=binding, sources=sources), _hash(dict(binding=binding, sources=sources)), applicable
 
 
@@ -321,6 +326,10 @@ def _persist(store, c, p, parent, ledger, key, fp, action, reason, snapshot, sha
     now = c.execute('SELECT clock_timestamp() now').fetchone()['now']
     late_applicable = {row['id']: datetime.fromisoformat(row['valid_from']) <= now < datetime.fromisoformat(row['valid_until'])
         for row in snapshot['sources']}
+    if 'fact_bundle' in parent:
+        from .case_fact_bundle import source_state
+        _, doc_applicable, _ = source_state(c, parent)
+        late_applicable.update(doc_applicable)
     if choices and (late_applicable != applicable or not all(late_applicable.get(item['assertion_id'], False) for item in choices)):
         raise Conflict('fact source validity changed during confirmation; refresh required')
     result = _result(value, 'CURRENT' if choices else 'UNKNOWN', () if choices else ('FACT_PURPOSE_SELECTION_REQUIRED',), sha)
@@ -369,6 +378,9 @@ def confirm(store, token, preparation_id, key, data: Confirm):
                 row['revision'] != choice.expected_assertion_revision or row['fingerprint'] != choice.expected_assertion_fingerprint):
                 raise Conflict('current owner assertion choice binding required')
         choices = [choice.model_dump(mode='json') for choice in data.choices]
+        if 'fact_bundle' in parent:
+            from .case_fact_bundle import enforce_locks
+            enforce_locks(c, parent, [item.model_dump(mode='json') for item in data.choices], snapshot['sources'])
         return _persist(store, c, p, parent, ledger, key, fp, 'CONFIRM_FACT_PURPOSE', data.reason, snapshot, sha, applicable, choices)
 
 

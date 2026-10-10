@@ -80,6 +80,11 @@ def _build(store, c, p, row):
     selected = {choice['field']: by_id[choice['assertion_id']] for choice in choices}
     if set(selected) != set(facts.FIELDS) or not all(applicable[s['id']] for s in selected.values()):
         raise Conflict('current selected draft facts required')
+    # This existing sharing recipe authorizes original global self assertions.
+    # Case-only document extracts must not be copied or relabeled as self assertions.
+    if any(s['source_kind'] != 'USER_ASSERTED_SYNTHETIC' for s in selected.values()):
+        result.update(state='BLOCKED',issues=issues+['OWNER_CASE_ONLY_SOURCE_NOT_SHARED_BY_BRIEF_RECIPE'])
+        return result
     request = row.get('request_intent')
     current_request = request['request_text'] if request else row['goal']
     text = '\n'.join(['企业资料准备诉求摘要（合成、自述未核实）', '本次企业诉求：' + current_request] +
