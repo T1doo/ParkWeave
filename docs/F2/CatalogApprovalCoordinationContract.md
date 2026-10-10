@@ -1,0 +1,17 @@
+# 实施前冻结：合成目录发布与原Approval消费的协作合同
+
+从实际已推dev 2e77e408cb761e86e9f4808159569075fa600063建立独立候选；main仍31e7acb7e53bb1ab6465b9daae59de28757f7583，已知88403af为祖先。root唯一源码/Git写入者；先读取现有Approval、原目录/权限、fixture签发及实际PG工具，不继承跨环境权限，不重做资料异议或导出。
+
+仅由已有IsolatedPlanApproval同进程签发的FixtureDatabaseEvidence及实际自有新建临时PG证明开启共同协议。默认关闭，无API发布路由、环境启用入口、生产迁移、新业务Grant、数据库Grant或新角色。应用目录权限保持SELECT；发布只能用原合成fixture数据库owner及原Case所引用的固定park/service/version键。不能发布真实政策、变服务合同/租户/目录主键/资格/name或开放任意源。
+
+合成setup只在既有preparation_catalog添加候选专用不可变修订JSONB与独立head JSONB及固定前缀触发器。每个修订有稳定UUID、单调revision、scope/key/原源完整快照/hash、动作INIT/PUBLISH/WITHDRAW、明确原因、幂等key/fingerprint、前一hash与事件hash。head由SQL触发器生成，只指向本次最后不可变修订，记录ACTIVE或WITHDRAWN；源正文与head实际快照必须一致，不允许单侧篡改、清空、截断或修改历史。最多32事件，活动指针保留撤回额度；重复同key同正文仅读回原事件，改参/CAS旧版拒绝。已撤回可明确新发布；不自动恢复旧修订。公开产品合同仍固定synthetic-material-preparation@1，publication revision是独立源代际，不冒充正式ServiceRelease。
+
+目录源读投影将携带实际候选publication UUID/revision/hash/state；普通未启用目录保持原投影。既有事项必须按原显式ADOPT/VERIFY更新绑定，不自动重绑资料或计划。原Approval在source_versions保存共同版本证明并在提交前比较精确原指针/源/hash。PUBLISH相同正文及改后恢复也产生新不可变代际，旧批准不可用；WITHDRAWN不能批准或消费。历史消费与原实际效果保留，P2/goal读取仍验原消费证明，当前投影与历史分开。
+
+共同锁键固定为独立namespace+park/service/version的规范字符串，由PG hashtextextended产生事务advisory键。同Case消费在读取任何批准源之前取shared lock，直到该原交付事务COMMIT/ROLLBACK；合成owner发布先取同键exclusive lock，再锁目录行、校验当前head/CAS并追加修订及移动源指针，同事务提交。多个源setup按规范键稳定排序；单次发布只一个源，不取principal/preparation/Case/resource锁，禁止与原消费逆序嵌套。消费者不对只读目录取需UPDATE权限的行锁，原身份/parent/资源/Case锁及COMMIT前重新验证保持。原预览可过时，实际PROPOSE/APPROVE/CONSUME必须参加协议；历史只读源采样不声称事务效果线性化。
+
+真实双连接验证两种顺序：发布先完成，原批准拒绝且零部分交付；消费先持shared锁，publisher实际pg_locks显示等待，直到消费COMMIT或ROLLBACK后才移动指针。覆盖撤回、相同正文与ABA、CAS/幂等、不可变SQL/head负例、消费或发布后段失败、跨最终Case锁等待过期与撤权、权限仍SELECT、默认关闭和原流程兼容。只封闭遵循此固定协议的合成publisher与该原Approval消费之间的last-read→COMMIT窗口；可信DB owner禁用触发器或自行无协作修改全部源/锚仍为排除边界，不宣称消除所有并发风险。
+
+跨进程证据采用独立子进程configured_app（最小环境，127.0.0.1，现有应用角色）和自有临时PG实际stop/start：记录API不同PID、PG不同PID/启动时间及同system_identifier/database OID，持久Approval账本/head/原消费回执/关联/效果不变；浏览器冷认证后原交付GET核对消费证明，P2/goal验证仍依据持久账本，篡改则拒绝。不用新Store/App代替重启，不传递/重签/伪造issued fixture nonce，不扩通用权限框架。未消费Approval的新进程专用端点仍403，原fixture写capability在PG重启后拒绝，不自动继续执行；这部分继续明示未验收。只重启测试本身新建、确证自有的临时PG，禁止共享pg fixture和真实数据库。
+
+先精确冻结运行源码、相关真实HTTP/PG/browser回归、普通候选推送后独立审查；BLOCKED不合dev，LIMITED_PASS后仅正常快进/推送，main不动，不强推、不部署、不改凭据或安全网络。所有受控子进程用minimal_environment，故障原日志/XML私有保全；报告精确SHA、独立与根分窗计数/时间、未通过限制、实际远端和未推送文件。正式发布/独立审批主体/真实业务/通知/分享/模型/Case完成、fullrepo/fullAT/Windows与旧a823a28均不在本片签收。
