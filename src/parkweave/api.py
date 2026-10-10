@@ -460,6 +460,24 @@ def create_app(store: Store) -> FastAPI:
     @app.get('/api/preparations/{preparation_id}/resource-execution-preview/recovery/{request_key}')
     def resource_execution_preview_recover(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
         return preview_call(lambda:resource_preview_executor().read(store,token(authorization),preparation_id,resource_key(request_key)))
+    from . import dispatch_execution_preview as dispatch_preview
+    def dispatch_preview_executor():
+        candidate=getattr(store,'_isolated_dispatch_execution_preview',None)
+        if type(candidate) is not dispatch_preview.DispatchExecutionPreview:
+            raise Denied('isolated dispatch execution preview disabled')
+        return candidate
+
+    @app.get('/api/preparations/{preparation_id}/dispatch-execution-preview')
+    def dispatch_execution_preview_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return preview_call(lambda:dispatch_preview_executor().read(store,token(authorization),preparation_id))
+
+    @app.post('/api/preparations/{preparation_id}/dispatch-execution-preview',status_code=201)
+    def dispatch_execution_preview_execute(preparation_id: UUID,data: dispatch_preview.Execute,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return preview_call(lambda:dispatch_preview_executor().execute(store,token(authorization),preparation_id,resource_key(idempotency_key),data))
+
+    @app.get('/api/preparations/{preparation_id}/dispatch-execution-preview/recovery/{request_key}')
+    def dispatch_execution_preview_recover(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return preview_call(lambda:dispatch_preview_executor().read(store,token(authorization),preparation_id,resource_key(request_key)))
     from . import case_path
     @app.get('/api/preparations/{preparation_id}/case-path')
     def case_record_path(preparation_id: UUID,authorization: str | None=Header(default=None)):
