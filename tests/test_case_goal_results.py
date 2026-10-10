@@ -147,6 +147,7 @@ def test_resource_window_expiry_during_actual_last_source_row_lock_wait(link_fix
   block.execute('SELECT preparation_id FROM case_local_lifecycles WHERE preparation_id=%s FOR UPDATE',(p['preparation_id'],));pending=pool.submit(get,f,p)
   deadline=time.monotonic()+1
   while time.monotonic()<deadline:
+   block.execute('SELECT pg_stat_clear_snapshot()')
    waiting=block.execute("SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query ILIKE '%%FROM case_local_lifecycles%%') AS waiting").fetchone()['waiting']
    if waiting:break
    time.sleep(.01)
