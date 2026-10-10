@@ -1,3 +1,9 @@
+## 已审合成目录版本与原 Approval 提交协作
+
+仅原隔离fixture owner与原Approval消费采用同目录shared/exclusive事务锁；不可变修订/head绑定实际源代际，same-source/ABA/撤回不能复活旧批，源变化仍明确ADOPT/VERIFY。首次安装稳定source-key→owner目录安装关系锁→schema重读，已修真实死锁及跨键DuplicateColumn，原应用仍SELECT only/默认关闭，无新Grant或生产迁移。实际新API PID及自有PG stop/start后的已消费证明可冷GET恢复，P2/goal核对持久证明；新批准写仍403、旧cap重启后DENIED，不接受未消费对象重启后自动执行。
+
+20c0a568312e53c1c926927eda6d11c607c8e44e精确独审LIMITED_PASS：根18完整相关模块分窗79/33.025秒与503/584.543秒；独审18分窗79/48.806秒与493/595.665秒，另25独立反例分四窗全PASS，331路径零漂移。旧2cc/07BLOCKED及观察器故障保全，不伪称一次总分或全仓。协作范围内last-read→COMMIT关闭；可信owner不协作改全部锚、默认无Approval其它路由、正式Release/真实业务/fullAT/Windows仍未签收，旧a823未迁移。原异议/导出不重做。见[范围与证据](CatalogApprovalCoordination.md)、[正常整合](CatalogApprovalCoordinationIntegration.md)。下方历史保留各自原范围。
+
 ## 已审原首次资源交付持久方案 Approval
 
 沿原产品§7.4/F2-T03/T05，在原owner已有权限和原首次同Case合成资源事务内增加明确PROPOSE/APPROVE/REVOKE/CONSUME；绑定Case/Run/plan UUID与修订/hash、服务/来源/双槽资料/成员/原请求、原执行身份/当前授权/期限，变更后恢复不复活旧批准。独立UUID、不可变事件/head、CAS/幂等与原效果同事务；丢响应冷热只GET，原P2/goal检查实际消费证明。默认关闭、仅已签发自有临时PG和原范围，不新增Grant/角色或生产迁移。
