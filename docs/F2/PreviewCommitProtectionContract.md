@@ -23,3 +23,11 @@ SQLite获得写锁后重新检查原actor权限与已经观察的managed时效�
 全来源没有共同原子锁。因此GET/POST/重放/恢复历史统一用 `SNAPSHOT_MATCH` 或 `STALE`，不再输出 `CURRENT`。返回 `source_consistency=COOPERATIVE_GUARDS_WITH_SNAPSHOT_COMPARISON`、`source_atomicity=false`，页面明确“采样时来源匹配；不保证提交时全部来源不变”。新POST完成后不拿执行前旧current作当前值：重新采样仅用于响应比较；若响应采样失败，已提交不可撤销，原key恢复可读，禁止自动POST。旧不可变正文和proof不重写，历史标签是本次读取的比较结果。
 
 真实HTTP/PostgreSQL/Chromium屏障oracle：末次采样后合作目录/资料/撤权写入等待SQLite commit；非合作来源可真实改变而原结果不得CURRENT；SQLite写锁等待期间managed到期/撤权先提交拒绝，无新产物；INSERT后故障回滚与同key明确重试恢复；提交后断响应冷GETonly保留原产物。全部public逐值比较，只有测试明确原来源改变可变，不把其变化归于预览。普通候选push后冻结源交独审；未审不合dev，main不变。
+
+## 独审阻断后的等待边界补充（修补前冻结）
+
+首候选 `791c518da37ef6048156029d67d6141ef80bee99` 独审真实1FAIL/BLOCKED：独立SQLite reader持SHARED锁时，BEGIN IMMEDIATE与三次_guard均通过；随后实际COMMIT等待中原managed时钟跨有效期，HTTP403但SQLite已经存1个SUCCEEDED，原keyGET为COMMITTED。266根PASS不抵消此阻断。独审报告hash `357196add885cf1ba7ff5bbf89115ddde85f8814ca8ed0419c2f7d41d84e937b`；原日志/XML/probe保全。
+
+修补改为 `BEGIN EXCLUSIVE`，在原rollback-journal专属SQLite库中一次获得排斥读者和写者的锁，使已有读者等待发生于首次_guard之前；获得锁后重验已观察managed时效，失效403且0产物。持锁直至SQLite commit/rollback，后来的reader不能在末次_guard后重新取得SHARED锁使commit等待。仅替换该一条事务起点，不更改既有格式v2、不可变正文/proof/合同hash或任何正式权限；忙锁仍按原有限3秒503拒绝，GET恢复不盲重试。无法冻结时钟、磁盘I/O及未合作来源；所有输出仍明确snapshot/source_atomicity=false，不承诺瞬间以后持续有效。SQLite COMMIT后响应来源采样失败仍按已提交结果GET恢复合同处理。
+
+业务oracle不变：真实reader持SHARED锁、实际BEGIN EXCLUSIVE尝试且HTTP未返回，等待中跨原issued lease期限，释放reader后403、0SQLite产物、原key冷GETonly NOT_OBSERVED、public全值相同；原最后_guard→COMMIT等待路径必须不再能由reader插入。重新普通push冻结新SHA，独审先同业务负例复验，后相关全窗；失败窗口不得覆盖或改称通过。
