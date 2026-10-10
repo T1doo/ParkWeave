@@ -1,0 +1,124 @@
+{
+  "verdict": "BLOCKED",
+  "reviewed_sha": "495b0ebae78864f3df4ba492f1e50b1515474143",
+  "expected_sha": "495b0ebae78864f3df4ba492f1e50b1515474143",
+  "baseline_dev": "b18419f1a8c4bff6951082062b3e84088e9e374b",
+  "unchanged_main": "31e7acb7e53bb1ab6465b9daae59de28757f7583",
+  "manifest_sha256": "f77d1cded89295df73c274f7b600350812775c65f8bf1274130116eee8f834b8",
+  "frozen_paths": 321,
+  "frozen_source_diff": [],
+  "worktree_status": "",
+  "remote_verified": {
+    "candidate": "495b0ebae78864f3df4ba492f1e50b1515474143",
+    "dev": "b18419f1a8c4bff6951082062b3e84088e9e374b",
+    "main": "31e7acb7e53bb1ab6465b9daae59de28757f7583",
+    "source": "actual normal exec_command git ls-remote immediately before report"
+  },
+  "contract_frozen_before_runtime_commit": "fa251bddee4959465d686b6bd95e4659f09c664f",
+  "regression": {
+    "testcases": 388,
+    "passed": 388,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_seconds": 237.885,
+    "junit_sha256": "f1473441a2a9d3fce8877952ba00260d1b8aed60e8631a453d5877fe37ef6246",
+    "controlled_seconds": 239.225
+  },
+  "regression_modules": [
+    "tests/test_case_goal_results.py",
+    "tests/test_case_goal_results_browser.py",
+    "tests/test_service_case_steps.py",
+    "tests/test_bounded_planning.py",
+    "tests/test_case_lifecycle.py",
+    "tests/test_executor_receipts.py",
+    "tests/test_material_objections.py",
+    "tests/test_case_fact_bundle.py",
+    "tests/test_ci_diagnostics.py"
+  ],
+  "independent_other_http_pg_browser_probes": {
+    "testcases": 14,
+    "passed": 14,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_seconds": 40.314,
+    "junit_sha256": "ac78401f8d1dc352ec6a66a3c4daf4abebd3ba74c45ae385d6d31397555eca06",
+    "controlled_seconds": 41.114
+  },
+  "blocking_business_probe_count": 1,
+  "blocking_probe_junit": {
+    "testcases": 2,
+    "passed": 0,
+    "failures": 1,
+    "errors": 1,
+    "skipped": 0,
+    "junit_seconds": 4.347,
+    "junit_sha256": "4753c38dd8f0909301fb623b9890fe78d5004c8a8f35b08decaf51b704441188",
+    "controlled_seconds": 4.999
+  },
+  "blocking_teardown_error_is_same_business_probe": true,
+  "blocking_probe": {
+    "source": "src/parkweave/web.html:900",
+    "trigger": "Original goal-results GET in flight; original RAISE actually committed and reply lost; owner READ revoked; in-flight GET actually fetches 403",
+    "observed": {
+      "goal_view_present": false,
+      "plan_view_present": true,
+      "preparation_view_present": true,
+      "objection_view_present": true,
+      "pending_present": true,
+      "private_draft_present": true,
+      "prep_hidden": false,
+      "result_hidden": false,
+      "feedback": "",
+      "actual_http_status": 403,
+      "opaque_handle_preserved": true,
+      "page_errors": [
+        "请先只读核对原异议操作"
+      ],
+      "business_snapshot_unchanged": true,
+      "exact_sha": "495b0ebae78864f3df4ba492f1e50b1515474143"
+    },
+    "observation_sha256": "ddd63dfc9c7361e2b4c4bca85290f6e917f369eb739c531fca4f00ecd92999a5",
+    "minimal_fix": "Use original clearPreparation(false,false,true) in current goal-results permission-denial branch; clear private memory/DOM without deleting original opaque localStorage recovery handles; verify original UNKNOWN material/objection combined cases"
+  },
+  "probe_sha256": "55d5c23ea5a36237d1e47a7a18d2731540de318d98b7a833fd44223c939ed398",
+  "screenshots": [
+    {
+      "path": "browser/test_case_goal_results_browser/goals-1200.png",
+      "sha256": "6e87a9e9aa550dacb380fcbadc92fe72e203608dc60216c49d15b249316de7d3"
+    },
+    {
+      "path": "browser/test_case_goal_results_browser/goals-320.png",
+      "sha256": "b1506ccfd2142ad7aade5a302068312b2c2eb17e4fab2fd40b6b70d5125f72be"
+    },
+    {
+      "path": "browser/test_case_goal_results_browser/goals-390.png",
+      "sha256": "abfac2c03387330a72bce2b48dbc958499e024bde59801cf755f8813a5c3976f"
+    },
+    {
+      "path": "probes/current-403-pending-objection.png",
+      "sha256": "ad9cc2b448baefb5b14f8a1c81b968f65575eb3f022faaeaf5c9b9ee497fc3fa"
+    },
+    {
+      "path": "probes/late-False.png",
+      "sha256": "902f6e61a23256c6e51bb01d4346f209b1f5efad74ee74e955c2ec7a2f9bb2b7"
+    },
+    {
+      "path": "probes/late-True.png",
+      "sha256": "fe62f5e52abdc20ba4535731bcc0702bb1b4e14b42891cd94caa14b4f1954b44"
+    }
+  ],
+  "diagnostic_windows_private": [
+    "pending-403: first 250 ms observation + click capture lock did not reach new GET; not defect evidence",
+    "pending-403-actual: old objection global click lock blocked read and timed out; not defect evidence",
+    "pending-403-direct: direct function call reproduced exception but natural in-flight GET is authoritative",
+    "Report Git helper used minimal test environment and could not resolve github.com; immediately repeated ordinary exec_command read-only ls-remote succeeded without environment or network configuration changes"
+  ],
+  "limitations": [
+    "Only existing SYNTHETIC owner READ/PREPARE bounded read result scope reviewed",
+    "No Windows/native/full-repository/formal AT acceptance",
+    "No Case fulfillment, real service action, model, external notification, new sharing or permissions",
+    "No source/Git modifications, dev merge or deployment by independent reviewer"
+  ]
+}

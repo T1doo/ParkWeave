@@ -1,0 +1,155 @@
+{
+  "verdict": "BLOCKED",
+  "reviewed_sha": "e8c6c94995fc2b31c0ba379835f5bb568de7e237",
+  "expected_sha": "e8c6c94995fc2b31c0ba379835f5bb568de7e237",
+  "baseline_dev": "b18419f1a8c4bff6951082062b3e84088e9e374b",
+  "unchanged_main": "31e7acb7e53bb1ab6465b9daae59de28757f7583",
+  "manifest_sha256": "729ffab170d3630c150491029c5ae0358da5e7d4bc64b4871ae8c459e36f23fc",
+  "frozen_paths": 321,
+  "frozen_source_diff": [],
+  "changed_source_paths_from_previous_review": [
+    "scripts/windows_ci/diagnostic-test-ids.json",
+    "src/parkweave/web.html",
+    "tests/test_case_goal_results_browser.py"
+  ],
+  "worktree_status": "",
+  "remote_verified": {
+    "candidate": "e8c6c94995fc2b31c0ba379835f5bb568de7e237",
+    "dev": "b18419f1a8c4bff6951082062b3e84088e9e374b",
+    "main": "31e7acb7e53bb1ab6465b9daae59de28757f7583",
+    "source": "actual ordinary exec_command ls-remote immediately before report"
+  },
+  "contract_addendum_frozen_before_implementation": "222ba6aa376a8fea0eb2e983d0d519f6cd49a2b7",
+  "previous_blocked_report": {
+    "path": ".runtime/independent-case-goal-results-review/review.json",
+    "sha256": "58cdac49b0be0c3a0bd08137315eec7e8755d7c243b27fed17e0eebfe17535c6",
+    "preserved": true
+  },
+  "regression": {
+    "testcases": 392,
+    "passed": 392,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_seconds": 277.301,
+    "junit_sha256": "870a0e49cef5ba68a3d0d58b1bbf468ae18809a9d9e0e9ac778fbe31081463aa",
+    "controlled_seconds": 278.842
+  },
+  "regression_modules": [
+    "tests/test_case_goal_results.py",
+    "tests/test_case_goal_results_browser.py",
+    "tests/test_service_case_steps.py",
+    "tests/test_bounded_planning.py",
+    "tests/test_case_lifecycle.py",
+    "tests/test_executor_receipts.py",
+    "tests/test_material_objections.py",
+    "tests/test_case_fact_bundle.py",
+    "tests/test_ci_diagnostics.py"
+  ],
+  "corrected_independent_http_pg_browser_probes": {
+    "testcases": 19,
+    "passed": 19,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "junit_seconds": 67.534,
+    "junit_sha256": "bb877a61c6d20598cb1d2296ab61fb26715cf3cc958f3addf6c14b8b9f68e58d",
+    "controlled_seconds": 68.857
+  },
+  "passing_probes_breakdown": {
+    "previous_other_probes": 14,
+    "previous_natural_403_unknown_objection": 1,
+    "independent_material_objection_200_403_and_exact_key_get_recovery": 4
+  },
+  "previous_natural_403_observation": {
+    "goal_view_present": false,
+    "plan_view_present": false,
+    "preparation_view_present": false,
+    "objection_view_present": false,
+    "pending_present": false,
+    "private_draft_present": false,
+    "prep_hidden": true,
+    "result_hidden": true,
+    "feedback": "当前目标结果访问权已失效，私有视图已清除。",
+    "actual_http_status": 403,
+    "opaque_handle_preserved": true,
+    "page_errors": [],
+    "business_snapshot_unchanged": true,
+    "exact_sha": "e8c6c94995fc2b31c0ba379835f5bb568de7e237"
+  },
+  "first_extra_probe_window": {
+    "testcases": 20,
+    "passed": 17,
+    "failures": 3,
+    "errors": 0,
+    "skipped": 0,
+    "junit_seconds": 70.722,
+    "junit_sha256": "3c415dd1b53150818d5d7917a3e2797c567258d75631338d6621359c49373e9d",
+    "controlled_seconds": 71.873
+  },
+  "first_extra_window_failures": {
+    "harness_shape_errors": 2,
+    "explanation": "Independent harness expected RAISE response items; actual immutable response is objection. Only assertion path corrected; next independent 19 probe window all passed.",
+    "business_cold_handle_failures": 1,
+    "cold_probe_call_seconds": 3.573
+  },
+  "blocking_probe": {
+    "kind": "EXISTING_BASELINE_PROTOCOL_MISMATCH",
+    "introduced_by_current_candidate": false,
+    "also_present_at_baseline_dev": true,
+    "source": "src/parkweave/web.html:54-55",
+    "trigger": "Actual original ADD_EVIDENCE committed and response lost; original opaque handle stored; cold reload and re-authentication use GET only",
+    "observed": {
+      "original_handle_retained": false,
+      "recovery_handle_present": false,
+      "current_material_version": 2,
+      "read_only_requests": true,
+      "business_snapshot_unchanged": true,
+      "page_errors": [],
+      "exact_sha": "e8c6c94995fc2b31c0ba379835f5bb568de7e237"
+    },
+    "observation_sha256": "6839dee4851730d3e14f8382861275e97973ca51ed1ee6f0ca84011a9df841dc",
+    "reason": "rememberPrepRecovery writes {v,id,key,revision}; readPrepRecovery accepts only {v,id,key,revision,expires}, finite expiry within 24h. Cold page deletes the original saved handle, removing precise original key recovery.",
+    "minimal_fix": "Make original bounded writer/reader contract consistent including 24h expiry; preserve opaque-only storage and historical GET recovery; test response loss then actual 403, restored original authority and cold-page exact original key with zero POST replay"
+  },
+  "probe_sha256": "8bf38292e8c72803e8b8833b6c27a9f00d31e3adfe82418ff583e31d65e834eb",
+  "first_probe_source_sha256": "09d90c829ab62d9f407d25e7de1d6a76e17aafc2e8abbcda4f951ac59da76ab9",
+  "screenshots": [
+    {
+      "path": "browser/test_case_goal_results_browser/goals-1200.png",
+      "sha256": "3c997a2ff0c480ffdbe68f8c1d2a27b20d32f6e4898bd73d32bef52ce662b67f"
+    },
+    {
+      "path": "browser/test_case_goal_results_browser/goals-320.png",
+      "sha256": "937a4d0f634373620189b4bc814da74e1214897f8a90b41574c064ec520b9cc9"
+    },
+    {
+      "path": "browser/test_case_goal_results_browser/goals-390.png",
+      "sha256": "5cb2487d95c606f6c8367bf390bc1922726cee6d9b28b2ecf5a8dd850de9ebd6"
+    },
+    {
+      "path": "probes/current-403-pending-objection.png",
+      "sha256": "2d54ee26dae62afed1f88ecf793f16fe82957277a4a2c19d716e15f528bd0384"
+    },
+    {
+      "path": "probes/late-False.png",
+      "sha256": "2a077165fb5ca18582e095f08c1614bd9054215754afdc68dfdfebe815bb7fed"
+    },
+    {
+      "path": "probes/late-True.png",
+      "sha256": "16bd85e34d54a45c713aaacdd024633138634bcd2d5910661c46da97112f11f4"
+    }
+  ],
+  "static_checks": [
+    "Current non-OK 403 handling precedes successful-result unknown-write guard",
+    "Original force-clear drops private memory/DOM and leaves opaque localStorage untouched",
+    "Successful200 source/write locks bind to preparationId===read context id; original plan pending cleared on original Case context switch",
+    "Backend and scope/role/grant/schema unchanged; no new feature business write/DDL/grants"
+  ],
+  "limitations": [
+    "Known cold material handle mismatch blocks claimed original persistent recovery chain despite current403 and late200 fixes passing",
+    "Only bounded synthetic local goal outputs; never Case fulfillment or genuine service execution",
+    "No Windows/native/full-repository/formal AT acceptance",
+    "No source/Git writes, dev merge, permissions configuration, models, external notifications or deployment by reviewer"
+  ]
+}
