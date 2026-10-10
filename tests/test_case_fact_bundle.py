@@ -64,13 +64,17 @@ def test_manual_lock_refuses_different_source_and_withdraw_until_explicit_unlock
 
 @pytest.mark.parametrize('change',['version','actual-text','expired','withdraw'])
 def test_historical_document_not_selected_when_source_changes(preparation_fixture,change):
- f=preparation_fixture;p=setup(f);v,e=register(f,p);selected={s['field_name']:s['id'] for s in fact_read(f,p).json()['sources'] if s['source_kind']=='USER_ASSERTED_SYNTHETIC'};selected['region']=e['id'];assert choose(f,p,selected).status_code==200
+ f=preparation_fixture;p=setup(f)
+ if change=='expired':
+  source=document(f,p);source['validity']['valid_until']=(datetime.now(timezone.utc)+timedelta(seconds=3)).isoformat();r=command(f,p,body(get(f,p).json(),source=source));assert r.status_code==200,r.text;v=r.json()['current'];e=r.json()['receipt']['payload']['entry']
+ else:v,e=register(f,p)
+ selected={s['field_name']:s['id'] for s in fact_read(f,p).json()['sources'] if s['source_kind']=='USER_ASSERTED_SYNTHETIC'};selected['region']=e['id'];assert choose(f,p,selected).status_code==200
  if change=='version':add(f,prep_read(f,p).json()['preparation']|dict(preparation_id=p['preparation_id']),'material_outline','SYNTHETIC 新地区 / 17 / 新需求')
  elif change=='actual-text':
   with f[1].connect() as c:c.execute('UPDATE preparation_evidence SET text=text||%s WHERE id=%s',('SYNTHETIC corrupted bytes',UUID(e['material']['id'])))
  elif change=='expired':
   with f[1].connect() as c:
-   value=c.execute('SELECT fact_bundle FROM preparations WHERE id=%s',(UUID(p['preparation_id']),)).fetchone()['fact_bundle'];x=value['events'][0]['payload']['entry'];x['source']['validity']['valid_until']=(datetime.now(timezone.utc)-timedelta(seconds=1)).isoformat();x['fingerprint']=bundle.sha({k:v for k,v in x.items() if k!='fingerprint'});value['events'][0]['sha256']=bundle.sha({k:v for k,v in value['events'][0].items() if k!='sha256'});c.execute('UPDATE preparations SET fact_bundle=%s WHERE id=%s',(Jsonb(value),UUID(p['preparation_id'])))
+   c.execute('SELECT pg_sleep(greatest(0,extract(epoch from (%s::timestamptz-clock_timestamp())))+0.02)',(e['source']['validity']['valid_until'],))
  else:assert command(f,p,body(get(f,p).json(),'WITHDRAW',source_id=e['id'])).status_code==200
  before=snapshot(f);v=get(f,p).json();assert not v['entries'][0]['eligible_for_case_selection'];assert fact_read(f,p).json()['state']=='STALE';assert choose(f,p,selected).status_code==409 and snapshot(f)==before
  assert choose(f,p).status_code==200
@@ -118,17 +122,28 @@ def test_same_key_recovery_cross_case_and_concurrent_CAS(preparation_fixture):
  with ThreadPoolExecutor(2) as pool:r=list(pool.map(lambda _:command(f,p,b),range(2)))
  assert sorted(x.status_code for x in r)==[200,409];assert authority(f)==before_auth
 
-@pytest.mark.parametrize('bad',['binding','version-bool','event','deleted'])
+@pytest.mark.parametrize('bad',['binding','version-bool','event','deleted','empty','prefix','sql-missing','sql-payload','sql-fingerprint','sql-revision','sql-actor'])
 def test_invalid_bundle_proof_fails_closed_and_no_get_writes(preparation_fixture,bad):
  f=preparation_fixture;p=setup(f);v,e=register(f,p)
+ if bad=='prefix':v,e=register(f,p,'employees')
+ b=body(v,'REGISTER_ASSUMPTION',source=dict(field='region',value='SYNTHETIC proposal',unit='text',validity=period(),note='SYNTHETIC assumption'));key=v['history'][0]['request_key']
  with f[1].connect() as c:
   value=c.execute('SELECT fact_bundle FROM preparations WHERE id=%s',(UUID(p['preparation_id']),)).fetchone()['fact_bundle']
   if bad=='binding':value['binding']['owner_id']='fixture-b'
   elif bad=='version-bool':value['version']=True
   elif bad=='event':value['events'][0]['reason']='SYNTHETIC corruption'
-  else:value=None
+  elif bad=='deleted':value=None
+  elif bad=='empty':value['revision']=0;value['events']=[]
+  elif bad=='prefix':value['revision']=1;value['events']=value['events'][:1]
+  elif bad=='sql-missing':c.execute("DELETE FROM preparation_events WHERE preparation_id=%s AND action='FACT_BUNDLE_COMMAND'",(UUID(p['preparation_id']),))
+  elif bad=='sql-payload':c.execute("UPDATE preparation_events SET payload=jsonb_set(payload,'{bundle_revision}','true') WHERE preparation_id=%s AND action='FACT_BUNDLE_COMMAND'",(UUID(p['preparation_id']),))
+  elif bad=='sql-fingerprint':c.execute("UPDATE preparation_events SET fingerprint=%s WHERE preparation_id=%s AND action='FACT_BUNDLE_COMMAND'",('0'*64,UUID(p['preparation_id'])))
+  elif bad=='sql-revision':c.execute("UPDATE preparation_events SET revision=revision+1 WHERE preparation_id=%s AND action='FACT_BUNDLE_COMMAND'",(UUID(p['preparation_id']),))
+  elif bad=='sql-actor':c.execute("UPDATE preparation_events SET actor_id='fixture-b' WHERE preparation_id=%s AND action='FACT_BUNDLE_COMMAND'",(UUID(p['preparation_id']),))
   c.execute('UPDATE preparations SET fact_bundle=%s WHERE id=%s',(Jsonb(value) if value is not None else None,UUID(p['preparation_id'])))
- before=snapshot(f);assert get(f,p).status_code==409;assert fact_read(f,p).status_code==409;assert snapshot(f)==before
+ before=snapshot(f);assert get(f,p).status_code==409;assert fact_read(f,p).status_code==409
+ assert recover(f,p,key).status_code==409;assert recover(f,p,uuid4().hex).status_code==409
+ assert command(f,p,b).status_code==409;assert snapshot(f)==before
 
 def test_post_update_failure_rolls_back_whole_source_parent_plan_event(preparation_fixture,monkeypatch):
  f=preparation_fixture;p=setup(f);b=body(get(f,p).json(),source=document(f,p));before=snapshot(f)

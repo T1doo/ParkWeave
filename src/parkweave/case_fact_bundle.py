@@ -91,13 +91,18 @@ def ledger(c,parent):
         return dict(version=1,scope=SCOPE,binding=binding(parent),purpose='SERVICE_PREPARATION',share_scope='OWNER_CASE_USE_ONLY',revision=0,events=[])
     try:
         if (type(value['version']) is not int or value['version']!=1 or value['scope']!=SCOPE or value['binding']!=binding(parent) or value['purpose']!='SERVICE_PREPARATION' or value['share_scope']!='OWNER_CASE_USE_ONLY' or
-            type(value['revision']) is not int or not 0<=value['revision']<=MAX_EVENTS or len(value['events'])!=value['revision']):raise ValueError()
+            type(value['revision']) is not int or not 1<=value['revision']<=MAX_EVENTS or len(value['events'])!=value['revision']):raise ValueError()
+        receipts=c.execute("SELECT * FROM preparation_events WHERE preparation_id=%s AND action='FACT_BUNDLE_COMMAND' ORDER BY revision,id",(parent['id'],)).fetchall()
+        if len(receipts)!=value['revision']:raise ValueError()
         previous=None;keys=set();ids=set();last_parent=0
-        for i,e in enumerate(value['events'],1):
+        for i,(e,receipt) in enumerate(zip(value['events'],receipts),1):
             if (type(e['revision']) is not int or e['revision']!=i or e['scope']!=SCOPE or e['actor_id']!=parent['owner_id'] or e['action'] not in ACTIONS or e['binding']!=binding(parent) or
                 e['previous_sha256']!=previous or e['sha256']!=sha({k:v for k,v in e.items() if k!='sha256'}) or e['request_key'] in keys or e['id'] in ids or
                 type(e['preparation_revision']) is not int or not last_parent<e['preparation_revision']<=64 or e['source_basis']['binding']!=binding(parent) or e['source_basis']['preparation_revision']!=e['preparation_revision']-1 or e['source_sha256']!=sha(e['source_basis']) or type(e['source_basis']['request_revision']) is not int or not 0<=e['source_basis']['request_revision']<e['preparation_revision'] or not re.fullmatch('[a-f0-9]{64}',e['source_basis']['request_sha256']) or not isinstance(e['reason'],str) or not 1<=len(e['reason'])<=1000 or
                 not re.fullmatch('[a-f0-9]{64}',e['fingerprint']) or not re.fullmatch('[A-Za-z0-9_-]{1,100}',e['request_key'])):raise ValueError()
+            if (receipt['actor_id'],receipt['request_key'],receipt['fingerprint'],receipt['revision'])!=(e['actor_id'],e['request_key'],e['fingerprint'],e['preparation_revision']):raise ValueError()
+            expected=dict(preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),revision=e['preparation_revision'],action='FACT_BUNDLE_COMMAND',actor_id=e['actor_id'],bundle_revision=i,bundle_receipt_sha256=e['sha256'],bundle_action=e['action'])
+            if any(type(receipt['payload'].get(k)) is not type(v) or receipt['payload'].get(k)!=v for k,v in expected.items()):raise ValueError()
             UUID(e['id']);keys.add(e['request_key']);ids.add(e['id']);previous=e['sha256'];last_parent=e['preparation_revision']
         project(value)
     except (KeyError,ValueError,TypeError,AttributeError):raise Conflict('Case fact bundle history proof invalid')
@@ -198,7 +203,7 @@ def original(c,p,parent,key):
 @er.bounded
 def recover(store,token,id,key):
     with store.connect() as c:
-        p,parent=scope(store,c,token,id,key=key);old=original(c,p,parent,key);out=dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(id),case_id=str(parent['case_id']),historical_only=True,automatically_replayed=False)
+        p,parent=scope(store,c,token,id,key=key);ledger(c,parent);old=original(c,p,parent,key);out=dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(id),case_id=str(parent['case_id']),historical_only=True,automatically_replayed=False)
         if old is None:return dict(**out,status='NOT_OBSERVED')
         return dict(**out,status='COMMITTED',receipt=deepcopy(old),current=view(store,c,p,parent))
 
