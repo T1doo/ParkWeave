@@ -416,6 +416,32 @@ def create_app(store: Store) -> FastAPI:
     @app.post('/api/preparations/{preparation_id}/planning-preview')
     def planning_capture(preparation_id: UUID,data: planning.Capture,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return planning.capture(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+    from . import isolated_execution_preview as execution_preview
+    import sqlite3
+    import psycopg
+
+    def preview_executor():
+        candidate=getattr(store,'_isolated_execution_preview',None)
+        if type(candidate) is not execution_preview.IsolatedExecutionPreview:
+            raise Denied('isolated execution preview disabled')
+        return candidate
+
+    def preview_call(action):
+        try:return action()
+        except (psycopg.Error,sqlite3.Error,OSError,execution_preview.Unavailable):
+            raise HTTPException(503,'isolated preview outcome unavailable; read original key before an explicit new attempt') from None
+
+    @app.get('/api/preparations/{preparation_id}/execution-preview')
+    def execution_preview_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return preview_call(lambda:preview_executor().read(store,token(authorization),preparation_id))
+
+    @app.post('/api/preparations/{preparation_id}/execution-preview',status_code=201)
+    def execution_preview_execute(preparation_id: UUID,data: execution_preview.Execute,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return preview_call(lambda:preview_executor().execute(store,token(authorization),preparation_id,resource_key(idempotency_key),data))
+
+    @app.get('/api/preparations/{preparation_id}/execution-preview/recovery/{request_key}')
+    def execution_preview_recover(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return preview_call(lambda:preview_executor().read(store,token(authorization),preparation_id,resource_key(request_key)))
     from . import case_path
     @app.get('/api/preparations/{preparation_id}/case-path')
     def case_record_path(preparation_id: UUID,authorization: str | None=Header(default=None)):
