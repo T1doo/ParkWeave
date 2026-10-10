@@ -172,3 +172,42 @@ def test_cold_handle_metadata_cannot_rebind_original_event_or_enable_writes(goal
  elif damage=='action':h['action']='REPORT_FAILURE'
  else:h['revision']+=1
  raw=json.dumps(h,separators=(',',':'));page.evaluate('([name,raw])=>localStorage.setItem(name,raw)',[name,raw]);before=snapshot(f);page.reload();requests=[];page.on('request',lambda r:requests.append(r.method));page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadServiceCasePlan(id)',p['preparation_id']);page.wait_for_function('()=>servicePlanRecoveryHandle!==null&&!servicePlanRecoveryChecking');assert not page.evaluate('servicePlanRecoveryHandle.observed||false') and page.evaluate('servicePlanView.read_only') and page.locator('[data-service-action]').count()==0 and set(requests)=={'GET'} and snapshot(f)==before and page.evaluate('(name)=>localStorage.getItem(name)',name)==raw and not errors
+
+def damage_handle(page,h,kind):
+ name=page.evaluate('(h)=>servicePlanRecoveryName(h)',h)
+ if kind=='expired':page.evaluate('(expiry)=>{window.realRecoveryNow=Date.now;Date.now=()=>expiry+1}',h['expires']);return
+ if kind=='missing':page.evaluate('(name)=>localStorage.removeItem(name)',name);return
+ if kind=='malformed':page.evaluate('(name)=>localStorage.setItem(name,"SYNTHETIC broken")',name);return
+ changed={**h,'key':str(uuid4())};page.evaluate('([name,h])=>localStorage.setItem(name,JSON.stringify(h))',[name,changed])
+
+def assert_handle_refused(page,f,before,draft):
+ page.wait_for_function('()=>servicePlanRecoveryHandle===null&&!servicePlanRecoveryChecking&&servicePlanPending===null');assert page.evaluate('servicePlanView.read_only') and page.locator('[data-service-action]').count()==0 and page.locator('#goal-results-read').is_disabled() and page.locator('#service-plan-reason').input_value()==draft and snapshot(f)==before;assert '原提交结果仍待人工核对' in page.locator('#service-plan-feedback').inner_text()
+
+@pytest.mark.parametrize('kind',['expired','missing','malformed','changed'])
+@pytest.mark.parametrize('entry',['button','write_guard','release'])
+def test_hot_strict_handle_revalidation_before_get_or_release_no_requests(goal_page,kind,entry):
+ f,page,errors=goal_page;p=prep(f,'BEGIN');open_case(page,f,p);h,_,_=lost(page,f,p,'BEGIN')
+ if entry=='release':page.locator('#service-plan-retry').click();wait_recovered(page)
+ draft='SYNTHETIC new unsent safe draft';page.evaluate('(draft)=>document.getElementById("service-plan-reason").value=draft',draft);damage_handle(page,h,kind);stored=page.evaluate('JSON.stringify({...localStorage})');before=snapshot(f);requests=[];page.on('request',lambda r:requests.append((r.method,r.headers.get('idempotency-key'))))
+ if entry=='button':page.locator('#service-plan-retry').click()
+ elif entry=='release':page.locator('#service-plan-release').click()
+ else:page.evaluate('()=>servicePlanWrite("BEGIN",servicePlanView.steps[0].id)')
+ assert_handle_refused(page,f,before,draft);assert requests==[] and not errors
+ assert page.evaluate('JSON.stringify({...localStorage})')==(stored if kind=='changed' else '{}')
+ # Explicit read is the only transition back to current original plan state.
+ if kind!='changed':page.locator('#service-plan-read').click();page.wait_for_function('()=>servicePlanView!==null&&!servicePlanView.read_only');assert page.locator('#service-plan-reason').input_value()==draft and all(m=='GET' for m,k in requests) and snapshot(f)==before
+
+@pytest.mark.parametrize('kind',['expired','missing','malformed','changed'])
+@pytest.mark.parametrize('method',['GET','POST'])
+def test_real_inflight_recovery_or_original_post_revalidates_handle_before_accepting200(goal_page,kind,method):
+ f,page,errors=goal_page;p=prep(f,'BEGIN');open_case(page,f,p);held=[]
+ if method=='GET':h,_,_=lost(page,f,p,'BEGIN')
+ def hold(route):
+  if route.request.method!=method or (method=='GET' and not route.request.headers.get('idempotency-key')):route.continue_();return
+  r=route.fetch();assert r.status==200;held.append((route,r))
+ page.route('**/service-case-plan/'+('command-recovery' if method=='GET' else 'commands'),hold)
+ if method=='GET':page.locator('#service-plan-retry').click()
+ else:page.locator('#service-plan-reason').fill('SYNTHETIC PRIVATE_INFLIGHT_POST');page.locator('[data-service-action="BEGIN"]').click()
+ wait_held(page,held)
+ if method=='POST':h=page.evaluate('servicePlanRecoveryHandle')
+ draft='SYNTHETIC keep changed unsent draft';page.evaluate('(draft)=>document.getElementById("service-plan-reason").value=draft',draft);damage_handle(page,h,kind);stored=page.evaluate('JSON.stringify({...localStorage})');before=snapshot(f);requests=[];page.on('request',lambda r:requests.append(r.method));route,r=held[0];route.fulfill(response=r);assert_handle_refused(page,f,before,draft);assert requests==[] and page.evaluate('JSON.stringify({...localStorage})')==(stored if kind=='changed' else '{}') and not errors
