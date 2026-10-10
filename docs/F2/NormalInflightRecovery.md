@@ -1,0 +1,26 @@
+# 普通建单在途进程失联：有限验收
+
+本片沿原计划F1-T04/F2-T05与AT16–19，实际运行原LOCAL configured_app、连续worker、LeaseKeeper、ExecutionGateway及原Store事务。产品runtime在基线f585a34b23ac2d05994b3833363bdb86ef29fe03已具备自然过期接管、fence和原子建单；本片没有产品缺陷修复或新恢复协议，新增真实自有进程故障验收，并修正旧目录测试的游标UUID类型观察器缺陷。来源、当前授权、租约和消费者都用原路径，不接受fixture效果旁账本作为本片普通路径证明。
+
+源码dc3ee77b736e880455e0c326f9c0b146deddad8d，已实际根验候选6efd2387352759144d9a3c826ded0b460a935b00，372冻结manifestc3c7f035ac056fcbc387c42551c23f6e906c3b34b8f41c0b48eb6df0f44d16c6。原src逐字未变；新增tests/test_normal_inflight_recovery.py，修改原tests/test_run_directory.py类型转换与非空游标oracle，diagnostic-test-ids.json只新增4个真实函数标识，无移除/筛选/限额调整。初始合同2cdebd333ccd87f8c923b183c01a4f08497f8126在故障测试实施前提交，撤权措辞随后明确为只撤已有EXECUTE、不新增/恢复Grant。
+
+实际五个普通故障节点：
+- 旧worker真实claim且独立heartbeat；第二连续worker不能抢有效租约。只暂停已知自有旧PID全进程，自然DB时钟到期后新worker合法claim/fence递增。在新worker RUNNING且当前租约有效时，测试父进程调用原heartbeat/prepare_dispatch/finish携旧claim，三入口均Conflict，业务/权限及Run耐久字段不变；仅当前LeaseKeeper的lease_until/heartbeat_count/last_heartbeat_at合法续租字段不比较。终态原全表快照不作豁免；旧真实进程恢复后原worker日志实际报告Conflict，Case/Operation/receipt/终态事件唯一，相同幂等键不重复。
+- 自有owner连接持有原outbox表锁，实际原worker到INSERT outbox等待，证实建单提交事务中；退出已知worker、同一连接rollback释放自己的锁，等待原数据库连接退出。未提交Case/Operation回执回滚，Run已持久claim保持；自然租约到期后原新worker接管并唯一建单。没有手改时间、Run、业务行、触发器或fault-stage。
+- 仅原deliveries表的自有锁阻断真实消费者，Case/Operation/receipt及Run终态已提交。原进程退出、消费事务回滚；新的原连续worker不重领终态，只消费原outbox。原完整Run JSON保持，2个queued/terminal逻辑delivery、唯一SUCCEEDED事件和SUCCEEDED projection，旧cached claim拒写。原页面冷读320/390/1200三个宽度只GET、无浏览器存储、无越权可见/横向溢出，原跨scope读取403。
+- 原旧进程退出后当前owner撤EXECUTE，原接管FAILED_SAFE/RunFAILED、无Case，权限不恢复。
+- 原正常HTTP cancel后RunCANCELLED、原Operation仍PREPARED、无Case；原连续消费者drain原事件后终态projection一致，旧claim拒写。取消不编造Operation业务回执或Case。
+
+初建Case一直NEEDS_INPUT/SYNTHETIC/NOT_SUBMITTED/NO_EVIDENCE，只表示LOCAL_CASE_CREATED。模型步骤及fixture_effects均0；没有真实模型/付费调用、外部接单/真人批准/履约/部署/新权限或凭据配置。仅原隔离SYNTHETIC数据库初始化；独立撤EXECUTE案例不恢复权限。
+
+根8窗实际214PASS/0FAIL/0ERROR/2SKIP，216唯一collection与JUnit集合完整匹配，372源首尾零漂移，所有已知自有PID代际均退出；独审9窗实际215PASS/0FAIL/0ERROR/2SKIP，217唯一collection/JUnit完整核对封存；其中额外1个独立组合反例：先新worker合法接管且当前lease有效，再撤EXECUTE，待FAILED_SAFE和原消费drain，恢复原旧PID。旧PID实际Conflict、三旧cached fence入口拒写、同key POST403，零Case/model/fixture effects及终态全表快照保持。相关faultledger/worker_gateway中的FAULT_INJECTION测试只作原外部未知效果回归，与以上普通路径证据分开；4个相关plan/account/candidate节点使用原mock交易，不表示真实模型验证。两项SKIP分别为Windows11 native file gate及缺portable PowerShell的cluster-control fault oracle，均NOT_RUN、不算通过；完整AT17/Windows实机/全仓/真实外部未知动作仍NOT_RUN。
+
+失败保全：首开发2PASS/1FAIL，提交后节点等待短暂RUNNING观察窗口超时，后2授权节点未跑；只改为实际原INSERT deliveries已被自己的锁挡后读取持久SUCCEEDED/fence1，原业务断言不变。首冻结candidate08b5486f3756f75cfe2288cad58247a4e5bbff33目录窗1PASS/1FAIL，旧other字符串读取.int；UUID比较只在随机结果非空时执行，旧通过不能证明该分支已执行。修为UUID(str(other)).int保留原大于关系并增加必定非空的UUID0游标exact本人的原Run；旧candidate不接受。原日志/截图/JUnit、旧冻结manifest和失败安全元数据分别保留，新通过不覆盖原失败。
+
+每窗唯一短/tmp basetemp、私有日志/截图/checkpoint，原模块OUT在执行前重定向独立窗，保全旧同名浏览器产物。本片无资源或访问拒绝，若出现即停；不改实例限额/未知锁/未知进程。原PPID1 postgres/Chromium僵尸只读记录不操作。旧实例不恢复/读取/写入。原历史P5失败与上一轮全停冷恢复验收各保留原SHA与范围，不叠为本轮通过数。
+
+P4/P5所有发行者退出后持久重新取得资格合同仍OPEN。本片普通原子建单和冷读不代替资格恢复，也不把P5影子record关闭当CaseFULFILLED。下一步仍需按原合同补完整AT17非原子外部未知效果、原企业长期进程恢复及Windows验证；当前只签收上述普通case.create Linux有限故障切片。
+
+实际机器证据：[根验收](evidence/normal-inflight-recovery/root-report-safe.json)、[独审](evidence/normal-inflight-recovery/independent-report-safe.json)、[冻结源码](evidence/normal-inflight-recovery/source-contract.json)、[先行合同](NormalInflightRecoveryContract.md)、[首故障观察器失败](evidence/normal-inflight-recovery/development-failure-preserved-safe.json)、[旧目录观察器失败](evidence/normal-inflight-recovery/directory-observer-failure-preserved-safe.json)。正常dev快进交付只纳入本有限范围，不签收任何未跑项。
+
+独审报告SHA256 `c3eaf79c30e9cc6f537f322ca2380443fcf5e2628212214497a6e81e1957dc14`，已知490个独审PID+create_time实例（含全停冷恢复73实例）全部退出，global active PG/API/worker/Chromium/pytest为0；原3个未知PPID1僵尸只读未动。旧17历史证据字节与f585一致，旧独审40隔离截图hash未变。

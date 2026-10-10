@@ -1,3 +1,9 @@
+## 已审普通建单在途自然过期接管（Linux有限故障）
+
+源码 `dc3ee77b736e880455e0c326f9c0b146deddad8d`、已推冻结候选 `6efd2387352759144d9a3c826ded0b460a935b00` 精确独审 LIMITED_PASS。原 runtime 与 f585 逐字/模式相同；新增实际普通LOCAL worker/LeaseKeeper/gateway自有进程故障验收，修原目录游标测试UUID类型与非空oracle，trusted IDs只增4函数。原DB自然租约到期合法接管、当前有效新lease期间旧fence拒写，原旧PID恢复实际Conflict；提交中退出回滚，提交后消费者退出由原outbox继续、不重领终态、不重复Case/回执。当前撤EXECUTE/正常cancel不恢复授权、无新Case；初建NEEDS_INPUT/LOCAL_CASE_CREATED不作履约。
+
+根8窗214PASS+2SKIP/216唯一节点，独审9窗215PASS+2SKIP/217唯一节点（含1自写接管后撤权/恢复旧PID/同key403组合反例），collection/JUnit精确匹配、372源首尾零漂移、全部已知资源退出。两个SKIP分别Windows native文件gate与缺portable PowerShell的cluster-control fault oracle，均NOT_RUN。首2P1F及后2未跑、旧08候选目录1P1F及后续未跑保全；旧17证据/40独审隔离图未改，本轮OUT全窗隔离。完整AT17/Windows/全仓/外部未知动作仍NOT_RUN，P4/P5所有发行者退出后持久资格合同仍OPEN，无真人批准/真实模型/付费/履约/部署或main改动。见[实际范围与机器证据](NormalInflightRecovery.md)、[先行合同](NormalInflightRecoveryContract.md)。以下历史保留各自原SHA及范围。
+
 ## 已审正常本地记录全进程停启只读找回
 
 运行源码 `4217e63c14259ddc679405c6228da948b877354c`、候选 `377a2bbe5c854359353967da11f71607e838ade4` 精确独审 LIMITED_PASS。原发行/初始化父进程及 PG/API/worker/Chromium 全停后，正常冷启动用同一数据与本人原0600会话文件，registry空、migrate/seed均0、无proof传输；目录及原Run真实GET200找回同一Case/Operation，业务/权限逻辑行不变，原拒绝审计单列。原 READ/park/org/owner/当前资格不扩，明确选择不重放；真实Run403迟到目录200隐私缺口已修。
