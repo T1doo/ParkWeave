@@ -269,7 +269,7 @@ class TemplateConsumer:
             stage = c.execute('SELECT * FROM consumer_stages WHERE instance_id=? AND name=?', (instance['id'], name)).fetchone()
             if stage is None:
                 body = normal(build())
-                key = 'tc:' + instance['id'] + ':' + name
+                key = 'tc_' + UUID(instance['id']).hex + '_' + name
                 c.execute('INSERT INTO consumer_stages VALUES(?,?,?,?,?,?,NULL,NULL)',
                           (instance['id'], name, key, digest(canonical(body)), canonical(body), 'STARTED'))
                 stage = dict(instance_id=instance['id'], name=name, request_key=key, body_sha256=digest(canonical(body)), body=canonical(body), state='STARTED', result=None)

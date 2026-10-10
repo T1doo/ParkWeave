@@ -335,9 +335,12 @@ def _recovery_proofs(parent):
                 step_ids.add(step['id'])
             for revision,event in enumerate(plan['events'],1):
                 UUID(event['id'])
+                legacy_adoption_key = (revision == 1 and event['action'] == 'ADOPT' and
+                    isinstance(event['request_key'], str) and bool(re.fullmatch(
+                        r'tc:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:ADOPT_PLAN', event['request_key'])))
                 if (event['id'] in event_ids or type(event['revision']) is not int or event['revision']!=revision or event['plan_id']!=plan['id'] or
                     (event['actor_id'],event['request_key']) in keys or type(event['actor_id']) is not str or
-                    type(event['request_key']) is not str or not re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or
+                    type(event['request_key']) is not str or not (re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or legacy_adoption_key) or
                     type(event['coordination_only']) is not bool or type(event['reason']) is not str or not 1<=len(event['reason'])<=1000):raise ValueError()
                 event_ids.add(event['id']);keys.add((event['actor_id'],event['request_key']))
                 previous=plans[index-1] if index else None
