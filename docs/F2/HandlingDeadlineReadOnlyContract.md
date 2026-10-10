@@ -6,7 +6,7 @@
 
 最高价值最小连通切片：原资料事项页增加“办理期限与来源”只读区域和 GET `/api/preparations/{id}/handling-deadline`。默认关闭仍返回 UNKNOWN；先按原 preparation.scoped 的当前认证、READ、PREPARE/REVIEW_ASSIGNED、原 owner/获派专员/企业/园区范围核验，不能用关闭开关泄露跨企业事项。仅已签发、原 owner 同临时 UUID PG/cluster/OID/端点/启动与同进程证明限定的显式合成配置可启用。无环境自动配置、公开导入、任意文件、政策文本解析或生产迁移。
 
-存储合同：最多16个明确资料事项，host 侧一次构造不可变规范 JSON 字节映射及独立 SHA-256；复制调用方对象，不保存到PG/浏览器，也不改变任何业务事件。来源精确绑定 park/org/owner/reviewer、Case/Run/preparation UUID、资料 revision、两个槽 ID/version/hash 的 snapshot、原 request revision/hash、服务 ID/version 与当前目录来源 hash，以及原 CREATE 事件 ID/PG 时间/原 payload hash。读取在原身份锁、资料行共享锁、目录共享锁下获取当前绑定，任何变化 UNKNOWN，历史业务数据保持；显式新 host 配置才能重绑，没有自动延期/自动重绑。冷浏览器重新认证后只GET；新 Store/新 API 进程/PG重启无原配置/证明默认UNKNOWN，不声称持久化正式时钟。
+存储合同：最多16个明确资料事项，host 侧一次构造不可变规范 JSON 字节映射及独立 SHA-256；复制调用方对象，不保存到PG/浏览器，也不改变任何业务事件。来源精确绑定 park/org/owner/reviewer、Case/Run/preparation UUID、资料 revision、两个槽 ID/version/hash 的 snapshot、原 request revision/hash、服务 ID/version 与当前目录来源 hash 及 xmin 行版本（改后恢复原值也须显式重绑），以及原 CREATE 事件 ID/PG 时间/原 payload hash 与资料创建时间（两个 clock_timestamp 不要求相同，事件不得早于资料）。读取在原身份锁、资料行共享锁、目录来源读取后获取当前绑定（现有 app 无目录 UPDATE 权限，不能用需该权限的 FOR SHARE 也不新增授权；目录 hash 核对是本次读取时点的观察，不承诺串行化任意 owner 写入），任何变化 UNKNOWN，历史业务数据保持；显式新 host 配置才能重绑，没有自动延期/自动重绑。冷浏览器重新认证后只GET；新 Store/新 API 进程/PG重启无原配置/证明默认UNKNOWN，不声称持久化正式时钟。
 
 合成来源必须有 SYNTHETIC 标记、稳定 ID/revision、明确文本及文本 SHA-256、有效期、服务版本/接单企业适用依据；policy 指向相同 source/calendar ID+revision+hash，明确业务 IANA 时区、正的 target_seconds（工作区间内真实经过秒数，不是自然日），开始依据仅原资料 CREATE 事件（合成资料准备起点，不是现实机构受理）。不从创建Run/访问批准/材料齐全自动推出现实受理。来源过期、不适用、hash不符、缺字段/多字段/错误类型/非法目标返回有界原因 UNKNOWN；不回显文本/私人材料、请求、token、DSN、owner配置或内部SQL。
 
