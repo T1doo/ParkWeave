@@ -122,6 +122,12 @@ def create_app(store: Store) -> FastAPI:
             raise HTTPException(422, "fixture adapter disabled")
         return {"run_id": store.submit(token(authorization), idempotency_key, data)}
 
+    @app.get('/api/runs')
+    def local_records(authorization: str | None = Header(default=None),
+                      limit: int = Query(default=20, ge=1, le=50),
+                      after: UUID | None = Query(default=None)):
+        return store.list_local_records(token(authorization), limit=limit, after=after)
+
     @app.get("/api/runs/{run_id}")
     def read(run_id: UUID, authorization: str | None = Header(default=None)):
         return store.read(token(authorization), run_id)

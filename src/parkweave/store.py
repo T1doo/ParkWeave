@@ -346,6 +346,30 @@ class Store:
             self.event(c, run_id)
             return str(run_id)
 
+    def list_local_records(self, token, *, limit=20, after=None):
+        """Discover existing owner case.create records under current READ only."""
+        if type(limit) is not int or not 1 <= limit <= 50:
+            raise ValueError('bounded record page required')
+        if after is not None and type(after) is not uuid.UUID:
+            raise ValueError('record UUID cursor required')
+        with self.connect() as c:
+            c.execute('SET TRANSACTION READ ONLY')
+            p = self.auth(c, token, lock=True)
+            self.check_capability(c, p, 'READ')
+            if p['role'] != 'enterprise_operator':
+                raise Denied('current enterprise owner required')
+            rows = c.execute("SELECT id,state,revision,namespace FROM runs "
+                "WHERE principal_id=%s AND park_id=%s AND org_id=%s "
+                "AND namespace='SYNTHETIC' AND input->>'action'='case.create' "
+                "AND (%s::uuid IS NULL OR id>%s::uuid) ORDER BY id LIMIT %s",
+                (p['id'], p['park_id'], p['org_id'], after, after, limit+1)).fetchall()
+            return {'scope': 'CURRENT_OWNER_LOCAL_CASE_RECORDS', 'read_only': True,
+                    'automatically_replayed': False,
+                    'items': [{'run_id': str(r['id']), 'state': r['state'],
+                               'revision': r['revision'], 'namespace': r['namespace']}
+                              for r in rows[:limit]],
+                    'next_after': str(rows[limit-1]['id']) if len(rows)>limit else None}
+
     def read(self, token, run_id):
         with self.connect() as c:
             p = self.auth(c, token, lock=True)
