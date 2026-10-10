@@ -14,8 +14,10 @@ P4仅28个已声明影子表、112个精确SQL模板；连接search_path固定pg
 
 原页面提供明确P4预演、ACK/REQUEST_CHANGES选择、历史/GET核对/结束恢复；仅独立五不透明字段恢复句柄，8条/24h，无token/正文，Case/身份/草稿变化、撤权403和迟到回复清私密视图；未知不自动POST。展示实际执行ID/hash/回执版本/模拟企业decision、CHANGES_REQUESTED未核对、完整目标/P5未执行、formal_writes=0/Case未完成。实际P3四个PENDING outbox保持未消费、notices空；无新通知消费者。
 
-验证真实HTTP/PostgreSQL/SQLite/Chromium及原API进程冷重建：本地generate实际调用、原SUBMIT/ACK/REQUEST_CHANGES、历史hash/材料换版拒绝、当前租约/角色/跨企业/撤权、source CAS、迟到/重复/并发、丢响应前后只GET、篡改proof、原正式UUID消费403和隐私/窄屏。检查全部public业务表逐值（排除原authorization_audit诊断）、正式schema/权限集合及旧P1/P2/P3文件字节不变。保全每个失败窗口，不汇总成一轮PASS。
+验证真实HTTP/PostgreSQL/SQLite/Chromium、原页面冷恢复和同一合法发行进程内的API/Store/预览对象冷重建：本地generate实际调用、原SUBMIT/ACK/REQUEST_CHANGES、历史hash/材料换版拒绝、当前租约/角色/跨企业/撤权、source CAS、迟到/重复/并发、丢响应前后只GET、篡改proof、原正式UUID消费403和隐私/窄屏。检查全部public业务表逐值（排除原authorization_audit诊断）、正式schema/权限集合及旧P1/P2/P3文件字节不变。保全每个失败窗口，不汇总成一轮PASS。
 
 正常候选推送后精确runtime SHA独立审查，阻断先修；独审自然窗口/资源关闭后才普通ff-only整合dev并核验实际远端。完整AT14、全仓、Windows、P5、正式受理/服务目标/Case完成均未签收；原本地报告不等于材料服务。禁止改main、强推、部署、凭据/安全网络配置、真实业务或模型。旧Windows修复和资料包导出不重做。
 
 开发闭包修订：原managed桥接使用ON CONFLICT(principal_id,run_id)，P3的仅DEFAULTS影子缺少对应唯一索引，原SQL明确拒绝。先补冻结：仅run_assignments的可信临时表建表复制原INDEXES（不复制FK/触发器），原112代理SQL不扩大；再实现。此影子临时journal的ProjectionPending不代表外层P4提交，转为503并只GET原key核对，finally销毁临时空间；不返回正式decision_committed含义。原注册adapter_ref必须精确executor-receipts，临时文件名遵守原.run-access.candidate.sqlite3门，既有拒绝不放宽。
+
+恢复合同边界：原ENG106临时FixtureDatabaseEvidence是进程内实际发行对象，不能序列化后在新API进程伪造恢复。P4不重签该证明、不补正式Grant；真实新进程验证默认关闭/无发行proof时403且保留原SQLite字节。同一合法发行进程内重建Store/API/预览对象、原页面冷恢复和GET-only核对分别测试，不声称独立新PID下原managed链已恢复。完整跨进程发行proof/lifecycle恢复仍是未签收缺口。
