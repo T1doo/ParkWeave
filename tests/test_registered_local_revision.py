@@ -226,3 +226,26 @@ def test_damaged_dependency_journal_is_rejected_without_observation_writes(http_
 def test_declared_branch_closure_does_not_invalidate_unrelated_numeric_step():
     steps=[dict(adapter_id='P1',depends_on=[]),dict(adapter_id='P2',depends_on=['P1']),dict(adapter_id='P3',depends_on=['P1']),dict(adapter_id='P4',depends_on=['P2'])]
     assert deps.closure(steps,{'P2'})=={'P2','P4'}
+
+
+def test_saved_local_adoption_stays_readable_when_current_declaration_version_changes(http_f,monkeypatch):
+    f=http_f;p,g,d,s=complete(f);add_resource(f);key=uuid4().hex
+    assert patch(f,p,key=key).status_code==201
+    for adapter in ('P2','P3','P4'):verified(f,p,adapter)
+    assert read(f,p).json()['state']=='VERIFIED' and recover(f,p,key).json()['status']=='COMMITTED'
+    before=stored(f,p);old_business=business(f)
+    # Technical future-version compatibility only: no source/registry/business migration.
+    monkeypatch.setattr(deps,'VERSION',2)
+    r=read(f,p);assert r.status_code==200,r.text;x=r.json()
+    expected_impact(x,('P1','P2','P3','P4'),());assert x['change_impact']['unknown_scope']=='THIS_CASE'
+    rc=recover(f,p,key);assert rc.status_code==200 and rc.json()['status']=='COMMITTED'
+    observed=stored(f,p);assert observed['events']==before['events'] and observed['history']==before['history']
+    for old,new in zip(before['steps'],observed['steps']):
+        assert {k:v for k,v in old.items() if k!='invalidated'}=={k:v for k,v in new.items() if k!='invalidated'}
+    assert business(f)==old_business
+    adopted=patch(f,p);assert adopted.status_code==201,adopted.text
+    now=stored(f,p);assert now['dependency_manifest']['version']==2 and now['events'][:-1]==before['events']
+    assert set(now['events'][-1]['local_revision']['affected'])=={z['id'] for z in before['steps']} and not now['events'][-1]['local_revision']['preserved']
+    assert command(f,p,'P4').status_code==409
+    for adapter in ('P1','P2','P3','P4'):verified(f,p,adapter)
+    assert read(f,p).json()['state']=='VERIFIED' and business(f)==old_business

@@ -120,7 +120,12 @@ def plan_proof(parent,plan):
                     not isinstance(patch['affected'],list) or not isinstance(patch['preserved'],list) or not patch['affected'] or
                     len(patch['affected']+patch['preserved'])!=len(step_ids) or set(patch['affected']+patch['preserved'])!=step_ids or value is None):raise ValueError()
                 affected,_=impact_between(plan['steps'],latest,value)
-                if (value!=manifest(plan['steps'],value['collections']) or any(not v['known'] for v in value['collections'].values()) or
+                # History carries its original declaration version. Never recompile it
+                # with today's VERSION/DECLARATIONS; current writes prove their preview.
+                original_edges=[dict(upstream=dep,downstream=s['adapter_id'],kind='PRECEDES',provenance='COMPILED_REGISTERED_ADAPTER')
+                                for s in plan['steps'] for dep in s['depends_on']]
+                if (set(value['declarations'])!={s['adapter_id'] for s in plan['steps']} or value['edges']!=original_edges or
+                    any(not v['known'] for v in value['collections'].values()) or
                     set(patch['affected'])!={s['id'] for s in plan['steps'] if s['adapter_id'] in affected} or
                     set(patch['preserved'])!={s['id'] for s in plan['steps'] if s['adapter_id'] not in affected}):raise ValueError()
             latest=value
