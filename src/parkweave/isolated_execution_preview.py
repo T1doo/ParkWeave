@@ -398,7 +398,10 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
             p,parent,current = self._source(store,c,token,id)
             fp = _sha({'preparation_id':str(id),**data.model_dump()})
             with self._database() as db:
-                db.execute('BEGIN IMMEDIATE')
+                # Obtain the rollback-journal reader exclusion before _guard:
+                # IMMEDIATE permits a reader to stall COMMIT after its last
+                # lease check, allowing a 403 with an expired committed result.
+                db.execute('BEGIN EXCLUSIVE')
                 self._guard(store,c,token,p)
                 old = db.execute('SELECT * FROM previews WHERE owner=? AND request_key=?',(p['id'],key)).fetchone()
                 if old:

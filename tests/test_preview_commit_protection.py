@@ -83,8 +83,9 @@ def test_original_catalog_publisher_waits_after_final_sample_until_preview_commi
                 writer = pool.submit(publish, protocol, p, action=action)
                 wait_lock(f, pids.get(timeout=5))
                 assert not writer.done() and snapshot(f) == before
-                with sqlite3.connect(engine.path) as db:
-                    assert db.execute('SELECT count(*) FROM previews').fetchone()[0] == 0
+                with sqlite3.connect(engine.path, timeout=0) as db:
+                    with pytest.raises(sqlite3.OperationalError, match='locked'):
+                        db.execute('SELECT count(*) FROM previews').fetchone()
             finally:
                 release.set()
             result, event = preview.result(timeout=15), writer.result(timeout=15)
@@ -131,8 +132,9 @@ def test_original_material_and_revocation_writer_wait_through_preview_commit(pre
                 writer = pool.submit(write)
                 wait_lock(f, pids.get(timeout=5))
                 assert not writer.done()
-                with sqlite3.connect(engine.path) as db:
-                    assert db.execute('SELECT count(*) FROM previews').fetchone()[0] == 0
+                with sqlite3.connect(engine.path, timeout=0) as db:
+                    with pytest.raises(sqlite3.OperationalError, match='locked'):
+                        db.execute('SELECT count(*) FROM previews').fetchone()
             finally:
                 release.set()
             result, changed = preview.result(timeout=15), writer.result(timeout=15)
@@ -178,7 +180,8 @@ def test_uncooperative_catalog_change_after_final_sample_is_snapshot_stale_not_c
         assert execute(f, p, data).status_code == 409
 
 
-def test_sqlite_wait_expired_managed_dependency_rejected_before_insert_and_cold_get_only(access_fixture, tmp_path, monkeypatch):
+@pytest.mark.parametrize('blocking_mode', ['writer', 'reader'])
+def test_sqlite_wait_expired_managed_dependency_rejected_before_insert_and_cold_get_only(access_fixture, tmp_path, monkeypatch, blocking_mode):
     a = access_fixture
     approved(a)
     original, p, _, now, _ = a
@@ -200,17 +203,21 @@ def test_sqlite_wait_expired_managed_dependency_rejected_before_insert_and_cold_
         @contextmanager
         def observed_database():
             with original_database() as db:
-                db.set_trace_callback(lambda statement: attempted.set() if statement == 'BEGIN IMMEDIATE' else None)
+                db.set_trace_callback(lambda statement: attempted.set() if statement == 'BEGIN EXCLUSIVE' else None)
                 yield db
         monkeypatch.setattr(engine, '_database', observed_database)
         blocker = sqlite3.connect(engine.path)
-        blocker.execute('BEGIN IMMEDIATE')
+        if blocking_mode == 'writer':
+            blocker.execute('BEGIN IMMEDIATE')
+        else:
+            blocker.execute('BEGIN')
+            assert blocker.execute('SELECT count(*) FROM previews').fetchone()[0] == 0
         try:
             with ThreadPoolExecutor(max_workers=1) as pool:
                 request = pool.submit(execute, f, p, data, key)
                 assert entered.wait(5) and attempted.wait(5) and not request.done()
                 # Advance the original bridge's explicit synthetic lease clock
-                # while a different real SQLite connection owns the write lock.
+                # while a separate SQLite writer or SHARED reader owns its lock.
                 now[0] += timedelta(minutes=11)
                 blocker.rollback()
                 response = request.result(timeout=15)
@@ -292,6 +299,41 @@ def test_post_commit_response_comparison_failure_preserves_exact_result_for_get_
         assert ep.prep.canonical(recovered.json()['result']) == row[0]
         assert_snapshot_semantics(recovered.json())
         assert {r['method'] for r in requests} == {'GET'} and snapshot(f) == before
+
+
+def test_new_sqlite_reader_cannot_insert_commit_wait_after_last_guard(preparation_fixture, tmp_path, monkeypatch):
+    with http(preparation_fixture) as (f, _):
+        p, engine = setup(f, tmp_path)
+        data, key = body(f, p), uuid4().hex
+        before, calls = snapshot(f), []
+        entered, release = Event(), Event()
+        guard = engine._guard
+        def last_guard(*args):
+            guard(*args)
+            calls.append(1)
+            if len(calls) == 3:
+                entered.set()
+                assert release.wait(8)
+        monkeypatch.setattr(engine, '_guard', last_guard)
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            request = pool.submit(execute, f, p, data, key)
+            reader = None
+            try:
+                assert entered.wait(5) and not request.done()
+                reader = sqlite3.connect(engine.path, timeout=0)
+                reader.execute('BEGIN')
+                with pytest.raises(sqlite3.OperationalError, match='locked'):
+                    reader.execute('SELECT count(*) FROM previews').fetchone()
+            finally:
+                if reader is not None:
+                    reader.rollback()
+                    reader.close()
+                release.set()
+            response = request.result(timeout=15)
+        assert response.status_code == 201, response.text
+        assert read(f, p, key).json()['result'] == response.json()['result']
+        assert_snapshot_semantics(response.json())
+        assert snapshot(f) == before
         result = execute(f, p, data, key)
         assert result.status_code == 201, result.text
         ep.IsolatedExecutionPreview(f[0], engine.root, enabled_for_synthetic_preview=True).attach_store(f[0])
