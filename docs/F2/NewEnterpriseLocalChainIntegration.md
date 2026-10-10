@@ -1,0 +1,7 @@
+# 新企业冷LOCAL链普通整合记录
+
+精确独审源码`6d79dc0a7bcbdacb60d9487ed5d9858af80cb402`，候选含安全证据`8ebece469145399ae5fafaeedde76b42118874d8`。独审报告SHA256 `e07ec1d21fb13571f4feef0f771a5f9573608300ddd0cb630816bc56cbb3d9f8`签LIMITED_PASS后，实际normal fetch核验dev基线`1ba81f94aae43471aa6079121980dc54cc9bf41a`、main`31e7acb7e53bb1ab6465b9daae59de28757f7583`、候选8ebe；原88403af已核祖先，平台空锁1310816未持有且未动、无Git挂起、工作区clean。实际 `git switch dev/f1-foundation`、`git merge --ff-only candidate/new-enterprise-local-chain-20261010`、`git push origin dev/f1-foundation`正常完成。
+
+后续实际ls-remote：candidate与dev在FF时点均8ebe，main仍31e7；337源码hash全相同、零漂移，已审代码tree未重写。最后只提交本说明、整合时点JSON/refs与证据hash引用；最终dev SHA由该纯文档提交后的实际远端核验与交付回复记录，8ebe仅是FF时点，不能冒称最终HEAD。见[整合时点](evidence/new-enterprise-local-chain/integration.json)、[实际refs](evidence/new-enterprise-local-chain/after-ff-remote.raw)、[前置检查](evidence/new-enterprise-local-chain/pre-integration.json)。无强推、main变更、部署、凭据或安全网络改动。
+
+根20模块650PASS/492.952秒；独审20模块650PASS/488.934秒，另16自有反例50.272秒；各窗自然exit0，零FAIL/ERROR/SKIP，1456 AST允许表、337路径已封存。根旧观察器4个tracked证据临时dirty、后验AssertionError、私有保全与指定原字节恢复均保留，不声称shared全程Gitclean。仅原fixture-a/b已有权限的完整合成LOCAL新输入链与第三件历史隔离；literal ENG098两企业止于材料P1，resource[]/executor[]/Approval403仍缺，不新Grant/身份或自动Run权。Case WAITING_CONFIRMATION，未消费ApprovalnewPID写仍关闭，真实ServiceRelease/履约/fullAT/全仓/Windows不签收；旧a823未迁移，原导出/异议不重做。完整[范围和真实证据](NewEnterpriseLocalChain.md)、[独审报告](evidence/new-enterprise-local-chain/independent-review/report.json)为准，旧076和开发早窗不转签。
