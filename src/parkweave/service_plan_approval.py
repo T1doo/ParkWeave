@@ -256,8 +256,16 @@ class IsolatedPlanApproval:
 
     def _source(self,store,c,p,parent,data,*,consumed=None):
         self._scope(c,p,parent)
+        from . import catalog_publication as catalogs
         publication=getattr(self,'_catalog_publication',None)
-        catalog_proof=publication.acquire(c,parent) if publication is not None else None
+        if publication is None:
+            catalogs.lock(c,catalogs.key_of(parent))
+            catalog_row=catalogs.row(c,catalogs.key_of(parent))
+            if catalog_row is None:raise Conflict('current catalog source required')
+            if catalog_row.get(catalogs.COL) is not None:
+                raise Denied('explicit matching cooperative catalog protocol required')
+            catalog_proof=None
+        else:catalog_proof=publication.acquire(c,parent)
         if consumed is None:
             context, candidate_sha, hs, now = delivery._candidate(store,c,p,parent,data,observe=False)
             if (parent['revision'] != data.expected_preparation_revision

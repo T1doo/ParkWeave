@@ -169,6 +169,9 @@ def deliver(store, token, id, key, data):
             raise Denied('isolated plan Approval disabled')
         publication=getattr(approval,'_catalog_publication',None)
         if publication is not None:publication.acquire(c,parent)
+        elif approval is not None:
+            from .catalog_publication import lock,key_of
+            lock(c,key_of(parent))
         context, sha, hs, now = _candidate(store, c, p, parent, data)
         if (parent['revision'] != data.expected_preparation_revision or parent['service_case_plan']['revision'] != data.expected_plan_revision
             or cp._hash(dict(source=sha,valid_until=data.valid_until.isoformat())) != data.expected_source_sha256

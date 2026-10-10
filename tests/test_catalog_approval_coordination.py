@@ -100,6 +100,15 @@ def test_owner_publication_failure_rolls_back_source_history_and_head(link_fixtu
     assert submit(f,p,{**data,'approval_id':item['id']}).status_code==201
 
 
+def test_another_original_approval_bridge_cannot_bypass_activated_catalog_protocol(link_fixture):
+    f=link_fixture;p,hs,data,bridge,protocol=setup(f);item,_=approved(f,p,data);before=ledger(f,p)
+    fresh=enable(f,p)
+    assert submit(f,p,{**data,'approval_id':item['id']}).status_code==403
+    assert ledger(f,p)==before and effects(f)==[0]*5
+    pub.IsolatedCatalogPublication(fresh,enabled_for_isolated_tests=True)
+    assert submit(f,p,{**data,'approval_id':item['id']}).status_code==201
+
+
 def test_shared_catalog_lock_precedes_any_resource_lock_in_original_delivery(link_fixture,monkeypatch):
     from parkweave import resource_holds as rh
     f=link_fixture;p,hs,data,bridge,protocol=setup(f);item,_=approved(f,p,data);old=rh._lock;seen=[]
@@ -177,3 +186,16 @@ def test_shared_catalog_wait_crosses_deadline_without_any_delivery_effect(link_f
             assert not future.done() and effects(f)==[0]*5
         assert future.result(timeout=5)=='EXPIRED'
     assert ledger(f,p)==original and effects(f)==[0]*5 and states(f,hs)==['HELD']*3
+
+
+def test_reachable_publication_limit_preserves_last_explicit_withdrawal_and_history(link_fixture):
+    f=link_fixture;p,hs,data,bridge,protocol=setup(f);first=catalog(f,p)[pub.COL]['events'][0];key=uuid4().hex
+    for revision in range(1,31):
+        event=publish(protocol,p,revision=revision,source_revision=revision,key=key if revision==30 else None)
+    assert event['revision']==31 and pub.proof(catalog(f,p))['state']=='ACTIVE'
+    with pytest.raises(Conflict):publish(protocol,p,revision=31)
+    withdraw=publish(protocol,p,revision=31,action='WITHDRAW');assert withdraw['revision']==32
+    assert publish(protocol,p,revision=30,source_revision=30,key=key)==event
+    with pytest.raises(Conflict):publish(protocol,p,revision=32)
+    value=catalog(f,p);assert value[pub.COL]['events'][0]==first
+    assert pub.proof(value)['state']=='WITHDRAWN' and len(value[pub.COL]['events'])==32 and effects(f)==[0]*5
