@@ -28,3 +28,15 @@
 候选 d52 普通推送及实际远端核验完成；开发分支仍 `aac5489710b4364a78e83383c0ec9284a2b213fb`，main 仍 `31e7acb7e53bb1ab6465b9daae59de28757f7583`。没有强推、部署或改 main；平台锁保持原样。资料包导出未重做，旧 Windows a823a28 修复未迁移。
 
 后续需要在可正常派生 PG/API/Chromium 的环境重新核验精确 SHA，完成根相关回归及独立 P5 API/页面验收后才可申请签收。完整原 issuer 退出恢复、完整 AT14、Windows 原生验收及真实履约仍未验证；仅沿用原 issuer 存活的已有证明范围。P4 旧错 key / 597 PASS 与 issuer 退出 500 故障窗口及旧报告保持不变。
+
+## 原环境一次有界恢复诊断（仍阻塞）
+
+父端授权仅在原实例诊断恢复；未创建替代环境。先只读核限额、进程和已有关闭记录，再做唯一一个 5 秒上限的单子进程探针，实际 0.014 秒 exit0 且自身 PID 消失。可见 pids.max=max、pids.events.max=0、内存约7.97/17.18GB、RLIMIT_NPROC=71955；具体限制未证明。这只能证明单进程当时可派生，不能证明 Chromium 所需线程容量。
+
+随后仅串行原失败页面项及一次补证诊断，没有叠加 PG/浏览器窗口、改原断言或 Chromium 参数。两窗均自然 exit1、各1FAIL，JUnit/受控分别6.305/7.192023秒、6.208/7.041715秒。在 BrowserContext.new_page 阶段 TargetClosedError，尚未达到原 GET 断言。补证在浏览器前经原API实际 GET 原未知key：HTTP200、body.status=NOT_OBSERVED，issuer/API存活且socket存在。Chromium DEBUG 原日志随后明确多条 `pthread_create: Resource temporarily unavailable (11)`，实际 SIGABRT。公开[脱敏响应](evidence/p5-local-case-preview/bounded-recovery/root-status-browser-diagnostic-http-safe.json)、[夹具状态](evidence/p5-local-case-preview/bounded-recovery/root-status-browser-diagnostic-fixture-safe.json)、[错误签名](evidence/p5-local-case-preview/bounded-recovery/chromium-resource-signatures-safe.json)；原body/日志受私有身份与文档边界限制，历史和结果文档省略。
+
+**停止后续所有测试，仍 ENVIRONMENT_BLOCKED。** 独立纠正API11、browser9、根/独审完整相关回归均未补跑，旧根 KeyError('status') 仍未解释；不能用启动前200或此次资源错误覆盖旧失败。源码 d52 的367路径再次零漂移、无产品修改、无 Grant/外部通知/真实履约。原两个 wrapper、补证 issuer/API/Chrome 已知 PID 均 /proc 不存在；自身日志路径匹配的存活 PG/runner 为空，原件仍保留。见[有界恢复结果与窗口hash](evidence/p5-local-case-preview/bounded-recovery/recovery-blocked-safe.json)。
+
+末次只读可见19066个Z全部PPID1/tail，不能推定全部为本轮，更不能通过kill清掉未知进程。实际 uid_map 为 `1000 0 1`，cgroup视图 `0::/`，看不到宿主祖先预算。最小管理员动作：在**同一实例**核验该映射用户及祖先/宿主侧线程、进程预算，查明 Chromium errno11 的具体约束；由实例管理器核验 PID1 下孤儿的归属及原父进程回收路径，恢复正常线程创建。不盲目升限额，不新建实例绕过，不改项目权限、凭据、网络或 OOM 配置。没有 EPERM/EACCES 证据，因此不归因为策略拒绝；只读挂载下的 OOM score 日志不构成修改安全配置的授权。
+
+独立仅只读核验本次原件，结论仍 ENVIRONMENT_BLOCKED；本轮 reviewer 未启动任何 PG/API/Chromium/pytest，不转借根成绩。见[独立诊断附录](evidence/p5-local-case-preview/bounded-recovery/independent-readonly-report.json)，SHA256 `cc08cde94f9455778f1247986424fb42826dfc22209a663054ab07ba21cdc4d7`。其初读 HEAD4401/Gitclean、末读本次docs-only待提交状态如实记录。旧 f613 P5报告及5b200 P4报告原字节不变；此后诊断附录提交仅docs，运行源码同d52，无新增运行验收。
