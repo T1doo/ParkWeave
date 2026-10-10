@@ -4,7 +4,7 @@
 
 新显式合成factory、独立0700目录/0600 SQLite、不同scope绑定原cluster/database；复用已审rollback-journal BEGIN EXCLUSIVE、当前权限优先于历史、不可变proof、有界128/每Case16/正文及proof64KiB、同key CAS/幂等和503后GET-only恢复。不迁移、清空或修改旧P1库。原Case/Run、资料revision、请求revision、双槽ID/version/hash、完整目标及P1/P2精确注册合同和两条既有授权资源规则hash均绑定。来源变化保留历史标STALE，匹配仅SNAPSHOT_MATCH/source_atomicity=false。
 
-仅现有P1 preparation revision1与P2 resource-combination revision1及原resource-link CREATE_OR_RECHECK_LINK；依赖须精确P2→P1，原service version1。固定既有两条合成资源，当前owner READ/EXECUTE/PREPARE及两资源READ/HOLD全交集；缺权限不建临时授权来绕过。拒绝未知目录、未知动作、任意SQL/路径/角色/资源。真实已授权规则只读复制，生成新资源UUID；不复制正式占位/组合/Case/Approval/通知/身份/Grant。预览空间初始占用为0，预演容量不代表正式可用量。
+仅现有P1 preparation revision1与P2 case-resources revision1及原resource-link CREATE_OR_RECHECK_LINK；依赖须精确P2→P1，原service version1。固定既有两条合成资源，当前owner READ/EXECUTE/PREPARE及两资源READ/HOLD全交集；缺权限不建临时授权来绕过。拒绝未知目录、未知动作、任意SQL/路径/角色/资源。真实已授权规则只读复制，生成新资源UUID；不复制正式占位/组合/Case/Approval/通知/身份/Grant。预览空间初始占用为0，预演容量不代表正式可用量。
 
 先真实执行原P1双槽ADD/REVIEW/CONFIRM，失败则P2明确NOT_EXECUTED，不填成功。P1成功后其新UUID及实际确认hash作为另一专属pg_temp事务的前置证据；生成仅预览身份与权限、Run/Case、资料影子及空controlled_plans。实际调用原resource_holds.preview/create、resource_combinations.confirm、case_resources.bind，预演从当前服务器时间一小时后开始，持续一小时、数量1，原窗口/版本/容量/CAS/角色/幂等检查运行。原P2关联未涉及正式Approval，不把临时Case NEEDS_INPUT改为完成；不生成任何P3–P5动作。
 
