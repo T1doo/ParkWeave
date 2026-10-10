@@ -1,0 +1,362 @@
+{
+  "decision": "BLOCKED",
+  "exact_sha": "2c964296488e42f2b162589b12e919647c96c13f",
+  "branch": "candidate/p4-history-api-recovery-20261010",
+  "reviewer": "independent_service_plan_manual_lock_review",
+  "source_writer": "root",
+  "created_utc": "2026-10-10T18:05:43.918442+00:00",
+  "product_blockers": [
+    {
+      "id": "ORIGINAL_KEY_RESPONSE_CORRELATION",
+      "trigger": "Current page requests independent-never-sent, whose genuine loopback HTTP GET is NOT_OBSERVED. Browser route returns a genuine successful loopback GET response for a different, already committed original key history-REQUEST_CHANGES.",
+      "expected": "Do not claim another original request result for the current unknown key; keep private result empty and show a correlation error.",
+      "actual": "Current input remains independent-never-sent, but page renders another request CHANGES_REQUESTED/SNAPSHOT_MATCH metadata report, original execution ID and receipt hash, without error.",
+      "body_hash_proof_fabrication": false,
+      "only_read_requests": true,
+      "formal_business_and_five_log_bytes_unchanged": true,
+      "classification": "PRODUCT_FAILURE_NOT_OBSERVER",
+      "observation": {
+        "path": ".runtime/independent-p4-history-api-recovery-review/independent-cases/test_wrong_key_legitimate_history_response_is_not_claimed_for_unknown_request[REQUEST_CHANGES]/wrong-key-response-observation-safe.json",
+        "sha256": "aa2c25d5bd55c705346ad4a4b68df91287055e1afbc41ca57c5d9508eda2776e",
+        "bytes": 412
+      },
+      "screenshot": {
+        "path": ".runtime/independent-p4-history-api-recovery-review/wrong-key-response-320.png",
+        "sha256": "cf387eef36f1937c6a40a6c09d7cb444486cfb153001b37718c56362ab3e25ff",
+        "bytes": 105779
+      },
+      "probe": {
+        "path": ".runtime/independent-p4-history-api-recovery-review/test_independent_browser.py",
+        "sha256": "19a0a13e68c8248f3c898bc420ce50a4884dc1ee3097f1dc38523e154316bcb5",
+        "bytes": 6889
+      }
+    }
+  ],
+  "windows": [
+    {
+      "name": "independent-api",
+      "natural_exit": true,
+      "returncode": 0,
+      "pass_count": 8,
+      "fail_count": 0,
+      "error_count": 0,
+      "skip_count": 0,
+      "failure_classification": null,
+      "junit_seconds": 50.688,
+      "controlled_seconds": 51.76368474960327,
+      "start_utc": "2026-10-10T17:58:37.830252+00:00",
+      "end_utc": "2026-10-10T17:59:29.593937+00:00",
+      "modules": [
+        ".runtime/independent-p4-history-api-recovery-review/test_independent_api.py"
+      ],
+      "artifacts": [
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/independent-api-pytest.log",
+          "sha256": "4f4e552b972f1e0b82b9ff65496dc29e2ab4444f8ae92b078c2f8d0766acf24f",
+          "bytes": 824
+        },
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/independent-api-junit.xml",
+          "sha256": "1b8e32fecbf7fb00cb9f82391ca29377c006a159c5f11b3f84c0847641c96392",
+          "bytes": 1743
+        },
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/independent-api-execution.json",
+          "sha256": "793e974472746b7bd319fa10b6f9cf92c1d5ca8bb2cb2de2374aecd468f32ec6",
+          "bytes": 320
+        },
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/independent-api-progress.json",
+          "sha256": "83610f797f47c997f2e6ac74aca14b6a78a1d4ff0b68fc50d14a054b48436dc2",
+          "bytes": 2169
+        }
+      ]
+    },
+    {
+      "name": "wrong-key-page",
+      "natural_exit": true,
+      "returncode": 1,
+      "pass_count": 0,
+      "fail_count": 1,
+      "error_count": 0,
+      "skip_count": 0,
+      "failure_classification": "PRODUCT_ORIGINAL_KEY_RESPONSE_CORRELATION",
+      "junit_seconds": 8.667,
+      "controlled_seconds": 9.866556882858276,
+      "start_utc": "2026-10-10T18:00:41.129111+00:00",
+      "end_utc": "2026-10-10T18:00:50.995667+00:00",
+      "modules": [
+        ".runtime/independent-p4-history-api-recovery-review/test_independent_browser.py"
+      ],
+      "artifacts": [
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/wrong-key-page-pytest.log",
+          "sha256": "c4db4009c51bfca1571b6c059728e6fccbc1907f92e67e678439ddad072ce081",
+          "bytes": 4272
+        },
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/wrong-key-page-junit.xml",
+          "sha256": "6f85309ce94657339230a8a093b01b676957732ce2b16914770c6e8eb6164ba6",
+          "bytes": 4064
+        },
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/wrong-key-page-execution.json",
+          "sha256": "c568a3e5956652ee3199ad1590f17e61dc84b3ee1b9d1548e713674ec01c4d69",
+          "bytes": 356
+        },
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/wrong-key-page-progress.json",
+          "sha256": "5527d98fafcb76dbf586601cc40d4803df269178be5bacb27ebc9f68d0898c04",
+          "bytes": 347
+        }
+      ]
+    },
+    {
+      "name": "related-twenty-four",
+      "natural_exit": true,
+      "returncode": 0,
+      "pass_count": 597,
+      "fail_count": 0,
+      "error_count": 0,
+      "skip_count": 0,
+      "failure_classification": null,
+      "junit_seconds": 523.565,
+      "controlled_seconds": 525.4656672477722,
+      "start_utc": "2026-10-10T17:56:22.338042+00:00",
+      "end_utc": "2026-10-10T18:05:07.803709+00:00",
+      "modules": [
+        "tests/test_receipt_history_recovery.py",
+        "tests/test_receipt_history_recovery_browser.py",
+        "tests/test_receipt_execution_preview.py",
+        "tests/test_receipt_execution_preview_browser.py",
+        "tests/test_dispatch_execution_preview.py",
+        "tests/test_dispatch_execution_preview_browser.py",
+        "tests/test_resource_execution_preview.py",
+        "tests/test_resource_execution_preview_browser.py",
+        "tests/test_preview_commit_protection.py",
+        "tests/test_preview_commit_protection_browser.py",
+        "tests/test_isolated_execution_preview.py",
+        "tests/test_isolated_execution_preview_browser.py",
+        "tests/test_catalog_approval_coordination.py",
+        "tests/test_isolated_run_access.py",
+        "tests/test_bounded_planning.py",
+        "tests/test_preparation.py",
+        "tests/test_request_intents.py",
+        "tests/test_ci_diagnostics.py",
+        "tests/test_resource_combinations.py",
+        "tests/test_case_resources.py",
+        "tests/test_service_dispatches.py",
+        "tests/test_dispatch_notices.py",
+        "tests/test_executor_receipts.py",
+        "tests/test_isolated_local_execution.py"
+      ],
+      "artifacts": [
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/related-twenty-four-pytest.log",
+          "sha256": "010c01413a57c74ffa61accbd79717ac3d94a3676e9c15dd91051aa6acb4d492",
+          "bytes": 1811
+        },
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/related-twenty-four-junit.xml",
+          "sha256": "0d27ab60b3a0fe54486fffe3d97f7c775f77d43bf219426ccbfd30d4e3214c95",
+          "bytes": 88130
+        },
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/related-twenty-four-execution.json",
+          "sha256": "5ce06d5dd0d0431b578e559fe48a3376141a326ea6dcb54c303e79acc8ff059a",
+          "bytes": 2342
+        },
+        {
+          "path": ".runtime/independent-p4-history-api-recovery-review/related-twenty-four-progress.json",
+          "sha256": "197c6fa5a2dc4990367900e0e205cd5b12f9de7db6071df7ea5b0774af08c33c",
+          "bytes": 134965
+        }
+      ]
+    }
+  ],
+  "separate_windows_not_aggregated_as_pass": true,
+  "independent_product_failures": 1,
+  "independent_observer_failures": 0,
+  "source": {
+    "paths": 363,
+    "manifest_sha256": "7516f3269a62f5409d671bffb95030f9b182fbfa8b0d7bbd59f155157bad7308",
+    "roles_sha256": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+    "drift": [],
+    "before": {
+      "path": ".runtime/independent-p4-history-api-recovery-review/source-before.json",
+      "sha256": "54bb6c243c67c7b77ee2d6b00561c5405cd7064cab6e3e040bf0da08d961ef15",
+      "bytes": 130
+    },
+    "after": {
+      "path": ".runtime/independent-p4-history-api-recovery-review/source-after.json",
+      "sha256": "f782de31751e9b51ed30c8a4c7c13a9b09bc2c99bcc285a187f1b84725c8b931",
+      "bytes": 275
+    }
+  },
+  "git": {
+    "final_clean": true,
+    "clean_throughout_not_claimed": true,
+    "actual_remote": {
+      "refs/heads/candidate/p4-history-api-recovery-20261010": "2c964296488e42f2b162589b12e919647c96c13f",
+      "refs/heads/dev/f1-foundation": "28f7a4f659626c4e2d2c0736bd7827b1ffe41381",
+      "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+    },
+    "verification_artifacts": [
+      {
+        "path": ".runtime/independent-p4-history-api-recovery-review/head-final.raw",
+        "sha256": "168842ca8bf56b33b9118609fd62d2aed267e1a58b0629a23659a5bd63cd4586",
+        "bytes": 41
+      },
+      {
+        "path": ".runtime/independent-p4-history-api-recovery-review/git-status-final.raw",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": ".runtime/independent-p4-history-api-recovery-review/remote-before.raw",
+        "sha256": "a42b7c79a7ab2d69237a1ecc20a8ae605205f0b4b9fa1bf47a2772477c8c7055",
+        "bytes": 222
+      },
+      {
+        "path": ".runtime/independent-p4-history-api-recovery-review/remote-before.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      {
+        "path": ".runtime/independent-p4-history-api-recovery-review/remote-after.raw",
+        "sha256": "a42b7c79a7ab2d69237a1ecc20a8ae605205f0b4b9fa1bf47a2772477c8c7055",
+        "bytes": 222
+      },
+      {
+        "path": ".runtime/independent-p4-history-api-recovery-review/remote-after.stderr",
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      }
+    ]
+  },
+  "owned_resources": {
+    "all_windows_naturally_closed": true,
+    "remaining_owned_pids": [],
+    "verification": {
+      "path": ".runtime/independent-p4-history-api-recovery-review/resources-after-safe.json",
+      "sha256": "81085653c2e42d3e837c702e5d0d89a8bee5fc99ba8373da4088c5fc9e08f4cc",
+      "bytes": 796
+    }
+  },
+  "permission_to_unfreeze_for_root_repair": true,
+  "permission_to_merge": false,
+  "probes": [
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/test_independent_api.py",
+      "sha256": "6ccf3774d7fbc7bbd85a7370641cb664d45be2f06e2b9d8fb69184b38c840763",
+      "bytes": 10815
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/test_independent_browser.py",
+      "sha256": "19a0a13e68c8248f3c898bc420ce50a4884dc1ee3097f1dc38523e154316bcb5",
+      "bytes": 6889
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/run.py",
+      "sha256": "c170dff05863c3bba673ac6fd08ad75d50c535d7d0a0ad2f66836cc41574a633",
+      "bytes": 1043
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/wrapper.py",
+      "sha256": "c4c3f3380637096c5d6027afbee9d68591a747c9cf53a5e8b5aa71ea8d8a60d4",
+      "bytes": 1484
+    }
+  ],
+  "executed_independent_api_scope": [
+    "Two truly different API PIDs with old confirmed gone and a continuously live third original issuer PID; exact ACKNOWLEDGE/REQUEST_CHANGES result preserved after original source version changes as STALE.",
+    "Six concurrent repeated GET, unknown key NOT_OBSERVED/no automatic replay, history POST405, original P4 GET/POST403.",
+    "Current original lease or missing proof403 without leaking old history; no proof or permission reissue.",
+    "Seven closed malformed requests and three frame cases rejected403; original valid read still200.",
+    "Original socket missing503/replacement inode403; restoring precisely original inode/listener200, no authority restart.",
+    "Single composed body/report/text/hash mutation with independent proof/fingerprint unchanged rejected409 and retained without repair.",
+    "Original issuer actual exit -> existing API503; all saved logs retained, no new issuer/proof, actual original adapter generated exactly once before serving."
+  ],
+  "safe_oracles": [
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/independent-cases/test_independent_composed_nested_body_rehash_cannot_replace_original_proof/independent-composed-rehash-safe.json",
+      "sha256": "6d9b7065c4220406fd21bcc535649d90a514f761ff77408a6ce744446ca00e2d",
+      "bytes": 245
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/independent-cases/test_independent_live_current_gate_no_old_history[lease]/independent-gate-lease-safe.json",
+      "sha256": "d71d742d79b5daf850e3efbb500618b385dc784223ad7c3acd62e1804435b218",
+      "bytes": 236
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/independent-cases/test_independent_live_current_gate_no_old_history[proof]/independent-gate-proof-safe.json",
+      "sha256": "4215ad7b4f5c16d87e098be9b0edcb95387b96bd98cf4c81c62360856a77a4a6",
+      "bytes": 236
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/independent-cases/test_independent_malformed_and_exact_binding_closed_frames_no_write/independent-frames-safe.json",
+      "sha256": "0c874670277563850f01a8d1b96a756278ebd898d961b080e29a874975548256",
+      "bytes": 241
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/independent-cases/test_independent_old_api_gone_new_api_source_stale_no_execute[ACKNOWLEDGE]/independent-two-pid-safe.json",
+      "sha256": "94099a6dffe5d251b0f0ac96a7edc02d34b28e50e6a63bc59dbd20786c500236",
+      "bytes": 611
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/independent-cases/test_independent_old_api_gone_new_api_source_stale_no_execute[REQUEST_CHANGES]/independent-two-pid-safe.json",
+      "sha256": "26279bf46cc5af28ea92179b5ecf24fb9eb38a49467d351cc84015402d4b845c",
+      "bytes": 615
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/independent-cases/test_independent_original_issuer_exit_fails_closed_without_generation/independent-issuer-exit-safe.json",
+      "sha256": "46bff6ecff502a5b1884f243460df091723bcdee8f918a8612b64ee691a4b4d7",
+      "bytes": 304
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/independent-cases/test_independent_socket_disappearance_and_replacement_refused_without_rebind/independent-socket-safe.json",
+      "sha256": "8796c7ad592dd799cf8069703eb1bae2bc04a75239b98c66d9daa5fe7155df78",
+      "bytes": 253
+    },
+    {
+      "path": ".runtime/independent-p4-history-api-recovery-review/independent-cases/test_wrong_key_legitimate_history_response_is_not_claimed_for_unknown_request[REQUEST_CHANGES]/wrong-key-response-observation-safe.json",
+      "sha256": "aa2c25d5bd55c705346ad4a4b68df91287055e1afbc41ca57c5d9508eda2776e",
+      "bytes": 412
+    }
+  ],
+  "prepared_but_not_executed_after_blocker": [
+    "additional cold-page positive case",
+    "late original-key/preparation context cases"
+  ],
+  "qualification_and_write_scope": {
+    "original_synthetic_fixtures_only": true,
+    "process_proof_never_serialized_or_reissued": true,
+    "no_preview_or_recovery_time_formal_grants_or_assignment_repair": true,
+    "public_business_snapshot_excludes": [
+      "authorization_audit"
+    ],
+    "public_schema_index_privileges_unchanged_by_reads": true,
+    "five_log_bytes_include": [
+      "P1 preview",
+      "P2 preview",
+      "P3 preview",
+      "P4 preview",
+      "original RunAccess journal"
+    ],
+    "original_generate_calls_per_issuer_lifetime": 1,
+    "child_generation_monitor_asserted": true
+  },
+  "limits": [
+    "This SHA is BLOCKED even though all API and related-module tests pass. No integration allowed.",
+    "Positive cross-PID observations replace only API clients under an original live issuer, not issuer proof lifecycle restart.",
+    "Issuer exit recovery, proof transport/reissue, PG restart/WAL, P5, Case completion, real material delivery, real approval, formal resources, notifications, external effects and model calls not implemented or accepted.",
+    "source_atomicity=false; old output is immutable metadata preview history, not current fulfillment.",
+    "Full repository, full AT14 and Windows NOT_RUN."
+  ],
+  "root_results_not_borrowed": true,
+  "root_prior_fault_history": {
+    "path": ".runtime/p4-history-api-recovery/development-windows.json",
+    "sha256": "ac3cbec8dd32a1ac70d7c1e0d7c7fd49c2104ce8055d11b0f4bad57bfb24e825",
+    "bytes": 5455
+  },
+  "all_previous_review_directories_unmodified": true
+}
