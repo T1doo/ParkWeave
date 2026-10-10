@@ -4,7 +4,7 @@
 
 ## 最小实际执行与边界
 
-仅已登记 `P1 / material-preparation / revision1` 及其原ADD_EVIDENCE、REVIEW、CONFIRM动作。读取当前owner合成资料两槽及原完整目标、Case/Run/资料revision/请求revision/目录和registry/source指纹，全部目标保留。P1存在且目录来源已知才可明确预演；其他已选P2–P5或不支持目标列NOT_PREVIEWED/UNSUPPORTED，整体仅PARTIAL_PREVIEW，不省略目标或开放任意图/脚本/SQL/动作。缺槽可实际进入原REVIEW产生已知FAILED，不能假填成功。
+仅已登记 `P1 / preparation / revision1` 及其原ADD_EVIDENCE、REVIEW、CONFIRM动作。读取当前owner合成资料两槽及原完整目标、Case/Run/资料revision/请求revision/目录和registry/source指纹，全部目标保留。P1存在且目录来源已知才可明确预演；其他已选P2–P5或不支持目标列NOT_PREVIEWED/UNSUPPORTED，整体仅PARTIAL_PREVIEW，不省略目标或开放任意图/脚本/SQL/动作。缺槽可实际进入原REVIEW产生已知FAILED，不能假填成功。
 
 原动作函数preparation.command实际执行两次ADD_EVIDENCE、独立合成reviewer的REVIEW、合成owner的CONFIRM。输入为当前两槽实际文本/来源种类/标签，不接受任意路径、Grant、角色、命名空间或生成动作。动作的授权与CAS/幂等/缺槽/审核hash检查仍运行；不把预览reviewer冒称原获派真人或正式审核。预览对象/Case/Run/actor/材料/event全部新UUID，与原对象只存只读绑定关系。
 
