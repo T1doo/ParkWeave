@@ -496,6 +496,20 @@ def create_app(store: Store) -> FastAPI:
     @app.get('/api/preparations/{preparation_id}/receipt-execution-preview/recovery/{request_key}')
     def receipt_execution_preview_recover(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
         return preview_call(lambda:receipt_preview_executor().read(store,token(authorization),preparation_id,resource_key(request_key)))
+    from . import receipt_history_recovery as receipt_history
+    def receipt_history_client():
+        client=getattr(store,'_isolated_receipt_history',None)
+        if type(client) is not receipt_history.ReceiptHistoryClient:
+            raise Denied('isolated read-only receipt history disabled')
+        return client
+
+    @app.get('/api/preparations/{preparation_id}/receipt-execution-history')
+    def receipt_execution_history_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return preview_call(lambda:receipt_history_client().read(store,token(authorization),preparation_id))
+
+    @app.get('/api/preparations/{preparation_id}/receipt-execution-history/recovery/{request_key}')
+    def receipt_execution_history_recover(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return preview_call(lambda:receipt_history_client().read(store,token(authorization),preparation_id,resource_key(request_key)))
     from . import case_path
     @app.get('/api/preparations/{preparation_id}/case-path')
     def case_record_path(preparation_id: UUID,authorization: str | None=Header(default=None)):
