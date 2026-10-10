@@ -1,3 +1,7 @@
+## 已审原注册步骤人工锁与来源影响
+
+从已推9bc4ed59基线沿原§8/F3-T03，只为原P1–P5核验增加显式LOCK/UNLOCK；来源变化保留原决定/历史，LOCK_CONFLICT阻塞，解锁不重验，活动锁预留64事件内解锁额度。原目标结果兼容并校验锁证明，丢响应热/冷/API重启只GET。首轮五产品FAIL独审BLOCKED，先补合同后修复；1a8d95e8cf532affc8e5b8c8503866c63b29d4c7精确LIMITED_PASS，根7完整相关模块285PASS/452.467秒，独审8模块353PASS/511.171秒，另27唯一probe分窗15+11+1全部通过，325源零漂移。只有限原合成注册Case链，不作全仓/原AT/Windows/一般DAG验收；原异议与导出不重做，无新Grant/模型/通知/真实完成。见[范围与证据](F2/ServicePlanManualLock.md)、[正式发布/审批只读缺口](F2/ServiceReleaseApprovalInventory.md)、[正常整合](F2/ServicePlanManualLockIntegration.md)。真实发布/履约/Case完成/分享未授权；这些不阻止已授权常规开发。以下历史保留各自原时点范围。
+
 ## 已审原目标当前本地交付证据与原材料冷恢复
 
 从b18419f1已推基线沿原§5.2/§5.5/§7.1、F2-T02/T04/T07，owner只读核对原六个LOCAL_*目标所对应的实际当前P1–P5产物、原本人VERIFY事件及未满足原因；历史和当前分开，未知目标保留，不自动核验/解决异议/完成Case。两轮独审分别阻断UNKNOWN写与403清屏、原句柄缺expires冷恢复，先补合同后修复；984cbe95精确独审LIMITED_PASS，根14模块560PASS/394.973秒、独审9模块393PASS/269.308秒，26唯一额外检查分窗口25PASS+纠正观察器单例1PASS（首窗1观察器FAIL原样保留）。321源首尾及整合零漂移，无新业务写/Schema/Grant/真实业务/模型/外部通知。已正常快进dev并普通推送；见[范围与证据](F2/CaseGoalResults.md)、[正常整合记录](F2/CaseGoalResultsIntegration.md)。正式服务发布权限、现实承诺产物/Case履约、多用途分享、步骤计划未知动作冷恢复、Windows/fullAT/fullrepo仍pending；旧a823a28未迁移。以下历史仍仅各自原时点范围。

@@ -1,3 +1,7 @@
+## 已审原注册步骤人工锁与来源影响
+
+从已推9bc4ed59基线沿原§8/F3-T03，只为原P1–P5核验增加显式LOCK/UNLOCK；来源变化保留原决定/历史，LOCK_CONFLICT阻塞，解锁不重验，活动锁预留64事件内解锁额度。原目标结果兼容并校验锁证明，丢响应热/冷/API重启只GET。首轮五产品FAIL独审BLOCKED，先补合同后修复；1a8d95e8cf532affc8e5b8c8503866c63b29d4c7精确LIMITED_PASS，根7完整相关模块285PASS/452.467秒，独审8模块353PASS/511.171秒，另27唯一probe分窗15+11+1全部通过，325源零漂移。只有限原合成注册Case链，不作全仓/原AT/Windows/一般DAG验收；原异议与导出不重做，无新Grant/模型/通知/真实完成。见[范围与证据](ServicePlanManualLock.md)、[正式发布/审批只读缺口](ServiceReleaseApprovalInventory.md)、[正常整合](ServicePlanManualLockIntegration.md)。真实发布/履约/Case完成/分享未授权；这些不阻止已授权常规开发。以下历史保留各自原时点范围。
+
 ## 已审原持久步骤未知操作冷恢复
 
 沿原F2-T02/T04/T05/T07与产品§5.2/§5.5/§7.1，原五动作仅GET核对原提交，刷新/重开/API重启重新认证后恢复；无自动未知POST、正文持久存储或新权限。两轮独审阻断热/在途24h期限与失效单event正文残留，先补合同再白名单修复；23f9a2f9285366a9cd6f3192ec159fc148d84f21精确独审LIMITED_PASS。根6相关完整模块246PASS/396.249秒，独审4相关完整模块184PASS/317.771秒、另23独立probe PASS/63.776秒，323源首尾零漂移；不加总全仓/原AT。资料异议原闭环和逐目标证据兼容，旧d5/92通过数仅历史BLOCKED窗口。范围与机器证据见[步骤冷恢复](ServicePlanColdRecovery.md)，正常dev整合/远端见[整合记录](ServicePlanColdRecoveryIntegration.md)。正式发布/现实承诺产物与Case履约、多用途分享、Windows/fullAT/fullrepo仍pending；旧a823a28未迁移，资料包导出不重做。以下保留各自历史原范围。
