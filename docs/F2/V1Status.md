@@ -1,3 +1,9 @@
+## 已审正常本地记录全进程停启只读找回
+
+运行源码 `4217e63c14259ddc679405c6228da948b877354c`、候选 `377a2bbe5c854359353967da11f71607e838ade4` 精确独审 LIMITED_PASS。原发行/初始化父进程及 PG/API/worker/Chromium 全停后，正常冷启动用同一数据与本人原0600会话文件，registry空、migrate/seed均0、无proof传输；目录及原Run真实GET200找回同一Case/Operation，业务/权限逻辑行不变，原拒绝审计单列。原 READ/park/org/owner/当前资格不扩，明确选择不重放；真实Run403迟到目录200隐私缺口已修。
+
+根13窗918PASS+1WindowsSKIP/919唯一节点，独审15窗923PASS+1WindowsSKIP/924唯一节点，集合均完整匹配、371源零漂移、全部已知自有资源退出；独审含4API/1页面自写反例。旧失败、白名单首候选100P1F、环境项目未安装1ERROR、独审Unix socket临时路径36P1F均保全并有限纠正；默认browser截图/JSON同名临时产物可能覆盖的路由限制如实保留，旧独审40隔离图hash不变。P4/P5组合历史仍缺持久重新取得资格合同，OPEN且冷普通Store仍403；正常记录读取不替代完整AT17/Windows实机关机/全仓/真实履约。见[实际证据与边界](NormalRecordRecovery.md)、[先行合同](NormalRecordRecoveryContract.md)。以下历史保留各自原SHA范围。
+
 ## 已审原注册步骤显式局部修订
 
 精确 `d12afaa6258dd89a539e3a859b965ca9441e2111` 独审LIMITED_PASS：根完整功能/diagnostics104PASS；独审45/5/24/4/1五窗各自PASS，343源零漂移。资源及既有Run访问集合有界指纹进入原计划，企业明确局部ADOPT后按实际边重验；未受影响步骤/锁、稳定ID/正文/事件及业务历史保留，受影响锁先原UNLOCK。未知/旧声明/溢出扩本Case，原初次257行页面已真实复验4受影响/0保留；CAS/幂等/丢响应冷热GET、撤权/跨企业与自有PG/API重启独立验证。前三轮真实BLOCKED保全，旧907/440/381不覆盖本源码。仅原合成注册切片，完整AT25/一般动态图/全仓/Windows/正式履约仍未签收；无新Grant/政策审批/模型/通知/Case完成，原导出/异议不重做。见[合同与实际范围](RegisteredLocalRevision.md)、[先行合同](RegisteredLocalRevisionContract.md)。以下历史各保留原SHA范围。
