@@ -104,4 +104,3 @@ def test_owned_new_api_pid_recovers_original_artifact_without_reissuing_permissi
    OUT.mkdir(parents=True,exist_ok=True);(OUT/'actual-api-restart.json').write_text(json.dumps(dict(different_api_pids=pids,actual_http=True,same_postgresql=True,original_namespace=True,original_artifact_hash=True,original_key_get_only=True,no_permission_reissued=True,formal_writes=0,model_calls=0),indent=2)+'\n')
   finally:
    if active is not None and active.poll() is None:active.terminate();active.wait(5)
-
