@@ -97,7 +97,7 @@ def _view(store,c,p,parent):
     return dict(current=current,history=[dict(id=h['id'],revision=h['revision'],document=h['document'],state='CURRENT' if h['document']['source_sha256']==current['source_sha256'] else 'STALE') for h in history],history_limit=LIMIT,
                 isolated_execution_preview_enabled=getattr(store,'_isolated_execution_preview',None) is not None,
                 isolated_resource_execution_preview_enabled=getattr(store,'_isolated_resource_execution_preview',None) is not None,
-                isolated_dispatch_execution_preview_enabled=getattr(store,'_isolated_dispatch_execution_preview',None) is not None, isolated_receipt_execution_preview_enabled=getattr(store,'_isolated_receipt_execution_preview',None) is not None)
+                isolated_dispatch_execution_preview_enabled=getattr(store,'_isolated_dispatch_execution_preview',None) is not None, isolated_receipt_execution_preview_enabled=getattr(store,'_isolated_receipt_execution_preview',None) is not None,isolated_lifecycle_execution_preview_enabled=getattr(store,'_isolated_lifecycle_execution_preview',None) is not None)
 
 def read(store,token,id):
     with store.connect() as c:

@@ -126,6 +126,9 @@ class ResourceExecutionPreview(ep.IsolatedExecutionPreview):
         except (ValueError,KeyError,TypeError):
             raise Conflict('isolated P2 artifact proof unavailable') from None
 
+    def _capture_resources(self, connection, artifact, current, resource_ids):
+        pass
+
     def _execute(self, store, parent, current, materials):
         p1 = super()._execute(store,parent,current,materials)
         artifact=dict(namespace='PREVIEW_EXECUTION',roles='SIMULATED_ROLES_ONLY',capacity_scope='EMPTY_ISOLATED_SPACE_ONLY',
@@ -167,6 +170,7 @@ class ResourceExecutionPreview(ep.IsolatedExecutionPreview):
                 artifact['error']='RESOURCE_PREREQUISITE_FAILED';artifact['p2_state']='FAILED'
             for name,table in (('holds','synthetic_resource_holds'),('receipts','synthetic_resource_receipts'),('combination_receipts','synthetic_resource_combination_receipts'),('links','case_resource_links'),('claims','resource_case_claims')):
                 artifact[name]=ep._normal(c.execute(sql.SQL('SELECT * FROM {} ORDER BY 1').format(sql.Identifier(table))).fetchall())
+            self._capture_resources(c,artifact,current,ids)
             return artifact
         finally:
             c.rollback();c.close()

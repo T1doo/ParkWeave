@@ -34,7 +34,7 @@ class _Cursor:
     def execute(self,query,params=None):self.result=self.connection.execute(query,params);return self
     def fetchone(self):return self.result.fetchone()
 class _Connection(_AccessConnection):
-    def __init__(self,raw):self._raw=raw;self._managed_checks=set()
+    def __init__(self,raw,templates=RECEIPT_SQL):self._raw=raw;self._managed_checks=set();self._templates=templates
     @property
     def autocommit(self):return self._raw.autocommit
     @property
@@ -43,19 +43,36 @@ class _Connection(_AccessConnection):
         if row_factory is not dict_row:raise Denied('registered proof cursor only')
         return _Cursor(self)
     def execute(self,query,params=None):
-        if type(query) is not str or query not in RECEIPT_SQL:raise Denied('unregistered P4 preview SQL template')
+        if type(query) is not str or query not in self._templates:raise Denied('unregistered P4 preview SQL template')
         return _Result(self._raw.execute(query,params))
     def commit(self):raise Denied('shadow commit unavailable')
     def rollback(self):raise Denied('shadow rollback owned by preview executor')
     def close(self):raise Denied('shadow close owned by preview executor')
 class _Store(Store):
     mode='LOCAL'
-    def __init__(self,raw):self.connection=_Connection(raw)
+    def __init__(self,raw,templates=RECEIPT_SQL):self.connection=_Connection(raw,templates)
     @contextmanager
     def connect(self):yield self.connection
 class ReceiptExecutionPreview(dp.DispatchExecutionPreview):
     storage_scope=SCOPE
     attachment_attribute='_isolated_receipt_execution_preview'
+    execution_contract=CONTRACT
+    document_version=2
+    proof_fields=PROOF_FIELDS
+    shadow_tables=TABLES
+    shadow_sql=RECEIPT_SQL
+    indexed_shadow_tables=('run_assignments',)
+    isolated_steps=('P1','P2','P3','P4')
+    registered=staticmethod(registered)
+    def _upstream_complete(self,doc):return doc['state']=='SUCCEEDED'
+    def _request_body(self,doc):
+        b=doc['binding']
+        return dict(expected_preparation_revision=b['preparation_revision'],expected_request_revision=b['request_revision'],expected_source_sha256=b['source_sha256'],review_decision=doc['review_decision'])
+    def _seed_resources(self,connection,artifact,current):pass
+    def _after_receipt(self,private,tokens,id,artifact,sequence):pass
+    def _run_artifact(self,store,parent,current,materials,data):
+        return self._execute(store,parent,current,materials,data.review_decision)
+    def _result_metadata(self,result,data,current):pass
     def _participants(self,store,c,parent):
         result=super()._participants(store,c,parent)
         bridge=getattr(store,'_isolated_run_access',None);adapter=local.provider(store)
@@ -65,7 +82,7 @@ class ReceiptExecutionPreview(dp.DispatchExecutionPreview):
     def _p4_document(self,doc):
         a=doc['artifact']
         if doc['decision']!='ACCEPT' or doc['review_decision'] not in ('ACKNOWLEDGE','REQUEST_CHANGES') or a['p4_state'] not in ('NOT_EXECUTED','FAILED','LOCAL_ACKNOWLEDGED','CHANGES_REQUESTED') or len(a['p4_steps'])>1 or len(a['p4_receipts'])>1 or len(a['p4_events'])>3 or len(a['access_events'])>2:raise ValueError()
-        if doc['state']!='SUCCEEDED':return
+        if not self._upstream_complete(doc):return
         expected='LOCAL_ACKNOWLEDGED' if doc['review_decision']=='ACKNOWLEDGE' else 'CHANGES_REQUESTED'
         if a['p4_state']!=expected or len(a['p4_receipts'])!=1 or len(a['p4_steps'])!=1 or len(a['p4_events'])!=3 or len(a['access_events'])!=2:raise ValueError()
         receipt=a['p4_receipts'][0];step=a['p4_steps'][0];events=a['p4_events'];metadata=receipt['adapter_execution'];report=metadata['report'];binding=report['binding'];UUID(report['execution_id'])
@@ -78,24 +95,23 @@ class ReceiptExecutionPreview(dp.DispatchExecutionPreview):
     def _view(self,db,p,parent,current):
         rows=db.execute('SELECT * FROM previews WHERE owner=? AND preparation=? ORDER BY rowid',(p['id'],str(parent['id']))).fetchall()
         history=[dict(document=self._document(row),source_state='SNAPSHOT_MATCH' if self._document(row)['binding']['source_sha256']==current['source_sha256'] else 'STALE') for row in rows]
-        return dict(scope=SCOPE,enabled=True,preparation_id=str(parent['id']),namespace=self.namespace,history=history,
-                    preparation_revision=parent['revision'],request_revision=parent['request_intent']['revision'],current_source_sha256=current['source_sha256'],execution_available=registered(current),isolated_steps=['P1','P2','P3','P4'],
+        return dict(scope=self.storage_scope,enabled=True,preparation_id=str(parent['id']),namespace=self.namespace,history=history,
+                    preparation_revision=parent['revision'],request_revision=parent['request_intent']['revision'],current_source_sha256=current['source_sha256'],execution_available=self.registered(current),isolated_steps=list(self.isolated_steps),
                     formal_writes=0,new_grants=False,case_goal_completed=False,source_atomicity=False,source_consistency='COOPERATIVE_GUARDS_WITH_SNAPSHOT_COMPARISON',capacity_scope='EMPTY_ISOLATED_SPACE_ONLY')
 
     def _document(self, row):
         try:
             if len(row['document'].encode())>65536 or len(row['proof'].encode())>65536: raise ValueError()
             doc=json.loads(row['document']);proof=json.loads(row['proof'])
-            if prep.canonical(proof)!=prep.canonical({k:doc[k] for k in PROOF_FIELDS}): raise ValueError()
-            if (doc['scope']!=SCOPE or type(doc['version']) is not int or doc['version']!=2 or doc['namespace']!=self.namespace or
-                    doc['execution_contract_sha256']!=CONTRACT or doc['actor_id']!=row['owner'] or
+            if prep.canonical(proof)!=prep.canonical({k:doc[k] for k in self.proof_fields}): raise ValueError()
+            if (doc['scope']!=self.storage_scope or type(doc['version']) is not int or doc['version']!=self.document_version or doc['namespace']!=self.namespace or
+                    doc['execution_contract_sha256']!=self.execution_contract or doc['actor_id']!=row['owner'] or
                     doc['request_key']!=row['request_key'] or doc['fingerprint']!=row['fingerprint'] or
                     doc['binding']['preparation_id']!=row['preparation'] or doc['sha256']!=ep._sha({k:v for k,v in doc.items() if k!='sha256'})):
                 raise ValueError()
             UUID(doc['id'])
             b=doc['binding'];a=doc['artifact']
-            fp=ep._sha(dict(preparation_id=b['preparation_id'],expected_preparation_revision=b['preparation_revision'],
-                           expected_request_revision=b['request_revision'],expected_source_sha256=b['source_sha256'],review_decision=doc['review_decision']))
+            fp=ep._sha(dict(preparation_id=b['preparation_id'],**self._request_body(doc)))
             if (fp!=doc['fingerprint'] or type(doc['formal_writes']) is not int or doc['formal_writes']!=0 or
                     doc['new_grants'] is not False or doc['case_goal_completed'] is not False or
                     doc['qualification']!='NOT_EVALUATED' or doc['external_acceptance']!='NOT_SUBMITTED' or
@@ -105,12 +121,12 @@ class ReceiptExecutionPreview(dp.DispatchExecutionPreview):
                     a['p1']['preparation_id']==b['preparation_id'] or a['p1']['case_id']==b['case_id'] or a['p1']['run_id']==b['run_id'] or
                     len(a['holds'])>2 or len(a['prechecks'])>2 or len(a['receipts'])>2 or len(a['links'])>1): raise ValueError()
             if (doc['state']=='SUCCEEDED')!=(a['error'] is None): raise ValueError()
-            if doc['state']=='SUCCEEDED' and (a['p1']['state']!='LOCAL_CONFIRMED' or a['combination']['state']!='CONFIRMED' or
+            if self._upstream_complete(doc) and (a['p1']['state']!='LOCAL_CONFIRMED' or a['combination']['state']!='CONFIRMED' or
                     len(a['holds'])!=2 or len(a['receipts'])!=2 or len(a['links'])!=1 or len(a['claims'])!=1): raise ValueError()
             if doc['decision'] not in ('ACCEPT','DECLINE') or len(a['offers'])>1 or len(a['dispatch_events'])>2 or len(a['steps'])>1 or len(a['receipt_events'])>1 or len(a['outbox'])>4 or a['notices']:
                 raise ValueError()
             if any(o['state']!='PENDING' or o['consumed_at'] is not None for o in a['outbox']): raise ValueError()
-            if doc['state']=='SUCCEEDED':
+            if self._upstream_complete(doc):
                 if a['p3_state']!=('ACCEPTED' if doc['decision']=='ACCEPT' else 'DECLINED'): raise ValueError()
                 if len(a['offers'])!=1 or [e['action'] for e in a['dispatch_events']]!=['OFFER',doc['decision']]: raise ValueError()
                 offer=a['offers'][0];events=a['dispatch_events'];reviewer=a['p1']['reviewer_id'];executor=a['executor_id']
@@ -131,14 +147,14 @@ class ReceiptExecutionPreview(dp.DispatchExecutionPreview):
         except (ValueError,KeyError,TypeError):
             raise Conflict('isolated P4 artifact proof unavailable') from None
 
-    def _execute(self,store,parent,current,materials,review_decision):
+    def _execute(self,store,parent,current,materials,review_decision,lifecycle_sequence=None):
         artifact=rp.ResourceExecutionPreview._execute(self,store,parent,current,materials)
         artifact.update(p4_state='NOT_EXECUTED',p4_steps=[],p4_receipts=[],p4_events=[],access_events=[],local_current_at_execution=False,p3_state='NOT_EXECUTED',executor_id=None,offers=[],dispatch_events=[],steps=[],receipt_events=[],outbox=[],notices=[])
         if artifact['error']:return artifact
         p1=artifact['p1'];source_bridge=store._isolated_run_access;c=source_bridge.owner.connect();journal=tempfile.TemporaryDirectory(prefix='pw-p4-shadow-')
         try:
             if c.execute(ep.IDENTITY_SQL).fetchone()!=self.database_identity:raise Denied('original preview cluster required')
-            for table in TABLES:c.execute(sql.SQL('CREATE TEMP TABLE {} (LIKE public.{} INCLUDING DEFAULTS'+(' INCLUDING INDEXES' if table=='run_assignments' else '')+') ON COMMIT DROP').format(sql.Identifier(table),sql.Identifier(table)))
+            for table in self.shadow_tables:c.execute(sql.SQL('CREATE TEMP TABLE {} (LIKE public.{} INCLUDING DEFAULTS'+(' INCLUDING INDEXES' if table in self.indexed_shadow_tables else '')+') ON COMMIT DROP').format(sql.Identifier(table),sql.Identifier(table)))
             c.execute('SET LOCAL search_path TO pg_temp');c.execute("SET LOCAL statement_timeout='3s'");c.execute("SET LOCAL lock_timeout='3s'")
             owner,reviewer=p1['owner_id'],p1['reviewer_id'];executor='preview-executor-'+uuid4().hex;artifact['executor_id']=executor
             park=artifact['links'][0]['park_id'];org=artifact['links'][0]['org_id']
@@ -157,7 +173,8 @@ class ReceiptExecutionPreview(dp.DispatchExecutionPreview):
                 for row in rows:
                     values=dict(row)
                     c.execute(sql.SQL('INSERT INTO {} ({}) VALUES ({})').format(sql.Identifier(table),sql.SQL(',').join(map(sql.Identifier,values)),sql.SQL(',').join(sql.Placeholder() for _ in values)),tuple(Jsonb(v) if isinstance(v,(dict,list)) else v for v in values.values()))
-            private=_Store(c)
+            self._seed_resources(c,artifact,current)
+            private=_Store(c,self.shadow_sql)
             bridge=IsolatedRunAccessBridge(private,source_bridge.proof,Path(journal.name)/'shadow.run-access.candidate.sqlite3',approver_ids={reviewer},enabled_for_isolated_tests=True,clock=source_bridge.clock)
             bridge.attach_store(private)
             local.IsolatedLocalExecutor(bridge,enabled_for_isolated_tests=True).attach_store(private)
@@ -188,6 +205,7 @@ class ReceiptExecutionPreview(dp.DispatchExecutionPreview):
                 artifact['error']='RECEIPT_PREREQUISITE_FAILED';artifact['p4_state']='FAILED'
             for name,table,order in (('p4_steps','service_receipt_steps','id'),('p4_receipts','service_step_receipts','version'),('p4_events','service_receipt_events','revision')):
                 artifact[name]=ep._normal(c.execute(sql.SQL('SELECT * FROM {} ORDER BY '+order).format(sql.Identifier(table))).fetchall())
+            self._after_receipt(private,tokens,id,artifact,lifecycle_sequence)
             for actor,run_id in private.connection._managed_checks:
                 principal=private.connection.execute('SELECT * FROM principals WHERE id=%s',(actor,)).fetchone()
                 private.check_capability(private.connection,principal,'READ')
@@ -206,14 +224,15 @@ class ReceiptExecutionPreview(dp.DispatchExecutionPreview):
                     if old['preparation']!=str(id) or old['fingerprint']!=fp: raise Conflict('P4 preview key body or scope mismatch')
                     return {**self._view(db,p,parent,current),'result':self._document(old)}
                 if (parent['revision']!=data.expected_preparation_revision or parent['request_intent']['revision']!=data.expected_request_revision or current['source_sha256']!=data.expected_source_sha256): raise Conflict('P4 preview sources changed; explicitly read current proposal')
-                if not registered(current): raise Conflict('exact registered P1/P2/P3/P4 action and service contract required')
+                if not self.registered(current): raise Conflict('exact registered P1/P2/P3/P4 action and service contract required')
                 if db.execute('SELECT count(*) FROM previews').fetchone()[0]>=128 or db.execute('SELECT count(*) FROM previews WHERE preparation=?',(str(id),)).fetchone()[0]>=16: raise Conflict('bounded P4 preview history limit reached')
-                materials=prep.latest(c,id);artifact=self._execute(store,parent,current,materials,data.review_decision);self._guard(store,c,token,p)
+                materials=prep.latest(c,id);artifact=self._run_artifact(store,parent,current,materials,data);self._guard(store,c,token,p)
                 if self._comparison(store,c,p,parent)!=current['source_sha256']: raise Conflict('P4 preview sources changed during execution')
-                result=dict(scope=SCOPE,version=2,id=str(uuid4()),namespace=self.namespace,actor_id=p['id'],request_key=key,fingerprint=fp,
+                result=dict(scope=self.storage_scope,version=self.document_version,id=str(uuid4()),namespace=self.namespace,actor_id=p['id'],request_key=key,fingerprint=fp,
                             binding=dict(preparation_id=str(id),case_id=str(parent['case_id']),run_id=str(parent['run_id']),service_id=parent['service_id'],service_version=parent['service_version'],preparation_revision=parent['revision'],request_revision=parent['request_intent']['revision'],source_sha256=current['source_sha256'],resource_rules=current['resource_rules'],participants=current['participants'],slots=[{k:str(m[k]) if isinstance(m[k],UUID) else m[k] for k in ('id','slot','version','source_sha256')} for m in materials]),
-                            execution_contract_sha256=CONTRACT,decision='ACCEPT',review_decision=data.review_decision,state='FAILED' if artifact['error'] else 'SUCCEEDED',coverage_state='P1_P2_P3_P4_PREVIEW_ONLY' if data.review_decision=='ACKNOWLEDGE' and not artifact['error'] and all(g in ('LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_SYNTHETIC_COORDINATION_RECORDS') for g in current['required_goals']) else 'PARTIAL_PREVIEW',required_goals=current['required_goals'],not_previewed=[s['id'] for s in current['steps'] if s['id'] not in ('P1','P2','P3','P4') or (s['id']=='P2' and artifact['p2_state']=='NOT_EXECUTED') or (s['id']=='P3' and artifact['p3_state']=='NOT_EXECUTED') or (s['id']=='P4' and artifact['p4_state']=='NOT_EXECUTED')],goal_coverage=current['goal_coverage'],artifact=artifact,formal_writes=0,new_grants=False,case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
-                result['sha256']=ep._sha(result);document=prep.canonical(result);proof=prep.canonical({k:result[k] for k in PROOF_FIELDS})
+                            execution_contract_sha256=self.execution_contract,decision='ACCEPT',review_decision=data.review_decision,state='FAILED' if artifact['error'] else 'SUCCEEDED',coverage_state='P1_P2_P3_P4_PREVIEW_ONLY' if data.review_decision=='ACKNOWLEDGE' and not artifact['error'] and all(g in ('LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_SYNTHETIC_COORDINATION_RECORDS') for g in current['required_goals']) else 'PARTIAL_PREVIEW',required_goals=current['required_goals'],not_previewed=[s['id'] for s in current['steps'] if s['id'] not in ('P1','P2','P3','P4') or (s['id']=='P2' and artifact['p2_state']=='NOT_EXECUTED') or (s['id']=='P3' and artifact['p3_state']=='NOT_EXECUTED') or (s['id']=='P4' and artifact['p4_state']=='NOT_EXECUTED')],goal_coverage=current['goal_coverage'],artifact=artifact,formal_writes=0,new_grants=False,case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
+                self._result_metadata(result,data,current)
+                result['sha256']=ep._sha(result);document=prep.canonical(result);proof=prep.canonical({k:result[k] for k in self.proof_fields})
                 if max(len(document.encode()),len(proof.encode()))>65536: raise Conflict('bounded P3 artifact bytes exceeded')
                 db.execute('INSERT INTO previews VALUES(?,?,?,?,?,?)',(p['id'],str(id),key,fp,document,proof))
                 self._document(db.execute('SELECT * FROM previews WHERE owner=? AND request_key=?',(p['id'],key)).fetchone());self._guard(store,c,token,p);db.commit()

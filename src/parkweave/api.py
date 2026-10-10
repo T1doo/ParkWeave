@@ -496,6 +496,24 @@ def create_app(store: Store) -> FastAPI:
     @app.get('/api/preparations/{preparation_id}/receipt-execution-preview/recovery/{request_key}')
     def receipt_execution_preview_recover(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
         return preview_call(lambda:receipt_preview_executor().read(store,token(authorization),preparation_id,resource_key(request_key)))
+    from . import lifecycle_execution_preview as lifecycle_preview
+    def lifecycle_preview_executor():
+        candidate=getattr(store,'_isolated_lifecycle_execution_preview',None)
+        if type(candidate) is not lifecycle_preview.LifecycleExecutionPreview:
+            raise Denied('isolated lifecycle execution preview disabled')
+        return candidate
+
+    @app.get('/api/preparations/{preparation_id}/lifecycle-execution-preview')
+    def lifecycle_execution_preview_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return preview_call(lambda:lifecycle_preview_executor().read(store,token(authorization),preparation_id))
+
+    @app.post('/api/preparations/{preparation_id}/lifecycle-execution-preview',status_code=201)
+    def lifecycle_execution_preview_execute(preparation_id: UUID,data: lifecycle_preview.Execute,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return preview_call(lambda:lifecycle_preview_executor().execute(store,token(authorization),preparation_id,resource_key(idempotency_key),data))
+
+    @app.get('/api/preparations/{preparation_id}/lifecycle-execution-preview/recovery/{request_key}')
+    def lifecycle_execution_preview_recover(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return preview_call(lambda:lifecycle_preview_executor().read(store,token(authorization),preparation_id,resource_key(request_key)))
     from . import receipt_history_recovery as receipt_history
     def receipt_history_client():
         client=getattr(store,'_isolated_receipt_history',None)
