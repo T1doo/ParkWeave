@@ -15,3 +15,5 @@
 写入、存储、CAS/幂等/恢复继续沿各原接口合同，产品不增加任何权限/迁移或新的账本。仅合成测试setup使用原确证自有UUID PG和既有seed；默认生产入口不挂模板，不启用Run/Approval/执行fixture。测试/API/PG子进程minimal_environment。源码冻结后按精确SHA交独立审查，失败原始日志/XML私有保全；通过后只正常候选push、开发分支整合/push，main不动，不强推、部署或改凭据/安全网络。正式ServiceRelease/ParkInstance、真实主体/政策/预约履约/模型/通知/Case完成、完整AT35/PR0、F1/Windows仍未签收，旧a823a28不迁移。
 
 首次真实串链观察：原资源交付要求3–8个占位，不能以两资源组合的2槽测试正文称交付拒绝缺陷；原REVALIDATE真实将Case置WAITING_CONFIRMATION而非FULFILLED。两窗各2FAIL/4PASS分别为上述测试预期错误，原日志/XML保全；只修测试/此合同说明，不改原交付容量下限或Case状态语义。
+
+首个冷浏览器窗定位到另一实际阻断：原REVIEW回应包含双槽 delivery_review_source 嵌套对象，原资料GET来自PostgreSQL jsonb，键顺序会变化。原页面逐键JSON.stringify比较把同一语义事件误判未知，已实际提交审核仍停旧视图。最小修复只将原精确事件核对改为递归结构相等：对象键集合和值均须相等，数组顺序与长度仍严格，标量类型和值仍严格；保留Case/事项/动作/revision与全事件键数检查，缺字段、多字段或任何嵌套hash/ID变动仍未知、冻结原请求。原后端事件、CAS、权限、历史与恢复合同不改，不借此放宽资料核对。首2FAIL/2PASS浏览器原日志/XML与现场私有保全。
