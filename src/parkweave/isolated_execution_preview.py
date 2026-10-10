@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from psycopg import sql
 from psycopg.types.json import Jsonb
 
-from . import bounded_planning as planning, preparation as prep, controlled_plans as cp
+from . import bounded_planning as planning, preparation as prep, controlled_plans as cp, catalog_publication as catalogs
 from .store import Store, Conflict, Denied, digest
 
 SCOPE = 'ISOLATED_REGISTERED_P1_EXECUTION_PREVIEW'
@@ -219,10 +219,31 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
         if getattr(store,'_isolated_execution_preview',None) is not self or identity != self.database_identity:
             raise Denied('attached original preview database required')
         p, parent = planning._context(store, c, token, id, True)
+        # Cooperating catalogue writers take this exact key exclusively before
+        # their row/DDL locks. Acquire it before _proposal first reads catalogues
+        # and retain it through SQLite commit. Direct owner SQL is a snapshot.
+        catalogs.lock(c, catalogs.key_of(parent))
         current = planning._proposal(store, c, p, parent)
         if not parent.get('request_intent'):
             raise Conflict('saved explicit request required')
         return p, parent, current
+
+    def _guard(self, store, c, token, p):
+        # PG locks cannot freeze wall-clock leases. Recheck after SQLite waits
+        # and immediately before its irreversible commit, rather than leaving
+        # the first managed recheck to the outer PG context's later commit.
+        actor = store.auth(c, token)
+        if actor['id'] != p['id']:
+            raise Denied('original preview actor required')
+        prep.grant(store, c, actor, 'PREPARE')
+        store.check_capability(c, actor, 'EXECUTE')
+        for principal_id, run_id in sorted(getattr(c, '_managed_checks', ())):
+            principal = c.execute('SELECT * FROM principals WHERE id=%s', (principal_id,)).fetchone()
+            if not principal or not principal['active']:
+                raise Denied('current preview dependency access required')
+            store.check_capability(c, principal, 'READ')
+            if not store.assignment_allowed(c, principal, run_id, track=False):
+                raise Denied('preview dependency access expired or changed before commit')
 
     def _document(self, row):
         try:
@@ -304,17 +325,19 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
 
     def _view(self, db, p, parent, current):
         rows = db.execute('SELECT * FROM previews WHERE owner=? AND preparation=? ORDER BY rowid', (p['id'],str(parent['id']))).fetchall()
-        history = [dict(document=self._document(r), source_state='CURRENT' if self._document(r)['binding']['source_sha256'] == current['source_sha256'] else 'STALE') for r in rows]
+        history = [dict(document=self._document(r), source_state='SNAPSHOT_MATCH' if self._document(r)['binding']['source_sha256'] == current['source_sha256'] else 'STALE') for r in rows]
         return dict(scope=SCOPE, enabled=True, preparation_id=str(parent['id']), history=history,
                     current_source_sha256=current['source_sha256'], preparation_revision=parent['revision'],
                     request_revision=parent['request_intent']['revision'], namespace=self.namespace,
                     isolated_steps=['P1'], formal_writes=0, new_grants=False, case_goal_completed=False,
-                    execution_available=_registered(current))
+                    execution_available=_registered(current), source_atomicity=False,
+                    source_consistency='COOPERATIVE_GUARDS_WITH_SNAPSHOT_COMPARISON')
 
     def read(self, store, token, id, key=None):
         with store.connect() as c:
             p, parent, current = self._source(store,c,token,id)
             with self._database() as db:
+                self._guard(store,c,token,p)
                 view = self._view(db,p,parent,current)
                 if key is not None:
                     old = db.execute('SELECT * FROM previews WHERE owner=? AND request_key=?',(p['id'],key)).fetchone()
@@ -376,6 +399,7 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
             fp = _sha({'preparation_id':str(id),**data.model_dump()})
             with self._database() as db:
                 db.execute('BEGIN IMMEDIATE')
+                self._guard(store,c,token,p)
                 old = db.execute('SELECT * FROM previews WHERE owner=? AND request_key=?',(p['id'],key)).fetchone()
                 if old:
                     if old['preparation'] != str(id) or old['fingerprint'] != fp:
@@ -390,6 +414,7 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
                     raise Conflict('bounded isolated preview history limit reached')
                 materials = prep.latest(c,id)
                 artifact = self._execute(store,parent,current,materials)
+                self._guard(store,c,token,p)
                 latest=planning._proposal(store,c,p,parent)
                 if latest['source_sha256'] != current['source_sha256']:
                     raise Conflict('preview sources changed during execution; read current proposal')
@@ -405,5 +430,10 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
                     raise Conflict('bounded preview proof size exceeded')
                 db.execute('INSERT INTO previews VALUES(?,?,?,?,?,?)',(p['id'],str(id),key,fp,document,proof))
                 self._document(db.execute('SELECT * FROM previews WHERE owner=? AND request_key=?',(p['id'],key)).fetchone())
+                self._guard(store,c,token,p)
                 db.commit()
-                return {**self._view(db,p,parent,current),'result':result}
+                # Informational comparison only: uncooperative writers, absent
+                # rows, collections, time and runtime declarations have no
+                # shared atomic transaction with SQLite. Never label CURRENT.
+                comparison = planning._proposal(store,c,p,parent)
+                return {**self._view(db,p,parent,comparison),'result':result}
