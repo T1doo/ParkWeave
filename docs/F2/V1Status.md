@@ -1,3 +1,7 @@
+## 已审原注册步骤显式局部修订
+
+精确 `d12afaa6258dd89a539e3a859b965ca9441e2111` 独审LIMITED_PASS：根完整功能/diagnostics104PASS；独审45/5/24/4/1五窗各自PASS，343源零漂移。资源及既有Run访问集合有界指纹进入原计划，企业明确局部ADOPT后按实际边重验；未受影响步骤/锁、稳定ID/正文/事件及业务历史保留，受影响锁先原UNLOCK。未知/旧声明/溢出扩本Case，原初次257行页面已真实复验4受影响/0保留；CAS/幂等/丢响应冷热GET、撤权/跨企业与自有PG/API重启独立验证。前三轮真实BLOCKED保全，旧907/440/381不覆盖本源码。仅原合成注册切片，完整AT25/一般动态图/全仓/Windows/正式履约仍未签收；无新Grant/政策审批/模型/通知/Case完成，原导出/异议不重做。见[合同与实际范围](RegisteredLocalRevision.md)、[先行合同](RegisteredLocalRevisionContract.md)。以下历史各保留原SHA范围。
+
 ## 已审来源明确的只读合成办理期限（正式停表仍缺）
 
 精确 `9e0d7cf5f76ba768f98c77121f7bc0f7923ecb97` 独审LIMITED_PASS：根13完整模块458PASS/346.841秒，独审13模块458PASS/355.827秒，另44/1/2三个独立窗各自通过；340源零漂移。原事项页默认UNKNOWN，仅明确自有合成源逐日完整日历/时区/目标计算；缺源/缺日/时区或适用依据UNKNOWN，换材料/请求/目录xmin须显式重绑。无业务停表授权，非空暂停声明UNKNOWN、写路径405；Run暂停/待补不能停表。新API默认UNKNOWN，实PG重启旧enabled provider403，未重签proof/新Grant或迁移。正式日历/SLA、合法停表/持久时钟与全部AT29仍NOT_RUN；原ENG098/Approval新PID/Windows等边界保留。见[范围与机器证据](HandlingDeadlineReadOnly.md)、[先行合同](HandlingDeadlineReadOnlyContract.md)。旧通过数仅各自历史。
