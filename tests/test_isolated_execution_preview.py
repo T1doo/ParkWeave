@@ -202,16 +202,23 @@ def test_source_catalog_change_during_actual_execution_refuses_commit_preserves_
     monkeypatch.setattr(e,'_execute',original);before=snapshot(f);assert execute(f,p).status_code==201 and snapshot(f)==before
 
 
-@pytest.mark.parametrize('damage',['actor','fingerprint','private_case','duplicate_event','snapshot','role','source_body'])
+@pytest.mark.parametrize('damage',['actor','fingerprint','private_case','duplicate_event','snapshot','role','source_body','required_goals','goal_coverage','coherent_omission','not_previewed','coverage_state','slot_bool','slot_float'])
 def test_rehashed_storage_corruption_never_served_or_replayed(preparation_fixture,tmp_path,damage):
-    f=preparation_fixture;p,e=setup(f,tmp_path);b=body(f,p);key=uuid4().hex;r=execute(f,p,b,key);assert r.status_code==201;x=r.json()['result'];before=snapshot(f)
+    f=preparation_fixture;p,e=setup(f,tmp_path,goals=['LOCAL_CASE_RECORD_RECHECK','SYNTHETIC unsupported goal']);b=body(f,p);key=uuid4().hex;r=execute(f,p,b,key);assert r.status_code==201;x=r.json()['result'];before=snapshot(f)
     if damage=='actor':x['artifact']['events'][0]['actor_id']='preview-owner-'+uuid4().hex
     elif damage=='fingerprint':x['artifact']['events'][0]['fingerprint']='0'*64
     elif damage=='private_case':x['artifact']['case_id']=p['case_id']
     elif damage=='duplicate_event':x['artifact']['events'][1]['id']=x['artifact']['events'][0]['id']
     elif damage=='snapshot':x['artifact']['events'][0]['payload']['snapshot_sha256']='0'*64
     elif damage=='role':x['artifact']['roles']='ACTUAL_REVIEWER'
-    else:x['binding']['source_sha256']='0'*64
+    elif damage=='source_body':x['binding']['source_sha256']='0'*64
+    elif damage=='required_goals':x['required_goals']=[]
+    elif damage=='goal_coverage':x['goal_coverage']=x['goal_coverage'][:1]
+    elif damage=='not_previewed':x['not_previewed']=[]
+    elif damage=='coverage_state':x['coverage_state']='P1_PREVIEW_ONLY'
+    elif damage=='slot_bool':x['binding']['slots'][0]['version']=True
+    elif damage=='slot_float':x['binding']['slots'][0]['version']=1.0
+    else:x['required_goals']=x['required_goals'][:1];x['goal_coverage']=x['goal_coverage'][:1];x['coverage_state']='P1_PREVIEW_ONLY'
     x['sha256']=ep._sha({k:v for k,v in x.items() if k!='sha256'})
     with sqlite3.connect(e.path) as db:
         trigger=db.execute("SELECT sql FROM sqlite_master WHERE name='immutable_update'").fetchone()[0];db.execute('DROP TRIGGER immutable_update');db.execute('UPDATE previews SET document=?',(prep.canonical(x),));db.execute(trigger);db.commit()
@@ -237,3 +244,48 @@ def test_distinct_actual_pg_clusters_same_name_oid_socket_port_refuse_reopen(tmp
         assert e.path.read_bytes()==before
     finally:
         for server in reversed(servers):server.cleanup()
+
+
+@pytest.mark.parametrize('field',['method','path','commands','role'])
+def test_changed_p1_registered_declaration_refuses_new_execution_keeps_history(preparation_fixture,tmp_path,monkeypatch,field):
+    from copy import deepcopy
+    from parkweave import bounded_planning as planning
+    f=preparation_fixture;p,e=setup(f,tmp_path);b=body(f,p);old=execute(f,p,b).json()['result'];original=planning.ACTIONS;changed=deepcopy(original)
+    changed['P1'][0][field]={'method':'PUT','path':'/api/SYNTHETIC-new-unsupported-action','commands':['SYNTHETIC_UNKNOWN'],'role':'service_executor'}[field]
+    monkeypatch.setattr(planning,'ACTIONS',changed);before=snapshot(f);x=read(f,p).json()
+    assert x['execution_available'] is False and x['history'][0]['document']==old and x['history'][0]['source_state']=='STALE'
+    assert execute(f,p).status_code==409 and snapshot(f)==before and len(read(f,p).json()['history'])==1
+    monkeypatch.setattr(planning,'ACTIONS',original);assert execute(f,p).status_code==201 and snapshot(f)==before
+
+
+def test_actual_other_service_version_read_only_no_fake_v1_conversion(preparation_fixture,tmp_path):
+    f=preparation_fixture;p,e=setup(f,tmp_path);old=execute(f,p).json()['result']
+    with f[1].connect() as c:
+        c.execute("INSERT INTO preparation_catalog(park_id,service_id,version,name,source,namespace,qualification) SELECT park_id,service_id,2,name,source,namespace,qualification FROM preparation_catalog WHERE version=1")
+        c.execute('UPDATE preparations SET service_version=2 WHERE id=%s',(p['preparation_id'],))
+    before=snapshot(f);x=read(f,p).json();assert x['execution_available'] is False and x['history'][0]['document']==old and x['history'][0]['source_state']=='STALE'
+    assert execute(f,p).status_code==409 and len(read(f,p).json()['history'])==1 and snapshot(f)==before
+
+
+@pytest.mark.parametrize('damage',['version','namespace','database','malformed'])
+def test_metadata_change_after_attach_rejected_without_repair_or_migration(preparation_fixture,tmp_path,damage):
+    f=preparation_fixture;p,e=setup(f,tmp_path);before=snapshot(f)
+    with sqlite3.connect(e.path) as db:
+        meta=json.loads(db.execute('SELECT value FROM meta').fetchone()[0])
+        if damage=='version':meta['version']=1
+        elif damage=='namespace':meta['id']=str(uuid4())
+        elif damage=='database':meta['database']['system_identifier']='0'
+        db.execute('UPDATE meta SET value=?',('{SYNTHETIC malformed' if damage=='malformed' else prep.canonical(meta),));db.commit()
+    original=e.path.read_bytes();assert read(f,p).status_code==403 and execute(f,p).status_code==403 and e.path.read_bytes()==original and snapshot(f)==before
+    if damage!='namespace':
+        with pytest.raises(Denied):ep.IsolatedExecutionPreview(f[0],e.root,enabled_for_synthetic_preview=True)
+        assert e.path.read_bytes()==original
+
+
+@pytest.mark.parametrize('field',['document','proof'])
+def test_foreign_case_oversized_utf8_record_refuses_open_without_private_read(preparation_fixture,tmp_path,field):
+    f=preparation_fixture;p,e=setup(f,tmp_path);before=snapshot(f)
+    with sqlite3.connect(e.path) as db:
+        row=['SYNTHETIC foreign owner',str(uuid4()),uuid4().hex,'0'*64,'{}','{}'];row[4 if field=='document' else 5]='文'*23000
+        db.execute('INSERT INTO previews VALUES(?,?,?,?,?,?)',row);db.commit()
+    original=e.path.read_bytes();assert read(f,p).status_code==403 and execute(f,p).status_code==403 and e.path.read_bytes()==original and snapshot(f)==before

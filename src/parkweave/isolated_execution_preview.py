@@ -5,9 +5,7 @@ production Grant, worker, model or resource executor is given to the adapter.
 """
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Literal
 from uuid import UUID, uuid4
-import hashlib
 import json
 import os
 import re
@@ -24,7 +22,7 @@ from .store import Store, Conflict, Denied, digest
 SCOPE = 'ISOLATED_REGISTERED_P1_EXECUTION_PREVIEW'
 TABLES = ('principals', 'capability_grants', 'preparation_grants', 'preparation_catalog',
           'preparations', 'preparation_evidence', 'preparation_events', 'controlled_plans')
-VERSION = 1
+VERSION = 2
 IDENTITY_SQL = "SELECT current_database() name, oid::text oid, (SELECT system_identifier::text FROM pg_control_system()) system_identifier FROM pg_database WHERE datname=current_database()"
 REGISTERED_SQL = frozenset((
     'INSERT INTO preparation_events(id,preparation_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',
@@ -46,6 +44,22 @@ REGISTERED_SQL = frozenset((
     'SELECT source,xmin::text AS generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',
     'UPDATE preparations SET state=%s,revision=revision+1,review_sha256=%s,material_corrections=%s WHERE id=%s RETURNING *',
 ))
+
+P1_ACTIONS = [
+    {'method':'POST','path':'/api/preparations/{preparation_id}/commands','role':'enterprise_operator','commands':['ADD_EVIDENCE','CONFIRM']},
+    {'method':'POST','path':'/api/preparations/{preparation_id}/commands','role':'park_specialist','commands':['REQUEST_CHANGES','REVIEW']},
+]
+P1_ACTIONS_SHA256 = digest(prep.canonical(P1_ACTIONS))
+PROOF_FIELDS = ('binding','required_goals','goal_coverage','not_previewed','coverage_state','execution_contract_sha256')
+EXECUTION_CONTRACT_SHA256 = digest(prep.canonical({'storage_version':VERSION,'adapter':'preparation','adapter_revision':1,
+    'service_id':prep.SERVICE,'service_version':1,'actions':P1_ACTIONS,'sql_templates':sorted(REGISTERED_SQL)}))
+
+
+def _registered(current):
+    selected = [step for step in current['steps'] if step['id']=='P1']
+    return (len(selected)==1 and not current['source_unknowns'] and selected[0]['adapter_ref']=='preparation' and
+            type(selected[0]['adapter_revision']) is int and selected[0]['adapter_revision']==1 and selected[0]['depends_on']==[] and digest(prep.canonical(selected[0]['actions']))==P1_ACTIONS_SHA256 and
+            selected[0]['request_service_ref']==prep.SERVICE and type(selected[0]['request_service_version']) is int and selected[0]['request_service_version']==1)
 
 
 class Execute(BaseModel):
@@ -116,7 +130,7 @@ class IsolatedExecutionPreview:
             with sqlite3.connect(self.path) as db:
                 db.executescript('''CREATE TABLE meta(value TEXT NOT NULL);
 CREATE TABLE previews(owner TEXT NOT NULL, preparation TEXT NOT NULL, request_key TEXT NOT NULL,
- fingerprint TEXT NOT NULL, document TEXT NOT NULL, PRIMARY KEY(owner,request_key));
+ fingerprint TEXT NOT NULL, document TEXT NOT NULL, proof TEXT NOT NULL, PRIMARY KEY(owner,request_key));
 CREATE TRIGGER immutable_update BEFORE UPDATE ON previews BEGIN SELECT RAISE(ABORT,'immutable preview'); END;
 CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABORT,'immutable preview'); END;''')
                 db.execute('INSERT INTO meta VALUES(?)', (prep.canonical(dict(scope=SCOPE, version=VERSION, id=str(uuid4()), database=self.database_identity)),))
@@ -165,13 +179,28 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
             if names != {'meta','previews','immutable_update','immutable_delete'} or db.execute('SELECT count(*) FROM meta').fetchone()[0] != 1:
                 raise Denied('foreign preview schema refused')
             columns={name:[(r['name'],r['type'],r['notnull'],r['pk']) for r in db.execute('PRAGMA table_info('+name+')')] for name in ('meta','previews')}
-            if columns != {'meta':[('value','TEXT',1,0)],'previews':[('owner','TEXT',1,1),('preparation','TEXT',1,0),('request_key','TEXT',1,2),('fingerprint','TEXT',1,0),('document','TEXT',1,0)]}:
+            if columns != {'meta':[('value','TEXT',1,0)],'previews':[('owner','TEXT',1,1),('preparation','TEXT',1,0),('request_key','TEXT',1,2),('fingerprint','TEXT',1,0),('document','TEXT',1,0),('proof','TEXT',1,0)]}:
                 raise Denied('preview storage columns unavailable')
             for action in ('update','delete'):
                 trigger=db.execute("SELECT sql FROM sqlite_master WHERE name=?",('immutable_'+action,)).fetchone()[0]
                 expected="CREATE TRIGGER immutable_"+action+" BEFORE "+action.upper()+" ON previews BEGIN SELECT RAISE(ABORT,'immutable preview'); END"
                 if ' '.join(trigger.split()) != expected:
                     raise Denied('preview immutable storage unavailable')
+            try:
+                raw=db.execute('SELECT value FROM meta').fetchone()[0]
+                if len(raw.encode())>4096:raise ValueError()
+                meta=json.loads(raw)
+                if (set(meta)!={'scope','version','id','database'} or meta['scope']!=SCOPE or
+                        type(meta['version']) is not int or meta['version']!=VERSION or meta['database']!=self.database_identity or
+                        (getattr(self,'namespace',meta['id'])!=meta['id'])):
+                    raise ValueError()
+                UUID(meta['id'])
+            except (ValueError,KeyError,TypeError):
+                raise Denied('preview storage identity unavailable') from None
+            if db.execute('SELECT count(*) FROM previews').fetchone()[0]>128 or db.execute('SELECT 1 FROM previews GROUP BY preparation HAVING count(*)>16 LIMIT 1').fetchone():
+                raise Denied('bounded preview storage unavailable')
+            if db.execute('SELECT 1 FROM previews WHERE length(CAST(document AS BLOB))>65536 OR length(CAST(proof AS BLOB))>65536 LIMIT 1').fetchone():
+                raise Denied('bounded preview storage bytes unavailable')
             yield db
         except BaseException:
             db.rollback()
@@ -197,7 +226,12 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
 
     def _document(self, row):
         try:
+            if len(row['document'].encode())>65536 or len(row['proof'].encode())>65536:
+                raise ValueError()
             doc = json.loads(row['document'])
+            proof = json.loads(row['proof'])
+            if prep.canonical(proof) != prep.canonical({k:doc[k] for k in PROOF_FIELDS}) or doc['execution_contract_sha256'] != EXECUTION_CONTRACT_SHA256:
+                raise ValueError()
             if (doc['scope'] != SCOPE or type(doc['version']) is not int or doc['version'] != VERSION or doc['namespace'] != self.namespace or
                     doc['binding']['preparation_id'] != row['preparation'] or doc['actor_id'] != row['owner'] or
                     doc['request_key'] != row['request_key'] or doc['fingerprint'] != row['fingerprint'] or
@@ -207,14 +241,14 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
             binding=doc['binding']
             request={'preparation_id':binding['preparation_id'],'expected_preparation_revision':binding['preparation_revision'],
                      'expected_request_revision':binding['request_revision'],'expected_source_sha256':binding['source_sha256']}
-            if _sha(request) != doc['fingerprint'] or doc['formal_writes'] != 0 or doc['new_grants'] is not False or doc['case_goal_completed'] is not False or doc['qualification'] != 'NOT_EVALUATED' or doc['external_acceptance'] != 'NOT_SUBMITTED' or doc['offline_fulfillment'] != 'NO_EVIDENCE':
+            if _sha(request) != doc['fingerprint'] or type(doc['formal_writes']) is not int or doc['formal_writes'] != 0 or doc['new_grants'] is not False or doc['case_goal_completed'] is not False or doc['qualification'] != 'NOT_EVALUATED' or doc['external_acceptance'] != 'NOT_SUBMITTED' or doc['offline_fulfillment'] != 'NO_EVIDENCE':
                 raise ValueError()
             artifact = doc['artifact']
             UUID(artifact['preparation_id'])
             UUID(artifact['case_id']); UUID(artifact['run_id'])
             owner,reviewer=artifact['owner_id'],artifact['reviewer_id']
             if (not re.fullmatch('preview-owner-[a-f0-9]{32}',owner) or reviewer != owner.replace('preview-owner-','preview-reviewer-') or
-                    artifact['roles'] != 'SIMULATED_ROLES_ONLY' or artifact['registered_adapter'] != 'preparation' or artifact['adapter_revision'] != 1 or
+                    artifact['roles'] != 'SIMULATED_ROLES_ONLY' or artifact['registered_adapter'] != 'preparation' or type(artifact['adapter_revision']) is not int or artifact['adapter_revision'] != 1 or
                     artifact['preparation_id'] == binding['preparation_id'] or artifact['case_id'] == binding['case_id'] or artifact['run_id'] == binding['run_id'] or
                     artifact['namespace'] != 'PREVIEW_EXECUTION'):
                 raise ValueError()
@@ -222,7 +256,7 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
                 raise ValueError()
             for material in artifact['materials']:
                 UUID(material['id'])
-                if material['version'] != 1 or material['slot'] not in prep.SLOTS:
+                if type(material['version']) is not int or material['version'] != 1 or material['slot'] not in prep.SLOTS:
                     raise ValueError()
                 if material['source_sha256'] != digest(material['text']) or material['authenticity'] != 'UNVERIFIED':
                     raise ValueError()
@@ -246,7 +280,7 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
                 UUID(e['id'])
                 actor=reviewer if e['action']=='REVIEW' else owner
                 payload=e['payload']
-                if (type(e['revision']) is not int or e['revision'] != i or payload['revision'] != i or
+                if (type(e['revision']) is not int or e['revision'] != i or type(payload['revision']) is not int or payload['revision'] != i or
                         e['actor_id'] != actor or payload['actor_id'] != actor or payload['action'] != e['action'] or payload['state'] != ('IN_PREPARATION' if e['action']=='ADD_EVIDENCE' else 'REVIEWED' if e['action']=='REVIEW' else 'LOCAL_CONFIRMED') or
                         any(payload[k] != artifact[k] for k in ('preparation_id','case_id','run_id'))):
                     raise ValueError()
@@ -275,7 +309,7 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
                     current_source_sha256=current['source_sha256'], preparation_revision=parent['revision'],
                     request_revision=parent['request_intent']['revision'], namespace=self.namespace,
                     isolated_steps=['P1'], formal_writes=0, new_grants=False, case_goal_completed=False,
-                    execution_available=any(s['id']=='P1' for s in current['steps']) and not current['source_unknowns'])
+                    execution_available=_registered(current))
 
     def read(self, store, token, id, key=None):
         with store.connect() as c:
@@ -350,8 +384,8 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
                     return {**self._view(db,p,parent,current),'result':result}
                 if (parent['revision'] != data.expected_preparation_revision or parent['request_intent']['revision'] != data.expected_request_revision or current['source_sha256'] != data.expected_source_sha256):
                     raise Conflict('preview source changed; explicitly read current proposal')
-                if not any(s['id']=='P1' for s in current['steps']) or current['source_unknowns']:
-                    raise Conflict('known registered P1 proposal required')
+                if not _registered(current):
+                    raise Conflict('exact registered P1 version1 action and service contract required')
                 if db.execute('SELECT count(*) FROM previews').fetchone()[0]>=128 or db.execute('SELECT count(*) FROM previews WHERE preparation=?',(str(id),)).fetchone()[0]>=16:
                     raise Conflict('bounded isolated preview history limit reached')
                 materials = prep.latest(c,id)
@@ -360,13 +394,16 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
                 if latest['source_sha256'] != current['source_sha256']:
                     raise Conflict('preview sources changed during execution; read current proposal')
                 result = dict(scope=SCOPE,version=VERSION,id=str(uuid4()),namespace=self.namespace,actor_id=p['id'],request_key=key,fingerprint=fp,
-                    binding=dict(preparation_id=str(id),case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],request_revision=parent['request_intent']['revision'],source_sha256=current['source_sha256'],slots=[{k:str(m[k]) if isinstance(m[k],UUID) else m[k] for k in ('id','slot','version','source_sha256')} for m in materials]),
-                    state='FAILED' if artifact['error'] else 'SUCCEEDED',coverage_state='P1_PREVIEW_ONLY' if all(g=='LOCAL_MATERIAL_PREPARATION' for g in current['required_goals']) else 'PARTIAL_PREVIEW',required_goals=current['required_goals'],not_previewed=[s['id'] for s in current['steps'] if s['id']!='P1'],goal_coverage=current['goal_coverage'],artifact=artifact,formal_writes=0,new_grants=False,case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
+                    binding=dict(preparation_id=str(id),case_id=str(parent['case_id']),run_id=str(parent['run_id']),service_id=parent['service_id'],service_version=parent['service_version'],preparation_revision=parent['revision'],request_revision=parent['request_intent']['revision'],source_sha256=current['source_sha256'],slots=[{k:str(m[k]) if isinstance(m[k],UUID) else m[k] for k in ('id','slot','version','source_sha256')} for m in materials]),
+                    execution_contract_sha256=EXECUTION_CONTRACT_SHA256,state='FAILED' if artifact['error'] else 'SUCCEEDED',coverage_state='P1_PREVIEW_ONLY' if all(g=='LOCAL_MATERIAL_PREPARATION' for g in current['required_goals']) else 'PARTIAL_PREVIEW',required_goals=current['required_goals'],not_previewed=[s['id'] for s in current['steps'] if s['id']!='P1'],goal_coverage=current['goal_coverage'],artifact=artifact,formal_writes=0,new_grants=False,case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
                 result['sha256'] = _sha(result)
                 document=prep.canonical(result)
                 if len(document.encode())>65536:
                     raise Conflict('bounded preview artifact size exceeded')
-                db.execute('INSERT INTO previews VALUES(?,?,?,?,?)',(p['id'],str(id),key,fp,document))
+                proof=prep.canonical({k:result[k] for k in PROOF_FIELDS})
+                if len(proof.encode())>65536:
+                    raise Conflict('bounded preview proof size exceeded')
+                db.execute('INSERT INTO previews VALUES(?,?,?,?,?,?)',(p['id'],str(id),key,fp,document,proof))
                 self._document(db.execute('SELECT * FROM previews WHERE owner=? AND request_key=?',(p['id'],key)).fetchone())
                 db.commit()
                 return {**self._view(db,p,parent,current),'result':result}
