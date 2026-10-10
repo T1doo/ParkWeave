@@ -52,7 +52,12 @@ def test_read_only_transaction_and_no_action_or_role_scope_expansion(fixture):
     before=snapshot(f);r=directory(f,role='enterprise_operator',principal='fixture-b',action='fault.record')
     assert [x['run_id'] for x in r.json()['items']]==[str(run)] and snapshot(f)==before
     cursor=directory(f,after=str(other)).json()
-    assert all(UUID(x['run_id']).int>other.int for x in cursor['items'])
+    assert all(UUID(x['run_id']).int>UUID(str(other)).int for x in cursor['items'])
+    # Always exercise a nonempty cursor result; the foreign random UUID above
+    # can legitimately sort after this owner's only record.
+    nonempty=directory(f,after=str(UUID(int=0))).json()
+    assert [x['run_id'] for x in nonempty['items']]==[str(run)]
+    assert all(UUID(x['run_id']).int>0 for x in nonempty['items'])
     original=f[0].auth
     def checked(c,*args,**kwargs):
         assert c.execute('SHOW transaction_read_only').fetchone()['transaction_read_only']=='on'
