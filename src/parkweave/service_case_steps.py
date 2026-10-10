@@ -34,7 +34,7 @@ class Adopt(BaseModel):
 
 class Command(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True,str_strip_whitespace=True)
-    action:Literal['BEGIN','REPORT_FAILURE','RETRY','VERIFY']
+    action:Literal['BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK']
     step_id:UUID=Field(strict=False)
     expected_revision:int=Field(ge=1,le=63)
     expected_source_sha256:str|None=Field(default=None,pattern='^[a-f0-9]{64}$')
@@ -42,8 +42,8 @@ class Command(BaseModel):
 
     @model_validator(mode='after')
     def source_check(self):
-        if (self.action=='VERIFY')!=(self.expected_source_sha256 is not None):
-            raise ValueError('only VERIFY requires the current adapter source hash')
+        if (self.action in ('VERIFY','LOCK'))!=(self.expected_source_sha256 is not None):
+            raise ValueError('VERIFY and LOCK require the current adapter source hash')
         return self
 
 
@@ -150,6 +150,25 @@ def _invalidate(plan,index):
             step['invalidated']=True
 
 
+def _manual_lock(plan,step):
+    """An active lock must retain its original owner event and verified contents."""
+    events=[e for e in plan['events'] if e['step_id']==step['id'] and e['action'] in ('LOCK','UNLOCK')]
+    lock=step.get('manual_lock')
+    if not events:
+        if lock is not None:raise Conflict('service step lock proof missing')
+        return None
+    last=events[-1]
+    if last['action']=='UNLOCK':
+        if lock is not None:raise Conflict('service step unlock proof changed')
+        return None
+    expected=dict(event_id=last['id'],plan_id=plan['id'],step_id=step['id'],actor_id=plan['events'][0]['actor_id'],source_sha256=last['source_sha256'])
+    if (lock!=expected or last['actor_id']!=expected['actor_id'] or last['source_sha256']!=cp._hash(last['sources']) or
+        step.get('verified_sha256')!=last['source_sha256'] or cp._normal(step.get('verified_sources'))!=cp._normal(last['sources']) or
+        step['coordination_state']!='VERIFIED'):
+        raise Conflict('service step locked decision proof changed')
+    return lock
+
+
 def persist_rejected_observation(store,error):
     with store.connect() as c:
         c.execute("SET LOCAL lock_timeout='3s'")
@@ -161,17 +180,21 @@ def persist_rejected_observation(store,error):
 
 
 def _inspect(store,c,parent,plan,observe=True,fresh_clock=False):
+    if any(e['action'] in ('LOCK','UNLOCK') for e in plan['events']) or any(s.get('manual_lock') is not None for s in plan['steps']):
+        _recovery_proofs(parent)
     binding_issues=_binding_issues(c,parent,plan)
     issues,sources,actual=current_sources(store,c,parent,plan)
     if fresh_clock:issues,sources,actual=current_sources(store,c,parent,plan)
     states={};bad=None
     for step in plan['steps']:
         adapter=step['adapter_id'];prior=all(states.get(dep)=='VERIFIED' for dep in step['depends_on'])
+        lock=_manual_lock(plan,step)
         changed=bool(step.get('verified_sha256') and (binding_issues or issues[adapter] or step['verified_sha256']!=cp._hash(sources[adapter])))
         if changed and bad is None:bad=int(adapter[1:])
         if changed:_invalidate(plan,int(adapter[1:]))
         state=step['coordination_state']
-        if binding_issues or not prior:state='BLOCKED'
+        if lock and (binding_issues or not prior or step.get('invalidated') or issues[adapter]):state='LOCK_CONFLICT'
+        elif binding_issues or not prior:state='BLOCKED'
         elif state=='REPORTED_BLOCKED':pass
         elif step.get('invalidated'):state='NEEDS_RECHECK'
         elif step.get('verified_sha256') and not issues[adapter]:state='VERIFIED'
@@ -198,8 +221,12 @@ def _context(store,c,token,id,write=False):
     return p,parent
 
 
-def _allowed(p,step,states,binding_issues,issues,sources,revision):
-    if binding_issues or revision>=LIMIT:return []
+def _allowed(p,step,states,binding_issues,issues,sources,revision,lock_count=0):
+    if revision>=LIMIT:return []
+    if step.get('manual_lock'):
+        return ['UNLOCK'] if p['role']=='enterprise_operator' and p.get('_plan_write') else []
+    if revision+1+lock_count>LIMIT:return []
+    if binding_issues:return []
     if p['role']=='service_executor' and (sources['P3'].get('offer_state')!='ACCEPTED' or not sources['P3'].get('receipt_step_id') or issues['P3']):return []
     adapter=step['adapter_id'];prior=all(states.get(dep)=='VERIFIED' for dep in step['depends_on'])
     if not prior:return []
@@ -209,6 +236,7 @@ def _allowed(p,step,states,binding_issues,issues,sources,revision):
         if states[adapter] in ('PENDING','IN_PROGRESS','NEEDS_RECHECK'):actions.append('REPORT_FAILURE')
         if step['coordination_state']=='REPORTED_BLOCKED':actions.append('RETRY')
     if p['role']=='enterprise_operator' and p.get('_plan_write') and not issues[adapter] and states[adapter]!='VERIFIED' and step['coordination_state']!='REPORTED_BLOCKED':actions.append('VERIFY')
+    if p['role']=='enterprise_operator' and p.get('_plan_write') and not issues[adapter] and states[adapter]=='VERIFIED' and revision+2+lock_count<=LIMIT:actions.append('LOCK')
     return actions
 
 
@@ -226,12 +254,17 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
         own=owner or p['role']=='park_specialist' or sources['P3'].get('executor_id')==p['id']
         steps.append(dict(id=step['id'],adapter_id=adapter,adapter=step['adapter'],depends_on=step['depends_on'],
                           state=states[adapter],actual_business_state=actual[adapter] if own and not (p['role']=='park_specialist' and adapter=='P4') else None,
-                          allowed_actions=_allowed(p,step,states,binding_issues,issues,sources,plan['revision']) if own else [],
+                          allowed_actions=_allowed(p,step,states,binding_issues,issues,sources,plan['revision'],sum(bool(s.get('manual_lock')) for s in plan['steps'])) if own else [],
                           source_sha256=cp._hash(sources[adapter]) if owner else None,
                           issues=issues[adapter] if owner else None,
                           verified_sources=step.get('verified_sources') if owner else None,
-                          verified_sha256=step.get('verified_sha256') if owner else None))
-    status='VERIFIED' if all(v=='VERIFIED' for v in states.values()) else 'BLOCKED' if binding_issues or any(v in ('BLOCKED','REPORTED_BLOCKED') for v in states.values()) else 'NEEDS_RECHECK' if any(v=='NEEDS_RECHECK' for v in states.values()) else 'ACTIVE'
+                          verified_sha256=step.get('verified_sha256') if owner else None,
+                          manually_locked=bool(step.get('manual_lock'))))
+    status='VERIFIED' if all(v=='VERIFIED' for v in states.values()) else 'BLOCKED' if binding_issues or any(v in ('BLOCKED','REPORTED_BLOCKED','LOCK_CONFLICT') for v in states.values()) else 'NEEDS_RECHECK' if any(v=='NEEDS_RECHECK' for v in states.values()) else 'ACTIVE'
+    direct=[s['id'] for s in plan['steps'] if s.get('verified_sha256') and (issues[s['adapter_id']] or s['verified_sha256']!=cp._hash(sources[s['adapter_id']]))]
+    affected=[s['id'] for s in plan['steps'] if binding_issues or s.get('invalidated') or states[s['adapter_id']] in ('BLOCKED','LOCK_CONFLICT')]
+    impact=dict(scope='REGISTERED_CASE_CHAIN',unknown_scope='THIS_CASE' if binding_issues else None,
+                directly_changed=direct,affected=affected,preserved=[s['id'] for s in plan['steps'] if s['id'] not in affected])
     events=plan['events'] if owner else [{k:e[k] for k in ('id','revision','action','step_id')} for e in plan['events']]
     receipt=None
     if event and event['actor_id']==p['id']:
@@ -244,7 +277,8 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
                 binding=plan['binding'] if owner else None,binding_issues=binding_issues if owner else None,
                 required_goals=plan['required_goals'] if owner else None,goal_coverage=plan['goal_coverage'] if owner else None,
                 history=plan.get('history',[]) if owner else [],events=events,event=event if owner else None,command_receipt=receipt,
-                can_adopt=owner and p.get('_plan_write') and bool(binding_issues) and len(plan.get('history',[]))<8 and context['current_preview']['state']=='COVERED_PREVIEW_ONLY',
+                can_adopt=owner and p.get('_plan_write') and bool(binding_issues) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8 and context['current_preview']['state']=='COVERED_PREVIEW_ONLY',
+                change_impact=impact if owner else None,
                 new_grants=False,automatic_execution=False,case_goal_completed=False,
                 external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
 
@@ -317,11 +351,12 @@ def _recovery_proofs(parent):
                     if event['step_id'] not in step_ids or event['action']=='ADOPT':raise ValueError()
                     expected=revision-1
                     data=Command(action=event['action'],step_id=event['step_id'],expected_revision=expected,
-                                 expected_source_sha256=event['source_sha256'] if event['action']=='VERIFY' else None,reason=event['reason'])
+                                 expected_source_sha256=event['source_sha256'] if event['action'] in ('VERIFY','LOCK') else None,reason=event['reason'])
                     fp=cp._hash(dict(preparation_id=str(parent['id']),**data.model_dump(mode='json')))
-                    if event['action']=='VERIFY' and (event['actor_id']!=parent['owner_id'] or event['source_sha256']!=cp._hash(event['sources'])):raise ValueError()
+                    if event['action'] in ('VERIFY','LOCK','UNLOCK') and event['actor_id']!=parent['owner_id']:raise ValueError()
+                    if event['action'] in ('VERIFY','LOCK') and event['source_sha256']!=cp._hash(event['sources']):raise ValueError()
                 if event['fingerprint']!=fp or event['coordination_only']!=(event['action']!='VERIFY'):raise ValueError()
-                if event['action']!='VERIFY' and (event['source_sha256'] is not None or event['sources'] is not None):raise ValueError()
+                if event['action'] not in ('VERIFY','LOCK') and (event['source_sha256'] is not None or event['sources'] is not None):raise ValueError()
                 proofs.append((plan,event,expected,previous))
         return proofs
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('original service plan recovery proof invalid')
@@ -344,7 +379,7 @@ def recover(store,token,id,key=None):
         if matches:
             plan,event,expected,previous=matches[0]
             step=next((s for s in plan['steps'] if s['id']==event['step_id']),None)
-            if event['action'] in ('ADOPT','VERIFY'):
+            if event['action'] in ('ADOPT','VERIFY','LOCK','UNLOCK'):
                 if p['role']!='enterprise_operator':raise Denied('original owner plan action required')
             elif not step or p['role'] not in ROLES[step['adapter_id']]:raise Denied('original adapter actor required')
             original=dict(id=event['id'],plan_id=plan['id'],revision=event['revision'],action=event['action'],step_id=event['step_id'],
@@ -389,6 +424,8 @@ def adopt(store,token,id,key,data):
         if (prior['revision'] if prior else 0)!=data.expected_plan_revision:raise Conflict('service plan revision changed')
         history=[]
         if prior:
+            if any(e['action'] in ('LOCK','UNLOCK') for e in prior['events']):_recovery_proofs(parent)
+            if any(_manual_lock(prior,s) for s in prior['steps']):raise Conflict('locked service step decisions require explicit unlock before replacement')
             if not _binding_issues(c,parent,prior):raise Conflict('current adopted plan already exists')
             history=prior.pop('history',[])+[prior]
             if len(history)>8:raise Conflict('service plan replacement history limit reached')
@@ -411,8 +448,8 @@ def command(store,token,id,key,data):
         if not plan:raise Conflict('adopted service plan required')
         step=next((s for history in [plan]+plan.get('history',[]) for s in history['steps'] if s['id']==str(data.step_id)),None)
         if not step:raise Conflict('step belongs to another adopted plan')
-        if data.action=='VERIFY' and p['role']!='enterprise_operator':raise Denied('owner source verification required')
-        if data.action!='VERIFY' and p['role'] not in ROLES[step['adapter_id']]:raise Denied('adapter coordination role required')
+        if data.action in ('VERIFY','LOCK','UNLOCK') and p['role']!='enterprise_operator':raise Denied('owner source decision required')
+        if data.action not in ('VERIFY','LOCK','UNLOCK') and p['role'] not in ROLES[step['adapter_id']]:raise Denied('adapter coordination role required')
         if p['role']=='service_executor':
             offer=c.execute('SELECT o.* FROM service_dispatch_offers o JOIN service_dispatches d ON d.current_offer_id=o.id WHERE d.preparation_id=%s',(id,)).fetchone()
             if not offer or offer['executor_id']!=p['id']:raise Denied('own current adapter offer required')
@@ -423,15 +460,24 @@ def command(store,token,id,key,data):
         if not any(s['id']==str(data.step_id) for s in plan['steps']):raise Conflict('historical step requires its existing command key')
         binding_issues,issues,sources,actual,states,bad=_inspect(store,c,parent,plan)
         if plan['revision']!=data.expected_revision or plan['revision']>=LIMIT:raise Conflict('service plan revision changed or exhausted')
-        if data.action not in _allowed(p,step,states,binding_issues,issues,sources,plan['revision']):
+        if step.get('manual_lock') and data.action!='UNLOCK':raise Conflict('locked service step decision requires explicit unlock')
+        lock_count=sum(bool(s.get('manual_lock')) for s in plan['steps'])
+        if data.action!='UNLOCK' and plan['revision']+1+lock_count+(data.action=='LOCK')>LIMIT:raise Conflict('event capacity reserved for explicit unlocks')
+        if data.action not in _allowed(p,step,states,binding_issues,issues,sources,plan['revision'],lock_count):
             raise ServicePlanBlocked(parent,plan,bad or int(step['adapter_id'][1:]),'adapter sources, binding, reported obstacle or predecessors need recheck')
         adapter=step['adapter_id'];source=None
-        if data.action=='VERIFY':
-            if data.expected_source_sha256!=cp._hash(sources[adapter]):raise ServicePlanBlocked(parent,plan,int(adapter[1:]),'adapter source changed')
-            source=sources[adapter];step.update(coordination_state='VERIFIED',verified_sha256=cp._hash(source),verified_sources=source,invalidated=False)
+        if data.action in ('VERIFY','LOCK'):
+            if data.expected_source_sha256!=cp._hash(sources[adapter]):
+                if data.action=='LOCK':raise Conflict('current source fingerprint required for lock')
+                raise ServicePlanBlocked(parent,plan,int(adapter[1:]),'adapter source changed')
+            source=sources[adapter]
+            if data.action=='VERIFY':step.update(coordination_state='VERIFIED',verified_sha256=cp._hash(source),verified_sources=source,invalidated=False)
+        elif data.action=='UNLOCK':step['manual_lock']=None
         elif data.action=='REPORT_FAILURE':step.update(coordination_state='REPORTED_BLOCKED',invalidated=bool(step.get('verified_sha256')))
         else:step.update(coordination_state='IN_PROGRESS' if data.action=='BEGIN' else 'PENDING')
-        if data.action!='VERIFY':_invalidate(plan,int(adapter[1:]))
+        if data.action not in ('VERIFY','LOCK','UNLOCK'):_invalidate(plan,int(adapter[1:]))
         plan['revision']+=1;event=_event(plan,p,key,fp,data.action,data.reason,step,source)
+        if data.action=='LOCK':step['manual_lock']=dict(event_id=event['id'],plan_id=plan['id'],step_id=step['id'],actor_id=p['id'],source_sha256=event['source_sha256'])
+        _context(store,c,token,id,True)
         _save(c,parent,plan)
         return _view(store,c,p,parent,plan,event)
