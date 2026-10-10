@@ -1,5 +1,7 @@
 # 实施前冻结：F2-T06 / §7.5 逐实例模板升级检查
 
+独审e830实际请求体锚故障补充（先于修复）：原末事件reason或choice与该事件payload/hash被修改，独立原row.fp/request_sha256保持且原不可变触发器恢复，GET仍200；两项真实FAIL使e830 BLOCKED，不整合。历史核验必须从精确check目标ID/hash、check hash、原审计revision-1、choice与reason重建严格Selection原请求，连同实例ID重算fp并同时比较独立row.fp与event.request_sha256；还核验固定非迁移FLAGS、类型与规范化文本。正常历史不得重写，损坏不能静默修复或降级。旧root314PASS、独立314PASS/13补充PASS不抵消故障；首独立probe13 ERROR系未注册原conftest fixture，原窗保全、修私有probe另窗13PASS，不把ERROR转签。
+
 首轮真实开发验证后的桥接合同补充（先于修复）：原 consumer 的计划采纳 stage key 为 `tc:<canonical实例UUID>:ADOPT_PLAN`，原计划历史证明却仅接受 `[A-Za-z0-9_-]`，导致已形成的真实旧实例检查和原LOCK拒绝。新建 stage 使用 `tc_<UUIDhex>_<注册stage>` 规范键；已有 stage/key/body不改写。原计划历史核验仅额外识别 revision1/actionADOPT 的精确旧键形状，仍核对原owner/Case/完整事件、原采纳参数与fingerprint。不是允许任意分隔键、复制fixture凭证或放宽新进程写门。首轮21FAIL/1PASS原日志/XML私有保全，不算最终验收。
 
 基线 dev `b496f6a4da7022c10c906ff722fd3279f4536f71`，main `31e7acb7e53bb1ab6465b9daae59de28757f7583` 保持。唯一源码/Git写入者；候选分支独立开发。现代码已有默认关闭的合成模板审核/发布、不可变 SQLite Release、原 PG 新企业消费和不可变实例绑定；没有逐旧实例升级检查。旧版本不可用仍禁止继续消费，不能由检查重新开启。
