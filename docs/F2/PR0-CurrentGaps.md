@@ -1,3 +1,7 @@
+## 当前新增有界§7.5检查，正式升级执行仍未验收
+
+076625a357fe9631cccb923132dad3cd224db48e只验本人原合成模板实例的升级分类与明确选择审计：根10模块318PASS，独审10模块318PASS、另API15与页面7各自三窗通过，335源码零漂移。真实64/CAS/丢响应冷热GET/迟到提交/撤权和body锚损坏反例有据；旧e830两项产品FAIL保留，不能以旧相关PASS抵消。正式ServiceRelease/ParkInstance、在途迁移与回退责任、完整新企业F2、原AT27迁移/fullAT/全仓/Windows仍未签收，原Approval未消费newPID写仍关闭，不新Grant/通知/模型/真实履约/Case完成。原冻结需求映射不改，下方2463/2455等全量仅属于各自历史源码，不能覆盖076。见[范围与机器证据](TemplateUpgradeCheck.md)、[发布审批缺口](ServiceReleaseApprovalInventory.md)。
+
 ## Win11首次安装最短路径：暂停前置拒绝
 
 原F1-T01/AT01、34：本轮只修已知native创建暂停下Setup仍先venv/pip/迁移的入口问题。Setup现在在这些副作用前固定拒绝；Doctor前置只读检查成功后显示新安装BLOCKED；指南停止在只读Doctor，不扩安装/权限授权。最小设备/人工签收、owner/附属对象/受保护authority、Job/S4、真实模型与政策来源缺口分列于[剩余清单](<../F1/Win11FirstUseRemaining.md>)。最终相关420PASS/4SKIP/2WARN（18.39秒），424项同次collection/JUnit精确一致，294源前后零变化；本轮不新跑full，旧2463full不覆盖本轮，Server非Win11、F1未签收/R4关闭/模型0。

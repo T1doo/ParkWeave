@@ -1,3 +1,9 @@
+## 已审逐实例模板版本升级检查与明确选择
+
+沿原F2-T06/§7.5，只比较本人原合成模板实例的新旧不可变修订、当前Case/资料/请求/计划/锁与实际依赖，区分兼容、需重验、人工锁冲突、破坏性拒绝。明确KEEP_CURRENT/REQUEST_RECHECK/ACK_COMPATIBLE仅追加最多64条独立不可变选择事件，CAS/幂等/原key只GET恢复；不迁移、重绑、重写旧Case、预约、回执或历史，未决不自动解决。默认关闭、原身份范围，无新Grant/角色/生产迁移或fixture凭证复制；旧consumer首ADOPT历史键精确兼容，原字节保留。
+
+076625a357fe9631cccb923132dad3cd224db48e精确独审LIMITED_PASS：根完整10相关模块318PASS/256.680秒，独审10模块318PASS/253.948秒，另API15/26.948秒和页面7/26.829秒三窗通过，335源码零漂移。旧e830虽相关回归通过仍因2项真实body锚FAIL被BLOCKED，保留原故障；先补合同再修并重审，不转签旧成绩。正式ServiceRelease/ParkInstance、升级执行/在途迁移/回退责任、完整新企业F2链仍缺；原Approval未消费新进程写仍403，非协作owner改全部锚、全仓/fullAT/Windows不签收，旧a823未迁移。原资料异议与导出不重做。见[范围与实际证据](TemplateUpgradeCheck.md)、[正常整合](TemplateUpgradeCheckIntegration.md)。下方历史保留各自原时点范围。
+
 ## 已审合成目录版本与原 Approval 提交协作
 
 仅原隔离fixture owner与原Approval消费采用同目录shared/exclusive事务锁；不可变修订/head绑定实际源代际，same-source/ABA/撤回不能复活旧批，源变化仍明确ADOPT/VERIFY。首次安装稳定source-key→owner目录安装关系锁→schema重读，已修真实死锁及跨键DuplicateColumn，原应用仍SELECT only/默认关闭，无新Grant或生产迁移。实际新API PID及自有PG stop/start后的已消费证明可冷GET恢复，P2/goal核对持久证明；新批准写仍403、旧cap重启后DENIED，不接受未消费对象重启后自动执行。
