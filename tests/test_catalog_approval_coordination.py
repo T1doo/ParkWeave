@@ -199,3 +199,55 @@ def test_reachable_publication_limit_preserves_last_explicit_withdrawal_and_hist
     with pytest.raises(Conflict):publish(protocol,p,revision=32)
     value=catalog(f,p);assert value[pub.COL]['events'][0]==first
     assert pub.proof(value)['state']=='WITHDRAWN' and len(value[pub.COL]['events'])==32 and effects(f)==[0]*5
+
+
+@pytest.mark.parametrize('publisher_first',[False,True])
+def test_first_installation_takes_catalog_key_before_ddl_and_consumer_cannot_deadlock(link_fixture,monkeypatch,publisher_first):
+    from test_service_plan_approval import setup as original_setup
+    f=link_fixture;p,hs,data,bridge=original_setup(f);item,_=approved(f,p,data);before=deepcopy(ledger(f,p))
+    entered=Event();release=Event();publisher_pids=Queue();consumer_pids=Queue();old=pub.lock
+    def controlled(c,key,exclusive=False):
+        pid=c.execute('SELECT pg_backend_pid() pid').fetchone()['pid']
+        if exclusive:
+            publisher_pids.put(pid)
+            if publisher_first:old(c,key,exclusive)
+            entered.set();assert release.wait(8)
+            if not publisher_first:return old(c,key,exclusive)
+        else:
+            consumer_pids.put(pid);return old(c,key,exclusive)
+    monkeypatch.setattr(pub,'lock',controlled)
+    def activate():
+        try:pub.IsolatedCatalogPublication(bridge,enabled_for_isolated_tests=True);return 'ACTIVATED'
+        except Exception as e:return type(e).__name__
+    def consume():
+        try:delivery.deliver(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,delivery.Deliver(**{**data,'approval_id':item['id']}));return 'COMMITTED'
+        except Exception as e:return type(e).__name__
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        a=pool.submit(activate)
+        try:
+            assert entered.wait(5);publisher_pid=publisher_pids.get(timeout=5)
+            b=pool.submit(consume);consumer_pid=consumer_pids.get(timeout=5)
+            if publisher_first:
+                wait_blocked(f,consumer_pid)
+                assert not b.done() and effects(f)==[0]*5
+                with f[1].connect() as c:
+                    assert not c.execute("SELECT 1 FROM information_schema.columns WHERE table_name='preparation_catalog' AND column_name=%s",(pub.COL,)).fetchone()
+                    assert not c.execute("SELECT 1 FROM pg_locks WHERE pid=%s AND relation='preparation_catalog'::regclass AND mode='AccessExclusiveLock'",(publisher_pid,)).fetchone()
+            else:
+                # The owner paused before requesting its first key: no DDL relation
+                # lock may exist, so the original consumer can commit independently.
+                assert b.result(timeout=5)=='COMMITTED'
+                assert effects(f)==[1,3,1,1,1]
+                with f[1].connect() as c:
+                    assert not c.execute("SELECT 1 FROM information_schema.columns WHERE table_name='preparation_catalog' AND column_name=%s",(pub.COL,)).fetchone()
+                    assert not c.execute("SELECT 1 FROM pg_locks WHERE pid=%s AND relation='preparation_catalog'::regclass AND mode='AccessExclusiveLock'",(publisher_pid,)).fetchone()
+        finally:release.set()
+        outcomes={'publisher':a.result(timeout=12),'consumer':b.result(timeout=12)}
+    assert outcomes['publisher']=='ACTIVATED' and 'DeadlockDetected' not in outcomes.values()
+    assert pub.proof(catalog(f,p))['revision']==1
+    if publisher_first:
+        assert outcomes['consumer'] in ('Conflict','Denied') and effects(f)==[0]*5
+        assert ledger(f,p)==before and states(f,hs)==['HELD']*3
+    else:
+        assert outcomes['consumer']=='COMMITTED' and ledger(f,p)['revision']==3
+        assert states(f,hs)==['CONFIRMED']*3

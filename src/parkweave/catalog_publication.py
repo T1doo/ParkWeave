@@ -156,14 +156,19 @@ class IsolatedCatalogPublication:
             parents=c.execute('SELECT * FROM preparations WHERE id=ANY(%s)',([UUID(i) for i in approval.ids],)).fetchall()
             self.parents={str(p['id']):key_of(p) for p in parents}
             if len(self.parents)!=len(approval.ids):raise Denied('original catalog Case scope required')
+            # Installations obey the same source-key-before-relation order as
+            # later publications. DDL must never hold the relation while waiting
+            # for a consumer's shared advisory key.
+            keys=sorted(set(self.parents.values()))
+            for key in keys:lock(c,key,exclusive=True)
             exists=c.execute("SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='preparation_catalog' AND column_name=%s",(COL,)).fetchone()
             if not exists:
                 c.execute('ALTER TABLE preparation_catalog ADD COLUMN candidate_catalog_revisions jsonb, ADD COLUMN candidate_catalog_head jsonb')
                 c.execute(SQL('CREATE FUNCTION candidate_catalog_prefix() RETURNS trigger LANGUAGE plpgsql AS {}').format(SQLLiteral(TRIGGER_BODY)))
                 c.execute('CREATE TRIGGER candidate_catalog_prefix BEFORE UPDATE ON preparation_catalog FOR EACH ROW EXECUTE FUNCTION candidate_catalog_prefix()')
             self._schema(c)
-            for key in sorted(set(self.parents.values())):
-                lock(c,key,exclusive=True);value=row(c,key,write=True)
+            for key in keys:
+                value=row(c,key,write=True)
                 if (not value or value['namespace']!='SYNTHETIC' or not isinstance(value['source'],dict) or value['source'].get('kind')!='SYNTHETIC'
                     or value['service_id']!='synthetic-material-preparation' or value['version']!=1):raise Denied('original synthetic catalog only')
                 if proof(value) is None:self._append(c,value,'INIT',{'action':'INIT'},'init-'+uuid4().hex)
