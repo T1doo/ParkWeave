@@ -1,3 +1,7 @@
+## 已审原目标当前本地交付证据与原材料冷恢复
+
+从b18419f1已推基线沿原§5.2/§5.5/§7.1、F2-T02/T04/T07，owner只读核对原六个LOCAL_*目标所对应的实际当前P1–P5产物、原本人VERIFY事件及未满足原因；历史和当前分开，未知目标保留，不自动核验/解决异议/完成Case。两轮独审分别阻断UNKNOWN写与403清屏、原句柄缺expires冷恢复，先补合同后修复；984cbe95精确独审LIMITED_PASS，根14模块560PASS/394.973秒、独审9模块393PASS/269.308秒，26唯一额外检查分窗口25PASS+纠正观察器单例1PASS（首窗1观察器FAIL原样保留）。321源首尾及整合零漂移，无新业务写/Schema/Grant/真实业务/模型/外部通知。已正常快进dev并普通推送；见[范围与证据](CaseGoalResults.md)、[正常整合记录](CaseGoalResultsIntegration.md)。正式服务发布权限、现实承诺产物/Case履约、多用途分享、步骤计划未知动作冷恢复、Windows/fullAT/fullrepo仍pending；旧a823a28未迁移。以下历史仍仅各自原时点范围。
+
 ## 已审有界 Case 事实来源与人工锁
 
 从84af2948已推基线继续，原资料导出与资料异议闭环保留。本片沿原§5.1/F2-T01/AT06/F3-T03/AT26，用本Case实际材料摘录、独立待核假设、显式LOCK/UNLOCK进入原用途确认与专员REVIEW/企业CONFIRM/P1；固定原owner和OWNER_CASE_USE_ONLY，无新Grant。根最终431PASS/270.782秒；精确候选282e0be4独审354仓库项+11真实HTTP/PG探针全部通过、188.510秒。首轮空账本降级BLOCKED已修复并重新验真，318源零漂移。仅限定Linux合成范围，无完整FactBundle/多用途分享/全仓/原AT/Win11签收；旧a823a28未迁移。已完成获审后的正常dev快进与普通推送，精确整合记录另见[CaseFactBundleIntegration.md](CaseFactBundleIntegration.md)。见[合同、失败史与实际证据](CaseFactBundle.md)，实际正常dev整合另记；下方历史保留各自时点范围。

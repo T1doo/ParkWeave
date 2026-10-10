@@ -1,3 +1,7 @@
+## 已审原目标当前本地交付证据与原材料冷恢复
+
+从b18419f1已推基线沿原§5.2/§5.5/§7.1、F2-T02/T04/T07，owner只读核对原六个LOCAL_*目标所对应的实际当前P1–P5产物、原本人VERIFY事件及未满足原因；历史和当前分开，未知目标保留，不自动核验/解决异议/完成Case。两轮独审分别阻断UNKNOWN写与403清屏、原句柄缺expires冷恢复，先补合同后修复；984cbe95精确独审LIMITED_PASS，根14模块560PASS/394.973秒、独审9模块393PASS/269.308秒，26唯一额外检查分窗口25PASS+纠正观察器单例1PASS（首窗1观察器FAIL原样保留）。321源首尾及整合零漂移，无新业务写/Schema/Grant/真实业务/模型/外部通知。已正常快进dev并普通推送；见[范围与证据](CaseGoalResults.md)、[正常整合记录](CaseGoalResultsIntegration.md)。正式服务发布权限、现实承诺产物/Case履约、多用途分享、步骤计划未知动作冷恢复、Windows/fullAT/fullrepo仍pending；旧a823a28未迁移。以下历史仍仅各自原时点范围。
+
 ## Win11首次安装最短路径：暂停前置拒绝
 
 原F1-T01/AT01、34：本轮只修已知native创建暂停下Setup仍先venv/pip/迁移的入口问题。Setup现在在这些副作用前固定拒绝；Doctor前置只读检查成功后显示新安装BLOCKED；指南停止在只读Doctor，不扩安装/权限授权。最小设备/人工签收、owner/附属对象/受保护authority、Job/S4、真实模型与政策来源缺口分列于[剩余清单](<../F1/Win11FirstUseRemaining.md>)。最终相关420PASS/4SKIP/2WARN（18.39秒），424项同次collection/JUnit精确一致，294源前后零变化；本轮不新跑full，旧2463full不覆盖本轮，Server非Win11、F1未签收/R4关闭/模型0。
