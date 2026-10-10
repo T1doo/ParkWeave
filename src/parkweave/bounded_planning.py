@@ -68,7 +68,8 @@ def _proposal(store,c,p,parent):
     validate_registry(REGISTRY)
     intent=parent.get('request_intent');goals=intent['required_goals'] if intent else []
     items,steps=compile(goals);issues,snapshots=cp._sources(store,c,parent)
-    catalog=c.execute('SELECT service_id,version,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',(parent['park_id'],parent['service_id'],parent['service_version'])).fetchone()
+    from .catalog_publication import snapshot as catalog_snapshot
+    catalog=catalog_snapshot(c,parent)
     resource_sources=c.execute('SELECT r.id,r.revision,r.source,r.capacity,r.buffer_seconds,r.open_from,r.open_until,r.enabled,g.capability,g.active FROM synthetic_resources r JOIN synthetic_resource_grants g ON g.resource_id=r.id WHERE g.principal_id=%s AND g.park_id=%s AND g.org_id=%s ORDER BY r.id,g.capability',(p['id'],p['park_id'],p['org_id'])).fetchall()
     access_sources=c.execute("SELECT a.principal_id,a.active,p.role,p.active AS principal_active,g.active AS read_active,g.revision FROM run_assignments a JOIN principals p ON p.id=a.principal_id AND p.park_id=a.park_id AND p.org_id=a.org_id LEFT JOIN capability_grants g ON g.principal_id=p.id AND g.park_id=p.park_id AND g.org_id=p.org_id AND g.capability='READ' WHERE a.run_id=%s AND a.park_id=%s AND a.org_id=%s ORDER BY a.principal_id",(parent['run_id'],parent['park_id'],parent['org_id'])).fetchall()
     for source in access_sources:
@@ -85,7 +86,7 @@ def _proposal(store,c,p,parent):
     local=c.execute('SELECT revision,cycle,state,verified_sha256 FROM case_local_lifecycles WHERE preparation_id=%s AND case_id=%s',(parent['id'],parent['case_id'])).fetchone()
     case=c.execute('SELECT state FROM cases WHERE id=%s AND run_id=%s',(parent['case_id'],parent['run_id'])).fetchone()
     source={'case_state':case,'local_lifecycle':local,'resources':resource_sources,'existing_access':access_sources,'request':intent,'original_request':parent['goal'],'preparation_revision':parent['revision'],'catalog':catalog,'registry':REGISTRY,'actions':ACTIONS,'issues':issues,'dependencies':snapshots}
-    sha=cp._hash(cp._normal(source));known=bool(catalog and catalog['namespace']=='SYNTHETIC' and isinstance(catalog['source'],dict) and catalog['source'].get('kind')=='SYNTHETIC' and catalog['source'].get('id') and catalog['source'].get('revision'))
+    sha=cp._hash(cp._normal(source));known=cp.binding_catalog_known(catalog)
     if not known:
         for item in items:
             if item['status']=='SUPPORTED_PREVIEW':item['status']='UNKNOWN'

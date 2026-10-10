@@ -57,8 +57,8 @@ class ServicePlanBlocked(cp.PlanBlocked):
 
 
 def _catalog(c,parent):
-    return cp._normal(c.execute('SELECT service_id,version,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',
-                               (parent['park_id'],parent['service_id'],parent['service_version'])).fetchone())
+    from .catalog_publication import snapshot
+    return snapshot(c,parent)
 
 
 def _binding(c,parent):

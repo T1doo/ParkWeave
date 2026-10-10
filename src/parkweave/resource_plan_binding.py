@@ -111,7 +111,8 @@ def catalog_decision(c,parent,link):
         if receipts[0]['payload'].get('plan_approval') is not None or link['snapshot'].get('plan_approval') is not None:
             from .service_plan_approval import verify_receipt
             verify_receipt(parent,receipts[0]['payload'],link['snapshot'].get('plan_approval'))
-    current=c.execute('SELECT service_id,version,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',(parent['park_id'],parent['service_id'],parent['service_version'])).fetchone()
+    from .catalog_publication import snapshot as catalog_snapshot
+    current=catalog_snapshot(c,parent)
     now_copy=_catalog_copy(current)
     document=link['snapshot'].get('binding_impact') if link else None
     result=dict(status='NOT_VERSION_BOUND',decision_ref=None,saved_catalog_sha256=None,

@@ -102,7 +102,7 @@ def template(store,token):
     return dict(scope=SCOPE,template=TEMPLATE,template_sha256=TEMPLATE_SHA,executed=False)
 
 def binding_catalog_known(catalog):
-    return bool(catalog and catalog['namespace']=='SYNTHETIC' and isinstance(catalog['source'],dict) and catalog['source'].get('kind')=='SYNTHETIC' and catalog['source'].get('id') and catalog['source'].get('revision'))
+    return bool(catalog and catalog['namespace']=='SYNTHETIC' and isinstance(catalog['source'],dict) and catalog['source'].get('kind')=='SYNTHETIC' and catalog['source'].get('id') and catalog['source'].get('revision') and catalog.get('cooperative_catalog',{}).get('state','ACTIVE')=='ACTIVE')
 
 def binding_p1(c,parent,snapshot,store=None):
     """Shared version descriptor for checks and the read-only binding projection."""
@@ -110,7 +110,8 @@ def binding_p1(c,parent,snapshot,store=None):
     if prep.fact_enabled(c,parent):
         if store is None:raise Conflict('current fact source context required')
         result['fact_clarification']=prep.fact_descriptor(store,c,parent)
-    catalog=c.execute('SELECT service_id,version,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',(parent['park_id'],parent['service_id'],parent['service_version'])).fetchone()
+    from .catalog_publication import snapshot as catalog_snapshot
+    catalog=catalog_snapshot(c,parent)
     result.update(owner_id=parent['owner_id'],reviewer_id=parent['reviewer_id'],goal=parent['goal'],
       required_goals=intents.view(parent)['required_goals'],request_intent=parent.get('request_intent'),
       template_sha256=TEMPLATE_SHA,service_catalog=_normal(catalog) if catalog else None)

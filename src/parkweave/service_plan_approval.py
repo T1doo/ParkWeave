@@ -256,6 +256,8 @@ class IsolatedPlanApproval:
 
     def _source(self,store,c,p,parent,data,*,consumed=None):
         self._scope(c,p,parent)
+        publication=getattr(self,'_catalog_publication',None)
+        catalog_proof=publication.acquire(c,parent) if publication is not None else None
         if consumed is None:
             context, candidate_sha, hs, now = delivery._candidate(store,c,p,parent,data,observe=False)
             if (parent['revision'] != data.expected_preparation_revision
@@ -288,6 +290,7 @@ class IsolatedPlanApproval:
             resources=c.execute('SELECT id,xmin::text row_version FROM synthetic_resources WHERE id=ANY(%s) ORDER BY id',
                 ([h['resource_id'] for h in hs],)).fetchall(),
             run=c.execute('SELECT id,xmin::text row_version FROM runs WHERE id=%s',(parent['run_id'],)).fetchone())
+        if catalog_proof is not None:versions['cooperative_catalog']=catalog_proof
         return cp._normal(dict(scope=SCOPE,purpose=PURPOSE,context=context,
             plan_revision=parent['service_case_plan']['revision'],execution_identity=identity,
             authority=authority,authority_sha256=cp._hash(authority),materials=slots,
