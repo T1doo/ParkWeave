@@ -1,4 +1,20 @@
-# P5 本地 Case 复核候选：环境阻塞，未签收
+# P5 本地 Case 复核候选：Linux 合成范围有限验收
+
+## 新工作区当前验收
+
+从远端确认的 `candidate/p5-local-case-preview-20261010` 精确候选 `0ca0d332aaa1c1300aad6cdeba0e404eddc3110d` 继续。运行源码仍为 `d52cfdbc0cfd98d34f172f72f56027ba861da8aa`，367路径字节/模式零漂移，没有产品修复或新运行源码SHA。main和已接受开发基线分别保持 `31e7acb7e53bb1ab6465b9daae59de28757f7583`、`aac5489710b4364a78e83383c0ec9284a2b213fb`，直到本次条件验收完成。
+
+根29完整相关模块分8个串行窗口 **744 PASS / 0 FAIL / 0 ERROR / 0 SKIP**，各窗JUnit合计 425.279 秒；同次完整collect744与8窗JUnit744个唯一节点集合完全一致，没有缺项。原页面两参数原断言另窗2PASS，实际HTTP200 / NOT_OBSERVED、HTTP200 / COMMITTED，原body私有保存、脱敏code/keys/status/hash公开在根报告。旧KeyError在相同源码新实例没有复现，旧窗口未保存HTTP code/body，具体历史成因仍UNKNOWN，不称已修复。
+
+独立审查 **LIMITED_PASS**：同一29模块分4个串行窗744PASS / 0FAIL / 0ERROR / 0SKIP，JUnit合计 419.706 秒；独立collect/JUnit节点集合完全一致，加载源码hash无漂移。最终节点观察器首比较因参数payload含`::`被误拆产生4个假missing/extra；该比较失败原件保全，仅修私有matcher后从同一collection/JUnit原件重新核对，没有改产品/断言或重跑覆盖。另有新独立真实HTTP/PG API11全通过及真实Chromium/HTTP/PG页面9全通过；旧私有API11/page9源码未跨实例传来，这两组是独立重建验收，不能称为旧原件补跑。根成绩没有转借独审。每窗正常退出、已知自有live资源为空；runner仅收养/回收自身后代，没有删除未知锁或信号未知进程。
+
+实际验收原REVALIDATE、显式CLOSE_LOCAL_RECORD、REOPEN；原材料/资源/本人接受/回执/资格及版本CAS保持。关闭检查点Case仍WAITING_CONFIRMATION，重开cycle2且当前校验false、四项必须明确复核；未决纠正不自动ACK。正式业务/权限/outbox零写、通知不消费，资格NOT_EVALUATED、外部NOT_SUBMITTED、线下NO_EVIDENCE、目标未完成。仅原发行者持续存活的原同进程proof/Store边界；**完整发行者退出/重启恢复、完整AT14、全仓、Windows原生/Win11和真实批准/履约仍NOT_RUN，不关闭这些缺口**。默认仍关闭，无真实模型/付费调用、正式授权或部署。
+
+保留前轮默认uv缓存EROFS原件。本次只经明确允许的工作区项目临时UV_CACHE_DIR安装原固定依赖，没有修改只读目录、权限、凭据、网络或锁文件。新实例唯一健康探针PG/HTTP/Chromium通过，只作基础设施证据。根首个P5窗54 setupERROR来自私有runner误把PG basetemp放在/workspace，原临时目录证明保护正确拒绝；保留原件后仅将runner改回原/tmp fresh路径，产品guard/TMPDIR/断言未改，最终54PASS已包含在根744内。此失败和旧96PASS1FAIL647ERROR、API11ERROR、根20PASS1FAIL及旧Chromium EAGAIN窗口全部保留，不用短探针覆盖。
+
+公开仅[根安全报告](evidence/p5-local-case-preview/new-workspace-acceptance/root-report-safe.json)和[独立安全报告](evidence/p5-local-case-preview/new-workspace-acceptance/independent-report-safe.json)，原日志/XML/HTTP正文/连接/身份/截图只留新实例私有.runtime与自有/tmp。本次一次标准重新供应，旧实例/旧任务没有恢复，无循环供应。已具备用户授权范围内正常开发集成条件；实际普通推送、完整SHA、远端和未提交/未推送差异在成功后另记私有交付记录，不预写交付成功。
+
+## 历史：旧实例环境阻塞，未签收
 
 运行源码候选 `d52cfdbc0cfd98d34f172f72f56027ba861da8aa`，分支 `candidate/p5-local-case-preview-20261010`。基于已接受开发分支 `aac5489710b4364a78e83383c0ec9284a2b213fb`；没有合入开发分支。此次状态文档提交不改变运行源码。冻结合同提交 `c1c7a6bbd0967e5f38cdffa3e949aa2f7420af67` 先于实现；[写入与存储合同](P5LocalCasePreviewContract.md)和[124 条 SQL / 30 个影子表闭包](P5LocalCasePreviewSQLContract.json)是实现边界。
 

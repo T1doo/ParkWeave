@@ -1,3 +1,7 @@
+## 已审 P5 原本地记录影子生命周期（有限 Linux 合成范围）
+
+运行源码 `d52cfdbc0cfd98d34f172f72f56027ba861da8aa` 保持367路径零漂移；根29模块8串行窗744PASS、独审相同29模块4串行窗744PASS，分别collect/JUnit节点精确一致；新独立API11/page9通过，不称缺失旧私有探针原件重跑。原REVALIDATE→显式CLOSE_LOCAL_RECORD→REOPEN真实调用，关闭Case仍WAITING_CONFIRMATION、重开cycle2且当前校验false/四复核，正式业务/权限/outbox零写，无真实模型/批准/履约/目标完成。旧全部失败、默认缓存EROFS及新runner54 setupERROR均保全；原旧KeyError本轮不复现但历史成因仍UNKNOWN。仅原发行者持续存活/同进程proof范围LIMITED_PASS；完整issuer重启、AT14、全仓、Windows/Win11/正式履约仍NOT_RUN，旧任务不恢复。见[P5范围与新独立证据](F2/P5LocalCasePreview.md)；普通dev集成实际完整SHA/远端交付另记成功后记录。以下历史保留各自原范围。
+
 ## 已审原注册步骤显式局部修订
 
 精确 `d12afaa6258dd89a539e3a859b965ca9441e2111` 独审LIMITED_PASS：根完整功能/diagnostics104PASS；独审45/5/24/4/1五窗各自PASS，343源零漂移。资源及既有Run访问集合有界指纹进入原计划，企业明确局部ADOPT后按实际边重验；未受影响步骤/锁、稳定ID/正文/事件及业务历史保留，受影响锁先原UNLOCK。未知/旧声明/溢出扩本Case，原初次257行页面已真实复验4受影响/0保留；CAS/幂等/丢响应冷热GET、撤权/跨企业与自有PG/API重启独立验证。前三轮真实BLOCKED保全，旧907/440/381不覆盖本源码。仅原合成注册切片，完整AT25/一般动态图/全仓/Windows/正式履约仍未签收；无新Grant/政策审批/模型/通知/Case完成，原导出/异议不重做。见[合同与实际范围](F2/RegisteredLocalRevision.md)、[先行合同](F2/RegisteredLocalRevisionContract.md)。以下历史各保留原SHA范围。
