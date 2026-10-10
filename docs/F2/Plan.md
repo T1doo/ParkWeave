@@ -1,6 +1,6 @@
 ## 已审有界 Case 事实来源与人工锁
 
-从84af2948已推基线继续，原资料导出与资料异议闭环保留。本片沿原§5.1/F2-T01/AT06/F3-T03/AT26，用本Case实际材料摘录、独立待核假设、显式LOCK/UNLOCK进入原用途确认与专员REVIEW/企业CONFIRM/P1；固定原owner和OWNER_CASE_USE_ONLY，无新Grant。根最终431PASS/270.782秒；精确候选282e0be4独审354仓库项+11真实HTTP/PG探针全部通过、188.510秒。首轮空账本降级BLOCKED已修复并重新验真，318源零漂移。仅限定Linux合成范围，无完整FactBundle/多用途分享/全仓/原AT/Win11签收；旧a823a28未迁移。见[合同、失败史与实际证据](CaseFactBundle.md)，实际正常dev整合另记；下方历史保留各自时点范围。
+从84af2948已推基线继续，原资料导出与资料异议闭环保留。本片沿原§5.1/F2-T01/AT06/F3-T03/AT26，用本Case实际材料摘录、独立待核假设、显式LOCK/UNLOCK进入原用途确认与专员REVIEW/企业CONFIRM/P1；固定原owner和OWNER_CASE_USE_ONLY，无新Grant。根最终431PASS/270.782秒；精确候选282e0be4独审354仓库项+11真实HTTP/PG探针全部通过、188.510秒。首轮空账本降级BLOCKED已修复并重新验真，318源零漂移。仅限定Linux合成范围，无完整FactBundle/多用途分享/全仓/原AT/Win11签收；旧a823a28未迁移。已完成获审后的正常dev快进与普通推送，精确整合记录另见[CaseFactBundleIntegration.md](CaseFactBundleIntegration.md)。见[合同、失败史与实际证据](CaseFactBundle.md)，实际正常dev整合另记；下方历史保留各自时点范围。
 
 ## 已审材料文本包正常整合（旧a823修复未迁移）
 
