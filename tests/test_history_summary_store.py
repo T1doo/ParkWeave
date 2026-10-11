@@ -10,7 +10,7 @@ from parkweave.store import Store,Denied
 from parkweave.api import create_app
 from test_lifecycle_execution_preview import lifecycle_fixture,receipt_preview_fixture,access_fixture,receipt_fixture,preparation_fixture,snapshot,schema,execute as p5_execute,body as p5_body
 from test_receipt_execution_preview import execute as p4_execute,body as p4_body
-from test_preparation import headers
+from test_preparation import headers,add
 
 
 def memory_reader(f,p,e,stage):
@@ -62,11 +62,13 @@ def test_actual_original_documents_read_without_execution_and_old_http_stays_clo
             if attached:setattr(cold,'_isolated_'+route+'_execution_preview',reader)
             assert client.get('/api/preparations/'+p['preparation_id']+'/'+route+'-execution-preview',headers=headers(f[2])).status_code==403
             assert client.post('/api/preparations/'+p['preparation_id']+'/'+route+'-execution-preview',headers=headers(f[2],key=uuid4().hex),json=b).status_code==403
+        cold._isolated_receipt_history=reader
+        assert client.get('/api/preparations/'+p['preparation_id']+'/receipt-execution-history',headers=headers(f[2])).status_code==403
     assert snapshot(f)==before and schema(f[1])==columns and e.path.read_bytes()==old_bytes
     assert baseline==reader.baselines[p['preparation_id']]
 
 
-@pytest.mark.parametrize('change',['read','resource_read','inactive','wrong_owner','wrong_tenant','resource_unknown','catalog_unknown','resource_disabled','replacement_db','expired','revoked','missing_baseline','declared_fact','material_stale','resource_stale'])
+@pytest.mark.parametrize('change',['read','resource_read','inactive','wrong_owner','wrong_tenant','resource_unknown','catalog_unknown','resource_disabled','replacement_db','expired','revoked','missing_baseline','declared_fact','material_stale','resource_stale','material_missing','material_one_slot','material_hash','material_body','material_actor','nonmapping','new_material_stale'])
 def test_actual_current_scope_source_revocation_and_legal_version_changes(lifecycle_fixture,change):
     f,p,_,_,_,e,_,_=lifecycle_fixture;key=uuid4().hex
     response=p4_execute(f,p,key=key);assert response.status_code==201,response.text
@@ -76,6 +78,10 @@ def test_actual_current_scope_source_revocation_and_legal_version_changes(lifecy
         updates={'replacement_db':dict(database=('replacement','1','2')),'expired':dict(valid_until=b.valid_from),'revoked':dict(revoked=True)}
         reader.baselines[p['preparation_id']]=replace(b,**updates[change])
     elif change=='missing_baseline':reader.baselines.clear()
+    elif change=='nonmapping':reader.records[p['preparation_id']]=(42,)
+    elif change=='new_material_stale':
+        response=add(f,p,'need_summary','SYNTHETIC legitimate new material version')
+        assert response.status_code==200,response.text
     else:
         with f[1].connect() as c:
             if change=='read':c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
@@ -87,6 +93,11 @@ def test_actual_current_scope_source_revocation_and_legal_version_changes(lifecy
             elif change=='resource_disabled':c.execute('UPDATE synthetic_resources SET enabled=false')
             elif change=='material_stale':c.execute('UPDATE preparation_evidence SET version=version+1 WHERE preparation_id=%s',(id,))
             elif change=='resource_stale':c.execute('UPDATE synthetic_resources SET revision=revision+1')
+            elif change=='material_missing':c.execute('DELETE FROM preparation_evidence WHERE preparation_id=%s',(id,))
+            elif change=='material_one_slot':c.execute("DELETE FROM preparation_evidence WHERE preparation_id=%s AND slot='need_summary'",(id,))
+            elif change=='material_hash':c.execute("UPDATE preparation_evidence SET source_sha256='invalid' WHERE preparation_id=%s",(id,))
+            elif change=='material_body':c.execute("UPDATE preparation_evidence SET text='SYNTHETIC unrecorded tamper' WHERE preparation_id=%s",(id,))
+            elif change=='material_actor':c.execute("UPDATE preparation_evidence SET actor_id='fixture-b' WHERE preparation_id=%s",(id,))
             elif change=='declared_fact':
                 # Synthetic declaration only, no current fact execution gate.
                 c.execute("UPDATE preparations SET fact_clarifications='{}'::jsonb WHERE id=%s",(id,))

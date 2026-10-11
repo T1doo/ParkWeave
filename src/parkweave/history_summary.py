@@ -95,7 +95,7 @@ class TrustedBaseline:
 
 def row_sha256(row):
     """Integrity helper only; computing this never enrolls or authorizes a row."""
-    if set(row.keys()) != set(ROW_FIELDS) or any(type(row[k]) is not str for k in ROW_FIELDS):
+    if type(row) is not dict or set(row.keys()) != set(ROW_FIELDS) or any(type(row[k]) is not str for k in ROW_FIELDS):
         raise Denied('original bounded history row required')
     if any(len(row[k].encode()) > (65536 if k in ('document', 'proof') else 200) for k in ROW_FIELDS):
         raise Denied('original bounded history row required')
@@ -131,7 +131,8 @@ def summaries(stage, baseline, context, rows, key=None):
     anchors = {}
     ids = set()
     for anchor in baseline.records:
-        if (type(anchor) is not RecordAnchor or anchor.key in anchors or anchor.id in ids or
+        if (type(anchor) is not RecordAnchor or type(anchor.key) is not str or type(anchor.id) is not str or
+                anchor.key in anchors or anchor.id in ids or
                 _key(anchor.key) is None or any(type(h) is not str or len(h) != 64 or
                 any(c not in '0123456789abcdef' for c in h) for h in (anchor.row_sha256, anchor.source_sha256))):
             raise Denied('unique independent record anchors required')
@@ -227,7 +228,16 @@ def current_context(store, c, token, preparation_id):
                 not r['source'].get('id') or not r['source'].get('revision')):
             raise Denied('current known synthetic resource required')
         rules.append(ep._normal({k: r[k] for k in ('id','revision','capacity','buffer_seconds','open_from','open_until','enabled','timezone','namespace','authority','source')}))
-    materials = c.execute('SELECT DISTINCT ON(slot) id,slot,version,source_kind,source_sha256 FROM preparation_evidence WHERE preparation_id=%s ORDER BY slot,version DESC', (parent['id'],)).fetchall()
+    # Return only metadata and a server-computed integrity boolean, no material
+    # body/label. Built-in PostgreSQL hashing needs no extension or new grant.
+    materials = c.execute("SELECT DISTINCT ON(slot) id,slot,version,source_kind,source_sha256,actor_id,source_sha256=encode(sha256(convert_to(text,'UTF8')),'hex') AS source_intact FROM preparation_evidence WHERE preparation_id=%s ORDER BY slot,version DESC", (parent['id'],)).fetchall()
+    if (len(materials) != len(prep.SLOTS) or {m['slot'] for m in materials} != set(prep.SLOTS) or
+            any(m['source_intact'] is not True or m['actor_id'] != p['id'] or
+                type(m['version']) is not int or m['version'] < 1 or
+                m['source_kind'] not in ('USER_STATEMENT', 'DOCUMENT_EXCERPT') or
+                type(m['source_sha256']) is not str or len(m['source_sha256']) != 64 or
+                any(ch not in '0123456789abcdef' for ch in m['source_sha256']) for m in materials)):
+        raise Denied('current complete intact own material sources required')
     identity = c.execute(ep.IDENTITY_SQL).fetchone()
     source_sha = ep._sha(ep._normal(dict(preparation_revision=parent['revision'], request_intent=parent['request_intent'], catalog=source, resources=rules, materials=materials)))
     return ReadContext(p['id'], p['park_id'], p['org_id'], str(parent['id']), str(parent['case_id']),
@@ -245,6 +255,12 @@ class MemoryHistorySummaryReader:
         _checks(stage, '')
         self.stage, self.baselines, self.records = stage, baselines, records
 
+    def _rows(self, preparation_id):
+        rows = self.records.get(str(preparation_id), ())
+        if type(rows) not in (tuple, list) or len(rows) > 128 or any(type(r) is not dict for r in rows):
+            raise Denied('bounded original memory history rows required')
+        return tuple(dict(r) for r in rows)
+
     def read(self, store, token, preparation_id, key=None):
         key = _key(key)
         with store.connect() as c:
@@ -253,16 +269,13 @@ class MemoryHistorySummaryReader:
             c.execute("SET LOCAL lock_timeout='3s'")
             before = current_context(store, c, token, preparation_id)
             baseline = self.baselines.get(str(preparation_id))
-            raw_rows = self.records.get(str(preparation_id), ())
-            if type(raw_rows) not in (tuple, list) or len(raw_rows) > 128:
-                raise Denied('bounded memory history required')
-            rows = tuple(dict(r) for r in raw_rows)
+            rows = self._rows(preparation_id)
             result = summaries(self.stage, baseline, before, rows, key)
             after = current_context(store, c, token, preparation_id)
             if (before != ReadContext(after.owner, after.park, after.org, after.preparation, after.case,
                     after.run, after.database, after.source_sha256, before.now) or
                     baseline != self.baselines.get(str(preparation_id)) or
-                    rows != tuple(dict(r) for r in self.records.get(str(preparation_id), ()))):
+                    rows != self._rows(preparation_id)):
                 raise Denied('history read context changed')
             _baseline(baseline, after, self.stage)
             return result

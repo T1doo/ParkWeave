@@ -6,6 +6,8 @@
 
 本片兼容未声明事实用途的原P4/P5产物。已声明fact_clarifications或有DECLARE_FACT_PURPOSE原事件则保守拒绝：事实用途来源的独立当前READ合同尚未实现，不调用其旧执行/签发gate，不拿历史数据补资格。合法的当前材料或资源版本变化可读但STALE；这种历史摘要不表示当前可执行或当前校验通过。
 
+当前两个材料槽必须各有本人已登记来源，正整数版本、已知source_kind及完整hash；仅在现有SQL SELECT权限内计算正文hash匹配布尔值，不返回正文或标签、不加extension/Grant。缺材料、非本人来源、摘要/正文不一致保守拒绝，不当合法版本变化放为STALE；缺槽时的失败历史不在本内存适配器兼容范围，纯摘要校验本身仍识别原FAILED文档。原正文读取接口资格不变。
+
 不是持久访问实现：没有文件/凭据/Grant/租约/管理员或API权限修改；没有新HTTP/IPC协议、生产路由挂接、auto-attach/env开关或基线加载/登记/续期入口。原P4/P5 GET/POST和旧live-issuer代理的精确资格保持；将新内存适配器塞入旧provider属性也须仍403。configured_app默认拒绝，禁止把纯适配器通过称全发行者退出/PG重启恢复通过。
 
 可信基线只由测试服务端在内存提供，不能来自HTTP参数或历史自述hash。绑定stage/scope/namespace、原数据库稳定身份(name/OID/system_identifier)、owner/park/org、原preparation/Case/Run、原合同与版本、每个原记录id/key及完整SQLite行摘要、独立读取来源指纹、显式绝对UTC valid_from/valid_until与撤销状态。没有外部基线即拒绝，不能自己根据读到的历史登记。时间不以新进程启动重算，GET不续期；过期/撤销不能靠新对象或新READ恢复。重建的执行bridge“now+8h”绝非历史读许可。

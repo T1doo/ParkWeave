@@ -64,7 +64,7 @@ def test_old_exact_version_summary_key_envelope_and_no_private_fields(stage):
     assert not hasattr(checks,'execute') and not hasattr(checks,'read') and not hasattr(checks,'attach_store')
 
 
-@pytest.mark.parametrize('change', ['missing','revoked','expired','future','naive','db','owner','park','org','preparation','case','run','scope','stage','version','contract','namespace','duplicate_anchor'])
+@pytest.mark.parametrize('change', ['missing','revoked','expired','future','naive','db','owner','park','org','preparation','case','run','scope','stage','version','contract','namespace','duplicate_anchor','malformed_key','malformed_id'])
 def test_independent_baseline_exact_scope_validity_and_uniqueness(change):
     c,b,r,_=sample()
     if change=='missing':b=None
@@ -74,6 +74,8 @@ def test_independent_baseline_exact_scope_validity_and_uniqueness(change):
     elif change=='naive':b=replace(b,valid_until=c.now.replace(tzinfo=None))
     elif change=='db':b=replace(b,database=('replacement','1','2'))
     elif change=='duplicate_anchor':b=replace(b,records=b.records*2)
+    elif change=='malformed_key':b=replace(b,records=(replace(b.records[0],key=[]),))
+    elif change=='malformed_id':b=replace(b,records=(replace(b.records[0],id='invalid'),))
     elif change=='version':b=replace(b,version=99)
     else:b=replace(b,**{change:'wrong'})
     with pytest.raises(Denied):hs.summaries('P4',b,c,(r,))
@@ -88,7 +90,7 @@ def test_self_rehashed_modified_row_cannot_replace_external_anchor(field):
     with pytest.raises(Denied):hs.summaries('P4',b,c,(r,))
 
 
-@pytest.mark.parametrize('change',['version','contract','case','run','malformed','private_event','oversize','extra_column','missing_row','duplicate_row','unknown_row','too_many'])
+@pytest.mark.parametrize('change',['version','contract','case','run','malformed','private_event','oversize','extra_column','missing_row','duplicate_row','unknown_row','too_many','nonmapping'])
 def test_bounded_original_document_semantics_checked_after_external_anchor(change):
     c,b,r,checks=sample('P5');d=json.loads(r['document'])
     if change=='version':d['version']=99
@@ -106,6 +108,7 @@ def test_bounded_original_document_semantics_checked_after_external_anchor(chang
     elif change=='duplicate_row':rows=(r,r)
     elif change=='unknown_row':rows=({**r,'request_key':'unknown'},)
     elif change=='too_many':rows=(r,)*129
+    elif change=='nonmapping':rows=(42,)
     with pytest.raises(Denied):hs.summaries('P5',b,c,rows)
 
 
