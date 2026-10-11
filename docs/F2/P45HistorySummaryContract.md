@@ -4,6 +4,8 @@
 
 实现有限片：固定P4/P5纯校验、摘要投影、原文档版本兼容，以及内存基线/内存记录的只读适配器，调用签名与原历史读取相同：read(store, token, preparation_id, key=None)。每次直接用现有Store的实际当前active/READ/企业本人/park/org/Run/Case/preparation归属、合成来源与双资源READ及数据库身份检查，数据库时间控制有效期；EXECUTE/PREPARE/HOLD/审批者/执行者当前租约不是独立摘要读取资格。仅其执行权撤回而READ仍有效可读；任何所需READ、来源、身份、tenant、登记有效期或完整性失效拒绝。当前sources前后核验，明确协作锁/快照边界，不声称全来源原子性。
 
+本片兼容未声明事实用途的原P4/P5产物。已声明fact_clarifications或有DECLARE_FACT_PURPOSE原事件则保守拒绝：事实用途来源的独立当前READ合同尚未实现，不调用其旧执行/签发gate，不拿历史数据补资格。合法的当前材料或资源版本变化可读但STALE；这种历史摘要不表示当前可执行或当前校验通过。
+
 不是持久访问实现：没有文件/凭据/Grant/租约/管理员或API权限修改；没有新HTTP/IPC协议、生产路由挂接、auto-attach/env开关或基线加载/登记/续期入口。原P4/P5 GET/POST和旧live-issuer代理的精确资格保持；将新内存适配器塞入旧provider属性也须仍403。configured_app默认拒绝，禁止把纯适配器通过称全发行者退出/PG重启恢复通过。
 
 可信基线只由测试服务端在内存提供，不能来自HTTP参数或历史自述hash。绑定stage/scope/namespace、原数据库稳定身份(name/OID/system_identifier)、owner/park/org、原preparation/Case/Run、原合同与版本、每个原记录id/key及完整SQLite行摘要、独立读取来源指纹、显式绝对UTC valid_from/valid_until与撤销状态。没有外部基线即拒绝，不能自己根据读到的历史登记。时间不以新进程启动重算，GET不续期；过期/撤销不能靠新对象或新READ恢复。重建的执行bridge“now+8h”绝非历史读许可。

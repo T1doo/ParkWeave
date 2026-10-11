@@ -39,7 +39,7 @@ class LifecycleExecutionPreview(p4.ReceiptExecutionPreview):
     indexed_shadow_tables=('run_assignments','case_local_lifecycles','case_local_events')
     isolated_steps=('P1','P2','P3','P4','P5')
     registered=staticmethod(registered)
-    def _request_body(self,doc):return {**super()._request_body(doc),'lifecycle_sequence':doc['lifecycle_sequence']}
+    def _request_body(self,doc):return {**p4.ReceiptExecutionPreview._request_body(self,doc),'lifecycle_sequence':doc['lifecycle_sequence']}
     def _upstream_complete(self,doc):return doc['artifact']['p4_state'] in ('LOCAL_ACKNOWLEDGED','CHANGES_REQUESTED')
     def _capture_resources(self,connection,artifact,current,resource_ids):
         if artifact['p2_state']!='LOCAL_ASSOCIATION_PREVIEWED':return
@@ -94,7 +94,7 @@ class LifecycleExecutionPreview(p4.ReceiptExecutionPreview):
         supported={'LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_SYNTHETIC_COORDINATION_RECORDS','LOCAL_CASE_RECORD_RECHECK'}
         result['coverage_state']='P1_P2_P3_P4_P5_PREVIEW_ONLY' if final and final['verification_current'] is True and not a['error'] and all(g in supported for g in current['required_goals']) else 'PARTIAL_PREVIEW'
     def _p4_document(self,doc):
-        super()._p4_document(doc)
+        p4.ReceiptExecutionPreview._p4_document(self,doc)
         try:
             actions=SEQUENCES[doc['lifecycle_sequence']];a=doc['artifact'];attempts=a['lifecycle_attempts'];events=a['lifecycle_events'];ledger=a['lifecycle_ledger'];final=a['lifecycle_final']
             if a['p5_state'] not in ('NOT_EXECUTED','FAILED','READY','LOCAL_RECORD_CLOSED','REOPENED') or len(attempts)>len(actions) or len(events)>3 or len(ledger)>1:raise ValueError()
