@@ -1,0 +1,34 @@
+from pathlib import Path
+from collections import Counter
+import gzip,hashlib,importlib.util,json,sys,xml.etree.ElementTree as E
+sys.dont_write_bytecode=True
+root=Path.cwd();archive=root/'docs/F2/evidence/native-run-access-activation-20261011'
+private=root/'.runtime/native-run-access-activation-20261011'
+sha=lambda b:hashlib.sha256(b).hexdigest()
+spec=importlib.util.spec_from_file_location('accepted_policy',root/'docs/F2/evidence/case-cancel-after-receipt-20261011/build_archive.py')
+policy=importlib.util.module_from_spec(spec);spec.loader.exec_module(policy)
+m=json.loads((archive/'archive-manifest.json').read_text());windows=[];static=0;protected_json=0
+for x in m['artifacts']:
+ original=(root/x['original_local_path']).read_bytes();content=(archive/x['exported_path']).read_bytes()
+ assert sha(original)==x['original_sha256'] and sha(content)==x['exported_sha256']
+ payload=gzip.decompress(content) if x['compression']=='gzip' else content
+ assert sha(payload)==x['sanitized_payload_sha256'] and len(payload)==x['sanitized_payload_bytes']
+ if x['classification']=='STATIC_EXACT_PATH_SHA':assert original==payload;static+=1
+ elif x['classification']=='JUNIT':
+  a=E.fromstring(original);b=E.fromstring(payload);assert policy.policy.identity_results(a)==policy.policy.identity_results(b)
+  outcomes=dict(Counter(v[3] for v in policy.policy.identity_results(a)[0]));assert outcomes==x['test_results_preserved'];windows.append({'artifact':x['exported_path'],'counts':outcomes})
+ elif x['classification']=='JSON_METADATA':
+  a=json.loads(original);b=json.loads(payload);policy.check_json_credentials(b)
+  def ids(value):
+   out=[]
+   if isinstance(value,dict):
+    for k,v in value.items():
+     if k in ['nodeid','test_id','source_sha','source_manifest_sha256','collected_ids','actual_collected_ids','outcomes'] or (k in ['classname','name'] and ('classname' in value or 'nodeid' in value)):out.append((k,v))
+     else:out.extend(ids(v))
+   elif isinstance(value,list):
+    for v in value:out.extend(ids(v))
+   return out
+  assert ids(a)==ids(b),(x['exported_path'],'protected JSON identities changed');protected_json+=1
+assert not m['raw_inputs_rewritten']
+r={'source_sha':m['source_sha'],'artifacts_checked':len(m['artifacts']),'exact_static_files_checked':static,'junit_windows_checked':len(windows),'junit_windows':windows,'protected_json_identity_files_checked':protected_json,'original_hashes_unchanged':True,'export_hashes_valid':True,'test_ids_outcomes_suite_attributes_and_durations_preserved':True,'failed_windows_remain_failed':True}
+(private/'archive-validation.json').write_text(json.dumps(r,indent=2)+'\n');print(json.dumps({k:v for k,v in r.items() if k!='junit_windows'},indent=2))

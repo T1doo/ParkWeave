@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.213" timestamp="2026-10-11T19:44:58.210495+00:00" hostname="synthetic-fixture-host"><testcase classname=".runtime.native-run-access-activation-review.test_independent_activation_probes" name="test_unknown_provider_cannot_supply_effective_native_scope" time="1.844"><failure message="AssertionError: ('unknown provider granted native READ', 200)&#10;assert 200 == 403&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">activation_fixture = ((&lt;parkweave.store.Store object at 0x7f62520d7ce0&gt;, &lt;parkweave.store.Store object at 0x7f62520d7c50&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+
+    def test_unknown_provider_cannot_supply_effective_native_scope(activation_fixture):
+        a=activation_fixture;f,parent,_,_=a
+        assert activate(a).status_code==200
+        f[0]._native_run_access=SimpleNamespace(assignment_allowed=lambda *args: True)
+        result=f[3].get('/api/runs/'+parent['run_id'],headers=headers(f[2],'executor-a'))
+&gt;       assert result.status_code==403, ('unknown provider granted native READ',result.status_code)
+E       AssertionError: ('unknown provider granted native READ', 200)
+E       assert 200 == 403
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+.runtime/native-run-access-activation-review/test_independent_activation_probes.py:20: AssertionError</failure></testcase></testsuite></testsuites>

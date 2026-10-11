@@ -1,0 +1,215 @@
+{
+  "accepted_parent_clarification": "READ source excludes case_state, but exact Run/Case provenance, Run revision/fingerprint, preparation/material/review and permission generations remain required. Existing historical READ survives ordinary Case lifecycle progress or cancellation if all independent lease/current-identity conditions hold; new ACTIVATE is frozen/closed guarded.",
+  "actual_defects_reproduced": [],
+  "baseline_delivery_head": "f37c93a50600e9afe32c18b31351ee09bddb52a8",
+  "baseline_selected_file_sha256": {
+    "docs/F2/ENG089-ActivationDecisionPacket.md": "e3f89fab1c893cf6db1e3584cc2df5d3524025cec489703a77c5b302d16f271e",
+    "src/parkweave/api.py": "52001bd8888024ef2d4af39fa051ce02a2b37f14a71d9d7559028f1c11864ff1",
+    "src/parkweave/case_cancellation.py": "96f273759c0fc7cf29b8e41497f9723aed2af7546eee6e857771d4157a396aff",
+    "src/parkweave/case_cancellation_before_receipt.py": "f6cc8f1bb3313c94b02ad32ed9b9bff8a3c892e64895ff719ce24f900fbca010",
+    "src/parkweave/case_cancellation_reconciliation.py": "408a0040415d884401b7fc357b2cbfa2c59e7b7f52154edfd9696e89bf5a73ac",
+    "src/parkweave/dispatch_notices.py": "e0d2365a1da07cc494a9168662f59ca4b17bcced73529ff171b2569cfea92a33",
+    "src/parkweave/executor_receipts.py": "c3003970cace6455e1eecedbb72f054a180318253d80ef71f5da0706ee0e99d5",
+    "src/parkweave/isolated_execution_preview.py": "36c8f01f2d8cbe4f058501b63da94ccc0d09251d451b33115a963cd7e508ab06",
+    "src/parkweave/isolated_local_execution.py": "81e4ef2e7c52dcea74483a12339403d374703bcb662d81c194f09c90478612e4",
+    "src/parkweave/native-run-access-storage.sql": "ea759e0fada61a4a6b7497c15a0fc50da7c23f2b2f3f281eb6756bbcbe8f804a",
+    "src/parkweave/native_run_access.py": "c0533fe0009c2028220c96102916cc3e30fef9e0d237fe37e33b82f837f49841",
+    "src/parkweave/receipt_execution_preview.py": "3be04dc595e9d7f459f9440ab44e2ee446c8e59b62ed7e750c8950e55a68b96d",
+    "src/parkweave/registered_dependencies.py": "319c80d950252140bf229dbb84fdf98bc9231dd5528f797ddbfb428eef49f256",
+    "src/parkweave/service_dispatches.py": "92ec61acaae35b1c063bd66aa5a7623a7395f72984a92f42f55ed206db6f5f1e",
+    "src/parkweave/store.py": "f282b18e460e702758fe89ea0734e21ea816f2b0a2a157b5e01a39e9c66de57e"
+  },
+  "browser_attempts": 0,
+  "checked_at": "2026-10-11T19:19:06.326962+00:00",
+  "consumers": [
+    {
+      "flow": "assignment_allowed is the central branch; scoped_run gates non-owner READ; assigned_executors checks current role/READ; CONTROL/FILE_READ remain outside assignment READ. Native trusted provider must select guarded Store connections and commit recheck.",
+      "lines": [
+        73,
+        98,
+        116,
+        328,
+        436,
+        452,
+        650,
+        705,
+        718,
+        744,
+        761
+      ],
+      "locks": "Current auth advisory shared; first effective-use guard must obtain parent before Run, retaining required protection through transaction. Legacy SQL NULL stays legacy only without native provenance.",
+      "path": "src/parkweave/store.py"
+    },
+    {
+      "flow": "Executor _parent calls scoped_run after parent lock; reviewer OFFER/reassign calls receipt _executor and current owner authority; raw active assignment listing is postfiltered by shared predicate.",
+      "lines": [
+        100,
+        237,
+        272,
+        318,
+        439,
+        445
+      ],
+      "locks": "parent SHARE/UPDATE -> dispatch SHARE/UPDATE -> receipt generation/Case under existing business guards",
+      "path": "src/parkweave/service_dispatches.py"
+    },
+    {
+      "flow": "Executor and owner ACK preconditions use scoped_run via _base/_executor before explicit parent and step locks; list raw active rows are postfiltered. Native READ enables only independently accepted/manual receipt paths; isolated EXECUTE_LOCAL stays unavailable.",
+      "lines": [
+        65,
+        72,
+        79,
+        164,
+        196,
+        209,
+        289,
+        293
+      ],
+      "locks": "First guard may run before _parent; obtain parent/Run lock before service_receipt_steps UPDATE. Commit must not first acquire parent after child locks.",
+      "path": "src/parkweave/executor_receipts.py"
+    },
+    {
+      "flow": "Consumer/read/OPEN/MARK_READ check current participant and dispatch parent; old outbox notification must not manufacture current access or acceptance.",
+      "lines": [
+        110,
+        117,
+        180,
+        209,
+        234
+      ],
+      "locks": "identity authorization -> dispatch parent -> dispatch/notice; reuse existing held parent protection",
+      "path": "src/parkweave/dispatch_notices.py"
+    },
+    {
+      "flow": "existing_access includes native metadata and derived effective_active, with current participant READ. ACTIVATE changes this collection; explicit local_revision/CAS adoption is required for prior registered plans.",
+      "lines": [
+        22,
+        29,
+        31,
+        39
+      ],
+      "locks": "Parent context and identity authorization locks; no implicit source rebind or invalidation repair in provider",
+      "path": "src/parkweave/registered_dependencies.py"
+    },
+    {
+      "flow": "Requires isolated bridge, managed metadata and shared predicate. Ordinary native provider must not become an isolated adapter permission.",
+      "lines": [
+        55,
+        62,
+        66
+      ],
+      "locks": "Existing isolated locks; mixed provider or provenance must fail closed",
+      "path": "src/parkweave/isolated_local_execution.py"
+    },
+    {
+      "flow": "Private PG previews use temporary shadow rows/search_path and restricted connection wrappers. DB identity alone cannot prove original public scope.",
+      "lines": [
+        245,
+        250,
+        382
+      ],
+      "locks": "Native effective use must reject shadow/non-guarded connection or reliably bind actual public relations; do not expand the isolated SQL whitelist to activate native access",
+      "path": "src/parkweave/isolated_execution_preview.py"
+    },
+    {
+      "flow": "Owner cancellation uses current owner scope and parent/dispatch/Case/local locks; independent resource release remains under existing resource rights. Native assignment is not isolated managed provenance.",
+      "lines": [
+        34,
+        43,
+        57
+      ],
+      "locks": "parent -> dispatch -> Case -> local; native ACTIVATE waits on parent, then Run/assignment",
+      "path": "src/parkweave/case_cancellation.py"
+    }
+  ],
+  "implementation_tests": "NOT_RUN_UNFROZEN",
+  "limitations": [
+    "No new implementation or test execution was performed in this static stage.",
+    "No claim of a reproduced deadlock; prior three-party permission writer queue test completed linearly.",
+    "All previous signed reports and raw evidence are unchanged."
+  ],
+  "next_validation": [
+    "Trusted/forged/copied/wrong-scope/cold rebind; exact provider identity and owner connection proof",
+    "Actual PG activation event/assignment atomic failure rollback and same/different original-key concurrency",
+    "Legacy/native/isolated collisions, JSON null and stripped provenance, delete/reinsert negative cases",
+    "Permission revoke/regrant generation and re-created row; case/material/source race through held real PG locks",
+    "All real Run/dispatch/receipt/notices/registered-dependency routes, expiry/revoke during operation and commit rollback",
+    "Legal Case VERIFY progression, CANCELLED/RECONCILING historical read versus blocked business writes, independent resource release",
+    "Explicit plan local revision after activation dependency change and real same-chain ACCEPT/manual SUBMIT/ACK",
+    "Offline NodeVM unknown outcome original-key GET, current versus historical activation, expiry and late responses"
+  ],
+  "production_actions": "NOT_RUN",
+  "rules": [
+    {
+      "id": "A01",
+      "requirement": "Activation capability is an issued exact object against a verified fresh owned fixture and exact existing Run/Case/lease/approver/beneficiary. Copied/reconstructed/wrong-DB permits, untrusted attachment, alternate owner connection and production configuration deny. No four/eight-hour default.",
+      "severity": "HIGH"
+    },
+    {
+      "id": "A02",
+      "requirement": "ACTIVATE authenticates the real API owner and current READ/PREPARE/EXECUTE plus all participants within the same verified owner transaction that writes activation event and assignment. App authentication in another transaction cannot be the authority. Owner connection is never made a general Store/user-controlled write connection.",
+      "severity": "HIGH"
+    },
+    {
+      "id": "A03",
+      "requirement": "Never overwrite even inactive legacy or isolated assignments. Native replacement is exact current lease/activation binding CAS and retains old activation history. SQL NULL differs from JSON null; unknown/mixed markers deny.",
+      "severity": "HIGH"
+    },
+    {
+      "id": "A04",
+      "requirement": "Prevent provenance downgrade: native marker clearing/removal/delete-and-legacy-reinsert must not let cold Store accept old native scope as legacy. Require durable activation provenance lookup and/or immutable assignment guard plus immutable activation history.",
+      "severity": "HIGH"
+    },
+    {
+      "id": "A05",
+      "requirement": "Trusted guarded connection at every actual use, autocommit/plain/non-guarded/shadow denial, first parent-before-Run protection and commit-time current grant/source/UTC/protocol check. Commit recheck cannot introduce first parent locks after dispatch/Case/receipt locks.",
+      "severity": "HIGH"
+    },
+    {
+      "id": "A06",
+      "requirement": "Versions must detect revoke/regrant or principal/grant reconstruction, including tables without explicit revision. Bind reliable row generation/identity and approver READ generation; restoring active fields must not resurrect the old approval/lease.",
+      "severity": "HIGH"
+    },
+    {
+      "id": "A07",
+      "requirement": "Activation append/event/assignment is atomic with exact event ID/request key/strict DTO fingerprint, approved decision receipt hash/revision, lease ID, target, tenant, source and UTC interval. Failure at either event/assignment/final recheck rolls back all.",
+      "severity": "HIGH"
+    },
+    {
+      "id": "A08",
+      "requirement": "Approval decision receipts remain immutable NON_EFFECTIVE. Current access comes from separate trusted activation plus exact durable binding, current protocol APPROVED and original lease; REVOKE/expired/new request or lease replacement denies old native binding without automatic mutation/rebind.",
+      "severity": "HIGH"
+    },
+    {
+      "id": "A09",
+      "requirement": "Exclude Case state from stable READ source equality: legal lifecycle progression, cancellation/reconciliation and local closure preserve otherwise currently authorized historical READ. New ACTIVATE rejects business-frozen/locally closed Case. Existing business write guards remain independent and mandatory.",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "A10",
+      "requirement": "Activation changes registered existing_access dependency source. Keep explicit local_revision/CAS ADOPT; never repair implicitly on GET/provider. Activation source must not circularly bind the assignment collection changed by its own activation.",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "A11",
+      "requirement": "Original-key ACTIVATE GET returns immutable historical receipt and separate current effective state; lost response only GET original key. Expiry/revoke/cold unauthorized state never reinstalls assignment or shows historical activation as currently effective.",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "A12",
+      "requirement": "Permit UTC interval is explicit and no wider than approved lease and issuer fixture lifetime. Check database clock after waits and immediately before completion, including actual business commit; future start is not yet effective and expired permit cannot reactivate an old lease.",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "A13",
+      "requirement": "Cold Store has no trusted effective access. Explicit same-scope trusted rebind must prove the same fixture/database/permit/lease/activation immutable bytes and cannot adopt arbitrary existing JSON as a provider.",
+      "severity": "MEDIUM"
+    },
+    {
+      "id": "A14",
+      "requirement": "Native READ is also a prerequisite for existing independently assigned synthetic dispatch/ACCEPT/manual receipt operations; it is not only a status page. No CONTROL/EXECUTE/FILE_READ, isolated adapter execution, external delivery or new Grant follows from the assignment.",
+      "severity": "MEDIUM"
+    }
+  ],
+  "status": "STATIC_CONTRACT_REVIEW"
+}

@@ -1,0 +1,32 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[explicit_success] _
+tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles
+    assert p.returncode==0,p.stderr
+E   AssertionError: evalmachine.<anonymous>:17
+E       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';
+E       ^
+E     
+E     ReferenceError: preparationView is not defined
+E         at renderDispatch (evalmachine.<anonymous>:17:3)
+E         at evalmachine.<anonymous>:1:65
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)
+E         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)
+E         at @repo/tests/pending_receipt_handoff_offline.js:17:26
+E         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'explicit_success'], r...e._compile (node:internal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n").returncode
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[explicit_success]
+1 failed, 1 warning in 0.17s

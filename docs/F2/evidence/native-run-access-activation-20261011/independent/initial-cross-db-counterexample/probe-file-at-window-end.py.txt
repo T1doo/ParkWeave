@@ -1,0 +1,41 @@
+"""Independent frozen native activation counterexamples; existing owned fixtures only."""
+from pathlib import Path
+import sys
+ROOT=Path(__file__).resolve().parents[2]
+sys.path.insert(0,str(ROOT/'tests'))
+from types import SimpleNamespace
+from uuid import UUID
+import pytest
+from conftest import pg, fixture
+from test_preparation import preparation_fixture, headers
+from test_executor_receipts import receipt_fixture
+from test_native_run_access import native_fixture
+from test_native_run_access_activation import activation_fixture, activate, path, business
+
+def test_unknown_provider_cannot_supply_effective_native_scope(activation_fixture):
+    a=activation_fixture;f,parent,_,_=a
+    assert activate(a).status_code==200
+    f[0]._native_run_access=SimpleNamespace(assignment_allowed=lambda *args: True)
+    result=f[3].get('/api/runs/'+parent['run_id'],headers=headers(f[2],'executor-a'))
+    assert result.status_code==403, ('unknown provider granted native READ',result.status_code)
+
+from fastapi.testclient import TestClient
+from parkweave.api import create_app
+from parkweave.store import Store, Denied
+from parkweave import native_run_access as native
+from test_native_run_access_activation import activation_body
+
+@pytest.fixture
+def other_owned_fixture(pg,request):
+    yield from fixture.__wrapped__(pg,request)
+
+def test_foreign_business_database_cannot_activate_origin_permit(activation_fixture,other_owned_fixture):
+    a=activation_fixture;f,parent,bridge,_=a
+    other=other_owned_fixture
+    wrong=Store(other[0].dsn)
+    wrong._native_run_access=native.NativeRunAccess(wrong,test_permit=bridge.test_permit,activation_permit=bridge.activation_permit)
+    before=business(a)
+    with TestClient(create_app(wrong)) as client:
+        r=client.post(path(a)+'/activate',headers=headers(f[2],key='foreign-business-db'),json=activation_body(a))
+    assert r.status_code==403, ('foreign Store used origin writer',r.status_code)
+    assert business(a)==before

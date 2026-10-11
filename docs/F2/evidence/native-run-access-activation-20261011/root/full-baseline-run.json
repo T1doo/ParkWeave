@@ -1,0 +1,365 @@
+{
+  "browser_attempts": 0,
+  "collected_unique_ids": 4423,
+  "complete_modules": 135,
+  "contract_drift": [],
+  "counts": {
+    "errors": 0,
+    "failed": 27,
+    "passed": 4357,
+    "skipped": 40
+  },
+  "elapsed_seconds": 3094.7998358570003,
+  "exit_code": 1,
+  "failures": [
+    {
+      "classname": "tests.test_acl_readonly",
+      "detail": "tests/test_acl_readonly.py:109: in test_setup_checks_created_config_and_sessions_without_acl_repair\n    assert calls==['precheck','final_check'] and 'Setup candidate complete' not in capsys.readouterr().out\nE   AssertionError: assert ([] == ['precheck', 'final_check']\nE     \nE     Right contains 2 more items, first extra item: 'precheck'\nE     Use -v to get more diff)",
+      "name": "test_setup_checks_created_config_and_sessions_without_acl_repair"
+    },
+    {
+      "classname": "tests.test_ci_diagnostics",
+      "detail": "tests/test_ci_diagnostics.py:91: in test_committed_allowlist_exactly_matches_trusted_test_functions\n    assert m._allowed_tests()==expected\nE   AssertionError: assert frozenset({'t...l_zero', ...}) == {'tests/test_...al_zero', ...}\nE     \nE     Extra items in the left set:\nE     'tests/test_case_fact_bundle.py::test_migration028_actual_receipt_idempotence_future_rejection_no_grants'\nE     Extra items in the right set:\nE     'tests/test_case_cancellation_before_receipt.py::test_later_generation_cannot_become_initial_by_stripping_lineage'\nE     'tests/test_dispatch_notice_pagination.py::test_invalid_expired_tampered_or_wrong_query_cursor_never_echoes'\nE     'tests/test_case_cancellation_reconciliation.py::test_actual_key_concurrency_one_event_each_phase'...\nE     \nE     ...Full output truncated (241 lines hidden), use '-vv' to show",
+      "name": "test_committed_allowlist_exactly_matches_trusted_test_functions"
+    },
+    {
+      "classname": "tests.test_pending_receipt_handoff_offline",
+      "detail": "tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles\n    assert p.returncode==0,p.stderr\nE   AssertionError: evalmachine.<anonymous>:17\nE       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';\nE       ^\nE     \nE     ReferenceError: preparationView is not defined\nE         at renderDispatch (evalmachine.<anonymous>:17:3)\nE         at evalmachine.<anonymous>:1:65\nE         at Script.runInContext (node:vm:149:12)\nE         at Object.runInContext (node:vm:301:6)\nE         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)\nE         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)\nE         at @repo/tests/pending_receipt_handoff_offline.js:17:26\nE         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)\nE         at Module._compile (node:internal/modules/cjs/loader:1872:14)\nE         at Object..js (node:internal/modules/cjs/loader:2003:10)\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'explicit_success'], r...e._compile (node:internal/modules/cjs/loader:1872:14)\\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\\n\").returncode",
+      "name": "test_pending_manual_handoff_actual_js_under_offline_doubles[explicit_success]"
+    },
+    {
+      "classname": "tests.test_pending_receipt_handoff_offline",
+      "detail": "tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles\n    assert p.returncode==0,p.stderr\nE   AssertionError: evalmachine.<anonymous>:17\nE       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';\nE       ^\nE     \nE     ReferenceError: preparationView is not defined\nE         at renderDispatch (evalmachine.<anonymous>:17:3)\nE         at evalmachine.<anonymous>:1:65\nE         at Script.runInContext (node:vm:149:12)\nE         at Object.runInContext (node:vm:301:6)\nE         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)\nE         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)\nE         at @repo/tests/pending_receipt_handoff_offline.js:17:26\nE         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)\nE         at Module._compile (node:internal/modules/cjs/loader:1872:14)\nE         at Object..js (node:internal/modules/cjs/loader:2003:10)\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'lost_response_cold_ge...e._compile (node:internal/modules/cjs/loader:1872:14)\\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\\n\").returncode",
+      "name": "test_pending_manual_handoff_actual_js_under_offline_doubles[lost_response_cold_get_only]"
+    },
+    {
+      "classname": "tests.test_pending_receipt_handoff_offline",
+      "detail": "tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles\n    assert p.returncode==0,p.stderr\nE   AssertionError: evalmachine.<anonymous>:17\nE       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';\nE       ^\nE     \nE     ReferenceError: preparationView is not defined\nE         at renderDispatch (evalmachine.<anonymous>:17:3)\nE         at evalmachine.<anonymous>:1:65\nE         at Script.runInContext (node:vm:149:12)\nE         at Object.runInContext (node:vm:301:6)\nE         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)\nE         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)\nE         at @repo/tests/pending_receipt_handoff_offline.js:17:26\nE         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)\nE         at Module._compile (node:internal/modules/cjs/loader:1872:14)\nE         at Object..js (node:internal/modules/cjs/loader:2003:10)\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'storage_failure'], re...e._compile (node:internal/modules/cjs/loader:1872:14)\\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\\n\").returncode",
+      "name": "test_pending_manual_handoff_actual_js_under_offline_doubles[storage_failure]"
+    },
+    {
+      "classname": "tests.test_pending_receipt_handoff_offline",
+      "detail": "tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles\n    assert p.returncode==0,p.stderr\nE   AssertionError: evalmachine.<anonymous>:17\nE       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';\nE       ^\nE     \nE     ReferenceError: preparationView is not defined\nE         at renderDispatch (evalmachine.<anonymous>:17:3)\nE         at evalmachine.<anonymous>:1:65\nE         at Script.runInContext (node:vm:149:12)\nE         at Object.runInContext (node:vm:301:6)\nE         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)\nE         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)\nE         at @repo/tests/pending_receipt_handoff_offline.js:17:26\nE         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)\nE         at Module._compile (node:internal/modules/cjs/loader:1872:14)\nE         at Object..js (node:internal/modules/cjs/loader:2003:10)\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'duplicate_click'], re...e._compile (node:internal/modules/cjs/loader:1872:14)\\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\\n\").returncode",
+      "name": "test_pending_manual_handoff_actual_js_under_offline_doubles[duplicate_click]"
+    },
+    {
+      "classname": "tests.test_pending_receipt_handoff_offline",
+      "detail": "tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles\n    assert p.returncode==0,p.stderr\nE   AssertionError: evalmachine.<anonymous>:17\nE       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';\nE       ^\nE     \nE     ReferenceError: preparationView is not defined\nE         at renderDispatch (evalmachine.<anonymous>:17:3)\nE         at evalmachine.<anonymous>:1:65\nE         at Script.runInContext (node:vm:149:12)\nE         at Object.runInContext (node:vm:301:6)\nE         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)\nE         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)\nE         at @repo/tests/pending_receipt_handoff_offline.js:17:26\nE         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)\nE         at Module._compile (node:internal/modules/cjs/loader:1872:14)\nE         at Object..js (node:internal/modules/cjs/loader:2003:10)\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'identity_aba_delayed_...e._compile (node:internal/modules/cjs/loader:1872:14)\\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\\n\").returncode",
+      "name": "test_pending_manual_handoff_actual_js_under_offline_doubles[identity_aba_delayed_json]"
+    },
+    {
+      "classname": "tests.test_pending_receipt_handoff_offline",
+      "detail": "tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles\n    assert p.returncode==0,p.stderr\nE   AssertionError: evalmachine.<anonymous>:17\nE       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';\nE       ^\nE     \nE     ReferenceError: preparationView is not defined\nE         at renderDispatch (evalmachine.<anonymous>:17:3)\nE         at evalmachine.<anonymous>:1:65\nE         at Script.runInContext (node:vm:149:12)\nE         at Object.runInContext (node:vm:301:6)\nE         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)\nE         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)\nE         at @repo/tests/pending_receipt_handoff_offline.js:17:26\nE         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)\nE         at Module._compile (node:internal/modules/cjs/loader:1872:14)\nE         at Object..js (node:internal/modules/cjs/loader:2003:10)\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'late_403_new_identity...e._compile (node:internal/modules/cjs/loader:1872:14)\\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\\n\").returncode",
+      "name": "test_pending_manual_handoff_actual_js_under_offline_doubles[late_403_new_identity]"
+    },
+    {
+      "classname": "tests.test_pending_receipt_handoff_offline",
+      "detail": "tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles\n    assert p.returncode==0,p.stderr\nE   AssertionError: evalmachine.<anonymous>:17\nE       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';\nE       ^\nE     \nE     ReferenceError: preparationView is not defined\nE         at renderDispatch (evalmachine.<anonymous>:17:3)\nE         at evalmachine.<anonymous>:1:65\nE         at Script.runInContext (node:vm:149:12)\nE         at Object.runInContext (node:vm:301:6)\nE         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)\nE         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)\nE         at @repo/tests/pending_receipt_handoff_offline.js:17:26\nE         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)\nE         at Module._compile (node:internal/modules/cjs/loader:1872:14)\nE         at Object..js (node:internal/modules/cjs/loader:2003:10)\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'wrong_recovery_proof'...e._compile (node:internal/modules/cjs/loader:1872:14)\\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\\n\").returncode",
+      "name": "test_pending_manual_handoff_actual_js_under_offline_doubles[wrong_recovery_proof]"
+    },
+    {
+      "classname": "tests.test_pending_receipt_handoff_offline",
+      "detail": "tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles\n    assert p.returncode==0,p.stderr\nE   AssertionError: evalmachine.<anonymous>:17\nE       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';\nE       ^\nE     \nE     ReferenceError: preparationView is not defined\nE         at renderDispatch (evalmachine.<anonymous>:17:3)\nE         at evalmachine.<anonymous>:1:65\nE         at Script.runInContext (node:vm:149:12)\nE         at Object.runInContext (node:vm:301:6)\nE         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)\nE         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)\nE         at @repo/tests/pending_receipt_handoff_offline.js:17:26\nE         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)\nE         at Module._compile (node:internal/modules/cjs/loader:1872:14)\nE         at Object..js (node:internal/modules/cjs/loader:2003:10)\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'bounded_handles'], re...e._compile (node:internal/modules/cjs/loader:1872:14)\\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\\n\").returncode",
+      "name": "test_pending_manual_handoff_actual_js_under_offline_doubles[bounded_handles]"
+    },
+    {
+      "classname": "tests.test_pending_receipt_handoff_offline",
+      "detail": "tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles\n    assert p.returncode==0,p.stderr\nE   AssertionError: evalmachine.<anonymous>:17\nE       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';\nE       ^\nE     \nE     ReferenceError: preparationView is not defined\nE         at renderDispatch (evalmachine.<anonymous>:17:3)\nE         at evalmachine.<anonymous>:1:65\nE         at Script.runInContext (node:vm:149:12)\nE         at Object.runInContext (node:vm:301:6)\nE         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)\nE         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)\nE         at @repo/tests/pending_receipt_handoff_offline.js:17:26\nE         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)\nE         at Module._compile (node:internal/modules/cjs/loader:1872:14)\nE         at Object..js (node:internal/modules/cjs/loader:2003:10)\nE     \nE   assert 1 == 0\nE    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'current_recovery_403_...e._compile (node:internal/modules/cjs/loader:1872:14)\\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\\n\").returncode",
+      "name": "test_pending_manual_handoff_actual_js_under_offline_doubles[current_recovery_403_keeps_original_handle]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:28: in test_pagination_current_owner_exact_projection_and_no_writes\n    before=snapshot(f);seen=[];after=None\n           ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_pagination_current_owner_exact_projection_and_no_writes"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:52: in test_read_only_transaction_and_no_action_or_role_scope_expansion\n    before=snapshot(f);r=directory(f,role='enterprise_operator',principal='fixture-b',action='fault.record')\n           ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_read_only_transaction_and_no_action_or_role_scope_expansion"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:75: in test_non_owner_directory_refused_even_with_original_status_assignment\n    before=snapshot(f);r=directory(f,user);assert r.status_code==403 and 'items' not in r.json()\n           ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_non_owner_directory_refused_even_with_original_status_assignment[park_specialist]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:75: in test_non_owner_directory_refused_even_with_original_status_assignment\n    before=snapshot(f);r=directory(f,user);assert r.status_code==403 and 'items' not in r.json()\n           ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_non_owner_directory_refused_even_with_original_status_assignment[resource_admin]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:75: in test_non_owner_directory_refused_even_with_original_status_assignment\n    before=snapshot(f);r=directory(f,user);assert r.status_code==403 and 'items' not in r.json()\n           ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_non_owner_directory_refused_even_with_original_status_assignment[service_executor]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:88: in test_current_auth_change_never_uses_previous_directory\n    before=snapshot(f);r=directory(f);assert r.status_code==403 and 'run_id' not in r.text\n           ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_current_auth_change_never_uses_previous_directory[identity]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:88: in test_current_auth_change_never_uses_previous_directory\n    before=snapshot(f);r=directory(f);assert r.status_code==403 and 'run_id' not in r.text\n           ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_current_auth_change_never_uses_previous_directory[read]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:88: in test_current_auth_change_never_uses_previous_directory\n    before=snapshot(f);r=directory(f);assert r.status_code==403 and 'run_id' not in r.text\n           ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_current_auth_change_never_uses_previous_directory[role]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:88: in test_current_auth_change_never_uses_previous_directory\n    before=snapshot(f);r=directory(f);assert r.status_code==403 and 'run_id' not in r.text\n           ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_current_auth_change_never_uses_previous_directory[org]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:88: in test_current_auth_change_never_uses_previous_directory\n    before=snapshot(f);r=directory(f);assert r.status_code==403 and 'run_id' not in r.text\n           ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_current_auth_change_never_uses_previous_directory[park]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:94: in test_bounded_query_rejected_without_business_writes\n    before=snapshot(fixture);assert directory(fixture,**params).status_code==422;assert snapshot(fixture)==before\n           ^^^^^^^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_bounded_query_rejected_without_business_writes[params0]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:94: in test_bounded_query_rejected_without_business_writes\n    before=snapshot(fixture);assert directory(fixture,**params).status_code==422;assert snapshot(fixture)==before\n           ^^^^^^^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_bounded_query_rejected_without_business_writes[params1]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:94: in test_bounded_query_rejected_without_business_writes\n    before=snapshot(fixture);assert directory(fixture,**params).status_code==422;assert snapshot(fixture)==before\n           ^^^^^^^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_bounded_query_rejected_without_business_writes[params2]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:94: in test_bounded_query_rejected_without_business_writes\n    before=snapshot(fixture);assert directory(fixture,**params).status_code==422;assert snapshot(fixture)==before\n           ^^^^^^^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_bounded_query_rejected_without_business_writes[params3]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:94: in test_bounded_query_rejected_without_business_writes\n    before=snapshot(fixture);assert directory(fixture,**params).status_code==422;assert snapshot(fixture)==before\n           ^^^^^^^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_bounded_query_rejected_without_business_writes[params4]"
+    },
+    {
+      "classname": "tests.test_run_directory",
+      "detail": "tests/test_run_directory.py:98: in test_cold_store_concurrent_get_and_missing_or_wrong_session\n    f=fixture;run=create(f);before=snapshot(f)\n                                   ^^^^^^^^^^^\ntests/test_run_directory.py:21: in snapshot\n    from normal_recovery_process import snapshot as capture\ntests/normal_recovery_process.py:17: in <module>\n    import playwright\nE   ModuleNotFoundError: No module named 'playwright'",
+      "name": "test_cold_store_concurrent_get_and_missing_or_wrong_session"
+    }
+  ],
+  "finish_utc": "2026-10-11T20:43:31.077570+00:00",
+  "formal_AT35": false,
+  "junit_cases": 4424,
+  "pid": 509149,
+  "raw_sha256": {
+    "full-baseline.log": "3b72a25f3ee7f940d7a69ac4fe4bd27351c74534c95c24e3ff87f6dd0edebf25",
+    "full-baseline.xml": "73447cb6316fb3d5351be4d181ed0e7ddcd5e667d8d8b22116446a28a2932469"
+  },
+  "skips": [
+    {
+      "classname": "",
+      "name": "tests.test_material_objection_authority_edges",
+      "reason": "collection skipped"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_readonly_acl_script_direct_SIDs_and_fail_closed[valid-0]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_readonly_acl_script_direct_SIDs_and_fail_closed[system_admin-0]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_readonly_acl_script_direct_SIDs_and_fail_closed[empty_rules-0]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_readonly_acl_script_direct_SIDs_and_fail_closed[owner_mismatch-2]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_readonly_acl_script_direct_SIDs_and_fail_closed[allow_unknown-3]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_readonly_acl_script_direct_SIDs_and_fail_closed[inheritance-4]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_readonly_acl_script_direct_SIDs_and_fail_closed[read_error-5]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_readonly_acl_script_direct_SIDs_and_fail_closed[owner_read-5]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_readonly_acl_script_direct_SIDs_and_fail_closed[rule_read-5]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_readonly_acl_script_direct_SIDs_and_fail_closed[stale_sid-3]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_legacy_metadata_error_can_report_success_while_new_checker_refuses[read_error-5]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_legacy_metadata_error_can_report_success_while_new_checker_refuses[owner_read-5]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_acl_readonly",
+      "name": "test_legacy_metadata_error_can_report_success_while_new_checker_refuses[stale_sid-3]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_authorization_files",
+      "name": "test_native_windows_file_backend_gate",
+      "reason": "NOT_RUN: native Windows reparse points, ADS, ACL and clean lifecycle require Windows11 x64"
+    },
+    {
+      "classname": "tests.test_ci_cleanup",
+      "name": "test_cluster_control_faults_with_no_real_postgres",
+      "reason": "portable PowerShell unavailable; fault oracle NOT_RUN"
+    },
+    {
+      "classname": "tests.test_job_budget",
+      "name": "test_portable_job_clock_shares_prepare_and_stage_cutoff",
+      "reason": "portable PowerShell unavailable"
+    },
+    {
+      "classname": "tests.test_job_budget",
+      "name": "test_portable_publication_sink_keeps_exact_utf8_lf_boundary",
+      "reason": "portable PowerShell unavailable"
+    },
+    {
+      "classname": "tests.test_minimal_observations",
+      "name": "test_powershell_readonly_object_is_fixed_and_reason_keeps_exit_contract[inheritance-ROOT-4]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_minimal_observations",
+      "name": "test_powershell_readonly_object_is_fixed_and_reason_keeps_exit_contract[owner_mismatch-SESSIONS-2]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_minimal_observations",
+      "name": "test_powershell_readonly_object_is_fixed_and_reason_keeps_exit_contract[config_owner-CONFIG-2]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_minimal_observations",
+      "name": "test_identity_read_failure_does_not_misattribute_an_acl_object",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_minimal_observations",
+      "name": "test_restart_acl_checked_adjunct_object_reaches_complete_safe_capture[files-FILES-files_owner]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_minimal_observations",
+      "name": "test_restart_acl_checked_adjunct_object_reaches_complete_safe_capture[windows-processes.json-PROCESS_RECORD-state_owner]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_minimal_observations",
+      "name": "test_restart_acl_checked_adjunct_object_reaches_complete_safe_capture[windows-services.log-SERVICE_LOG-log_owner]",
+      "reason": "portable PowerShell fixture only; actual PS5/ACL validation separate"
+    },
+    {
+      "classname": "tests.test_native_command",
+      "name": "test_powershell_bridge_preserves_arguments_and_public_phase_metadata",
+      "reason": "portable PowerShell bridge oracle; native Server separate"
+    },
+    {
+      "classname": "tests.test_owned_job",
+      "name": "test_native_job_stops_owned_descendant_and_preserves_unrelated_and_primary[False]",
+      "reason": "native Windows JobObject required; Linux/mock is not coverage"
+    },
+    {
+      "classname": "tests.test_owned_job",
+      "name": "test_native_job_stops_owned_descendant_and_preserves_unrelated_and_primary[True]",
+      "reason": "native Windows JobObject required; Linux/mock is not coverage"
+    },
+    {
+      "classname": "tests.test_owned_job",
+      "name": "test_native_job_binding_refusal_stops_exact_suspended_child_before_body",
+      "reason": "native Windows suspended creation required"
+    },
+    {
+      "classname": "tests.test_owned_job",
+      "name": "test_native_job_coordinator_abrupt_exit_closes_job_and_stops_tree",
+      "reason": "native Windows last-job-handle closure required"
+    },
+    {
+      "classname": "tests.test_python_command",
+      "name": "test_python_resolver_returns_one_real_application_path[multiple]",
+      "reason": "portable PowerShell unavailable; resolver regression NOT_RUN"
+    },
+    {
+      "classname": "tests.test_python_command",
+      "name": "test_python_resolver_returns_one_real_application_path[alias_first]",
+      "reason": "portable PowerShell unavailable; resolver regression NOT_RUN"
+    },
+    {
+      "classname": "tests.test_python_command",
+      "name": "test_python_resolver_returns_one_real_application_path[spaces]",
+      "reason": "portable PowerShell unavailable; resolver regression NOT_RUN"
+    },
+    {
+      "classname": "tests.test_python_command",
+      "name": "test_python_resolver_returns_one_real_application_path[aliases_only]",
+      "reason": "portable PowerShell unavailable; resolver regression NOT_RUN"
+    },
+    {
+      "classname": "tests.test_python_command",
+      "name": "test_python_resolver_returns_one_real_application_path[source_array]",
+      "reason": "portable PowerShell unavailable; resolver regression NOT_RUN"
+    },
+    {
+      "classname": "tests.test_python_command",
+      "name": "test_python_resolver_returns_one_real_application_path[missing_zero]",
+      "reason": "portable PowerShell unavailable; resolver regression NOT_RUN"
+    },
+    {
+      "classname": "tests.test_server_identity",
+      "name": "test_native_windows_query_current_process_handle_only",
+      "reason": "NOT_RUN: Windows read-only kernel handle validation"
+    },
+    {
+      "classname": "tests.test_server_identity",
+      "name": "test_native_windows_popen_binding_preserves_borrowed_creation_handle",
+      "reason": "NOT_RUN: Windows actual Popen borrowed handle validation"
+    },
+    {
+      "classname": "tests.test_synthetic_config_file",
+      "name": "test_native_config_first_creation_and_existing_bytes_protected",
+      "reason": "native Windows CONFIG owner-only creation required"
+    },
+    {
+      "classname": "tests.test_synthetic_session_file",
+      "name": "test_native_session_owner_matches_current_user_and_existing_bytes_protected",
+      "reason": "native Windows owner-only verification required"
+    }
+  ],
+  "source_drift": [],
+  "source_manifest_sha256": "a8a2c61aab735d9f769800021d5f1d92bff994039ecc17aa65eddbd9ad1caab4",
+  "source_sha": "13029ed5e19fd3ffbf8c8dba01a3afcfe7215893",
+  "start_utc": "2026-10-11T19:51:56.278019+00:00"
+}

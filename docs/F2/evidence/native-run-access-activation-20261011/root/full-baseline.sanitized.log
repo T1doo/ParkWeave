@@ -1,0 +1,455 @@
+................................................................ssssssss [  1%]
+ss......F....sss.......................s................................ [  3%]
+........................................................................ [  4%]
+........................................................................ [  6%]
+........................................................................ [  8%]
+........................................................................ [  9%]
+........................................................................ [ 11%]
+........................................................................ [ 13%]
+........................................................................ [ 14%]
+........................................................................ [ 16%]
+........................................................................ [ 17%]
+........................................................................ [ 19%]
+........................................................................ [ 21%]
+.....................................................................s.. [ 22%]
+...........................F............................................ [ 24%]
+........................................................................ [ 26%]
+........................................................................ [ 27%]
+........................................................................ [ 29%]
+........................................................................ [ 30%]
+........................................................................ [ 32%]
+........................................................................ [ 34%]
+........................................................................ [ 35%]
+........................................................................ [ 37%]
+........................................................................ [ 39%]
+........................................................................ [ 40%]
+........................................................................ [ 42%]
+........................................................................ [ 43%]
+........................................................................ [ 45%]
+........................................................................ [ 47%]
+........................................................................ [ 48%]
+........................................................................ [ 50%]
+........................................................................ [ 52%]
+........................................................................ [ 53%]
+...........s.......s.................................................... [ 55%]
+........................................................................ [ 56%]
+........................................................................ [ 58%]
+........................................................................ [ 60%]
+.........................................sss..........................s. [ 61%]
+sss..................................s.................................. [ 63%]
+........................................................................ [ 65%]
+........................................................................ [ 66%]
+....ssss................................................................ [ 68%]
+....................................................FFFFFFFFF........... [ 69%]
+........................................................................ [ 71%]
+..................................ssssss................................ [ 73%]
+........................................................................ [ 74%]
+........................................................................ [ 76%]
+........................................................................ [ 78%]
+........................................................................ [ 79%]
+........................................................................ [ 81%]
+........................................................................ [ 83%]
+...........................................................FFFFFFFFFFFFF [ 84%]
+FFF..................................................................... [ 86%]
+......ss................................................................ [ 87%]
+........................................................................ [ 89%]
+........................................................................ [ 91%]
+........................................................................ [ 92%]
+...............................................................s........ [ 94%]
+..s..................................................................... [ 96%]
+........................................................................ [ 97%]
+........................................................................ [ 99%]
+...............................                                          [100%]
+=================================== FAILURES ===================================
+_______ test_setup_checks_created_config_and_sessions_without_acl_repair _______
+tests/test_acl_readonly.py:109: in test_setup_checks_created_config_and_sessions_without_acl_repair
+    assert calls==['precheck','final_check'] and 'Setup candidate complete' not in capsys.readouterr().out
+E   AssertionError: assert ([] == ['precheck', 'final_check']
+E     
+E     Right contains 2 more items, first extra item: 'precheck'
+E     Use -v to get more diff)
+_______ test_committed_allowlist_exactly_matches_trusted_test_functions ________
+tests/test_ci_diagnostics.py:91: in test_committed_allowlist_exactly_matches_trusted_test_functions
+    assert m._allowed_tests()==expected
+E   AssertionError: assert frozenset({'t...l_zero', ...}) == {'tests/test_...al_zero', ...}
+E     
+E     Extra items in the left set:
+E     'tests/test_case_fact_bundle.py::test_migration028_actual_receipt_idempotence_future_rejection_no_grants'
+E     Extra items in the right set:
+E     'tests/test_case_cancellation_before_receipt.py::test_later_generation_cannot_become_initial_by_stripping_lineage'
+E     'tests/test_dispatch_notice_pagination.py::test_invalid_expired_tampered_or_wrong_query_cursor_never_echoes'
+E     'tests/test_case_cancellation_reconciliation.py::test_actual_key_concurrency_one_event_each_phase'...
+E     
+E     ...Full output truncated (241 lines hidden), use '-vv' to show
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[explicit_success] _
+tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles
+    assert p.returncode==0,p.stderr
+E   AssertionError: evalmachine.<anonymous>:17
+E       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';
+E       ^
+E     
+E     ReferenceError: preparationView is not defined
+E         at renderDispatch (evalmachine.<anonymous>:17:3)
+E         at evalmachine.<anonymous>:1:65
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)
+E         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)
+E         at @repo/tests/pending_receipt_handoff_offline.js:17:26
+E         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'explicit_success'], r...e._compile (node:internal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n").returncode
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[lost_response_cold_get_only] _
+tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles
+    assert p.returncode==0,p.stderr
+E   AssertionError: evalmachine.<anonymous>:17
+E       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';
+E       ^
+E     
+E     ReferenceError: preparationView is not defined
+E         at renderDispatch (evalmachine.<anonymous>:17:3)
+E         at evalmachine.<anonymous>:1:65
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)
+E         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)
+E         at @repo/tests/pending_receipt_handoff_offline.js:17:26
+E         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'lost_response_cold_ge...e._compile (node:internal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n").returncode
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[storage_failure] _
+tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles
+    assert p.returncode==0,p.stderr
+E   AssertionError: evalmachine.<anonymous>:17
+E       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';
+E       ^
+E     
+E     ReferenceError: preparationView is not defined
+E         at renderDispatch (evalmachine.<anonymous>:17:3)
+E         at evalmachine.<anonymous>:1:65
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)
+E         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)
+E         at @repo/tests/pending_receipt_handoff_offline.js:17:26
+E         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'storage_failure'], re...e._compile (node:internal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n").returncode
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[duplicate_click] _
+tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles
+    assert p.returncode==0,p.stderr
+E   AssertionError: evalmachine.<anonymous>:17
+E       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';
+E       ^
+E     
+E     ReferenceError: preparationView is not defined
+E         at renderDispatch (evalmachine.<anonymous>:17:3)
+E         at evalmachine.<anonymous>:1:65
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)
+E         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)
+E         at @repo/tests/pending_receipt_handoff_offline.js:17:26
+E         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'duplicate_click'], re...e._compile (node:internal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n").returncode
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[identity_aba_delayed_json] _
+tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles
+    assert p.returncode==0,p.stderr
+E   AssertionError: evalmachine.<anonymous>:17
+E       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';
+E       ^
+E     
+E     ReferenceError: preparationView is not defined
+E         at renderDispatch (evalmachine.<anonymous>:17:3)
+E         at evalmachine.<anonymous>:1:65
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)
+E         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)
+E         at @repo/tests/pending_receipt_handoff_offline.js:17:26
+E         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'identity_aba_delayed_...e._compile (node:internal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n").returncode
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[late_403_new_identity] _
+tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles
+    assert p.returncode==0,p.stderr
+E   AssertionError: evalmachine.<anonymous>:17
+E       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';
+E       ^
+E     
+E     ReferenceError: preparationView is not defined
+E         at renderDispatch (evalmachine.<anonymous>:17:3)
+E         at evalmachine.<anonymous>:1:65
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)
+E         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)
+E         at @repo/tests/pending_receipt_handoff_offline.js:17:26
+E         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'late_403_new_identity...e._compile (node:internal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n").returncode
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[wrong_recovery_proof] _
+tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles
+    assert p.returncode==0,p.stderr
+E   AssertionError: evalmachine.<anonymous>:17
+E       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';
+E       ^
+E     
+E     ReferenceError: preparationView is not defined
+E         at renderDispatch (evalmachine.<anonymous>:17:3)
+E         at evalmachine.<anonymous>:1:65
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)
+E         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)
+E         at @repo/tests/pending_receipt_handoff_offline.js:17:26
+E         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'wrong_recovery_proof'...e._compile (node:internal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n").returncode
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[bounded_handles] _
+tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles
+    assert p.returncode==0,p.stderr
+E   AssertionError: evalmachine.<anonymous>:17
+E       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';
+E       ^
+E     
+E     ReferenceError: preparationView is not defined
+E         at renderDispatch (evalmachine.<anonymous>:17:3)
+E         at evalmachine.<anonymous>:1:65
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)
+E         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)
+E         at @repo/tests/pending_receipt_handoff_offline.js:17:26
+E         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'bounded_handles'], re...e._compile (node:internal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n").returncode
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[current_recovery_403_keeps_original_handle] _
+tests/test_pending_receipt_handoff_offline.py:10: in test_pending_manual_handoff_actual_js_under_offline_doubles
+    assert p.returncode==0,p.stderr
+E   AssertionError: evalmachine.<anonymous>:17
+E       if(preparationView?.preparation.id===x.preparation_id){x={...x,case_cancelled:x.case_cancelled||preparationView.case_cancelled,case_reconciling:x.case_reconciling||preparationView.case_reconciling};}const phase=typeof caseReconPhase==='function'?caseReconPhase(x.case_id):null;if(typeof caseReconRemember==='function')caseReconRemember(x.case_id,x.case_cancelled?'CANCELLED':x.case_reconciling?'RECONCILING':null);const blocked=x.case_cancelled||x.case_reconciling||x.case_write_blocked||!!phase;if(blocked){x={...x,case_cancelled:x.case_cancelled||phase==='CANCELLED',case_reconciling:x.case_reconciling||phase==='RECONCILING',case_write_blocked:true,can_accept:false};catalog=catalog?{...catalog,ready:false,can_reassign:false,can_reoffer:false}:catalog;}dispatchView=x;dispatchCatalog=catalog;const current=x.current_offer,reviewer=x.role==='park_specialist',executor=x.role==='service_executor';
+E       ^
+E     
+E     ReferenceError: preparationView is not defined
+E         at renderDispatch (evalmachine.<anonymous>:17:3)
+E         at evalmachine.<anonymous>:1:65
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at evalCode (@repo/tests/pending_receipt_handoff_offline.js:12:57)
+E         at Object.render (@repo/tests/pending_receipt_handoff_offline.js:12:178)
+E         at @repo/tests/pending_receipt_handoff_offline.js:17:26
+E         at Object.<anonymous> (@repo/tests/pending_receipt_handoff_offline.js:48:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['node', '@repo/tests/pending_receipt_handoff_offline.js', 'current_recovery_403_...e._compile (node:internal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n").returncode
+_________ test_pagination_current_owner_exact_projection_and_no_writes _________
+tests/test_run_directory.py:28: in test_pagination_current_owner_exact_projection_and_no_writes
+    before=snapshot(f);seen=[];after=None
+           ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_______ test_read_only_transaction_and_no_action_or_role_scope_expansion _______
+tests/test_run_directory.py:52: in test_read_only_transaction_and_no_action_or_role_scope_expansion
+    before=snapshot(f);r=directory(f,role='enterprise_operator',principal='fixture-b',action='fault.record')
+           ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_ test_non_owner_directory_refused_even_with_original_status_assignment[park_specialist] _
+tests/test_run_directory.py:75: in test_non_owner_directory_refused_even_with_original_status_assignment
+    before=snapshot(f);r=directory(f,user);assert r.status_code==403 and 'items' not in r.json()
+           ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_ test_non_owner_directory_refused_even_with_original_status_assignment[resource_admin] _
+tests/test_run_directory.py:75: in test_non_owner_directory_refused_even_with_original_status_assignment
+    before=snapshot(f);r=directory(f,user);assert r.status_code==403 and 'items' not in r.json()
+           ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_ test_non_owner_directory_refused_even_with_original_status_assignment[service_executor] _
+tests/test_run_directory.py:75: in test_non_owner_directory_refused_even_with_original_status_assignment
+    before=snapshot(f);r=directory(f,user);assert r.status_code==403 and 'items' not in r.json()
+           ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_______ test_current_auth_change_never_uses_previous_directory[identity] _______
+tests/test_run_directory.py:88: in test_current_auth_change_never_uses_previous_directory
+    before=snapshot(f);r=directory(f);assert r.status_code==403 and 'run_id' not in r.text
+           ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_________ test_current_auth_change_never_uses_previous_directory[read] _________
+tests/test_run_directory.py:88: in test_current_auth_change_never_uses_previous_directory
+    before=snapshot(f);r=directory(f);assert r.status_code==403 and 'run_id' not in r.text
+           ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_________ test_current_auth_change_never_uses_previous_directory[role] _________
+tests/test_run_directory.py:88: in test_current_auth_change_never_uses_previous_directory
+    before=snapshot(f);r=directory(f);assert r.status_code==403 and 'run_id' not in r.text
+           ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_________ test_current_auth_change_never_uses_previous_directory[org] __________
+tests/test_run_directory.py:88: in test_current_auth_change_never_uses_previous_directory
+    before=snapshot(f);r=directory(f);assert r.status_code==403 and 'run_id' not in r.text
+           ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_________ test_current_auth_change_never_uses_previous_directory[park] _________
+tests/test_run_directory.py:88: in test_current_auth_change_never_uses_previous_directory
+    before=snapshot(f);r=directory(f);assert r.status_code==403 and 'run_id' not in r.text
+           ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_________ test_bounded_query_rejected_without_business_writes[params0] _________
+tests/test_run_directory.py:94: in test_bounded_query_rejected_without_business_writes
+    before=snapshot(fixture);assert directory(fixture,**params).status_code==422;assert snapshot(fixture)==before
+           ^^^^^^^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_________ test_bounded_query_rejected_without_business_writes[params1] _________
+tests/test_run_directory.py:94: in test_bounded_query_rejected_without_business_writes
+    before=snapshot(fixture);assert directory(fixture,**params).status_code==422;assert snapshot(fixture)==before
+           ^^^^^^^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_________ test_bounded_query_rejected_without_business_writes[params2] _________
+tests/test_run_directory.py:94: in test_bounded_query_rejected_without_business_writes
+    before=snapshot(fixture);assert directory(fixture,**params).status_code==422;assert snapshot(fixture)==before
+           ^^^^^^^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_________ test_bounded_query_rejected_without_business_writes[params3] _________
+tests/test_run_directory.py:94: in test_bounded_query_rejected_without_business_writes
+    before=snapshot(fixture);assert directory(fixture,**params).status_code==422;assert snapshot(fixture)==before
+           ^^^^^^^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_________ test_bounded_query_rejected_without_business_writes[params4] _________
+tests/test_run_directory.py:94: in test_bounded_query_rejected_without_business_writes
+    before=snapshot(fixture);assert directory(fixture,**params).status_code==422;assert snapshot(fixture)==before
+           ^^^^^^^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+_________ test_cold_store_concurrent_get_and_missing_or_wrong_session __________
+tests/test_run_directory.py:98: in test_cold_store_concurrent_get_and_missing_or_wrong_session
+    f=fixture;run=create(f);before=snapshot(f)
+                                   ^^^^^^^^^^^
+tests/test_run_directory.py:21: in snapshot
+    from normal_recovery_process import snapshot as capture
+tests/normal_recovery_process.py:17: in <module>
+    import playwright
+E   ModuleNotFoundError: No module named 'playwright'
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_acl_readonly.py::test_setup_checks_created_config_and_sessions_without_acl_repair
+FAILED tests/test_ci_diagnostics.py::test_committed_allowlist_exactly_matches_trusted_test_functions
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[explicit_success]
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[lost_response_cold_get_only]
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[storage_failure]
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[duplicate_click]
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[identity_aba_delayed_json]
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[late_403_new_identity]
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[wrong_recovery_proof]
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[bounded_handles]
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[current_recovery_403_keeps_original_handle]
+FAILED tests/test_run_directory.py::test_pagination_current_owner_exact_projection_and_no_writes
+FAILED tests/test_run_directory.py::test_read_only_transaction_and_no_action_or_role_scope_expansion
+FAILED tests/test_run_directory.py::test_non_owner_directory_refused_even_with_original_status_assignment[park_specialist]
+FAILED tests/test_run_directory.py::test_non_owner_directory_refused_even_with_original_status_assignment[resource_admin]
+FAILED tests/test_run_directory.py::test_non_owner_directory_refused_even_with_original_status_assignment[service_executor]
+FAILED tests/test_run_directory.py::test_current_auth_change_never_uses_previous_directory[identity]
+FAILED tests/test_run_directory.py::test_current_auth_change_never_uses_previous_directory[read]
+FAILED tests/test_run_directory.py::test_current_auth_change_never_uses_previous_directory[role]
+FAILED tests/test_run_directory.py::test_current_auth_change_never_uses_previous_directory[org]
+FAILED tests/test_run_directory.py::test_current_auth_change_never_uses_previous_directory[park]
+FAILED tests/test_run_directory.py::test_bounded_query_rejected_without_business_writes[params0]
+FAILED tests/test_run_directory.py::test_bounded_query_rejected_without_business_writes[params1]
+FAILED tests/test_run_directory.py::test_bounded_query_rejected_without_business_writes[params2]
+FAILED tests/test_run_directory.py::test_bounded_query_rejected_without_business_writes[params3]
+FAILED tests/test_run_directory.py::test_bounded_query_rejected_without_business_writes[params4]
+FAILED tests/test_run_directory.py::test_cold_store_concurrent_get_and_missing_or_wrong_session
+27 failed, 4357 passed, 40 skipped, 2 warnings in 3091.96s (0:51:31)

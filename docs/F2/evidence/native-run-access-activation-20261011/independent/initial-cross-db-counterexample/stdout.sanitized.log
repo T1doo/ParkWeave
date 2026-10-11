@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_foreign_business_database_cannot_activate_origin_permit _________
+
+activation_fixture = ((<parkweave.store.Store object at 0x7f81634fbf20>, <parkweave.store.Store object at 0x7f8163c60e00>, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+other_owned_fixture = (<parkweave.store.Store object at 0x7f816314b980>, <parkweave.store.Store object at 0x7f81634fbcb0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]"}, <starlette.testclient.TestClient object at 0x7f8161f30770>)
+
+    def test_foreign_business_database_cannot_activate_origin_permit(activation_fixture,other_owned_fixture):
+        a=activation_fixture;f,parent,bridge,_=a
+        other=other_owned_fixture
+        wrong=Store(other[0].dsn)
+        wrong._native_run_access=native.NativeRunAccess(wrong,test_permit=bridge.test_permit,activation_permit=bridge.activation_permit)
+        before=business(a)
+        with TestClient(create_app(wrong)) as client:
+            r=client.post(path(a)+'/activate',headers=headers(f[2],key='foreign-business-db'),json=activation_body(a))
+>       assert r.status_code==403, ('foreign Store used origin writer',r.status_code)
+E       AssertionError: ('foreign Store used origin writer', 200)
+E       assert 200 == 403
+E        +  where 200 = <Response [200 OK]>.status_code
+
+.runtime/native-run-access-activation-review/test_independent_activation_probes.py:40: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/native-run-access-activation-review/test_independent_activation_probes.py::test_foreign_business_database_cannot_activate_origin_permit
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/native-run-access-activation-review/test_independent_activation_probes.py::test_foreign_business_database_cannot_activate_origin_permit
+1 failed, 2 warnings in 5.17s

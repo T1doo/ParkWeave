@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.161" timestamp="2026-10-11T19:45:53.722759+00:00" hostname="synthetic-fixture-host"><testcase classname=".runtime.native-run-access-activation-review.test_independent_activation_probes" name="test_foreign_business_database_cannot_activate_origin_permit" time="4.073"><failure message="AssertionError: ('foreign Store used origin writer', 200)&#10;assert 200 == 403&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">activation_fixture = ((&lt;parkweave.store.Store object at 0x7f81634fbf20&gt;, &lt;parkweave.store.Store object at 0x7f8163c60e00&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+other_owned_fixture = (&lt;parkweave.store.Store object at 0x7f816314b980&gt;, &lt;parkweave.store.Store object at 0x7f81634fbcb0&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]"}, &lt;starlette.testclient.TestClient object at 0x7f8161f30770&gt;)
+
+    def test_foreign_business_database_cannot_activate_origin_permit(activation_fixture,other_owned_fixture):
+        a=activation_fixture;f,parent,bridge,_=a
+        other=other_owned_fixture
+        wrong=Store(other[0].dsn)
+        wrong._native_run_access=native.NativeRunAccess(wrong,test_permit=bridge.test_permit,activation_permit=bridge.activation_permit)
+        before=business(a)
+        with TestClient(create_app(wrong)) as client:
+            r=client.post(path(a)+'/activate',headers=headers(f[2],key='foreign-business-db'),json=activation_body(a))
+&gt;       assert r.status_code==403, ('foreign Store used origin writer',r.status_code)
+E       AssertionError: ('foreign Store used origin writer', 200)
+E       assert 200 == 403
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+.runtime/native-run-access-activation-review/test_independent_activation_probes.py:40: AssertionError</failure></testcase></testsuite></testsuites>

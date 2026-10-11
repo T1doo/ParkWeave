@@ -1,0 +1,22 @@
+........................................................................ [ 83%]
+F.............                                                           [100%]
+=================================== FAILURES ===================================
+___________ test_native_marker_is_never_legacy_even_with_cold_store ____________
+tests/test_native_run_access.py:281: in test_native_marker_is_never_legacy_even_with_cold_store
+    assert cold.assignment_allowed(c,p,parent['run_id'],assignment=assignment)
+E   AssertionError: assert False
+E    +  where False = assignment_allowed(<parkweave.store._AccessConnection [INTRANS] (user=parkweave_app database=fixture_c3d3dff395214ab6a7c04a1aa264b334) at 0x7f900bbd8b90>, {'id': 'executor-a', 'token_hash': "[REDACTED opaque fixture value]", 'park_id': 'park-a', 'org_id': 'org-a', ...}, '3cb21d49-85ea-406b-91f6-9ad5ebdc3ea9', assignment={'principal_id': 'executor-a', 'run_id': UUID('3cb21d49-85ea-406b-91f6-9ad5ebdc3ea9'), 'park_id': 'park-a', 'org_id': 'org-a', ...})
+E    +    where assignment_allowed = <parkweave.store.Store object at 0x7f900b22d9d0>.assignment_allowed
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_native_run_access_activation.py::test_default_closed_forged_permit_and_cold_store_do_not_activate
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_native_run_access.py::test_native_marker_is_never_legacy_even_with_cold_store
+1 failed, 85 passed, 2 warnings in 71.38s (0:01:11)

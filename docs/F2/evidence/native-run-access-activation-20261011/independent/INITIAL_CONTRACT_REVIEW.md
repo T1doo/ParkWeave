@@ -1,0 +1,30 @@
+# Restricted native activation: independent static review
+
+Baseline delivery `f37c93a50600e9afe32c18b31351ee09bddb52a8`. **STATIC_CONTRACT_REVIEW**; implementation/PG/API tests NOT RUN at this stage. Browser attempts: 0. The reviewer writes only this new runtime directory and has not changed source, tests, docs, Git or earlier signed evidence.
+
+The proposed owned-fixture scope can remain separate from production authority, provided it closes the requirements below. These are implementation requirements and planned counterexamples, not reproduced new defects.
+
+| Requirement | Severity | Rule |
+|---|---|---|
+| A01 | HIGH | Activation capability is an issued exact object against a verified fresh owned fixture and exact existing Run/Case/lease/approver/beneficiary. Copied/reconstructed/wrong-DB permits, untrusted attachment, alternate owner connection and production configuration deny. No four/eight-hour default. |
+| A02 | HIGH | ACTIVATE authenticates the real API owner and current READ/PREPARE/EXECUTE plus all participants within the same verified owner transaction that writes activation event and assignment. App authentication in another transaction cannot be the authority. Owner connection is never made a general Store/user-controlled write connection. |
+| A03 | HIGH | Never overwrite even inactive legacy or isolated assignments. Native replacement is exact current lease/activation binding CAS and retains old activation history. SQL NULL differs from JSON null; unknown/mixed markers deny. |
+| A04 | HIGH | Prevent provenance downgrade: native marker clearing/removal/delete-and-legacy-reinsert must not let cold Store accept old native scope as legacy. Require durable activation provenance lookup and/or immutable assignment guard plus immutable activation history. |
+| A05 | HIGH | Trusted guarded connection at every actual use, autocommit/plain/non-guarded/shadow denial, first parent-before-Run protection and commit-time current grant/source/UTC/protocol check. Commit recheck cannot introduce first parent locks after dispatch/Case/receipt locks. |
+| A06 | HIGH | Versions must detect revoke/regrant or principal/grant reconstruction, including tables without explicit revision. Bind reliable row generation/identity and approver READ generation; restoring active fields must not resurrect the old approval/lease. |
+| A07 | HIGH | Activation append/event/assignment is atomic with exact event ID/request key/strict DTO fingerprint, approved decision receipt hash/revision, lease ID, target, tenant, source and UTC interval. Failure at either event/assignment/final recheck rolls back all. |
+| A08 | HIGH | Approval decision receipts remain immutable NON_EFFECTIVE. Current access comes from separate trusted activation plus exact durable binding, current protocol APPROVED and original lease; REVOKE/expired/new request or lease replacement denies old native binding without automatic mutation/rebind. |
+| A09 | MEDIUM | Exclude Case state from stable READ source equality: legal lifecycle progression, cancellation/reconciliation and local closure preserve otherwise currently authorized historical READ. New ACTIVATE rejects business-frozen/locally closed Case. Existing business write guards remain independent and mandatory. |
+| A10 | MEDIUM | Activation changes registered existing_access dependency source. Keep explicit local_revision/CAS ADOPT; never repair implicitly on GET/provider. Activation source must not circularly bind the assignment collection changed by its own activation. |
+| A11 | MEDIUM | Original-key ACTIVATE GET returns immutable historical receipt and separate current effective state; lost response only GET original key. Expiry/revoke/cold unauthorized state never reinstalls assignment or shows historical activation as currently effective. |
+| A12 | MEDIUM | Permit UTC interval is explicit and no wider than approved lease and issuer fixture lifetime. Check database clock after waits and immediately before completion, including actual business commit; future start is not yet effective and expired permit cannot reactivate an old lease. |
+| A13 | MEDIUM | Cold Store has no trusted effective access. Explicit same-scope trusted rebind must prove the same fixture/database/permit/lease/activation immutable bytes and cannot adopt arbitrary existing JSON as a provider. |
+| A14 | MEDIUM | Native READ is also a prerequisite for existing independently assigned synthetic dispatch/ACCEPT/manual receipt operations; it is not only a status page. No CONTROL/EXECUTE/FILE_READ, isolated adapter execution, external delivery or new Grant follows from the assignment. |
+
+The central real consumers are Store scoped_run/assigned_executors/read and delivery reads, dispatch executor parent and catalogs/lists, receipt base/executor/list and owner ACK, notice consumer/OPEN/MARK_READ, and registered dependency collections. Isolated local execution and private preview shadow connections must remain a separate denied boundary. Exact paths and lock ordering are in INITIAL_CONTRACT_REVIEW.json.
+
+The parent has accepted the Case-state clarification: legal Case progress and cancellation/local closure do not independently erase existing effective READ history, while new ACTIVATE and all business writes keep their existing frozen/closed guards. This avoids NEEDS_INPUT → WAITING_CONFIRMATION self-invalidation. Material/review and subject permission-generation changes invalidate the lease without implicit repair.
+
+The next independent stage needs a frozen implementation and actual owned PG/API/commit-time tests. In particular, current source equality must not circularly include the assignment collection changed by activation; existing plans must receive explicit local_revision/CAS adoption. Activation receipts stay historical; current effectiveness is a separate guarded result.
+
+Production installation, real authority/Grant/assignment changes, new SQL privileges, adopted four/eight-hour policy, browser/models/deployment remain outside this task and NOT RUN.
