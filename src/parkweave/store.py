@@ -92,7 +92,9 @@ class Store:
             if c.autocommit or a.get('managed_access') is not None:
                 return False
             bridge=getattr(self,'_native_run_access',None)
-            if bridge is None or not bridge.assignment_allowed(c,p,run_id,a):
+            from .native_run_access import NativeRunAccess
+            if (type(bridge) is not NativeRunAccess or bridge.store is not self or
+                    not NativeRunAccess.assignment_allowed(bridge,c,p,run_id,a)):
                 return False
             if track:
                 if not isinstance(c,_AccessConnection):

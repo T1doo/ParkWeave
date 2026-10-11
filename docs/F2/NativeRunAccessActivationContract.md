@@ -12,6 +12,10 @@ approver, existing executor, owner, Run/Case/tenant/material and permission
 versions, and the explicitly supplied approved UTC interval. It cannot expand
 that interval or authorize another Run. Missing, forged, expired, stale or
 cross-database enablement denies. The fixture issuer is not a production factory.
+The provider must be the exact native implementation bound to the same Store;
+an unknown provider or overridden instance access predicate cannot grant scope.
+Activation checks the business Store's actual PostgreSQL endpoint and database
+identity before using the independently verified, narrowly issued owner writer.
 
 ACTIVATE requires current owner READ/PREPARE/EXECUTE, explicit confirmation,
 reason, original request key and exact current versions/permit hash. Under
@@ -57,3 +61,7 @@ cross scope, exact-key concurrency, append/write rollback, cold recovery and all
 shared consumers. No browser is started. Production installation, real permission
 or assignment changes, production policy adoption/deployment and formal complete
 AT35 acceptance remain NOT RUN.
+The workbench displays current effective fixture READ separately from immutable
+non-effective approval history and clears the effective display at lease expiry.
+Activation itself is available only through the explicit restricted API in this
+slice; no production activation control is exposed.

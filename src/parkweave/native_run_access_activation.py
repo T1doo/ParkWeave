@@ -133,7 +133,7 @@ def issue_activation_test_permit(owner,proof,decision_permit,*,run_id,lease_id,
 
 def _permit(bridge,c,run_id):
     value=bridge.activation_permit
-    if (type(value) is not ActivationTestPermit or
+    if (type(bridge) is not NativeRunAccess or type(value) is not ActivationTestPermit or
             _issued_activation_permits.get(id(value)) is not value or
             bridge.test_permit is not value.decision_permit or bridge.store.mode!='LOCAL' or
             getattr(bridge.store,'_isolated_run_access',None) is not None):
@@ -261,6 +261,12 @@ def activate(bridge,token,run_id,key,data):
     permit=bridge.activation_permit
     if type(permit) is not ActivationTestPermit or _issued_activation_permits.get(id(permit)) is not permit:
         raise Denied('trusted production activation authority unavailable')
+    # The restricted owner channel cannot lend its writer to a foreign business
+    # Store. Verify the Store's actual endpoint/database before opening that
+    # channel; the owner transaction separately verifies the same issued proof.
+    with bridge.store._guarded_connect() as business:
+        business.execute('SET TRANSACTION READ ONLY')
+        _permit(bridge,business,run_id)
     fp=_hash(dict(run_id=str(run_id),command=data.model_dump(mode='json')))
     # This existing owned fixture connection is a narrowly issued test writer.
     # Authentication and all current checks occur in this SAME transaction.

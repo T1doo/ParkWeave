@@ -150,7 +150,11 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
             raise Denied('ambiguous ordinary and isolated access providers')
         if bridge is None:
             from .native_run_access import NativeRunAccess
-            bridge = getattr(store, '_native_run_access', None) or NativeRunAccess(store)
+            bridge = getattr(store, '_native_run_access', None)
+            if bridge is None:
+                bridge = NativeRunAccess(store)
+            elif type(bridge) is not NativeRunAccess or bridge.store is not store:
+                raise Denied('trusted native access provider required')
         return bridge
 
     from . import material_preparation_drafts as material_drafts
@@ -180,11 +184,9 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
                            authorization: str | None = Header(default=None)):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', request_key):
             raise HTTPException(422, 'invalid original request key')
-        from .native_run_access import NativeRunAccess
         if getattr(store, '_isolated_run_access', None) is not None:
             raise Denied('native original-key recovery unavailable for isolated decisions')
-        bridge = getattr(store, '_native_run_access', None) or NativeRunAccess(store)
-        return bridge.recover(token(authorization), run_id, request_key)
+        return access_bridge().recover(token(authorization), run_id, request_key)
 
     @app.post('/api/runs/{run_id}/access/commands')
     def run_access_command(run_id: UUID, data: RunCommand,

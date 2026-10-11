@@ -5,6 +5,7 @@ from datetime import datetime,timedelta,timezone
 import hashlib,json,os
 from pathlib import Path
 from time import monotonic,sleep
+from types import SimpleNamespace
 from uuid import UUID,uuid4
 
 from fastapi.testclient import TestClient
@@ -15,6 +16,7 @@ from parkweave import native_run_access as native, native_run_access_activation 
 from parkweave import dispatch_notices as notices, registered_dependencies as dependencies
 from parkweave.api import create_app
 from parkweave.store import Store,Denied,Conflict
+from conftest import fixture as owned_fixture
 from test_native_run_access import native_fixture,body,act,snapshot,APPROVER
 from test_preparation import headers,preparation_fixture,command as material,filled
 from test_executor_receipts import receipt_fixture,create as legacy_receipt,act as receipt_command
@@ -65,6 +67,22 @@ def activation_fixture(native_fixture,request):
         target.write_text(json.dumps(dict(test_id=request.node.nodeid,scope='OWNED_SYNTHETIC_NATIVE_ACTIVATION_PG_ASGI',
             owned_postgres=owned,application=app,run=run,assignments=assignments,
             production_policy_adopted=False,browser_attempts=0,formal_AT35=False),indent=2,default=str)+'\n')
+
+
+@pytest.fixture
+def other_owned_fixture(pg,request):
+    yield from owned_fixture.__wrapped__(pg,request)
+
+
+def test_foreign_business_store_cannot_borrow_issued_owner_writer(activation_fixture,other_owned_fixture):
+    a=activation_fixture;f,_,bridge,_=a;before=business(a)
+    wrong=Store(other_owned_fixture[0].dsn)
+    wrong._native_run_access=native.NativeRunAccess(wrong,test_permit=bridge.test_permit,
+                                                   activation_permit=bridge.activation_permit)
+    with TestClient(create_app(wrong)) as client:
+        result=client.post(path(a)+'/activate',headers=headers(f[2],key='foreign-store'),json=activation_body(a))
+    assert result.status_code==403
+    assert business(a)==before
 
 
 def activation_body(a,**changes):
@@ -380,6 +398,10 @@ def test_mixed_provider_and_inserted_activation_history_are_rejected(activation_
     f[0]._isolated_run_access=object()
     assert f[3].get('/api/runs/'+parent['run_id'],headers=headers(f[2],'executor-a')).status_code==403
     del f[0]._isolated_run_access
+    f[0]._native_run_access=SimpleNamespace(assignment_allowed=lambda *args:True)
+    assert f[3].get('/api/runs/'+parent['run_id'],headers=headers(f[2],'executor-a')).status_code==403
+    assert f[3].get(path(a),headers=headers(f[2])).status_code==403
+    f[0]._native_run_access=bridge
 
 
 @pytest.mark.parametrize('first',['accept','revoke'])

@@ -28,7 +28,14 @@ sandbox.status=status;sandbox.view=view;
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 async function read(){const p=run('loadRunAccess()');calls.at(-1).ok(status);await tick();calls.at(-1).ok(view);await p;}
 (async()=>{
- if(mode==='disabled_pending'){
+ if(mode==='effective_fixture'){
+  view.actual_run_access=true;view.projection_state='ACTIVE_SYNTHETIC_FIXTURE';
+  view.request={requester_id:'owner',target_id:'existing-executor',requested_validity:{},approved_validity:{valid_until:new Date(Date.now()+60000).toISOString()}};
+  await read();check($('run-access-summary').textContent.includes('READ范围生效'));
+  check($('run-access-error').textContent.includes('生产操作入口关闭'));
+  run('renderNativeRunAccess(status,{...view,actual_run_access:false,projection_state:"NON_EFFECTIVE"},runAccessContext)');
+  check($('run-access-summary').textContent.includes('未生效'));check(calls.every(c=>c.method==='GET'));
+ }else if(mode==='disabled_pending'){
   status.enabled=false;status.authority_valid_until=null;view.enabled=false;view.can_request=false;
   await read();check(!$('run-access-panel').hidden);check($('run-access-request').hidden);
   check($('run-access-summary').textContent.includes('未生效'));check(calls.every(c=>c.method==='GET'));

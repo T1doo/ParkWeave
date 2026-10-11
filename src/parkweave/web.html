@@ -1062,8 +1062,9 @@ function renderNativeRunAccess(status,view,c){
  runAccessStatusView=status;runAccessView=view;runAccessContext={...c,revision:view.revision,runRevision:view.run_revision,authoritySha:view.authority_sha256};
  $('run-access-open').hidden=false;$('run-access-panel').hidden=false;
  const flags={...status,...view},scope=view.scope||{},live=status.enabled===true&&view.enabled===true&&runAccessAuthorityLive(status);
- $('run-access-summary').textContent=(runAccessLabels[view.state]||'待核对')+' · 申请版本 '+view.revision+' / Run版本 '+view.run_revision+' · 普通PG决定协议 · 实际赋权待批准、未生效';
- $('run-access-scope').replaceChildren(textElement('p','精确范围：Park '+(scope.park_id||'—')+' / 企业 '+(scope.org_id||'—')+' / Run '+(scope.run_id||c.runId)),textElement('p','批准记录与拟议期限不授予Run访问、接单或执行权。生产操作入口关闭；审批主体和期限策略仍待采用。撤销保留历史。'));
+ const leaseDeadline=Date.parse(view.request?.approved_validity?.valid_until),active=view.actual_run_access===true&&view.projection_state==='ACTIVE_SYNTHETIC_FIXTURE'&&Number.isFinite(leaseDeadline)&&leaseDeadline>Date.now();
+ $('run-access-summary').textContent=(runAccessLabels[view.state]||'待核对')+' · 申请版本 '+view.revision+' / Run版本 '+view.run_revision+' · 普通PG决定协议 · '+(active?'已有受限合成fixture READ范围生效':'实际赋权待批准、未生效');
+ $('run-access-scope').replaceChildren(textElement('p','精确范围：Park '+(scope.park_id||'—')+' / 企业 '+(scope.org_id||'—')+' / Run '+(scope.run_id||c.runId)),textElement('p',active?'已核实独立激活的受限合成fixture READ范围；各业务操作仍核对当前权限。批准历史本身不赋权，生产操作入口关闭，撤销保留历史。':'批准记录与拟议期限不授予Run访问、接单或执行权。生产操作入口关闭；审批主体和期限策略仍待采用。撤销保留历史。'));
  const request=view.request;if(request)$('run-access-scope').append(textElement('p','申请人 '+request.requester_id+' · 目标 '+request.target_id+' · READ · '+request.requested_validity.valid_from+' 至 '+request.requested_validity.valid_until));
  const target=$('run-access-target'),old=target.value;target.replaceChildren(new Option('明确选择已有READ执行者',''));for(const person of view.executors||[])target.append(new Option(person.id,person.id));if([...target.options].some(o=>o.value===old))target.value=old;
  $('run-access-request').hidden=!(live&&flags.can_request===true&&target.options.length>1);
@@ -1072,7 +1073,8 @@ function renderNativeRunAccess(status,view,c){
  $('run-access-history').replaceChildren();for(const event of view.history||[])$('run-access-history').append(textElement('article','版本 '+event.revision+' · '+event.action+' · '+event.actor_id+' · '+event.recorded_at+' · '+event.reason+' · 未赋权'));
  $('run-access-id').disabled=!!runAccessPending;$('run-access-retry').textContent='仅GET核对原请求结果';$('run-access-retry').hidden=!runAccessPending;$('run-access-retry').disabled=false;
  for(const el of [...$('run-access-request').elements,...$('run-access-decision').elements,$('run-access-read')])el.disabled=!!runAccessPending;
- $('run-access-error').textContent=runAccessPending?'操作结果未知；仅以原请求编号读取结果，不自动重发。':live?'此会话仅验证未生效决定协议。':'当前可读取申请历史；生产申请和批准入口待启用。';
+ $('run-access-error').textContent=runAccessPending?'操作结果未知；仅以原请求编号读取结果，不自动重发。':active?'当前仅有受限合成fixture访问范围；生产操作入口关闭。':live?'此会话仅验证未生效决定协议。':'当前可读取申请历史；生产申请和批准入口待启用。';
+ if(active)runAccessExpiryTimer=setTimeout(()=>{if(!runAccessCurrent(c))return;renderNativeRunAccess(status,{...view,actual_run_access:false,projection_state:'NON_EFFECTIVE'},c);$('run-access-error').textContent='访问期限已到；请重新读取当前范围。';},Math.max(0,Math.min(2147483647,leaseDeadline-Date.now())));
  const deadline=runAccessAuthorityDeadline(status);if(live&&deadline!==null)runAccessAuthorityTimer=setTimeout(()=>{if(!runAccessCurrent(c))return;renderNativeRunAccess({...status,enabled:false},{...view,enabled:false},c);},Math.max(0,Math.min(2147483647,deadline-Date.now())));
 }
 async function recoverNativeRunAccess(p){
