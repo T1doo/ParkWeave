@@ -30,6 +30,30 @@ class Hold(Preview):
     ttl_seconds: int=Field(default=120,ge=5,le=300)
     purpose: str=Field(min_length=1,max_length=200)
 
+class AlternativeTimes(Preview):
+    """Fixed duration/quantity; a 15-minute grid anchored at search_from."""
+    search_from: AwareDatetime=Field(strict=False)
+    search_until: AwareDatetime=Field(strict=False)
+
+    @field_validator('starts_at','ends_at')
+    @classmethod
+    def utc(cls,value):
+        try:return value.astimezone(timezone.utc)
+        except OverflowError as e:raise ValueError('UTC time outside supported date range') from e
+
+    @field_validator('search_from','search_until')
+    @classmethod
+    def search_utc(cls,value):return cls.utc(value)
+
+    @model_validator(mode='after')
+    def search_window(self):
+        span=self.search_until-self.search_from
+        if not timedelta(0)<span<=timedelta(hours=24):
+            raise ValueError('positive search window of at most 24 hours required')
+        if self.ends_at-self.starts_at>span:
+            raise ValueError('search window must fit the original duration')
+        return self
+
 class Confirm(BaseModel):
     model_config=ConfigDict(extra="forbid",strict=True)
     expected_revision: int=Field(ge=1)
@@ -71,9 +95,13 @@ def _key(c,p,key):
 def _now(c):return c.execute('SELECT clock_timestamp() AS now').fetchone()['now']
 
 
-def _window(r,data,now):
+def _active_resource(r):
     if not r['enabled']:raise Conflict('synthetic resource disabled')
     if r['namespace']!='SYNTHETIC' or r['authority']!='LOCAL_AUTHORITY':raise Conflict('unsupported authority')
+
+
+def _window(r,data,now):
+    _active_resource(r)
     lo=data.starts_at-timedelta(seconds=r['buffer_seconds']);hi=data.ends_at+timedelta(seconds=r['buffer_seconds'])
     if data.starts_at<now or lo<r['open_from'] or hi>r['open_until']:
         raise Conflict('window outside current synthetic opening interval')
@@ -129,6 +157,41 @@ def preview(store,token,id,data):
             starts_at=data.starts_at,ends_at=data.ends_at,quantity=data.quantity,capacity=r['capacity'],
             buffer_seconds=r['buffer_seconds'],occupied_peak=peak,available_quantity=max(0,r['capacity']-peak),
             available=peak+data.quantity<=r['capacity'],preview_only=True)
+
+
+def alternative_times(store,token,id,data):
+    """Read-only suggestions under the existing resource lock and current scope.
+
+    Enumerate all starts that fit the explicit window on its anchored grid.
+    No hold, request key, receipt, actor detail or reservation is produced.
+    """
+    with store.connect() as c:
+        p=_auth(store,c,token);_scope(c,p,id);_lock(c,id,shared=True);r=_scope(c,p,id);now=_now(c)
+        _active_resource(r)
+        duration=data.ends_at-data.starts_at
+        step=timedelta(minutes=15);scan_limit=100;result_limit=10
+        grid_count=(data.search_until-duration-data.search_from)//step+1
+        scanned=min(grid_count,scan_limit);available_count=0;items=[]
+        for index in range(scanned):
+            start=data.search_from+index*step
+            candidate=Preview(starts_at=start,ends_at=start+duration,quantity=data.quantity)
+            # Opening and past-time checks use the same buffered rule as HOLD.
+            # Disabled/unsupported resources have already failed above.
+            try:lo,hi=_window(r,candidate,now)
+            except (Conflict,OverflowError):
+                # An unrepresentable buffered interval cannot be suggested.
+                continue
+            if _peak(c,id,lo,hi,now)+data.quantity<=r['capacity']:
+                available_count+=1
+                if len(items)<result_limit:items.append(candidate.model_dump())
+        return _boundary(resource_id=id,resource_revision=r['revision'],server_time=now,
+            starts_at=data.starts_at,ends_at=data.ends_at,quantity=data.quantity,
+            search_from=data.search_from,search_until=data.search_until,
+            grid_anchor=data.search_from,grid_minutes=15,scan_limit=scan_limit,result_limit=result_limit,
+            scanned_candidates=scanned,grid_exhausted=grid_count<=scan_limit,
+            available_candidates=available_count,results_truncated=available_count>result_limit,
+            capacity=r['capacity'],buffer_seconds=r['buffer_seconds'],items=items,
+            ordering='START_ASC',coverage='SEARCH_WINDOW_GRID_ONLY',preview_only=True)
 
 
 def _fingerprint(action,id,data):

@@ -331,6 +331,10 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
     def resource_preview(resource_id: UUID,data: resources.Preview,authorization: str | None=Header(default=None)):
         return resources.preview(store,token(authorization),resource_id,data)
 
+    @app.post('/api/synthetic-resources/{resource_id}/alternative-times')
+    def resource_alternative_times(resource_id: UUID,data: resources.AlternativeTimes,authorization: str | None=Header(default=None)):
+        return resources.alternative_times(store,token(authorization),resource_id,data)
+
     @app.post('/api/synthetic-resources/{resource_id}/holds',status_code=201)
     def resource_hold(resource_id: UUID,data: resources.Hold,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return resources.create(store,token(authorization),resource_id,resource_key(idempotency_key),data)
