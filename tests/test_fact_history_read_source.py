@@ -71,6 +71,7 @@ def assert_public_projection_only(result, expected_digest):
     """
     expected = public_projection(expected_digest)
     assert type(result) is dict
+    assert all(type(key) is str for key in result), 'non-string output key'
     assert result.keys() == expected.keys(), 'unexpected or missing output field'
     for key, value in expected.items():
         actual = result[key]
@@ -146,6 +147,25 @@ def test_leakage_oracle_rejects_hash_shaped_private_content():
     result = public_projection('a'*64)
     result['source_sha256'] = 'b'*64
     with pytest.raises(AssertionError):
+        assert_public_projection_only(result, 'a'*64)
+
+
+def test_leakage_oracle_rejects_private_key_alias_with_custom_equality():
+    import json
+
+    class PrivateKey(str):
+        def __hash__(self):
+            return hash('qualification')
+
+        def __eq__(self, other):
+            return other == 'qualification'
+
+    private_excerpt = sample()[3][0]['source_excerpt']
+    result = public_projection('a'*64)
+    del result['qualification']
+    result[PrivateKey(private_excerpt)] = 'NOT_EVALUATED'
+    assert private_excerpt in json.dumps(result)
+    with pytest.raises(AssertionError, match='non-string output key'):
         assert_public_projection_only(result, 'a'*64)
 
 
