@@ -1,0 +1,130 @@
+{
+  "source_commit": "55d1366373e949ffe3f621be98c8a5d13435750f",
+  "base_delivery_commit": "008ecdaf767eec4e5d1dc9e82074b2781c3502d8",
+  "branch": "acceptance/history-registration-contract-20261011",
+  "scope": "default-disabled pure synthetic declaration consistency only; MATCH never grants access or authenticates trust",
+  "source_files": {
+    "src/parkweave/history_registration_contract.py": "3a78415fb58a0b2dd12df441ba96f02cb3192c9cf1e6b77d030d3bf33ba20d95",
+    "tests/test_history_registration_contract.py": "3df66c93352341a9f6081f869415d250a8a8ff22c356507dbd29212a89505aeb",
+    "docs/F2/HistoryRegistrationPureContract.md": "e6c2ed6bd2f813e84c67e48d05facceb89fe72a59bc1aff940d481ebe7089064"
+  },
+  "runs": [
+    {
+      "artifact": "initial",
+      "counts": {
+        "tests": 127,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 127
+      },
+      "classes": {
+        "tests.test_history_registration_contract": {
+          "tests": 127,
+          "failures": 0
+        }
+      },
+      "revision_scope": "pre-freeze preliminary test suite (127 cases), not attestation of final 150-case test file"
+    },
+    {
+      "artifact": "final",
+      "counts": {
+        "tests": 251,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 250
+      },
+      "classes": {
+        "tests.test_history_registration_contract": {
+          "tests": 150,
+          "failures": 0
+        },
+        "tests.test_history_summary": {
+          "tests": 46,
+          "failures": 0
+        },
+        "tests.test_fact_history_read_source": {
+          "tests": 55,
+          "failures": 1
+        }
+      },
+      "revision_scope": "final frozen source content, checked byte-for-byte against source commit"
+    },
+    {
+      "artifact": "verified",
+      "counts": {
+        "tests": 251,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 250
+      },
+      "classes": {
+        "tests.test_history_registration_contract": {
+          "tests": 150,
+          "failures": 0
+        },
+        "tests.test_history_summary": {
+          "tests": 46,
+          "failures": 0
+        },
+        "tests.test_fact_history_read_source": {
+          "tests": 55,
+          "failures": 1
+        }
+      },
+      "revision_scope": "final frozen source content, checked byte-for-byte against source commit"
+    },
+    {
+      "artifact": "scoped",
+      "counts": {
+        "tests": 196,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 196
+      },
+      "classes": {
+        "tests.test_history_registration_contract": {
+          "tests": 150,
+          "failures": 0
+        },
+        "tests.test_history_summary": {
+          "tests": 46,
+          "failures": 0
+        }
+      },
+      "revision_scope": "final frozen source content, checked byte-for-byte against source commit"
+    }
+  ],
+  "commands": {
+    "initial": "python -m pytest tests/test_history_registration_contract.py -q",
+    "final_and_verified": "python -m pytest tests/test_history_registration_contract.py tests/test_history_summary.py tests/test_fact_history_read_source.py -q",
+    "scoped": "python -m pytest tests/test_history_registration_contract.py tests/test_history_summary.py -q"
+  },
+  "runtime_python": "/tmp/parkweave-summary-venv/bin/python",
+  "failures_retained": "Both expanded runs fail the unchanged preexisting test_exact_projection_no_values_or_proof_and_no_input_mutation: random source_sha256 contains numeric secret substring 17. No fix or retry-until-pass performed.",
+  "warning": "Existing fastapi/Starlette TestClient httpx deprecation, one warning per run. No dependency changes.",
+  "not_executed": [
+    "PostgreSQL fixtures/start/restart",
+    "business workloads",
+    "persistent registry or history copy",
+    "loader wiring",
+    "production API enablement",
+    "browser",
+    "Windows/full-page",
+    "credential/security modifications",
+    "full issuer shutdown recovery"
+  ],
+  "counterexample": "Indistinguishable complete synthetic replay may MATCH; no persistent trust root or rollback defense.",
+  "default_api_probe": "Synthetic in-process TestClient with NoDatabaseStore, no network listener, classification as reader returns 403.",
+  "independent_review": {
+    "source_commit": "55d1366373e949ffe3f621be98c8a5d13435750f",
+    "passed": 80,
+    "failed": 0,
+    "scope": "pure synthetic classification only; no PG/network/browser/execution",
+    "manifest_sha256": "45083efe4f527c0829287677f8e5d60288613f4aec021a80fccb0d3b2aee4a02",
+    "conclusion": "No blocking defect in pure synthetic consistency scope; old unrelated hash-substring assertion limitation retained."
+  }
+}
