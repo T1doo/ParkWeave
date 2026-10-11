@@ -1,0 +1,214 @@
+{
+  "branch": "dev/f2-pending-receipt-handoff-20261011",
+  "sole_source_writer": "/root in this thread",
+  "independent_reviewer": "/root/independent_review; no repository or Git writes",
+  "original_working_tree_inventory": "original-working-tree-inventory.json",
+  "original_modification_window_utc": [
+    "2026-10-11T09:52:50.489537+00:00",
+    "2026-10-11T10:05:04.154182+00:00"
+  ],
+  "requirement": "docs/sources/V1/平台产品设计 (2).md §5.5: 园区专员可调整责任方，但必须说明原因",
+  "baseline_gap": "ENG032 temporarily excluded post-accept handoff; baseline catalog lacked can_reassign and ordinary reoffer returned409",
+  "preliminary_runs": [
+    {
+      "label": "gap",
+      "description": "wrong fixture helper import: collection error",
+      "raw_private_directory": "/tmp/parkweave-pending-handoff-baseline",
+      "raw_published": false,
+      "tests": 1,
+      "failures": 0,
+      "errors": 1,
+      "skipped": 0,
+      "files": {
+        "gap.log": "0c80ec2487edf82aa019c3a7671f99b4b72c4ccacfd74b4d18a9b8ad953b361a",
+        "gap.xml": "cac5bf73a2861b74241fbcee77e5024ef62abf70c9cd44daa5ee9b5d80fe123d"
+      },
+      "failed_test_names": [
+        "test_gap"
+      ],
+      "passed": 0
+    },
+    {
+      "label": "gap-fixed",
+      "description": "real baseline missing pending manual handoff",
+      "raw_private_directory": "/tmp/parkweave-pending-handoff-baseline",
+      "raw_published": false,
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "files": {
+        "gap-fixed.log": "1a1ac3c05e2abcd7499bb4e54aafba9650ddf9ffd9f6fd0b72d4608b7e9932c6",
+        "gap-fixed.xml": "d859db41c9bdcf700a4bf22ffebd2d5268462556276ee0325bbb348b61a458a2"
+      },
+      "failed_test_names": [
+        "test_original_accepted_pending_cannot_change_responsible_party"
+      ],
+      "passed": 0
+    },
+    {
+      "label": "initial",
+      "description": "outbox oracle expected one row instead of two recipients of one event",
+      "raw_private_directory": "/tmp/parkweave-pending-handoff-root",
+      "raw_published": false,
+      "tests": 131,
+      "failures": 2,
+      "errors": 0,
+      "skipped": 0,
+      "files": {
+        "initial.log": "15231f285f5d3ec3fa51a150dfbe18c59fc8f96afdca01a0f6029feaa6f35502",
+        "initial.xml": "73618e0b4f0319cf91b9a6968610ff14278d07f2c4759903170a8c36c9a5e4ef"
+      },
+      "failed_test_names": [
+        "test_concurrent_reassignment_creates_one_offer_and_one_outbox_event[False]",
+        "test_concurrent_reassignment_creates_one_offer_and_one_outbox_event[True]"
+      ],
+      "passed": 129
+    },
+    {
+      "label": "related",
+      "description": "new offer/receipt unique constraint blocked trusted-owner corrupt-pointer fixture seed",
+      "raw_private_directory": "/tmp/parkweave-pending-handoff-root",
+      "raw_published": false,
+      "tests": 256,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "files": {
+        "related.log": "f2c71d6265e698a06675e49d5d565996aa0a3bc99ffd426a681a00c25001af25",
+        "related.xml": "75e684f6e87e646391ff6c99dd0a48bc8ecc84f059157c62b2f36e9e59c639ea"
+      },
+      "failed_test_names": [
+        "test_corrupt_current_offer_pointer_never_falls_back_to_any_historical_step"
+      ],
+      "passed": 255
+    },
+    {
+      "label": "offline-initial",
+      "description": "preliminary NodeVM pass; no browser",
+      "raw_private_directory": "/tmp/parkweave-pending-handoff-root",
+      "raw_published": false,
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "files": {
+        "offline-initial.log": "59555748fafeb6505be696ea458a7d1698daf439985e4f64dafdfa82c062dce5",
+        "offline-initial.xml": "e66fa219149ed70c8919c8de6f9016a222e8b29afd91bd33399e7a51501b7a88"
+      },
+      "failed_test_names": [],
+      "passed": 9
+    },
+    {
+      "label": "final-scoped",
+      "description": "future-version fixture incorrectly seeded schema29 instead of30; corrected before frozen SHA",
+      "raw_private_directory": "/tmp/parkweave-pending-handoff-root",
+      "raw_published": false,
+      "tests": 331,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "files": {
+        "final-scoped.log": "c03fbbf319f26af4815374e9629ff4c5dfd34f539e79bd37aeeb3142f294f0b2",
+        "final-scoped.xml": "520691e1fbcd6cd62411e0aa0bbdf87aba788a73d88ae031c2c7da5683c3a61c"
+      },
+      "failed_test_names": [
+        "test_migration_refuses_future_version_even_with_retained_24_and_valid_receipt"
+      ],
+      "passed": 330
+    }
+  ],
+  "private_failure_reason": "Pytest fixture failure repr can contain ephemeral synthetic session values; original bytes retained privately and public evidence stores hashes/counts only.",
+  "protected_files": {
+    "src/parkweave/roles.sql": {
+      "sha256": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/roles-fault-fixture.sql": {
+      "sha256": "f472caee551ce691d08bc953b91f3d620df651eedb1f122620f893f49b7a47db",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/dispatch_preview_sql.py": {
+      "sha256": "302b688a8e7238a66124a7d755e2afdf0bd1a0c8801d229001f544e41537664d",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/receipt_preview_sql.py": {
+      "sha256": "0bc49bf39cf5ce8333ffaae2a0cff5a0c23950295399f3c30885be05ab6456b2",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/isolated_run_access.py": {
+      "sha256": "fdc64b3f737e82c3201c53bb7d6896e516ee5555a72ad2248ff4848997bb173a",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/history_registration_contract.py": {
+      "sha256": "3a78415fb58a0b2dd12df441ba96f02cb3192c9cf1e6b77d030d3bf33ba20d95",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/receipt_history_recovery.py": {
+      "sha256": "fd46cbe741dfa39331bed1d289ce6ba7bc99d44031347e10d657d87aedf9c5a7",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/installed_fixture_receipt.py": {
+      "sha256": "492ab830a0d704cdcaf93794daea6e2e33e72bc3c64cfff2f82bc70fb28c275e",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/dispatch_notices.py": {
+      "sha256": "5b3a1f4e1bc2046fce6ed03c272c7e42bdf1fe49f42f45134e9e8f6ddcc07556",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/executor_receipts.py": {
+      "sha256": "cb01870dab9b2cfc08bbf2ef2a474094459ab74f44723d594e5a358de1d9bbed",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/migration-025.sql": {
+      "sha256": "b6e920a803e010c6cd4012075bfecd5549677c25bd1518abaa1cf288b5e8949d",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/migration-026.sql": {
+      "sha256": "625208b5620e8c5a0840e6672fd08c1081e148b5bd1d401697f0810dec8b50a3",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/migration-027.sql": {
+      "sha256": "97034ad99ad21af9c0e36724481a65c179638e7e49a27d5d140e8aaa93a73c79",
+      "unchanged_from_parent": true
+    },
+    "src/parkweave/migration-028.sql": {
+      "sha256": "ed94c37d627300651dc13935665baf774fa07ea9f3589e4089649ff6005591f0",
+      "unchanged_from_parent": true
+    }
+  },
+  "initial_source_sha": "a5ea0c61ebef365527aac9f570494c61cec1fac9",
+  "final_source_sha": "0418146b7c2024577e4bdaba509ec5fd9b6c433d",
+  "repair_parent_sha": "a5ea0c61ebef365527aac9f570494c61cec1fac9",
+  "initial_changed_source_files": {
+    "docs/F2/PendingReceiptHandoff.md": "fafb3247508deff6c71e94b0ce49489575865bab162b5dc2bb823a6d11105fc1",
+    "pyproject.toml": "7342794d9efc781023502dcd40ed1ccdff8d44c1e2eb161e3f07407578a3f69c",
+    "scripts/linux_fixture_server.py": "d8252b042d693c3e0b5f367bc0eb50c4bd42c942cf321a440fd2636b815d9d0c",
+    "src/parkweave/api.py": "d442fb2ab898bd772b61a4dfdc227632d07640918aa2c1934895abe402a2a097",
+    "src/parkweave/migration-029.sql": "179ff8f16b862cc7b5a076a6f21a31dd77961a0c62af37cc53d9315e89b9bac7",
+    "src/parkweave/service_dispatches.py": "d39fe4cf73e4b806317c5eab4b6d879c946ce655433234227be2eea640789da4",
+    "src/parkweave/store.py": "3d20bdf5e7492404569559e066931a2d8400237c4188ad4b9c1d55e805eca25e",
+    "src/parkweave/web.html": "291ef55cb177a4c155925d7c1174283f06ddb8e5c1dfcf7bb6758645f8bf77ae",
+    "tests/normal_recovery_process.py": "50f47137d0b842ccbf38babac3ba0417d8c91e7b240d91a32064fb0cef4a0ebe",
+    "tests/pending_receipt_handoff_offline.js": "9ad200773aa2085333df305dec720eca5bfa6992580579dd12cd1485bf24713c",
+    "tests/test_authorization_files.py": "7a399feb68f2cd758a574cca772b8ee154f9a907325dc80ccd03192679bc0909",
+    "tests/test_case_fact_bundle.py": "5f9efc6bdc2583b0167232d1b0cf2f1fcd5b877dfc93e414e8acb0340b0bb1b5",
+    "tests/test_case_fact_clarifications.py": "1c50745e0868851fba2b8b0347ad06690e31e97dc8900aa4b5ec9a75524d6b18",
+    "tests/test_case_lifecycle.py": "0b2182ece4b2ad02c28a787da41433e1cc65e62c52203337b3878078b9fadb54",
+    "tests/test_case_opportunities.py": "40862a55b3b2125fbdb0c28450470df3c26ec210ca6f417090623c6e6f1931d4",
+    "tests/test_controlled_plans.py": "71e19dedac53ae0fcce831b73261aab508b4302cf542268ad8783714db103f98",
+    "tests/test_dispatch_recovery.py": "238f94da3f13e2ce9602ff55085bde4afaba14038287db7e6d6d3a1153b75fa7",
+    "tests/test_executor_receipts.py": "95a259c9dfe3ee9ecb1b254d3ce820b72b4774d629bbf950e0be8376fb3bc962",
+    "tests/test_lifecycle_diagnostics.py": "46a192d171ce6b88dc0da2b99ea8a092ee43d0d0dd92cc6b70ee6ce4a0a3909f",
+    "tests/test_linux_fixture_startup.py": "ac0f92a195d8ef69c12e4c566bb595d7fa41798279d5fcc4c568d265dd6c7d68",
+    "tests/test_material_objections.py": "e168c07e2e057167d752b148204025204b515c1d46e516f03687e5e6b3ea5575",
+    "tests/test_material_reuse.py": "7e0bb357667e5299afe87cbc42ba146136d18ed3d847b7bc4edec95cda29d96b",
+    "tests/test_pending_receipt_handoff.py": "6ac5d2960602b47b7a33cba85be9622bf47372aab29ffa825d9995f6b9028c77",
+    "tests/test_pending_receipt_handoff_offline.py": "334868dd0f28ed19bd694697ed50ea70c079c7f39d4f9c375f980440f47fd2dc",
+    "tests/test_request_intents.py": "1759ae7e446945da87c7bab79265dcac2ead01fd406d7930eb9200137215d794",
+    "tests/test_resource_combinations.py": "8253b245315b1774de9cc4111b95690863e2128bb8b1849955aef75a32c4eac3",
+    "tests/test_resource_holds.py": "4783a99cc88cc473df7c6795b0ef934888d4b94bcf7e42ad1d92ae8789729de3",
+    "tests/test_worker_gateway.py": "33a9afd5e4f60946eb8be18bc089c8ba29a708ccb7c9a4a5e077c25c0a17fb18"
+  },
+  "initial_source_parent_sha": "4a0ec78ec7d554204e6fea66a75afd26242c3cd5"
+}
