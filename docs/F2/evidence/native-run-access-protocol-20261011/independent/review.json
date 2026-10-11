@@ -1,0 +1,1205 @@
+{
+  "browser_attempts": 0,
+  "checks": [
+    {
+      "area": "honest boundary",
+      "evidence": "Production commands default closed; proposals always NON_EFFECTIVE; explicit test permit cannot activate business access; no automatic storage migration.",
+      "result": "LIMITED_PASS"
+    },
+    {
+      "area": "transaction/idempotency/recovery",
+      "evidence": "Actual PG atomic request/approve/revoke, actor+original-key serialization, cross-Run conflict, append failure rollback, readonly cold original receipt recovery, later-cycle same-key replay.",
+      "result": "LIMITED_PASS"
+    },
+    {
+      "area": "source/current permission/time",
+      "evidence": "Typed Intake plus original fingerprint/operation action/current Case tenant; exact material snapshot; current owner/beneficiary metadata; actual parent lock wait and DB-clock expiry recheck.",
+      "result": "LIMITED_PASS"
+    },
+    {
+      "area": "all assignment entry paths",
+      "evidence": "Store.scoped_run/read/assignment_allowed/assign_status/assigned_executors; dispatch executor parent; receipt base/executor and lists; notices authority; registered dependency collection; isolated execution delegates shared predicate. No actual native assignment activation was performed.",
+      "result": "LIMITED_STATIC_AND_PREDICATE_PASS"
+    },
+    {
+      "area": "cancellation/handoff",
+      "evidence": "Case CANCELLED native approval blocked; existing REQUEST key GET and protocol CANCEL remain available; shared parent serialization and unchanged source guards reviewed. Full old handoff/cancellation regressions belong to the separate running root window.",
+      "result": "LIMITED_PASS"
+    },
+    {
+      "area": "workbench recovery and expiry",
+      "evidence": "9 actual offline NodeVM IDs; lost response only GET original key, no automatic POST, late/forbidden response clears private view, ordinary expiry keeps original key and historical read boundary.",
+      "result": "LIMITED_PASS"
+    },
+    {
+      "area": "plans/cold reads",
+      "evidence": "Native read/recover explicitly SET TRANSACTION READ ONLY; no plan invalidation or other business mutation invoked; registered dependency legacy hash compatibility retained.",
+      "result": "LIMITED_STATIC_AND_READONLY_PASS"
+    }
+  ],
+  "commit_byte_mismatch_paths": [],
+  "contract_sha256": "9cdff3cd7a34b355c8a1e909fa5c1058e0fdeff1a324641e27464f48f7cc862f",
+  "evidence_sha256": {
+    "INITIAL_CONTRACT_REVIEW.json": "f1e1cf9ca9fb7fc7cf4995eeaa4b3d2705089df604c524a0fb999d495e35960b",
+    "INITIAL_CONTRACT_REVIEW.md": "c210887bd8cba1b95354c2201860bcbb4c7cfcd15a037471a4d451df8fc03b3c",
+    "corrected-probes/cancel-request-rewrite.json": "6b57076fb989646d8f1f4442195fc8037302a215d7f7942645866fb979e8df70",
+    "corrected-probes/json-null-marker.json": "bf685d8ab7edb722a9c0800a823a8426357930e3f82b1e86769048e076705c20",
+    "corrected-probes/results.xml": "26120401b4e84cc839f03f4c3458b06c46e9e6ed648ec0dd15b966be8ad6b93b",
+    "corrected-probes/run.json": "4d23dcf4e7ccf2b82f3b01830ff96de49cb741dcc89191bc8103a97f5a54e3be",
+    "corrected-probes/self-approval-lease.json": "f9d0ca41a03cd8503629886739c23cee4a9e5d7bd029f14c5561cab96b66738f",
+    "corrected-probes/source-after.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+    "corrected-probes/source-before.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+    "corrected-probes/stdout.log": "a5bd38d7340b1a5844f2c79e38efefc086ece9bb36d22563494080b111df1f26",
+    "final-frozen/cancel-request-rewrite.json": "6b57076fb989646d8f1f4442195fc8037302a215d7f7942645866fb979e8df70",
+    "final-frozen/json-null-marker.json": "bf685d8ab7edb722a9c0800a823a8426357930e3f82b1e86769048e076705c20",
+    "final-frozen/lock-queue-observation.json": "3a32d00988877911c33f6eb75b7b6a9d3a83a09718736423760aa57f7ad07d92",
+    "final-frozen/results.xml": "4cd2a330736ac55f1551be22a45594c39809bc2c5ae62c71eb4d7ae44b46f28e",
+    "final-frozen/run.json": "47d50500994b2eeaae57dd772a583fbdc739fbfbd65a0444300edb96943aa86d",
+    "final-frozen/self-approval-lease.json": "f9d0ca41a03cd8503629886739c23cee4a9e5d7bd029f14c5561cab96b66738f",
+    "final-frozen/source-after.json": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+    "final-frozen/source-before.json": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+    "final-frozen/stdout.log": "65b5d54cc9d7e3ecae7f84aa06f788122f9280f4d52e77b56d20ac1dba945276",
+    "initial-probes/cancel-request-rewrite.json": "e906bc0a24691e4b1d7e18a965d21e109467318435f5a7703ef64978a00f6ee0",
+    "initial-probes/json-null-marker.json": "0897e880dc60b1c35fdbb39fae837d064b46654b8f2c95ab02a03689330708c1",
+    "initial-probes/native-run-access-storage.sql.txt": "644b4579592c45db078e7c1c571f2705c69596b504ca1cd181f448d9d278017e",
+    "initial-probes/results.xml": "c002aade44ed603eff131006905528886452d91465cea85c372bd62078720923",
+    "initial-probes/run.json": "f42bf8169d54701ba5c109bb41b1f0891c656ab3fcb9daf2775df9ce87d1f8c8",
+    "initial-probes/run_window.py": "537dcd22cdb0a4a68d3af950472c062c2ed306b6e8d2147c3787018cfe0bdbcc",
+    "initial-probes/self-approval-lease.json": "21b4dce43006184c413a33cfc25c62ec6a3ecea9a74dfe106322fb5fded08cfe",
+    "initial-probes/source-after.json": "3353fc23f85d6eabf6b8c9190382c8032ce1434868091ca60be4ac44b0e9ab5e",
+    "initial-probes/source-before.json": "0b4314c227efb58205587a91a3d1005f4f0c4f57f84064769d4a4fdf1eedeebc",
+    "initial-probes/stdout.log": "226b79b411dfaf5e6e86a717c3bfd7c113c966abf4575258af6c2afbf86136e2",
+    "initial-probes/test_independent_native_probes.py": "9c3e03fc34a55836347c7d8fa3a820a21eaa1d53ad3b8757b04bc60ab4675234",
+    "lock-initial/results.xml": "7126d8c41c9dcb7ac421068b97cb63fcf385ccac3997e515408cb08215c19b5c",
+    "lock-initial/run.json": "4f9edee7466329976db322a664796ae8a0d26444fed17a2ad463337f89403dd6",
+    "lock-initial/source-after.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+    "lock-initial/source-before.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+    "lock-initial/stdout.log": "fe56e5702969345b9338d2f2cb30c00fb2407de8c9e246170ac37907e09d1958",
+    "lock-initial/test_native_lock_probe.py": "fcce39a01249a5bb62b823843a0f7780dfe11303bccc9acab0b7014d7cdef8e1",
+    "lock-oracle-corrected/lock-queue-observation.json": "f31700b906ac592a1a55bd73e6b9218763eda9e0e08ce47669c1be0af46d210d",
+    "lock-oracle-corrected/results.xml": "0c48a0e22b73c14b408ee0d6a4e4817cbd3be82eb8db439aa4693d804f147702",
+    "lock-oracle-corrected/run.json": "8896a59e9e56903c0302012d2070bcc59eca1c1e6e20dc81af3277c1a725e39e",
+    "lock-oracle-corrected/source-after.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+    "lock-oracle-corrected/source-before.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+    "lock-oracle-corrected/stdout.log": "31bb02d431d16186924bb266a040807b5304b66745aa74178d20348f94edcccb",
+    "native_expiry_probe.js": "3385dd3907087f7486ec7a28a7ad077f47b997495de9eaaac4eb9c4d4de015d7",
+    "run_window.py": "3e2e3b40d35c4d2ab5d4aac51267b3398bf61188caf22ccaa5f63434fb9d01b2",
+    "source-binding.json": "3e70ae1f774e1a2652efc6c7f7dd99b6e5bc1d477efe2dea0d5a37e42f55b7f0",
+    "source-proof-corrected/results.xml": "9bbeec46d354d8e2e13a06a1ee5c2a182872bb9ce0fe5e3eecc333d93b6626c2",
+    "source-proof-corrected/run.json": "cc897ac562cfa44e8c4acfd7feacdef46d66ad00e6c19c40cf504b669f0f72ec",
+    "source-proof-corrected/source-after.json": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+    "source-proof-corrected/source-before.json": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+    "source-proof-corrected/stdout.log": "bd2831ed2973a041d7a24c199c4776a3c4f84e83fa37e2d48c479faa0d180b9e",
+    "source-proof-initial/native_run_access.py.txt": "b8eeee145dca9fab745c3bd95b57f12c1bb899cacfd4b84b603b1f3e8eae54cb",
+    "source-proof-initial/results.xml": "3d6c3f9d8b816d11d5766dd1a64618e2ae75270f3614afff5777c2662bc9e384",
+    "source-proof-initial/run.json": "954f3a53d1e0379add4345ddfeda1760ef1e1252f84b6eca1063fdd13b30badc",
+    "source-proof-initial/source-after.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+    "source-proof-initial/source-before.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+    "source-proof-initial/stdout.log": "7113cabd3376a2b04262f9bae939098a0f6dbaf3af52745ae89d58d8f14501a0",
+    "source-proof-initial/test_native_source_probe.py": "3ef5fb96dc5f8f65e02cbb9f80cc19906e5001ac82abc4830d94d7af6c8ae9e5",
+    "test_independent_native_probes.py": "ae4f2dbd70a11c3bc0c2d52d37876a2de0327a4f99b99e9cc5aaef06a5ba54d1",
+    "test_independent_native_ui.py": "a419b5a34434ae27b3990ecd7ae2dec68267bbb16a766f18b6f15bd7e992e183",
+    "test_native_lock_probe.py": "53085937d589e679c65805cd151853b815dddbae9f63b716a3e19a686c54930b",
+    "test_native_source_probe.py": "3ef5fb96dc5f8f65e02cbb9f80cc19906e5001ac82abc4830d94d7af6c8ae9e5",
+    "ui-initial/results.xml": "7cc208886240b945553ce0a4bb31246d27f11103078f759a768b03b9453ebece",
+    "ui-initial/run.json": "06ab2aaf6da7cfbc5aa825d2615f8b58e87b088f919020cd7218e38ff126ed91",
+    "ui-initial/source-after.json": "b2e984714e24e51564b2afa72e47655112b1f81beac4db9470f08f6a1e74f549",
+    "ui-initial/source-before.json": "b2e984714e24e51564b2afa72e47655112b1f81beac4db9470f08f6a1e74f549",
+    "ui-initial/stdout.log": "3c73199a2d5c67cc918d60fcd0c4592220cb037b3f9587d090aa630b3cfee6f6"
+  },
+  "final_window": {
+    "cases": [
+      {
+        "id": "tests.test_native_run_access::test_native_atomic_approve_revoke_never_writes_assignment_or_permissions",
+        "result": "PASS",
+        "seconds": 1.82
+      },
+      {
+        "id": "tests.test_native_run_access::test_original_receipt_recovery_after_later_events_and_cold_store",
+        "result": "PASS",
+        "seconds": 1.017
+      },
+      {
+        "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[fixture-b]",
+        "result": "PASS",
+        "seconds": 0.604
+      },
+      {
+        "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[fixture-c]",
+        "result": "PASS",
+        "seconds": 0.643
+      },
+      {
+        "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[prep-specialist-fixture-b]",
+        "result": "PASS",
+        "seconds": 0.757
+      },
+      {
+        "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[unassigned]",
+        "result": "PASS",
+        "seconds": 0.695
+      },
+      {
+        "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[executor-b]",
+        "result": "PASS",
+        "seconds": 0.774
+      },
+      {
+        "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[executor-c]",
+        "result": "PASS",
+        "seconds": 0.808
+      },
+      {
+        "id": "tests.test_native_run_access::test_current_read_revocation_blocks_original_key_recovery",
+        "result": "PASS",
+        "seconds": 1.087
+      },
+      {
+        "id": "tests.test_native_run_access::test_owner_cannot_approve_and_beneficiary_metadata_is_not_run_access",
+        "result": "PASS",
+        "seconds": 0.646
+      },
+      {
+        "id": "tests.test_native_run_access::test_same_key_concurrent_commands_serialized_in_pg[True]",
+        "result": "PASS",
+        "seconds": 0.931
+      },
+      {
+        "id": "tests.test_native_run_access::test_same_key_concurrent_commands_serialized_in_pg[False]",
+        "result": "PASS",
+        "seconds": 0.627
+      },
+      {
+        "id": "tests.test_native_run_access::test_same_key_different_run_conflicts",
+        "result": "PASS",
+        "seconds": 0.678
+      },
+      {
+        "id": "tests.test_native_run_access::test_event_failure_rolls_back_request_decision_and_lease",
+        "result": "PASS",
+        "seconds": 0.7
+      },
+      {
+        "id": "tests.test_native_run_access::test_pg_immutable_history_and_state_guard[prefix]",
+        "result": "PASS",
+        "seconds": 0.694
+      },
+      {
+        "id": "tests.test_native_run_access::test_pg_immutable_history_and_state_guard[clear]",
+        "result": "PASS",
+        "seconds": 0.793
+      },
+      {
+        "id": "tests.test_native_run_access::test_pg_immutable_history_and_state_guard[rewrite]",
+        "result": "PASS",
+        "seconds": 0.66
+      },
+      {
+        "id": "tests.test_native_run_access::test_pg_immutable_history_and_state_guard[missing_revision]",
+        "result": "PASS",
+        "seconds": 0.516
+      },
+      {
+        "id": "tests.test_native_run_access::test_approval_interval_must_shrink_and_history_stays_atomic",
+        "result": "PASS",
+        "seconds": 0.583
+      },
+      {
+        "id": "tests.test_native_run_access::test_expiry_rechecked_after_actual_pg_parent_lock_wait",
+        "result": "PASS",
+        "seconds": 2.219
+      },
+      {
+        "id": "tests.test_native_run_access::test_malformed_source_is_explicit_conflict_not_internal_error[input]",
+        "result": "PASS",
+        "seconds": 0.931
+      },
+      {
+        "id": "tests.test_native_run_access::test_malformed_source_is_explicit_conflict_not_internal_error[receipt]",
+        "result": "PASS",
+        "seconds": 0.909
+      },
+      {
+        "id": "tests.test_native_run_access::test_malformed_source_is_explicit_conflict_not_internal_error[empty_input]",
+        "result": "PASS",
+        "seconds": 0.536
+      },
+      {
+        "id": "tests.test_native_run_access::test_malformed_source_is_explicit_conflict_not_internal_error[changed_goal]",
+        "result": "PASS",
+        "seconds": 0.675
+      },
+      {
+        "id": "tests.test_native_run_access::test_malformed_source_is_explicit_conflict_not_internal_error[operation_action]",
+        "result": "PASS",
+        "seconds": 0.594
+      },
+      {
+        "id": "tests.test_native_run_access::test_approval_rechecks_material_source_after_actual_parent_lock_wait",
+        "result": "PASS",
+        "seconds": 0.592
+      },
+      {
+        "id": "tests.test_native_run_access::test_permission_revoked_before_approval_is_not_cached",
+        "result": "PASS",
+        "seconds": 0.768
+      },
+      {
+        "id": "tests.test_native_run_access::test_case_cancel_blocks_approve_preserves_history_recovery_and_request_cancel",
+        "result": "PASS",
+        "seconds": 1.32
+      },
+      {
+        "id": "tests.test_native_run_access::test_native_marker_is_never_legacy_even_with_cold_store",
+        "result": "PASS",
+        "seconds": 0.643
+      },
+      {
+        "id": "tests.test_native_run_access::test_unissued_test_permit_and_default_constructor_are_closed",
+        "result": "PASS",
+        "seconds": 0.621
+      },
+      {
+        "id": "tests.test_native_run_access::test_native_strict_dto[fields0]",
+        "result": "PASS",
+        "seconds": 0.624
+      },
+      {
+        "id": "tests.test_native_run_access::test_native_strict_dto[fields1]",
+        "result": "PASS",
+        "seconds": 0.55
+      },
+      {
+        "id": "tests.test_native_run_access::test_native_strict_dto[fields2]",
+        "result": "PASS",
+        "seconds": 0.808
+      },
+      {
+        "id": "tests.test_native_run_access::test_native_strict_dto[fields3]",
+        "result": "PASS",
+        "seconds": 0.837
+      },
+      {
+        "id": "tests.test_native_run_access::test_native_strict_dto[fields4]",
+        "result": "PASS",
+        "seconds": 0.716
+      },
+      {
+        "id": "tests.test_native_run_access_offline::test_native_run_access_ui[disabled_pending]",
+        "result": "PASS",
+        "seconds": 0.074
+      },
+      {
+        "id": "tests.test_native_run_access_offline::test_native_run_access_ui[lost_response]",
+        "result": "PASS",
+        "seconds": 0.11
+      },
+      {
+        "id": "tests.test_native_run_access_offline::test_native_run_access_ui[not_observed]",
+        "result": "PASS",
+        "seconds": 0.073
+      },
+      {
+        "id": "tests.test_native_run_access_offline::test_native_run_access_ui[revoked]",
+        "result": "PASS",
+        "seconds": 0.068
+      },
+      {
+        "id": "tests.test_native_run_access_offline::test_native_run_access_ui[late_read]",
+        "result": "PASS",
+        "seconds": 0.052
+      },
+      {
+        "id": "tests.test_native_run_access_offline::test_native_run_access_ui[late_recovery]",
+        "result": "PASS",
+        "seconds": 0.048
+      },
+      {
+        "id": "tests.test_native_run_access_offline::test_native_run_access_ui[authority_expiry]",
+        "result": "PASS",
+        "seconds": 0.065
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_independent_native_probes::test_json_null_native_marker_is_not_legacy",
+        "result": "PASS",
+        "seconds": 1.642
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_independent_native_probes::test_pg_append_cannot_rewrite_existing_request_on_cancel",
+        "result": "PASS",
+        "seconds": 0.654
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_independent_native_probes::test_pg_append_rejects_self_approval_lease_without_valid_request",
+        "result": "PASS",
+        "seconds": 0.646
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_independent_native_probes::test_two_request_cycles_keep_original_key_receipt",
+        "result": "PASS",
+        "seconds": 0.711
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[marker0]",
+        "result": "PASS",
+        "seconds": 0.656
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[marker1]",
+        "result": "PASS",
+        "seconds": 0.51
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[False]",
+        "result": "PASS",
+        "seconds": 0.808
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[UNKNOWN]",
+        "result": "PASS",
+        "seconds": 1.578
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_independent_native_ui::test_native_expiry_boundary[status_expiry]",
+        "result": "PASS",
+        "seconds": 0.384
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_independent_native_ui::test_native_expiry_boundary[pending_expiry]",
+        "result": "PASS",
+        "seconds": 6.502
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_native_lock_probe::test_current_permission_writer_queue_does_not_deadlock_protocol",
+        "result": "PASS",
+        "seconds": 3.66
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[malformed_input]",
+        "result": "PASS",
+        "seconds": 2.052
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[input_fingerprint]",
+        "result": "PASS",
+        "seconds": 1.243
+      },
+      {
+        "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[operation_action]",
+        "result": "PASS",
+        "seconds": 0.842
+      }
+    ],
+    "counts": {
+      "ERROR": 0,
+      "FAIL": 0,
+      "PASS": 56,
+      "SKIP": 0
+    },
+    "drift_paths": [],
+    "ended_at": "2026-10-11T18:26:18.218627+00:00",
+    "exit_code": 0,
+    "junit_suite_seconds": 50.956,
+    "name": "final-frozen",
+    "process_seconds": 52.87477098800082,
+    "raw": {
+      "results.xml": "4cd2a330736ac55f1551be22a45594c39809bc2c5ae62c71eb4d7ae44b46f28e",
+      "run.json": "47d50500994b2eeaae57dd772a583fbdc739fbfbd65a0444300edb96943aa86d",
+      "source-after.json": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+      "source-before.json": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+      "stdout.log": "65b5d54cc9d7e3ecae7f84aa06f788122f9280f4d52e77b56d20ac1dba945276"
+    },
+    "source_after_sha256": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+    "source_before_sha256": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+    "source_count": 411,
+    "started_at": "2026-10-11T18:25:25.343864+00:00",
+    "unique_test_ids": 56
+  },
+  "findings": [
+    {
+      "fix": "Native SQL presence distinguishes SQL NULL legacy from JSON null or unknown supplied provenance.",
+      "id": "NR01",
+      "location": "src/parkweave/store.py:73",
+      "original": "JSONB null decoded to None and was accepted by the legacy assignment predicate. SELECT-only synthetic row reproduction; no actual assignment inserted.",
+      "severity": "HIGH",
+      "status": "FIXED_AND_SAME_ID_RETESTED"
+    },
+    {
+      "fix": "Terminal actions preserve exact original request and lease head.",
+      "id": "NR02",
+      "location": "src/parkweave/native-run-access-storage.sql:82",
+      "original": "An app-role terminal CANCEL append could rewrite current request.target_id while retaining old receipt prefix.",
+      "severity": "MEDIUM",
+      "status": "FIXED_AND_SAME_ID_RETESTED"
+    },
+    {
+      "fix": "APPROVE preserves base request, independent actor, exact lease id/request/source/validity.",
+      "id": "NR03",
+      "location": "src/parkweave/native-run-access-storage.sql:103",
+      "original": "An app-role append could save owner self-approval with an unbound NON_EFFECTIVE lease. It never granted actual access.",
+      "severity": "MEDIUM",
+      "status": "FIXED_AND_SAME_ID_RETESTED"
+    },
+    {
+      "fix": "Native expiry branch disables decision writes and preserves original-key GET context.",
+      "id": "NR04",
+      "location": "src/parkweave/web.html:1028",
+      "original": "Ordinary status expiry timer rendered isolated demonstration expiry text.",
+      "severity": "MEDIUM",
+      "status": "FIXED_AND_SAME_ID_RETESTED"
+    },
+    {
+      "fix": "Typed original Intake/fingerprint, operation action, and Case tenant proof checked; input fingerprint included in source.",
+      "id": "NR05",
+      "location": "src/parkweave/native_run_access.py:197",
+      "original": "Approval accepted malformed Run.input, changed goal with old fingerprint, or operation.action facts.assess after request. Three actual PG counterexamples.",
+      "severity": "MEDIUM",
+      "status": "FIXED_AND_SAME_ID_RETESTED"
+    }
+  ],
+  "limitations": [
+    "Assignment-marked predicates were tested with SELECT-only or supplied rows, no actual native assignment activation. Entire business bypass coverage is static plus direct predicate/Run-403 checks.",
+    "The queued permission writer/owner CANCEL/APPROVE probe observed real parent and exclusive advisory waits but completed linearly; a hypothesized three-party deadlock was not reproduced and is not a claimed defect.",
+    "Fixture setup reuses existing explicitly authorized fresh owned PostgreSQL, seeded synthetic identities and app-role SQL privileges; setup is distinct from decision-only business commands. Business permission/assignment snapshots remain unchanged.",
+    "Initial 8-ID window had two source paths drift while root fixed them; its 5PASS/3FAIL are not a frozen signoff.",
+    "Separate root broad regression remains running; 56PASS is not full-repository or native/browser acceptance."
+  ],
+  "not_run": [
+    "Production additive storage installation",
+    "Actual native authority/Grant/assignment or SQL privilege changes",
+    "Adopted approver/TTL policy and effective-access lease end-to-end",
+    "Native Windows PostgreSQL",
+    "Browser startup/navigation/alternate retry",
+    "Models or deployment",
+    "Formal complete AT35 acceptance"
+  ],
+  "preserved_failure_occurrences": [
+    {
+      "classification": "PRODUCT_COUNTEREXAMPLE",
+      "id": ".runtime.native-run-access-review.test_independent_native_probes::test_json_null_native_marker_is_not_legacy",
+      "result": "FAIL",
+      "same_id_final_result": "PASS",
+      "seconds": 1.238,
+      "window": "initial-probes"
+    },
+    {
+      "classification": "PRODUCT_COUNTEREXAMPLE",
+      "id": ".runtime.native-run-access-review.test_independent_native_probes::test_pg_append_cannot_rewrite_existing_request_on_cancel",
+      "result": "FAIL",
+      "same_id_final_result": "PASS",
+      "seconds": 0.667,
+      "window": "initial-probes"
+    },
+    {
+      "classification": "PRODUCT_COUNTEREXAMPLE",
+      "id": ".runtime.native-run-access-review.test_independent_native_probes::test_pg_append_rejects_self_approval_lease_without_valid_request",
+      "result": "FAIL",
+      "same_id_final_result": "PASS",
+      "seconds": 0.509,
+      "window": "initial-probes"
+    },
+    {
+      "classification": "PRODUCT_COUNTEREXAMPLE",
+      "id": ".runtime.native-run-access-review.test_independent_native_ui::test_native_expiry_boundary[status_expiry]",
+      "result": "FAIL",
+      "same_id_final_result": "PASS",
+      "seconds": 0.128,
+      "window": "ui-initial"
+    },
+    {
+      "classification": "INDEPENDENT_PROBE_ORACLE",
+      "id": ".runtime.native-run-access-review.test_native_lock_probe::test_current_permission_writer_queue_does_not_deadlock_protocol",
+      "result": "FAIL",
+      "same_id_final_result": "PASS",
+      "seconds": 6.203,
+      "window": "lock-initial"
+    },
+    {
+      "classification": "PRODUCT_COUNTEREXAMPLE",
+      "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[malformed_input]",
+      "result": "FAIL",
+      "same_id_final_result": "PASS",
+      "seconds": 1.316,
+      "window": "source-proof-initial"
+    },
+    {
+      "classification": "PRODUCT_COUNTEREXAMPLE",
+      "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[input_fingerprint]",
+      "result": "FAIL",
+      "same_id_final_result": "PASS",
+      "seconds": 0.592,
+      "window": "source-proof-initial"
+    },
+    {
+      "classification": "PRODUCT_COUNTEREXAMPLE",
+      "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[operation_action]",
+      "result": "FAIL",
+      "same_id_final_result": "PASS",
+      "seconds": 0.531,
+      "window": "source-proof-initial"
+    }
+  ],
+  "preserved_independent_oracle_failures": 1,
+  "preserved_product_failure_occurrences": 7,
+  "remaining_blockers": [],
+  "root_broad_regression": {
+    "modules": 44,
+    "result": "NOT_YET_SIGNED",
+    "separate_window": true,
+    "state": "RUNNING_AT_INDEPENDENT_SIGNOFF"
+  },
+  "signed_at": "2026-10-11T18:28:33.308918+00:00",
+  "source_count": 411,
+  "source_head": "213a6b9083a4f0f10f6b71bcd0da10d826c78a46",
+  "source_manifest_sha256": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+  "status": "LIMITED_PASS",
+  "windows": [
+    {
+      "cases": [
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_json_null_native_marker_is_not_legacy",
+          "result": "FAIL",
+          "seconds": 1.238
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_pg_append_cannot_rewrite_existing_request_on_cancel",
+          "result": "FAIL",
+          "seconds": 0.667
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_pg_append_rejects_self_approval_lease_without_valid_request",
+          "result": "FAIL",
+          "seconds": 0.509
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_two_request_cycles_keep_original_key_receipt",
+          "result": "PASS",
+          "seconds": 0.668
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[marker0]",
+          "result": "PASS",
+          "seconds": 0.5
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[marker1]",
+          "result": "PASS",
+          "seconds": 0.491
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[False]",
+          "result": "PASS",
+          "seconds": 0.58
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[UNKNOWN]",
+          "result": "PASS",
+          "seconds": 0.473
+        }
+      ],
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 3,
+        "PASS": 5,
+        "SKIP": 0
+      },
+      "drift_paths": [
+        "src/parkweave/registered_dependencies.py",
+        "src/parkweave/store.py"
+      ],
+      "ended_at": "2026-10-11T18:15:41.466265+00:00",
+      "exit_code": 1,
+      "junit_suite_seconds": 5.855,
+      "name": "initial-probes",
+      "process_seconds": 6.623488061002718,
+      "raw": {
+        "results.xml": "c002aade44ed603eff131006905528886452d91465cea85c372bd62078720923",
+        "run.json": "f42bf8169d54701ba5c109bb41b1f0891c656ab3fcb9daf2775df9ce87d1f8c8",
+        "source-after.json": "3353fc23f85d6eabf6b8c9190382c8032ce1434868091ca60be4ac44b0e9ab5e",
+        "source-before.json": "0b4314c227efb58205587a91a3d1005f4f0c4f57f84064769d4a4fdf1eedeebc",
+        "stdout.log": "226b79b411dfaf5e6e86a717c3bfd7c113c966abf4575258af6c2afbf86136e2"
+      },
+      "source_after_sha256": "3353fc23f85d6eabf6b8c9190382c8032ce1434868091ca60be4ac44b0e9ab5e",
+      "source_before_sha256": "0b4314c227efb58205587a91a3d1005f4f0c4f57f84064769d4a4fdf1eedeebc",
+      "source_count": 411,
+      "started_at": "2026-10-11T18:15:34.842781+00:00",
+      "unique_test_ids": 8
+    },
+    {
+      "cases": [
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_ui::test_native_expiry_boundary[status_expiry]",
+          "result": "FAIL",
+          "seconds": 0.128
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_ui::test_native_expiry_boundary[pending_expiry]",
+          "result": "PASS",
+          "seconds": 0.136
+        }
+      ],
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 1,
+        "PASS": 1,
+        "SKIP": 0
+      },
+      "drift_paths": [],
+      "ended_at": "2026-10-11T18:18:00.175351+00:00",
+      "exit_code": 1,
+      "junit_suite_seconds": 0.297,
+      "name": "ui-initial",
+      "process_seconds": 0.7163132169989694,
+      "raw": {
+        "results.xml": "7cc208886240b945553ce0a4bb31246d27f11103078f759a768b03b9453ebece",
+        "run.json": "06ab2aaf6da7cfbc5aa825d2615f8b58e87b088f919020cd7218e38ff126ed91",
+        "source-after.json": "b2e984714e24e51564b2afa72e47655112b1f81beac4db9470f08f6a1e74f549",
+        "source-before.json": "b2e984714e24e51564b2afa72e47655112b1f81beac4db9470f08f6a1e74f549",
+        "stdout.log": "3c73199a2d5c67cc918d60fcd0c4592220cb037b3f9587d090aa630b3cfee6f6"
+      },
+      "source_after_sha256": "b2e984714e24e51564b2afa72e47655112b1f81beac4db9470f08f6a1e74f549",
+      "source_before_sha256": "b2e984714e24e51564b2afa72e47655112b1f81beac4db9470f08f6a1e74f549",
+      "source_count": 411,
+      "started_at": "2026-10-11T18:17:59.459039+00:00",
+      "unique_test_ids": 2
+    },
+    {
+      "cases": [
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_json_null_native_marker_is_not_legacy",
+          "result": "PASS",
+          "seconds": 1.181
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_pg_append_cannot_rewrite_existing_request_on_cancel",
+          "result": "PASS",
+          "seconds": 0.565
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_pg_append_rejects_self_approval_lease_without_valid_request",
+          "result": "PASS",
+          "seconds": 0.501
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_two_request_cycles_keep_original_key_receipt",
+          "result": "PASS",
+          "seconds": 0.656
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[marker0]",
+          "result": "PASS",
+          "seconds": 0.461
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[marker1]",
+          "result": "PASS",
+          "seconds": 0.459
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[False]",
+          "result": "PASS",
+          "seconds": 0.472
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[UNKNOWN]",
+          "result": "PASS",
+          "seconds": 0.556
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_ui::test_native_expiry_boundary[status_expiry]",
+          "result": "PASS",
+          "seconds": 0.063
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_ui::test_native_expiry_boundary[pending_expiry]",
+          "result": "PASS",
+          "seconds": 0.055
+        }
+      ],
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "PASS": 10,
+        "SKIP": 0
+      },
+      "drift_paths": [],
+      "ended_at": "2026-10-11T18:19:24.536786+00:00",
+      "exit_code": 0,
+      "junit_suite_seconds": 5.473,
+      "name": "corrected-probes",
+      "process_seconds": 6.158450154998718,
+      "raw": {
+        "results.xml": "26120401b4e84cc839f03f4c3458b06c46e9e6ed648ec0dd15b966be8ad6b93b",
+        "run.json": "4d23dcf4e7ccf2b82f3b01830ff96de49cb741dcc89191bc8103a97f5a54e3be",
+        "source-after.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+        "source-before.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+        "stdout.log": "a5bd38d7340b1a5844f2c79e38efefc086ece9bb36d22563494080b111df1f26"
+      },
+      "source_after_sha256": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+      "source_before_sha256": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+      "source_count": 411,
+      "started_at": "2026-10-11T18:19:18.378340+00:00",
+      "unique_test_ids": 10
+    },
+    {
+      "cases": [
+        {
+          "id": ".runtime.native-run-access-review.test_native_lock_probe::test_current_permission_writer_queue_does_not_deadlock_protocol",
+          "result": "FAIL",
+          "seconds": 6.203
+        }
+      ],
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 1,
+        "PASS": 0,
+        "SKIP": 0
+      },
+      "drift_paths": [],
+      "ended_at": "2026-10-11T18:20:17.220035+00:00",
+      "exit_code": 1,
+      "junit_suite_seconds": 6.675,
+      "name": "lock-initial",
+      "process_seconds": 7.309546922999289,
+      "raw": {
+        "results.xml": "7126d8c41c9dcb7ac421068b97cb63fcf385ccac3997e515408cb08215c19b5c",
+        "run.json": "4f9edee7466329976db322a664796ae8a0d26444fed17a2ad463337f89403dd6",
+        "source-after.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+        "source-before.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+        "stdout.log": "fe56e5702969345b9338d2f2cb30c00fb2407de8c9e246170ac37907e09d1958"
+      },
+      "source_after_sha256": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+      "source_before_sha256": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+      "source_count": 411,
+      "started_at": "2026-10-11T18:20:09.910492+00:00",
+      "unique_test_ids": 1
+    },
+    {
+      "cases": [
+        {
+          "id": ".runtime.native-run-access-review.test_native_lock_probe::test_current_permission_writer_queue_does_not_deadlock_protocol",
+          "result": "PASS",
+          "seconds": 2.774
+        }
+      ],
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "PASS": 1,
+        "SKIP": 0
+      },
+      "drift_paths": [],
+      "ended_at": "2026-10-11T18:20:59.816879+00:00",
+      "exit_code": 0,
+      "junit_suite_seconds": 3.267,
+      "name": "lock-oracle-corrected",
+      "process_seconds": 3.9260907089992543,
+      "raw": {
+        "results.xml": "0c48a0e22b73c14b408ee0d6a4e4817cbd3be82eb8db439aa4693d804f147702",
+        "run.json": "8896a59e9e56903c0302012d2070bcc59eca1c1e6e20dc81af3277c1a725e39e",
+        "source-after.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+        "source-before.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+        "stdout.log": "31bb02d431d16186924bb266a040807b5304b66745aa74178d20348f94edcccb"
+      },
+      "source_after_sha256": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+      "source_before_sha256": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+      "source_count": 411,
+      "started_at": "2026-10-11T18:20:55.890783+00:00",
+      "unique_test_ids": 1
+    },
+    {
+      "cases": [
+        {
+          "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[malformed_input]",
+          "result": "FAIL",
+          "seconds": 1.316
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[input_fingerprint]",
+          "result": "FAIL",
+          "seconds": 0.592
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[operation_action]",
+          "result": "FAIL",
+          "seconds": 0.531
+        }
+      ],
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 3,
+        "PASS": 0,
+        "SKIP": 0
+      },
+      "drift_paths": [],
+      "ended_at": "2026-10-11T18:23:05.037557+00:00",
+      "exit_code": 1,
+      "junit_suite_seconds": 3.02,
+      "name": "source-proof-initial",
+      "process_seconds": 3.7935860920006235,
+      "raw": {
+        "results.xml": "3d6c3f9d8b816d11d5766dd1a64618e2ae75270f3614afff5777c2662bc9e384",
+        "run.json": "954f3a53d1e0379add4345ddfeda1760ef1e1252f84b6eca1063fdd13b30badc",
+        "source-after.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+        "source-before.json": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+        "stdout.log": "7113cabd3376a2b04262f9bae939098a0f6dbaf3af52745ae89d58d8f14501a0"
+      },
+      "source_after_sha256": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+      "source_before_sha256": "6a309b16e70d2645a5b9ff00aefae6ad75736164cadc34c34dc4c3a958692286",
+      "source_count": 411,
+      "started_at": "2026-10-11T18:23:01.243973+00:00",
+      "unique_test_ids": 3
+    },
+    {
+      "cases": [
+        {
+          "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[malformed_input]",
+          "result": "PASS",
+          "seconds": 1.305
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[input_fingerprint]",
+          "result": "PASS",
+          "seconds": 0.624
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[operation_action]",
+          "result": "PASS",
+          "seconds": 0.544
+        }
+      ],
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "PASS": 3,
+        "SKIP": 0
+      },
+      "drift_paths": [],
+      "ended_at": "2026-10-11T18:23:59.763336+00:00",
+      "exit_code": 0,
+      "junit_suite_seconds": 2.941,
+      "name": "source-proof-corrected",
+      "process_seconds": 3.6290615159996378,
+      "raw": {
+        "results.xml": "9bbeec46d354d8e2e13a06a1ee5c2a182872bb9ce0fe5e3eecc333d93b6626c2",
+        "run.json": "cc897ac562cfa44e8c4acfd7feacdef46d66ad00e6c19c40cf504b669f0f72ec",
+        "source-after.json": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+        "source-before.json": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+        "stdout.log": "bd2831ed2973a041d7a24c199c4776a3c4f84e83fa37e2d48c479faa0d180b9e"
+      },
+      "source_after_sha256": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+      "source_before_sha256": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+      "source_count": 411,
+      "started_at": "2026-10-11T18:23:56.134277+00:00",
+      "unique_test_ids": 3
+    },
+    {
+      "cases": [
+        {
+          "id": "tests.test_native_run_access::test_native_atomic_approve_revoke_never_writes_assignment_or_permissions",
+          "result": "PASS",
+          "seconds": 1.82
+        },
+        {
+          "id": "tests.test_native_run_access::test_original_receipt_recovery_after_later_events_and_cold_store",
+          "result": "PASS",
+          "seconds": 1.017
+        },
+        {
+          "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[fixture-b]",
+          "result": "PASS",
+          "seconds": 0.604
+        },
+        {
+          "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[fixture-c]",
+          "result": "PASS",
+          "seconds": 0.643
+        },
+        {
+          "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[prep-specialist-fixture-b]",
+          "result": "PASS",
+          "seconds": 0.757
+        },
+        {
+          "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[unassigned]",
+          "result": "PASS",
+          "seconds": 0.695
+        },
+        {
+          "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[executor-b]",
+          "result": "PASS",
+          "seconds": 0.774
+        },
+        {
+          "id": "tests.test_native_run_access::test_nonparticipants_cannot_read_command_or_recover[executor-c]",
+          "result": "PASS",
+          "seconds": 0.808
+        },
+        {
+          "id": "tests.test_native_run_access::test_current_read_revocation_blocks_original_key_recovery",
+          "result": "PASS",
+          "seconds": 1.087
+        },
+        {
+          "id": "tests.test_native_run_access::test_owner_cannot_approve_and_beneficiary_metadata_is_not_run_access",
+          "result": "PASS",
+          "seconds": 0.646
+        },
+        {
+          "id": "tests.test_native_run_access::test_same_key_concurrent_commands_serialized_in_pg[True]",
+          "result": "PASS",
+          "seconds": 0.931
+        },
+        {
+          "id": "tests.test_native_run_access::test_same_key_concurrent_commands_serialized_in_pg[False]",
+          "result": "PASS",
+          "seconds": 0.627
+        },
+        {
+          "id": "tests.test_native_run_access::test_same_key_different_run_conflicts",
+          "result": "PASS",
+          "seconds": 0.678
+        },
+        {
+          "id": "tests.test_native_run_access::test_event_failure_rolls_back_request_decision_and_lease",
+          "result": "PASS",
+          "seconds": 0.7
+        },
+        {
+          "id": "tests.test_native_run_access::test_pg_immutable_history_and_state_guard[prefix]",
+          "result": "PASS",
+          "seconds": 0.694
+        },
+        {
+          "id": "tests.test_native_run_access::test_pg_immutable_history_and_state_guard[clear]",
+          "result": "PASS",
+          "seconds": 0.793
+        },
+        {
+          "id": "tests.test_native_run_access::test_pg_immutable_history_and_state_guard[rewrite]",
+          "result": "PASS",
+          "seconds": 0.66
+        },
+        {
+          "id": "tests.test_native_run_access::test_pg_immutable_history_and_state_guard[missing_revision]",
+          "result": "PASS",
+          "seconds": 0.516
+        },
+        {
+          "id": "tests.test_native_run_access::test_approval_interval_must_shrink_and_history_stays_atomic",
+          "result": "PASS",
+          "seconds": 0.583
+        },
+        {
+          "id": "tests.test_native_run_access::test_expiry_rechecked_after_actual_pg_parent_lock_wait",
+          "result": "PASS",
+          "seconds": 2.219
+        },
+        {
+          "id": "tests.test_native_run_access::test_malformed_source_is_explicit_conflict_not_internal_error[input]",
+          "result": "PASS",
+          "seconds": 0.931
+        },
+        {
+          "id": "tests.test_native_run_access::test_malformed_source_is_explicit_conflict_not_internal_error[receipt]",
+          "result": "PASS",
+          "seconds": 0.909
+        },
+        {
+          "id": "tests.test_native_run_access::test_malformed_source_is_explicit_conflict_not_internal_error[empty_input]",
+          "result": "PASS",
+          "seconds": 0.536
+        },
+        {
+          "id": "tests.test_native_run_access::test_malformed_source_is_explicit_conflict_not_internal_error[changed_goal]",
+          "result": "PASS",
+          "seconds": 0.675
+        },
+        {
+          "id": "tests.test_native_run_access::test_malformed_source_is_explicit_conflict_not_internal_error[operation_action]",
+          "result": "PASS",
+          "seconds": 0.594
+        },
+        {
+          "id": "tests.test_native_run_access::test_approval_rechecks_material_source_after_actual_parent_lock_wait",
+          "result": "PASS",
+          "seconds": 0.592
+        },
+        {
+          "id": "tests.test_native_run_access::test_permission_revoked_before_approval_is_not_cached",
+          "result": "PASS",
+          "seconds": 0.768
+        },
+        {
+          "id": "tests.test_native_run_access::test_case_cancel_blocks_approve_preserves_history_recovery_and_request_cancel",
+          "result": "PASS",
+          "seconds": 1.32
+        },
+        {
+          "id": "tests.test_native_run_access::test_native_marker_is_never_legacy_even_with_cold_store",
+          "result": "PASS",
+          "seconds": 0.643
+        },
+        {
+          "id": "tests.test_native_run_access::test_unissued_test_permit_and_default_constructor_are_closed",
+          "result": "PASS",
+          "seconds": 0.621
+        },
+        {
+          "id": "tests.test_native_run_access::test_native_strict_dto[fields0]",
+          "result": "PASS",
+          "seconds": 0.624
+        },
+        {
+          "id": "tests.test_native_run_access::test_native_strict_dto[fields1]",
+          "result": "PASS",
+          "seconds": 0.55
+        },
+        {
+          "id": "tests.test_native_run_access::test_native_strict_dto[fields2]",
+          "result": "PASS",
+          "seconds": 0.808
+        },
+        {
+          "id": "tests.test_native_run_access::test_native_strict_dto[fields3]",
+          "result": "PASS",
+          "seconds": 0.837
+        },
+        {
+          "id": "tests.test_native_run_access::test_native_strict_dto[fields4]",
+          "result": "PASS",
+          "seconds": 0.716
+        },
+        {
+          "id": "tests.test_native_run_access_offline::test_native_run_access_ui[disabled_pending]",
+          "result": "PASS",
+          "seconds": 0.074
+        },
+        {
+          "id": "tests.test_native_run_access_offline::test_native_run_access_ui[lost_response]",
+          "result": "PASS",
+          "seconds": 0.11
+        },
+        {
+          "id": "tests.test_native_run_access_offline::test_native_run_access_ui[not_observed]",
+          "result": "PASS",
+          "seconds": 0.073
+        },
+        {
+          "id": "tests.test_native_run_access_offline::test_native_run_access_ui[revoked]",
+          "result": "PASS",
+          "seconds": 0.068
+        },
+        {
+          "id": "tests.test_native_run_access_offline::test_native_run_access_ui[late_read]",
+          "result": "PASS",
+          "seconds": 0.052
+        },
+        {
+          "id": "tests.test_native_run_access_offline::test_native_run_access_ui[late_recovery]",
+          "result": "PASS",
+          "seconds": 0.048
+        },
+        {
+          "id": "tests.test_native_run_access_offline::test_native_run_access_ui[authority_expiry]",
+          "result": "PASS",
+          "seconds": 0.065
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_json_null_native_marker_is_not_legacy",
+          "result": "PASS",
+          "seconds": 1.642
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_pg_append_cannot_rewrite_existing_request_on_cancel",
+          "result": "PASS",
+          "seconds": 0.654
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_pg_append_rejects_self_approval_lease_without_valid_request",
+          "result": "PASS",
+          "seconds": 0.646
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_two_request_cycles_keep_original_key_receipt",
+          "result": "PASS",
+          "seconds": 0.711
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[marker0]",
+          "result": "PASS",
+          "seconds": 0.656
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[marker1]",
+          "result": "PASS",
+          "seconds": 0.51
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[False]",
+          "result": "PASS",
+          "seconds": 0.808
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_probes::test_non_null_unknown_markers_deny_even_cold[UNKNOWN]",
+          "result": "PASS",
+          "seconds": 1.578
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_ui::test_native_expiry_boundary[status_expiry]",
+          "result": "PASS",
+          "seconds": 0.384
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_independent_native_ui::test_native_expiry_boundary[pending_expiry]",
+          "result": "PASS",
+          "seconds": 6.502
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_native_lock_probe::test_current_permission_writer_queue_does_not_deadlock_protocol",
+          "result": "PASS",
+          "seconds": 3.66
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[malformed_input]",
+          "result": "PASS",
+          "seconds": 2.052
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[input_fingerprint]",
+          "result": "PASS",
+          "seconds": 1.243
+        },
+        {
+          "id": ".runtime.native-run-access-review.test_native_source_probe::test_approval_requires_original_ordinary_case_creation_proof[operation_action]",
+          "result": "PASS",
+          "seconds": 0.842
+        }
+      ],
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "PASS": 56,
+        "SKIP": 0
+      },
+      "drift_paths": [],
+      "ended_at": "2026-10-11T18:26:18.218627+00:00",
+      "exit_code": 0,
+      "junit_suite_seconds": 50.956,
+      "name": "final-frozen",
+      "process_seconds": 52.87477098800082,
+      "raw": {
+        "results.xml": "4cd2a330736ac55f1551be22a45594c39809bc2c5ae62c71eb4d7ae44b46f28e",
+        "run.json": "47d50500994b2eeaae57dd772a583fbdc739fbfbd65a0444300edb96943aa86d",
+        "source-after.json": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+        "source-before.json": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+        "stdout.log": "65b5d54cc9d7e3ecae7f84aa06f788122f9280f4d52e77b56d20ac1dba945276"
+      },
+      "source_after_sha256": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+      "source_before_sha256": "0e0a325123aa404483b1184e1dd50cec98cc25b37477f6700900e2c3eca3cfa9",
+      "source_count": 411,
+      "started_at": "2026-10-11T18:25:25.343864+00:00",
+      "unique_test_ids": 56
+    }
+  ]
+}

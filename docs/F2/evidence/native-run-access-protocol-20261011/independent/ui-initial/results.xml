@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="0.297" timestamp="2026-10-11T18:17:59.777416+00:00" hostname="b9877353a986"><testcase classname=".runtime.native-run-access-review.test_independent_native_ui" name="test_native_expiry_boundary[status_expiry]" time="0.128"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: ordinary native status expiry must not claim an isolated demonstration session&#10;      at /workspace/ParkWeave/.runtime/native-run-access-review/native_expiry_probe.js:36:3 {&#10;    generatedMessage: false,&#10;    code: 'ERR_ASSERTION',&#10;    actual: false,&#10;    expected: true,&#10;    operator: '==',&#10;    diff: 'simple'&#10;  }&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/.runtime/native-run-access-review/native_expiry_probe.js', 'statu...sage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n&quot;).returncode">mode = 'status_expiry'
+
+    @pytest.mark.parametrize('mode', ['status_expiry', 'pending_expiry'])
+    def test_native_expiry_boundary(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('native_expiry_probe.js')), mode],
+                                capture_output=True, text=True, timeout=15)
+        print(result.stdout, end='')
+        print(result.stderr, end='')
+&gt;       assert result.returncode == 0, result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: ordinary native status expiry must not claim an isolated demonstration session
+E             at /workspace/ParkWeave/.runtime/native-run-access-review/native_expiry_probe.js:36:3 {
+E           generatedMessage: false,
+E           code: 'ERR_ASSERTION',
+E           actual: false,
+E           expected: true,
+E           operator: '==',
+E           diff: 'simple'
+E         }
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/.runtime/native-run-access-review/native_expiry_probe.js', 'statu...sage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n").returncode
+
+.runtime/native-run-access-review/test_independent_native_ui.py:13: AssertionError</failure></testcase><testcase classname=".runtime.native-run-access-review.test_independent_native_ui" name="test_native_expiry_boundary[pending_expiry]" time="0.136" /></testsuite></testsuites>

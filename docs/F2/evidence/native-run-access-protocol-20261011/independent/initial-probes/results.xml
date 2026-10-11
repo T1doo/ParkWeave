@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="8" time="5.855" timestamp="2026-10-11T18:15:35.179424+00:00" hostname="b9877353a986"><testcase classname=".runtime.native-run-access-review.test_independent_native_probes" name="test_json_null_native_marker_is_not_legacy" time="1.238"><failure message="AssertionError: SQL non-NULL native JSON null must not become a legacy assignment&#10;assert not True">native_fixture = ((&lt;parkweave.store.Store object at 0x7f0d85027230&gt;, &lt;parkweave.store.Store object at 0x7f0d85026a80&gt;, {'fixture-a': 'y...{'row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+
+    def test_json_null_native_marker_is_not_legacy(native_fixture):
+        a = native_fixture
+        f, parent, _, before = a
+        # SELECT only: simulates psycopg's actual decoding without any assignment write.
+        with f[0].connect() as c:
+            p = f[0].auth(c, f[2]['executor-a'], lock=True)
+            row = c.execute("""SELECT %s::text principal_id, %s::uuid run_id,
+                %s::text park_id, %s::text org_id, true active,
+                'null'::jsonb native_access, ('null'::jsonb IS NOT NULL) native_sql_present""",
+                (p['id'], parent['run_id'], p['park_id'], p['org_id'])).fetchone()
+            allowed = Store(f[0].dsn).assignment_allowed(c, p, parent['run_id'], assignment=row)
+        observe('json-null-marker', {'native_sql_present': row['native_sql_present'],
+                                    'python_marker_is_none': row['native_access'] is None,
+                                    'assignment_allowed': allowed,
+                                    'authority_snapshot_unchanged': snapshot(f[1]) == before})
+&gt;       assert not allowed, 'SQL non-NULL native JSON null must not become a legacy assignment'
+E       AssertionError: SQL non-NULL native JSON null must not become a legacy assignment
+E       assert not True
+
+.runtime/native-run-access-review/test_independent_native_probes.py:42: AssertionError</failure></testcase><testcase classname=".runtime.native-run-access-review.test_independent_native_probes" name="test_pg_append_cannot_rewrite_existing_request_on_cancel" time="0.667"><failure message="AssertionError: terminal append must preserve the original request head&#10;assert False">native_fixture = ((&lt;parkweave.store.Store object at 0x7f0d84f16390&gt;, &lt;parkweave.store.Store object at 0x7f0d84b00a40&gt;, {'fixture-a': 'Q...{'row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+
+    def test_pg_append_cannot_rewrite_existing_request_on_cancel(native_fixture):
+        a = native_fixture
+        f, parent, bridge, before = a
+        act(a, 'REQUEST')
+        original = deepcopy(ledger(a))
+        altered = deepcopy(original)
+        altered['revision'] = 2
+        altered['state'] = 'CANCELLED'
+        altered['request']['target_id'] = 'unassigned'
+        event = deepcopy(original['events'][-1])
+        event.update(action='CANCEL', revision=2, state='CANCELLED',
+                     request_key='synthetic-head-tamper', fingerprint='a' * 64,
+                     request=deepcopy(altered['request']))
+        altered['events'].append(event)
+        rejected = False
+        try:
+            with f[0].connect() as c:
+                c.execute('UPDATE runs SET native_run_access_protocol=%s WHERE id=%s',
+                          (Jsonb(altered), parent['run_id']))
+        except psycopg.errors.RaiseException:
+            rejected = True
+        current = ledger(a)
+        observe('cancel-request-rewrite', {'rejected': rejected,
+            'original_prefix_preserved': current['events'][:1] == original['events'],
+            'current_target': current['request']['target_id'],
+            'authority_snapshot_unchanged': snapshot(f[1]) == before})
+&gt;       assert rejected, 'terminal append must preserve the original request head'
+E       AssertionError: terminal append must preserve the original request head
+E       assert False
+
+.runtime/native-run-access-review/test_independent_native_probes.py:71: AssertionError</failure></testcase><testcase classname=".runtime.native-run-access-review.test_independent_native_probes" name="test_pg_append_rejects_self_approval_lease_without_valid_request" time="0.509"><failure message="AssertionError: approval append must reject self approval and an unbound lease&#10;assert False">native_fixture = ((&lt;parkweave.store.Store object at 0x7f0d8386d250&gt;, &lt;parkweave.store.Store object at 0x7f0d83832e40&gt;, {'fixture-a': '0...{'row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+
+    def test_pg_append_rejects_self_approval_lease_without_valid_request(native_fixture):
+        a = native_fixture
+        f, parent, _, before = a
+        act(a, 'REQUEST')
+        original = deepcopy(ledger(a))
+        altered = deepcopy(original)
+        altered['revision'] = 2
+        altered['state'] = 'APPROVED'
+        altered['request']['approver_id'] = 'fixture-a'
+        altered['request']['approved_validity'] = altered['request']['requested_validity']
+        altered['lease_id'] = str(uuid4())
+        altered['leases'].append({'state': 'NON_EFFECTIVE'})
+        event = deepcopy(original['events'][-1])
+        event.update(action='APPROVE', revision=2, state='APPROVED',
+                     request_key='synthetic-self-approve', fingerprint='b' * 64,
+                     request=deepcopy(altered['request']), lease_id=altered['lease_id'])
+        altered['events'].append(event)
+        rejected = False
+        try:
+            with f[0].connect() as c:
+                c.execute('UPDATE runs SET native_run_access_protocol=%s WHERE id=%s',
+                          (Jsonb(altered), parent['run_id']))
+        except psycopg.errors.RaiseException:
+            rejected = True
+        current = ledger(a)
+        observe('self-approval-lease', {'rejected': rejected, 'state': current['state'],
+            'current_approver': current['request'].get('approver_id'),
+            'lease_has_exact_id': bool(current['leases'] and current['leases'][-1].get('id') == current.get('lease_id')),
+            'authority_snapshot_unchanged': snapshot(f[1]) == before})
+&gt;       assert rejected, 'approval append must reject self approval and an unbound lease'
+E       AssertionError: approval append must reject self approval and an unbound lease
+E       assert False
+
+.runtime/native-run-access-review/test_independent_native_probes.py:103: AssertionError</failure></testcase><testcase classname=".runtime.native-run-access-review.test_independent_native_probes" name="test_two_request_cycles_keep_original_key_receipt" time="0.668" /><testcase classname=".runtime.native-run-access-review.test_independent_native_probes" name="test_non_null_unknown_markers_deny_even_cold[marker0]" time="0.500" /><testcase classname=".runtime.native-run-access-review.test_independent_native_probes" name="test_non_null_unknown_markers_deny_even_cold[marker1]" time="0.491" /><testcase classname=".runtime.native-run-access-review.test_independent_native_probes" name="test_non_null_unknown_markers_deny_even_cold[False]" time="0.580" /><testcase classname=".runtime.native-run-access-review.test_independent_native_probes" name="test_non_null_unknown_markers_deny_even_cold[UNKNOWN]" time="0.473" /></testsuite></testsuites>

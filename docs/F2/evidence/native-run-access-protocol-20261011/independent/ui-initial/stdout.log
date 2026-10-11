@@ -1,0 +1,41 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+__________________ test_native_expiry_boundary[status_expiry] __________________
+
+mode = 'status_expiry'
+
+    @pytest.mark.parametrize('mode', ['status_expiry', 'pending_expiry'])
+    def test_native_expiry_boundary(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('native_expiry_probe.js')), mode],
+                                capture_output=True, text=True, timeout=15)
+        print(result.stdout, end='')
+        print(result.stderr, end='')
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: ordinary native status expiry must not claim an isolated demonstration session
+E             at /workspace/ParkWeave/.runtime/native-run-access-review/native_expiry_probe.js:36:3 {
+E           generatedMessage: false,
+E           code: 'ERR_ASSERTION',
+E           actual: false,
+E           expected: true,
+E           operator: '==',
+E           diff: 'simple'
+E         }
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/.runtime/native-run-access-review/native_expiry_probe.js', 'statu...sage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n").returncode
+
+.runtime/native-run-access-review/test_independent_native_ui.py:13: AssertionError
+----------------------------- Captured stdout call -----------------------------
+{"mode":"status_expiry","summary":"隔离演示审批会话已到期，旧访问视图已清除。","post_count":0,"browser_attempts":0}
+AssertionError [ERR_ASSERTION]: ordinary native status expiry must not claim an isolated demonstration session
+    at /workspace/ParkWeave/.runtime/native-run-access-review/native_expiry_probe.js:36:3 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+=========================== short test summary info ============================
+FAILED .runtime/native-run-access-review/test_independent_native_ui.py::test_native_expiry_boundary[status_expiry]
+1 failed, 1 passed in 0.30s

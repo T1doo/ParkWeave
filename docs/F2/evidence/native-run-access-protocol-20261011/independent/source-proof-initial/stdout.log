@@ -1,0 +1,95 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_approval_requires_original_ordinary_case_creation_proof[malformed_input] _
+
+native_fixture = ((<parkweave.store.Store object at 0x7f013bc8e120>, <parkweave.store.Store object at 0x7f013cd89280>, {'fixture-a': 'n...{'row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+mutation = 'malformed_input'
+
+    @pytest.mark.parametrize('mutation', ['malformed_input', 'input_fingerprint', 'operation_action'])
+    def test_approval_requires_original_ordinary_case_creation_proof(native_fixture, mutation):
+        a = native_fixture
+        f, parent, _, before = a
+        act(a, 'REQUEST')
+        approve = body(a, 'APPROVE')
+        with f[1].connect() as c:
+            if mutation == 'operation_action':
+                c.execute("UPDATE operations SET action='facts.assess' WHERE run_id=%s", (parent['run_id'],))
+            else:
+                value = c.execute('SELECT input FROM runs WHERE id=%s', (parent['run_id'],)).fetchone()['input']
+                if mutation == 'malformed_input':
+                    value = {}
+                else:
+                    value['goal'] += ' SYNTHETIC changed without original fingerprint'
+                c.execute('UPDATE runs SET input=%s WHERE id=%s', (Jsonb(value), parent['run_id']))
+>       with pytest.raises(Conflict):
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+.runtime/native-run-access-review/test_native_source_probe.py:32: Failed
+_ test_approval_requires_original_ordinary_case_creation_proof[input_fingerprint] _
+
+native_fixture = ((<parkweave.store.Store object at 0x7f013bdb5520>, <parkweave.store.Store object at 0x7f013b7f7dd0>, {'fixture-a': 'b...{'row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+mutation = 'input_fingerprint'
+
+    @pytest.mark.parametrize('mutation', ['malformed_input', 'input_fingerprint', 'operation_action'])
+    def test_approval_requires_original_ordinary_case_creation_proof(native_fixture, mutation):
+        a = native_fixture
+        f, parent, _, before = a
+        act(a, 'REQUEST')
+        approve = body(a, 'APPROVE')
+        with f[1].connect() as c:
+            if mutation == 'operation_action':
+                c.execute("UPDATE operations SET action='facts.assess' WHERE run_id=%s", (parent['run_id'],))
+            else:
+                value = c.execute('SELECT input FROM runs WHERE id=%s', (parent['run_id'],)).fetchone()['input']
+                if mutation == 'malformed_input':
+                    value = {}
+                else:
+                    value['goal'] += ' SYNTHETIC changed without original fingerprint'
+                c.execute('UPDATE runs SET input=%s WHERE id=%s', (Jsonb(value), parent['run_id']))
+>       with pytest.raises(Conflict):
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+.runtime/native-run-access-review/test_native_source_probe.py:32: Failed
+_ test_approval_requires_original_ordinary_case_creation_proof[operation_action] _
+
+native_fixture = ((<parkweave.store.Store object at 0x7f013be36210>, <parkweave.store.Store object at 0x7f013a5981d0>, {'fixture-a': 'r...{'row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+mutation = 'operation_action'
+
+    @pytest.mark.parametrize('mutation', ['malformed_input', 'input_fingerprint', 'operation_action'])
+    def test_approval_requires_original_ordinary_case_creation_proof(native_fixture, mutation):
+        a = native_fixture
+        f, parent, _, before = a
+        act(a, 'REQUEST')
+        approve = body(a, 'APPROVE')
+        with f[1].connect() as c:
+            if mutation == 'operation_action':
+                c.execute("UPDATE operations SET action='facts.assess' WHERE run_id=%s", (parent['run_id'],))
+            else:
+                value = c.execute('SELECT input FROM runs WHERE id=%s', (parent['run_id'],)).fetchone()['input']
+                if mutation == 'malformed_input':
+                    value = {}
+                else:
+                    value['goal'] += ' SYNTHETIC changed without original fingerprint'
+                c.execute('UPDATE runs SET input=%s WHERE id=%s', (Jsonb(value), parent['run_id']))
+>       with pytest.raises(Conflict):
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+.runtime/native-run-access-review/test_native_source_probe.py:32: Failed
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/native-run-access-review/test_native_source_probe.py::test_approval_requires_original_ordinary_case_creation_proof[malformed_input]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/native-run-access-review/test_native_source_probe.py::test_approval_requires_original_ordinary_case_creation_proof[malformed_input]
+FAILED .runtime/native-run-access-review/test_native_source_probe.py::test_approval_requires_original_ordinary_case_creation_proof[input_fingerprint]
+FAILED .runtime/native-run-access-review/test_native_source_probe.py::test_approval_requires_original_ordinary_case_creation_proof[operation_action]
+3 failed, 2 warnings in 3.02s

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="3.020" timestamp="2026-10-11T18:23:01.614477+00:00" hostname="b9877353a986"><testcase classname=".runtime.native-run-access-review.test_native_source_probe" name="test_approval_requires_original_ordinary_case_creation_proof[malformed_input]" time="1.316"><failure message="Failed: DID NOT RAISE Conflict">native_fixture = ((&lt;parkweave.store.Store object at 0x7f013bc8e120&gt;, &lt;parkweave.store.Store object at 0x7f013cd89280&gt;, {'fixture-a': 'n...{'row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+mutation = 'malformed_input'
+
+    @pytest.mark.parametrize('mutation', ['malformed_input', 'input_fingerprint', 'operation_action'])
+    def test_approval_requires_original_ordinary_case_creation_proof(native_fixture, mutation):
+        a = native_fixture
+        f, parent, _, before = a
+        act(a, 'REQUEST')
+        approve = body(a, 'APPROVE')
+        with f[1].connect() as c:
+            if mutation == 'operation_action':
+                c.execute("UPDATE operations SET action='facts.assess' WHERE run_id=%s", (parent['run_id'],))
+            else:
+                value = c.execute('SELECT input FROM runs WHERE id=%s', (parent['run_id'],)).fetchone()['input']
+                if mutation == 'malformed_input':
+                    value = {}
+                else:
+                    value['goal'] += ' SYNTHETIC changed without original fingerprint'
+                c.execute('UPDATE runs SET input=%s WHERE id=%s', (Jsonb(value), parent['run_id']))
+&gt;       with pytest.raises(Conflict):
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+.runtime/native-run-access-review/test_native_source_probe.py:32: Failed</failure></testcase><testcase classname=".runtime.native-run-access-review.test_native_source_probe" name="test_approval_requires_original_ordinary_case_creation_proof[input_fingerprint]" time="0.592"><failure message="Failed: DID NOT RAISE Conflict">native_fixture = ((&lt;parkweave.store.Store object at 0x7f013bdb5520&gt;, &lt;parkweave.store.Store object at 0x7f013b7f7dd0&gt;, {'fixture-a': 'b...{'row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+mutation = 'input_fingerprint'
+
+    @pytest.mark.parametrize('mutation', ['malformed_input', 'input_fingerprint', 'operation_action'])
+    def test_approval_requires_original_ordinary_case_creation_proof(native_fixture, mutation):
+        a = native_fixture
+        f, parent, _, before = a
+        act(a, 'REQUEST')
+        approve = body(a, 'APPROVE')
+        with f[1].connect() as c:
+            if mutation == 'operation_action':
+                c.execute("UPDATE operations SET action='facts.assess' WHERE run_id=%s", (parent['run_id'],))
+            else:
+                value = c.execute('SELECT input FROM runs WHERE id=%s', (parent['run_id'],)).fetchone()['input']
+                if mutation == 'malformed_input':
+                    value = {}
+                else:
+                    value['goal'] += ' SYNTHETIC changed without original fingerprint'
+                c.execute('UPDATE runs SET input=%s WHERE id=%s', (Jsonb(value), parent['run_id']))
+&gt;       with pytest.raises(Conflict):
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+.runtime/native-run-access-review/test_native_source_probe.py:32: Failed</failure></testcase><testcase classname=".runtime.native-run-access-review.test_native_source_probe" name="test_approval_requires_original_ordinary_case_creation_proof[operation_action]" time="0.531"><failure message="Failed: DID NOT RAISE Conflict">native_fixture = ((&lt;parkweave.store.Store object at 0x7f013be36210&gt;, &lt;parkweave.store.Store object at 0x7f013a5981d0&gt;, {'fixture-a': 'r...{'row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+mutation = 'operation_action'
+
+    @pytest.mark.parametrize('mutation', ['malformed_input', 'input_fingerprint', 'operation_action'])
+    def test_approval_requires_original_ordinary_case_creation_proof(native_fixture, mutation):
+        a = native_fixture
+        f, parent, _, before = a
+        act(a, 'REQUEST')
+        approve = body(a, 'APPROVE')
+        with f[1].connect() as c:
+            if mutation == 'operation_action':
+                c.execute("UPDATE operations SET action='facts.assess' WHERE run_id=%s", (parent['run_id'],))
+            else:
+                value = c.execute('SELECT input FROM runs WHERE id=%s', (parent['run_id'],)).fetchone()['input']
+                if mutation == 'malformed_input':
+                    value = {}
+                else:
+                    value['goal'] += ' SYNTHETIC changed without original fingerprint'
+                c.execute('UPDATE runs SET input=%s WHERE id=%s', (Jsonb(value), parent['run_id']))
+&gt;       with pytest.raises(Conflict):
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+.runtime/native-run-access-review/test_native_source_probe.py:32: Failed</failure></testcase></testsuite></testsuites>
