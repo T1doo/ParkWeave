@@ -14,7 +14,6 @@ import time
 import httpx
 import psutil
 import psycopg
-import playwright
 from psycopg.conninfo import make_conninfo
 from parkweave.process_env import minimal_environment
 from parkweave.store import Store
@@ -23,6 +22,7 @@ REPO=Path(__file__).resolve().parents[1]
 
 
 def child_environment(**overrides):
+    import playwright  # Only the browser lifecycle needs this optional package.
     # Explicit source and installed package paths; never inherited PYTHONPATH.
     sites=list(dict.fromkeys(str(Path(m.__file__).resolve().parent.parent)
                              for m in (psycopg,psutil,playwright)))

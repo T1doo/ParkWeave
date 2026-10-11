@@ -85,29 +85,20 @@ def test_acl_return_branches_use_existing_bounded_protocol_without_private_outpu
 
 
 def test_setup_checks_created_config_and_sessions_without_acl_repair(tmp_path,monkeypatch,capsys):
+    """The current setup pause precedes config creation and every native action."""
     from parkweave.store import Store
     runtime=tmp_path/'.runtime';runtime.mkdir();sessions=runtime/'synthetic-sessions.json';sessions.write_text('{"fixture-a":"SYNTHETIC"}')
-    original=sessions.read_bytes();python=tmp_path/'.venv-windows/Scripts/python.exe';python.parent.mkdir(parents=True);python.write_text('SYNTHETIC')
-    monkeypatch.setattr(lifecycle,'REPO',tmp_path);monkeypatch.setattr(lifecycle,'RUNTIME',runtime);monkeypatch.setattr(lifecycle,'CONFIG',runtime/'windows-config.json');monkeypatch.setattr(lifecycle.sys,'executable',str(python))
-    monkeypatch.setattr(lifecycle,'check_python',lambda *args:None);monkeypatch.setattr(lifecycle,'check_dsn_scope',lambda *args,**kwargs:None);monkeypatch.setattr(lifecycle,'needed_environment',lambda name:'SYNTHETIC')
-    (tmp_path/'src/parkweave').mkdir(parents=True);(tmp_path/'src/parkweave/roles.sql').write_text('-- SYNTHETIC fixture')
-    class Connection:
-        def __enter__(self):return self
-        def __exit__(self,*args):pass
-        def execute(self,*args):pass
-    monkeypatch.setattr(Store,'migrate',lambda *args:None);monkeypatch.setattr(Store,'connect',lambda *args:Connection())
-    # Native owner creation is separately tested; this fixture checks the final ACL boundary.
-    monkeypatch.setattr(lifecycle,'create_synthetic_config_file',lambda path:Path(path).open('x',encoding='utf-8'))
-    calls=[]
-    monkeypatch.setattr(lifecycle,'protect_private_root',lambda root:calls.append('precheck'))
-    def final_check(root):
-        assert lifecycle.CONFIG.exists() and sessions.read_bytes()==original
-        calls.append('final_check')
-        raise lifecycle.BoundaryError(POISON,'ACL_OWNER_MISMATCH')
-    monkeypatch.setattr(lifecycle,'native_acl_check',final_check)
-    with pytest.raises(lifecycle.BoundaryError):lifecycle.setup()
-    assert calls==['precheck','final_check'] and 'Setup candidate complete' not in capsys.readouterr().out
-    assert sessions.read_bytes()==original and json.loads(lifecycle.CONFIG.read_text())['project']=='ParkWeave'
+    original=sessions.read_bytes()
+    monkeypatch.setattr(lifecycle,'REPO',tmp_path);monkeypatch.setattr(lifecycle,'RUNTIME',runtime);monkeypatch.setattr(lifecycle,'CONFIG',runtime/'windows-config.json')
+    def refused(*args,**kwargs):pytest.fail('paused setup must not perform native or database actions')
+    for name in ('check_python','check_dsn_scope','needed_environment','protect_private_root','native_acl_check','create_synthetic_config_file'):
+        monkeypatch.setattr(lifecycle,name,refused)
+    monkeypatch.setattr(lifecycle.subprocess,'run',refused)
+    monkeypatch.setattr(Store,'migrate',refused);monkeypatch.setattr(Store,'connect',refused)
+    with pytest.raises(lifecycle.BoundaryError) as error:lifecycle.setup()
+    assert error.value.parkweave_lifecycle_reason=='OWNER_MUTATION_PAUSED'
+    assert not lifecycle.CONFIG.exists() and not (tmp_path/'.venv-windows').exists()
+    assert 'Setup candidate complete' not in capsys.readouterr().out and sessions.read_bytes()==original
 
 
 def test_acl_reparse_root_refused_without_launch(tmp_path,monkeypatch):
