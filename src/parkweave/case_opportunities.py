@@ -68,7 +68,7 @@ def auth(store,c,token,id,write=False):
     c.execute("SET LOCAL lock_timeout='3s'")
     p=store.auth(c,token,lock=True)
     if p['role']!='enterprise_operator':raise Denied('original Case owner required')
-    row=prep.scoped(store,c,p,id,write=write)
+    row=prep.scoped(store,c,p,id,write=write,business_write=write)
     if row['namespace']!='SYNTHETIC' or row['service_id']!=prep.SERVICE:raise Denied('existing synthetic preparation Case required')
     case=c.execute('SELECT id FROM cases WHERE id=%s AND run_id=%s AND park_id=%s AND org_id=%s AND source=%s',(row['case_id'],row['run_id'],p['park_id'],p['org_id'],'SYNTHETIC')).fetchone()
     if not case:raise Denied('bound synthetic Case required')

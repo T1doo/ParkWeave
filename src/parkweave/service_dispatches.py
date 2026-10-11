@@ -48,7 +48,8 @@ def _handoff_enabled(store, c):
             '_isolated_run_access','_isolated_local_execution','_isolated_execution_preview',
             '_isolated_resource_execution_preview','_isolated_dispatch_execution_preview',
             '_isolated_receipt_execution_preview','_isolated_lifecycle_execution_preview')) and \
-        c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 29
+        c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] in (29,30) and \
+        bool(c.execute('SELECT 1 FROM schema_version WHERE version=29').fetchone())
 
 
 def _handoff_predecessor(store, c, parent, root, *, write=False, accepting=False):
@@ -196,7 +197,8 @@ def _event(c, p, root, offer, key, fp, action, reason, **extra):
 
 
 def _view(c, p, parent, root, event=None,store=None):
-    result = dict(scope=SCOPE, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
+    cancelled=prep.case_cancelled(c,parent)
+    result = dict(scope=SCOPE, case_cancelled=cancelled, can_accept=False, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
                   service_id=parent['service_id'], service_version=parent['service_version'],
                   preparation_revision=parent['revision'], dispatch_id=root['id'] if root else None,
                   revision=root['revision'] if root else 0, current_offer=None, offers=[], history=[], event=event,
@@ -219,6 +221,8 @@ def _view(c, p, parent, root, event=None,store=None):
     if offer['id']==root['current_offer_id']:
         result.update(current_receipt_step_id=offer['receipt_step_id'] if offer['state']=='ACCEPTED' else None,
                       **_recovery_flags(c,p,parent,root,store))
+    if cancelled:result.update(can_reoffer=False,reoffer_kind=None)
+    else:result['can_accept']=executor and result['is_current_offer'] and offer['state']=='OFFERED' and result['dependency']=='CURRENT'
     return result
 
 
@@ -239,8 +243,8 @@ def catalog(store, token, id):
         handoff=_handoff_predecessor(store,c,parent,root)
         handoff_rows=[r for r in rows if handoff and r['id']!=handoff[0]['executor_id']]
         return dict(scope=SCOPE, preparation_revision=parent['revision'], dispatch_revision=root['revision'] if root else 0,
-                    ready=ready and bool(rows), executors=rows, has_receipt_step=existing, history_limit_reached=limited,
-                    can_reassign=bool(handoff_rows),reassignment_executors=handoff_rows,
+                    case_cancelled=prep.case_cancelled(c,parent),ready=ready and bool(rows) and not prep.case_cancelled(c,parent), executors=rows, has_receipt_step=existing, history_limit_reached=limited,
+                    can_reassign=bool(handoff_rows) and not prep.case_cancelled(c,parent),reassignment_executors=handoff_rows,
                     reassignment_actor_id=p['id'],
                     reassignment_predecessor=_handoff_binding(parent,*handoff) if handoff else None,
                     **_recovery_flags(c,p,parent,root,store))
@@ -275,6 +279,7 @@ def reassign(store, token, id, key, data):
         base=c.execute('SELECT preparation_id FROM service_dispatches WHERE id=%s',(id,)).fetchone()
         if not base:raise Denied('dispatch unavailable')
         parent=_parent(store,c,p,base['preparation_id'],write=True);root=_root(c,parent,write=True)
+        prep.case_write_guard(c,parent)
         if not _handoff_enabled(store,c):raise Conflict('manual receipt handoff is not installed or available')
         receipts._executor(store,c,data.executor_id,parent['run_id'])
         _party(store,c,parent,parent['owner_id'],'PREPARE')
@@ -325,6 +330,7 @@ def offer(store, token, id, key, data):
         p = _auth(store, c, token)
         if p['role'] != 'park_specialist': raise Denied('assigned preparation reviewer required')
         _key(c, p, key); parent = _parent(store, c, p, id, write=True); root = _root(c, parent, write=True)
+        prep.case_write_guard(c,parent)
         receipts._executor(store, c, data.executor_id, parent['run_id'])
         _party(store, c, parent, parent['owner_id'], 'PREPARE')
         old = _replay(c, p, key, fp, root)
@@ -369,6 +375,7 @@ def command(store, token, id, key, data):
         base = c.execute('SELECT preparation_id FROM service_dispatches WHERE id=%s', (id,)).fetchone()
         if not base: raise Denied('dispatch unavailable')
         parent = _parent(store, c, p, base['preparation_id'], write=True); root = _root(c, parent, write=True)
+        prep.case_write_guard(c,parent)
         own = _own_offer(c, p, root)
         if data.action == 'ACCEPT':
             _party(store, c, parent, parent['reviewer_id'], 'REVIEW_ASSIGNED')

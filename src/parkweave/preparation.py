@@ -44,7 +44,21 @@ def grant(store,c,p,capability):
     store.check_capability(c,p,'READ')
     if not c.execute('SELECT 1 FROM preparation_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s AND capability=%s AND active',(p['id'],p['park_id'],p['org_id'],capability)).fetchone():raise Denied('current preparation grant required')
 
-def scoped(store,c,p,id,write=False):
+def case_cancelled(c,parent):
+    # Isolated temporary material executions cannot be cancelled by this slice.
+    if parent['namespace']=='PREVIEW_EXECUTION':return False
+    case=c.execute('SELECT state FROM cases WHERE id=%s',(parent['case_id'],)).fetchone()
+    if not case:raise Conflict('bound Case required')
+    return case['state']=='CANCELLED'
+
+def case_write_guard(c,parent):
+    # Caller holds the parent SHARE/UPDATE lock through commit. Cancellation
+    # obtains UPDATE on that same parent before dispatch and the final Case lock.
+    # A plain read here preserves resource/dispatch -> Case lock ordering.
+    if c.autocommit:raise Conflict('transactional Case write required')
+    if case_cancelled(c,parent):raise Conflict('Case cancelled before first acceptance; historical reads only')
+
+def scoped(store,c,p,id,write=False,business_write=False):
     capability='PREPARE' if p['role']=='enterprise_operator' else 'REVIEW_ASSIGNED'
     grant(store,c,p,capability)
     if write and capability=='PREPARE':store.check_capability(c,p,'EXECUTE')
@@ -52,6 +66,9 @@ def scoped(store,c,p,id,write=False):
     q+=' FOR UPDATE' if write else ' FOR SHARE'
     row=c.execute(q,(id,p['park_id'],p['org_id'])).fetchone()
     if row is None or p['id']!=(row['owner_id'] if capability=='PREPARE' else row['reviewer_id']):raise Denied('assigned preparation scope required')
+    if business_write:
+        if not write:raise Conflict('locked business write required')
+        case_write_guard(c,row)
     return row
 
 def catalog(store,token):
@@ -167,7 +184,7 @@ def command(store,token,id,key,data):
     body=data.model_dump(mode='json',exclude={'correction_slots'} if data.correction_slots is None else set())
     fp=digest(canonical({'preparation_id':str(id),**body}))
     with store.connect() as c:
-        p=store.auth(c,token,lock=True);key_lock(c,p,key);row=scoped(store,c,p,id,write=True)
+        p=store.auth(c,token,lock=True);key_lock(c,p,key);row=scoped(store,c,p,id,write=True,business_write=True)
         if data.action in ('REQUEST_CHANGES','REVIEW'):
             if p['role']!='park_specialist':raise Denied('assigned reviewer required')
         elif p['role']!='enterprise_operator':raise Denied('enterprise owner required')
@@ -244,6 +261,7 @@ def read(store,token,id):
                 if reuse:
                     record['payload']['material_reuse']={k:reuse[k] for k in ('target_evidence_id','target_version','target_sha256','purpose','requires_independent_review','snapshot_mode')}
         result={'preparation':row,'current_materials':items,'snapshot_sha256':snapshot(row,items),
+                'case_cancelled':case_cancelled(c,row),
                 'material_history':c.execute('SELECT slot,version,text,source_kind,source_label,source_sha256,authenticity,created_at FROM preparation_evidence WHERE preparation_id=%s ORDER BY slot,version',(id,)).fetchall(),
                 'history':history,
                 'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY','qualification':'NOT_EVALUATED',

@@ -137,7 +137,7 @@ def _parent(store, c, p, id, write=False):
     candidate = c.execute('SELECT owner_id,reviewer_id FROM preparations WHERE id=%s AND park_id=%s AND org_id=%s', (id, p['park_id'], p['org_id'])).fetchone()
     if not candidate or p['id'] != candidate['owner_id' if p['role'] == 'enterprise_operator' else 'reviewer_id']: raise Denied('assigned preparation scope required')
     if candidate['reviewer_id'] != p['id']: store.lock_principal(c, candidate['reviewer_id'])
-    row = prep.scoped(store, c, p, id, write=write)
+    row = prep.scoped(store, c, p, id, write=write,business_write=write)
     if row['reviewer_id'] != candidate['reviewer_id']: raise Conflict('reviewer changed; refresh required')
     return row
 

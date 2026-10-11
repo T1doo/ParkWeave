@@ -44,7 +44,7 @@ def save(store,token,id,key,data):
         p=store.auth(c,token,lock=True)
         prep.grant(store,c,p,'PREPARE');store.check_capability(c,p,'EXECUTE')
         prep.key_lock(c,p,key)
-        parent=prep.scoped(store,c,p,id,write=True)
+        parent=prep.scoped(store,c,p,id,write=True,business_write=True)
         if parent['namespace']!='SYNTHETIC':raise Denied('synthetic request required')
         old=prep.replay(c,p,key,fp,id)
         if old:return old

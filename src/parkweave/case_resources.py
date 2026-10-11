@@ -25,7 +25,7 @@ class Bind(BaseModel):
 
 def _parent(store,c,token,id,write=False):
     p=rh._auth(store,c,token,write=write)
-    row=prep.scoped(store,c,p,id,write=write)
+    row=prep.scoped(store,c,p,id,write=write,business_write=write)
     store.scoped_run(c,p,row['run_id'])
     return p,row
 
@@ -86,6 +86,7 @@ def bind(store,token,id,key,data):
 def _bind_locked(store,c,p,parent,id,key,data,fp,*,delivery_binding=None,plan_approval=None):
     """Trusted composition; the existing public route retains its own authentication."""
     if c.autocommit:raise Conflict('transactional Case resource binding required')
+    prep.case_write_guard(c,parent)
     c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('case-resource-key:'+p['id']+':'+key,))
     old=c.execute('SELECT * FROM case_resource_links WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
     if old and (old['fingerprint']!=fp or old['preparation_id']!=id):raise Conflict('case resource request key fingerprint mismatch')

@@ -191,13 +191,15 @@ def persist_rejected_observation(store,error):
     with store.connect() as c:
         c.execute("SET LOCAL lock_timeout='3s'")
         parent=c.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(error.preparation_id,)).fetchone()
-        plan=parent.get('service_case_plan') if parent else None
+        if not parent or prep.case_cancelled(c,parent):return
+        plan=parent.get('service_case_plan')
         if plan and plan['id']==error.plan_id and plan['revision']==error.revision:
             _invalidate(plan,error.index)
             c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),parent['id']))
 
 
 def _inspect(store,c,parent,plan,observe=True,fresh_clock=False):
+    if prep.case_cancelled(c,parent):observe=False
     dependencies.plan_proof(parent,plan)
     if any(e['action'] in ('LOCK','UNLOCK') for e in plan['events']) or any(s.get('manual_lock') is not None for s in plan['steps']):
         _recovery_proofs(parent)
@@ -238,7 +240,9 @@ def gate(store,c,parent,through,*,observe=True):
 
 def _context(store,c,token,id,write=False):
     p,parent=cp._auth(store,c,token,id)
-    if write and p['role']=='enterprise_operator':store.check_capability(c,p,'EXECUTE')
+    if write:
+        prep.case_write_guard(c,parent)
+        if p['role']=='enterprise_operator':store.check_capability(c,p,'EXECUTE')
     return p,parent
 
 
@@ -263,6 +267,8 @@ def _allowed(p,step,states,binding_issues,issues,sources,revision,lock_count=0):
 
 def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
     owner=p['role']=='enterprise_operator';cp._write_flag(store,c,p)
+    cancelled=prep.case_cancelled(c,parent)
+    if cancelled:p['_plan_write']=False;observe=False
     context=dict(role=p['role'],actor_ref=cp._hash(dict(actor_id=p['id'])),preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),
                  preparation_revision=parent['revision'],request_revision=(parent.get('request_intent') or {}).get('revision',0),
                  current_preview=planning._proposal(store,c,p,parent) if owner else None)
@@ -276,7 +282,7 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
         own=owner or p['role']=='park_specialist' or sources['P3'].get('executor_id')==p['id']
         steps.append(dict(id=step['id'],adapter_id=adapter,adapter=step['adapter'],depends_on=step['depends_on'],
                           state=states[adapter],actual_business_state=actual[adapter] if own and not (p['role']=='park_specialist' and adapter=='P4') else None,
-                          allowed_actions=_allowed(p,step,states,binding_issues,issues,sources,plan['revision'],sum(bool(s.get('manual_lock')) for s in plan['steps'])) if own else [],
+                          allowed_actions=_allowed(p,step,states,binding_issues,issues,sources,plan['revision'],sum(bool(s.get('manual_lock')) for s in plan['steps'])) if own and not cancelled else [],
                           source_sha256=cp._hash(sources[adapter]) if owner else None,
                           issues=issues[adapter] if owner else None,
                           verified_sources=step.get('verified_sources') if owner else None,

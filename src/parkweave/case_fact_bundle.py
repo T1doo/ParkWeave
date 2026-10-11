@@ -79,7 +79,7 @@ def scope(store,c,token,id,write=False,key=None):
     from . import case_fact_clarifications as facts
     c.execute("SET LOCAL lock_timeout='3s'");p=store.auth(c,token,lock=True)
     if key is not None:prep.key_lock(c,p,key)
-    parent=prep.scoped(store,c,p,id,write=write);facts._field_locks(c,p['id']);facts._scope(store,c,p,parent,require_write=write)
+    parent=prep.scoped(store,c,p,id,write=write,business_write=write);facts._field_locks(c,p['id']);facts._scope(store,c,p,parent,require_write=write)
     if 'fact_bundle' not in parent:raise Conflict('Case fact bundle fixture increment not enabled')
     if facts._stored_ledger(c,parent) is None:raise Conflict('explicit Case fact purpose declaration required')
     return p,parent

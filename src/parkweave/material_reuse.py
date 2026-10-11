@@ -144,6 +144,7 @@ def reuse(store,token,id,key,data):
         p=_auth(store,c,token);prep.key_lock(c,p,key)
         rows={ref:_scope(store,c,p,ref,write=True) for ref in sorted({id,data.source_preparation_id},key=str)}
         target=rows[id];source=rows[data.source_preparation_id]
+        prep.case_write_guard(c,target)
         old=prep.replay(c,p,key,fp,id)
         if old:return old
         if target['revision']!=data.expected_target_revision:raise Conflict('target preparation revision changed')

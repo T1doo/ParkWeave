@@ -111,7 +111,7 @@ def auth(store,c,token,id,write=False):
     c.execute("SET LOCAL lock_timeout='3s'")
     p=store.auth(c,token,lock=True)
     if p['role'] not in ('enterprise_operator','park_specialist'):raise Denied('original owner or assigned reviewer required')
-    row=prep.scoped(store,c,p,id,write=write)
+    row=prep.scoped(store,c,p,id,write=write,business_write=write)
     if row['namespace']!='SYNTHETIC':raise Denied('synthetic delivery required')
     schema=c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']
     if schema<26:raise Conflict('isolated synthetic objection storage is not installed')

@@ -186,15 +186,15 @@ def test_bounds_are_actual_persistent_source_and_event_caps(preparation_fixture)
  v=get(f,p).json();assert v['revision']==32 and len(v['entries'])==12 and not v['can_write'];before=snapshot(f);assert command(f,p,body(v,'REGISTER_ASSUMPTION',source=source)).status_code==409 and snapshot(f)==before
 
 
-def test_migration028_actual_receipt_idempotence_future_rejection_no_grants(preparation_fixture):
+def test_migration030_actual_receipt_idempotence_future_rejection_no_grants(preparation_fixture):
  from pathlib import Path
  f=preparation_fixture;p=setup(f);register(f,p);before=snapshot(f);f[1].migrate();Store(f[1].dsn).migrate();assert snapshot(f)==before
- sql=Path('src/parkweave/migration-029.sql').read_text()
+ sql=Path('src/parkweave/migration-030.sql').read_text()
  with pytest.raises(psycopg.errors.RaiseException,match='creation ticket required'):
   with f[1].connect() as c:c.execute(sql)
  with f[1].connect() as c:f[1]._case_fact_fixture_receipt.authorize_migration(c);c.execute(sql)
  assert snapshot(f)==before
- with f[1].connect() as c:c.execute('INSERT INTO schema_version VALUES(30)')
+ with f[1].connect() as c:c.execute('INSERT INTO schema_version VALUES(31)')
  with pytest.raises(Conflict,match='newer than this code'):f[1].migrate()
 
 

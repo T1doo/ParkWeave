@@ -74,6 +74,8 @@ class Unavailable(Exception):
 
 
 class _ClosedConnection:
+    @property
+    def autocommit(self):return self.connection.autocommit
     def __init__(self, connection):
         self.connection = connection
 
@@ -221,7 +223,7 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
         identity=c.execute(IDENTITY_SQL).fetchone()
         if getattr(store,self.attachment_attribute,None) is not self or identity != self.database_identity:
             raise Denied('attached original preview database required')
-        p, parent = planning._context(store, c, token, id, True)
+        p, parent = planning._context(store, c, token, id, True,business_write=False)
         # Cooperating catalogue writers take this exact key exclusively before
         # their row/DDL locks. Acquire it before _proposal first reads catalogues
         # and retain it through SQLite commit. Direct owner SQL is a snapshot.
@@ -342,6 +344,9 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
             with self._database() as db:
                 self._guard(store,c,token,p)
                 view = self._view(db,p,parent,current)
+                if prep.case_cancelled(c,parent):
+                    view['execution_available']=False
+                    view['case_cancelled']=True
                 if key is not None:
                     old = db.execute('SELECT * FROM previews WHERE owner=? AND request_key=?',(p['id'],key)).fetchone()
                     if old and old['preparation'] != str(id):
@@ -399,6 +404,7 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
     def execute(self, store, token, id, key, data):
         with store.connect() as c:
             p,parent,current = self._source(store,c,token,id)
+            prep.case_write_guard(c,parent)
             fp = _sha({'preparation_id':str(id),**data.model_dump()})
             with self._database() as db:
                 # Obtain the rollback-journal reader exclusion before _guard:

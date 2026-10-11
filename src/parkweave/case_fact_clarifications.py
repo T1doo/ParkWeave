@@ -262,7 +262,7 @@ def _transaction(store, c, token, id, key=None):
         if type(key) is not str or not 1 <= len(key) <= 200 or not key.strip():
             raise Conflict('bounded nonblank idempotency key required')
         prep.key_lock(c, p, key)
-    parent = prep.scoped(store, c, p, id, write=key is not None)
+    parent = prep.scoped(store, c, p, id, write=key is not None,business_write=key is not None)
     _field_locks(c, p['id'])
     _scope(store, c, p, parent, require_write=key is not None)
     return p, parent

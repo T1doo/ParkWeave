@@ -208,6 +208,7 @@ class TemplateUpgradeChecker:
         self.consumer._key(key)
         fp = sha(dict(instance_id=str(instance_id), **data.model_dump(mode='json')))
         with self._context(token, instance_id) as context, self.engine.lock, self.engine.repository.transaction() as t, self.repository.connect(write=True) as c:
+            prep.case_write_guard(context[0],context[2])
             events = self._history(c, context[-1])
             old = c.execute('SELECT * FROM upgrade_events WHERE actor=? AND key=?', (context[1]['id'], key)).fetchone()
             if old:

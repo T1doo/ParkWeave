@@ -78,9 +78,9 @@ def demo_database(fresh=False):
             with owner.connect() as c:
                 table=c.execute("SELECT to_regclass('public.schema_version') t").fetchone()["t"]
                 version=c.execute("SELECT max(version) v FROM schema_version").fetchone()["v"] if table else None
-                if version not in (25,26,27,28,29):
+                if version not in (25,26,27,28,29,30):
                     raise Denied("Existing demo migration has no creation receipt; preserve it and use --fresh-fixture")
-        if fresh or version==29:owner.migrate()
+        if fresh or version==30:owner.migrate()
         yield root,owner
     except DemoStopUnconfirmed:
         preserve=True
@@ -167,7 +167,7 @@ def serve(root,owner,args):
                     connection.request('GET','/health')
                     response=connection.getresponse()
                     health=json.loads(response.read()) if response.status==200 else None
-                    if health and health.get('process_id')==api.pid and health.get('schema') in (25,26,27,28,29) and health.get('data')=='SYNTHETIC' and health.get('execution_mode')==mode:
+                    if health and health.get('process_id')==api.pid and health.get('schema') in (25,26,27,28,29,30) and health.get('data')=='SYNTHETIC' and health.get('execution_mode')==mode:
                         break
                 except (OSError,ValueError):pass
                 finally:connection.close()

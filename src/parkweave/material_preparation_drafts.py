@@ -35,7 +35,7 @@ def _context(store, c, token, id, key=None):
     candidate = c.execute('SELECT owner_id,reviewer_id FROM preparations WHERE id=%s AND park_id=%s AND org_id=%s', (id, p['park_id'], p['org_id'])).fetchone()
     if not candidate or candidate['owner_id'] != p['id']: raise Denied('own material draft required')
     store.lock_principal(c, candidate['reviewer_id'])
-    row = prep.scoped(store, c, p, id, write=key is not None)
+    row = prep.scoped(store, c, p, id, write=key is not None,business_write=key is not None)
     if row['reviewer_id'] != candidate['reviewer_id']: raise Conflict('material reviewer changed')
     facts._field_locks(c, p['id'])
     facts._scope(store, c, p, row, require_write=key is not None)

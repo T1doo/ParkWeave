@@ -36,7 +36,8 @@ def persist_rejected_observation(store,error):
     if error.index is None:return
     with store.connect() as c:
         c.execute("SET LOCAL lock_timeout='3s'")
-        c.execute('SELECT id FROM preparations WHERE id=%s FOR UPDATE',(error.preparation_id,))
+        parent=c.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(error.preparation_id,)).fetchone()
+        if not parent or prep.case_cancelled(c,parent):return
         row=_row(c,error.preparation_id)
         if row and row['id']==error.plan_id and row['revision']==error.revision:
             invalidate(c,error.preparation_id,error.index)
@@ -75,6 +76,7 @@ def _creation_blockers(c,parent):
     blockers=[reason for reason,table,column in dependencies
       if c.execute('SELECT 1 FROM '+table+' WHERE '+column+'=%s',(parent['id'],)).fetchone()]
     if intents.state(parent) not in ('NOT_RECORDED','SUPPORTED_LOCAL'):blockers.append('REQUEST_GOAL_COVERAGE_REQUIRED')
+    if prep.case_cancelled(c,parent):blockers.append('CASE_CANCELLED')
     return blockers
 
 def _auth(store,c,token,id,write=False):
@@ -95,6 +97,7 @@ def _auth(store,c,token,id,write=False):
     if write:
         if p['role']!='enterprise_operator':raise Denied('owner explicit plan check required')
         store.check_capability(c,p,'EXECUTE')
+        prep.case_write_guard(c,parent)
     return p,parent
 
 def template(store,token):
@@ -160,6 +163,7 @@ def invalidate(c,id,index):
         c.execute('UPDATE controlled_plans SET invalidated_from=least(coalesce(invalidated_from,%s),%s),invalidated_at=coalesce(invalidated_at,clock_timestamp()) WHERE preparation_id=%s',(index,index,id))
 
 def _inspect(store,c,parent,row,observe=True):
+    if prep.case_cancelled(c,parent):observe=False
     if row['template_sha256']!=TEMPLATE_SHA:raise Conflict('fixed template version/hash unavailable')
     issues,snapshots=_sources(store,c,parent);bad=None
     for i,s in enumerate(STEPS,1):
@@ -241,6 +245,7 @@ def _old(c,p,id,key,fp):
 def read(store,token,id):
     with store.connect() as c:
         p,parent=_auth(store,c,token,id);_write_flag(store,c,p);row=_row(c,id)
+        if prep.case_cancelled(c,parent):p['_plan_write']=False
         if not row:
             owner=p['role']=='enterprise_operator'
             blockers=_creation_blockers(c,parent) if owner else None

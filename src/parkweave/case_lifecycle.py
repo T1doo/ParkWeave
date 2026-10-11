@@ -28,7 +28,9 @@ def _auth(store, c, token, id, write=False):
     p = store.auth(c, token, lock=True)
     if write and p['role'] != 'enterprise_operator': raise Denied('enterprise owner local lifecycle required')
     parent = sd._parent(store,c,p,id,write=write)
-    if write: store.check_capability(c,p,'EXECUTE')
+    if write:
+        store.check_capability(c,p,'EXECUTE')
+        prep.case_write_guard(c,parent)
     p['_local_case_write']=False
     if p['role']=='enterprise_operator':
         try:store.check_capability(c,p,'EXECUTE');p['_local_case_write']=True
@@ -124,7 +126,7 @@ def _sha(snapshot,cycle):return digest(prep.canonical({'cycle':cycle,'sources':s
 
 
 def _view(c,p,parent,case,row,issues=None,snapshot=None,event=None):
-    owner=p['role']=='enterprise_operator';can_write=owner and p.get('_local_case_write',False);cycle=row['cycle'] if row else 1
+    owner=p['role']=='enterprise_operator';can_write=owner and p.get('_local_case_write',False) and case['state']!='CANCELLED';cycle=row['cycle'] if row else 1
     current_sha=_sha(snapshot,cycle) if snapshot is not None else None
     current=bool(row and row['verified_sha256'] and current_sha==row['verified_sha256'] and not any(issues.values())) if issues is not None else None
     history=c.execute('SELECT revision,cycle,action,payload,created_at FROM case_local_events WHERE preparation_id=%s ORDER BY revision',(parent['id'],)).fetchall()

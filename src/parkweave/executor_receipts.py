@@ -172,7 +172,7 @@ def create(store,token,key,data):
         p=_auth(store,c,token)
         if p['role']!='enterprise_operator':raise Denied('enterprise owner required')
         store.check_capability(c,p,'EXECUTE');_key(c,p,key)
-        parent=prep.scoped(store,c,p,data.preparation_id,write=True)
+        parent=prep.scoped(store,c,p,data.preparation_id,write=True,business_write=True)
         _executor(store,c,data.executor_id,parent['run_id'])
         old=_replay(c,p,key,fp)
         if old:
@@ -215,7 +215,7 @@ def command(store,token,id,key,data):
             store.check_capability(c,p,'EXECUTE')
         _key(c,p,key);row=_base(store,c,p,id)
         if p['role']=='enterprise_operator':_executor(store,c,row['executor_id'],row['run_id'])
-        parent=_parent(c,row);row=_locked(c,id,write=True);old=_replay(c,p,key,fp)
+        parent=_parent(c,row);prep.case_write_guard(c,parent);row=_locked(c,id,write=True);old=_replay(c,p,key,fp)
         if old:
             if execute and (not _fresh(row,parent,c,store) or
                             old.get('receipt_id')!=str(row['current_receipt_id']) or

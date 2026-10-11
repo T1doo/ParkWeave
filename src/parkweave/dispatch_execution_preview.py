@@ -163,6 +163,7 @@ class DispatchExecutionPreview(rp.ResourceExecutionPreview):
     def execute(self, store, token, id, key, data):
         with store.connect() as c:
             p,parent,current=self._source(store,c,token,id);fp=ep._sha({'preparation_id':str(id),**data.model_dump()})
+            prep.case_write_guard(c,parent)
             with self._database() as db:
                 db.execute('BEGIN EXCLUSIVE');self._guard(store,c,token,p)
                 old=db.execute('SELECT * FROM previews WHERE owner=? AND request_key=?',(p['id'],key)).fetchone()

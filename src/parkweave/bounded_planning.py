@@ -57,10 +57,12 @@ def compile(goals,registry=None):
         for id in ready:ordered.append(by_id[id]);done.add(id)
     return items,ordered
 
-def _context(store,c,token,id,write=False):
+def _context(store,c,token,id,write=False,*,business_write=None):
     p,parent=cp._auth(store,c,token,id)
     if p['role']!='enterprise_operator':raise Denied('owner planning preview required')
-    if write:store.check_capability(c,p,'EXECUTE')
+    if business_write is True or business_write is None and write:prep.case_write_guard(c,parent)
+    if write:
+        store.check_capability(c,p,'EXECUTE')
     if parent['namespace']!='SYNTHETIC':raise Denied('synthetic planning preview required')
     return p,parent
 
