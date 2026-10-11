@@ -1,21 +1,21 @@
 """Pure declared-source contract: persisted evidence, never execution proof."""
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
-from uuid import uuid4
-import json
+from uuid import UUID, uuid4
+import re
 import pytest
 
 from parkweave import fact_history_read_source as read, case_fact_clarifications as facts, preparation as prep
 from parkweave.store import Denied
 
 
-def sample():
+def sample(*, uuid_factory=uuid4):
     now = datetime(2026, 10, 11, tzinfo=timezone.utc)
     principal = dict(id='SYNTHETIC-owner', park_id='park-a', org_id='org-a', role='enterprise_operator', active=True)
-    parent = dict(id=uuid4(), case_id=uuid4(), run_id=uuid4(), owner_id=principal['id'],
+    parent = dict(id=uuid_factory(), case_id=uuid_factory(), run_id=uuid_factory(), owner_id=principal['id'],
         park_id=principal['park_id'], org_id=principal['org_id'], namespace='SYNTHETIC',
         service_id=prep.SERVICE, service_version=1, revision=3, goal='SYNTHETIC Case', request_intent=None)
-    sources = [dict(id=str(uuid4()), evidence_id=str(uuid4()), field_name=field,
+    sources = [dict(id=str(uuid_factory()), evidence_id=str(uuid_factory()), field_name=field,
         value=17 if field == 'employees' else 'PRIVATE_VALUE_' + field,
         unit='people' if field == 'employees' else 'text',
         source_ref=dict(id='PRIVATE_SOURCE_' + field, kind='SYNTHETIC', revision='1'),
@@ -29,7 +29,7 @@ def sample():
     for i in (1, 2):
         choices = [] if i == 1 else [dict(field=row['field_name'], assertion_id=row['id'],
             expected_assertion_revision=row['revision'], expected_assertion_fingerprint=row['fingerprint']) for row in sources]
-        event = dict(id=str(uuid4()), revision=i, preparation_revision=i+1, actor_id=principal['id'],
+        event = dict(id=str(uuid_factory()), revision=i, preparation_revision=i+1, actor_id=principal['id'],
             action='DECLARE_FACT_PURPOSE' if i == 1 else 'CONFIRM_FACT_PURPOSE', reason='SYNTHETIC explicit owner selection',
             decided_at=(now-timedelta(minutes=1)).isoformat(), source_snapshot=deepcopy(snapshot),
             source_sha256=facts._hash(snapshot), applicable=deepcopy(applicable), choices=choices,
@@ -47,18 +47,106 @@ def sample():
     return parent, principal, receipts, sources, applicable, now
 
 
-def test_exact_projection_no_values_or_proof_and_no_input_mutation():
+def expected_source_digest(args):
+    """Fixture's declared binding/decision/selected rows, independent of output."""
+    parent, _, _, sources, _, _ = args
+    latest = parent['fact_clarifications']['events'][-1]
+    return facts._hash(dict(binding=facts._binding(parent), decision=latest['decision_sha256'],
+                            sources=sorted(sources, key=lambda row: row['field_name'])))
+
+
+def public_projection(source_sha256):
+    assert type(source_sha256) is str and re.fullmatch('[0-9a-f]{64}', source_sha256)
+    return dict(contract=read.CONTRACT, purpose=facts.PURPOSE, fields=list(facts.FIELDS),
+        source_sha256=source_sha256, read_only=True, execution_available=False,
+        qualification='NOT_EVALUATED', authenticity='USER_ASSERTED_UNVERIFIED', proof_available=False)
+
+
+def assert_public_projection_only(result, expected_digest):
+    """Closed public shape: no raw facts/IDs/excerpts under any output key.
+
+    Match complete values and exact JSON types, never substring-search a digest.
+    Digest metadata must equal the separately supplied expected digest, so even
+    private content shaped like a 64-character hash cannot replace that field.
+    """
+    expected = public_projection(expected_digest)
+    assert type(result) is dict
+    assert result.keys() == expected.keys(), 'unexpected or missing output field'
+    for key, value in expected.items():
+        actual = result[key]
+        assert type(actual) is type(value), f'wrong public value type: {key}'
+        if key == 'fields':
+            assert all(type(field) is str for field in actual)
+        assert actual == value, f'non-public or changed value: {key}'
+
+
+def test_exact_projection_no_values_or_proof():
+    args = sample()
+    expected_digest = expected_source_digest(args)
+    result = read.project(*args)
+    assert result == public_projection(expected_digest)
+    assert_public_projection_only(result, expected_digest)
+
+
+def test_projection_does_not_mutate_input_independently_of_output_assertions():
     args = sample()
     before = deepcopy(args)
+    try:
+        read.project(*args)
+    finally:
+        assert args == before
+
+
+def test_leakage_oracle_accepts_actual_legal_digest_containing_numeric_fact_text():
+    identifiers = iter(UUID(int=1003+i) for i in range(11))
+    args = sample(uuid_factory=lambda: next(identifiers))
     result = read.project(*args)
-    assert result == dict(contract=read.CONTRACT, purpose=facts.PURPOSE, fields=list(facts.FIELDS),
-        source_sha256=result['source_sha256'], read_only=True, execution_available=False,
-        qualification='NOT_EVALUATED', authenticity='USER_ASSERTED_UNVERIFIED', proof_available=False)
-    raw = json.dumps(result)
-    for row in args[3]:
-        for secret in (row['id'], row['evidence_id'], row['source_excerpt'], row['source_ref']['id'], str(row['value'])):
-            assert secret not in raw
-    assert args == before
+    expected_digest = expected_source_digest(args)
+    assert expected_digest == '1ab214b54e972ae2231da520785615e66a899c101a448b4c8b963508627d5717'
+    assert '17' in result['source_sha256']
+    assert next(row['value'] for row in args[3] if row['field_name'] == 'employees') == 17
+    assert_public_projection_only(result, expected_digest)
+
+
+@pytest.mark.parametrize('field', facts.FIELDS)
+@pytest.mark.parametrize('secret_kind', ['value', 'id', 'evidence_id', 'source_excerpt', 'source_ref_id', 'excerpt_fragment'])
+@pytest.mark.parametrize('position', ['new_field', 'scalar', 'fields', 'digest'])
+def test_leakage_oracle_rejects_injected_fact_content(field, secret_kind, position):
+    args = sample()
+    row = next(row for row in args[3] if row['field_name'] == field)
+    if secret_kind == 'source_ref_id':
+        secret = row['source_ref']['id']
+    elif secret_kind == 'excerpt_fragment':
+        secret = row['source_excerpt'][8:16]
+    else:
+        secret = row[secret_kind]
+    digest = expected_source_digest(args)
+    result = public_projection(digest)
+    if position == 'new_field':
+        result[secret_kind] = secret
+    elif position == 'scalar':
+        result['qualification'] = secret
+    elif position == 'fields':
+        result['fields'].append({'field_name': field, secret_kind: secret})
+    else:
+        result['source_sha256'] = secret
+    with pytest.raises(AssertionError):
+        assert_public_projection_only(result, digest)
+
+
+@pytest.mark.parametrize('value', [1, 0, 'true'])
+def test_leakage_oracle_rejects_type_coercion_of_public_flags(value):
+    result = public_projection('a'*64)
+    result['read_only'] = value
+    with pytest.raises(AssertionError):
+        assert_public_projection_only(result, 'a'*64)
+
+
+def test_leakage_oracle_rejects_hash_shaped_private_content():
+    result = public_projection('a'*64)
+    result['source_sha256'] = 'b'*64
+    with pytest.raises(AssertionError):
+        assert_public_projection_only(result, 'a'*64)
 
 
 @pytest.mark.parametrize('change', ['owner','park','org','case','run','inactive','role','purpose','fields','bool_version',
