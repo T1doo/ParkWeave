@@ -146,8 +146,11 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
 
     def access_bridge():
         bridge = getattr(store, '_isolated_run_access', None)
+        if bridge is not None and getattr(store, '_native_run_access', None) is not None:
+            raise Denied('ambiguous ordinary and isolated access providers')
         if bridge is None:
-            raise Denied('isolated access decisions disabled')
+            from .native_run_access import NativeRunAccess
+            bridge = getattr(store, '_native_run_access', None) or NativeRunAccess(store)
         return bridge
 
     from . import material_preparation_drafts as material_drafts
@@ -166,18 +169,22 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
     @app.get('/api/run-access/status')
     def run_access_status(authorization: str | None = Header(default=None)):
         session = token(authorization)
-        bridge = getattr(store, '_isolated_run_access', None)
-        if bridge is None:
-            with store.connect() as c:
-                p = store.auth(c, session, lock=True)
-                store.check_capability(c, p, 'READ')
-            return {'enabled': False, 'role': p['role'], 'can_approve': False,
-                    'can_revoke': False, 'deployment_enabled': False}
-        return bridge.status(session)
+        return access_bridge().status(session)
 
     @app.get('/api/runs/{run_id}/access')
     def run_access_read(run_id: UUID, authorization: str | None = Header(default=None)):
         return access_bridge().read(token(authorization), run_id)
+
+    @app.get('/api/runs/{run_id}/access/commands/{request_key}')
+    def run_access_recover(run_id: UUID, request_key: str,
+                           authorization: str | None = Header(default=None)):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', request_key):
+            raise HTTPException(422, 'invalid original request key')
+        from .native_run_access import NativeRunAccess
+        if getattr(store, '_isolated_run_access', None) is not None:
+            raise Denied('native original-key recovery unavailable for isolated decisions')
+        bridge = getattr(store, '_native_run_access', None) or NativeRunAccess(store)
+        return bridge.recover(token(authorization), run_id, request_key)
 
     @app.post('/api/runs/{run_id}/access/commands')
     def run_access_command(run_id: UUID, data: RunCommand,
@@ -185,6 +192,13 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
                            idempotency_key: str = Header()):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', idempotency_key):
             raise HTTPException(422, 'invalid request key')
+        if getattr(store, '_isolated_run_access', None) is None:
+            from .native_run_access import RunCommand as NativeCommand
+            from pydantic import ValidationError
+            try:
+                data=NativeCommand.model_validate(data.model_dump())
+            except ValidationError:
+                raise HTTPException(422, 'invalid native UTC command')
         return access_bridge().command(token(authorization), run_id, idempotency_key, data)
 
     @app.get("/api/runs/{run_id}/plan-revisions")

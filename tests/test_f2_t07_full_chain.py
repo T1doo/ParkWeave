@@ -441,7 +441,9 @@ def test_fresh_ordinary_chain_exposes_missing_production_run_access_without_repa
     u = chain; p = u.prepared('ordinary-default', assigned=False)
     authority = u.authority(); u.adopt(p); u.verify(p, 'P1'); u.resources(p); u.verify(p, 'P2')
     status = u.get('/api/run-access/status'); assert not status['enabled']
-    u.get('/api/runs/'+p['run_id']+'/access', status=403)
+    pending = u.get('/api/runs/'+p['run_id']+'/access')
+    assert pending['namespace']=='ORDINARY_PG_RUN_ACCESS_DECISION_V1'
+    assert pending['activation_pending'] and not pending['actual_run_access'] and not pending['enabled']
     before = u.business()
     u.post(u.path(p, '/dispatch'), dict(expected_preparation_revision=p['revision'], expected_dispatch_revision=0,
            executor_id='executor-a', reason='SYNTHETIC no assignment must remain blocked'), actor='prep-specialist-fixture-a', status=403)

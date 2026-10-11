@@ -26,10 +26,14 @@ def collections(store,c,parent):
     """
     resources=c.execute('SELECT r.id,r.revision,r.source,r.capacity,r.buffer_seconds,r.open_from,r.open_until,r.enabled,g.capability,g.active FROM synthetic_resources r JOIN synthetic_resource_grants g ON g.resource_id=r.id WHERE g.principal_id=%s AND g.park_id=%s AND g.org_id=%s AND r.park_id=g.park_id ORDER BY r.id,g.capability LIMIT %s',
                         (parent['owner_id'],parent['park_id'],parent['org_id'],COLLECTION_LIMIT+1)).fetchall()
-    access=c.execute("SELECT a.principal_id,a.active,to_jsonb(a)->'managed_access' AS managed_access,p.role,p.active AS principal_active,g.active AS read_active,g.revision FROM run_assignments a JOIN principals p ON p.id=a.principal_id AND p.park_id=a.park_id AND p.org_id=a.org_id LEFT JOIN capability_grants g ON g.principal_id=p.id AND g.park_id=p.park_id AND g.org_id=p.org_id AND g.capability='READ' WHERE a.run_id=%s AND a.park_id=%s AND a.org_id=%s ORDER BY a.principal_id LIMIT %s",
+    access=c.execute("SELECT a.principal_id,a.active,to_jsonb(a)->'managed_access' AS managed_access,to_jsonb(a)->'native_access' AS native_access,p.role,p.active AS principal_active,g.active AS read_active,g.revision FROM run_assignments a JOIN principals p ON p.id=a.principal_id AND p.park_id=a.park_id AND p.org_id=a.org_id LEFT JOIN capability_grants g ON g.principal_id=p.id AND g.park_id=p.park_id AND g.org_id=p.org_id AND g.capability='READ' WHERE a.run_id=%s AND a.park_id=%s AND a.org_id=%s ORDER BY a.principal_id LIMIT %s",
                      (parent['run_id'],parent['park_id'],parent['org_id'],COLLECTION_LIMIT+1)).fetchall()
+    native_installed=c.execute("SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='run_assignments' AND column_name='native_access'").fetchone()
+    native_marked={r['principal_id'] for r in c.execute('SELECT principal_id FROM run_assignments WHERE run_id=%s AND native_access IS NOT NULL',(parent['run_id'],)).fetchall()} if native_installed else set()
     for source in access:
-        if source['managed_access'] is None:continue
+        native=source['native_access']
+        if source['principal_id'] not in native_marked:source.pop('native_access')
+        if source['managed_access'] is None and source['principal_id'] not in native_marked:continue
         store.lock_principal(c,source['principal_id'])
         principal=c.execute('SELECT * FROM principals WHERE id=%s',(source['principal_id'],)).fetchone()
         source['effective_active']=bool(principal and principal['active'] and source['read_active'] and store.assignment_allowed(c,principal,parent['run_id']))

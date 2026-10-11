@@ -79,6 +79,9 @@ class Store:
             (a['principal_id'], str(a['run_id']), a['park_id'], a['org_id']) !=
             (p['id'], str(run_id), p['park_id'], p['org_id'])):
             return False
+        if self.native_assignment_marked(c, a):
+            from .native_run_access import native_assignment_allowed
+            return native_assignment_allowed(c, p, run_id, a)
         if a.get('managed_access') is None:
             return True
         if c.autocommit:
@@ -91,6 +94,23 @@ class Store:
                 raise Denied('managed access requires guarded Store transaction')
             c._managed_checks.add((p['id'], str(run_id)))
         return True
+
+    @staticmethod
+    def native_assignment_marked(c, assignment):
+        if 'native_access' not in assignment:
+            return False
+        if assignment['native_access'] is not None:
+            return True
+        # psycopg decodes both SQL NULL and JSON null as None. Only actual
+        # SQL NULL is a legacy row; unknown supplied provenance fails closed.
+        installed=c.execute("""SELECT 1 FROM information_schema.columns WHERE
+            table_schema='public' AND table_name='run_assignments' AND
+            column_name='native_access' AND data_type='jsonb'""").fetchone()
+        if not installed:
+            return True
+        row=c.execute('SELECT native_access IS NOT NULL marked FROM run_assignments WHERE principal_id=%s AND run_id=%s',
+                      (assignment['principal_id'],assignment['run_id'])).fetchone()
+        return not row or row['marked']
 
     def assigned_executors(self, c, run_id, park_id, org_id):
         rows = c.execute("""SELECT e.* FROM principals e JOIN run_assignments a
@@ -348,7 +368,7 @@ class Store:
                 raise Denied('invalid assignment scope')
             old=c.execute('SELECT * FROM run_assignments WHERE principal_id=%s AND run_id=%s',
                           (principal_id,run_id)).fetchone()
-            if old and old.get('managed_access') is not None:
+            if old and (old.get('managed_access') is not None or self.native_assignment_marked(c,old)):
                 raise Denied('managed assignment requires explicit access decision')
             c.execute('INSERT INTO run_assignments(principal_id,run_id,park_id,org_id,active) VALUES(%s,%s,%s,%s,%s) ON CONFLICT(principal_id,run_id) '
                       'DO UPDATE SET active=excluded.active',(principal_id,run_id,p['park_id'],p['org_id'],active))

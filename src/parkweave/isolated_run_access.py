@@ -117,6 +117,8 @@ class IsolatedRunAccessBridge:
             raise Denied('isolated access connection binding refused')
 
     def attach_store(self, store):
+        if getattr(store, '_native_run_access', None) is not None:
+            raise Denied('ordinary and isolated access providers cannot be combined')
         if not self.enabled or store.mode != 'LOCAL':
             raise Denied('isolated access bridge disabled')
         with self.owner.connect() as c:
