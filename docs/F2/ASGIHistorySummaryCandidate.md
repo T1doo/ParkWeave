@@ -4,7 +4,7 @@
 
 新增只读 GET `/api/cases/{case_id}/preparations/{preparation_id}/history-summary/{stage}`，stage 仅 P4/P5。`create_app(store, *, summary_reader=None)` 必须由服务端显式注入精确 `MemoryHistorySummaryReader`，且 stage 匹配。None、子类、鸭子类型、错 stage 均拒绝；请求参数、Store 属性和环境不能登记 reader。`configured_app` 保持默认 None；没有生产、文件、持久化或自动登记入口。
 
-`read_case` 要求实际 UUID Case。当前 auth/READ/企业本人/park/org 筛出 preparation 后，立即核对路径 Case，早于历史行读取、解码和事实私有来源读取。复用原 `current_context` 的 Run/Case/来源、三字段 READ、显式事实用途选择、当前来源完整性/版本/期限/撤回检查；来源与基线、行在投影后再核。精确 Case 和 reader stage 在最后观察中再核。原 `read` 接口保留。
+`read_case` 要求实际 UUID Case。路由将请求 stage 固定传入 reader，在进入事务前和投影后都与 reader stage 核对，不能在路由检查与 reader 进入之间切换为另一阶段。当前 auth/READ/企业本人/park/org 筛出 preparation 后，立即核对路径 Case，早于历史行读取、解码和事实私有来源读取。复用原 `current_context` 的 Run/Case/来源、三字段 READ、显式事实用途选择、当前来源完整性/版本/期限/撤回检查；来源与基线、行在投影后再核。精确 Case 和 reader stage 在最后观察中再核。原 `read` 接口保留。
 
 返回原固定摘要，加 `case_id`、`stage`。不返回正文、标签、proof、来源快照、事实选择或授权租约。不重放、恢复执行或批准权；`execution_available=false`、`NOT_EVALUATED`、`formal_writes=0`、`new_grants=false`。原 P4/P5 GET/POST provider 精确类型和执行门不变，网页不接入。已知合法未声明来源版本变化仍按原合同 STALE；已声明事实用途的被选来源变更、过期或撤回按现有事实 READ 合同拒绝。协作锁与两次快照不是全来源原子性承诺。
 

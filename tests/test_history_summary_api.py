@@ -156,6 +156,21 @@ def test_http_final_guard_rechecks_after_projection(preparation_fixture, monkeyp
         assert client.get(url(p, 'P5'), headers=headers(f[2])).status_code == 403
 
 
+def test_request_stage_is_pinned_across_reader_entry(preparation_fixture, monkeypatch):
+    f = preparation_fixture;p = selected(f);reader = memory_reader(f, p, 'P4')
+    replacement = memory_reader(f, p, 'P5');original = reader.read_case
+    def switched(*args, **kwargs):
+        reader.stage = replacement.stage
+        reader.baselines = replacement.baselines
+        reader.records = replacement.records
+        return original(*args, **kwargs)
+    monkeypatch.setattr(reader, 'read_case', switched)
+    before = snapshot(f)
+    with TestClient(create_app(f[0], summary_reader=reader)) as client:
+        assert client.get(url(p, 'P4'), headers=headers(f[2])).status_code == 403
+    assert_read_effects(f, before, 1)
+
+
 def test_withdrawn_selected_document_refused_over_http(preparation_fixture):
     f = preparation_fixture;p, entry = mixed_document(f);reader = memory_reader(f, p, 'P5')
     response = bundle_command(f, p, bundle_body(bundle_get(f, p).json(), 'WITHDRAW', source_id=entry['id']))

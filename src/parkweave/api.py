@@ -110,7 +110,7 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
         session = token(authorization)
         if type(summary_reader) is not MemoryHistorySummaryReader or summary_reader.stage != stage:
             raise Denied('explicit matching history summary reader required')
-        return summary_reader.read_case(store, session, case_id, preparation_id)
+        return summary_reader.read_case(store, session, case_id, preparation_id, stage=stage)
 
     @app.get("/", response_class=HTMLResponse)
     def index():

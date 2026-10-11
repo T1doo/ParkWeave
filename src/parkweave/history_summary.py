@@ -275,14 +275,16 @@ class MemoryHistorySummaryReader:
     def read(self, store, token, preparation_id, key=None):
         return self._read(store, token, preparation_id, key)
 
-    def read_case(self, store, token, case_id, preparation_id, key=None):
+    def read_case(self, store, token, case_id, preparation_id, key=None, *, stage=None):
         if type(case_id) is not UUID:
             raise Denied('exact history Case required')
-        return self._read(store, token, preparation_id, key, case_id)
+        return self._read(store, token, preparation_id, key, case_id, stage)
 
-    def _read(self, store, token, preparation_id, key, case_id=None):
+    def _read(self, store, token, preparation_id, key, case_id=None, expected_stage=None):
         key = _key(key)
-        stage = self.stage
+        stage = self.stage if expected_stage is None else expected_stage
+        if self.stage != stage:
+            raise Denied('matching history stage required')
         with store.connect() as c:
             c.execute('SET TRANSACTION READ ONLY')
             c.execute("SET LOCAL statement_timeout='3s'")
