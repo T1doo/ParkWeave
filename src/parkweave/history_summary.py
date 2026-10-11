@@ -202,7 +202,7 @@ def current_context(store, c, token, preparation_id):
     store.check_capability(c, p, 'READ')
     if p['role'] != 'enterprise_operator':
         raise Denied('owner history scope required')
-    parent = c.execute('SELECT id,owner_id,park_id,org_id,run_id,case_id,namespace,service_id,service_version,revision,request_intent,fact_clarifications FROM preparations WHERE id=%s AND owner_id=%s AND park_id=%s AND org_id=%s',
+    parent = c.execute('SELECT id,owner_id,park_id,org_id,run_id,case_id,namespace,service_id,service_version,revision,goal,request_intent,fact_clarifications,fact_bundle FROM preparations WHERE id=%s AND owner_id=%s AND park_id=%s AND org_id=%s',
         (preparation_id, p['id'], p['park_id'], p['org_id'])).fetchone()
     if parent is None or parent['namespace'] != 'SYNTHETIC':
         raise Denied('own synthetic preparation required')
@@ -211,10 +211,11 @@ def current_context(store, c, token, preparation_id):
     if (run['namespace'] != 'SYNTHETIC' or case is None or
             any(case[k] != parent[k] for k in ('run_id', 'park_id', 'org_id')) or case['source'] != 'SYNTHETIC'):
         raise Denied('current own synthetic Case Run required')
-    # Declared fact purposes need a separate current READ-only source contract;
-    # do not call their issued execution gate or infer authority from old proof.
+    # Independent declared-source READ contract, never the issued execution gate.
+    fact_source = None
     if prep.fact_enabled(c, parent):
-        raise Denied('declared fact history source unsupported')
+        from .fact_history_read_source import source_descriptor
+        fact_source = source_descriptor(store, c, p, parent)
     catalog.lock(c, catalog.key_of(parent))
     source = catalog.snapshot(c, parent)
     if not plans.binding_catalog_known(source):
@@ -239,7 +240,14 @@ def current_context(store, c, token, preparation_id):
                 any(ch not in '0123456789abcdef' for ch in m['source_sha256']) for m in materials)):
         raise Denied('current complete intact own material sources required')
     identity = c.execute(ep.IDENTITY_SQL).fetchone()
-    source_sha = ep._sha(ep._normal(dict(preparation_revision=parent['revision'], request_intent=parent['request_intent'], catalog=source, resources=rules, materials=materials)))
+    # Recheck timed READ and selected-source validity after catalog/resource
+    # lock waits, including in the reader's final context observation.
+    if fact_source is not None and source_descriptor(store, c, p, parent) != fact_source:
+        raise Denied('declared Case fact READ source changed')
+    source_basis = dict(preparation_revision=parent['revision'], request_intent=parent['request_intent'], catalog=source, resources=rules, materials=materials)
+    if fact_source is not None:
+        source_basis['fact_read_source'] = fact_source
+    source_sha = ep._sha(ep._normal(source_basis))
     return ReadContext(p['id'], p['park_id'], p['org_id'], str(parent['id']), str(parent['case_id']),
         str(parent['run_id']), tuple(identity[k] for k in ('name','oid','system_identifier')),
         source_sha, c.execute('SELECT clock_timestamp() now').fetchone()['now'])
