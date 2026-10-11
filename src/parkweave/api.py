@@ -104,13 +104,16 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
         return authorization[7:]
 
     @app.get('/api/cases/{case_id}/preparations/{preparation_id}/history-summary/{stage}')
-    def history_summary(case_id: UUID, preparation_id: UUID, stage: Literal['P4', 'P5'],
+    def history_summary(case_id: UUID, preparation_id: UUID, stage: Literal['P4', 'P5'], request: Request,
+                        request_key: str | None = Query(default=None),
                         authorization: str | None = Header(default=None)):
         from .history_summary import MemoryHistorySummaryReader
         session = token(authorization)
         if type(summary_reader) is not MemoryHistorySummaryReader or summary_reader.stage != stage:
             raise Denied('explicit matching history summary reader required')
-        return summary_reader.read_case(store, session, case_id, preparation_id, stage=stage)
+        if len(request.query_params.getlist('request_key')) > 1:
+            raise Denied('single original history key required')
+        return summary_reader.read_case(store, session, case_id, preparation_id, request_key, stage=stage)
 
     @app.get("/", response_class=HTMLResponse)
     def index():
