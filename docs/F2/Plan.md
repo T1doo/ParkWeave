@@ -1,3 +1,9 @@
+## 普通合成 Case 首次实际接单前取消
+
+源码及测试 `557528da70d905859d7fd09dc0b4ed8f5545af51`，从原远端 `e40bd24329ec21bd881ee7521e63e32a8ee3c13a` 建独立分支开发。企业原 owner 按当前权限、精确 Case/资料/来源版本、原 key 与明确原因取消；状态及事件同事务。任何历史 ACCEPT、receipt、本地关闭或隔离来源拒绝；取消后服务端封锁所有业务写及执行者/资源关联旁路，有权历史 GET 保留且不追加计划隐式失效。原成功 Run、资料、分派和预约保留，资源按原权限独立释放。
+
+独审 LIMITED_PASS，398 路径零漂移，真实 PG 双向竞争及离线 NodeVM 恢复验证通过；每窗实际 PASS/FAIL/ERROR/SKIP、原失败哈希和交付范围见 [合同与证据](CaseCancellationBeforeAccept.md)。schema 30 只装于具有原创建票据的自有 Linux 临时 PG，无新 Grant/registry、生产迁移或权限扩大。历史浏览器 `ERR_BLOCKED_BY_ADMINISTRATOR` 未重试，真实浏览器/全仓/完整原 AT/Windows/native 未执行。不支持取消后恢复、首次接单后或履约后取消，不签收完整 Case 生命周期。以下历史保持各自原范围。
+
 ## 已审原注册步骤显式局部修订
 
 精确 `d12afaa6258dd89a539e3a859b965ca9441e2111` 独审LIMITED_PASS：根完整功能/diagnostics104PASS；独审45/5/24/4/1五窗各自PASS，343源零漂移。资源及既有Run访问集合有界指纹进入原计划，企业明确局部ADOPT后按实际边重验；未受影响步骤/锁、稳定ID/正文/事件及业务历史保留，受影响锁先原UNLOCK。未知/旧声明/溢出扩本Case，原初次257行页面已真实复验4受影响/0保留；CAS/幂等/丢响应冷热GET、撤权/跨企业与自有PG/API重启独立验证。前三轮真实BLOCKED保全，旧907/440/381不覆盖本源码。仅原合成注册切片，完整AT25/一般动态图/全仓/Windows/正式履约仍未签收；无新Grant/政策审批/模型/通知/Case完成，原导出/异议不重做。见[合同与实际范围](RegisteredLocalRevision.md)、[先行合同](RegisteredLocalRevisionContract.md)。以下历史各保留原SHA范围。

@@ -1,0 +1,574 @@
+{
+  "affected_complete_modules": [
+    "tests.test_authorization_files",
+    "tests.test_bounded_planning",
+    "tests.test_case_cancellation",
+    "tests.test_case_cancellation_offline",
+    "tests.test_case_fact_bundle",
+    "tests.test_case_fact_clarifications",
+    "tests.test_case_lifecycle",
+    "tests.test_case_opportunities",
+    "tests.test_case_resource_delivery",
+    "tests.test_case_resources",
+    "tests.test_controlled_plans",
+    "tests.test_dispatch_execution_preview",
+    "tests.test_dispatch_notices",
+    "tests.test_executor_receipts",
+    "tests.test_isolated_execution_preview",
+    "tests.test_lifecycle_diagnostics",
+    "tests.test_lifecycle_execution_preview",
+    "tests.test_linux_fixture_startup",
+    "tests.test_material_objections",
+    "tests.test_material_preparation_drafts",
+    "tests.test_material_reuse",
+    "tests.test_pending_receipt_handoff",
+    "tests.test_plan_preview",
+    "tests.test_preparation",
+    "tests.test_readiness_checklist",
+    "tests.test_receipt_execution_preview",
+    "tests.test_request_intents",
+    "tests.test_resource_combinations",
+    "tests.test_resource_execution_preview",
+    "tests.test_resource_holds",
+    "tests.test_resource_plan_binding",
+    "tests.test_service_case_steps",
+    "tests.test_service_dispatches",
+    "tests.test_service_plan_approval",
+    "tests.test_template_upgrade",
+    "tests.test_worker_gateway"
+  ],
+  "baseline_sha": "e40bd24329ec21bd881ee7521e63e32a8ee3c13a",
+  "branch": "dev/f2-case-cancel-before-accept-20261011",
+  "browser": {
+    "attempts_this_task": 0,
+    "retained_historical_denial": "Chromium data: navigation ERR_BLOCKED_BY_ADMINISTRATOR",
+    "status": "NOT_RUN"
+  },
+  "environment_setup": {
+    "credential_or_network_configuration": false,
+    "dependency_changes": [
+      "setuptools==80.9.0",
+      "wheel==0.45.1",
+      "editable current ParkWeave without dependencies/build isolation"
+    ],
+    "logs": {
+      "build-dependencies-install.log": "0fe796e259645c4a8e364144c0cfb310f8ac27c0bac0a5278464ed011cfc5b7e",
+      "editable-project-install.log": "3647d7bf104bb4a4e69c6bfbf20810a68a44618b0af1321f865f7b52976ba0a7"
+    },
+    "virtualenv": ".venv"
+  },
+  "feature_source_sha": "4d1967ab7691a7dc3203c5214fb1fbe95ceba34c",
+  "git_delivery": {
+    "baseline_verified": true,
+    "delivery_commit": "Git commit containing this evidence document; its full SHA and actual remote verification are reported after normal push.",
+    "protected_remote_refs": {
+      "refs/heads/dev/f1-foundation": "b58cf201de3d6ca4e249bec3e8544ea53163807a",
+      "refs/heads/dev/f2-resource-alternative-times-20261011": "e40bd24329ec21bd881ee7521e63e32a8ee3c13a",
+      "refs/heads/main": "31e7acb7e53bb1ab6465b9daae59de28757f7583"
+    },
+    "push_style": "Normal independent branch push; no force or main/dev baseline update.",
+    "source_and_tests_commit": "557528da70d905859d7fd09dc0b4ed8f5545af51",
+    "target_ref": "refs/heads/dev/f2-case-cancel-before-accept-20261011"
+  },
+  "grants_or_registry_added": false,
+  "independent_review": {
+    "additional_oracles": [
+      "Same key different reason concurrent requests commit exactly one cancellation",
+      "Cancellation first legacy receipt CREATE observes actual owned PG lock wait and refuses mutation",
+      "Trusted _bind_locked composition refuses cancelled Case before resource effects",
+      "Fresh post-cancel P1 proposal cannot execute",
+      "Assigned specialist and offered executor see no plan actions or owner cancellation reason",
+      "Locked registered plan cold GET retains database bytes without implicit invalidation"
+    ],
+    "baseline_head": "e40bd24329ec21bd881ee7521e63e32a8ee3c13a",
+    "branch": "dev/f2-case-cancel-before-accept-20261011",
+    "followups": {
+      "template_dependency": {
+        "markdown_path": ".runtime/case-cancel/independent-review/FOLLOWUP_TEMPLATE.md",
+        "markdown_sha256": "757127bb21502bb199ddeec50629012078b0efdde1acef3a00ed04dc5a6075e3",
+        "path": ".runtime/case-cancel/independent-review/template-followup-review.json",
+        "product_source_drift": [],
+        "remaining_blockers": [],
+        "sha256": "2197575b75d1ec7e52c69cfa3a66b10a6bf3a35b76e33ee68bd3554fe1ee0cd7",
+        "source_head": "557528da70d905859d7fd09dc0b4ed8f5545af51",
+        "status": "LIMITED_PASS",
+        "test_manifest_change": [
+          "tests/test_template_upgrade.py"
+        ]
+      }
+    },
+    "not_run": [
+      "Full repository suite",
+      "Real browser (historical ERR_BLOCKED_BY_ADMINISTRATOR not retried)",
+      "Native Windows",
+      "Full original product acceptance matrix",
+      "Production migration/deployment",
+      "Git commit/push by reviewer; parent is sole Git writer"
+    ],
+    "prior_source_snapshots": [
+      {
+        "source_head": "4d1967ab7691a7dc3203c5214fb1fbe95ceba34c",
+        "source_snapshot": {
+          "changes_since_270_pass_2_fail_window": [
+            "tests/test_case_fact_clarifications.py"
+          ],
+          "drift": [],
+          "file_count": 398,
+          "path": ".runtime/case-cancel/corrected-test-manifest.json",
+          "production_source_changes_since_that_window": [],
+          "sha256": "c00d03cb7336836bed720c385040ed8cb49fc269d9b850c3f5bc09a515e3e80b"
+        }
+      }
+    ],
+    "remaining_blockers": [],
+    "resolved_findings": [
+      {
+        "finding": "Schema 30 disabled existing pending manual receipt handoff globally; final logic accepts 29/30 and requires retained 29 prerequisite.",
+        "location": "src/parkweave/service_dispatches.py:_handoff_enabled",
+        "severity": "HIGH",
+        "validation": "47 pending receipt handoff tests pass in frozen-review-corrected."
+      },
+      {
+        "finding": "Unsupported business_write keyword raised TypeError on existing Case fact/material read and write routes.",
+        "location": "src/parkweave/case_fact_clarifications.py:_transaction; src/parkweave/material_preparation_drafts.py:_context",
+        "severity": "HIGH",
+        "validation": "22 material preparation draft tests pass; facts corrected complete module 66 passes; independent historical-read oracles pass."
+      },
+      {
+        "finding": "Added business guard broke real temporary PG P1 adapter with missing autocommit property; source placed guard on read instead of execute.",
+        "location": "src/parkweave/isolated_execution_preview.py:_ClosedConnection; read; execute",
+        "severity": "HIGH",
+        "validation": "46 complete P1 preview tests pass, immutable existing preview history remains readable; cancellation rejects stale and fresh P1 execution."
+      },
+      {
+        "finding": "Original-key POST returned COMMITTED with Case state inconsistent after owned test injection, while GET recovery rejected it.",
+        "location": "src/parkweave/case_cancellation.py:cancel original-key replay",
+        "severity": "MEDIUM",
+        "validation": "Shared committed-state proof rejects corrupt Case/local state and revision; independent replay corruption oracle passes."
+      }
+    ],
+    "retained_failures": [
+      {
+        "cause": "Reviewer basetemp under workspace violated existing ephemeral cluster directory proof; no guard change or bypass; continued with new standard default /tmp fixture.",
+        "kind": "REVIEW_HARNESS",
+        "window": "first"
+      },
+      {
+        "cause": "Old loaded handoff schema and invalid facts _scope parameter failures; log retained.",
+        "kind": "OLD_PRODUCT_SOURCE",
+        "window": "second"
+      },
+      {
+        "cause": "Two _scope TypeErrors; P1 history setup failed before cancellation on missing autocommit property, not an observed post-cancel GET failure.",
+        "kind": "OLD_PRODUCT_SOURCE",
+        "window": "boundaries-first"
+      },
+      {
+        "cause": "Inconsistent persistent Case state accepted by original-key POST.",
+        "kind": "OLD_PRODUCT_SOURCE",
+        "window": "replay-first"
+      },
+      {
+        "cause": "Runtime conftest did not export existing drop_owned_fixture_database helper; collection error before tests.",
+        "kind": "REVIEW_HARNESS",
+        "window": "frozen-review"
+      },
+      {
+        "cause": "Two offer setups skipped required P1/P2 verification; LOCK omitted exact source SHA. Only runtime reviewer oracles corrected.",
+        "kind": "REVIEW_HARNESS",
+        "window": "extra-first"
+      },
+      {
+        "cause": "Fixed-name migration test still repeated 029 after current migration 030; future-version test inserted already-existing 30. Only that repository test file changed; complete corrected module revalidated.",
+        "kind": "OUTDATED_REPOSITORY_TEST_ORACLE",
+        "window": "frozen-review-corrected"
+      }
+    ],
+    "review_md_sha256": "c63120b2cb4f1fc5b7f91af0ff7de50431037271459a2c5de09ab13e0ae40cea",
+    "review_scope": [
+      "Owner-only ordinary successful verified SYNTHETIC Case before any actual historical ACCEPT/receipt/local closure",
+      "Business-write guards including executor parent bypasses and resource binding composition",
+      "Parent -> dispatch -> Case lock order and owned PG waits/races",
+      "Current authorization, tenant scope, exact source versions, atomic event/state rollback, original-key recovery",
+      "Historical GET preservation and no implicit plan invalidation writes",
+      "Old outbox notice consumption/open and cancelled UI recovery in offline NodeVM",
+      "Resource reservations, claims and links preserved; separately authorized release remains operative"
+    ],
+    "reviewed_at_utc": "2026-10-11T12:17:35.681846+00:00",
+    "reviewer_artifacts": {
+      "conftest.py": "25bec53d1494523bfcb71e5fd5736025087461bf2d0f6acabb1f070c5d9603e4",
+      "test_extra_boundaries.py": "7baafb8b1d53357d0d727a5afea178964a2b0d3b85c2c2f3b3f478340692f57b",
+      "test_independent_boundaries.py": "4cc5dac678ce8b8253df90ef40050388c6bdc343a51179522b0e3a2d26e20bb4"
+    },
+    "source_head": "557528da70d905859d7fd09dc0b4ed8f5545af51",
+    "source_snapshot": {
+      "changes_since_previous_source_sha": [
+        "tests/test_template_upgrade.py"
+      ],
+      "drift": [],
+      "file_count": 398,
+      "path": ".runtime/case-cancel/final-delivery-source-manifest.json",
+      "production_source_changes_since_previous_source_sha": [],
+      "sha256": "5571352ab2d645d7739f4e727c2ba1188d169c919c3109bc263aec0c3592100b"
+    },
+    "status": "LIMITED_PASS",
+    "windows": {
+      "boundaries-first": {
+        "errors": 0,
+        "failures": 3,
+        "junit_sha256": "02f7197a302357943fc6cd9d9ef4668c1e9d0a15038ae9f10d4ffbf82c22e049",
+        "log_sha256": "7462ceac79f76c19dfab421a77ed8e5985935a4b6baf3825b46a7f0e7e4cda29",
+        "passed": 1,
+        "seconds": 4.905,
+        "skipped": 0,
+        "tests": 4
+      },
+      "extra-corrected": {
+        "errors": 0,
+        "failures": 0,
+        "junit_sha256": "703286b8a519f41224bfeb46398e73a2b1e8de8560a9dc087948c901245a2b72",
+        "log_sha256": "752592b3aabc5fec3702408bbb2b9243a2a37d5336ddc245f7b506de72fa36b1",
+        "passed": 7,
+        "seconds": 9.595,
+        "skipped": 0,
+        "tests": 7
+      },
+      "extra-first": {
+        "errors": 0,
+        "failures": 3,
+        "junit_sha256": "f80dd5ef8f8f1fc15351f1d820f8d57bceac93cff47795648fd0777a2951f7af",
+        "log_sha256": "4f8793336608c73171c4a70fa2c0fdf50d912b36ee924a461a16aee844e4c553",
+        "passed": 4,
+        "seconds": 7.66,
+        "skipped": 0,
+        "tests": 7
+      },
+      "facts-corrected": {
+        "errors": 0,
+        "failures": 0,
+        "junit_sha256": "7f9563523520938f502584769d33139e1d44b3c74afd9ff68983ebecef968849",
+        "log_sha256": "1ed1e0c6ed4c3d8db77151951b7cc3c1290595602c75073fff9fbc0e3cc31bd4",
+        "passed": 66,
+        "seconds": 33.446,
+        "skipped": 0,
+        "tests": 66
+      },
+      "first": {
+        "errors": 117,
+        "failures": 0,
+        "junit_sha256": "a3da6443ae5648ad006b08c4a7d1e653eb1f71ada29b035211e5834e8abe0d6d",
+        "log_sha256": "1d708520e4ea3e2fdb9850a2c7d9bc90f5e0b66f07f9bb9a1332affeadbae245",
+        "passed": 9,
+        "seconds": 4.136,
+        "skipped": 0,
+        "tests": 126
+      },
+      "frozen-review": {
+        "errors": 1,
+        "failures": 0,
+        "junit_sha256": "32f5b0352985f0b2141f2bf1f1749c45291ecb325d61810b462eed192d877e3e",
+        "log_sha256": "02595b86218a0de33844443e804a1c5d9f67d41553afc15d55ac9e5850b89f42",
+        "passed": 0,
+        "seconds": 0.493,
+        "skipped": 0,
+        "tests": 1
+      },
+      "frozen-review-corrected": {
+        "errors": 0,
+        "failures": 2,
+        "junit_sha256": "4f5c8689dfc4ba5596d0f949a4aba12f58378a68e5fe7fd6d88a4dd5ce883014",
+        "log_sha256": "6e1e964fc663214c9a7f94837c5fb4801a6822f4b28bcdbf73034f49930ecae6",
+        "passed": 270,
+        "seconds": 223.054,
+        "skipped": 0,
+        "tests": 272
+      },
+      "replay-first": {
+        "errors": 0,
+        "failures": 1,
+        "junit_sha256": "c1c2c694730873e6bbf37de635c85d072dfb7dec4dd476113f26a9d4ec68e77f",
+        "log_sha256": "b03b6f19975e09a9cbca17cea2e538ef1dfbaa3581967f30133e9d5712524b35",
+        "passed": 0,
+        "seconds": 1.503,
+        "skipped": 0,
+        "tests": 1
+      },
+      "second": {
+        "errors": 21,
+        "failures": 92,
+        "junit_sha256": "5f5a2338a11f476ccca038125d4532bcc802064258b3f79dbd3a112ea07cd183",
+        "log_sha256": "5038ff2805ab5074d63fbd55aaedb36e3c194bb69cc56562b2612c8288dbb9da",
+        "passed": 101,
+        "seconds": 124.439,
+        "skipped": 0,
+        "tests": 214
+      },
+      "template-followup": {
+        "by_module": {
+          ".runtime.case-cancel.independent-review.test_template_dependency_followup": 2,
+          "tests.test_template_upgrade": 33
+        },
+        "errors": 0,
+        "failures": 0,
+        "junit_sha256": "d961536596241a47ecef405723d7957e26f9739477ffb2a3b1609228fe198ac7",
+        "log_sha256": "adfcdce848c4cb620095fd44129f2b977e3f82b9b8d2185f829b388dd5238b8d",
+        "passed": 35,
+        "seconds": 48.157,
+        "skipped": 0,
+        "tests": 35
+      }
+    }
+  },
+  "independent_review_artifacts": {
+    "FOLLOWUP_TEMPLATE.md": "757127bb21502bb199ddeec50629012078b0efdde1acef3a00ed04dc5a6075e3",
+    "REVIEW.md": "c63120b2cb4f1fc5b7f91af0ff7de50431037271459a2c5de09ab13e0ae40cea",
+    "review.json": "3d57449535f485ef251e3e886d0a0da87ed219f4f61422371419b5ad9c9f9d64",
+    "template-followup-review.json": "2197575b75d1ec7e52c69cfa3a66b10a6bf3a35b76e33ee68bd3554fe1ee0cd7"
+  },
+  "initial_collection": {
+    "cause": "Requested a nonexistent preexisting test nodeid; corrected selection in next window.",
+    "log_sha256": "d57eba88b5635628e1ed3ceea4c616f0653bf507c2c3d46fe41add1cda7f9d0d",
+    "status": "COLLECTION_ERROR",
+    "tests_run": 0
+  },
+  "latest_result_index": {
+    "counts": {
+      "ERROR": 0,
+      "FAIL": 0,
+      "PASS": 1270,
+      "SKIP": 1
+    },
+    "method": "Latest result per identical classname::testname, in ordered windows final-affected, final-facts, template-current-corrected, installed-process-rerun. A multi-window index, not a single all-PASS suite.",
+    "path": ".runtime/case-cancel/current-coverage-index.json",
+    "sha256": "9ae3a39ce23795332471adb1313bd9238ad6dfb4fd0bcc52756cdfe7caaf8484",
+    "unique_test_ids": 1271
+  },
+  "not_run": [
+    "full repository suite",
+    "full original acceptance matrix",
+    "native Windows",
+    "production migration",
+    "deployment",
+    "real model/paid call",
+    "GitHub CI for this independent branch"
+  ],
+  "production_migrations": false,
+  "raw_evidence": {
+    "local_directory": ".runtime/case-cancel",
+    "public_document_policy": "Only counts, scope and hashes; no transient fixture authentication data.",
+    "verbatim_retained": true
+  },
+  "recorded_at_utc": "2026-10-11T12:18:41.123555+00:00",
+  "remaining_blockers": [],
+  "remaining_feature_limits": [
+    "No restoration after cancellation",
+    "No cancellation after any historical ACCEPT, receipt or local closure",
+    "No complete Case lifecycle claim"
+  ],
+  "root_completed_windows": {
+    "fifth": {
+      "errors": 0,
+      "failures": 0,
+      "junit_sha256": "03c004e9ea3b150d9e4381301a93c3bea9388f03a824ef49383cb9b4e2fc31a1",
+      "log_sha256": "4313eae653d30ee7788913f831aafcb0f9d3a86432fc66d979884af07370453c",
+      "passed": 79,
+      "seconds": 42.301,
+      "skipped": 0,
+      "tests": 79
+    },
+    "final-affected": {
+      "errors": 39,
+      "failures": 4,
+      "junit_sha256": "e630662b5faae1d140de31d5d65b2fdb45d4c2fdfa36b1d2b63888899b2749b4",
+      "log_sha256": "271eca66ff8908bac6b74bebcfec280451241bd044c4610059fd4eed2d2f34ed",
+      "passed": 1227,
+      "seconds": 1029.069,
+      "skipped": 1,
+      "tests": 1271
+    },
+    "final-facts": {
+      "errors": 0,
+      "failures": 0,
+      "junit_sha256": "ad70b38679a3d880d122cbfea12eee16b3bbc8fe6c8e85af7ead3191b5c26119",
+      "log_sha256": "dc09d9d057ff5d8401b96570c371558d0b6279715b52a804a13a856c5bd42fb6",
+      "passed": 66,
+      "seconds": 32.993,
+      "skipped": 0,
+      "tests": 66
+    },
+    "first": {
+      "errors": 0,
+      "failures": 4,
+      "junit_sha256": "ccb7f8e7258aab08925a7c5ee329a4c39a8c5df1b4dd853836a27bb4265d5d34",
+      "log_sha256": "dc09885450f92d735fe3c7cffabc16489e26d004ae68c40eb31750d6dc2a7872",
+      "passed": 35,
+      "seconds": 36.672,
+      "skipped": 0,
+      "tests": 39
+    },
+    "fourth": {
+      "errors": 0,
+      "failures": 0,
+      "junit_sha256": "58031db000143741e631fde3aad42947b9de6a2b9f681e6d05b663f3f0dd4b27",
+      "log_sha256": "bb26b3dfab27ff2a11da296f7b2e685d8d803c9a86ead0eda3494a36b1729e95",
+      "passed": 73,
+      "seconds": 40.55,
+      "skipped": 0,
+      "tests": 73
+    },
+    "installed-process-rerun": {
+      "errors": 0,
+      "failures": 0,
+      "junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+      "log_sha256": "81a13607160305fe8d1f0835b8169635a16c9e4b5830e87baf5436df172e7d46",
+      "passed": 82,
+      "seconds": 134.21,
+      "skipped": 1,
+      "tests": 83
+    },
+    "regression-first": {
+      "errors": 22,
+      "failures": 266,
+      "junit_sha256": "5f25662dce21ebd81c464f849bcff9307657e5cd1d7d2b5c1adef7e0ef5a04e8",
+      "log_sha256": "a970cb44aeb43e681d4028931e378f590af817e503dc595a2e312e639ee97a41",
+      "passed": 538,
+      "seconds": 765.32,
+      "skipped": 0,
+      "tests": 826
+    },
+    "second": {
+      "errors": 0,
+      "failures": 0,
+      "junit_sha256": "dc69f3a69544b67ef94eff00267516ccad088d8546ec3deaf8fed4317e12803b",
+      "log_sha256": "9c5496a0e6218b4a1530f4dec5d50583065fa89bf72ea95879438985bbd4085f",
+      "passed": 39,
+      "seconds": 22.228,
+      "skipped": 0,
+      "tests": 39
+    },
+    "sixth": {
+      "errors": 0,
+      "failures": 0,
+      "junit_sha256": "6ac4c91e172cdebd64455ba327fd397eee9d09b06f42eceecb0cc419a9548595",
+      "log_sha256": "6fa549220ace537e36f673fc33270519d900a2a92176c3611986626968a036c6",
+      "passed": 86,
+      "seconds": 52.247,
+      "skipped": 0,
+      "tests": 86
+    },
+    "template-baseline": {
+      "errors": 0,
+      "failures": 1,
+      "junit_sha256": "1512d03903554f4949baf47de9a10ca0d383397ddaa576594cb2b49daf26a085",
+      "log_sha256": "e1517e25480daddd584effc9aecd89026b3082f9d9fbbfbfc16b316aef043d03",
+      "passed": 0,
+      "seconds": 4.425,
+      "skipped": 0,
+      "tests": 1
+    },
+    "template-current-corrected": {
+      "errors": 0,
+      "failures": 0,
+      "junit_sha256": "2b1ff1fc3962abeecdab8e34f93be7e06f1e112fa876d781d6d08ebf0215f755",
+      "log_sha256": "9f0e3f96337af396d7cbfa63808734d137e7c965c49a31df8de055f708a302cc",
+      "passed": 33,
+      "seconds": 51.147,
+      "skipped": 0,
+      "tests": 33
+    },
+    "template-current-first": {
+      "errors": 0,
+      "failures": 1,
+      "junit_sha256": "54334e10e4f869efb56a8aa3bb85a10d08085457fa68eecf564c7c3365d15023",
+      "log_sha256": "8af2e79a555f0c0704066c5d8687b049e6b9b47a9d031250495e765c6f469209",
+      "passed": 0,
+      "seconds": 3.536,
+      "skipped": 0,
+      "tests": 1
+    },
+    "third": {
+      "errors": 0,
+      "failures": 3,
+      "junit_sha256": "8bd70621bad00f9103f499a418f951004666360b2a99ce109d827079f9b35156",
+      "log_sha256": "eb83b7bbbd6a2108dc9ba1184e8f610115df8b9214439d7414c7af6048e4e698",
+      "passed": 61,
+      "seconds": 38.147,
+      "skipped": 0,
+      "tests": 64
+    },
+    "ui-first": {
+      "errors": 0,
+      "failures": 1,
+      "junit_sha256": "f57c0c77cc2bc7f70f69df3b0ac037f580341e69700728d1f5a257ed9e63def4",
+      "log_sha256": "74eeeab6585ce82d4b855fb396cb3c324fa6f4e892ec9a2b1039b4dad331af2c",
+      "passed": 8,
+      "seconds": 0.639,
+      "skipped": 0,
+      "tests": 9
+    }
+  },
+  "root_window_notes": {
+    "final-affected": "36 complete related modules, 1227 PASS / 4 FAIL / 39 ERROR / 1 SKIP, exact unchanged product bytes. Two collected old schema test oracles, one baseline template fixture omitting required explicit local ADOPT, wheel missing setuptools, and 39 process setup errors from project not yet installed in the venv. All original outcomes and files retained. The corrected complete facts/template modules and installed full worker/auth/opportunity modules are separately rerun below.",
+    "final-facts": "66 PASS. Only old version-oracle corrections, with migration refusal semantics retained. No production source change.",
+    "first": "35 PASS / 4 FAIL: strict confirmation product defect plus historical-offer/isolation/lock-witness fixture construction errors; original failure files retained.",
+    "installed-process-rerun": "82 PASS / 1 SKIP for full worker_gateway, authorization_files and case_opportunities after installing setuptools, wheel and editable project in the task venv. Pytest process exit 0. A pgserver atexit FileNotFoundError cleanup diagnostic follows the test result; retained verbatim and separately reported.",
+    "regression-first": "538 PASS / 266 FAIL / 22 ERROR on source imported before independent-review fixes; full real failure log retained, not final-source coverage.",
+    "sixth": "86 PASS after product fixes, including real owned PG races and P1-P4 history/late-execute guards.",
+    "template-baseline": "1 FAIL on original e40bd24329ec21bd881ee7521e63e32a8ee3c13a archive: test inserted Run access assignments after plan adoption and P3 verification returned 409. Actual baseline fail retained.",
+    "template-current-corrected": "33 PASS: existing adopt/adopt_body with exact current plan revision and local_revision=True explicitly binds changed source; no production change or automatic rebinding.",
+    "template-current-first": "1 FAIL: same original fixture sequence reproduced at current feature source 4d1967ab7691a7dc3203c5214fb1fbe95ceba34c; original result retained.",
+    "third": "61 PASS / 3 FAIL: wrong objection URL, delivery member count and helper keyword in test construction; corrected fixtures.",
+    "ui-first": "8 PASS / 1 FAIL: offline fake DOM lacked replaceChildren/append/reset; corrected only the test double."
+  },
+  "scope": "SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT",
+  "skips": [
+    {
+      "reason": "NOT_RUN: native Windows reparse points, ADS, ACL and clean lifecycle require Windows11 x64",
+      "test": "tests.test_authorization_files::test_native_windows_file_backend_gate"
+    }
+  ],
+  "source_manifest": {
+    "drift": [],
+    "files": 398,
+    "path": ".runtime/case-cancel/final-delivery-source-manifest.json",
+    "product_files": 125,
+    "production_changes_since_final_affected_window": [],
+    "sha256": "5571352ab2d645d7739f4e727c2ba1188d169c919c3109bc263aec0c3592100b",
+    "test_changes_since_frozen_windows": [
+      "tests/test_case_fact_clarifications.py",
+      "tests/test_template_upgrade.py"
+    ]
+  },
+  "source_sha": "557528da70d905859d7fd09dc0b4ed8f5545af51",
+  "teardown_diagnostic": {
+    "atexit_diagnostic": "FileNotFoundError while pgserver atexit rmtree removed pg_wal; pytest result 82 PASS / 1 SKIP and process exit 0 retained independently.",
+    "atexit_diagnostic_retained_in": ".runtime/case-cancel/installed-process-rerun.log",
+    "checked_at_utc": "2026-10-11T12:16:20.754493+00:00",
+    "cleanup_attempt_by_root": false,
+    "fixture_data_exists": false,
+    "known_fixture_data_path": "/tmp/pytest-of-agent/pytest-16/parkweave-pg0/data",
+    "live_postgres_processes_at_check": []
+  },
+  "test_delivery_scope": {
+    "api": "in-process ASGI plus real API/worker subprocess windows",
+    "database": "Owned ephemeral real PostgreSQL with original issued FixtureDatabaseEvidence; no SQLite substitution.",
+    "lock_competitors": [
+      "actual ACCEPT both orders",
+      "material write both orders",
+      "first dispatch both orders",
+      "plan adoption both orders",
+      "Case resource link both orders",
+      "independent legacy receipt CREATE cancel-first wait"
+    ],
+    "offline_ui_cases": 9,
+    "specialized_cases": 77,
+    "ui": "offline NodeVM only, full script syntax checked"
+  },
+  "ui_syntax": {
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "node_check_exit": 0,
+    "scope": "Exact full web.html script, syntax only; no browser.",
+    "status": "PASS"
+  },
+  "verification_status": "LIMITED_PASS_SOURCE_AND_TESTS_FROZEN"
+}
