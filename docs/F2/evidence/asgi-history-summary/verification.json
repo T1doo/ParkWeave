@@ -1,0 +1,47 @@
+{
+  "source_sha": "c3da9cb33a2fc205834d21825d64e98ddfcb1cce",
+  "baseline_dev_sha": "b58cf201de3d6ca4e249bec3e8544ea53163807a",
+  "baseline_main_sha": "31e7acb7e53bb1ab6465b9daae59de28757f7583",
+  "candidate_branch": "acceptance/asgi-history-summary-20261011",
+  "method": "existing isolated synthetic PostgreSQL fixture; in-process ASGI TestClient; no browser or listener",
+  "command": "/tmp/parkweave-summary-venv/bin/python -m pytest tests/test_history_summary_api.py tests/test_history_summary.py tests/test_history_summary_store.py tests/test_fact_history_read_source.py tests/test_fact_history_read_source_store.py tests/test_foundation.py tests/test_preparation.py -q --junitxml=/tmp/parkweave-summary-frozen-final.xml",
+  "tests": 263,
+  "passed": 263,
+  "failed": 0,
+  "errors": 0,
+  "skipped": 0,
+  "new_api_tests": 37,
+  "existing_related_tests": 226,
+  "duration_seconds": 70.293,
+  "platform": "Linux",
+  "python": "3.12.14",
+  "dependencies": "requirements-linux-evidence.txt installed in temporary /tmp virtualenv; project src installed via standard .pth for worker child import",
+  "source_files_sha256": {
+    "src/parkweave/api.py": "3b65f80f08b2d2bc838508efd901c16b49941b22d7890a98777be46e3b9f69aa",
+    "src/parkweave/history_summary.py": "f06bf8a0946fb29a0b640d9d32d2ed131d8070cfd7fd4d9e21c7aaeeb1f7968c",
+    "tests/test_history_summary_api.py": "2ec392aaa87766e7b9d4ed7a7cf075b75839bdd18431e7f803a796b2ea265709"
+  },
+  "effects": {
+    "successful_read": "all public-schema table snapshots unchanged",
+    "known_token_denial": "only original authorization_audit may append; business, grants and outbox unchanged",
+    "fixture_mutations": "synthetic test arrangements by fixture owner only"
+  },
+  "legacy_76_used_as_current_evidence": false,
+  "limitations": [
+    "browser data: ERR_BLOCKED_BY_ADMINISTRATOR retained; no browser launched",
+    "Windows and full-page acceptance not run",
+    "persistent enrollment not implemented",
+    "full issuer shutdown / PostgreSQL restart recovery not verified",
+    "no old-container authentication recovery or shared state assumed"
+  ],
+  "independent_review": {
+    "source_sha": "c3da9cb33a2fc205834d21825d64e98ddfcb1cce",
+    "passed": 12,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "duration_seconds": 6.235,
+    "verdict": "no remaining blocking defect in authorized scope",
+    "evidence": "independent-review/REVIEW.md"
+  }
+}
