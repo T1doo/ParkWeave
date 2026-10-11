@@ -569,9 +569,17 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
     def fixed_plan_command(preparation_id: UUID,data: cp.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return cp.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
 
+    notice_navigation=notices.Navigation()
+    app.state.notice_navigation=notice_navigation
+
     @app.get('/api/dispatch-notices')
-    def notice_list(authorization: str | None=Header(default=None)):
-        return notices.list_items(store,token(authorization))
+    def notice_list(request: Request,response: Response,authorization: str | None=Header(default=None)):
+        response.headers['Cache-Control']='no-store'
+        cursors=request.query_params.getlist('cursor')
+        if len(cursors)>1 or any(key!='cursor' for key in request.query_params):
+            raise Denied('notice navigation unavailable; refresh required')
+        return notices.list_items(store,token(authorization),cursor=cursors[0] if cursors else None,
+                                  navigation=notice_navigation)
 
     @app.get('/api/dispatch-notices/{event_id}')
     def notice_read(event_id: UUID,authorization: str | None=Header(default=None)):

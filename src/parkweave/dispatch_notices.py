@@ -1,6 +1,12 @@
 """Minimal synthetic platform notices; current Case authority is never cached."""
 from uuid import UUID
 from typing import Literal
+from collections import OrderedDict
+from dataclasses import dataclass
+from threading import Lock
+from time import monotonic
+import re
+import secrets
 from pydantic import BaseModel,ConfigDict,Field
 from . import service_dispatches as sd, preparation as prep
 from .executor_receipts import bounded
@@ -9,6 +15,67 @@ from psycopg.errors import LockNotAvailable
 
 SCOPE='SYNTHETIC_INTERNAL_DISPATCH_NOTICES_ONLY'
 SCAN_LIMIT=20
+LIST_SCAN_LIMIT=100
+LIST_RETURN_LIMIT=20
+NAVIGATION_CAPACITY=256
+NAVIGATION_TTL_SECONDS=300
+_navigation_creation_lock=Lock()
+
+
+@dataclass(frozen=True)
+class _Position:
+    binding: tuple
+    high_water: tuple
+    after: tuple
+    expires: float
+
+
+class Navigation:
+    """Process-local bounded positions, never cached permission or notice data.
+
+    A handle can be replayed, but every replay rechecks current authority. Child
+    positions retain the original expiry/high-water; restart or eviction requires
+    refresh. Only opaque randomness crosses the API, never filtered row keys.
+    """
+    def __init__(self, *, capacity=NAVIGATION_CAPACITY, ttl=NAVIGATION_TTL_SECONDS, clock=monotonic):
+        if type(capacity) is not int or not 1 <= capacity <= NAVIGATION_CAPACITY:
+            raise ValueError('bounded navigation capacity required')
+        if type(ttl) is not int or not 1 <= ttl <= NAVIGATION_TTL_SECONDS:
+            raise ValueError('bounded navigation expiry required')
+        self._capacity,self._ttl,self._clock=capacity,ttl,clock
+        self._positions=OrderedDict()
+        self._lock=Lock()
+
+    def _purge(self, now):
+        for key in tuple(self._positions):
+            if self._positions[key].expires <= now:
+                del self._positions[key]
+
+    def resolve(self, handle, binding):
+        if type(handle) is not str or re.fullmatch(r'[A-Za-z0-9_-]{43}',handle) is None:
+            raise Denied('notice navigation unavailable; refresh required')
+        with self._lock:
+            now=self._clock();self._purge(now)
+            position=self._positions.get(handle)
+            if position is None or position.binding != binding:
+                raise Denied('notice navigation unavailable; refresh required')
+            return position
+
+    def issue(self, binding, high_water, after, expires):
+        with self._lock:
+            now=self._clock();self._purge(now)
+            if now >= expires:
+                raise Denied('notice navigation unavailable; refresh required')
+            while len(self._positions) >= self._capacity:
+                self._positions.popitem(last=False)
+            for _ in range(8):
+                handle=secrets.token_urlsafe(32)
+                if handle not in self._positions:break
+            else:
+                raise Conflict('notice navigation busy; refresh required')
+            self._positions[handle]=_Position(binding,high_water,after,expires)
+            return handle
+
 class Command(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True)
     action: Literal['OPEN','MARK_READ']
@@ -101,17 +168,50 @@ def _recipient(store,c,token):
 
 
 @bounded
-def list_items(store,token):
+def list_items(store,token,*,cursor=None,navigation=None):
+    # API owns one cache per app instance. Direct callers keep positions only
+    # on their Store instance. Neither cache is a persistent authority/registry.
+    if navigation is None:
+        with _navigation_creation_lock:
+            navigation=getattr(store,'_notice_navigation',None)
+            if navigation is None:
+                navigation=Navigation();store._notice_navigation=navigation
     with store.connect() as c:
         p=_recipient(store,c,token)
-        rows=c.execute('SELECT * FROM dispatch_notices WHERE recipient_id=%s ORDER BY delivered_at DESC,event_id DESC LIMIT 100',(p['id'],)).fetchall()
+        binding=(SCOPE,p['id'],p['park_id'],p['org_id'],p['role'],p['token_hash'])
+        if cursor is None:
+            expires=navigation._clock()+navigation._ttl
+            rows=c.execute('SELECT * FROM dispatch_notices WHERE recipient_id=%s ORDER BY delivered_at DESC,event_id DESC LIMIT %s',
+                           (p['id'],LIST_SCAN_LIMIT)).fetchall()
+            high_water=(rows[0]['delivered_at'],rows[0]['event_id']) if rows else None
+        else:
+            position=navigation.resolve(cursor,binding)
+            expires=position.expires;high_water=position.high_water
+            rows=c.execute('''SELECT * FROM dispatch_notices WHERE recipient_id=%s
+                AND (delivered_at,event_id)<= (%s,%s) AND (delivered_at,event_id)< (%s,%s)
+                ORDER BY delivered_at DESC,event_id DESC LIMIT %s''',
+                (p['id'],*high_water,*position.after,LIST_SCAN_LIMIT)).fetchall()
         items=[]
+        examined=0
         for row in rows:
-            source=_source(c,row['event_id'])
-            try:parent,root=_authority(store,c,p,source)
+            examined+=1
+            try:
+                source=_source(c,row['event_id'])
+                parent,root=_authority(store,c,p,source)
             except Denied:continue
             items.append(_item(source,row,root))
-        return dict(scope=SCOPE,items=items,check_limit=100,external_send=False,case_goal_completed=False)
+            if len(items)==LIST_RETURN_LIMIT:break
+        # Reaching either bound means "continue scanning", not a disclosed total
+        # or a guarantee that the next page contains authorized notices. Advance
+        # past *examined* rows only, including denied ones; never skip fetched rows.
+        next_cursor=None
+        if navigation._clock() >= expires:
+            raise Denied('notice navigation unavailable; refresh required')
+        if examined and (examined==LIST_SCAN_LIMIT or len(items)==LIST_RETURN_LIMIT):
+            last=rows[examined-1]
+            next_cursor=navigation.issue(binding,high_water,(last['delivered_at'],last['event_id']),expires)
+        return dict(scope=SCOPE,items=items,check_limit=LIST_SCAN_LIMIT,page_limit=LIST_RETURN_LIMIT,
+                    next_cursor=next_cursor,external_send=False,case_goal_completed=False)
 
 
 def _get(store,c,token,id):
