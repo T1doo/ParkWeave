@@ -1,0 +1,150 @@
+{
+  "base_commit": "c5b0a6fb7ece59f4a97e33ecfc021a1c785e6e4d",
+  "source_commit": "1bccc05381b5cf1ad58149709a35720d90ea79f0",
+  "branch": "dev/f2-notice-history-pagination-20261011",
+  "single_writer": "root; independent reviewer read-only; no active Git process or index lock at preflight",
+  "remote_at_preflight": {
+    "main": "31e7acb7e53bb1ab6465b9daae59de28757f7583",
+    "dev/f1-foundation": "b58cf201de3d6ca4e249bec3e8544ea53163807a",
+    "acceptance/fact-history-leakage-oracle-20261011": "c5b0a6fb7ece59f4a97e33ecfc021a1c785e6e4d"
+  },
+  "files": {
+    "src/parkweave/api.py": "459c059cefc8f4fd277e0792a6fe7a0a92a1a1587e11c0a4e6cadab819ef2141",
+    "src/parkweave/dispatch_notices.py": "5b3a1f4e1bc2046fce6ed03c272c7e42bdf1fe49f42f45134e9e8f6ddcc07556",
+    "src/parkweave/web.html": "a3cf94f68e5159077b32204e73ae057b5ca4ca8b20ed47e88ed36feb5282870b",
+    "tests/dispatch_notice_pagination_offline.js": "04e979cf0ebe3c4697f15105a4e7ab4f9f9ef470b853558d5f6bce7f59dfc1e7",
+    "tests/test_dispatch_notice_page_offline.py": "e80a5003969fb1fcaf9b57f3d9b33443594886fce5867d820568eb8ef279cbb4",
+    "tests/test_dispatch_notice_pagination.py": "8166a4f8c23f45da94b6cfd53a56496fb5db2aaa76aeaeeadf8ab659aea85e23"
+  },
+  "limits": {
+    "candidate_scan": 100,
+    "returned_items": 20,
+    "navigation_positions_per_app": 256,
+    "absolute_navigation_seconds": 300
+  },
+  "sorting": "delivered_at DESC, event_id DESC; keyset after examined rows; logical high-water fixed at initial newest candidate",
+  "navigation": "opaque random positions only, bound to list/subject/park/org/role/session hash; no cached permission; every page/replay uses original current authority; expiry inherited; process/app restart or eviction refresh required",
+  "runtime_python": "/tmp/parkweave-summary-venv/bin/python",
+  "runs": [
+    {
+      "artifact": "initial-pagination",
+      "counts": {
+        "tests": 26,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 26
+      },
+      "classes": {
+        "tests.test_dispatch_notice_pagination": 26
+      },
+      "source_binding": "preliminary source/harness; not final attestation"
+    },
+    {
+      "artifact": "initial-offline",
+      "counts": {
+        "tests": 10,
+        "failed": 10,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 0
+      },
+      "classes": {
+        "tests.test_dispatch_notice_page_offline": 10
+      },
+      "source_binding": "preliminary source/harness; not final attestation"
+    },
+    {
+      "artifact": "fixed-offline",
+      "counts": {
+        "tests": 10,
+        "failed": 1,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 9
+      },
+      "classes": {
+        "tests.test_dispatch_notice_page_offline": 10
+      },
+      "source_binding": "preliminary source/harness; not final attestation"
+    },
+    {
+      "artifact": "scoped",
+      "counts": {
+        "tests": 68,
+        "failed": 0,
+        "errors": 0,
+        "skipped": 0,
+        "passed": 68
+      },
+      "classes": {
+        "tests.test_dispatch_notice_pagination": 26,
+        "tests.test_dispatch_notice_page_offline": 10,
+        "tests.test_dispatch_notices": 32
+      },
+      "source_binding": "final frozen content"
+    }
+  ],
+  "requirement_sources": [
+    "docs/平台产品设计.md §§5.5/7.4",
+    "docs/分阶段开发计划.md F2-T04",
+    "docs/验收规格.json AT-12 and AT-19",
+    "docs/F2/ENG035-DispatchNotices.md original recent100 limitation"
+  ],
+  "status": "root scoped PASS; independent review PASS; normal development branch push pending",
+  "not_claimed": [
+    "full F2/AT12/AT19 acceptance",
+    "real browser/Windows/full-page",
+    "deployment/multi-worker navigation affinity",
+    "persistent history trusted registry/loader",
+    "long-lived database snapshot or arbitrary owner backdating/clock rollback",
+    "real model/external notification/Case fulfillment"
+  ],
+  "baseline_actual_failures": {
+    "source": "c5b0a6fb7ece59f4a97e33ecfc021a1c785e6e4d",
+    "failed": 2,
+    "expected_gaps": [
+      "authorized101st unreachable",
+      "denied100 prefix false empty"
+    ],
+    "private_directory": "/tmp/parkweave-notice-pagination-baseline",
+    "files": {
+      "dispatch_notices_c5b0a6f.py": "04c1fa8dde636821b8fa25a5180871b8b6875faa8e9df37224ee613221d357fd",
+      "original-gap.log": "39305600d293767763f995eaf584b13e4b4643ae2332005e94548c866f9e7e26",
+      "original-gap.xml": "6b15162c65e391ae3404b15ae064f6fbd4a9c72a2e01e899fa25045e56076878",
+      "source.json": "02070456b4e93985fdb53ae9a5e189625a9a7560656f75901cdb87572ce84d05",
+      "test_original_prefix_gap.py": "5e013bbfb1aaf2860801598202597a6854b67c746a9d70c8b7b650d821cc9f84"
+    },
+    "publication": "raw fixture failures retained privately; digests/counts preserved here; no relabel as PASS"
+  },
+  "independent_review": {
+    "source_commit": "1bccc05381b5cf1ad58149709a35720d90ea79f0",
+    "manifest_sha256": "ff1a3a16ce0c84e11270763fbb7f228b242c704bd971542bbbe000d74711d83d",
+    "passed": 25,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "breakdown": {
+      "owned_synthetic_PG_ASGI": 18,
+      "pure_navigation": 1,
+      "offline_NodeVM_DOM_fetch_doubles": 6
+    },
+    "no_blocking_findings": true,
+    "report": "../independent/REVIEW.md"
+  },
+  "format_validation": {
+    "source_diff_check": "PASS",
+    "staged_non_raw_evidence_check": "PASS",
+    "raw_failure_artifacts": {
+      "check_exit_code": 2,
+      "trailing_whitespace_lines": 22,
+      "files": [
+        "docs/F2/evidence/notice-history-pagination/root/fixed-offline.log",
+        "docs/F2/evidence/notice-history-pagination/root/fixed-offline.xml",
+        "docs/F2/evidence/notice-history-pagination/root/initial-offline.log",
+        "docs/F2/evidence/notice-history-pagination/root/initial-offline.xml"
+      ],
+      "reason": "pytest original failure lines retain their original trailing whitespace and hashes; raw evidence not rewritten"
+    }
+  }
+}
