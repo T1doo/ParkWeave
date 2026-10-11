@@ -1,0 +1,41 @@
+........F                                                                [100%]
+=================================== FAILURES ===================================
+___________________ test_case_cancel_ui[cancelled_dispatch] ____________________
+
+mode = 'cancelled_dispatch'
+
+    @pytest.mark.parametrize('mode',['lost_response','cold_recovery','unknown_not_observed','corrupt_proof','revoked','late_read','late_post','pending_other_operation','cancelled_dispatch'])
+    def test_case_cancel_ui(mode):
+     node=shutil.which('node')
+     assert node,'Node is required for this offline acceptance'
+     result=subprocess.run([node,'tests/case_cancellation_offline.js',mode],capture_output=True,text=True,timeout=15)
+>    assert result.returncode==0,result.stderr
+E    AssertionError: evalmachine.<anonymous>:5
+E        $('dispatch-current').replaceChildren();if(current){$('dispatch-current').append(textElement('p','执行者：'+current.executor_id),textElement('p','分派说明：'+current.reason));}
+E                              ^
+E      
+E      TypeError: $(...).replaceChildren is not a function
+E          at renderDispatch (evalmachine.<anonymous>:5:25)
+E          at evalmachine.<anonymous>:1:1
+E          at Script.runInContext (node:vm:149:12)
+E          at Object.runInContext (node:vm:301:6)
+E          at run (@repo/tests/case_cancellation_offline.js:27:17)
+E          at @repo/tests/case_cancellation_offline.js:61:51
+E          at Object.<anonymous> (@repo/tests/case_cancellation_offline.js:64:3)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['@execution/[REDACTED]/', 'tests/case_cancellatio...bject..js (node:internal/modules/cjs/loader:2003:10)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n").returncode
+
+tests/test_case_cancellation_offline.py:10: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_cancellation_offline.py::test_case_cancel_ui[cancelled_dispatch]
+1 failed, 8 passed, 1 warning in 0.64s

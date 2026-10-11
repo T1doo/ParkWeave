@@ -1,0 +1,936 @@
+{
+  "causes": {
+    "C1": {
+      "basis": "DIRECT_ORIGINAL_EXCEPTION_AND_QUERY",
+      "change": "Test oracle now repeats current migration-030 with the original issued receipt; no receipt/ownership/migration guard relaxed.",
+      "direct_original_exception": "psycopg.errors.RaiseException: schema 28 prerequisite or retained schema 29 required",
+      "module_recheck": "final-facts",
+      "root_cause": "Collected old migration-029 repeat oracle at schema 30; the actual retained SQL is migration-029, despite traceback source line having changed to 030 after file edit."
+    },
+    "C2": {
+      "basis": "DIRECT_ORIGINAL_EXCEPTION_AND_QUERY",
+      "change": "Test INSERT31 remains a genuine future version and preserves migration-025 future-version refusal with a valid original receipt.",
+      "direct_original_exception": "psycopg.errors.UniqueViolation: schema_version_pkey; Key (version)=(30) already exists.",
+      "module_recheck": "final-facts",
+      "root_cause": "Collected old future-version oracle INSERTed already-existing schema version 30. Actual query and exception record version 30, although linecache displays corrected INSERT31."
+    },
+    "C3": {
+      "basis": "DIRECT_ORIGINAL_EXCEPTION_BASELINE_REPRO_AND_INDEPENDENT_SOURCE_ORACLE",
+      "change": "Existing ADOPT/CAS with current plan revision and local_revision=True explicitly binds changed access source before P3. Production registered dependency code unchanged; same original flow actually FAILed on e40 baseline.",
+      "direct_original_exception": "AssertionError: adapter sources, binding, reported obstacle or predecessors need recheck;409 !=200",
+      "module_recheck": "template-current-corrected",
+      "root_cause": "Template history fixture adopted its plan, then added Run assignments without explicit local ADOPT. Existing registered access dependency invalidated P3/P4 and P3 correctly returned409."
+    },
+    "C4": {
+      "basis": "DIRECT_ORIGINAL_SUBPROCESS_STDERR_IN_JUNIT",
+      "change": "Installed setuptools==80.9.0 and wheel==0.45.1 in the existing task venv, without changing source, credentials, network configuration or fixture permissions.",
+      "direct_original_exception": "ModuleNotFoundError: No module named 'setuptools'",
+      "module_recheck": "installed-process-rerun",
+      "root_cause": "The task venv lacked setuptools==80.9.0, required by the actual wheel-building subprocess."
+    },
+    "C5": {
+      "basis": "SHARED_STARTUP_EXCEPTION_DIRECT; MISSING_PROJECT_IMPORT_ROOT_CAUSE_INFERRED_FROM_SOURCE_ENVIRONMENT_AND_INSTALLATION_RECHECK",
+      "change": "Editable current project installed using --no-build-isolation --no-deps in the existing venv; full worker/auth/opportunity modules subsequently run. No source or auth guard change for this setup problem.",
+      "direct_original_exception": "RuntimeError: API exited during start at tests/test_worker_gateway.py:33",
+      "limitation": "The original 39 child api.log files under pytest-11 are no longer present. The original JUnit/stdout records API exit, not the child ModuleNotFoundError traceback. A prior tool read observed missing parkweave, but no durable stderr copy was saved; the archive does not manufacture one or claim each stderr directly proved.",
+      "module_recheck": "installed-process-rerun",
+      "root_cause": "Shared child API startup failure, attributed to ParkWeave not yet installed for the minimal-environment Python subprocess. Pytest pythonpath=src only made in-process imports work."
+    }
+  },
+  "failures_and_errors": [
+    {
+      "cause_id": "C1",
+      "complete_module_recheck": {
+        "archived_junit": "root/final-facts.sanitized.xml",
+        "raw_junit_sha256": "ad70b38679a3d880d122cbfea12eee16b3bbc8fe6c8e85af7ead3191b5c26119",
+        "status": "PASS",
+        "window": "final-facts"
+      },
+      "direct_original_message_type": "psycopg.errors.RaiseException",
+      "original_status": "FAIL",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_case_fact_clarifications::test_fixed_lifecycle_name_requires_real_cluster_creation_receipt"
+    },
+    {
+      "cause_id": "C2",
+      "complete_module_recheck": {
+        "archived_junit": "root/final-facts.sanitized.xml",
+        "raw_junit_sha256": "ad70b38679a3d880d122cbfea12eee16b3bbc8fe6c8e85af7ead3191b5c26119",
+        "status": "PASS",
+        "window": "final-facts"
+      },
+      "direct_original_message_type": "psycopg.errors.UniqueViolation",
+      "original_status": "FAIL",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_case_fact_clarifications::test_migration_refuses_future_version_even_with_retained_24_and_valid_receipt"
+    },
+    {
+      "cause_id": "C3",
+      "complete_module_recheck": {
+        "archived_junit": "root/template-current-corrected.sanitized.xml",
+        "raw_junit_sha256": "2b1ff1fc3962abeecdab8e34f93be7e06f1e112fa876d781d6d08ebf0215f755",
+        "status": "PASS",
+        "window": "template-current-corrected"
+      },
+      "direct_original_message_type": "AssertionError",
+      "original_status": "FAIL",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_template_upgrade::test_real_holds_acceptance_receipt_and_entire_history_survive_check_and_choice"
+    },
+    {
+      "cause_id": "C4",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "AssertionError",
+      "original_status": "FAIL",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_case_opportunities::test_actual_wheel_installed_new_fixture_migrates_with_packaged_027"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_real_api_worker_unknown_reconcile_outbox_and_no_duplicate"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_real_worker_crash_old_callback_control_and_effect_visibility[cancel-CANCELLED]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_real_worker_crash_old_callback_control_and_effect_visibility[pause-PAUSED]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_actual_expiry_recovery_after_crash_does_not_dispatch_again"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_crash_without_observed_effect_stays_unknown_and_stops_automatic_queries"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_real_worker_revocation_before_dispatch_and_after_effect[None]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_real_worker_revocation_before_dispatch_and_after_effect[after-effect]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_real_gateway_scope_read_cancel_and_manual_reconcile[fixture-b]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_real_gateway_scope_read_cancel_and_manual_reconcile[fixture-c]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_local_and_fixture_use_same_worker_gateway"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_invalid_receipt_rejected_by_actual_worker_gateway"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_worker_gateway::test_default_worker_cannot_dispatch_explicit_fixture_action"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_roles_assigned_status_only_no_self_elevation[park_specialist]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_roles_assigned_status_only_no_self_elevation[resource_admin]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_roles_assigned_status_only_no_self_elevation[service_executor]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_cross_scope_even_with_misconfigured_assignment_zero_effect[fixture-b]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_cross_scope_even_with_misconfigured_assignment_zero_effect[fixture-c]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_queued_execution_rechecks_current_capability[case.create]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_queued_execution_rechecks_current_capability[facts.assess]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_queued_execution_rechecks_current_capability[fault.record]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_outbox_revoked_before_consume_suppressed_after_delivery_retracted"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_outbox_field_grant_revoked_before_consume"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_logical_file_actual_http_attachment_scope_and_revoked_cache"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_windows_and_traversal_strings_are_not_file_ids[..%5Csecret]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_windows_and_traversal_strings_are_not_file_ids[C:%5CWindows%5Cwin.ini]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_windows_and_traversal_strings_are_not_file_ids[%5C%5Cserver%5Cshare]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_windows_and_traversal_strings_are_not_file_ids[file.txt:secret]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_windows_and_traversal_strings_are_not_file_ids[..%2Fsecret]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_file_integrity_and_descriptor_boundary[content]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_file_integrity_and_descriptor_boundary[symlink]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_file_integrity_and_descriptor_boundary[hardlink]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_file_integrity_and_descriptor_boundary[directory]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_file_integrity_and_descriptor_boundary[root_symlink]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_action_grant_and_role_change_cannot_reuse_queued_identity"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_field_delivery_after_withdrawal_retracted"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_identity_scope_change_does_not_carry_old_grants"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_insecure_private_directories_rejected_without_repair[root-511]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_insecure_private_directories_rejected_without_repair[files-511]"
+    },
+    {
+      "cause_id": "C5",
+      "complete_module_recheck": {
+        "archived_junit": "root/installed-process-rerun.sanitized.xml",
+        "raw_junit_sha256": "693619d60219c707a66a0f59d5597a36453ef83695d646f77778954dec725f11",
+        "status": "PASS",
+        "window": "installed-process-rerun"
+      },
+      "direct_original_message_type": "RuntimeError",
+      "original_junit_wrapper_message_label": "failed on setup with \"RuntimeError: API exited during start\"",
+      "original_status": "ERROR",
+      "single_complete_final_window": {
+        "junit": "root/full-final-recheck.sanitized.xml",
+        "original_junit_sha256": "bdacfa6bcf654cf51b13cab5c7aa4f29767b3ac2f0441454a3f1f69d326f22c8",
+        "status": "PASS"
+      },
+      "source_context": "old_final_affected_freeze",
+      "test_id": "tests.test_authorization_files::test_insecure_private_directories_rejected_without_repair[files-493]"
+    }
+  ],
+  "full_scope_final_recheck": {
+    "counts": {
+      "ERROR": 0,
+      "FAIL": 0,
+      "PASS": 1270,
+      "SKIP": 1
+    },
+    "exit_code": 0,
+    "expected_modules": 36,
+    "expected_test_count": 1271,
+    "order_note": "Same complete module/test set; current runner orders modules alphabetically. Both actual JUnit testcase orders are retained. No tests excluded and no source/assertion edits for this new window.",
+    "source_commit": "557528da70d905859d7fd09dc0b4ed8f5545af51",
+    "source_drift": [],
+    "status": "COMPLETED",
+    "test_ids_equal_original_window": true
+  },
+  "original_window": {
+    "counts": {
+      "ERROR": 39,
+      "FAIL": 4,
+      "PASS": 1227,
+      "SKIP": 1
+    },
+    "junit": "root/final-affected.sanitized.xml",
+    "module_order": [
+      "tests.test_case_cancellation",
+      "tests.test_case_cancellation_offline",
+      "tests.test_preparation",
+      "tests.test_service_dispatches",
+      "tests.test_executor_receipts",
+      "tests.test_case_lifecycle",
+      "tests.test_controlled_plans",
+      "tests.test_service_case_steps",
+      "tests.test_case_resources",
+      "tests.test_case_resource_delivery",
+      "tests.test_dispatch_notices",
+      "tests.test_pending_receipt_handoff",
+      "tests.test_case_fact_bundle",
+      "tests.test_case_fact_clarifications",
+      "tests.test_material_reuse",
+      "tests.test_material_preparation_drafts",
+      "tests.test_material_objections",
+      "tests.test_request_intents",
+      "tests.test_readiness_checklist",
+      "tests.test_plan_preview",
+      "tests.test_isolated_execution_preview",
+      "tests.test_resource_execution_preview",
+      "tests.test_dispatch_execution_preview",
+      "tests.test_receipt_execution_preview",
+      "tests.test_lifecycle_execution_preview",
+      "tests.test_linux_fixture_startup",
+      "tests.test_service_plan_approval",
+      "tests.test_resource_plan_binding",
+      "tests.test_bounded_planning",
+      "tests.test_template_upgrade",
+      "tests.test_resource_holds",
+      "tests.test_resource_combinations",
+      "tests.test_case_opportunities",
+      "tests.test_worker_gateway",
+      "tests.test_authorization_files",
+      "tests.test_lifecycle_diagnostics"
+    ],
+    "original_sha256": "e630662b5faae1d140de31d5d65b2fdb45d4c2fdfa36b1d2b63888899b2749b4"
+  },
+  "source_contexts": {
+    "old_final_affected_freeze": {
+      "collected_at_utc": "2026-10-11T11:50:51.412019+00:00",
+      "committed_at_collection": false,
+      "first_feature_commit_at_utc": "2026-10-11T11:58:10Z",
+      "freeze": "final-source-manifest.json",
+      "freeze_sha256": "53d8d0948bd082aee69443145d6646266583e92be6590d3ff49242f53218818e",
+      "linecache_warning": "Two loaded old test oracles had their source file corrected during the running window. Exact retained SQL and exception are authoritative; displayed source lines can show newer bytes.",
+      "loaded_facts_test_reconstructed_file": "loaded-test-case-fact-clarifications.py.txt",
+      "loaded_facts_test_sha256": "d7acd56a10480aeda9af2a7f3d276e00e02894596310f1b69145a6786178e64c",
+      "loaded_to_final_diff": "loaded-facts-to-final.diff",
+      "product_files": 125,
+      "product_source_bytes_equal_final_commit": "557528da70d905859d7fd09dc0b4ed8f5545af51",
+      "reconstruction": "Reversed schema-oracle number/comment changes in final file, then required exact SHA256 match with original 398-path frozen manifest. It is a reconstructed source file, not a claim that the old original file was separately preserved.",
+      "repository_anchor_at_collection": "e40bd24329ec21bd881ee7521e63e32a8ee3c13a"
+    }
+  }
+}

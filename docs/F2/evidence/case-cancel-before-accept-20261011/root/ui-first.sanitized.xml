@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="9" time="0.639" timestamp="2026-10-11T11:39:01.553526+00:00" hostname="synthetic-fixture-host"><testcase classname="tests.test_case_cancellation_offline" name="test_case_cancel_ui[lost_response]" time="0.139" /><testcase classname="tests.test_case_cancellation_offline" name="test_case_cancel_ui[cold_recovery]" time="0.062" /><testcase classname="tests.test_case_cancellation_offline" name="test_case_cancel_ui[unknown_not_observed]" time="0.051" /><testcase classname="tests.test_case_cancellation_offline" name="test_case_cancel_ui[corrupt_proof]" time="0.046" /><testcase classname="tests.test_case_cancellation_offline" name="test_case_cancel_ui[revoked]" time="0.059" /><testcase classname="tests.test_case_cancellation_offline" name="test_case_cancel_ui[late_read]" time="0.063" /><testcase classname="tests.test_case_cancellation_offline" name="test_case_cancel_ui[late_post]" time="0.043" /><testcase classname="tests.test_case_cancellation_offline" name="test_case_cancel_ui[pending_other_operation]" time="0.057" /><testcase classname="tests.test_case_cancellation_offline" name="test_case_cancel_ui[cancelled_dispatch]" time="0.049"><failure message="AssertionError: evalmachine.&lt;anonymous&gt;:5&#10;    $('dispatch-current').replaceChildren();if(current){$('dispatch-current').append(textElement('p','执行者：'+current.executor_id),textElement('p','分派说明：'+current.reason));}&#10;                          ^&#10;  &#10;  TypeError: $(...).replaceChildren is not a function&#10;      at renderDispatch (evalmachine.&lt;anonymous&gt;:5:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (@repo/tests/case_cancellation_offline.js:27:17)&#10;      at @repo/tests/case_cancellation_offline.js:61:51&#10;      at Object.&lt;anonymous&gt; (@repo/tests/case_cancellation_offline.js:64:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['@execution/[REDACTED]/', 'tests/case_cancellatio...bject..js (node:internal/modules/cjs/loader:2003:10)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n&quot;).returncode">mode = 'cancelled_dispatch'
+
+    @pytest.mark.parametrize('mode',['lost_response','cold_recovery','unknown_not_observed','corrupt_proof','revoked','late_read','late_post','pending_other_operation','cancelled_dispatch'])
+    def test_case_cancel_ui(mode):
+     node=shutil.which('node')
+     assert node,'Node is required for this offline acceptance'
+     result=subprocess.run([node,'tests/case_cancellation_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;    assert result.returncode==0,result.stderr
+E    AssertionError: evalmachine.&lt;anonymous&gt;:5
+E        $('dispatch-current').replaceChildren();if(current){$('dispatch-current').append(textElement('p','执行者：'+current.executor_id),textElement('p','分派说明：'+current.reason));}
+E                              ^
+E      
+E      TypeError: $(...).replaceChildren is not a function
+E          at renderDispatch (evalmachine.&lt;anonymous&gt;:5:25)
+E          at evalmachine.&lt;anonymous&gt;:1:1
+E          at Script.runInContext (node:vm:149:12)
+E          at Object.runInContext (node:vm:301:6)
+E          at run (@repo/tests/case_cancellation_offline.js:27:17)
+E          at @repo/tests/case_cancellation_offline.js:61:51
+E          at Object.&lt;anonymous&gt; (@repo/tests/case_cancellation_offline.js:64:3)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['@execution/[REDACTED]/', 'tests/case_cancellatio...bject..js (node:internal/modules/cjs/loader:2003:10)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n").returncode
+
+tests/test_case_cancellation_offline.py:10: AssertionError</failure></testcase></testsuite></testsuites>

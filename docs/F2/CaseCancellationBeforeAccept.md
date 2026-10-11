@@ -38,6 +38,10 @@ schema 30 只扩展原 Case/本地生命周期状态和原事件 action CHECK，
 
 独审结论 **LIMITED_PASS**，绑定上述完整源码/测试 SHA，无本限定切片剩余审查阻断。各窗口分别记录，不相加为单次全通过。按相同测试标识取扩大原窗与三组复验的最新结果，1271 个唯一标识中为 1270 PASS、1 SKIP、0 FAIL/ERROR；这是多窗口索引。初期产品缺陷、审查夹具错误、集合错误与基线失败的原记录及哈希均在机器证据中。
 
+父审补交已实际完成同一最终源码、安装齐依赖环境的一次完整范围复验：36个模块、与原窗相同1271个测试标识，**1270 PASS / 1 SKIP / 0 FAIL / 0 ERROR，退出0**。运行前后398路径零漂移，原43个异常ID全部PASS，完整新JUnit与stdout另行归档；原窗及旧清理异常不改签、不删除。原39份子API stderr没有持久保存，归档明确将具体缺项目导入根因标为推断，不能补造丢失的traceback。
+
+[可审计归档最终独审](evidence/case-cancel-before-accept-20261011/FINAL_EVIDENCE_AUDIT.md) 结论LIMITED_PASS，核实61件副本及原/导出hash、旧59件不变、完整单窗1271集合、43项旧异常PASS、398源码零漂移和公开脱敏；本片无剩余产品或归档审查阻断。原39stderr缺口、Windows跳过和旧清理异常仍保留为证据与验收限制。
+
 安装后进程复验退出 0，但结果后有 `pgserver` atexit 清理临时 `pg_wal` 的 `FileNotFoundError`，原 stdout 完整保留；后续检查对应数据目录已不存在且无存活测试 PG 进程。该诊断独立记录，不能把此窗口表述为无清理异常。唯一 SKIP 要求原生 Windows 11 x64 的 reparse/ADS/ACL 与干净生命周期。
 
-最终源码 SHA、独审、实际测试结果和各失败窗哈希记录在 [机器证据](CaseCancellationBeforeAcceptEvidence.json)。原失败 stdout/JUnit 留在本地 `.runtime/case-cancel/`，不以失败窗成绩替代最终版本，不将测试生成的临时认证值写入交付文档。全仓测试、真实浏览器、Windows/native、完整原 AT、生产迁移和部署均未执行；后续在既有授权范围补足这些验收前提，再评估完整生命周期。
+最终源码 SHA、独审、实际测试结果和各失败窗哈希记录在 [机器证据](CaseCancellationBeforeAcceptEvidence.json)。[可审计原始结果归档](evidence/case-cancel-before-accept-20261011/README.md) 提供完整脱敏 JUnit/stdout、原哈希与导出哈希、43项逐项失败映射及旧测试的哈希匹配重建。原未脱敏输入仍留在指定环境 `.runtime/case-cancel/`，不以失败窗成绩替代最终版本，不将测试生成的临时认证值写入交付文档。全仓测试、真实浏览器、Windows/native、完整原 AT、生产迁移和部署均未执行；后续在既有授权范围补足这些验收前提，再评估完整生命周期。

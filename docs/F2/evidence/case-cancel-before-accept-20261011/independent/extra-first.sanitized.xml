@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="7" time="7.660" timestamp="2026-10-11T11:52:38.201517+00:00" hostname="synthetic-fixture-host"><testcase classname=".runtime.case-cancel.independent-review.test_extra_boundaries" name="test_fresh_cancelled_proposal_cannot_execute_p1" time="1.585" /><testcase classname=".runtime.case-cancel.independent-review.test_extra_boundaries" name="test_cancelled_nonowner_plan_has_no_actions_or_cancellation_reason[prep-specialist-fixture-a]" time="1.003"><failure message="assert 409 == 201&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">link_fixture = (&lt;parkweave.store.Store object at 0x7fd97144e810&gt;, &lt;parkweave.store.Store object at 0x7fd97144e840&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7fd970b5b020&gt;)
+user = 'prep-specialist-fixture-a'
+
+    @pytest.mark.parametrize('user', ['prep-specialist-fixture-a', 'executor-a'])
+    def test_cancelled_nonowner_plan_has_no_actions_or_cancellation_reason(link_fixture, user):
+        from test_service_case_steps import setup, adopt, read
+        from test_service_dispatches import offer
+        f = link_fixture
+        p = setup(f, goal='LOCAL_INTERNAL_ACCEPTANCE')
+        assert adopt(f, p).status_code == 201
+&gt;       assert offer(f, p)[0].status_code == 201
+E       assert 409 == 201
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+.runtime/case-cancel/independent-review/test_extra_boundaries.py:33: AssertionError</failure></testcase><testcase classname=".runtime.case-cancel.independent-review.test_extra_boundaries" name="test_cancelled_nonowner_plan_has_no_actions_or_cancellation_reason[executor-a]" time="1.153"><failure message="assert 409 == 201&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">link_fixture = (&lt;parkweave.store.Store object at 0x7fd9715e05f0&gt;, &lt;parkweave.store.Store object at 0x7fd9715e0e30&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7fd97022ea20&gt;)
+user = 'executor-a'
+
+    @pytest.mark.parametrize('user', ['prep-specialist-fixture-a', 'executor-a'])
+    def test_cancelled_nonowner_plan_has_no_actions_or_cancellation_reason(link_fixture, user):
+        from test_service_case_steps import setup, adopt, read
+        from test_service_dispatches import offer
+        f = link_fixture
+        p = setup(f, goal='LOCAL_INTERNAL_ACCEPTANCE')
+        assert adopt(f, p).status_code == 201
+&gt;       assert offer(f, p)[0].status_code == 201
+E       assert 409 == 201
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+.runtime/case-cancel/independent-review/test_extra_boundaries.py:33: AssertionError</failure></testcase><testcase classname=".runtime.case-cancel.independent-review.test_extra_boundaries" name="test_cancelled_locked_plan_cold_reads_never_write_invalidation" time="1.193"><failure message="AssertionError: assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&#10; +    where &lt;Response [422 Unprocessable Entity]&gt; = &lt;function command at 0x7fd9713a3a60&gt;((&lt;parkweave.store.Store object at 0x7fd9700b89e0&gt;, &lt;parkweave.store.Store object at 0x7fd97142c410&gt;, {'fixture-a': &quot;[REDACTED synthetic auth value]&quot;: &quot;[REDACTED opaque fixture value]&quot;, ...}, &lt;starlette.testclient.TestClient object at 0x7fd96bf1ce60&gt;), {'preparation_id': 'a8e726b7-1251-40db-82dc-9959704dc50a', 'case_id': '817d46bb-08fe-4462-8f34-65933146573e', 'run_id': '662bc916-932a-4571-9671-9b24e5dc64a4', 'revision': 8, ...}, 'P1', action='LOCK')">link_fixture = (&lt;parkweave.store.Store object at 0x7fd9700b89e0&gt;, &lt;parkweave.store.Store object at 0x7fd97142c410&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7fd96bf1ce60&gt;)
+
+    def test_cancelled_locked_plan_cold_reads_never_write_invalidation(link_fixture):
+        from test_service_case_steps import setup, adopt, command
+        f = link_fixture
+        p = setup(f, goal='LOCAL_MATERIAL_PREPARATION')
+        assert adopt(f, p).status_code == 201
+        assert command(f, p, 'P1', action='VERIFY').status_code == 200
+&gt;       assert command(f, p, 'P1', action='LOCK').status_code == 200
+E       AssertionError: assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+E        +    where &lt;Response [422 Unprocessable Entity]&gt; = &lt;function command at 0x7fd9713a3a60&gt;((&lt;parkweave.store.Store object at 0x7fd9700b89e0&gt;, &lt;parkweave.store.Store object at 0x7fd97142c410&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7fd96bf1ce60&gt;), {'preparation_id': 'a8e726b7-1251-40db-82dc-9959704dc50a', 'case_id': '817d46bb-08fe-4462-8f34-65933146573e', 'run_id': '662bc916-932a-4571-9671-9b24e5dc64a4', 'revision': 8, ...}, 'P1', action='LOCK')
+
+.runtime/case-cancel/independent-review/test_extra_boundaries.py:49: AssertionError</failure></testcase><testcase classname=".runtime.case-cancel.independent-review.test_extra_boundaries" name="test_cancelled_composition_bypass_refused_before_resource_effect" time="0.850" /><testcase classname=".runtime.case-cancel.independent-review.test_extra_boundaries" name="test_same_key_different_arguments_concurrent_cancel_conflicts" time="0.673" /><testcase classname=".runtime.case-cancel.independent-review.test_extra_boundaries" name="test_cancellation_first_legacy_receipt_create_observes_owned_pg_wait" time="0.797" /></testsuite></testsuites>

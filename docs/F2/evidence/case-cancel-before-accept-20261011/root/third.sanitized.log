@@ -1,0 +1,112 @@
+....................................................F......F..F.         [100%]
+=================================== FAILURES ===================================
+_ test_all_case_business_write_families_reject_cancelled_before_other_prerequisites[material-objections/commands] _
+
+link_fixture = (<parkweave.store.Store object at 0x7f4f12a3ce90>, <parkweave.store.Store object at 0x7f4f124962a0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f4f14277560>)
+endpoint = 'material-objections/commands'
+
+    @pytest.mark.parametrize('endpoint',[
+     'request-intent','readiness','material-draft','planning-preview','fact-clarifications/declare',
+     'fact-clarifications/confirm','fact-bundle/commands','opportunities/commands','material-objections/commands',
+     'service-case-plan','service-case-plan/commands','controlled-plan','controlled-plan/commands',
+     'local-case/commands','resource-link','resource-delivery'])
+    def test_all_case_business_write_families_reject_cancelled_before_other_prerequisites(link_fixture,endpoint):
+     from parkweave.controlled_plans import TEMPLATE_SHA
+     f=link_fixture;p=ready(f);assert post(f,p).status_code==200;before=snapshot(f);rev=p['revision'];sha='0'*64;uid=str(uuid4())
+     payloads={
+      'request-intent':dict(expected_preparation_revision=rev,request_text='SYNTHETIC request',required_goals=[]),
+      'readiness':dict(expected_preparation_revision=rev,expected_source_sha256=sha),
+      'planning-preview':dict(expected_preparation_revision=rev,expected_source_sha256=sha),
+      'material-draft':dict(expected_preparation_revision=rev,expected_source_sha256=sha,expected_reviewer_id='prep-specialist-fixture-a',confirm_material_share=True),
+      'fact-clarifications/declare':dict(expected_preparation_revision=rev,profile='LOCAL_SERVICE_PREPARATION_FACTS_V1',purpose='SERVICE_PREPARATION',reason='SYNTHETIC'),
+      'fact-clarifications/confirm':dict(expected_preparation_revision=rev,expected_clarification_revision=1,expected_source_sha256=sha,choices=[dict(field=a,assertion_id=str(uuid4()),expected_assertion_revision=1,expected_assertion_fingerprint=sha) for a in ('region','employees','service_need')],reason='SYNTHETIC'),
+      'fact-bundle/commands':dict(action='WITHDRAW',expected_preparation_revision=rev,expected_bundle_revision=0,expected_source_sha256=sha,source_id=uid,reason='SYNTHETIC'),
+      'opportunities/commands':dict(action='REFRESH',expected_revision=0,expected_source_sha256=sha,reason='SYNTHETIC'),
+      'material-objections/commands':dict(action='RAISE',expected_preparation_revision=rev,expected_version=0,binding_sha256=sha,reason='SYNTHETIC'),
+      'service-case-plan':dict(expected_preparation_revision=rev,expected_request_revision=1,expected_source_sha256=sha,required_goals=['LOCAL_MATERIAL_PREPARATION'],reason='SYNTHETIC'),
+      'service-case-plan/commands':dict(action='BEGIN',step_id=uid,expected_revision=1,reason='SYNTHETIC'),
+      'controlled-plan':dict(template_sha256=TEMPLATE_SHA,expected_preparation_revision=rev,required_goals=['LOCAL_SYNTHETIC_COORDINATION_RECORDS']),
+      'controlled-plan/commands':dict(action='CHECK_STEP',step='P1',expected_revision=1,expected_source_sha256=sha,reason='SYNTHETIC'),
+      'local-case/commands':dict(action='REOPEN',expected_revision=1,expected_cycle=1,reason='SYNTHETIC'),
+      'resource-link':dict(combination_id=uid,expected_preparation_revision=rev,expected_link_revision=0,reason='SYNTHETIC'),
+      'resource-delivery':dict(members=[dict(hold_id=str(uuid4()),expected_revision=1) for _ in range(2)],expected_preparation_revision=rev,expected_plan_revision=1,expected_source_sha256=sha,valid_until='2026-10-11T12:00:00Z',reason='SYNTHETIC')}
+     r=f[3].post('/api/preparations/'+p['preparation_id']+'/'+endpoint,headers=headers(f[2],key=uuid4().hex),json=payloads[endpoint])
+>    assert r.status_code==409,r.text;assert 'Case cancelled' in r.text and snapshot(f)==before
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    AssertionError: {"detail":"Not Found"}
+E    assert 404 == 409
+E     +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/test_case_cancellation.py:241: AssertionError
+_ test_all_case_business_write_families_reject_cancelled_before_other_prerequisites[resource-delivery] _
+
+link_fixture = (<parkweave.store.Store object at 0x7f4f140b8500>, <parkweave.store.Store object at 0x7f4f11f033e0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f4f1212e150>)
+endpoint = 'resource-delivery'
+
+    @pytest.mark.parametrize('endpoint',[
+     'request-intent','readiness','material-draft','planning-preview','fact-clarifications/declare',
+     'fact-clarifications/confirm','fact-bundle/commands','opportunities/commands','material-objections/commands',
+     'service-case-plan','service-case-plan/commands','controlled-plan','controlled-plan/commands',
+     'local-case/commands','resource-link','resource-delivery'])
+    def test_all_case_business_write_families_reject_cancelled_before_other_prerequisites(link_fixture,endpoint):
+     from parkweave.controlled_plans import TEMPLATE_SHA
+     f=link_fixture;p=ready(f);assert post(f,p).status_code==200;before=snapshot(f);rev=p['revision'];sha='0'*64;uid=str(uuid4())
+     payloads={
+      'request-intent':dict(expected_preparation_revision=rev,request_text='SYNTHETIC request',required_goals=[]),
+      'readiness':dict(expected_preparation_revision=rev,expected_source_sha256=sha),
+      'planning-preview':dict(expected_preparation_revision=rev,expected_source_sha256=sha),
+      'material-draft':dict(expected_preparation_revision=rev,expected_source_sha256=sha,expected_reviewer_id='prep-specialist-fixture-a',confirm_material_share=True),
+      'fact-clarifications/declare':dict(expected_preparation_revision=rev,profile='LOCAL_SERVICE_PREPARATION_FACTS_V1',purpose='SERVICE_PREPARATION',reason='SYNTHETIC'),
+      'fact-clarifications/confirm':dict(expected_preparation_revision=rev,expected_clarification_revision=1,expected_source_sha256=sha,choices=[dict(field=a,assertion_id=str(uuid4()),expected_assertion_revision=1,expected_assertion_fingerprint=sha) for a in ('region','employees','service_need')],reason='SYNTHETIC'),
+      'fact-bundle/commands':dict(action='WITHDRAW',expected_preparation_revision=rev,expected_bundle_revision=0,expected_source_sha256=sha,source_id=uid,reason='SYNTHETIC'),
+      'opportunities/commands':dict(action='REFRESH',expected_revision=0,expected_source_sha256=sha,reason='SYNTHETIC'),
+      'material-objections/commands':dict(action='RAISE',expected_preparation_revision=rev,expected_version=0,binding_sha256=sha,reason='SYNTHETIC'),
+      'service-case-plan':dict(expected_preparation_revision=rev,expected_request_revision=1,expected_source_sha256=sha,required_goals=['LOCAL_MATERIAL_PREPARATION'],reason='SYNTHETIC'),
+      'service-case-plan/commands':dict(action='BEGIN',step_id=uid,expected_revision=1,reason='SYNTHETIC'),
+      'controlled-plan':dict(template_sha256=TEMPLATE_SHA,expected_preparation_revision=rev,required_goals=['LOCAL_SYNTHETIC_COORDINATION_RECORDS']),
+      'controlled-plan/commands':dict(action='CHECK_STEP',step='P1',expected_revision=1,expected_source_sha256=sha,reason='SYNTHETIC'),
+      'local-case/commands':dict(action='REOPEN',expected_revision=1,expected_cycle=1,reason='SYNTHETIC'),
+      'resource-link':dict(combination_id=uid,expected_preparation_revision=rev,expected_link_revision=0,reason='SYNTHETIC'),
+      'resource-delivery':dict(members=[dict(hold_id=str(uuid4()),expected_revision=1) for _ in range(2)],expected_preparation_revision=rev,expected_plan_revision=1,expected_source_sha256=sha,valid_until='2026-10-11T12:00:00Z',reason='SYNTHETIC')}
+     r=f[3].post('/api/preparations/'+p['preparation_id']+'/'+endpoint,headers=headers(f[2],key=uuid4().hex),json=payloads[endpoint])
+>    assert r.status_code==409,r.text;assert 'Case cancelled' in r.text and snapshot(f)==before
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    AssertionError: {"detail":[{"type":"too_short","loc":["body","members"],"msg":"List should have at least 3 items after validation, not 2","input":[{"hold_id":"2953ef5d-ca7b-4a75-9873-75e5dcbef31b","expected_revision":1},{"hold_id":"3b302005-442a-46c3-919c-6f78a304a2f7","expected_revision":1}],"ctx":{"field_type":"List","min_length":3,"actual_length":2}}]}
+E    assert 422 == 409
+E     +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+tests/test_case_cancellation.py:241: AssertionError
+_ test_historical_plan_get_does_not_persist_implicit_invalidation[registered] __
+
+link_fixture = (<parkweave.store.Store object at 0x7f4f12ca9d30>, <parkweave.store.Store object at 0x7f4f12673020>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f4f124aa000>)
+kind = 'registered'
+
+    @pytest.mark.parametrize('kind',['controlled','registered'])
+    def test_historical_plan_get_does_not_persist_implicit_invalidation(link_fixture,kind):
+     f=link_fixture;p=ready(f)
+     if kind=='controlled':
+      from test_controlled_plans import create,check
+      assert create(f,p).status_code==201;assert check(f,p,'P1').status_code==200
+     else:
+      from test_request_intents import save
+      from test_service_case_steps import adopt,command
+>     p=save(f,p,required_goals=['LOCAL_MATERIAL_PREPARATION']).json()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     TypeError: save() got an unexpected keyword argument 'required_goals'
+
+tests/test_case_cancellation.py:266: TypeError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_case_cancellation.py::test_allowed_lineages_replay_cold_get_and_original_success_kept[UNASSIGNED]
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_cancellation.py::test_all_case_business_write_families_reject_cancelled_before_other_prerequisites[material-objections/commands]
+FAILED tests/test_case_cancellation.py::test_all_case_business_write_families_reject_cancelled_before_other_prerequisites[resource-delivery]
+FAILED tests/test_case_cancellation.py::test_historical_plan_get_does_not_persist_implicit_invalidation[registered]
+3 failed, 61 passed, 2 warnings in 38.15s

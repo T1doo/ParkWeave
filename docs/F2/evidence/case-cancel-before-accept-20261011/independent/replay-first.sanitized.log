@@ -1,0 +1,38 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+____ test_original_cancel_post_replay_rejects_inconsistent_persistent_state ____
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f65fd0d5e80>, <parkweave.store.Store object at 0x7f65fd137c20>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f65fcd13ec0>)
+
+    def test_original_cancel_post_replay_rejects_inconsistent_persistent_state(receipt_fixture):
+        from test_case_cancellation import body as cancellation_body, recover
+        f = receipt_fixture
+        p = ready(f)
+        data = cancellation_body(f, p)
+        key = uuid4().hex
+        assert cancel(f, p, data, key).status_code == 200
+        # Owned test-only inconsistency: recovery already requires both state proofs.
+        with f[1].connect() as c:
+            c.execute("UPDATE cases SET state='NEEDS_INPUT' WHERE id=%s", (p['case_id'],))
+        before = snapshot(f)
+        assert recover(f, p, key).status_code == 409
+        response = cancel(f, p, data, key)
+>       assert response.status_code == 409, response.text
+E       AssertionError: {"scope":"[REDACTED opaque fixture value]","status":"COMMITTED","event_id":"0e906c80-60a0-40a2-8e16-c5bf0407e84a","event":{"cycle":1,"scope":"[REDACTED opaque fixture value]","action":"CANCEL_BEFORE_ACCEPT","case_id":"1501ac04-101c-4a13-a319-244816019cf7","request":{"reason":"SYNTHETIC owner no longer needs this request","case_id":"1501ac04-101c-4a13-a319-244816019cf7","confirm_cancel":true,"expected_source_sha256":"[REDACTED opaque fixture value]","expected_lifecycle_revision":0,"expected_preparation_revision":5},"actor_id":"fixture-a","revision":1,"case_state":"CANCELLED","request_key":"0339d3747d9d48f99e490a75067e497b","preparation_id":"b75c3619-f849-4d52-9b96-e4d3aa163ff4","resource_release_automatic":false},"historical_only":true,"automatically_replayed":false,"resource_release_automatic":false}
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+.runtime/case-cancel/independent-review/test_independent_boundaries.py:71: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/case-cancel/independent-review/test_independent_boundaries.py::test_original_cancel_post_replay_rejects_inconsistent_persistent_state
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/case-cancel/independent-review/test_independent_boundaries.py::test_original_cancel_post_replay_rejects_inconsistent_persistent_state
+1 failed, 2 warnings in 1.50s

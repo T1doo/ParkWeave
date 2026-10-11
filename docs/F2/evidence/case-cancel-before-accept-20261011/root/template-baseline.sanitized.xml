@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="4.425" timestamp="2026-10-11T12:10:11.205265+00:00" hostname="synthetic-fixture-host"><testcase classname="tests.test_template_upgrade" name="test_real_holds_acceptance_receipt_and_entire_history_survive_check_and_choice" time="2.971"><failure message="AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f5f677b9a90&gt;, &lt;parkweave.store.Store object at 0x7f5f677b9e80&gt;, {'fixture-a...bject at 0x7f5f67a25280&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f5f677b9c70&gt;, ...}
+
+    def test_real_holds_acceptance_receipt_and_entire_history_survive_check_and_choice(upgrade_case):
+        u=upgrade_case;row,_=instance(u,[GOALS[3]]);p=confirmed(u,row)
+        # Existing fixture service actors need their ordinary new-Run read assignments.
+        with u['f'][1].connect() as c:
+            for actor in ('prep-specialist-fixture-a','executor-a'):
+                c.execute('INSERT INTO run_assignments(run_id,principal_id,park_id,org_id) VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING',(row['run_id'],actor,'park-a','org-a'))
+&gt;       group,dispatch=accepted(u['f'],p);verified(u['f'],p,'P3')
+                                          ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_upgrade.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED synthetic fixture authentication locals]
+p = {'preparation_id': '5d4d5f0d-6c83-45fb-ae03-b292ee5bb75a', 'case_id': 'c16d6923-a234-467c-8c72-a59f652af292', 'run_id': 'dca7d5cb-970d-404a-a811-28529debc8f6', 'revision': 6, ...}
+adapter = 'P3'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</failure></testcase></testsuite></testsuites>

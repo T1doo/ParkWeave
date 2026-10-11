@@ -1,0 +1,180 @@
+.....F..F..............F...........F...                                  [100%]
+=================================== FAILURES ===================================
+___ test_explicit_unsupported_origins_and_history_refused[historical_accept] ___
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f2d2727b950>, <parkweave.store.Store object at 0x7f2d2727b1a0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f2d26f9ff20>)
+bad = 'historical_accept'
+
+    @pytest.mark.parametrize('bad',['accept','historical_accept','receipt','closed','isolated','unverified','run_not_success','receipt_corrupt'])
+    def test_explicit_unsupported_origins_and_history_refused(receipt_fixture,bad):
+     f=receipt_fixture;p=ready(f)
+     if bad in ('accept','historical_accept'):
+      d=offer(f,p)[0].json();assert dispatch_command(f,d,'ACCEPT').status_code==200
+      if bad=='historical_accept':
+>      with f[1].connect() as c:c.execute("UPDATE service_dispatch_offers SET state='WITHDRAWN' WHERE dispatch_id=%s",(d['dispatch_id'],))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_cancellation.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f2d271b5ac0>
+query = "UPDATE service_dispatch_offers SET state='WITHDRAWN' WHERE dispatch_id=%s"
+params = ('95f2db86-4533-4ed7-9286-90c1b735e746',), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.CheckViolation: new row for relation "service_dispatch_offers" violates check constraint "service_dispatch_offers_check"
+E           DETAIL:  Failing row contains (32f9c916-d6bc-4a2e-8307-f5d1609ec4d6, 95f2db86-4533-4ed7-9286-90c1b735e746, executor-a, 5, 283c1b83a084a74d54600913102285ccf087759ab1fd9af95a6d0ef8c55d53ad, SYNTHETIC explicit responsibility offer, WITHDRAWN, 1b57bad1-5e3b-4060-b1ae-d510d2b6f806, 2026-10-11 11:33:33.667819+00).
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: CheckViolation
+_______ test_explicit_unsupported_origins_and_history_refused[isolated] ________
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f2d28461fd0>, <parkweave.store.Store object at 0x7f2d2842d3a0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f2d2829fce0>)
+bad = 'isolated'
+
+    @pytest.mark.parametrize('bad',['accept','historical_accept','receipt','closed','isolated','unverified','run_not_success','receipt_corrupt'])
+    def test_explicit_unsupported_origins_and_history_refused(receipt_fixture,bad):
+     f=receipt_fixture;p=ready(f)
+     if bad in ('accept','historical_accept'):
+      d=offer(f,p)[0].json();assert dispatch_command(f,d,'ACCEPT').status_code==200
+      if bad=='historical_accept':
+       with f[1].connect() as c:c.execute("UPDATE service_dispatch_offers SET state='WITHDRAWN' WHERE dispatch_id=%s",(d['dispatch_id'],))
+     elif bad=='receipt':assert legacy_create(f,p)[0].status_code==201
+     elif bad=='closed':
+      with f[1].connect() as c:c.execute("INSERT INTO case_local_lifecycles(preparation_id,case_id,revision,cycle,state,verified_snapshot,verified_sha256) VALUES(%s,%s,1,1,'LOCAL_RECORD_CLOSED','{}',repeat('0',64))",(p['preparation_id'],p['case_id']))
+     else:
+      with f[1].connect() as c:
+>      if bad=='isolated':c.execute("UPDATE preparations SET namespace='PREVIEW_EXECUTION' WHERE id=%s",(p['preparation_id'],))
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_cancellation.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f2d26b19e50>
+query = "UPDATE preparations SET namespace='PREVIEW_EXECUTION' WHERE id=%s"
+params = ('fe92d4c3-baeb-4c80-9f33-04bba1da236a',), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.CheckViolation: new row for relation "preparations" violates check constraint "preparations_namespace_check"
+E           DETAIL:  Failing row contains (fe92d4c3-baeb-4c80-9f33-04bba1da236a, 9036ff2c-3804-49ec-84b5-f8b423991e9f, cfd59623-98a3-4846-b53d-2b5b3db06e12, fixture-a, prep-specialist-fixture-a, park-a, org-a, synthetic-material-preparation, 1, PREVIEW_EXECUTION, SYNTHETIC资料准备, LOCAL_CONFIRMED, 5, 97d43fcbb1a6048a3153c7adb82c4b5163834791f42729dae77dc78f03e4d200, 2026-10-11 11:33:35.163165+00, null, null, null, null, null, null, null, null).
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: CheckViolation
+______ test_explicit_reason_and_confirmation_validated[confirm_cancel-1] _______
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f2d26e0d580>, <parkweave.store.Store object at 0x7f2d282eab10>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f2d2710d6a0>)
+field = 'confirm_cancel', value = 1
+
+    @pytest.mark.parametrize('field,value',[('reason',' '),('confirm_cancel',False),('confirm_cancel',1),('expected_preparation_revision',True)])
+    def test_explicit_reason_and_confirmation_validated(receipt_fixture,field,value):
+     f=receipt_fixture;p=ready(f);data=body(f,p);before=snapshot(f)
+>    assert post(f,p,{**data,field:value}).status_code==422 and snapshot(f)==before
+E    AssertionError: assert (200 == 422)
+E     +  where 200 = <Response [200 OK]>.status_code
+E     +    where <Response [200 OK]> = post((<parkweave.store.Store object at 0x7f2d26e0d580>, <parkweave.store.Store object at 0x7f2d282eab10>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f2d2710d6a0>), {'preparation_id': '1ebe9c85-1a61-42e7-bcbb-8aada5334d13', 'case_id': '2cc1fab5-eb9f-4ea5-b504-15f59c996a81', 'run_id': 'f2b2e5c1-1240-43d9-ab38-82b28f82a673', 'revision': 5, ...}, {'case_id': '2cc1fab5-eb9f-4ea5-b504-15f59c996a81', 'expected_preparation_revision': 5, 'expected_lifecycle_revision': 0, 'expected_source_sha256': "[REDACTED opaque fixture value]", ...})
+
+tests/test_case_cancellation.py:108: AssertionError
+_________ test_cancel_first_real_pg_wait_blocks_all_competitors[plan] __________
+
+link_fixture = (<parkweave.store.Store object at 0x7f2d267dc6b0>, <parkweave.store.Store object at 0x7f2d251e5ee0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f2d270a1820>)
+writer = 'plan'
+
+    @pytest.mark.parametrize('writer',['accept','material','offer','plan','link'])
+    def test_cancel_first_real_pg_wait_blocks_all_competitors(link_fixture,writer):
+     f=link_fixture;p=ready(f);d=offer(f,p)[0].json() if writer=='accept' else None
+     g=group(f) if writer=='link' else None;data=body(f,p);results=[]
+     def cancel():results.append(('cancel',post(f,p,data).status_code))
+     def write():
+      if writer=='accept':r=dispatch_command(f,d,'ACCEPT')
+      elif writer=='material':r=material_command(f,p,'ADD_EVIDENCE',slot='need_summary',text='SYNTHETIC late',source_kind='USER_STATEMENT',source_label='late')
+      elif writer=='offer':r=offer(f,p)[0]
+      elif writer=='link':r=bind(f,p,g)
+      else:
+       from parkweave.controlled_plans import TEMPLATE_SHA
+       r=f[3].post('/api/preparations/'+p['preparation_id']+'/controlled-plan',headers=headers(f[2],key=uuid4().hex),json=dict(template_sha256=TEMPLATE_SHA,expected_preparation_revision=p['revision'],required_goals=['LOCAL_SYNTHETIC_COORDINATION_RECORDS']))
+      results.append((writer,r.status_code))
+     with f[1].connect() as block:
+      block.execute('SELECT * FROM cases WHERE id=%s FOR UPDATE',(p['case_id'],))
+      t=threading.Thread(target=cancel);t.start();wait_for_pg_lock(f,'SELECT * FROM cases WHERE id=')
+>     w=threading.Thread(target=write);w.start();wait_for_pg_lock(f,'SELECT * FROM preparations WHERE id=')
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_cancellation.py:171: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED synthetic fixture authentication locals]
+fragment = 'SELECT * FROM preparations WHERE id='
+
+    def wait_for_pg_lock(f,fragment):
+     deadline=time.monotonic()+3
+     while time.monotonic()<deadline:
+      with f[1].connect() as c:
+       rows=c.execute("SELECT pid,wait_event,query FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND position(%s in query)>0",(fragment,)).fetchall()
+      if rows:return rows
+      time.sleep(.02)
+>    raise AssertionError('actual PG lock wait not observed: '+fragment)
+E    AssertionError: actual PG lock wait not observed: SELECT * FROM preparations WHERE id=
+
+tests/test_case_cancellation.py:151: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_case_cancellation.py::test_allowed_lineages_replay_cold_get_and_original_success_kept[UNASSIGNED]
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_cancellation.py::test_explicit_unsupported_origins_and_history_refused[historical_accept]
+FAILED tests/test_case_cancellation.py::test_explicit_unsupported_origins_and_history_refused[isolated]
+FAILED tests/test_case_cancellation.py::test_explicit_reason_and_confirmation_validated[confirm_cancel-1]
+FAILED tests/test_case_cancellation.py::test_cancel_first_real_pg_wait_blocks_all_competitors[plan]
+4 failed, 35 passed, 2 warnings in 36.67s

@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.503" timestamp="2026-10-11T11:47:38.562407+00:00" hostname="synthetic-fixture-host"><testcase classname=".runtime.case-cancel.independent-review.test_independent_boundaries" name="test_original_cancel_post_replay_rejects_inconsistent_persistent_state" time="1.379"><failure message="AssertionError: {&quot;scope&quot;:&quot;[REDACTED opaque fixture value]&quot;,&quot;status&quot;:&quot;COMMITTED&quot;,&quot;event_id&quot;:&quot;0e906c80-60a0-40a2-8e16-c5bf0407e84a&quot;,&quot;event&quot;:{&quot;cycle&quot;:1,&quot;scope&quot;:&quot;[REDACTED opaque fixture value]&quot;,&quot;action&quot;:&quot;CANCEL_BEFORE_ACCEPT&quot;,&quot;case_id&quot;:&quot;1501ac04-101c-4a13-a319-244816019cf7&quot;,&quot;request&quot;:{&quot;reason&quot;:&quot;SYNTHETIC owner no longer needs this request&quot;,&quot;case_id&quot;:&quot;1501ac04-101c-4a13-a319-244816019cf7&quot;,&quot;confirm_cancel&quot;:true,&quot;expected_source_sha256&quot;:&quot;[REDACTED opaque fixture value]&quot;,&quot;expected_lifecycle_revision&quot;:0,&quot;expected_preparation_revision&quot;:5},&quot;actor_id&quot;:&quot;fixture-a&quot;,&quot;revision&quot;:1,&quot;case_state&quot;:&quot;CANCELLED&quot;,&quot;request_key&quot;:&quot;0339d3747d9d48f99e490a75067e497b&quot;,&quot;preparation_id&quot;:&quot;b75c3619-f849-4d52-9b96-e4d3aa163ff4&quot;,&quot;resource_release_automatic&quot;:false},&quot;historical_only&quot;:true,&quot;automatically_replayed&quot;:false,&quot;resource_release_automatic&quot;:false}&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f65fd0d5e80&gt;, &lt;parkweave.store.Store object at 0x7f65fd137c20&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7f65fcd13ec0&gt;)
+
+    def test_original_cancel_post_replay_rejects_inconsistent_persistent_state(receipt_fixture):
+        from test_case_cancellation import body as cancellation_body, recover
+        f = receipt_fixture
+        p = ready(f)
+        data = cancellation_body(f, p)
+        key = uuid4().hex
+        assert cancel(f, p, data, key).status_code == 200
+        # Owned test-only inconsistency: recovery already requires both state proofs.
+        with f[1].connect() as c:
+            c.execute("UPDATE cases SET state='NEEDS_INPUT' WHERE id=%s", (p['case_id'],))
+        before = snapshot(f)
+        assert recover(f, p, key).status_code == 409
+        response = cancel(f, p, data, key)
+&gt;       assert response.status_code == 409, response.text
+E       AssertionError: {"scope":"[REDACTED opaque fixture value]","status":"COMMITTED","event_id":"0e906c80-60a0-40a2-8e16-c5bf0407e84a","event":{"cycle":1,"scope":"[REDACTED opaque fixture value]","action":"CANCEL_BEFORE_ACCEPT","case_id":"1501ac04-101c-4a13-a319-244816019cf7","request":{"reason":"SYNTHETIC owner no longer needs this request","case_id":"1501ac04-101c-4a13-a319-244816019cf7","confirm_cancel":true,"expected_source_sha256":"[REDACTED opaque fixture value]","expected_lifecycle_revision":0,"expected_preparation_revision":5},"actor_id":"fixture-a","revision":1,"case_state":"CANCELLED","request_key":"0339d3747d9d48f99e490a75067e497b","preparation_id":"b75c3619-f849-4d52-9b96-e4d3aa163ff4","resource_release_automatic":false},"historical_only":true,"automatically_replayed":false,"resource_release_automatic":false}
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+.runtime/case-cancel/independent-review/test_independent_boundaries.py:71: AssertionError</failure></testcase></testsuite></testsuites>

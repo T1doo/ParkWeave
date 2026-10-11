@@ -1,0 +1,1280 @@
+........................................................................ [  5%]
+........................................................................ [ 11%]
+........................................................................ [ 16%]
+........................................................................ [ 22%]
+........................................................................ [ 28%]
+........................................................................ [ 33%]
+........................................................................ [ 39%]
+........................................................................ [ 45%]
+.............................F........F................................. [ 50%]
+........................................................................ [ 56%]
+........................................................................ [ 62%]
+........................................................................ [ 67%]
+........................................................................ [ 73%]
+........................................................................ [ 79%]
+......................F................................................. [ 84%]
+.........................................................F.............. [ 90%]
+....................EEEEEEEEEE.E.EEEEEEEEEEE.EEEEEEEEEEE.sEE..E.EEE..... [ 96%]
+...............................................                          [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_real_api_worker_unknown_reconcile_outbox_and_no_duplicate _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_real_worker_crash_old_callback_control_and_effect_visibility[cancel-CANCELLED] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_real_worker_crash_old_callback_control_and_effect_visibility[pause-PAUSED] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_actual_expiry_recovery_after_crash_does_not_dispatch_again _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_crash_without_observed_effect_stays_unknown_and_stops_automatic_queries _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_real_worker_revocation_before_dispatch_and_after_effect[None] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_real_worker_revocation_before_dispatch_and_after_effect[after-effect] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_real_gateway_scope_read_cancel_and_manual_reconcile[fixture-b] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_real_gateway_scope_read_cancel_and_manual_reconcile[fixture-c] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_______ ERROR at setup of test_local_and_fixture_use_same_worker_gateway _______
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+___ ERROR at setup of test_invalid_receipt_rejected_by_actual_worker_gateway ___
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_default_worker_cannot_dispatch_explicit_fixture_action _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_roles_assigned_status_only_no_self_elevation[park_specialist] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_roles_assigned_status_only_no_self_elevation[resource_admin] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_roles_assigned_status_only_no_self_elevation[service_executor] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_cross_scope_even_with_misconfigured_assignment_zero_effect[fixture-b] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_cross_scope_even_with_misconfigured_assignment_zero_effect[fixture-c] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_queued_execution_rechecks_current_capability[case.create] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_queued_execution_rechecks_current_capability[facts.assess] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_queued_execution_rechecks_current_capability[fault.record] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_outbox_revoked_before_consume_suppressed_after_delivery_retracted _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_______ ERROR at setup of test_outbox_field_grant_revoked_before_consume _______
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_logical_file_actual_http_attachment_scope_and_revoked_cache _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_windows_and_traversal_strings_are_not_file_ids[..%5Csecret] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_windows_and_traversal_strings_are_not_file_ids[C:%5CWindows%5Cwin.ini] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_windows_and_traversal_strings_are_not_file_ids[%5C%5Cserver%5Cshare] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_windows_and_traversal_strings_are_not_file_ids[file.txt:secret] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_windows_and_traversal_strings_are_not_file_ids[..%2Fsecret] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+____ ERROR at setup of test_file_integrity_and_descriptor_boundary[content] ____
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+____ ERROR at setup of test_file_integrity_and_descriptor_boundary[symlink] ____
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+___ ERROR at setup of test_file_integrity_and_descriptor_boundary[hardlink] ____
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+___ ERROR at setup of test_file_integrity_and_descriptor_boundary[directory] ___
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_file_integrity_and_descriptor_boundary[root_symlink] __
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_action_grant_and_role_change_cannot_reuse_queued_identity _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_______ ERROR at setup of test_field_delivery_after_withdrawal_retracted _______
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+____ ERROR at setup of test_identity_scope_change_does_not_carry_old_grants ____
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_insecure_private_directories_rejected_without_repair[root-511] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_insecure_private_directories_rejected_without_repair[files-511] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+_ ERROR at setup of test_insecure_private_directories_rejected_without_repair[files-493] _
+
+[REDACTED synthetic fixture authentication locals]
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    @pytest.fixture
+    def runtime(fixture,tmp_path):
+        store,owner,tokens,_=fixture
+        with owner.connect() as c:
+            c.execute('GRANT SELECT,INSERT,UPDATE ON fixture_effects TO parkweave_app')
+        with socket.socket() as s:
+            s.bind(('127.0.0.1',0));port=s.getsockname()[1]
+        env=minimal_environment(os.environ,PARKWEAVE_DSN=store.dsn,PARKWEAVE_MODE='FAULT_INJECTION')
+        log=(tmp_path/'api.log').open('w+')
+        proc=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                               '--host','127.0.0.1','--port',str(port)],env=env,stdout=log,stderr=log)
+        try:
+            with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=5) as api:
+                for _ in range(100):
+                    try:
+                        if api.get('/health').status_code==200:break
+                    except httpx.TransportError:pass
+>                   if proc.poll() is not None:raise RuntimeError('API exited during start')
+                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   RuntimeError: API exited during start
+
+tests/test_worker_gateway.py:33: RuntimeError
+=================================== FAILURES ===================================
+_______ test_fixed_lifecycle_name_requires_real_cluster_creation_receipt _______
+
+pg = <pgserver.postgres_server.PostgresServer object at 0x7f3aa7b4fe60>
+fixture_cluster_evidence = <parkweave.case_fact_clarifications.FixtureClusterEvidence object at 0x7f3aa5672390>
+
+    def test_fixed_lifecycle_name_requires_real_cluster_creation_receipt(pg, fixture_cluster_evidence):
+        """Same fixed name; genuine new owned cluster/DB, no app GRANT/setup change.
+    
+        This checks migration compatibility, not native lifecycle/browser execution.
+        """
+        owner = Store(make_conninfo(pg.get_uri(), dbname='parkweave'))
+        created = False; receipt = None
+        try:
+            with psycopg.connect(pg.get_uri(), autocommit=True) as c:
+                c.execute('CREATE DATABASE parkweave'); created = True
+            with owner.connect() as c:
+                receipt = fixture_cluster_evidence.record_created_database(c)
+            owner._case_fact_fixture_receipt = receipt
+            owner.migrate()  # Current loader issues the original creation ticket in its transaction.
+            with pytest.raises(psycopg.errors.RaiseException, match='creation ticket required'):
+                with owner.connect() as c: c.execute(MIGRATION.read_text())
+            with owner.connect() as c:
+>               receipt.authorize_migration(c); c.execute(MIGRATION.with_name('migration-030.sql').read_text())
+                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_fact_clarifications.py:578: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f3aa5672660>
+query = '-- Pending manual receipt handoff; history, roles and grants remain unchanged.\nDO $$ DECLARE receipt record; actual_...key UNIQUE(receipt_step_id);\n END IF;\nEND$$;\nINSERT INTO public.schema_version VALUES(29) ON CONFLICT DO NOTHING;\n'
+params = None, prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.RaiseException: schema 28 prerequisite or retained schema 29 required
+E           CONTEXT:  PL/pgSQL function inline_code_block line 37 at RAISE
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: RaiseException
+_ test_migration_refuses_future_version_even_with_retained_24_and_valid_receipt _
+
+[REDACTED synthetic fixture authentication locals]
+
+    def test_migration_refuses_future_version_even_with_retained_24_and_valid_receipt(f):
+>       with f[1].connect() as c: c.execute('INSERT INTO schema_version VALUES(31)')
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_fact_clarifications.py:629: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f3aa7348890>
+query = 'INSERT INTO schema_version VALUES(30)', params = None, prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UniqueViolation: duplicate key value violates unique constraint "schema_version_pkey"
+E           DETAIL:  Key (version)=(30) already exists.
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: UniqueViolation
+_ test_real_holds_acceptance_receipt_and_entire_history_survive_check_and_choice _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f3aa5903140>, <parkweave.store.Store object at 0x7f3aa778e330>, {'fixture-a...bject at 0x7f3aa5c117f0>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f3aa64db800>, ...}
+
+    def test_real_holds_acceptance_receipt_and_entire_history_survive_check_and_choice(upgrade_case):
+        u=upgrade_case;row,_=instance(u,[GOALS[3]]);p=confirmed(u,row)
+        # Existing fixture service actors need their ordinary new-Run read assignments.
+        with u['f'][1].connect() as c:
+            for actor in ('prep-specialist-fixture-a','executor-a'):
+                c.execute('INSERT INTO run_assignments(run_id,principal_id,park_id,org_id) VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING',(row['run_id'],actor,'park-a','org-a'))
+>       group,dispatch=accepted(u['f'],p);verified(u['f'],p,'P3')
+                                          ^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_upgrade.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED synthetic fixture authentication locals]
+p = {'preparation_id': '31f4484a-c53f-496a-bc41-eff77033d7f9', 'case_id': 'b6990a7e-5121-4d5d-9c6b-0e7f8cc6f53e', 'run_id': 'a1477131-7919-4be2-99ca-8e9c07de5d03', 'revision': 6, ...}
+adapter = 'P3'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_service_case_steps.py:71: AssertionError
+______ test_actual_wheel_installed_new_fixture_migrates_with_packaged_027 ______
+
+pg = <pgserver.postgres_server.PostgresServer object at 0x7f3aa7b4fe60>
+tmp_path = PosixPath('@tmp/[REDACTED]/')
+
+    def test_actual_wheel_installed_new_fixture_migrates_with_packaged_027(pg,tmp_path):
+     """An installed wheel must carry the SQL read by Store, not just source-tree SQL."""
+     root=Path(__file__).resolve().parents[1];project=tmp_path/'project';project.mkdir()
+     shutil.copyfile(root/'pyproject.toml',project/'pyproject.toml')
+     shutil.copytree(root/'src'/'parkweave',project/'src'/'parkweave',ignore=shutil.ignore_patterns('__pycache__','*.pyc'))
+     wheel_dir=tmp_path/'wheels';wheel_dir.mkdir()
+     build=subprocess.run([sys.executable,'-c',"import setuptools, setuptools.build_meta as b; assert setuptools.__version__=='80.9.0'; b.build_wheel('"+str(wheel_dir)+"')"],cwd=project,env=minimal_environment(os.environ),text=True,capture_output=True,timeout=60)
+>    assert build.returncode==0,build.stderr
+E    AssertionError: Traceback (most recent call last):
+E        File "<string>", line 1, in <module>
+E      ModuleNotFoundError: No module named 'setuptools'
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['@repo/.venv/bin/python', '-c', "import setuptools, setuptools.build_meta as b; ...ost recent call last):\n  File "<string>", line 1, in <module>\nModuleNotFoundError: No module named \'setuptools\'\n').returncode
+
+tests/test_case_opportunities.py:20: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_fact_clarifications.py::test_fixed_lifecycle_name_requires_real_cluster_creation_receipt
+FAILED tests/test_case_fact_clarifications.py::test_migration_refuses_future_version_even_with_retained_24_and_valid_receipt
+FAILED tests/test_template_upgrade.py::test_real_holds_acceptance_receipt_and_entire_history_survive_check_and_choice
+FAILED tests/test_case_opportunities.py::test_actual_wheel_installed_new_fixture_migrates_with_packaged_027
+ERROR tests/test_worker_gateway.py::test_real_api_worker_unknown_reconcile_outbox_and_no_duplicate
+ERROR tests/test_worker_gateway.py::test_real_worker_crash_old_callback_control_and_effect_visibility[cancel-CANCELLED]
+ERROR tests/test_worker_gateway.py::test_real_worker_crash_old_callback_control_and_effect_visibility[pause-PAUSED]
+ERROR tests/test_worker_gateway.py::test_actual_expiry_recovery_after_crash_does_not_dispatch_again
+ERROR tests/test_worker_gateway.py::test_crash_without_observed_effect_stays_unknown_and_stops_automatic_queries
+ERROR tests/test_worker_gateway.py::test_real_worker_revocation_before_dispatch_and_after_effect[None]
+ERROR tests/test_worker_gateway.py::test_real_worker_revocation_before_dispatch_and_after_effect[after-effect]
+ERROR tests/test_worker_gateway.py::test_real_gateway_scope_read_cancel_and_manual_reconcile[fixture-b]
+ERROR tests/test_worker_gateway.py::test_real_gateway_scope_read_cancel_and_manual_reconcile[fixture-c]
+ERROR tests/test_worker_gateway.py::test_local_and_fixture_use_same_worker_gateway
+ERROR tests/test_worker_gateway.py::test_invalid_receipt_rejected_by_actual_worker_gateway
+ERROR tests/test_worker_gateway.py::test_default_worker_cannot_dispatch_explicit_fixture_action
+ERROR tests/test_authorization_files.py::test_roles_assigned_status_only_no_self_elevation[park_specialist]
+ERROR tests/test_authorization_files.py::test_roles_assigned_status_only_no_self_elevation[resource_admin]
+ERROR tests/test_authorization_files.py::test_roles_assigned_status_only_no_self_elevation[service_executor]
+ERROR tests/test_authorization_files.py::test_cross_scope_even_with_misconfigured_assignment_zero_effect[fixture-b]
+ERROR tests/test_authorization_files.py::test_cross_scope_even_with_misconfigured_assignment_zero_effect[fixture-c]
+ERROR tests/test_authorization_files.py::test_queued_execution_rechecks_current_capability[case.create]
+ERROR tests/test_authorization_files.py::test_queued_execution_rechecks_current_capability[facts.assess]
+ERROR tests/test_authorization_files.py::test_queued_execution_rechecks_current_capability[fault.record]
+ERROR tests/test_authorization_files.py::test_outbox_revoked_before_consume_suppressed_after_delivery_retracted
+ERROR tests/test_authorization_files.py::test_outbox_field_grant_revoked_before_consume
+ERROR tests/test_authorization_files.py::test_logical_file_actual_http_attachment_scope_and_revoked_cache
+ERROR tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids[..%5Csecret]
+ERROR tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids[C:%5CWindows%5Cwin.ini]
+ERROR tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids[%5C%5Cserver%5Cshare]
+ERROR tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids[file.txt:secret]
+ERROR tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids[..%2Fsecret]
+ERROR tests/test_authorization_files.py::test_file_integrity_and_descriptor_boundary[content]
+ERROR tests/test_authorization_files.py::test_file_integrity_and_descriptor_boundary[symlink]
+ERROR tests/test_authorization_files.py::test_file_integrity_and_descriptor_boundary[hardlink]
+ERROR tests/test_authorization_files.py::test_file_integrity_and_descriptor_boundary[directory]
+ERROR tests/test_authorization_files.py::test_file_integrity_and_descriptor_boundary[root_symlink]
+ERROR tests/test_authorization_files.py::test_action_grant_and_role_change_cannot_reuse_queued_identity
+ERROR tests/test_authorization_files.py::test_field_delivery_after_withdrawal_retracted
+ERROR tests/test_authorization_files.py::test_identity_scope_change_does_not_carry_old_grants
+ERROR tests/test_authorization_files.py::test_insecure_private_directories_rejected_without_repair[root-511]
+ERROR tests/test_authorization_files.py::test_insecure_private_directories_rejected_without_repair[files-511]
+ERROR tests/test_authorization_files.py::test_insecure_private_directories_rejected_without_repair[files-493]
+4 failed, 1227 passed, 1 skipped, 2 warnings, 39 errors in 1029.09s (0:17:09)
