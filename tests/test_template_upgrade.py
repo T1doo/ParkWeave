@@ -18,7 +18,7 @@ from test_template_candidate import template_config, definition, VALID
 from test_case_resources import link_fixture
 from test_executor_receipts import receipt_fixture, act as receipt_act
 from test_preparation import preparation_fixture, command as preparation_act, headers
-from test_service_case_steps import accepted, verified, business, read as plan_read, command as plan_command, GOALS
+from test_service_case_steps import accepted, verified, business, read as plan_read, command as plan_command, adopt, adopt_body, GOALS
 
 
 @pytest.fixture
@@ -142,6 +142,11 @@ def test_real_holds_acceptance_receipt_and_entire_history_survive_check_and_choi
     with u['f'][1].connect() as c:
         for actor in ('prep-specialist-fixture-a','executor-a'):
             c.execute('INSERT INTO run_assignments(run_id,principal_id,park_id,org_id) VALUES(%s,%s,%s,%s) ON CONFLICT DO NOTHING',(row['run_id'],actor,'park-a','org-a'))
+    # The already adopted plan must explicitly bind this changed access source.
+    current=plan_read(u['f'],p).json()
+    assert current['local_revision_required']
+    response=adopt(u['f'],p,{**adopt_body(u['f'],p),'expected_plan_revision':current['revision'],'local_revision':True})
+    assert response.status_code==201,response.text
     group,dispatch=accepted(u['f'],p);verified(u['f'],p,'P3')
     receipt=u['f'][3].get('/api/executor-receipts/'+dispatch['receipt_step_id'],headers=headers(u['f'][2],'executor-a')).json()
     receipt=receipt_act(u['f'],receipt,'SUBMIT').json();receipt=receipt_act(u['f'],receipt,'ACKNOWLEDGE').json();verified(u['f'],p,'P4')
