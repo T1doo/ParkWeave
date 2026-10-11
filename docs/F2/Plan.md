@@ -526,3 +526,13 @@ ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKI
 有限合同先冻结；源码 `796b41ad8939ba1d067f84f137a4d2a1861f06d4`，405文件首尾零漂移。最终单窗38完整模块1560PASS/0FAIL/0ERROR/1原WindowsSKIP、exit0，1561唯一ID保留全部旧1391、新增170。独立第六226PASS（141新后端+51离线UI+34自有probe），最终相对第六仅十个旧schema测试oracle修订，产品代码不变、逐diff静态核授权/历史/rollback未减少；不冒称最终清单下另跑226。10个真实产品FAIL与2个独立oracle FAIL同ID通过；全部根和独立34 FAIL/ERROR原件与same-ID映射公开脱敏保留，standalone Node原exit1/原probe修后exit0另记。249证据冻结件、55静态精确hash白名单、旧两片149文件全集字节保留。
 
 详见 [有限合同](CaseCancellationReconciliationContract.md)、[交付证据](CaseCancellationReconciliationEvidence.md)、[可读归档](evidence/case-cancel-after-receipt-20261011/README.md)。真实owned PG双向锁等待、全部写入口/冷GET、撤权跨租户、同异key、事件回滚、UNKNOWN/迟到UI和资源容量/独立释放均在有限测试范围内。父审下一步以完整SHA和正常独立远端分支限定签收，非全仓/AT；历史Case_count0根因仍UNCONFIRMED，浏览器管理员拒绝0次重试，Windows/native、生产迁移/部署/真实模型NOT RUN，protected分支保持。
+
+## 原 F2-T07 有限整链验收（2026-10-11）
+
+从已限定签收交付 `28f28328efb23f60cdfbbc51ae215cebd5261a08` 回到原T07，在正常独立分支 `dev/f2-t07-full-chain-20261011` 验证同一新普通SYNTHETIC Case的新诉求、补件/专员核对/企业确认、注册五目标规划、组合资源占用与关联、本人接单、实际人工回执、企业ACK/明确VERIFY、拒单重派、回执补正/反馈、本地关闭重开及再次新输入。普通生产HTTP、自有PG、独立CLI worker和普通configured_app冷API子进程实际执行；人工动作明确为合成测试驱动，不替代自然人试点或真实外部履约。原405源码无修改，仅新增必要整链测试与证据；本轮验收源码 `b5ea90ac9b366b015b43c426ad94b72faf7c8b72`，406文件零漂移。
+
+根39完整模块单窗1570PASS/0FAIL/0ERROR/1旧WindowsSKIP，exit0、1523.631秒，原1561 test IDs全部保留并新增10；另一个同SHA目标产物PG完整专项44PASS/0FAIL/0ERROR/0SKIP、exit0。两窗无重复ID，共40完整模块、1614PASS/1SKIP、1615 unique IDs，不称一个40模块进程。独立最终源码完整新模块10PASS及另3反例PASS分别保留。22原驱动FAIL执行/10唯一ID同ID最终通过；原中断17P/exit1附teardown KeyError和误选浏览器模块的收集1ERROR/exit2均原样保留，不计完整PASS、不伪造same-ID修复。该浏览器收集在缺playwright处退出，测试与浏览器启动0，未安装或重试；历史管理员导航拒绝保持。
+
+A普通新Run无执行者assignment且默认批准入口关闭，实际分派403、业务与权限不变，原生产合法批准/分派授权合同仍BLOCKED。B把原owner-only合成assign_status单列为业务链之外前提，随后仅原API/worker办理；不签零setup正式AT35。成功再次输入为同fixture-a，跨企业/园区仅拒绝矩阵。真实模型、正式服务发布、真实工作台/原生Windows/园区效果、正式AT01–35/F2/PR0-alpha仍NOT_RUN；历史Case_count0仍UNCONFIRMED，不通过新建单成功消除历史未知。无生产迁移/部署、新Grant/信任登记、凭据或网络配置、权限扩大、强推或保护分支修改。
+
+详见 [实施前合同](T07FullChainContract.md)、[整链有限报告](T07FullChain.md)、[167项可读证据索引](evidence/f2-t07-full-chain-20261011/README.md)。原三段取消归档428文件集合/字节保持。下一步须明确原产品普通新Run的合法批准/分派授权生产合同并另验模型/发布/工作台；本片不新增取消微状态或放宽前提。

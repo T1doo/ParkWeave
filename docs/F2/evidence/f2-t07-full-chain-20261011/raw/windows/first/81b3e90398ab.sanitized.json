@@ -1,0 +1,4004 @@
+{
+  "browser_attempts": 0,
+  "fixture_assignment_preconditions": [
+    {
+      "actor": "executor-a",
+      "after_sha256": "83aaa4777b1175d2fbf1b2a1e90b170cb7aacb74500c30a9fdb9bd98d8d9a6c2",
+      "before_sha256": "f7394c20f3f87c95b8bc3d8eec348210584925a072fe3003a5e5ed7d64892dc9",
+      "business_API": false,
+      "capability_grants_unchanged": true,
+      "formal_new_Run_authorization_acceptance": false,
+      "kind": "EXISTING_OWNER_ONLY_SYNTHETIC_ASSIGN_STATUS_PRECONDITION",
+      "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+      "trust_registry_created": false
+    }
+  ],
+  "formal_AT35": false,
+  "independent_worker_processes": [
+    {
+      "DSN_recorded": false,
+      "argv": [
+        "@repo/.venv/bin/python",
+        "-m",
+        "parkweave.worker",
+        "--once"
+      ],
+      "ended_utc": "2026-10-11T16:29:28.875564+00:00",
+      "exit_code": 0,
+      "mock": false,
+      "mode": "LOCAL",
+      "pid": 350542,
+      "started_utc": "2026-10-11T16:29:28.475856+00:00",
+      "stderr": "",
+      "stdout": "",
+      "timed_out": false
+    }
+  ],
+  "requests": [
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/runs",
+      "request_body": {
+        "goal": "SYNTHETIC T07 first new composite local request"
+      },
+      "request_key": "3552f0a0-2f8d-4ade-aefb-d55eee861b7b",
+      "request_sha256": "72437319307620f7322dc0965398286452aa13aefcfbb8ead9350a8ed6a00268",
+      "response": {
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68"
+      },
+      "sequence": 1,
+      "status": 202,
+      "utc": "2026-10-11T16:29:28.475792+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/runs/f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+      "request_body": null,
+      "request_key": null,
+      "request_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "response": {
+        "case": {
+          "external_acceptance": "NOT_SUBMITTED",
+          "goal": "SYNTHETIC T07 first new composite local request",
+          "id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+          "offline_fulfillment": "NO_EVIDENCE",
+          "source": "SYNTHETIC",
+          "state": "NEEDS_INPUT"
+        },
+        "control_intent": "CONTINUE",
+        "execution_mode": "LOCAL",
+        "model_mode": "MODEL_MOCK",
+        "namespace": "SYNTHETIC",
+        "operation": {
+          "id": "256af8a0-5c09-458f-866f-07f1ffa71b37",
+          "receipt": {
+            "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+            "source": "LOCAL_DATABASE",
+            "success_scope": "LOCAL_CASE_CREATED",
+            "verified": true
+          },
+          "state": "VERIFIED"
+        },
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "state": "SUCCEEDED",
+        "success_scope": "LOCAL_CASE_CREATED"
+      },
+      "sequence": 2,
+      "status": 200,
+      "utc": "2026-10-11T16:29:28.891388+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/runs",
+      "request_body": {
+        "goal": "SYNTHETIC T07 first new composite local request"
+      },
+      "request_key": "3552f0a0-2f8d-4ade-aefb-d55eee861b7b",
+      "request_sha256": "72437319307620f7322dc0965398286452aa13aefcfbb8ead9350a8ed6a00268",
+      "response": {
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68"
+      },
+      "sequence": 3,
+      "status": 202,
+      "utc": "2026-10-11T16:29:28.945405+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/runs",
+      "request_body": {
+        "goal": "SYNTHETIC T07 first new composite local request different"
+      },
+      "request_key": "3552f0a0-2f8d-4ade-aefb-d55eee861b7b",
+      "request_sha256": "fd152b9fe8a21d1984bf170c72112851707dc764dd330af8128064f23de2d9a6",
+      "response": {
+        "detail": "idempotency key fingerprint mismatch"
+      },
+      "sequence": 4,
+      "status": 409,
+      "utc": "2026-10-11T16:29:29.001380+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations",
+      "request_body": {
+        "reviewer_id": "prep-specialist-fixture-a",
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "service_id": "synthetic-material-preparation",
+        "service_version": 1
+      },
+      "request_key": "11c6b997-15ce-431f-b798-f1589bef5780",
+      "request_sha256": "e3a6e6f3a79bc7595eae75b74819689f9abb7878a28c665996e5a4402e264dfb",
+      "response": {
+        "action": "CREATE",
+        "actor_id": "fixture-a",
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "external_acceptance": "NOT_SUBMITTED",
+        "offline_fulfillment": "NO_EVIDENCE",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "qualification": "NOT_EVALUATED",
+        "revision": 1,
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY",
+        "state": "IN_PREPARATION"
+      },
+      "sequence": 5,
+      "status": 201,
+      "utc": "2026-10-11T16:29:29.061919+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/request-intent",
+      "request_body": {
+        "expected_preparation_revision": 1,
+        "request_text": "SYNTHETIC T07 first independently selected five local goals",
+        "required_goals": [
+          "LOCAL_MATERIAL_PREPARATION",
+          "LOCAL_CASE_RESOURCE_ASSOCIATION",
+          "LOCAL_INTERNAL_ACCEPTANCE",
+          "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+          "LOCAL_CASE_RECORD_RECHECK"
+        ]
+      },
+      "request_key": "721e8f4f-543e-4cef-92b0-45da59dae412",
+      "request_sha256": "7c1aebbf6a174859511c4cb5e48be15c47bf45929387cac085f0f5e663d2f24c",
+      "response": {
+        "action": "UPDATE_REQUEST",
+        "actor_id": "fixture-a",
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "external_acceptance": "NOT_SUBMITTED",
+        "offline_fulfillment": "NO_EVIDENCE",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "qualification": "NOT_EVALUATED",
+        "request_intent": {
+          "coverage": {
+            "items": [
+              {
+                "goal": "LOCAL_MATERIAL_PREPARATION",
+                "status": "UNSUPPORTED"
+              },
+              {
+                "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                "status": "UNSUPPORTED"
+              },
+              {
+                "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+                "status": "UNSUPPORTED"
+              },
+              {
+                "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                "status": "UNSUPPORTED"
+              },
+              {
+                "goal": "LOCAL_CASE_RECORD_RECHECK",
+                "status": "UNSUPPORTED"
+              }
+            ],
+            "original_case_goal_completed": false,
+            "original_request_understood": false,
+            "state": "PARTIAL",
+            "template_sha256": "a4df282ca61643abc5980d1493be83b8f0aad7bcd97dc2dd046f956baae76870",
+            "unsupported_goals": [
+              "LOCAL_MATERIAL_PREPARATION",
+              "LOCAL_CASE_RESOURCE_ASSOCIATION",
+              "LOCAL_INTERNAL_ACCEPTANCE",
+              "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+              "LOCAL_CASE_RECORD_RECHECK"
+            ]
+          },
+          "current_request": "SYNTHETIC T07 first independently selected five local goals",
+          "original_request": "SYNTHETIC T07 first new composite local request",
+          "recorded": true,
+          "required_goals": [
+            "LOCAL_MATERIAL_PREPARATION",
+            "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "LOCAL_INTERNAL_ACCEPTANCE",
+            "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "LOCAL_CASE_RECORD_RECHECK"
+          ],
+          "revision": 2,
+          "source": "USER_EXPLICIT_STATEMENT"
+        },
+        "revision": 2,
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY",
+        "state": "IN_PREPARATION"
+      },
+      "sequence": 6,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.125678+00:00"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/commands",
+      "request_body": {
+        "action": "REQUEST_CHANGES",
+        "expected_revision": 2,
+        "reason": "SYNTHETIC T07 two missing material slots"
+      },
+      "request_key": "c1dc07db-b3d8-4ef3-a519-23f4a43b4e94",
+      "request_sha256": "527466939950cd1a04e1bdb9d0ccc74b6c70519cb434e53812e16b1126b87dab",
+      "response": {
+        "action": "REQUEST_CHANGES",
+        "actor_id": "prep-specialist-fixture-a",
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "external_acceptance": "NOT_SUBMITTED",
+        "offline_fulfillment": "NO_EVIDENCE",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "qualification": "NOT_EVALUATED",
+        "reason": "SYNTHETIC T07 two missing material slots",
+        "revision": 3,
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY",
+        "snapshot_sha256": "60b622178353d29b5a3449cca3f526419d442a02326d967b1920c05c1f5607e7",
+        "state": "CHANGES_REQUESTED"
+      },
+      "sequence": 7,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.181520+00:00"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/commands",
+      "request_body": {
+        "action": "REVIEW",
+        "expected_revision": 3,
+        "reason": "SYNTHETIC T07 must not approve missing materials"
+      },
+      "request_key": "66f5a46a-3755-40c0-bbd3-9705b9ba6208",
+      "request_sha256": "d7480dc03cca3d2382e4fe280d0c1fc1fb923997f49b7117ba0522783ee50b54",
+      "response": {
+        "detail": "required material slots missing"
+      },
+      "sequence": 8,
+      "status": 409,
+      "utc": "2026-10-11T16:29:29.253371+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/commands",
+      "request_body": {
+        "action": "ADD_EVIDENCE",
+        "expected_revision": 3,
+        "slot": "need_summary",
+        "source_kind": "USER_STATEMENT",
+        "source_label": "SYNTHETIC new user statement",
+        "text": "SYNTHETIC T07 first new need"
+      },
+      "request_key": "f03c47af-0fc2-4736-a8e1-f2ba5d74ee8f",
+      "request_sha256": "d8af942b7b1ae9b46c3ee4a4bc02d91b8db7f65b2ffaf5adf7f209a68d16cae7",
+      "response": {
+        "action": "ADD_EVIDENCE",
+        "actor_id": "fixture-a",
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "external_acceptance": "NOT_SUBMITTED",
+        "offline_fulfillment": "NO_EVIDENCE",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "qualification": "NOT_EVALUATED",
+        "reason": null,
+        "revision": 4,
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY",
+        "snapshot_sha256": "c72c56edb0687276ad016fdd2fd0f7b948a30b229d2acb12c6694f8de26fba4b",
+        "state": "IN_PREPARATION"
+      },
+      "sequence": 9,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.325457+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/commands",
+      "request_body": {
+        "action": "ADD_EVIDENCE",
+        "expected_revision": 4,
+        "slot": "material_outline",
+        "source_kind": "DOCUMENT_EXCERPT",
+        "source_label": "SYNTHETIC current document",
+        "text": "SYNTHETIC T07 first new outline"
+      },
+      "request_key": "25821d5f-8d26-4399-a748-91da30d0386c",
+      "request_sha256": "b5e5a840a1dfe67eefc0f410ecd6241ede6991438bf38467d3a25412dd70c92b",
+      "response": {
+        "action": "ADD_EVIDENCE",
+        "actor_id": "fixture-a",
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "external_acceptance": "NOT_SUBMITTED",
+        "offline_fulfillment": "NO_EVIDENCE",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "qualification": "NOT_EVALUATED",
+        "reason": null,
+        "revision": 5,
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY",
+        "snapshot_sha256": "2d612e373879587ba8f34594cb6174cdabb0e7533107716e43ef06db131982ba",
+        "state": "IN_PREPARATION"
+      },
+      "sequence": 10,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.381428+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/command-recovery",
+      "request_body": null,
+      "request_key": "25821d5f-8d26-4399-a748-91da30d0386c",
+      "request_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "response": {
+        "automatically_replayed": false,
+        "current_revision": 5,
+        "event": {
+          "action": "ADD_EVIDENCE",
+          "actor_id": "fixture-a",
+          "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+          "external_acceptance": "NOT_SUBMITTED",
+          "offline_fulfillment": "NO_EVIDENCE",
+          "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+          "qualification": "NOT_EVALUATED",
+          "reason": null,
+          "revision": 5,
+          "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+          "scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY",
+          "snapshot_sha256": "2d612e373879587ba8f34594cb6174cdabb0e7533107716e43ef06db131982ba",
+          "state": "IN_PREPARATION"
+        },
+        "external_acceptance": "NOT_SUBMITTED",
+        "historical_only": true,
+        "offline_fulfillment": "NO_EVIDENCE",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "qualification": "NOT_EVALUATED",
+        "status": "COMMITTED"
+      },
+      "sequence": 11,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.449493+00:00"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/commands",
+      "request_body": {
+        "action": "REVIEW",
+        "expected_revision": 5,
+        "reason": "SYNTHETIC test-driven independent material review"
+      },
+      "request_key": "761e85b8-84ae-4b16-8fc9-e46fa104125d",
+      "request_sha256": "b41d90e3391538c98809e03ecc45828a9f2d91f5ed6600e02cb53e793e158436",
+      "response": {
+        "action": "REVIEW",
+        "actor_id": "prep-specialist-fixture-a",
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "delivery_review_source": {
+          "authority_sha256": "2ccd0cf4436cb8f92ec949512e133f9744897cc77e1dcce132e3c7e165ca3a24",
+          "catalog_epoch_sha256": "616d18842ba303518bcba9fe67d89bb1ea0bb6b8186a501bccfb4faf49903e08",
+          "catalog_sha256": "2145cd750a487eec166611f09ce812b46d26558138b2938cef3507ef4f1f698a"
+        },
+        "external_acceptance": "NOT_SUBMITTED",
+        "offline_fulfillment": "NO_EVIDENCE",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "qualification": "NOT_EVALUATED",
+        "reason": "SYNTHETIC test-driven independent material review",
+        "revision": 6,
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY",
+        "snapshot_sha256": "2d612e373879587ba8f34594cb6174cdabb0e7533107716e43ef06db131982ba",
+        "state": "REVIEWED"
+      },
+      "sequence": 12,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.525391+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/commands",
+      "request_body": {
+        "action": "CONFIRM",
+        "expected_revision": 6,
+        "reason": "SYNTHETIC test-driven enterprise explicitly confirms"
+      },
+      "request_key": "fd1e644b-247b-4b78-ae5e-dbd455e603d0",
+      "request_sha256": "48b6e26e40341407d17858fae56dc50472002c79f9596bcd8ceb65cc022201fd",
+      "response": {
+        "action": "CONFIRM",
+        "actor_id": "fixture-a",
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "external_acceptance": "NOT_SUBMITTED",
+        "offline_fulfillment": "NO_EVIDENCE",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "qualification": "NOT_EVALUATED",
+        "reason": "SYNTHETIC test-driven enterprise explicitly confirms",
+        "revision": 7,
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY",
+        "snapshot_sha256": "2d612e373879587ba8f34594cb6174cdabb0e7533107716e43ef06db131982ba",
+        "state": "LOCAL_CONFIRMED"
+      },
+      "sequence": 13,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.581526+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/planning-preview",
+      "request_body": null,
+      "request_key": null,
+      "request_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "response": {
+        "current": {
+          "business_publication": false,
+          "case_goal_completed": false,
+          "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+          "catalog_sha256": "d856f90a830f5718e535a37bb27de84717dbd01ec7fd95eb52a628d0b65eb4d9",
+          "dependency_collections": {
+            "existing_access": {
+              "count": 1,
+              "known": true,
+              "sha256": "4a280819659deb5b63ba4c44aa3b9cf7c1d258bdba94db8dc745af27b13e7936"
+            },
+            "resources": {
+              "count": 4,
+              "known": true,
+              "sha256": "7c7a33bad3501f8fd459580ecfae8b7024a28895456956a4bc163879663f449f"
+            }
+          },
+          "executed": false,
+          "execution_enabled": false,
+          "goal_coverage": [
+            {
+              "goal": "LOCAL_MATERIAL_PREPARATION",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1"
+              ]
+            },
+            {
+              "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2"
+              ]
+            },
+            {
+              "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3"
+              ]
+            },
+            {
+              "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3",
+                "P4"
+              ]
+            },
+            {
+              "goal": "LOCAL_CASE_RECORD_RECHECK",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3",
+                "P4",
+                "P5"
+              ]
+            }
+          ],
+          "namespace": "PLANNING_METADATA_PREVIEW",
+          "new_grants": false,
+          "optional_suggestions": [],
+          "planner": "DETERMINISTIC_REGISTERED_ADAPTER_SUBGRAPH",
+          "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+          "preparation_revision": 7,
+          "qualification_truth": "UNKNOWN",
+          "registry_sha256": "cecab0f9b86bc01b3ffd75da129673ce7a832d0458ebcbb266446bd16df9be70",
+          "required_goals": [
+            "LOCAL_MATERIAL_PREPARATION",
+            "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "LOCAL_INTERNAL_ACCEPTANCE",
+            "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "LOCAL_CASE_RECORD_RECHECK"
+          ],
+          "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+          "source_sha256": "9640a57b33c5bd428fc5e311ae3a59b3f4c80e90cb1f0bfdd70c20e4180a7036",
+          "source_unknowns": [],
+          "state": "COVERED_PREVIEW_ONLY",
+          "steps": [
+            {
+              "acceptance": "\u4f01\u4e1a\u660e\u786e\u6838\u5bf9\u5f53\u524d\u6750\u6599\u7248\u672c",
+              "actions": [
+                {
+                  "commands": [
+                    "ADD_EVIDENCE",
+                    "CONFIRM"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "enterprise_operator"
+                },
+                {
+                  "commands": [
+                    "REQUEST_CHANGES",
+                    "REVIEW"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "park_specialist"
+                }
+              ],
+              "adapter": "preparation",
+              "adapter_ref": "preparation",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [],
+              "executable": false,
+              "id": "P1",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "REQUEST_GOAL_COVERAGE_REQUIRED"
+              ],
+              "output": "\u5f53\u524d\u7248\u672c\u7684\u672c\u5730\u786e\u8ba4\u8d44\u6599\u5305",
+              "preconditions": "\u6709\u6765\u6e90\u7684\u8bc9\u6c42\u6458\u8981\u548c\u6750\u6599\u76ee\u5f55\uff1b\u5f53\u524d\u4e13\u5458\u6838\u5bf9\u6743",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba\u8865\u4ef6\u3001\u83b7\u6d3e\u4e13\u5458\u4eba\u5de5\u6838\u5bf9\u3001\u4f01\u4e1a\u786e\u8ba4",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u6838\u5bf9\u65f6\u6bb5\u3001\u89c4\u5219\u4e0e\u5f53\u524d\u6750\u6599\u7ed1\u5b9a",
+              "actions": [
+                {
+                  "commands": [
+                    "CREATE_OR_RECHECK_LINK"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/resource-link",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "case-resources",
+              "adapter_ref": "case-resources",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P1"
+              ],
+              "executable": false,
+              "id": "P2",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED"
+              ],
+              "output": "\u6b64Case\u7684\u4e24\u8d44\u6e90\u7ec4\u5408\u5173\u8054\u8bb0\u5f55",
+              "preconditions": "P1\u6838\u5bf9\u6709\u6548\uff1b\u672c\u4eba\u4e24\u8d44\u6e90\u7ec4\u5408\u6709\u6548\u4e14\u660e\u786e\u5173\u8054\u6b64Case",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u6838\u5bf9\u672c\u4eba\u63a5\u53d7\u8bb0\u5f55\u53ca\u5f53\u524d\u8fd0\u884c\u8bbf\u95ee",
+              "actions": [
+                {
+                  "commands": [
+                    "OFFER"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/dispatch",
+                  "role": "park_specialist"
+                },
+                {
+                  "commands": [
+                    "ACCEPT",
+                    "DECLINE"
+                  ],
+                  "method": "POST",
+                  "path": "/api/service-dispatches/{dispatch_id}/commands",
+                  "role": "service_executor"
+                }
+              ],
+              "adapter": "dispatch",
+              "adapter_ref": "dispatch",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P2"
+              ],
+              "executable": false,
+              "id": "P3",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED"
+              ],
+              "output": "\u5f53\u524d\u5185\u90e8\u63a5\u5355\u53ca\u56de\u6267\u4e8b\u9879",
+              "preconditions": "P2\u6838\u5bf9\u6709\u6548\uff1b\u5df2\u6709\u8fd0\u884c\u8bbf\u95ee\uff1b\u5f53\u524d\u6750\u6599\u5bf9\u5e94\u7684\u672c\u4eba\u63a5\u5355",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u83b7\u6d3e\u4e13\u5458\u5206\u6d3e\u3001\u5df2\u6709\u5408\u6cd5Run\u8bbf\u95ee\u7684\u6267\u884c\u8005\u672c\u4eba\u63a5\u5355",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u660e\u786e\u6838\u5bf9\u6765\u6e90\u548c\u5f53\u524d\u56de\u6267\u7248\u672c\uff1b\u4ecd\u4e0d\u8bc1\u660e\u5916\u90e8\u5c65\u7ea6",
+              "actions": [
+                {
+                  "commands": [
+                    "SUBMIT"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "service_executor"
+                },
+                {
+                  "commands": [
+                    "ACKNOWLEDGE",
+                    "REQUEST_CHANGES",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "executor-receipts",
+              "adapter_ref": "executor-receipts",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P3"
+              ],
+              "executable": false,
+              "id": "P4",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED"
+              ],
+              "output": "\u4f01\u4e1a\u5df2\u6838\u5bf9\u7684\u5408\u6210\u56de\u6267\u8bb0\u5f55",
+              "preconditions": "P3\u6838\u5bf9\u6709\u6548\uff1b\u5f53\u524d\u6750\u6599\u7ed1\u5b9a\u7684\u5408\u6210\u56de\u6267",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u83b7\u6d3e\u6267\u884c\u8005\u63d0\u4ea4\u3001\u4f01\u4e1a\u7ecf\u529e\u4eba\u6838\u5bf9",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u539f\u5165\u53e3\u660e\u786e\u91cd\u65b0\u6821\u9a8c\uff0c\u771f\u5b9e\u76ee\u6807\u4e0e\u5c65\u7ea6\u4ecd\u672a\u9a8c\u8bc1",
+              "actions": [
+                {
+                  "commands": [
+                    "REVALIDATE",
+                    "CLOSE_LOCAL_RECORD",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/local-case/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "case-lifecycle",
+              "adapter_ref": "case-lifecycle",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P4"
+              ],
+              "executable": false,
+              "id": "P5",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED",
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED",
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED",
+                "REQUEST_GOAL_COVERAGE_REQUIRED"
+              ],
+              "lifecycle_cycle": null,
+              "lifecycle_state": "NOT_STARTED",
+              "output": "\u6b64Case\u672c\u5730\u8bb0\u5f55\u91cd\u65b0\u6821\u9a8c",
+              "preconditions": "\u5f53\u524d\u6750\u6599\u3001\u8d44\u6e90\u3001\u672c\u4eba\u63a5\u5355\u4e0e\u56de\u6267\u6838\u5bf9\u5747\u6709\u6548",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+              "revision": 1
+            }
+          ]
+        },
+        "history": [],
+        "history_limit": 16,
+        "isolated_dispatch_execution_preview_enabled": false,
+        "isolated_execution_preview_enabled": false,
+        "isolated_lifecycle_execution_preview_enabled": false,
+        "isolated_receipt_execution_preview_enabled": false,
+        "isolated_resource_execution_preview_enabled": false
+      },
+      "sequence": 14,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.645767+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/service-case-plan",
+      "request_body": null,
+      "request_key": null,
+      "request_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "response": {
+        "actor_ref": "27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db",
+        "automatic_execution": false,
+        "can_adopt": true,
+        "case_goal_completed": false,
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "current_preview": {
+          "business_publication": false,
+          "case_goal_completed": false,
+          "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+          "catalog_sha256": "d856f90a830f5718e535a37bb27de84717dbd01ec7fd95eb52a628d0b65eb4d9",
+          "dependency_collections": {
+            "existing_access": {
+              "count": 1,
+              "known": true,
+              "sha256": "4a280819659deb5b63ba4c44aa3b9cf7c1d258bdba94db8dc745af27b13e7936"
+            },
+            "resources": {
+              "count": 4,
+              "known": true,
+              "sha256": "7c7a33bad3501f8fd459580ecfae8b7024a28895456956a4bc163879663f449f"
+            }
+          },
+          "executed": false,
+          "execution_enabled": false,
+          "goal_coverage": [
+            {
+              "goal": "LOCAL_MATERIAL_PREPARATION",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1"
+              ]
+            },
+            {
+              "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2"
+              ]
+            },
+            {
+              "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3"
+              ]
+            },
+            {
+              "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3",
+                "P4"
+              ]
+            },
+            {
+              "goal": "LOCAL_CASE_RECORD_RECHECK",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3",
+                "P4",
+                "P5"
+              ]
+            }
+          ],
+          "namespace": "PLANNING_METADATA_PREVIEW",
+          "new_grants": false,
+          "optional_suggestions": [],
+          "planner": "DETERMINISTIC_REGISTERED_ADAPTER_SUBGRAPH",
+          "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+          "preparation_revision": 7,
+          "qualification_truth": "UNKNOWN",
+          "registry_sha256": "cecab0f9b86bc01b3ffd75da129673ce7a832d0458ebcbb266446bd16df9be70",
+          "required_goals": [
+            "LOCAL_MATERIAL_PREPARATION",
+            "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "LOCAL_INTERNAL_ACCEPTANCE",
+            "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "LOCAL_CASE_RECORD_RECHECK"
+          ],
+          "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+          "source_sha256": "9640a57b33c5bd428fc5e311ae3a59b3f4c80e90cb1f0bfdd70c20e4180a7036",
+          "source_unknowns": [],
+          "state": "COVERED_PREVIEW_ONLY",
+          "steps": [
+            {
+              "acceptance": "\u4f01\u4e1a\u660e\u786e\u6838\u5bf9\u5f53\u524d\u6750\u6599\u7248\u672c",
+              "actions": [
+                {
+                  "commands": [
+                    "ADD_EVIDENCE",
+                    "CONFIRM"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "enterprise_operator"
+                },
+                {
+                  "commands": [
+                    "REQUEST_CHANGES",
+                    "REVIEW"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "park_specialist"
+                }
+              ],
+              "adapter": "preparation",
+              "adapter_ref": "preparation",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [],
+              "executable": false,
+              "id": "P1",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "REQUEST_GOAL_COVERAGE_REQUIRED"
+              ],
+              "output": "\u5f53\u524d\u7248\u672c\u7684\u672c\u5730\u786e\u8ba4\u8d44\u6599\u5305",
+              "preconditions": "\u6709\u6765\u6e90\u7684\u8bc9\u6c42\u6458\u8981\u548c\u6750\u6599\u76ee\u5f55\uff1b\u5f53\u524d\u4e13\u5458\u6838\u5bf9\u6743",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba\u8865\u4ef6\u3001\u83b7\u6d3e\u4e13\u5458\u4eba\u5de5\u6838\u5bf9\u3001\u4f01\u4e1a\u786e\u8ba4",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u6838\u5bf9\u65f6\u6bb5\u3001\u89c4\u5219\u4e0e\u5f53\u524d\u6750\u6599\u7ed1\u5b9a",
+              "actions": [
+                {
+                  "commands": [
+                    "CREATE_OR_RECHECK_LINK"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/resource-link",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "case-resources",
+              "adapter_ref": "case-resources",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P1"
+              ],
+              "executable": false,
+              "id": "P2",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED"
+              ],
+              "output": "\u6b64Case\u7684\u4e24\u8d44\u6e90\u7ec4\u5408\u5173\u8054\u8bb0\u5f55",
+              "preconditions": "P1\u6838\u5bf9\u6709\u6548\uff1b\u672c\u4eba\u4e24\u8d44\u6e90\u7ec4\u5408\u6709\u6548\u4e14\u660e\u786e\u5173\u8054\u6b64Case",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u6838\u5bf9\u672c\u4eba\u63a5\u53d7\u8bb0\u5f55\u53ca\u5f53\u524d\u8fd0\u884c\u8bbf\u95ee",
+              "actions": [
+                {
+                  "commands": [
+                    "OFFER"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/dispatch",
+                  "role": "park_specialist"
+                },
+                {
+                  "commands": [
+                    "ACCEPT",
+                    "DECLINE"
+                  ],
+                  "method": "POST",
+                  "path": "/api/service-dispatches/{dispatch_id}/commands",
+                  "role": "service_executor"
+                }
+              ],
+              "adapter": "dispatch",
+              "adapter_ref": "dispatch",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P2"
+              ],
+              "executable": false,
+              "id": "P3",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED"
+              ],
+              "output": "\u5f53\u524d\u5185\u90e8\u63a5\u5355\u53ca\u56de\u6267\u4e8b\u9879",
+              "preconditions": "P2\u6838\u5bf9\u6709\u6548\uff1b\u5df2\u6709\u8fd0\u884c\u8bbf\u95ee\uff1b\u5f53\u524d\u6750\u6599\u5bf9\u5e94\u7684\u672c\u4eba\u63a5\u5355",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u83b7\u6d3e\u4e13\u5458\u5206\u6d3e\u3001\u5df2\u6709\u5408\u6cd5Run\u8bbf\u95ee\u7684\u6267\u884c\u8005\u672c\u4eba\u63a5\u5355",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u660e\u786e\u6838\u5bf9\u6765\u6e90\u548c\u5f53\u524d\u56de\u6267\u7248\u672c\uff1b\u4ecd\u4e0d\u8bc1\u660e\u5916\u90e8\u5c65\u7ea6",
+              "actions": [
+                {
+                  "commands": [
+                    "SUBMIT"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "service_executor"
+                },
+                {
+                  "commands": [
+                    "ACKNOWLEDGE",
+                    "REQUEST_CHANGES",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "executor-receipts",
+              "adapter_ref": "executor-receipts",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P3"
+              ],
+              "executable": false,
+              "id": "P4",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED"
+              ],
+              "output": "\u4f01\u4e1a\u5df2\u6838\u5bf9\u7684\u5408\u6210\u56de\u6267\u8bb0\u5f55",
+              "preconditions": "P3\u6838\u5bf9\u6709\u6548\uff1b\u5f53\u524d\u6750\u6599\u7ed1\u5b9a\u7684\u5408\u6210\u56de\u6267",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u83b7\u6d3e\u6267\u884c\u8005\u63d0\u4ea4\u3001\u4f01\u4e1a\u7ecf\u529e\u4eba\u6838\u5bf9",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u539f\u5165\u53e3\u660e\u786e\u91cd\u65b0\u6821\u9a8c\uff0c\u771f\u5b9e\u76ee\u6807\u4e0e\u5c65\u7ea6\u4ecd\u672a\u9a8c\u8bc1",
+              "actions": [
+                {
+                  "commands": [
+                    "REVALIDATE",
+                    "CLOSE_LOCAL_RECORD",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/local-case/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "case-lifecycle",
+              "adapter_ref": "case-lifecycle",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P4"
+              ],
+              "executable": false,
+              "id": "P5",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED",
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED",
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED",
+                "REQUEST_GOAL_COVERAGE_REQUIRED"
+              ],
+              "lifecycle_cycle": null,
+              "lifecycle_state": "NOT_STARTED",
+              "output": "\u6b64Case\u672c\u5730\u8bb0\u5f55\u91cd\u65b0\u6821\u9a8c",
+              "preconditions": "\u5f53\u524d\u6750\u6599\u3001\u8d44\u6e90\u3001\u672c\u4eba\u63a5\u5355\u4e0e\u56de\u6267\u6838\u5bf9\u5747\u6709\u6548",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+              "revision": 1
+            }
+          ]
+        },
+        "events": [],
+        "history": [],
+        "new_grants": false,
+        "plan_id": null,
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "preparation_revision": 7,
+        "request_revision": 2,
+        "revision": 0,
+        "role": "enterprise_operator",
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN",
+        "state": "NOT_ADOPTED",
+        "steps": []
+      },
+      "sequence": 15,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.717396+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/service-case-plan",
+      "request_body": {
+        "expected_plan_revision": 0,
+        "expected_preparation_revision": 7,
+        "expected_request_revision": 2,
+        "expected_source_sha256": "9640a57b33c5bd428fc5e311ae3a59b3f4c80e90cb1f0bfdd70c20e4180a7036",
+        "reason": "SYNTHETIC explicit registered finite plan",
+        "required_goals": [
+          "LOCAL_MATERIAL_PREPARATION",
+          "LOCAL_CASE_RESOURCE_ASSOCIATION",
+          "LOCAL_INTERNAL_ACCEPTANCE",
+          "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+          "LOCAL_CASE_RECORD_RECHECK"
+        ]
+      },
+      "request_key": "1faa4b9c-ff44-4eba-a88c-1bf3edf14dbd",
+      "request_sha256": "c51525776b7ec40fc7f5016706895c058cf7a3520e4ba9f504acb7cb6720e447",
+      "response": {
+        "actor_ref": "27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db",
+        "automatic_execution": false,
+        "binding": {
+          "catalog": {
+            "namespace": "SYNTHETIC",
+            "qualification": "NOT_EVALUATED",
+            "service_id": "synthetic-material-preparation",
+            "source": {
+              "id": "ENG014-reviewed-fixture",
+              "kind": "SYNTHETIC",
+              "revision": "1",
+              "statement": "\u5408\u6210\u8d44\u6599\u6574\u7406\u670d\u52a1\uff0c\u65e0\u8d44\u683c\u6761\u4ef6\uff1b\u8bc9\u6c42\u6458\u8981\u4e0e\u6750\u6599\u76ee\u5f55\u7531\u6d4b\u8bd5\u89c4\u683c\u5b9a\u4e49\u3002"
+            },
+            "version": 1
+          },
+          "original_goal": "SYNTHETIC T07 first new composite local request",
+          "registry": {
+            "actions": {
+              "P1": [
+                {
+                  "commands": [
+                    "ADD_EVIDENCE",
+                    "CONFIRM"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "enterprise_operator"
+                },
+                {
+                  "commands": [
+                    "REQUEST_CHANGES",
+                    "REVIEW"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "park_specialist"
+                }
+              ],
+              "P2": [
+                {
+                  "commands": [
+                    "CREATE_OR_RECHECK_LINK"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/resource-link",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "P3": [
+                {
+                  "commands": [
+                    "OFFER"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/dispatch",
+                  "role": "park_specialist"
+                },
+                {
+                  "commands": [
+                    "ACCEPT",
+                    "DECLINE"
+                  ],
+                  "method": "POST",
+                  "path": "/api/service-dispatches/{dispatch_id}/commands",
+                  "role": "service_executor"
+                }
+              ],
+              "P4": [
+                {
+                  "commands": [
+                    "SUBMIT"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "service_executor"
+                },
+                {
+                  "commands": [
+                    "ACKNOWLEDGE",
+                    "REQUEST_CHANGES",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "P5": [
+                {
+                  "commands": [
+                    "REVALIDATE",
+                    "CLOSE_LOCAL_RECORD",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/local-case/commands",
+                  "role": "enterprise_operator"
+                }
+              ]
+            },
+            "steps": [
+              {
+                "acceptance": "\u4f01\u4e1a\u660e\u786e\u6838\u5bf9\u5f53\u524d\u6750\u6599\u7248\u672c",
+                "adapter": "preparation",
+                "depends_on": [],
+                "id": "P1",
+                "output": "\u5f53\u524d\u7248\u672c\u7684\u672c\u5730\u786e\u8ba4\u8d44\u6599\u5305",
+                "preconditions": "\u6709\u6765\u6e90\u7684\u8bc9\u6c42\u6458\u8981\u548c\u6750\u6599\u76ee\u5f55\uff1b\u5f53\u524d\u4e13\u5458\u6838\u5bf9\u6743",
+                "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba\u8865\u4ef6\u3001\u83b7\u6d3e\u4e13\u5458\u4eba\u5de5\u6838\u5bf9\u3001\u4f01\u4e1a\u786e\u8ba4",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u6838\u5bf9\u65f6\u6bb5\u3001\u89c4\u5219\u4e0e\u5f53\u524d\u6750\u6599\u7ed1\u5b9a",
+                "adapter": "case-resources",
+                "depends_on": [
+                  "P1"
+                ],
+                "id": "P2",
+                "output": "\u6b64Case\u7684\u4e24\u8d44\u6e90\u7ec4\u5408\u5173\u8054\u8bb0\u5f55",
+                "preconditions": "P1\u6838\u5bf9\u6709\u6548\uff1b\u672c\u4eba\u4e24\u8d44\u6e90\u7ec4\u5408\u6709\u6548\u4e14\u660e\u786e\u5173\u8054\u6b64Case",
+                "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u6838\u5bf9\u672c\u4eba\u63a5\u53d7\u8bb0\u5f55\u53ca\u5f53\u524d\u8fd0\u884c\u8bbf\u95ee",
+                "adapter": "dispatch",
+                "depends_on": [
+                  "P2"
+                ],
+                "id": "P3",
+                "output": "\u5f53\u524d\u5185\u90e8\u63a5\u5355\u53ca\u56de\u6267\u4e8b\u9879",
+                "preconditions": "P2\u6838\u5bf9\u6709\u6548\uff1b\u5df2\u6709\u8fd0\u884c\u8bbf\u95ee\uff1b\u5f53\u524d\u6750\u6599\u5bf9\u5e94\u7684\u672c\u4eba\u63a5\u5355",
+                "responsibility": "\u83b7\u6d3e\u4e13\u5458\u5206\u6d3e\u3001\u5df2\u6709\u5408\u6cd5Run\u8bbf\u95ee\u7684\u6267\u884c\u8005\u672c\u4eba\u63a5\u5355",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u660e\u786e\u6838\u5bf9\u6765\u6e90\u548c\u5f53\u524d\u56de\u6267\u7248\u672c\uff1b\u4ecd\u4e0d\u8bc1\u660e\u5916\u90e8\u5c65\u7ea6",
+                "adapter": "executor-receipts",
+                "depends_on": [
+                  "P3"
+                ],
+                "id": "P4",
+                "output": "\u4f01\u4e1a\u5df2\u6838\u5bf9\u7684\u5408\u6210\u56de\u6267\u8bb0\u5f55",
+                "preconditions": "P3\u6838\u5bf9\u6709\u6548\uff1b\u5f53\u524d\u6750\u6599\u7ed1\u5b9a\u7684\u5408\u6210\u56de\u6267",
+                "responsibility": "\u83b7\u6d3e\u6267\u884c\u8005\u63d0\u4ea4\u3001\u4f01\u4e1a\u7ecf\u529e\u4eba\u6838\u5bf9",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u539f\u5165\u53e3\u660e\u786e\u91cd\u65b0\u6821\u9a8c\uff0c\u771f\u5b9e\u76ee\u6807\u4e0e\u5c65\u7ea6\u4ecd\u672a\u9a8c\u8bc1",
+                "adapter": "case-lifecycle",
+                "depends_on": [
+                  "P4"
+                ],
+                "id": "P5",
+                "output": "\u6b64Case\u672c\u5730\u8bb0\u5f55\u91cd\u65b0\u6821\u9a8c",
+                "preconditions": "\u5f53\u524d\u6750\u6599\u3001\u8d44\u6e90\u3001\u672c\u4eba\u63a5\u5355\u4e0e\u56de\u6267\u6838\u5bf9\u5747\u6709\u6548",
+                "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+                "revision": 1
+              }
+            ]
+          },
+          "request_intent": {
+            "coverage": {
+              "items": [
+                {
+                  "goal": "LOCAL_MATERIAL_PREPARATION",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_CASE_RECORD_RECHECK",
+                  "status": "UNSUPPORTED"
+                }
+              ],
+              "original_case_goal_completed": false,
+              "original_request_understood": false,
+              "state": "PARTIAL",
+              "template_sha256": "a4df282ca61643abc5980d1493be83b8f0aad7bcd97dc2dd046f956baae76870",
+              "unsupported_goals": [
+                "LOCAL_MATERIAL_PREPARATION",
+                "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                "LOCAL_INTERNAL_ACCEPTANCE",
+                "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                "LOCAL_CASE_RECORD_RECHECK"
+              ]
+            },
+            "request_text": "SYNTHETIC T07 first independently selected five local goals",
+            "required_goals": [
+              "LOCAL_MATERIAL_PREPARATION",
+              "LOCAL_CASE_RESOURCE_ASSOCIATION",
+              "LOCAL_INTERNAL_ACCEPTANCE",
+              "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+              "LOCAL_CASE_RECORD_RECHECK"
+            ],
+            "revision": 2,
+            "source": "USER_EXPLICIT_STATEMENT"
+          },
+          "service_id": "synthetic-material-preparation",
+          "service_version": 1
+        },
+        "binding_issues": [],
+        "can_adopt": false,
+        "case_goal_completed": false,
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "change_impact": {
+          "affected": [
+            "9e85529f-6620-4a0f-a282-e0332ee511bd",
+            "533f2a29-5a72-491b-ad5d-a6e5c6f4eea6",
+            "33b676d2-2e77-4281-90b0-f928d9d745d0",
+            "032d0464-3050-4e65-9dc2-be3e47f1b97c"
+          ],
+          "directly_changed": [],
+          "preserved": [
+            "de8dd231-29e4-46a0-8158-6ac56f45a91f"
+          ],
+          "scope": "REGISTERED_CASE_CHAIN",
+          "unknown_scope": null
+        },
+        "command_receipt": {
+          "action": "ADOPT",
+          "actor_ref": "27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db",
+          "expected_revision": 0,
+          "id": "24cec5ec-0bbc-4f72-9b5f-36961e973e65",
+          "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+          "previous_plan_id": null,
+          "request_key": "1faa4b9c-ff44-4eba-a88c-1bf3edf14dbd",
+          "revision": 1,
+          "step_id": null
+        },
+        "current_preview": {
+          "business_publication": false,
+          "case_goal_completed": false,
+          "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+          "catalog_sha256": "d856f90a830f5718e535a37bb27de84717dbd01ec7fd95eb52a628d0b65eb4d9",
+          "dependency_collections": {
+            "existing_access": {
+              "count": 1,
+              "known": true,
+              "sha256": "4a280819659deb5b63ba4c44aa3b9cf7c1d258bdba94db8dc745af27b13e7936"
+            },
+            "resources": {
+              "count": 4,
+              "known": true,
+              "sha256": "7c7a33bad3501f8fd459580ecfae8b7024a28895456956a4bc163879663f449f"
+            }
+          },
+          "executed": false,
+          "execution_enabled": false,
+          "goal_coverage": [
+            {
+              "goal": "LOCAL_MATERIAL_PREPARATION",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1"
+              ]
+            },
+            {
+              "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2"
+              ]
+            },
+            {
+              "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3"
+              ]
+            },
+            {
+              "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3",
+                "P4"
+              ]
+            },
+            {
+              "goal": "LOCAL_CASE_RECORD_RECHECK",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3",
+                "P4",
+                "P5"
+              ]
+            }
+          ],
+          "namespace": "PLANNING_METADATA_PREVIEW",
+          "new_grants": false,
+          "optional_suggestions": [],
+          "planner": "DETERMINISTIC_REGISTERED_ADAPTER_SUBGRAPH",
+          "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+          "preparation_revision": 7,
+          "qualification_truth": "UNKNOWN",
+          "registry_sha256": "cecab0f9b86bc01b3ffd75da129673ce7a832d0458ebcbb266446bd16df9be70",
+          "required_goals": [
+            "LOCAL_MATERIAL_PREPARATION",
+            "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "LOCAL_INTERNAL_ACCEPTANCE",
+            "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "LOCAL_CASE_RECORD_RECHECK"
+          ],
+          "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+          "source_sha256": "9640a57b33c5bd428fc5e311ae3a59b3f4c80e90cb1f0bfdd70c20e4180a7036",
+          "source_unknowns": [],
+          "state": "COVERED_PREVIEW_ONLY",
+          "steps": [
+            {
+              "acceptance": "\u4f01\u4e1a\u660e\u786e\u6838\u5bf9\u5f53\u524d\u6750\u6599\u7248\u672c",
+              "actions": [
+                {
+                  "commands": [
+                    "ADD_EVIDENCE",
+                    "CONFIRM"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "enterprise_operator"
+                },
+                {
+                  "commands": [
+                    "REQUEST_CHANGES",
+                    "REVIEW"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "park_specialist"
+                }
+              ],
+              "adapter": "preparation",
+              "adapter_ref": "preparation",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [],
+              "executable": false,
+              "id": "P1",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "REQUEST_GOAL_COVERAGE_REQUIRED"
+              ],
+              "output": "\u5f53\u524d\u7248\u672c\u7684\u672c\u5730\u786e\u8ba4\u8d44\u6599\u5305",
+              "preconditions": "\u6709\u6765\u6e90\u7684\u8bc9\u6c42\u6458\u8981\u548c\u6750\u6599\u76ee\u5f55\uff1b\u5f53\u524d\u4e13\u5458\u6838\u5bf9\u6743",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba\u8865\u4ef6\u3001\u83b7\u6d3e\u4e13\u5458\u4eba\u5de5\u6838\u5bf9\u3001\u4f01\u4e1a\u786e\u8ba4",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u6838\u5bf9\u65f6\u6bb5\u3001\u89c4\u5219\u4e0e\u5f53\u524d\u6750\u6599\u7ed1\u5b9a",
+              "actions": [
+                {
+                  "commands": [
+                    "CREATE_OR_RECHECK_LINK"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/resource-link",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "case-resources",
+              "adapter_ref": "case-resources",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P1"
+              ],
+              "executable": false,
+              "id": "P2",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED"
+              ],
+              "output": "\u6b64Case\u7684\u4e24\u8d44\u6e90\u7ec4\u5408\u5173\u8054\u8bb0\u5f55",
+              "preconditions": "P1\u6838\u5bf9\u6709\u6548\uff1b\u672c\u4eba\u4e24\u8d44\u6e90\u7ec4\u5408\u6709\u6548\u4e14\u660e\u786e\u5173\u8054\u6b64Case",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u6838\u5bf9\u672c\u4eba\u63a5\u53d7\u8bb0\u5f55\u53ca\u5f53\u524d\u8fd0\u884c\u8bbf\u95ee",
+              "actions": [
+                {
+                  "commands": [
+                    "OFFER"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/dispatch",
+                  "role": "park_specialist"
+                },
+                {
+                  "commands": [
+                    "ACCEPT",
+                    "DECLINE"
+                  ],
+                  "method": "POST",
+                  "path": "/api/service-dispatches/{dispatch_id}/commands",
+                  "role": "service_executor"
+                }
+              ],
+              "adapter": "dispatch",
+              "adapter_ref": "dispatch",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P2"
+              ],
+              "executable": false,
+              "id": "P3",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED"
+              ],
+              "output": "\u5f53\u524d\u5185\u90e8\u63a5\u5355\u53ca\u56de\u6267\u4e8b\u9879",
+              "preconditions": "P2\u6838\u5bf9\u6709\u6548\uff1b\u5df2\u6709\u8fd0\u884c\u8bbf\u95ee\uff1b\u5f53\u524d\u6750\u6599\u5bf9\u5e94\u7684\u672c\u4eba\u63a5\u5355",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u83b7\u6d3e\u4e13\u5458\u5206\u6d3e\u3001\u5df2\u6709\u5408\u6cd5Run\u8bbf\u95ee\u7684\u6267\u884c\u8005\u672c\u4eba\u63a5\u5355",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u660e\u786e\u6838\u5bf9\u6765\u6e90\u548c\u5f53\u524d\u56de\u6267\u7248\u672c\uff1b\u4ecd\u4e0d\u8bc1\u660e\u5916\u90e8\u5c65\u7ea6",
+              "actions": [
+                {
+                  "commands": [
+                    "SUBMIT"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "service_executor"
+                },
+                {
+                  "commands": [
+                    "ACKNOWLEDGE",
+                    "REQUEST_CHANGES",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "executor-receipts",
+              "adapter_ref": "executor-receipts",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P3"
+              ],
+              "executable": false,
+              "id": "P4",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED"
+              ],
+              "output": "\u4f01\u4e1a\u5df2\u6838\u5bf9\u7684\u5408\u6210\u56de\u6267\u8bb0\u5f55",
+              "preconditions": "P3\u6838\u5bf9\u6709\u6548\uff1b\u5f53\u524d\u6750\u6599\u7ed1\u5b9a\u7684\u5408\u6210\u56de\u6267",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u83b7\u6d3e\u6267\u884c\u8005\u63d0\u4ea4\u3001\u4f01\u4e1a\u7ecf\u529e\u4eba\u6838\u5bf9",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u539f\u5165\u53e3\u660e\u786e\u91cd\u65b0\u6821\u9a8c\uff0c\u771f\u5b9e\u76ee\u6807\u4e0e\u5c65\u7ea6\u4ecd\u672a\u9a8c\u8bc1",
+              "actions": [
+                {
+                  "commands": [
+                    "REVALIDATE",
+                    "CLOSE_LOCAL_RECORD",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/local-case/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "case-lifecycle",
+              "adapter_ref": "case-lifecycle",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P4"
+              ],
+              "executable": false,
+              "id": "P5",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED",
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED",
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED",
+                "REQUEST_GOAL_COVERAGE_REQUIRED"
+              ],
+              "lifecycle_cycle": null,
+              "lifecycle_state": "NOT_STARTED",
+              "output": "\u6b64Case\u672c\u5730\u8bb0\u5f55\u91cd\u65b0\u6821\u9a8c",
+              "preconditions": "\u5f53\u524d\u6750\u6599\u3001\u8d44\u6e90\u3001\u672c\u4eba\u63a5\u5355\u4e0e\u56de\u6267\u6838\u5bf9\u5747\u6709\u6548",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+              "revision": 1
+            }
+          ]
+        },
+        "event": {
+          "action": "ADOPT",
+          "actor_id": "fixture-a",
+          "coordination_only": true,
+          "dependencies": {
+            "collections": {
+              "existing_access": {
+                "count": 1,
+                "known": true,
+                "sha256": "4a280819659deb5b63ba4c44aa3b9cf7c1d258bdba94db8dc745af27b13e7936"
+              },
+              "resources": {
+                "count": 4,
+                "known": true,
+                "sha256": "7c7a33bad3501f8fd459580ecfae8b7024a28895456956a4bc163879663f449f"
+              }
+            },
+            "declarations": {
+              "P1": [
+                "REQUEST",
+                "MATERIAL",
+                "FACT",
+                "SERVICE_RULE",
+                "OWNER_AUTHORITY"
+              ],
+              "P2": [
+                "MATERIAL",
+                "RESOURCE",
+                "RESERVATION",
+                "RESOURCE_RULE_COLLECTION"
+              ],
+              "P3": [
+                "MATERIAL",
+                "DISPATCH",
+                "ACCEPTANCE",
+                "RUN_ACCESS_COLLECTION"
+              ],
+              "P4": [
+                "MATERIAL",
+                "RECEIPT",
+                "RECEIPT_EVENT_COLLECTION",
+                "LOCAL_EXECUTION"
+              ],
+              "P5": [
+                "MATERIAL",
+                "RESOURCE",
+                "ACCEPTANCE",
+                "RECEIPT",
+                "LOCAL_CASE_CHECK"
+              ]
+            },
+            "edges": [
+              {
+                "downstream": "P2",
+                "kind": "PRECEDES",
+                "provenance": "COMPILED_REGISTERED_ADAPTER",
+                "upstream": "P1"
+              },
+              {
+                "downstream": "P3",
+                "kind": "PRECEDES",
+                "provenance": "COMPILED_REGISTERED_ADAPTER",
+                "upstream": "P2"
+              },
+              {
+                "downstream": "P4",
+                "kind": "PRECEDES",
+                "provenance": "COMPILED_REGISTERED_ADAPTER",
+                "upstream": "P3"
+              },
+              {
+                "downstream": "P5",
+                "kind": "PRECEDES",
+                "provenance": "COMPILED_REGISTERED_ADAPTER",
+                "upstream": "P4"
+              }
+            ],
+            "sha256": "cc465f98b989879f3a54f58ae18f184d2e21c7ecdaeccd260438ced75498029b",
+            "version": 1
+          },
+          "fingerprint": "e1b6bd12e9be315e0f00bca75221d88529620757602c577c9645c220ef44acb7",
+          "id": "24cec5ec-0bbc-4f72-9b5f-36961e973e65",
+          "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+          "reason": "SYNTHETIC explicit registered finite plan",
+          "request_key": "1faa4b9c-ff44-4eba-a88c-1bf3edf14dbd",
+          "revision": 1,
+          "source_sha256": null,
+          "sources": null,
+          "step_id": null
+        },
+        "events": [
+          {
+            "action": "ADOPT",
+            "actor_id": "fixture-a",
+            "coordination_only": true,
+            "dependencies": {
+              "collections": {
+                "existing_access": {
+                  "count": 1,
+                  "known": true,
+                  "sha256": "4a280819659deb5b63ba4c44aa3b9cf7c1d258bdba94db8dc745af27b13e7936"
+                },
+                "resources": {
+                  "count": 4,
+                  "known": true,
+                  "sha256": "7c7a33bad3501f8fd459580ecfae8b7024a28895456956a4bc163879663f449f"
+                }
+              },
+              "declarations": {
+                "P1": [
+                  "REQUEST",
+                  "MATERIAL",
+                  "FACT",
+                  "SERVICE_RULE",
+                  "OWNER_AUTHORITY"
+                ],
+                "P2": [
+                  "MATERIAL",
+                  "RESOURCE",
+                  "RESERVATION",
+                  "RESOURCE_RULE_COLLECTION"
+                ],
+                "P3": [
+                  "MATERIAL",
+                  "DISPATCH",
+                  "ACCEPTANCE",
+                  "RUN_ACCESS_COLLECTION"
+                ],
+                "P4": [
+                  "MATERIAL",
+                  "RECEIPT",
+                  "RECEIPT_EVENT_COLLECTION",
+                  "LOCAL_EXECUTION"
+                ],
+                "P5": [
+                  "MATERIAL",
+                  "RESOURCE",
+                  "ACCEPTANCE",
+                  "RECEIPT",
+                  "LOCAL_CASE_CHECK"
+                ]
+              },
+              "edges": [
+                {
+                  "downstream": "P2",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P1"
+                },
+                {
+                  "downstream": "P3",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P2"
+                },
+                {
+                  "downstream": "P4",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P3"
+                },
+                {
+                  "downstream": "P5",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P4"
+                }
+              ],
+              "sha256": "cc465f98b989879f3a54f58ae18f184d2e21c7ecdaeccd260438ced75498029b",
+              "version": 1
+            },
+            "fingerprint": "e1b6bd12e9be315e0f00bca75221d88529620757602c577c9645c220ef44acb7",
+            "id": "24cec5ec-0bbc-4f72-9b5f-36961e973e65",
+            "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+            "reason": "SYNTHETIC explicit registered finite plan",
+            "request_key": "1faa4b9c-ff44-4eba-a88c-1bf3edf14dbd",
+            "revision": 1,
+            "source_sha256": null,
+            "sources": null,
+            "step_id": null
+          }
+        ],
+        "external_acceptance": "NOT_SUBMITTED",
+        "goal_coverage": [
+          {
+            "goal": "LOCAL_MATERIAL_PREPARATION",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1"
+            ]
+          },
+          {
+            "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2"
+            ]
+          },
+          {
+            "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2",
+              "P3"
+            ]
+          },
+          {
+            "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2",
+              "P3",
+              "P4"
+            ]
+          },
+          {
+            "goal": "LOCAL_CASE_RECORD_RECHECK",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2",
+              "P3",
+              "P4",
+              "P5"
+            ]
+          }
+        ],
+        "history": [],
+        "local_revision_required": false,
+        "new_grants": false,
+        "offline_fulfillment": "NO_EVIDENCE",
+        "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "preparation_revision": 7,
+        "request_revision": 2,
+        "required_goals": [
+          "LOCAL_MATERIAL_PREPARATION",
+          "LOCAL_CASE_RESOURCE_ASSOCIATION",
+          "LOCAL_INTERNAL_ACCEPTANCE",
+          "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+          "LOCAL_CASE_RECORD_RECHECK"
+        ],
+        "revision": 1,
+        "role": "enterprise_operator",
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN",
+        "state": "BLOCKED",
+        "steps": [
+          {
+            "actual_business_state": "LOCAL_CONFIRMED",
+            "adapter": "preparation",
+            "adapter_id": "P1",
+            "allowed_actions": [
+              "BEGIN",
+              "REPORT_FAILURE",
+              "VERIFY"
+            ],
+            "depends_on": [],
+            "id": "de8dd231-29e4-46a0-8158-6ac56f45a91f",
+            "issues": [],
+            "manually_locked": false,
+            "source_sha256": "2a879c539d5d37795532640dc9db803bc649e6632723ae6d8c654b8e82d72ff5",
+            "state": "PENDING",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_LINKED",
+            "adapter": "case-resources",
+            "adapter_id": "P2",
+            "allowed_actions": [],
+            "depends_on": [
+              "P1"
+            ],
+            "id": "9e85529f-6620-4a0f-a282-e0332ee511bd",
+            "issues": [
+              "CURRENT_CASE_RESOURCE_LINK_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "1955c1ddeb8dbcce6c00e522dda912b124fcd3769413abed062f0e5a9449b7e9",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_OFFERED",
+            "adapter": "dispatch",
+            "adapter_id": "P3",
+            "allowed_actions": [],
+            "depends_on": [
+              "P2"
+            ],
+            "id": "533f2a29-5a72-491b-ad5d-a6e5c6f4eea6",
+            "issues": [
+              "ACCEPTED_DISPATCH_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "d892bfbb22b1f2bf2355c41c33e56abd07068e1b1b392bb0582ddc39ea7fb678",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_ACCEPTED",
+            "adapter": "executor-receipts",
+            "adapter_id": "P4",
+            "allowed_actions": [],
+            "depends_on": [
+              "P3"
+            ],
+            "id": "33b676d2-2e77-4281-90b0-f928d9d745d0",
+            "issues": [
+              "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "829e684bbb6b8354356e76e25ad72811331b18b8880fc4b2184c0909c8b0d86a",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_STARTED",
+            "adapter": "case-lifecycle",
+            "adapter_id": "P5",
+            "allowed_actions": [],
+            "depends_on": [
+              "P4"
+            ],
+            "id": "032d0464-3050-4e65-9dc2-be3e47f1b97c",
+            "issues": [
+              "ACCEPTED_DISPATCH_REQUIRED",
+              "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED",
+              "CURRENT_CASE_RESOURCE_LINK_REQUIRED",
+              "CURRENT_LOCAL_CASE_REVALIDATION_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "99fda01476273b528ecec98aa344e4ce516b3162e9c76e07cd8636fa016c4368",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          }
+        ]
+      },
+      "sequence": 16,
+      "status": 201,
+      "utc": "2026-10-11T16:29:29.801873+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/service-case-plan",
+      "request_body": null,
+      "request_key": null,
+      "request_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "response": {
+        "actor_ref": "27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db",
+        "automatic_execution": false,
+        "binding": {
+          "catalog": {
+            "namespace": "SYNTHETIC",
+            "qualification": "NOT_EVALUATED",
+            "service_id": "synthetic-material-preparation",
+            "source": {
+              "id": "ENG014-reviewed-fixture",
+              "kind": "SYNTHETIC",
+              "revision": "1",
+              "statement": "\u5408\u6210\u8d44\u6599\u6574\u7406\u670d\u52a1\uff0c\u65e0\u8d44\u683c\u6761\u4ef6\uff1b\u8bc9\u6c42\u6458\u8981\u4e0e\u6750\u6599\u76ee\u5f55\u7531\u6d4b\u8bd5\u89c4\u683c\u5b9a\u4e49\u3002"
+            },
+            "version": 1
+          },
+          "original_goal": "SYNTHETIC T07 first new composite local request",
+          "registry": {
+            "actions": {
+              "P1": [
+                {
+                  "commands": [
+                    "ADD_EVIDENCE",
+                    "CONFIRM"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "enterprise_operator"
+                },
+                {
+                  "commands": [
+                    "REQUEST_CHANGES",
+                    "REVIEW"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "park_specialist"
+                }
+              ],
+              "P2": [
+                {
+                  "commands": [
+                    "CREATE_OR_RECHECK_LINK"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/resource-link",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "P3": [
+                {
+                  "commands": [
+                    "OFFER"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/dispatch",
+                  "role": "park_specialist"
+                },
+                {
+                  "commands": [
+                    "ACCEPT",
+                    "DECLINE"
+                  ],
+                  "method": "POST",
+                  "path": "/api/service-dispatches/{dispatch_id}/commands",
+                  "role": "service_executor"
+                }
+              ],
+              "P4": [
+                {
+                  "commands": [
+                    "SUBMIT"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "service_executor"
+                },
+                {
+                  "commands": [
+                    "ACKNOWLEDGE",
+                    "REQUEST_CHANGES",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "P5": [
+                {
+                  "commands": [
+                    "REVALIDATE",
+                    "CLOSE_LOCAL_RECORD",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/local-case/commands",
+                  "role": "enterprise_operator"
+                }
+              ]
+            },
+            "steps": [
+              {
+                "acceptance": "\u4f01\u4e1a\u660e\u786e\u6838\u5bf9\u5f53\u524d\u6750\u6599\u7248\u672c",
+                "adapter": "preparation",
+                "depends_on": [],
+                "id": "P1",
+                "output": "\u5f53\u524d\u7248\u672c\u7684\u672c\u5730\u786e\u8ba4\u8d44\u6599\u5305",
+                "preconditions": "\u6709\u6765\u6e90\u7684\u8bc9\u6c42\u6458\u8981\u548c\u6750\u6599\u76ee\u5f55\uff1b\u5f53\u524d\u4e13\u5458\u6838\u5bf9\u6743",
+                "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba\u8865\u4ef6\u3001\u83b7\u6d3e\u4e13\u5458\u4eba\u5de5\u6838\u5bf9\u3001\u4f01\u4e1a\u786e\u8ba4",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u6838\u5bf9\u65f6\u6bb5\u3001\u89c4\u5219\u4e0e\u5f53\u524d\u6750\u6599\u7ed1\u5b9a",
+                "adapter": "case-resources",
+                "depends_on": [
+                  "P1"
+                ],
+                "id": "P2",
+                "output": "\u6b64Case\u7684\u4e24\u8d44\u6e90\u7ec4\u5408\u5173\u8054\u8bb0\u5f55",
+                "preconditions": "P1\u6838\u5bf9\u6709\u6548\uff1b\u672c\u4eba\u4e24\u8d44\u6e90\u7ec4\u5408\u6709\u6548\u4e14\u660e\u786e\u5173\u8054\u6b64Case",
+                "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u6838\u5bf9\u672c\u4eba\u63a5\u53d7\u8bb0\u5f55\u53ca\u5f53\u524d\u8fd0\u884c\u8bbf\u95ee",
+                "adapter": "dispatch",
+                "depends_on": [
+                  "P2"
+                ],
+                "id": "P3",
+                "output": "\u5f53\u524d\u5185\u90e8\u63a5\u5355\u53ca\u56de\u6267\u4e8b\u9879",
+                "preconditions": "P2\u6838\u5bf9\u6709\u6548\uff1b\u5df2\u6709\u8fd0\u884c\u8bbf\u95ee\uff1b\u5f53\u524d\u6750\u6599\u5bf9\u5e94\u7684\u672c\u4eba\u63a5\u5355",
+                "responsibility": "\u83b7\u6d3e\u4e13\u5458\u5206\u6d3e\u3001\u5df2\u6709\u5408\u6cd5Run\u8bbf\u95ee\u7684\u6267\u884c\u8005\u672c\u4eba\u63a5\u5355",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u660e\u786e\u6838\u5bf9\u6765\u6e90\u548c\u5f53\u524d\u56de\u6267\u7248\u672c\uff1b\u4ecd\u4e0d\u8bc1\u660e\u5916\u90e8\u5c65\u7ea6",
+                "adapter": "executor-receipts",
+                "depends_on": [
+                  "P3"
+                ],
+                "id": "P4",
+                "output": "\u4f01\u4e1a\u5df2\u6838\u5bf9\u7684\u5408\u6210\u56de\u6267\u8bb0\u5f55",
+                "preconditions": "P3\u6838\u5bf9\u6709\u6548\uff1b\u5f53\u524d\u6750\u6599\u7ed1\u5b9a\u7684\u5408\u6210\u56de\u6267",
+                "responsibility": "\u83b7\u6d3e\u6267\u884c\u8005\u63d0\u4ea4\u3001\u4f01\u4e1a\u7ecf\u529e\u4eba\u6838\u5bf9",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u539f\u5165\u53e3\u660e\u786e\u91cd\u65b0\u6821\u9a8c\uff0c\u771f\u5b9e\u76ee\u6807\u4e0e\u5c65\u7ea6\u4ecd\u672a\u9a8c\u8bc1",
+                "adapter": "case-lifecycle",
+                "depends_on": [
+                  "P4"
+                ],
+                "id": "P5",
+                "output": "\u6b64Case\u672c\u5730\u8bb0\u5f55\u91cd\u65b0\u6821\u9a8c",
+                "preconditions": "\u5f53\u524d\u6750\u6599\u3001\u8d44\u6e90\u3001\u672c\u4eba\u63a5\u5355\u4e0e\u56de\u6267\u6838\u5bf9\u5747\u6709\u6548",
+                "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+                "revision": 1
+              }
+            ]
+          },
+          "request_intent": {
+            "coverage": {
+              "items": [
+                {
+                  "goal": "LOCAL_MATERIAL_PREPARATION",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_CASE_RECORD_RECHECK",
+                  "status": "UNSUPPORTED"
+                }
+              ],
+              "original_case_goal_completed": false,
+              "original_request_understood": false,
+              "state": "PARTIAL",
+              "template_sha256": "a4df282ca61643abc5980d1493be83b8f0aad7bcd97dc2dd046f956baae76870",
+              "unsupported_goals": [
+                "LOCAL_MATERIAL_PREPARATION",
+                "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                "LOCAL_INTERNAL_ACCEPTANCE",
+                "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                "LOCAL_CASE_RECORD_RECHECK"
+              ]
+            },
+            "request_text": "SYNTHETIC T07 first independently selected five local goals",
+            "required_goals": [
+              "LOCAL_MATERIAL_PREPARATION",
+              "LOCAL_CASE_RESOURCE_ASSOCIATION",
+              "LOCAL_INTERNAL_ACCEPTANCE",
+              "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+              "LOCAL_CASE_RECORD_RECHECK"
+            ],
+            "revision": 2,
+            "source": "USER_EXPLICIT_STATEMENT"
+          },
+          "service_id": "synthetic-material-preparation",
+          "service_version": 1
+        },
+        "binding_issues": [],
+        "can_adopt": false,
+        "case_goal_completed": false,
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "change_impact": {
+          "affected": [
+            "9e85529f-6620-4a0f-a282-e0332ee511bd",
+            "533f2a29-5a72-491b-ad5d-a6e5c6f4eea6",
+            "33b676d2-2e77-4281-90b0-f928d9d745d0",
+            "032d0464-3050-4e65-9dc2-be3e47f1b97c"
+          ],
+          "directly_changed": [],
+          "preserved": [
+            "de8dd231-29e4-46a0-8158-6ac56f45a91f"
+          ],
+          "scope": "REGISTERED_CASE_CHAIN",
+          "unknown_scope": null
+        },
+        "command_receipt": null,
+        "current_preview": {
+          "business_publication": false,
+          "case_goal_completed": false,
+          "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+          "catalog_sha256": "d856f90a830f5718e535a37bb27de84717dbd01ec7fd95eb52a628d0b65eb4d9",
+          "dependency_collections": {
+            "existing_access": {
+              "count": 1,
+              "known": true,
+              "sha256": "4a280819659deb5b63ba4c44aa3b9cf7c1d258bdba94db8dc745af27b13e7936"
+            },
+            "resources": {
+              "count": 4,
+              "known": true,
+              "sha256": "7c7a33bad3501f8fd459580ecfae8b7024a28895456956a4bc163879663f449f"
+            }
+          },
+          "executed": false,
+          "execution_enabled": false,
+          "goal_coverage": [
+            {
+              "goal": "LOCAL_MATERIAL_PREPARATION",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1"
+              ]
+            },
+            {
+              "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2"
+              ]
+            },
+            {
+              "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3"
+              ]
+            },
+            {
+              "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3",
+                "P4"
+              ]
+            },
+            {
+              "goal": "LOCAL_CASE_RECORD_RECHECK",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3",
+                "P4",
+                "P5"
+              ]
+            }
+          ],
+          "namespace": "PLANNING_METADATA_PREVIEW",
+          "new_grants": false,
+          "optional_suggestions": [],
+          "planner": "DETERMINISTIC_REGISTERED_ADAPTER_SUBGRAPH",
+          "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+          "preparation_revision": 7,
+          "qualification_truth": "UNKNOWN",
+          "registry_sha256": "cecab0f9b86bc01b3ffd75da129673ce7a832d0458ebcbb266446bd16df9be70",
+          "required_goals": [
+            "LOCAL_MATERIAL_PREPARATION",
+            "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "LOCAL_INTERNAL_ACCEPTANCE",
+            "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "LOCAL_CASE_RECORD_RECHECK"
+          ],
+          "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+          "source_sha256": "9640a57b33c5bd428fc5e311ae3a59b3f4c80e90cb1f0bfdd70c20e4180a7036",
+          "source_unknowns": [],
+          "state": "COVERED_PREVIEW_ONLY",
+          "steps": [
+            {
+              "acceptance": "\u4f01\u4e1a\u660e\u786e\u6838\u5bf9\u5f53\u524d\u6750\u6599\u7248\u672c",
+              "actions": [
+                {
+                  "commands": [
+                    "ADD_EVIDENCE",
+                    "CONFIRM"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "enterprise_operator"
+                },
+                {
+                  "commands": [
+                    "REQUEST_CHANGES",
+                    "REVIEW"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "park_specialist"
+                }
+              ],
+              "adapter": "preparation",
+              "adapter_ref": "preparation",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [],
+              "executable": false,
+              "id": "P1",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "REQUEST_GOAL_COVERAGE_REQUIRED"
+              ],
+              "output": "\u5f53\u524d\u7248\u672c\u7684\u672c\u5730\u786e\u8ba4\u8d44\u6599\u5305",
+              "preconditions": "\u6709\u6765\u6e90\u7684\u8bc9\u6c42\u6458\u8981\u548c\u6750\u6599\u76ee\u5f55\uff1b\u5f53\u524d\u4e13\u5458\u6838\u5bf9\u6743",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba\u8865\u4ef6\u3001\u83b7\u6d3e\u4e13\u5458\u4eba\u5de5\u6838\u5bf9\u3001\u4f01\u4e1a\u786e\u8ba4",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u6838\u5bf9\u65f6\u6bb5\u3001\u89c4\u5219\u4e0e\u5f53\u524d\u6750\u6599\u7ed1\u5b9a",
+              "actions": [
+                {
+                  "commands": [
+                    "CREATE_OR_RECHECK_LINK"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/resource-link",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "case-resources",
+              "adapter_ref": "case-resources",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P1"
+              ],
+              "executable": false,
+              "id": "P2",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED"
+              ],
+              "output": "\u6b64Case\u7684\u4e24\u8d44\u6e90\u7ec4\u5408\u5173\u8054\u8bb0\u5f55",
+              "preconditions": "P1\u6838\u5bf9\u6709\u6548\uff1b\u672c\u4eba\u4e24\u8d44\u6e90\u7ec4\u5408\u6709\u6548\u4e14\u660e\u786e\u5173\u8054\u6b64Case",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u6838\u5bf9\u672c\u4eba\u63a5\u53d7\u8bb0\u5f55\u53ca\u5f53\u524d\u8fd0\u884c\u8bbf\u95ee",
+              "actions": [
+                {
+                  "commands": [
+                    "OFFER"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/dispatch",
+                  "role": "park_specialist"
+                },
+                {
+                  "commands": [
+                    "ACCEPT",
+                    "DECLINE"
+                  ],
+                  "method": "POST",
+                  "path": "/api/service-dispatches/{dispatch_id}/commands",
+                  "role": "service_executor"
+                }
+              ],
+              "adapter": "dispatch",
+              "adapter_ref": "dispatch",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P2"
+              ],
+              "executable": false,
+              "id": "P3",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED"
+              ],
+              "output": "\u5f53\u524d\u5185\u90e8\u63a5\u5355\u53ca\u56de\u6267\u4e8b\u9879",
+              "preconditions": "P2\u6838\u5bf9\u6709\u6548\uff1b\u5df2\u6709\u8fd0\u884c\u8bbf\u95ee\uff1b\u5f53\u524d\u6750\u6599\u5bf9\u5e94\u7684\u672c\u4eba\u63a5\u5355",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u83b7\u6d3e\u4e13\u5458\u5206\u6d3e\u3001\u5df2\u6709\u5408\u6cd5Run\u8bbf\u95ee\u7684\u6267\u884c\u8005\u672c\u4eba\u63a5\u5355",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u660e\u786e\u6838\u5bf9\u6765\u6e90\u548c\u5f53\u524d\u56de\u6267\u7248\u672c\uff1b\u4ecd\u4e0d\u8bc1\u660e\u5916\u90e8\u5c65\u7ea6",
+              "actions": [
+                {
+                  "commands": [
+                    "SUBMIT"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "service_executor"
+                },
+                {
+                  "commands": [
+                    "ACKNOWLEDGE",
+                    "REQUEST_CHANGES",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "executor-receipts",
+              "adapter_ref": "executor-receipts",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P3"
+              ],
+              "executable": false,
+              "id": "P4",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED"
+              ],
+              "output": "\u4f01\u4e1a\u5df2\u6838\u5bf9\u7684\u5408\u6210\u56de\u6267\u8bb0\u5f55",
+              "preconditions": "P3\u6838\u5bf9\u6709\u6548\uff1b\u5f53\u524d\u6750\u6599\u7ed1\u5b9a\u7684\u5408\u6210\u56de\u6267",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u83b7\u6d3e\u6267\u884c\u8005\u63d0\u4ea4\u3001\u4f01\u4e1a\u7ecf\u529e\u4eba\u6838\u5bf9",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u539f\u5165\u53e3\u660e\u786e\u91cd\u65b0\u6821\u9a8c\uff0c\u771f\u5b9e\u76ee\u6807\u4e0e\u5c65\u7ea6\u4ecd\u672a\u9a8c\u8bc1",
+              "actions": [
+                {
+                  "commands": [
+                    "REVALIDATE",
+                    "CLOSE_LOCAL_RECORD",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/local-case/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "case-lifecycle",
+              "adapter_ref": "case-lifecycle",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P4"
+              ],
+              "executable": false,
+              "id": "P5",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED",
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED",
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED",
+                "REQUEST_GOAL_COVERAGE_REQUIRED"
+              ],
+              "lifecycle_cycle": null,
+              "lifecycle_state": "NOT_STARTED",
+              "output": "\u6b64Case\u672c\u5730\u8bb0\u5f55\u91cd\u65b0\u6821\u9a8c",
+              "preconditions": "\u5f53\u524d\u6750\u6599\u3001\u8d44\u6e90\u3001\u672c\u4eba\u63a5\u5355\u4e0e\u56de\u6267\u6838\u5bf9\u5747\u6709\u6548",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+              "revision": 1
+            }
+          ]
+        },
+        "event": null,
+        "events": [
+          {
+            "action": "ADOPT",
+            "actor_id": "fixture-a",
+            "coordination_only": true,
+            "dependencies": {
+              "collections": {
+                "existing_access": {
+                  "count": 1,
+                  "known": true,
+                  "sha256": "4a280819659deb5b63ba4c44aa3b9cf7c1d258bdba94db8dc745af27b13e7936"
+                },
+                "resources": {
+                  "count": 4,
+                  "known": true,
+                  "sha256": "7c7a33bad3501f8fd459580ecfae8b7024a28895456956a4bc163879663f449f"
+                }
+              },
+              "declarations": {
+                "P1": [
+                  "REQUEST",
+                  "MATERIAL",
+                  "FACT",
+                  "SERVICE_RULE",
+                  "OWNER_AUTHORITY"
+                ],
+                "P2": [
+                  "MATERIAL",
+                  "RESOURCE",
+                  "RESERVATION",
+                  "RESOURCE_RULE_COLLECTION"
+                ],
+                "P3": [
+                  "MATERIAL",
+                  "DISPATCH",
+                  "ACCEPTANCE",
+                  "RUN_ACCESS_COLLECTION"
+                ],
+                "P4": [
+                  "MATERIAL",
+                  "RECEIPT",
+                  "RECEIPT_EVENT_COLLECTION",
+                  "LOCAL_EXECUTION"
+                ],
+                "P5": [
+                  "MATERIAL",
+                  "RESOURCE",
+                  "ACCEPTANCE",
+                  "RECEIPT",
+                  "LOCAL_CASE_CHECK"
+                ]
+              },
+              "edges": [
+                {
+                  "downstream": "P2",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P1"
+                },
+                {
+                  "downstream": "P3",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P2"
+                },
+                {
+                  "downstream": "P4",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P3"
+                },
+                {
+                  "downstream": "P5",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P4"
+                }
+              ],
+              "sha256": "cc465f98b989879f3a54f58ae18f184d2e21c7ecdaeccd260438ced75498029b",
+              "version": 1
+            },
+            "fingerprint": "e1b6bd12e9be315e0f00bca75221d88529620757602c577c9645c220ef44acb7",
+            "id": "24cec5ec-0bbc-4f72-9b5f-36961e973e65",
+            "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+            "reason": "SYNTHETIC explicit registered finite plan",
+            "request_key": "1faa4b9c-ff44-4eba-a88c-1bf3edf14dbd",
+            "revision": 1,
+            "source_sha256": null,
+            "sources": null,
+            "step_id": null
+          }
+        ],
+        "external_acceptance": "NOT_SUBMITTED",
+        "goal_coverage": [
+          {
+            "goal": "LOCAL_MATERIAL_PREPARATION",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1"
+            ]
+          },
+          {
+            "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2"
+            ]
+          },
+          {
+            "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2",
+              "P3"
+            ]
+          },
+          {
+            "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2",
+              "P3",
+              "P4"
+            ]
+          },
+          {
+            "goal": "LOCAL_CASE_RECORD_RECHECK",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2",
+              "P3",
+              "P4",
+              "P5"
+            ]
+          }
+        ],
+        "history": [],
+        "local_revision_required": false,
+        "new_grants": false,
+        "offline_fulfillment": "NO_EVIDENCE",
+        "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "preparation_revision": 7,
+        "request_revision": 2,
+        "required_goals": [
+          "LOCAL_MATERIAL_PREPARATION",
+          "LOCAL_CASE_RESOURCE_ASSOCIATION",
+          "LOCAL_INTERNAL_ACCEPTANCE",
+          "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+          "LOCAL_CASE_RECORD_RECHECK"
+        ],
+        "revision": 1,
+        "role": "enterprise_operator",
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN",
+        "state": "BLOCKED",
+        "steps": [
+          {
+            "actual_business_state": "LOCAL_CONFIRMED",
+            "adapter": "preparation",
+            "adapter_id": "P1",
+            "allowed_actions": [
+              "BEGIN",
+              "REPORT_FAILURE",
+              "VERIFY"
+            ],
+            "depends_on": [],
+            "id": "de8dd231-29e4-46a0-8158-6ac56f45a91f",
+            "issues": [],
+            "manually_locked": false,
+            "source_sha256": "2a879c539d5d37795532640dc9db803bc649e6632723ae6d8c654b8e82d72ff5",
+            "state": "PENDING",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_LINKED",
+            "adapter": "case-resources",
+            "adapter_id": "P2",
+            "allowed_actions": [],
+            "depends_on": [
+              "P1"
+            ],
+            "id": "9e85529f-6620-4a0f-a282-e0332ee511bd",
+            "issues": [
+              "CURRENT_CASE_RESOURCE_LINK_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "1955c1ddeb8dbcce6c00e522dda912b124fcd3769413abed062f0e5a9449b7e9",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_OFFERED",
+            "adapter": "dispatch",
+            "adapter_id": "P3",
+            "allowed_actions": [],
+            "depends_on": [
+              "P2"
+            ],
+            "id": "533f2a29-5a72-491b-ad5d-a6e5c6f4eea6",
+            "issues": [
+              "ACCEPTED_DISPATCH_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "d892bfbb22b1f2bf2355c41c33e56abd07068e1b1b392bb0582ddc39ea7fb678",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_ACCEPTED",
+            "adapter": "executor-receipts",
+            "adapter_id": "P4",
+            "allowed_actions": [],
+            "depends_on": [
+              "P3"
+            ],
+            "id": "33b676d2-2e77-4281-90b0-f928d9d745d0",
+            "issues": [
+              "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "829e684bbb6b8354356e76e25ad72811331b18b8880fc4b2184c0909c8b0d86a",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_STARTED",
+            "adapter": "case-lifecycle",
+            "adapter_id": "P5",
+            "allowed_actions": [],
+            "depends_on": [
+              "P4"
+            ],
+            "id": "032d0464-3050-4e65-9dc2-be3e47f1b97c",
+            "issues": [
+              "ACCEPTED_DISPATCH_REQUIRED",
+              "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED",
+              "CURRENT_CASE_RESOURCE_LINK_REQUIRED",
+              "CURRENT_LOCAL_CASE_REVALIDATION_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "99fda01476273b528ecec98aa344e4ce516b3162e9c76e07cd8636fa016c4368",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          }
+        ]
+      },
+      "sequence": 17,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.893579+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/service-case-plan/commands",
+      "request_body": {
+        "action": "VERIFY",
+        "expected_revision": 1,
+        "expected_source_sha256": "2a879c539d5d37795532640dc9db803bc649e6632723ae6d8c654b8e82d72ff5",
+        "reason": "SYNTHETIC test-driven owner verifies P1",
+        "step_id": "de8dd231-29e4-46a0-8158-6ac56f45a91f"
+      },
+      "request_key": "c79edbd3-a0ef-4b2b-b888-9f13cae5102c",
+      "request_sha256": "d7d0023631f18b1cadeb9ca83bd13cf8b767429f8ae9b9e5071606915775438d",
+      "response": {
+        "actor_ref": "27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db",
+        "automatic_execution": false,
+        "binding": {
+          "catalog": {
+            "namespace": "SYNTHETIC",
+            "qualification": "NOT_EVALUATED",
+            "service_id": "synthetic-material-preparation",
+            "source": {
+              "id": "ENG014-reviewed-fixture",
+              "kind": "SYNTHETIC",
+              "revision": "1",
+              "statement": "\u5408\u6210\u8d44\u6599\u6574\u7406\u670d\u52a1\uff0c\u65e0\u8d44\u683c\u6761\u4ef6\uff1b\u8bc9\u6c42\u6458\u8981\u4e0e\u6750\u6599\u76ee\u5f55\u7531\u6d4b\u8bd5\u89c4\u683c\u5b9a\u4e49\u3002"
+            },
+            "version": 1
+          },
+          "original_goal": "SYNTHETIC T07 first new composite local request",
+          "registry": {
+            "actions": {
+              "P1": [
+                {
+                  "commands": [
+                    "ADD_EVIDENCE",
+                    "CONFIRM"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "enterprise_operator"
+                },
+                {
+                  "commands": [
+                    "REQUEST_CHANGES",
+                    "REVIEW"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "park_specialist"
+                }
+              ],
+              "P2": [
+                {
+                  "commands": [
+                    "CREATE_OR_RECHECK_LINK"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/resource-link",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "P3": [
+                {
+                  "commands": [
+                    "OFFER"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/dispatch",
+                  "role": "park_specialist"
+                },
+                {
+                  "commands": [
+                    "ACCEPT",
+                    "DECLINE"
+                  ],
+                  "method": "POST",
+                  "path": "/api/service-dispatches/{dispatch_id}/commands",
+                  "role": "service_executor"
+                }
+              ],
+              "P4": [
+                {
+                  "commands": [
+                    "SUBMIT"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "service_executor"
+                },
+                {
+                  "commands": [
+                    "ACKNOWLEDGE",
+                    "REQUEST_CHANGES",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "P5": [
+                {
+                  "commands": [
+                    "REVALIDATE",
+                    "CLOSE_LOCAL_RECORD",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/local-case/commands",
+                  "role": "enterprise_operator"
+                }
+              ]
+            },
+            "steps": [
+              {
+                "acceptance": "\u4f01\u4e1a\u660e\u786e\u6838\u5bf9\u5f53\u524d\u6750\u6599\u7248\u672c",
+                "adapter": "preparation",
+                "depends_on": [],
+                "id": "P1",
+                "output": "\u5f53\u524d\u7248\u672c\u7684\u672c\u5730\u786e\u8ba4\u8d44\u6599\u5305",
+                "preconditions": "\u6709\u6765\u6e90\u7684\u8bc9\u6c42\u6458\u8981\u548c\u6750\u6599\u76ee\u5f55\uff1b\u5f53\u524d\u4e13\u5458\u6838\u5bf9\u6743",
+                "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba\u8865\u4ef6\u3001\u83b7\u6d3e\u4e13\u5458\u4eba\u5de5\u6838\u5bf9\u3001\u4f01\u4e1a\u786e\u8ba4",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u6838\u5bf9\u65f6\u6bb5\u3001\u89c4\u5219\u4e0e\u5f53\u524d\u6750\u6599\u7ed1\u5b9a",
+                "adapter": "case-resources",
+                "depends_on": [
+                  "P1"
+                ],
+                "id": "P2",
+                "output": "\u6b64Case\u7684\u4e24\u8d44\u6e90\u7ec4\u5408\u5173\u8054\u8bb0\u5f55",
+                "preconditions": "P1\u6838\u5bf9\u6709\u6548\uff1b\u672c\u4eba\u4e24\u8d44\u6e90\u7ec4\u5408\u6709\u6548\u4e14\u660e\u786e\u5173\u8054\u6b64Case",
+                "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u6838\u5bf9\u672c\u4eba\u63a5\u53d7\u8bb0\u5f55\u53ca\u5f53\u524d\u8fd0\u884c\u8bbf\u95ee",
+                "adapter": "dispatch",
+                "depends_on": [
+                  "P2"
+                ],
+                "id": "P3",
+                "output": "\u5f53\u524d\u5185\u90e8\u63a5\u5355\u53ca\u56de\u6267\u4e8b\u9879",
+                "preconditions": "P2\u6838\u5bf9\u6709\u6548\uff1b\u5df2\u6709\u8fd0\u884c\u8bbf\u95ee\uff1b\u5f53\u524d\u6750\u6599\u5bf9\u5e94\u7684\u672c\u4eba\u63a5\u5355",
+                "responsibility": "\u83b7\u6d3e\u4e13\u5458\u5206\u6d3e\u3001\u5df2\u6709\u5408\u6cd5Run\u8bbf\u95ee\u7684\u6267\u884c\u8005\u672c\u4eba\u63a5\u5355",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u660e\u786e\u6838\u5bf9\u6765\u6e90\u548c\u5f53\u524d\u56de\u6267\u7248\u672c\uff1b\u4ecd\u4e0d\u8bc1\u660e\u5916\u90e8\u5c65\u7ea6",
+                "adapter": "executor-receipts",
+                "depends_on": [
+                  "P3"
+                ],
+                "id": "P4",
+                "output": "\u4f01\u4e1a\u5df2\u6838\u5bf9\u7684\u5408\u6210\u56de\u6267\u8bb0\u5f55",
+                "preconditions": "P3\u6838\u5bf9\u6709\u6548\uff1b\u5f53\u524d\u6750\u6599\u7ed1\u5b9a\u7684\u5408\u6210\u56de\u6267",
+                "responsibility": "\u83b7\u6d3e\u6267\u884c\u8005\u63d0\u4ea4\u3001\u4f01\u4e1a\u7ecf\u529e\u4eba\u6838\u5bf9",
+                "revision": 1
+              },
+              {
+                "acceptance": "\u539f\u5165\u53e3\u660e\u786e\u91cd\u65b0\u6821\u9a8c\uff0c\u771f\u5b9e\u76ee\u6807\u4e0e\u5c65\u7ea6\u4ecd\u672a\u9a8c\u8bc1",
+                "adapter": "case-lifecycle",
+                "depends_on": [
+                  "P4"
+                ],
+                "id": "P5",
+                "output": "\u6b64Case\u672c\u5730\u8bb0\u5f55\u91cd\u65b0\u6821\u9a8c",
+                "preconditions": "\u5f53\u524d\u6750\u6599\u3001\u8d44\u6e90\u3001\u672c\u4eba\u63a5\u5355\u4e0e\u56de\u6267\u6838\u5bf9\u5747\u6709\u6548",
+                "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+                "revision": 1
+              }
+            ]
+          },
+          "request_intent": {
+            "coverage": {
+              "items": [
+                {
+                  "goal": "LOCAL_MATERIAL_PREPARATION",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                  "status": "UNSUPPORTED"
+                },
+                {
+                  "goal": "LOCAL_CASE_RECORD_RECHECK",
+                  "status": "UNSUPPORTED"
+                }
+              ],
+              "original_case_goal_completed": false,
+              "original_request_understood": false,
+              "state": "PARTIAL",
+              "template_sha256": "a4df282ca61643abc5980d1493be83b8f0aad7bcd97dc2dd046f956baae76870",
+              "unsupported_goals": [
+                "LOCAL_MATERIAL_PREPARATION",
+                "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                "LOCAL_INTERNAL_ACCEPTANCE",
+                "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                "LOCAL_CASE_RECORD_RECHECK"
+              ]
+            },
+            "request_text": "SYNTHETIC T07 first independently selected five local goals",
+            "required_goals": [
+              "LOCAL_MATERIAL_PREPARATION",
+              "LOCAL_CASE_RESOURCE_ASSOCIATION",
+              "LOCAL_INTERNAL_ACCEPTANCE",
+              "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+              "LOCAL_CASE_RECORD_RECHECK"
+            ],
+            "revision": 2,
+            "source": "USER_EXPLICIT_STATEMENT"
+          },
+          "service_id": "synthetic-material-preparation",
+          "service_version": 1
+        },
+        "binding_issues": [],
+        "can_adopt": false,
+        "case_goal_completed": false,
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "change_impact": {
+          "affected": [
+            "533f2a29-5a72-491b-ad5d-a6e5c6f4eea6",
+            "33b676d2-2e77-4281-90b0-f928d9d745d0",
+            "032d0464-3050-4e65-9dc2-be3e47f1b97c"
+          ],
+          "directly_changed": [],
+          "preserved": [
+            "de8dd231-29e4-46a0-8158-6ac56f45a91f",
+            "9e85529f-6620-4a0f-a282-e0332ee511bd"
+          ],
+          "scope": "REGISTERED_CASE_CHAIN",
+          "unknown_scope": null
+        },
+        "command_receipt": {
+          "action": "VERIFY",
+          "actor_ref": "27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db",
+          "expected_revision": 1,
+          "id": "6971f436-f434-4846-8fec-7efc281e8348",
+          "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+          "previous_plan_id": null,
+          "request_key": "c79edbd3-a0ef-4b2b-b888-9f13cae5102c",
+          "revision": 2,
+          "step_id": "de8dd231-29e4-46a0-8158-6ac56f45a91f"
+        },
+        "current_preview": {
+          "business_publication": false,
+          "case_goal_completed": false,
+          "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+          "catalog_sha256": "d856f90a830f5718e535a37bb27de84717dbd01ec7fd95eb52a628d0b65eb4d9",
+          "dependency_collections": {
+            "existing_access": {
+              "count": 1,
+              "known": true,
+              "sha256": "4a280819659deb5b63ba4c44aa3b9cf7c1d258bdba94db8dc745af27b13e7936"
+            },
+            "resources": {
+              "count": 4,
+              "known": true,
+              "sha256": "7c7a33bad3501f8fd459580ecfae8b7024a28895456956a4bc163879663f449f"
+            }
+          },
+          "executed": false,
+          "execution_enabled": false,
+          "goal_coverage": [
+            {
+              "goal": "LOCAL_MATERIAL_PREPARATION",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1"
+              ]
+            },
+            {
+              "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2"
+              ]
+            },
+            {
+              "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3"
+              ]
+            },
+            {
+              "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3",
+                "P4"
+              ]
+            },
+            {
+              "goal": "LOCAL_CASE_RECORD_RECHECK",
+              "status": "SUPPORTED_PREVIEW",
+              "steps": [
+                "P1",
+                "P2",
+                "P3",
+                "P4",
+                "P5"
+              ]
+            }
+          ],
+          "namespace": "PLANNING_METADATA_PREVIEW",
+          "new_grants": false,
+          "optional_suggestions": [],
+          "planner": "DETERMINISTIC_REGISTERED_ADAPTER_SUBGRAPH",
+          "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+          "preparation_revision": 7,
+          "qualification_truth": "UNKNOWN",
+          "registry_sha256": "cecab0f9b86bc01b3ffd75da129673ce7a832d0458ebcbb266446bd16df9be70",
+          "required_goals": [
+            "LOCAL_MATERIAL_PREPARATION",
+            "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "LOCAL_INTERNAL_ACCEPTANCE",
+            "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "LOCAL_CASE_RECORD_RECHECK"
+          ],
+          "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+          "source_sha256": "9640a57b33c5bd428fc5e311ae3a59b3f4c80e90cb1f0bfdd70c20e4180a7036",
+          "source_unknowns": [],
+          "state": "COVERED_PREVIEW_ONLY",
+          "steps": [
+            {
+              "acceptance": "\u4f01\u4e1a\u660e\u786e\u6838\u5bf9\u5f53\u524d\u6750\u6599\u7248\u672c",
+              "actions": [
+                {
+                  "commands": [
+                    "ADD_EVIDENCE",
+                    "CONFIRM"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "enterprise_operator"
+                },
+                {
+                  "commands": [
+                    "REQUEST_CHANGES",
+                    "REVIEW"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/commands",
+                  "role": "park_specialist"
+                }
+              ],
+              "adapter": "preparation",
+              "adapter_ref": "preparation",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [],
+              "executable": false,
+              "id": "P1",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "REQUEST_GOAL_COVERAGE_REQUIRED"
+              ],
+              "output": "\u5f53\u524d\u7248\u672c\u7684\u672c\u5730\u786e\u8ba4\u8d44\u6599\u5305",
+              "preconditions": "\u6709\u6765\u6e90\u7684\u8bc9\u6c42\u6458\u8981\u548c\u6750\u6599\u76ee\u5f55\uff1b\u5f53\u524d\u4e13\u5458\u6838\u5bf9\u6743",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba\u8865\u4ef6\u3001\u83b7\u6d3e\u4e13\u5458\u4eba\u5de5\u6838\u5bf9\u3001\u4f01\u4e1a\u786e\u8ba4",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u6838\u5bf9\u65f6\u6bb5\u3001\u89c4\u5219\u4e0e\u5f53\u524d\u6750\u6599\u7ed1\u5b9a",
+              "actions": [
+                {
+                  "commands": [
+                    "CREATE_OR_RECHECK_LINK"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/resource-link",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "case-resources",
+              "adapter_ref": "case-resources",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P1"
+              ],
+              "executable": false,
+              "id": "P2",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED"
+              ],
+              "output": "\u6b64Case\u7684\u4e24\u8d44\u6e90\u7ec4\u5408\u5173\u8054\u8bb0\u5f55",
+              "preconditions": "P1\u6838\u5bf9\u6709\u6548\uff1b\u672c\u4eba\u4e24\u8d44\u6e90\u7ec4\u5408\u6709\u6548\u4e14\u660e\u786e\u5173\u8054\u6b64Case",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u6838\u5bf9\u672c\u4eba\u63a5\u53d7\u8bb0\u5f55\u53ca\u5f53\u524d\u8fd0\u884c\u8bbf\u95ee",
+              "actions": [
+                {
+                  "commands": [
+                    "OFFER"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/dispatch",
+                  "role": "park_specialist"
+                },
+                {
+                  "commands": [
+                    "ACCEPT",
+                    "DECLINE"
+                  ],
+                  "method": "POST",
+                  "path": "/api/service-dispatches/{dispatch_id}/commands",
+                  "role": "service_executor"
+                }
+              ],
+              "adapter": "dispatch",
+              "adapter_ref": "dispatch",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P2"
+              ],
+              "executable": false,
+              "id": "P3",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED"
+              ],
+              "output": "\u5f53\u524d\u5185\u90e8\u63a5\u5355\u53ca\u56de\u6267\u4e8b\u9879",
+              "preconditions": "P2\u6838\u5bf9\u6709\u6548\uff1b\u5df2\u6709\u8fd0\u884c\u8bbf\u95ee\uff1b\u5f53\u524d\u6750\u6599\u5bf9\u5e94\u7684\u672c\u4eba\u63a5\u5355",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u83b7\u6d3e\u4e13\u5458\u5206\u6d3e\u3001\u5df2\u6709\u5408\u6cd5Run\u8bbf\u95ee\u7684\u6267\u884c\u8005\u672c\u4eba\u63a5\u5355",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u660e\u786e\u6838\u5bf9\u6765\u6e90\u548c\u5f53\u524d\u56de\u6267\u7248\u672c\uff1b\u4ecd\u4e0d\u8bc1\u660e\u5916\u90e8\u5c65\u7ea6",
+              "actions": [
+                {
+                  "commands": [
+                    "SUBMIT"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "service_executor"
+                },
+                {
+                  "commands": [
+                    "ACKNOWLEDGE",
+                    "REQUEST_CHANGES",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/executor-receipts/{step_id}/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "executor-receipts",
+              "adapter_ref": "executor-receipts",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P3"
+              ],
+              "executable": false,
+              "id": "P4",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED"
+              ],
+              "output": "\u4f01\u4e1a\u5df2\u6838\u5bf9\u7684\u5408\u6210\u56de\u6267\u8bb0\u5f55",
+              "preconditions": "P3\u6838\u5bf9\u6709\u6548\uff1b\u5f53\u524d\u6750\u6599\u7ed1\u5b9a\u7684\u5408\u6210\u56de\u6267",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u83b7\u6d3e\u6267\u884c\u8005\u63d0\u4ea4\u3001\u4f01\u4e1a\u7ecf\u529e\u4eba\u6838\u5bf9",
+              "revision": 1
+            },
+            {
+              "acceptance": "\u539f\u5165\u53e3\u660e\u786e\u91cd\u65b0\u6821\u9a8c\uff0c\u771f\u5b9e\u76ee\u6807\u4e0e\u5c65\u7ea6\u4ecd\u672a\u9a8c\u8bc1",
+              "actions": [
+                {
+                  "commands": [
+                    "REVALIDATE",
+                    "CLOSE_LOCAL_RECORD",
+                    "REOPEN"
+                  ],
+                  "method": "POST",
+                  "path": "/api/preparations/{preparation_id}/local-case/commands",
+                  "role": "enterprise_operator"
+                }
+              ],
+              "adapter": "case-lifecycle",
+              "adapter_ref": "case-lifecycle",
+              "adapter_revision": 1,
+              "correction": "\u8fd4\u56de\u5bf9\u5e94\u539f\u529e\u7406\u5165\u53e3\u8865\u6b63\u5e76\u91cd\u65b0\u6838\u5bf9",
+              "depends_on": [
+                "P4"
+              ],
+              "executable": false,
+              "id": "P5",
+              "input": "\u6b64Case\u5f53\u524d\u6765\u6e90\u7248\u672c\u4e0e\u5df2\u6709\u6388\u6743\u4e8b\u5b9e",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED",
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED",
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED",
+                "REQUEST_GOAL_COVERAGE_REQUIRED"
+              ],
+              "lifecycle_cycle": null,
+              "lifecycle_state": "NOT_STARTED",
+              "output": "\u6b64Case\u672c\u5730\u8bb0\u5f55\u91cd\u65b0\u6821\u9a8c",
+              "preconditions": "\u5f53\u524d\u6750\u6599\u3001\u8d44\u6e90\u3001\u672c\u4eba\u63a5\u5355\u4e0e\u56de\u6267\u6838\u5bf9\u5747\u6709\u6548",
+              "request_service_ref": "synthetic-material-preparation",
+              "request_service_version": 1,
+              "responsibility": "\u4f01\u4e1a\u7ecf\u529e\u4eba",
+              "revision": 1
+            }
+          ]
+        },
+        "event": {
+          "action": "VERIFY",
+          "actor_id": "fixture-a",
+          "coordination_only": false,
+          "fingerprint": "4ac811cea74572f199c6b0f45515dcf772e5df552c1692a069364f8eb1469c4c",
+          "id": "6971f436-f434-4846-8fec-7efc281e8348",
+          "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+          "reason": "SYNTHETIC test-driven owner verifies P1",
+          "request_key": "c79edbd3-a0ef-4b2b-b888-9f13cae5102c",
+          "revision": 2,
+          "source_sha256": "2a879c539d5d37795532640dc9db803bc649e6632723ae6d8c654b8e82d72ff5",
+          "sources": {
+            "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+            "goal": "SYNTHETIC T07 first new composite local request",
+            "owner_grants": {
+              "EXECUTE": true,
+              "PREPARE": true,
+              "READ": true
+            },
+            "owner_id": "fixture-a",
+            "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+            "preparation_revision": 7,
+            "preparation_sha256": "2d612e373879587ba8f34594cb6174cdabb0e7533107716e43ef06db131982ba",
+            "request_intent": {
+              "coverage": {
+                "items": [
+                  {
+                    "goal": "LOCAL_MATERIAL_PREPARATION",
+                    "status": "UNSUPPORTED"
+                  },
+                  {
+                    "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                    "status": "UNSUPPORTED"
+                  },
+                  {
+                    "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+                    "status": "UNSUPPORTED"
+                  },
+                  {
+                    "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                    "status": "UNSUPPORTED"
+                  },
+                  {
+                    "goal": "LOCAL_CASE_RECORD_RECHECK",
+                    "status": "UNSUPPORTED"
+                  }
+                ],
+                "original_case_goal_completed": false,
+                "original_request_understood": false,
+                "state": "PARTIAL",
+                "template_sha256": "a4df282ca61643abc5980d1493be83b8f0aad7bcd97dc2dd046f956baae76870",
+                "unsupported_goals": [
+                  "LOCAL_MATERIAL_PREPARATION",
+                  "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                  "LOCAL_INTERNAL_ACCEPTANCE",
+                  "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                  "LOCAL_CASE_RECORD_RECHECK"
+                ]
+              },
+              "request_text": "SYNTHETIC T07 first independently selected five local goals",
+              "required_goals": [
+                "LOCAL_MATERIAL_PREPARATION",
+                "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                "LOCAL_INTERNAL_ACCEPTANCE",
+                "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                "LOCAL_CASE_RECORD_RECHECK"
+              ],
+              "revision": 2,
+              "source": "USER_EXPLICIT_STATEMENT"
+            },
+            "request_intent_sha256": "e8edf9dd07960eb8e8c332622cfb732947c029491754566fbc596d4c5772ad43",
+            "required_goals": [
+              "LOCAL_MATERIAL_PREPARATION",
+              "LOCAL_CASE_RESOURCE_ASSOCIATION",
+              "LOCAL_INTERNAL_ACCEPTANCE",
+              "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+              "LOCAL_CASE_RECORD_RECHECK"
+            ],
+            "reviewer_id": "prep-specialist-fixture-a",
+            "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+            "service_catalog": {
+              "namespace": "SYNTHETIC",
+              "qualification": "NOT_EVALUATED",
+              "service_id": "synthetic-material-preparation",
+              "source": {
+                "id": "ENG014-reviewed-fixture",
+                "kind": "SYNTHETIC",
+                "revision": "1",
+                "statement": "\u5408\u6210\u8d44\u6599\u6574\u7406\u670d\u52a1\uff0c\u65e0\u8d44\u683c\u6761\u4ef6\uff1b\u8bc9\u6c42\u6458\u8981\u4e0e\u6750\u6599\u76ee\u5f55\u7531\u6d4b\u8bd5\u89c4\u683c\u5b9a\u4e49\u3002"
+              },
+              "version": 1
+            },
+            "service_id": "synthetic-material-preparation",
+            "service_version": 1,
+            "template_sha256": "a4df282ca61643abc5980d1493be83b8f0aad7bcd97dc2dd046f956baae76870"
+          },
+          "step_id": "de8dd231-29e4-46a0-8158-6ac56f45a91f"
+        },
+        "events": [
+          {
+            "action": "ADOPT",
+            "actor_id": "fixture-a",
+            "coordination_only": true,
+            "dependencies": {
+              "collections": {
+                "existing_access": {
+                  "count": 1,
+                  "known": true,
+                  "sha256": "4a280819659deb5b63ba4c44aa3b9cf7c1d258bdba94db8dc745af27b13e7936"
+                },
+                "resources": {
+                  "count": 4,
+                  "known": true,
+                  "sha256": "7c7a33bad3501f8fd459580ecfae8b7024a28895456956a4bc163879663f449f"
+                }
+              },
+              "declarations": {
+                "P1": [
+                  "REQUEST",
+                  "MATERIAL",
+                  "FACT",
+                  "SERVICE_RULE",
+                  "OWNER_AUTHORITY"
+                ],
+                "P2": [
+                  "MATERIAL",
+                  "RESOURCE",
+                  "RESERVATION",
+                  "RESOURCE_RULE_COLLECTION"
+                ],
+                "P3": [
+                  "MATERIAL",
+                  "DISPATCH",
+                  "ACCEPTANCE",
+                  "RUN_ACCESS_COLLECTION"
+                ],
+                "P4": [
+                  "MATERIAL",
+                  "RECEIPT",
+                  "RECEIPT_EVENT_COLLECTION",
+                  "LOCAL_EXECUTION"
+                ],
+                "P5": [
+                  "MATERIAL",
+                  "RESOURCE",
+                  "ACCEPTANCE",
+                  "RECEIPT",
+                  "LOCAL_CASE_CHECK"
+                ]
+              },
+              "edges": [
+                {
+                  "downstream": "P2",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P1"
+                },
+                {
+                  "downstream": "P3",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P2"
+                },
+                {
+                  "downstream": "P4",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P3"
+                },
+                {
+                  "downstream": "P5",
+                  "kind": "PRECEDES",
+                  "provenance": "COMPILED_REGISTERED_ADAPTER",
+                  "upstream": "P4"
+                }
+              ],
+              "sha256": "cc465f98b989879f3a54f58ae18f184d2e21c7ecdaeccd260438ced75498029b",
+              "version": 1
+            },
+            "fingerprint": "e1b6bd12e9be315e0f00bca75221d88529620757602c577c9645c220ef44acb7",
+            "id": "24cec5ec-0bbc-4f72-9b5f-36961e973e65",
+            "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+            "reason": "SYNTHETIC explicit registered finite plan",
+            "request_key": "1faa4b9c-ff44-4eba-a88c-1bf3edf14dbd",
+            "revision": 1,
+            "source_sha256": null,
+            "sources": null,
+            "step_id": null
+          },
+          {
+            "action": "VERIFY",
+            "actor_id": "fixture-a",
+            "coordination_only": false,
+            "fingerprint": "4ac811cea74572f199c6b0f45515dcf772e5df552c1692a069364f8eb1469c4c",
+            "id": "6971f436-f434-4846-8fec-7efc281e8348",
+            "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+            "reason": "SYNTHETIC test-driven owner verifies P1",
+            "request_key": "c79edbd3-a0ef-4b2b-b888-9f13cae5102c",
+            "revision": 2,
+            "source_sha256": "2a879c539d5d37795532640dc9db803bc649e6632723ae6d8c654b8e82d72ff5",
+            "sources": {
+              "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+              "goal": "SYNTHETIC T07 first new composite local request",
+              "owner_grants": {
+                "EXECUTE": true,
+                "PREPARE": true,
+                "READ": true
+              },
+              "owner_id": "fixture-a",
+              "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+              "preparation_revision": 7,
+              "preparation_sha256": "2d612e373879587ba8f34594cb6174cdabb0e7533107716e43ef06db131982ba",
+              "request_intent": {
+                "coverage": {
+                  "items": [
+                    {
+                      "goal": "LOCAL_MATERIAL_PREPARATION",
+                      "status": "UNSUPPORTED"
+                    },
+                    {
+                      "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                      "status": "UNSUPPORTED"
+                    },
+                    {
+                      "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+                      "status": "UNSUPPORTED"
+                    },
+                    {
+                      "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                      "status": "UNSUPPORTED"
+                    },
+                    {
+                      "goal": "LOCAL_CASE_RECORD_RECHECK",
+                      "status": "UNSUPPORTED"
+                    }
+                  ],
+                  "original_case_goal_completed": false,
+                  "original_request_understood": false,
+                  "state": "PARTIAL",
+                  "template_sha256": "a4df282ca61643abc5980d1493be83b8f0aad7bcd97dc2dd046f956baae76870",
+                  "unsupported_goals": [
+                    "LOCAL_MATERIAL_PREPARATION",
+                    "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                    "LOCAL_INTERNAL_ACCEPTANCE",
+                    "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                    "LOCAL_CASE_RECORD_RECHECK"
+                  ]
+                },
+                "request_text": "SYNTHETIC T07 first independently selected five local goals",
+                "required_goals": [
+                  "LOCAL_MATERIAL_PREPARATION",
+                  "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                  "LOCAL_INTERNAL_ACCEPTANCE",
+                  "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                  "LOCAL_CASE_RECORD_RECHECK"
+                ],
+                "revision": 2,
+                "source": "USER_EXPLICIT_STATEMENT"
+              },
+              "request_intent_sha256": "e8edf9dd07960eb8e8c332622cfb732947c029491754566fbc596d4c5772ad43",
+              "required_goals": [
+                "LOCAL_MATERIAL_PREPARATION",
+                "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                "LOCAL_INTERNAL_ACCEPTANCE",
+                "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                "LOCAL_CASE_RECORD_RECHECK"
+              ],
+              "reviewer_id": "prep-specialist-fixture-a",
+              "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+              "service_catalog": {
+                "namespace": "SYNTHETIC",
+                "qualification": "NOT_EVALUATED",
+                "service_id": "synthetic-material-preparation",
+                "source": {
+                  "id": "ENG014-reviewed-fixture",
+                  "kind": "SYNTHETIC",
+                  "revision": "1",
+                  "statement": "\u5408\u6210\u8d44\u6599\u6574\u7406\u670d\u52a1\uff0c\u65e0\u8d44\u683c\u6761\u4ef6\uff1b\u8bc9\u6c42\u6458\u8981\u4e0e\u6750\u6599\u76ee\u5f55\u7531\u6d4b\u8bd5\u89c4\u683c\u5b9a\u4e49\u3002"
+                },
+                "version": 1
+              },
+              "service_id": "synthetic-material-preparation",
+              "service_version": 1,
+              "template_sha256": "a4df282ca61643abc5980d1493be83b8f0aad7bcd97dc2dd046f956baae76870"
+            },
+            "step_id": "de8dd231-29e4-46a0-8158-6ac56f45a91f"
+          }
+        ],
+        "external_acceptance": "NOT_SUBMITTED",
+        "goal_coverage": [
+          {
+            "goal": "LOCAL_MATERIAL_PREPARATION",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1"
+            ]
+          },
+          {
+            "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2"
+            ]
+          },
+          {
+            "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2",
+              "P3"
+            ]
+          },
+          {
+            "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2",
+              "P3",
+              "P4"
+            ]
+          },
+          {
+            "goal": "LOCAL_CASE_RECORD_RECHECK",
+            "status": "SUPPORTED_PREVIEW",
+            "steps": [
+              "P1",
+              "P2",
+              "P3",
+              "P4",
+              "P5"
+            ]
+          }
+        ],
+        "history": [],
+        "local_revision_required": false,
+        "new_grants": false,
+        "offline_fulfillment": "NO_EVIDENCE",
+        "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "preparation_revision": 7,
+        "request_revision": 2,
+        "required_goals": [
+          "LOCAL_MATERIAL_PREPARATION",
+          "LOCAL_CASE_RESOURCE_ASSOCIATION",
+          "LOCAL_INTERNAL_ACCEPTANCE",
+          "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+          "LOCAL_CASE_RECORD_RECHECK"
+        ],
+        "revision": 2,
+        "role": "enterprise_operator",
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN",
+        "state": "BLOCKED",
+        "steps": [
+          {
+            "actual_business_state": "LOCAL_CONFIRMED",
+            "adapter": "preparation",
+            "adapter_id": "P1",
+            "allowed_actions": [
+              "LOCK"
+            ],
+            "depends_on": [],
+            "id": "de8dd231-29e4-46a0-8158-6ac56f45a91f",
+            "issues": [],
+            "manually_locked": false,
+            "source_sha256": "2a879c539d5d37795532640dc9db803bc649e6632723ae6d8c654b8e82d72ff5",
+            "state": "VERIFIED",
+            "verified_sha256": "2a879c539d5d37795532640dc9db803bc649e6632723ae6d8c654b8e82d72ff5",
+            "verified_sources": {
+              "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+              "goal": "SYNTHETIC T07 first new composite local request",
+              "owner_grants": {
+                "EXECUTE": true,
+                "PREPARE": true,
+                "READ": true
+              },
+              "owner_id": "fixture-a",
+              "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+              "preparation_revision": 7,
+              "preparation_sha256": "2d612e373879587ba8f34594cb6174cdabb0e7533107716e43ef06db131982ba",
+              "request_intent": {
+                "coverage": {
+                  "items": [
+                    {
+                      "goal": "LOCAL_MATERIAL_PREPARATION",
+                      "status": "UNSUPPORTED"
+                    },
+                    {
+                      "goal": "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                      "status": "UNSUPPORTED"
+                    },
+                    {
+                      "goal": "LOCAL_INTERNAL_ACCEPTANCE",
+                      "status": "UNSUPPORTED"
+                    },
+                    {
+                      "goal": "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                      "status": "UNSUPPORTED"
+                    },
+                    {
+                      "goal": "LOCAL_CASE_RECORD_RECHECK",
+                      "status": "UNSUPPORTED"
+                    }
+                  ],
+                  "original_case_goal_completed": false,
+                  "original_request_understood": false,
+                  "state": "PARTIAL",
+                  "template_sha256": "a4df282ca61643abc5980d1493be83b8f0aad7bcd97dc2dd046f956baae76870",
+                  "unsupported_goals": [
+                    "LOCAL_MATERIAL_PREPARATION",
+                    "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                    "LOCAL_INTERNAL_ACCEPTANCE",
+                    "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                    "LOCAL_CASE_RECORD_RECHECK"
+                  ]
+                },
+                "request_text": "SYNTHETIC T07 first independently selected five local goals",
+                "required_goals": [
+                  "LOCAL_MATERIAL_PREPARATION",
+                  "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                  "LOCAL_INTERNAL_ACCEPTANCE",
+                  "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                  "LOCAL_CASE_RECORD_RECHECK"
+                ],
+                "revision": 2,
+                "source": "USER_EXPLICIT_STATEMENT"
+              },
+              "request_intent_sha256": "e8edf9dd07960eb8e8c332622cfb732947c029491754566fbc596d4c5772ad43",
+              "required_goals": [
+                "LOCAL_MATERIAL_PREPARATION",
+                "LOCAL_CASE_RESOURCE_ASSOCIATION",
+                "LOCAL_INTERNAL_ACCEPTANCE",
+                "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+                "LOCAL_CASE_RECORD_RECHECK"
+              ],
+              "reviewer_id": "prep-specialist-fixture-a",
+              "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+              "service_catalog": {
+                "namespace": "SYNTHETIC",
+                "qualification": "NOT_EVALUATED",
+                "service_id": "synthetic-material-preparation",
+                "source": {
+                  "id": "ENG014-reviewed-fixture",
+                  "kind": "SYNTHETIC",
+                  "revision": "1",
+                  "statement": "\u5408\u6210\u8d44\u6599\u6574\u7406\u670d\u52a1\uff0c\u65e0\u8d44\u683c\u6761\u4ef6\uff1b\u8bc9\u6c42\u6458\u8981\u4e0e\u6750\u6599\u76ee\u5f55\u7531\u6d4b\u8bd5\u89c4\u683c\u5b9a\u4e49\u3002"
+                },
+                "version": 1
+              },
+              "service_id": "synthetic-material-preparation",
+              "service_version": 1,
+              "template_sha256": "a4df282ca61643abc5980d1493be83b8f0aad7bcd97dc2dd046f956baae76870"
+            }
+          },
+          {
+            "actual_business_state": "NOT_LINKED",
+            "adapter": "case-resources",
+            "adapter_id": "P2",
+            "allowed_actions": [
+              "BEGIN",
+              "REPORT_FAILURE"
+            ],
+            "depends_on": [
+              "P1"
+            ],
+            "id": "9e85529f-6620-4a0f-a282-e0332ee511bd",
+            "issues": [
+              "CURRENT_CASE_RESOURCE_LINK_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "1955c1ddeb8dbcce6c00e522dda912b124fcd3769413abed062f0e5a9449b7e9",
+            "state": "PENDING",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_OFFERED",
+            "adapter": "dispatch",
+            "adapter_id": "P3",
+            "allowed_actions": [],
+            "depends_on": [
+              "P2"
+            ],
+            "id": "533f2a29-5a72-491b-ad5d-a6e5c6f4eea6",
+            "issues": [
+              "ACCEPTED_DISPATCH_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "d892bfbb22b1f2bf2355c41c33e56abd07068e1b1b392bb0582ddc39ea7fb678",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_ACCEPTED",
+            "adapter": "executor-receipts",
+            "adapter_id": "P4",
+            "allowed_actions": [],
+            "depends_on": [
+              "P3"
+            ],
+            "id": "33b676d2-2e77-4281-90b0-f928d9d745d0",
+            "issues": [
+              "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "829e684bbb6b8354356e76e25ad72811331b18b8880fc4b2184c0909c8b0d86a",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          },
+          {
+            "actual_business_state": "NOT_STARTED",
+            "adapter": "case-lifecycle",
+            "adapter_id": "P5",
+            "allowed_actions": [],
+            "depends_on": [
+              "P4"
+            ],
+            "id": "032d0464-3050-4e65-9dc2-be3e47f1b97c",
+            "issues": [
+              "ACCEPTED_DISPATCH_REQUIRED",
+              "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED",
+              "CURRENT_CASE_RESOURCE_LINK_REQUIRED",
+              "CURRENT_LOCAL_CASE_REVALIDATION_REQUIRED"
+            ],
+            "manually_locked": false,
+            "source_sha256": "99fda01476273b528ecec98aa344e4ce516b3162e9c76e07cd8636fa016c4368",
+            "state": "BLOCKED",
+            "verified_sha256": null,
+            "verified_sources": null
+          }
+        ]
+      },
+      "sequence": 18,
+      "status": 200,
+      "utc": "2026-10-11T16:29:29.989659+00:00"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/12183f9f-459b-488e-b31f-666cda49f896/service-case-plan/command-recovery",
+      "request_body": null,
+      "request_key": "c79edbd3-a0ef-4b2b-b888-9f13cae5102c",
+      "request_sha256": "74234e98afe7498fb5daf1f36ac2d78acc339464f950703b8c019892f982b90b",
+      "response": {
+        "actor_ref": "27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db",
+        "automatically_replayed": false,
+        "case_goal_completed": false,
+        "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+        "current": {
+          "actor_ref": "27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db",
+          "automatic_execution": false,
+          "binding": null,
+          "binding_issues": [],
+          "can_adopt": false,
+          "case_goal_completed": false,
+          "case_id": "d18d2995-4bd0-43b7-82cb-dcfc2eeacb04",
+          "change_impact": {
+            "affected": [
+              "533f2a29-5a72-491b-ad5d-a6e5c6f4eea6",
+              "33b676d2-2e77-4281-90b0-f928d9d745d0",
+              "032d0464-3050-4e65-9dc2-be3e47f1b97c"
+            ],
+            "directly_changed": [],
+            "preserved": [
+              "de8dd231-29e4-46a0-8158-6ac56f45a91f",
+              "9e85529f-6620-4a0f-a282-e0332ee511bd"
+            ],
+            "scope": "REGISTERED_CASE_CHAIN",
+            "unknown_scope": null
+          },
+          "command_receipt": null,
+          "current_preview": null,
+          "event": null,
+          "events": [
+            {
+              "action": "ADOPT",
+              "id": "24cec5ec-0bbc-4f72-9b5f-36961e973e65",
+              "revision": 1,
+              "step_id": null
+            },
+            {
+              "action": "VERIFY",
+              "id": "6971f436-f434-4846-8fec-7efc281e8348",
+              "revision": 2,
+              "step_id": "de8dd231-29e4-46a0-8158-6ac56f45a91f"
+            }
+          ],
+          "external_acceptance": "NOT_SUBMITTED",
+          "goal_coverage": null,
+          "history": [],
+          "local_revision_required": false,
+          "new_grants": false,
+          "offline_fulfillment": "NO_EVIDENCE",
+          "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+          "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+          "preparation_revision": 7,
+          "read_only": true,
+          "request_revision": 2,
+          "required_goals": null,
+          "revision": 2,
+          "role": "enterprise_operator",
+          "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+          "scope": "SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN",
+          "state": "BLOCKED",
+          "steps": [
+            {
+              "actual_business_state": "LOCAL_CONFIRMED",
+              "adapter": "preparation",
+              "adapter_id": "P1",
+              "allowed_actions": [],
+              "depends_on": [],
+              "id": "de8dd231-29e4-46a0-8158-6ac56f45a91f",
+              "issues": [],
+              "manually_locked": false,
+              "source_sha256": null,
+              "state": "VERIFIED",
+              "verified_sha256": null,
+              "verified_sources": null
+            },
+            {
+              "actual_business_state": "NOT_LINKED",
+              "adapter": "case-resources",
+              "adapter_id": "P2",
+              "allowed_actions": [],
+              "depends_on": [
+                "P1"
+              ],
+              "id": "9e85529f-6620-4a0f-a282-e0332ee511bd",
+              "issues": [
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED"
+              ],
+              "manually_locked": false,
+              "source_sha256": null,
+              "state": "PENDING",
+              "verified_sha256": null,
+              "verified_sources": null
+            },
+            {
+              "actual_business_state": "NOT_OFFERED",
+              "adapter": "dispatch",
+              "adapter_id": "P3",
+              "allowed_actions": [],
+              "depends_on": [
+                "P2"
+              ],
+              "id": "533f2a29-5a72-491b-ad5d-a6e5c6f4eea6",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED"
+              ],
+              "manually_locked": false,
+              "source_sha256": null,
+              "state": "BLOCKED",
+              "verified_sha256": null,
+              "verified_sources": null
+            },
+            {
+              "actual_business_state": "NOT_ACCEPTED",
+              "adapter": "executor-receipts",
+              "adapter_id": "P4",
+              "allowed_actions": [],
+              "depends_on": [
+                "P3"
+              ],
+              "id": "33b676d2-2e77-4281-90b0-f928d9d745d0",
+              "issues": [
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED"
+              ],
+              "manually_locked": false,
+              "source_sha256": null,
+              "state": "BLOCKED",
+              "verified_sha256": null,
+              "verified_sources": null
+            },
+            {
+              "actual_business_state": "NOT_STARTED",
+              "adapter": "case-lifecycle",
+              "adapter_id": "P5",
+              "allowed_actions": [],
+              "depends_on": [
+                "P4"
+              ],
+              "id": "032d0464-3050-4e65-9dc2-be3e47f1b97c",
+              "issues": [
+                "ACCEPTED_DISPATCH_REQUIRED",
+                "CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED",
+                "CURRENT_CASE_RESOURCE_LINK_REQUIRED",
+                "CURRENT_LOCAL_CASE_REVALIDATION_REQUIRED"
+              ],
+              "manually_locked": false,
+              "source_sha256": null,
+              "state": "BLOCKED",
+              "verified_sha256": null,
+              "verified_sources": null
+            }
+          ]
+        },
+        "event": {
+          "action": "VERIFY",
+          "actor_ref": "27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db",
+          "current_plan": true,
+          "expected_revision": 1,
+          "historical_only": true,
+          "id": "6971f436-f434-4846-8fec-7efc281e8348",
+          "plan_id": "a3557914-032d-4067-b7a2-f08540359005",
+          "previous_plan_id": null,
+          "request_key": "c79edbd3-a0ef-4b2b-b888-9f13cae5102c",
+          "revision": 2,
+          "step_id": "de8dd231-29e4-46a0-8158-6ac56f45a91f"
+        },
+        "historical_only": true,
+        "preparation_id": "12183f9f-459b-488e-b31f-666cda49f896",
+        "read_only": true,
+        "run_id": "f041ef30-3fd6-4082-8153-0a2bb3e6ee68",
+        "scope": "SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN",
+        "status": "COMMITTED"
+      },
+      "sequence": 19,
+      "status": 200,
+      "utc": "2026-10-11T16:29:30.080335+00:00"
+    }
+  ],
+  "scope": "SYNTHETIC_ORDINARY_HTTP_PG_MANUAL_CHAIN",
+  "test_id": "tests/test_f2_t07_full_chain.py::test_offer_cancel_retains_capacity_and_history_until_independent_release"
+}

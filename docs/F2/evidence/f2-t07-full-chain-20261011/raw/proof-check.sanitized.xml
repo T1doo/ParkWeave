@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="3" time="20.001" timestamp="2026-10-11T16:36:59.737650+00:00" hostname="synthetic-fixture-host"><testcase classname="tests.test_f2_t07_full_chain" name="test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history" time="7.453"><failure message="KeyError: 'combination_id'">tests/test_f2_t07_full_chain.py:418: in test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history
+    u = chain; p, g, data, d, s = u.completed('first')
+                                  ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:376: in completed
+    self.assert_outputs(p, combo, d, s, outputs)
+tests/test_f2_t07_full_chain.py:311: in assert_outputs
+    members = [r for r in rows['synthetic_resource_holds'] if str(r['combination_id']) == combo['id']]
+                                                                  ^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'combination_id'</failure></testcase><testcase classname="tests.test_f2_t07_full_chain" name="test_offer_cancel_retains_capacity_and_history_until_independent_release" time="4.925" /><testcase classname="tests.test_f2_t07_full_chain" name="test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history" time="7.240"><failure message="KeyError: 'combination_id'">tests/test_f2_t07_full_chain.py:436: in test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history
+    u = chain; p, g, data, d, s = u.completed(feedback=True)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:376: in completed
+    self.assert_outputs(p, combo, d, s, outputs)
+tests/test_f2_t07_full_chain.py:311: in assert_outputs
+    members = [r for r in rows['synthetic_resource_holds'] if str(r['combination_id']) == combo['id']]
+                                                                  ^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'combination_id'</failure></testcase></testsuite></testsuites>

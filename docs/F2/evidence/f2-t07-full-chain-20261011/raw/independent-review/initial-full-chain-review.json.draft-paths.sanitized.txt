@@ -1,0 +1,771 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-11T16:27:56.817743+00:00",
+  "decision": "LIMITED_STATIC_REVIEW",
+  "scope": "F2_T07_PREIMPLEMENTATION_MAPPING",
+  "parent_declared_delivery_sha": "[REDACTED opaque fixture value]",
+  "parent_declared_source_sha": "[REDACTED opaque fixture value]",
+  "source_binding": "Review inputs hashed directly; no independent Git operation or new implementation signoff",
+  "prior_source_manifest_sha256": "[REDACTED opaque fixture value]",
+  "reviewed_paths": 41,
+  "prior_source_compared_paths": 30,
+  "prior_source_changed_paths": [],
+  "tests": {
+    "PASS": 0,
+    "FAIL": 0,
+    "ERROR": 0,
+    "SKIP": 0,
+    "NOT_RUN": "all business/PG/API/worker/Node/browser tests in this static window"
+  },
+  "browser_launches": 0,
+  "model_calls": 0,
+  "git_operations": 0,
+  "findings": [
+    {
+      "id": "SCOPE_A_ACCESS",
+      "classification": "EXPECTED_AUTHORIZATION_BLOCKER",
+      "locations": [
+        "src/parkweave/api.py:147",
+        "src/parkweave/store.py:73",
+        "src/parkweave/store.py:341",
+        "src/parkweave/service_dispatches.py:325"
+      ],
+      "detail": "Ordinary new Run has no executor assignment; access bridge disabled; no safe ordinary API within current scope can grant it."
+    },
+    {
+      "id": "SCOPE_FRESH_CHAIN",
+      "classification": "[REDACTED opaque fixture value]",
+      "locations": [
+        "tests/test_new_enterprise_local_chain.py:53",
+        "tests/test_new_enterprise_local_chain.py:111",
+        "tests/test_new_enterprise_local_chain.py:183",
+        "tests/test_new_enterprise_local_chain.py:207"
+      ],
+      "detail": "Actual HTTP/PG but isolated template/access/approval/local execution; inline claim/finish not CLI worker and no fulfilled assertion."
+    },
+    {
+      "id": "P5_CLOSE_SOURCE",
+      "classification": "[REDACTED opaque fixture value]",
+      "locations": [
+        "src/parkweave/service_case_steps.py:140",
+        "src/parkweave/case_lifecycle.py:271",
+        "src/parkweave/case_goal_results.py:86"
+      ],
+      "detail": "Local close changes whole local lifecycle source after P5 VERIFY; explicit new P5 VERIFY required. REVALIDATE and CLOSE gate only through P4; no structural P5 deadlock shown statically."
+    },
+    {
+      "id": "COLD_HELPER_BROWSER",
+      "classification": "DO_NOT_EXECUTE_AS_IS",
+      "locations": [
+        "tests/normal_recovery_process.py:141"
+      ],
+      "detail": "Existing full process helper launches Chromium; borrow ordinary process ideas only, do not run it under current browser prohibition."
+    },
+    {
+      "id": "GET_OBSERVATION",
+      "classification": "READ_SCOPE_DISTINCTION",
+      "locations": [
+        "src/parkweave/service_case_steps.py:201",
+        "src/parkweave/case_goal_results.py:103"
+      ],
+      "detail": "Active Case plan GET may persist invalidation metadata; goal-results is read-only and cancellation/reconciling disables observation writes. Do not claim all GETs universally immutable."
+    },
+    {
+      "id": "AT_BINDINGS",
+      "classification": "COVERAGE_REGISTRY_GAP",
+      "locations": [
+        "docs/F1/ATBindings.json",
+        "scripts/run_acceptance.py:20"
+      ],
+      "detail": "Existing F1 registry leaves most F2 selectors empty and retains formal whole_status NOT_RUN. Build a separate finite full-chain map; do not relabel whole acceptance from pytest."
+    }
+  ],
+  "remaining_formal_blockers": [
+    "ordinary new Run access authority remains absent",
+    "real model F1 prerequisite not run",
+    "formal ServiceRelease/Approval/template activation absent",
+    "native Windows/browser/live/external/real fulfillment and fair comparison not run"
+  ],
+  "at_mapping": [
+    {
+      "id": "AT-01",
+      "scenario": "Windows原生启动",
+      "steps": "按说明准备环境、启动API/worker/数据库，查看PID与路径，停止再启动",
+      "oracle": "原生进程真实存在，数据可读；WSL2或远程浏览器不替代；错误清晰且不覆盖既有配置",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "LIVE",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "F1前置；本片Linux不能签原生",
+      "implementation_paths": [
+        "src/parkweave/lifecycle.py",
+        "scripts/linux_fixture_server.py",
+        "tests/test_foundation.py"
+      ],
+      "remaining_limit": "真实Win11安装/停启仍NOT_RUN",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-02",
+      "scenario": "书生真实工具闭环",
+      "steps": "真实理解→选工具→接收确定性反馈→修订计划",
+      "oracle": "调用ID、工具回填与修订可核查；无开发模型兜底；不能用stub计通过",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "LIVE",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "模型前置；本片不调用模型",
+      "implementation_paths": [
+        "src/parkweave/model_chain.py",
+        "src/parkweave/bounded_planning.py"
+      ],
+      "remaining_limit": "当前规划为确定性注册闭包，非书生真实理解/修订",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-03",
+      "scenario": "恶意规格与注入拒绝",
+      "steps": "提交候选规格并尝试执行；注册表、权限和结构检查",
+      "oracle": "先拒绝后无业务副作用；不会执行“看得懂的半截”或加载新工具",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "链上错误输入/越界动作负例",
+      "implementation_paths": [
+        "src/parkweave/domain.py",
+        "src/parkweave/bounded_planning.py",
+        "tests/test_v1_contracts.py"
+      ],
+      "remaining_limit": "结构拒绝和零副作用；不加载新工具",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-04",
+      "scenario": "跨企业/园区隔离",
+      "steps": "猜测另一企业ID访问资料、Case、结果和匿名占用记录",
+      "oracle": "后端隔离；不能泄露别家资料、身份和预约用途；汇总另授权",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "必测不同企业/园区各入口隔离",
+      "implementation_paths": [
+        "src/parkweave/store.py",
+        "src/parkweave/preparation.py",
+        "src/parkweave/executor_receipts.py"
+      ],
+      "remaining_limit": "Case/材料/资源用途/回执/通知/结果均不可泄露；固定合成主体范围",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-05",
+      "scenario": "文件和凭证边界",
+      "steps": "导入/下载/渲染恶意输入，检查结果与日志",
+      "oracle": "只读授权根目录；无密钥/宿主文件外泄；危险内容不执行",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "文本和日志边界；浏览器不执行",
+      "implementation_paths": [
+        "src/parkweave/web.html",
+        "src/parkweave/store.py",
+        "tests/test_authorization_files.py"
+      ],
+      "remaining_limit": "输出转义及日志脱敏；原生根/ACL/全部导入下载仍未验",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-06",
+      "scenario": "事实冲突与必要澄清",
+      "steps": "提取候选事实并准备服务条件",
+      "oracle": "保留双方来源，不猜测有权事实，不把缺值当不符合；必要问题集中展示",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "保留来源/未知/用途核对",
+      "implementation_paths": [
+        "src/parkweave/case_fact_clarifications.py",
+        "src/parkweave/preparation.py"
+      ],
+      "remaining_limit": "有限事实合同不能称通用事实抽取；缺值不是不符合",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-07",
+      "scenario": "复合目标服务编排",
+      "steps": "模型选服务、拆步骤、绑定动作并预检",
+      "oracle": "必需目标不删；步骤有责任与验收；不可行明确等待/拒绝，软件输出不是虚假履约",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "五LOCAL目标明确保存/计划采用",
+      "implementation_paths": [
+        "src/parkweave/request_intents.py",
+        "src/parkweave/bounded_planning.py",
+        "src/parkweave/service_case_steps.py"
+      ],
+      "remaining_limit": "必需目标不删除；UNKNOWN/UNSUPPORTED保持；未验证真实模型/任意服务DAG",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-08",
+      "scenario": "模板新输入与冷会话",
+      "steps": "应用参数化模板并运行有效新输入及错误输入",
+      "oracle": "产生新Case和结果；不复制旧材料/授权；错误明确处理",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "同已有scope新输入/独立新Case与错误输入",
+      "implementation_paths": [
+        "tests/test_new_enterprise_local_chain.py",
+        "src/parkweave/template_consumer.py"
+      ],
+      "remaining_limit": "隔离模板候选是另一合同；普通入口无正式模板挂载/发布权",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-09",
+      "scenario": "本地组合资源确认",
+      "steps": "占位并提交必需组合；失败条件下注入冲突",
+      "oracle": "同本地事务全成功或全不提交；部分替代需重新选方案；不会残留未说明占用",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "普通两资源全事务确认/Case关联",
+      "implementation_paths": [
+        "src/parkweave/resource_combinations.py",
+        "src/parkweave/case_resources.py"
+      ],
+      "remaining_limit": "已确认占用与关联分开；失败不部分确认；3–8交付Approval普通入口未启用",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-10",
+      "scenario": "并发最后名额",
+      "steps": "并行确认同一资源时段，重复提交同键与不同参数",
+      "oracle": "总有效确认不超容量；同键不重复，不同指纹冲突",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "最后容量与同键/异参并发反例",
+      "implementation_paths": [
+        "src/parkweave/resource_holds.py",
+        "src/parkweave/resource_combinations.py",
+        "tests/test_resource_combinations.py"
+      ],
+      "remaining_limit": "真实PG锁/容量；不从线程数推断效果数",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-11",
+      "scenario": "陈旧批准与过期占位",
+      "steps": "继续提交，清理worker可故意停止",
+      "oracle": "提交时重验并拒绝陈旧批准；数据库当前时点判断占位，不靠清理任务才过期",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "清理停止仍拒过期占位/陈旧来源",
+      "implementation_paths": [
+        "src/parkweave/resource_holds.py",
+        "src/parkweave/resource_plan_binding.py",
+        "src/parkweave/service_plan_approval.py"
+      ],
+      "remaining_limit": "数据库最后时点复读；普通无Approval桥，不能据旧隔离成绩称正式批准通过",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-12",
+      "scenario": "多人协同最小权限",
+      "steps": "执行者读取/更新步骤并尝试查看全企业材料或越级批准",
+      "oracle": "只允许所获派数据与动作；所有入口一致，改变客户端角色无效",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "专员OFFER/执行者ACCEPT+SUBMIT/owner ACK",
+      "implementation_paths": [
+        "src/parkweave/service_dispatches.py",
+        "src/parkweave/executor_receipts.py"
+      ],
+      "remaining_limit": "固定READ assignment是setup前置；不得越级或读取企业全部材料",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-13",
+      "scenario": "Case与Run成功分离",
+      "steps": "完成技术任务并显示业务状态",
+      "oracle": "Run可成功，Case仍待补件；不得计业务目标已交付",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "每阶段明确Run/Case/本地状态",
+      "implementation_paths": [
+        "src/parkweave/store.py",
+        "src/parkweave/case_lifecycle.py",
+        "src/parkweave/case_goal_results.py"
+      ],
+      "remaining_limit": "SUCCEEDED只LOCAL_CASE_CREATED；LOCAL_OUTPUTS_VERIFIED/LOCAL_RECORD_CLOSED不等于FULFILLED",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-14",
+      "scenario": "预览与真实数据隔离",
+      "steps": "预览执行写入，然后核对真实命名空间",
+      "oracle": "预览只影响测试命名空间，不能占用生产资源或沿用生产Grant",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "预览与业务写快照对照",
+      "implementation_paths": [
+        "src/parkweave/bounded_planning.py",
+        "src/parkweave/isolated_execution_preview.py"
+      ],
+      "remaining_limit": "普通planning-preview不执行，不能替代执行预览命名空间全量验收",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-15",
+      "scenario": "履约核验与重开",
+      "steps": "尝试关闭Case，随后补真实回执、确认和重开",
+      "oracle": "发送不等于履约；无证据不关闭；冲突需复核；重开不抹历史",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "缺ACK关闭拒绝/REVALIDATE/本地关闭重开",
+      "implementation_paths": [
+        "src/parkweave/case_lifecycle.py",
+        "tests/test_case_lifecycle.py"
+      ],
+      "remaining_limit": "仅本地合成记录；真实履约证据/正式FULFILLED仍缺",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-16",
+      "scenario": "outbox与消息去重",
+      "steps": "中断再消费同事件，模拟新旧版本倒序",
+      "oracle": "业务与事件意图不分离丢失；同事件不重复逻辑效果；陈旧事件不覆盖新版",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "实际worker消费通知/outbox并重启",
+      "implementation_paths": [
+        "src/parkweave/store.py",
+        "src/parkweave/dispatch_notices.py",
+        "src/parkweave/worker.py"
+      ],
+      "remaining_limit": "保存业务事件/通知意图及唯一收件事实；OPEN/READ与履约分开",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-17",
+      "scenario": "worker失联与旧worker回报",
+      "steps": "新worker核对后续跑，旧worker尝试提交",
+      "oracle": "已提交效果不重复，旧token不能写新状态，结果未明先核对",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "建单worker独立进程/自然失联接管可分窗",
+      "implementation_paths": [
+        "src/parkweave/lease.py",
+        "src/parkweave/gateway.py",
+        "tests/test_worker_gateway.py"
+      ],
+      "remaining_limit": "不从worker exit0推出Case创建；必须读operation/run/case，保留旧Case0未知根因",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-18",
+      "scenario": "暂停取消在途动作",
+      "steps": "请求暂停/取消，模拟在途返回或丢失响应",
+      "oracle": "不派发新动作；不把取消当撤销；未知保持核对；已有影响可见",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "沿三片已有取消边界验证冻结与历史",
+      "implementation_paths": [
+        "src/parkweave/case_cancellation.py",
+        "src/parkweave/case_cancellation_before_receipt.py",
+        "src/parkweave/case_cancellation_reconciliation.py"
+      ],
+      "remaining_limit": "Run取消与Case取消不同；只覆盖已审有限普通人工片；资源独立释放",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-19",
+      "scenario": "撤权与缓存",
+      "steps": "撤回权限后继续读写或发送，再查看输出",
+      "oracle": "当前授权优先，旧缓存/批准不恢复授权；记录在途无法收回边界",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "撤权/旧键/冷GET/通知重读负例",
+      "implementation_paths": [
+        "src/parkweave/store.py",
+        "src/parkweave/preparation.py",
+        "src/parkweave/dispatch_notices.py"
+      ],
+      "remaining_limit": "当前权限先于回放，历史授权读取保留；缓存已取副本不能收回",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-20",
+      "scenario": "外部结果不明工程测试",
+      "steps": "驱动恢复与重试逻辑，按业务ID核对",
+      "oracle": "OUTCOME_UNKNOWN不盲重发；失败适配器明确标FAULT_INJECTION，不称真实集成",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "本地丢响应原key只读核对；故障适配器另标",
+      "implementation_paths": [
+        "src/parkweave/gateway.py",
+        "src/parkweave/receipt_history_recovery.py"
+      ],
+      "remaining_limit": "无外部调用；FAULT_INJECTION不计真实接入；不盲重发未知效果",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-21",
+      "scenario": "准备度三值",
+      "steps": "执行条件和AND/OR组合核对",
+      "oracle": "三值结果符合独立真值表；无证据不通过；不显示官方审批结论",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "现有三值表/材料缺口",
+      "implementation_paths": [
+        "src/parkweave/readiness.py",
+        "tests/test_foundation.py"
+      ],
+      "remaining_limit": "纯合成目录资格NOT_EVALUATED；不能给官方审批结论",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-22",
+      "scenario": "地区日期与规则版本",
+      "steps": "在指定时点评估并更换服务版本",
+      "oracle": "不混用地区或失效版本；未审核候选不直接用于承诺；历史按当时规则留存",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "来源版本改变/历史按原版本留存",
+      "implementation_paths": [
+        "src/parkweave/catalog_publication.py",
+        "src/parkweave/preparation.py"
+      ],
+      "remaining_limit": "合成目录版本不证明真实地区/正式政策适用",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-23",
+      "scenario": "材料清单与不伪造",
+      "steps": "生成材料目录与草稿并请求复核",
+      "oracle": "缺事实留缺口；不生成虚假资质/财务/签章；材料齐全不冒充已批准",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "独立双槽新材料/补正/REVIEW/CONFIRM",
+      "implementation_paths": [
+        "src/parkweave/material_corrections.py",
+        "src/parkweave/material_preparation_drafts.py",
+        "src/parkweave/material_objections.py"
+      ],
+      "remaining_limit": "来源未核实留UNVERIFIED；不造资质/签章；材料齐全不等批准",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-24",
+      "scenario": "机会提示作用域和去重",
+      "steps": "导入事件与手动刷新，重复/乱序触发",
+      "oracle": "只匹配有权企业；同版本不重复骚扰；不外发消息或宣称后台一直在线",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "同Case原机会/手动刷新/站内通知去重",
+      "implementation_paths": [
+        "src/parkweave/case_opportunities.py",
+        "src/parkweave/dispatch_notices.py"
+      ],
+      "remaining_limit": "受控有权合成来源，不外发/不宣称关机仍后台在线",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-25",
+      "scenario": "依赖失效与未知扩大重验",
+      "steps": "修改源规则/资料/容量，再生成补丁和检查",
+      "oracle": "确定依赖更新；未知扩大重验而非乱改；分别报告漏更新与误改",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "版本/材料/容量改变实际影响与明确局部修订",
+      "implementation_paths": [
+        "src/parkweave/registered_dependencies.py",
+        "src/parkweave/service_case_steps.py",
+        "tests/test_registered_local_revision.py"
+      ],
+      "remaining_limit": "稳定ID/正文/未受影响项保留，未知扩本Case重验，不自动重绑定",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-26",
+      "scenario": "人工锁与历史事实",
+      "steps": "提出变更并处理冲突",
+      "oracle": "LOCK_CONFLICT保留原内容；未解冲突不自动发布；历史不删除，当前有效性单列",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "人工锁冲突/历史回执保留",
+      "implementation_paths": [
+        "src/parkweave/service_plan_manual_lock.py",
+        "src/parkweave/service_case_steps.py"
+      ],
+      "remaining_limit": "被影响锁须显式UNLOCK，核验无权覆盖原决定",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-27",
+      "scenario": "定义升级与业务数据",
+      "steps": "尝试不兼容发布/数据迁移/回退",
+      "oracle": "阻止不兼容操作；版本回退不回滚业务事实，预检有证据",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "既有模板升级/原业务不回滚",
+      "implementation_paths": [
+        "src/parkweave/template_upgrade.py",
+        "src/parkweave/store.py"
+      ],
+      "remaining_limit": "无本片生产迁移/发布；逐实例选择不等正式Release已部署",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-28",
+      "scenario": "资源状态新鲜度",
+      "steps": "检查可用性并申请确认",
+      "oracle": "显示来源/时间及需确认；本地非权威快照不能保证外部资源可用",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "资源来源/更新时间/容量与确认回读",
+      "implementation_paths": [
+        "src/parkweave/resource_holds.py",
+        "src/parkweave/resource_alternative_times.py"
+      ],
+      "remaining_limit": "SYNTHETIC LOCAL_AUTHORITY仅本地容量，不称真实房间/设备预约",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-29",
+      "scenario": "时间与办理期限",
+      "steps": "计算冲突/期限，执行合法与非法停表",
+      "oracle": "UTC存储和业务时区一致；[start,end)与缓冲正确；无来源不编SLA，非法暂停被拒",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "UTC/[start,end)/双缓冲/DB过期",
+      "implementation_paths": [
+        "src/parkweave/resource_holds.py",
+        "src/parkweave/handling_deadline.py"
+      ],
+      "remaining_limit": "正式日历/SLA/合法业务停表仍NOT_RUN；无源UNKNOWN/非法暂停拒绝",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-30",
+      "scenario": "限流截断与全成本",
+      "steps": "请求、失败、验证与修复多条路径",
+      "oracle": "共享或明确划分总额度；非流式工具完整校验；步骤有上限；未知usage不记零；注入不冒充真实上游",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "模型0调用与既有预算门保留",
+      "implementation_paths": [
+        "src/parkweave/account_rate.py",
+        "src/parkweave/model_chain.py"
+      ],
+      "remaining_limit": "不启用真实账号；本片不能签真实限流/usage成本验收",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-31",
+      "scenario": "公平对照与验收不降低",
+      "steps": "运行B0/B1/B2，复核失败与标准版本",
+      "oracle": "各组有合理能力且安全保护相同；固定标准不被模型降低；保留全部失败和修复成本",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "失败原件/oracle版本/范围不降低",
+      "implementation_paths": [
+        "scripts/run_acceptance.py",
+        "docs/验收规格.json"
+      ],
+      "remaining_limit": "B0/B1/B2真实公平对照未运行；工程局部不转整项AT PASS",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-32",
+      "scenario": "数据来源与效果声明",
+      "steps": "检查输入、输出、使用反馈和报告引用",
+      "oracle": "各类分列；无真实试点就明确无证据；不能把校园模拟/专家检查当园区上线",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "数据源和效果声明贯穿机器报告",
+      "implementation_paths": [
+        "docs/sources/V1/平台产品设计 (2).md",
+        "docs/F2/PR0-CurrentGaps.md"
+      ],
+      "remaining_limit": "仅合成/人工驱动；无真实园区试点/线下履约/AI代办声明",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-33",
+      "scenario": "第二园区配置迁移",
+      "steps": "映射配置并在新授权下运行A/B/C任务",
+      "oracle": "结果可核对、不同园区隔离；统计人工配置/代码与回归问题，不预设一键迁移",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "fixture-c跨园区隔离负例",
+      "implementation_paths": [
+        "tests/conftest.py",
+        "tests/test_authorization_files.py"
+      ],
+      "remaining_limit": "不等第二园区A/B/C配置迁移、成本及新授权验收",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-34",
+      "scenario": "干净Windows复现与关机边界",
+      "steps": "重建、关闭网页/API/worker、重启环境，检查时效",
+      "oracle": "隐含依赖可见；关机期间不报继续运行；重开不重复操作，占位按当前时钟失效",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "LIVE",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "普通API/worker进程冷启读回可验",
+      "implementation_paths": [
+        "tests/test_full_process_record_recovery.py",
+        "tests/normal_recovery_process.py"
+      ],
+      "remaining_limit": "旧helper含browser，不能直接跑；Linux进程重启不替代干净Win11/关机边界",
+      "executed_in_this_window": false
+    },
+    {
+      "id": "AT-35",
+      "scenario": "首个完整办理和重新使用",
+      "steps": "规划→确认→本地办理→补件/接单→回执→确认；再次运行",
+      "oracle": "关键状态持久化并能被对应角色操作；不靠手改源码/数据库；不同输入输出不混淆",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定",
+      "review_scope": "STATIC_MAPPING_ONLY",
+      "proposed_finite_check": "A真实权限阻断+B已有setup普通生产API手工完整链/再次新输入",
+      "implementation_paths": [
+        "tests/test_service_case_steps.py",
+        "tests/test_case_goal_results.py",
+        "tests/test_case_lifecycle.py"
+      ],
+      "remaining_limit": "B只有限合成授权前提链；不能签无setup正式AT35或PR0-alpha/F2阶段门",
+      "executed_in_this_window": false
+    }
+  ]
+}

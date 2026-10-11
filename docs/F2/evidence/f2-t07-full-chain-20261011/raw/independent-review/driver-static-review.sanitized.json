@@ -1,0 +1,105 @@
+{
+  "created_at": "2026-10-11T16:33:08.040704+00:00",
+  "current_read_files": {
+    "docs/F2/T07FullChainContract.md": "e44cb7d851ab51531ae53cc412e0679f9972f4b3644e30fac7e57189cfbbfa7e",
+    "src/parkweave/case_goal_results.py": "3cf0b4b1359da799de7c291b61b2cf746357dd4f5503dbce26470f1940d94516",
+    "src/parkweave/case_lifecycle.py": "8344f3c6510e0eb6bd38855a8af8fadca995d8a0ed5e0c96d514db859215e1bd",
+    "src/parkweave/dispatch_notices.py": "e0d2365a1da07cc494a9168662f59ca4b17bcced73529ff171b2569cfea92a33",
+    "src/parkweave/service_case_steps.py": "3cda5e4c056db8ab729e21e0dd8a1c31a8019b1113007136118f3bd3af5f1734",
+    "tests/test_f2_t07_full_chain.py": "aa7d33757a94f523fe5ae0edb3c1e96215fab5f2678ec367c938f76876f12137"
+  },
+  "decision": "LIMITED_STATIC_REVIEW_DRIVER_COVERAGE_GAPS",
+  "expected_authorization_blocker": "A ordinary fresh Run still has no production access assignment authority; no permission expansion recommended",
+  "findings": [
+    {
+      "detail": "Global LOCAL_OUTPUTS_VERIFIED plus count5 cannot independently detect wrong-Case/current-version output mixing.",
+      "id": "E01_CURRENT_CHAIN_OUTPUT_PROOFS",
+      "location": "tests/test_f2_t07_full_chain.py:238",
+      "recommendation": "Assert outer preparation/case/run/request/plan identity; match exact goal->adapter set and each evidence UUID/version/SHA, combination/link/offer/step/executor/current receipt/version/SHA/SUBMIT+ACK IDs, current-cycle REVALIDATE event against API+owned PG reads. Assert no stale actual_output before reverify.",
+      "severity": "HIGH_EVIDENCE_GAP"
+    },
+    {
+      "detail": "Contract T07-F old notice OPEN is absent. worker drain alone does not verify delivery/read/current actionability.",
+      "id": "E02_NOTICE_PATH",
+      "location": "tests/test_f2_t07_full_chain.py:343",
+      "recommendation": "GET original /api/dispatch-notices with recipient; bind exact OFFER event_id/preparation_id/dispatch_id/revision; OPEN then MARK_READ and monotonic timestamps. After Case cancellation GET/OPEN original authorized notice and assert case_cancelled=true/actionable=false, no offer state WITHDRAWN fabrication and late ACCEPT409. Include outbox/notices/projection counts or scoped PG oracle.",
+      "severity": "MEDIUM_EVIDENCE_GAP"
+    },
+    {
+      "detail": "T07-G promises no receipt/ACK no close; actual new full-chain test closes only after complete acknowledged business records.",
+      "id": "E03_PREMATURE_CLOSE",
+      "location": "tests/test_f2_t07_full_chain.py:300",
+      "recommendation": "On same chain after ACCEPT and again after SUBMIT-before-ACK, submit original local REVALIDATE/CLOSE with current CAS/SHA and expect409/no local event/business mutation. Preserve need for P4 verification. After CLOSE assert Case WAITING_CONFIRMATION, old P5 NEEDS_RECHECK before fresh explicit VERIFY; after REOPEN assert cleared verification/current cycle2 and no current result until explicit REVALIDATE/P5VERIFY.",
+      "severity": "MEDIUM_EVIDENCE_GAP"
+    },
+    {
+      "detail": "setup.actor='executor-a' misidentifies the assignment target as the setup authority; actual invoker is owner Store.",
+      "id": "E04_SETUP_ACTOR_AND_EXACT_DELTA",
+      "location": "tests/test_f2_t07_full_chain.py:108",
+      "recommendation": "Use setup_actor=OWNED_SYNTHETIC_FIXTURE_DATABASE_OWNER and target_executor_id=executor-a. Assert exactly one intended new assignment with exact Run/scope/active/managed_access=None and all earlier assignment rows unchanged, plus current existing role/READ. Keep all other authority tables byte/logically unchanged.",
+      "severity": "MEDIUM_EVIDENCE_GAP"
+    },
+    {
+      "detail": "New matrix covers cross-scope and ownerREAD only; it lacks same-chain stale preparation/resource/receipt revision plus own-role EXECUTE/PREPARE/assignment boundaries promised in contract.",
+      "id": "E05_CURRENT_VERSION_AND_REVOCATION",
+      "location": "tests/test_f2_t07_full_chain.py:320",
+      "recommendation": "Either add compact same-chain cases or explicitly map exact existing regression testIDs in final38+new module scope. Own executor ACK403/owner SUBMIT403, PREPARE/EXECUTE revocation current writes403 and correct authorized historical GET; assignment revocation lateACCEPT/SUBMIT/ACK403. Old material/source/hash or receipt revision409; no admin regrant.",
+      "severity": "MEDIUM_EVIDENCE_GAP"
+    },
+    {
+      "detail": "actual_http starts a new API object/thread in the same host process; current cold check reads only goal-results.",
+      "id": "E06_COLD_BOUNDARY",
+      "location": "tests/test_f2_t07_full_chain.py:290",
+      "recommendation": "Label API-object/Store replacement accurately. For process-cold claim start ordinary uvicorn configured_app factory in own child with same low-privilege DSN and no bridges, preserve PID/argv/exit/stdout/stderr and GET original Run/material/receipt/plan/recovery/local/goals. Do not run existing Chromium helper. At minimum read exact same IDs/version/SHA after fresh Store and assert no business writes.",
+      "severity": "MEDIUM_SCOPE_LIMIT"
+    },
+    {
+      "detail": "Fixed quantity2/current revision1 holds plus occupied_peak assertions cover one resource cancellation capacity but not declared broad final-slot/version/TTL integration.",
+      "id": "E07_CAPACITY_VERSION_ORACLE",
+      "location": "tests/test_f2_t07_full_chain.py:171",
+      "recommendation": "Bind preview.resource_revision/current source and authoritative synthetic source. Assert both resource members CONFIRMED/current claims and exact capacity; after cancel both remainoccupied and independent whole release freesboth. Add same-chain expired hold/stale expected_revision or map precise existing owned PG concurrency/window/TTL tests; no SQLite stand-in.",
+      "severity": "MEDIUM_EVIDENCE_GAP"
+    },
+    {
+      "detail": "Whole original command event differs intentionally from read-only recovery event projection; first10 failures must remain actual FAIL.",
+      "id": "E08_RECOVERY_ORACLE",
+      "location": "tests/test_f2_t07_full_chain.py:165",
+      "recommendation": "Match exact projection id,plan_id,revision,action,step_id,expected_revision,previous_plan_id,actor_ref,request_key,historical_only,current_plan plus outerCase/Run/preparation/read_only/automatically_replayed=false. Do not demand absent source/SHA/fingerprint/actor_id/reason. Current recovery steps have no allowed_actions/source/verified_sources and must not persist observation writes.",
+      "severity": "KNOWN_TEST_ORACLE_FAILURE"
+    },
+    {
+      "detail": "All valid complete cases use existing fixture-a; foreign tenants are negative actors. This is not two valid enterprise full chains.",
+      "id": "E09_DECLARED_CASE_SCOPE",
+      "location": "tests/test_f2_t07_full_chain.py:89",
+      "recommendation": "Keep scope statement precise; if two successful tenant chains desired parameterize original existing fixture-b with its own specialist/executor/material/holds and exact assignment setup, no new grant. Current AT35 once-again same-scope new inputs remains a valid finite reuse test, not broad tenant success proof.",
+      "severity": "LOW_SCOPE_LIMIT"
+    }
+  ],
+  "own_tests": {
+    "PG_API_worker_Node_browser_executions": 0,
+    "status": "NOT_RUN"
+  },
+  "parent_first_window": {
+    "counts": {
+      "ERROR": 0,
+      "FAIL": 10,
+      "PASS": 0,
+      "SKIP": 0
+    },
+    "driver_sha256": "b6a987b3f7ba71925dd95d9b15f658bf606e4d9aca539b33e2dad0920396a5f6",
+    "exit_code": 1,
+    "run_record_sha256": "dded4e54fa446c98358a429b5e93c3ba43f0863849f8fd69db578c39084141ee",
+    "scope": "Parent actual window metadata and JUnit inspected, not independent rerun",
+    "source_commit": null,
+    "source_drift": [],
+    "source_files": 406,
+    "source_manifest_sha256": "c97a2f5576104756b6e2015780ded015c1550b7d76afd5da3ebdc6739738b763",
+    "uncommitted": true,
+    "unique_test_ids": 10,
+    "xml_sha256": "81b02cbe82badf062fc60a97bcdb16d208e220a37498039146c25f1525f7e75c"
+  },
+  "product_bug_reproduced": false,
+  "recommended_product_changes": "none based on this static review; strengthen driver/evidence and disclose finite limits",
+  "schema_version": 1,
+  "signed_old_records_changed": false
+}

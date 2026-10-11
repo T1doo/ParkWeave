@@ -1,0 +1,36 @@
+F.F                                                                      [100%]
+=================================== FAILURES ===================================
+____ test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history ____
+tests/test_f2_t07_full_chain.py:418: in test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history
+    u = chain; p, g, data, d, s = u.completed('first')
+                                  ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:376: in completed
+    self.assert_outputs(p, combo, d, s, outputs)
+tests/test_f2_t07_full_chain.py:311: in assert_outputs
+    members = [r for r in rows['synthetic_resource_holds'] if str(r['combination_id']) == combo['id']]
+                                                                  ^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'combination_id'
+_ test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history _
+tests/test_f2_t07_full_chain.py:436: in test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history
+    u = chain; p, g, data, d, s = u.completed(feedback=True)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:376: in completed
+    self.assert_outputs(p, combo, d, s, outputs)
+tests/test_f2_t07_full_chain.py:311: in assert_outputs
+    members = [r for r in rows['synthetic_resource_holds'] if str(r['combination_id']) == combo['id']]
+                                                                  ^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'combination_id'
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_f2_t07_full_chain.py::test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_f2_t07_full_chain.py::test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history
+FAILED tests/test_f2_t07_full_chain.py::test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history
+2 failed, 1 passed, 2 warnings in 20.00s

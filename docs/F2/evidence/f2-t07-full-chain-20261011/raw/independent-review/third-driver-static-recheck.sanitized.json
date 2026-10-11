@@ -1,0 +1,397 @@
+{
+  "base_delivery_sha": "28f28328efb23f60cdfbbc51ae215cebd5261a08",
+  "confirmed_new_product_defects": [],
+  "current_406_against_complete_chain_manifest_drift": [
+    "tests/test_f2_t07_full_chain.py"
+  ],
+  "driver_sha256_field_meaning": "run_window.py capture program hash, not tests/test_f2_t07_full_chain.py hash; actual test driver hash is in source manifest.",
+  "final_source_commit": "NOT_YET_REVIEWED",
+  "findings": [
+    {
+      "id": "S01",
+      "location": "tests/test_f2_t07_full_chain.py::Chain.cold_api",
+      "message": "Health readiness checks only HTTP 200; use the existing health process_id, schema, data and execution_mode to bind the response to the owned configured_app child. communicate timeout should terminate/kill only that owned child and preserve diagnostics.",
+      "severity": "EVIDENCE_IMPROVEMENT"
+    },
+    {
+      "id": "S02",
+      "location": "tests/test_f2_t07_full_chain.py::Chain.assert_outputs",
+      "message": "P1 individually checks projected evidence rows but does not require output evidence IDs to be unique and exactly equal to all two current preparation materials. Review/confirm event payload source/case/run revisions and snapshot hash can be independently asserted.",
+      "severity": "EVIDENCE_IMPROVEMENT"
+    },
+    {
+      "id": "S03",
+      "location": "tests/test_f2_t07_full_chain.py::test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history",
+      "message": "After closing the local record, explicitly assert P5 NEEDS_RECHECK before VERIFY and P1-P4 still current. Bind P5 revalidation event preparation_id and snapshot SHA to the same current local record.",
+      "severity": "EVIDENCE_IMPROVEMENT"
+    },
+    {
+      "id": "S04",
+      "location": "tests/test_f2_t07_full_chain.py::test_current_owner_revocation_blocks_cold_original_material_key_and_delivery_read",
+      "message": "The revocation scenario performs fresh requests on the original HTTP server; the separate configured_app process currently covers only successful whole-chain read, not this revocation case.",
+      "severity": "COVERAGE_LIMIT"
+    },
+    {
+      "id": "S05",
+      "location": "src/parkweave/store.py::Store.assign_status; src/parkweave/api.py::access_bridge",
+      "message": "Ordinary new Run has no production assignment writer. A correctly proves default 403; B uses precisely documented owner-only synthetic setup assignment. Neither result is formal zero-setup AT35.",
+      "severity": "FORMAL_BLOCKER"
+    }
+  ],
+  "full_related_regression": "NOT_YET_REVIEWED",
+  "independent_execution": {
+    "ASGI_or_real_HTTP": "NOT_RUN",
+    "NodeVM": "NOT_RUN",
+    "PG": "NOT_RUN",
+    "browser_attempts": 0,
+    "worker": "NOT_RUN"
+  },
+  "old_signed_reports_unchanged": true,
+  "previous_405_drift": [],
+  "previous_product_source_sha": "796b41ad8939ba1d067f84f137a4d2a1861f06d4",
+  "remaining_formal_blockers": [
+    "Production authorization contract for assignment on a normal new Run is missing; no grant or bridge created.",
+    "Full formal AT01-35, real model, natural-person pilot, external fulfillment, native Windows, and browser acceptance are NOT_RUN.",
+    "Historical Case_count0 cause remains UNKNOWN; new successful worker evidence does not establish its root cause."
+  ],
+  "reviewed_at_utc": "2026-10-11T16:42:14.364894+00:00",
+  "reviewed_input_hashes": {
+    ".runtime/f2-t07-full-chain/run_window.py": "b6a987b3f7ba71925dd95d9b15f658bf606e4d9aca539b33e2dad0920396a5f6",
+    "docs/F2/T07FullChainContract.md": "e44cb7d851ab51531ae53cc412e0679f9972f4b3644e30fac7e57189cfbbfa7e",
+    "src/parkweave/api.py": "e04e656b92fd2e9ad91ab2144c2b2a459353f3881a709b99dc265dc899ffcf5b",
+    "src/parkweave/case_goal_results.py": "3cf0b4b1359da799de7c291b61b2cf746357dd4f5503dbce26470f1940d94516",
+    "src/parkweave/case_lifecycle.py": "8344f3c6510e0eb6bd38855a8af8fadca995d8a0ed5e0c96d514db859215e1bd",
+    "src/parkweave/dispatch_notices.py": "e0d2365a1da07cc494a9168662f59ca4b17bcced73529ff171b2569cfea92a33",
+    "src/parkweave/executor_receipts.py": "c3003970cace6455e1eecedbb72f054a180318253d80ef71f5da0706ee0e99d5",
+    "src/parkweave/resource_combinations.py": "acb909de69aa4a4cbced140adb5df4ec203b797a8fc4dda36a773d94fe35d496",
+    "src/parkweave/resource_holds.py": "5c1cf1ce89298150b9ac32c962ccf1e6a14736a9cc32379c48bca2c611966f72",
+    "src/parkweave/service_case_steps.py": "3cda5e4c056db8ab729e21e0dd8a1c31a8019b1113007136118f3bd3af5f1734",
+    "src/parkweave/store.py": "d3e87d8310c2c6caa103585cf89058f16fa9d862d2386c517a663204fd607cdc",
+    "tests/test_f2_t07_full_chain.py": "00be48fac389026f2bff29a37a064961c86c9292714ceb295bbca2f672cbd521"
+  },
+  "root_complete_chain_trace_metadata": [
+    {
+      "cold_api_count": 0,
+      "cold_api_exit_codes": [],
+      "initial_case_count": 0,
+      "initial_run_count": 0,
+      "path": ".runtime/f2-t07-full-chain/windows/complete-chain/02ed7b79d5d9.json",
+      "proof_count": 1,
+      "request_count": 52,
+      "setup_assignment_count": 1,
+      "sha256": "c54c16341a5a9b772cd37e6aa4f242d66b8615cbc8934bc13e527070d23646b2",
+      "test_id": "tests/test_f2_t07_full_chain.py::test_current_owner_revocation_blocks_cold_original_material_key_and_delivery_read",
+      "worker_count": 2,
+      "worker_exit_codes": [
+        0,
+        0
+      ]
+    },
+    {
+      "cold_api_count": 0,
+      "cold_api_exit_codes": [],
+      "initial_case_count": 0,
+      "initial_run_count": 0,
+      "path": ".runtime/f2-t07-full-chain/windows/complete-chain/1c24412fc4e9.json",
+      "proof_count": 1,
+      "request_count": 55,
+      "setup_assignment_count": 1,
+      "sha256": "7f14e390f3985e0a6fcc2178094b968aa74f6b959acc86a3cec5e887c343e81f",
+      "test_id": "tests/test_f2_t07_full_chain.py::test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[executor-b]",
+      "worker_count": 2,
+      "worker_exit_codes": [
+        0,
+        0
+      ]
+    },
+    {
+      "cold_api_count": 0,
+      "cold_api_exit_codes": [],
+      "initial_case_count": 0,
+      "initial_run_count": 0,
+      "path": ".runtime/f2-t07-full-chain/windows/complete-chain/570283052e40.json",
+      "proof_count": 1,
+      "request_count": 55,
+      "setup_assignment_count": 1,
+      "sha256": "fa8dcc01d819310e56ead72e605ac35b7e36f9b1e2a4711ed4f6ceffd0082535",
+      "test_id": "tests/test_f2_t07_full_chain.py::test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[fixture-c]",
+      "worker_count": 2,
+      "worker_exit_codes": [
+        0,
+        0
+      ]
+    },
+    {
+      "cold_api_count": 0,
+      "cold_api_exit_codes": [],
+      "initial_case_count": 0,
+      "initial_run_count": 0,
+      "path": ".runtime/f2-t07-full-chain/windows/complete-chain/69261b6be9bf.json",
+      "proof_count": 1,
+      "request_count": 55,
+      "setup_assignment_count": 1,
+      "sha256": "6cb45a4c71ce12d6dfb33c47284fbefb58546f9418f082ebaa6ef6008d2718eb",
+      "test_id": "tests/test_f2_t07_full_chain.py::test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[unassigned]",
+      "worker_count": 2,
+      "worker_exit_codes": [
+        0,
+        0
+      ]
+    },
+    {
+      "cold_api_count": 0,
+      "cold_api_exit_codes": [],
+      "initial_case_count": 0,
+      "initial_run_count": 0,
+      "path": ".runtime/f2-t07-full-chain/windows/complete-chain/6c4a486527a9.json",
+      "proof_count": 0,
+      "request_count": 32,
+      "setup_assignment_count": 0,
+      "sha256": "efa3588502bbf99e6cff155ef6d54491c5f59d1113f7ab7f57fcfdbfb8d2d7b8",
+      "test_id": "tests/test_f2_t07_full_chain.py::test_fresh_ordinary_chain_exposes_missing_production_run_access_without_repair",
+      "worker_count": 1,
+      "worker_exit_codes": [
+        0
+      ]
+    },
+    {
+      "cold_api_count": 0,
+      "cold_api_exit_codes": [],
+      "initial_case_count": 0,
+      "initial_run_count": 0,
+      "path": ".runtime/f2-t07-full-chain/windows/complete-chain/81b3e90398ab.json",
+      "proof_count": 0,
+      "request_count": 41,
+      "setup_assignment_count": 1,
+      "sha256": "e42132fecaa9b1f801f31144b193b35d040825a4d192a2f6bfe46a63893cf7b2",
+      "test_id": "tests/test_f2_t07_full_chain.py::test_offer_cancel_retains_capacity_and_history_until_independent_release",
+      "worker_count": 3,
+      "worker_exit_codes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cold_api_count": 0,
+      "cold_api_exit_codes": [],
+      "initial_case_count": 0,
+      "initial_run_count": 0,
+      "path": ".runtime/f2-t07-full-chain/windows/complete-chain/8daf2ec728a4.json",
+      "proof_count": 1,
+      "request_count": 60,
+      "setup_assignment_count": 1,
+      "sha256": "d3179b05d22a5d9e56195c27310cc5cde94207b86e907adfabe617641720685c",
+      "test_id": "tests/test_f2_t07_full_chain.py::test_unsupported_new_goal_and_invalid_inputs_do_not_erase_prior_chain",
+      "worker_count": 3,
+      "worker_exit_codes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "cold_api_count": 0,
+      "cold_api_exit_codes": [],
+      "initial_case_count": 0,
+      "initial_run_count": 0,
+      "path": ".runtime/f2-t07-full-chain/windows/complete-chain/94d43474da34.json",
+      "proof_count": 1,
+      "request_count": 84,
+      "setup_assignment_count": 1,
+      "sha256": "f830701ce25b3be8ebe2128fc0ac7ba434db41b1199cde6728f1973d5c2ed9fa",
+      "test_id": "tests/test_f2_t07_full_chain.py::test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history",
+      "worker_count": 2,
+      "worker_exit_codes": [
+        0,
+        0
+      ]
+    },
+    {
+      "cold_api_count": 0,
+      "cold_api_exit_codes": [],
+      "initial_case_count": 0,
+      "initial_run_count": 0,
+      "path": ".runtime/f2-t07-full-chain/windows/complete-chain/97419eea4005.json",
+      "proof_count": 1,
+      "request_count": 55,
+      "setup_assignment_count": 1,
+      "sha256": "fdabc6f7a7b005fd44c0e80c80f033ed7eb6127264525870b8c46a1431209bdc",
+      "test_id": "tests/test_f2_t07_full_chain.py::test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[fixture-b]",
+      "worker_count": 2,
+      "worker_exit_codes": [
+        0,
+        0
+      ]
+    },
+    {
+      "cold_api_count": 1,
+      "cold_api_exit_codes": [
+        -15
+      ],
+      "initial_case_count": 0,
+      "initial_run_count": 0,
+      "path": ".runtime/f2-t07-full-chain/windows/complete-chain/fa10ea00b369.json",
+      "proof_count": 3,
+      "request_count": 103,
+      "setup_assignment_count": 2,
+      "sha256": "cc45ab69c9a499abffdeaa9c5ed312e45c492c53acdc4adaa1a86f564e778450",
+      "test_id": "tests/test_f2_t07_full_chain.py::test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history",
+      "worker_count": 4,
+      "worker_exit_codes": [
+        0,
+        0,
+        0,
+        0
+      ]
+    }
+  ],
+  "root_windows": [
+    {
+      "cause_or_scope": "New driver incorrectly compared compact read-only recovery event with the full command event.",
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 10,
+        "PASS": 0,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 27.473,
+      "exit_code": 1,
+      "log_path": ".runtime/f2-t07-full-chain/first.log",
+      "log_sha256": "208a4aeffb297af5ccca57d39a2719763f4fc638e9be8470c58bb4e9ce53e34d",
+      "name": "first",
+      "operator": "ROOT",
+      "run_path": ".runtime/f2-t07-full-chain/first-run.json",
+      "run_sha256": "dded4e54fa446c98358a429b5e93c3ba43f0863849f8fd69db578c39084141ee",
+      "source_commit": null,
+      "source_drift": [],
+      "source_manifest_sha256": "c97a2f5576104756b6e2015780ded015c1550b7d76afd5da3ebdc6739738b763",
+      "test_count": 10,
+      "test_source_sha256": "5a7497beb724f24800fc59c9deba72395ac05799ba87edb64553bfd56f0aefe9",
+      "xml_path": ".runtime/f2-t07-full-chain/first.xml",
+      "xml_sha256": "81b02cbe82badf062fc60a97bcdb16d208e220a37498039146c25f1525f7e75c"
+    },
+    {
+      "cause_or_scope": "New driver looked for cancellation case_state at the top level instead of event.case_state.",
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 1,
+        "PASS": 9,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 71.271,
+      "exit_code": 1,
+      "log_path": ".runtime/f2-t07-full-chain/second.log",
+      "log_sha256": "2e315b1d19e967cb085d56c12f04f3a315fcfc61cbcbedbecf2c182f4fd7bd80",
+      "name": "second",
+      "operator": "ROOT",
+      "run_path": ".runtime/f2-t07-full-chain/second-run.json",
+      "run_sha256": "34d1fa9364236568a74f62212b658308d182e4d49e35f0a14e678378663366aa",
+      "source_commit": null,
+      "source_drift": [],
+      "source_manifest_sha256": "76d7092dd38c16eaee06964c8e001827db0085451659ca8f5f28f5bd3a94ec96",
+      "test_count": 10,
+      "test_source_sha256": "aa7d33757a94f523fe5ae0edb3c1e96215fab5f2678ec367c938f76876f12137",
+      "xml_path": ".runtime/f2-t07-full-chain/second.xml",
+      "xml_sha256": "9b5fd5d1cd1525a3686094b35c9bd1a34d464d92470636e17c5d4b9f274911fa"
+    },
+    {
+      "cause_or_scope": "New fixture oracle accessed absent run_assignments managed_access column; this stage did not reach the later proof-oracle problems.",
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 9,
+        "PASS": 1,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 21.305,
+      "exit_code": 1,
+      "log_path": ".runtime/f2-t07-full-chain/third.log",
+      "log_sha256": "40a94b75e31f7c17bbb3e421aeb815fbdef5f2c393e3fa88167f9e69f6685339",
+      "name": "third",
+      "operator": "ROOT",
+      "run_path": ".runtime/f2-t07-full-chain/third-run.json",
+      "run_sha256": "ebc1a6e7a3685d706965516ad0b5af126712458ebe689f67c4f19eeaed5d1069",
+      "source_commit": null,
+      "source_drift": [],
+      "source_manifest_sha256": "2a1f10b60904c327c7efaa1dd12a55e610c532c5c80eed4efd2980c4545029af",
+      "test_count": 10,
+      "test_source_sha256": "32092f893f44534e3f0be4c54bc5a43997e55202e0c3b87eb6b51420e0a32dba",
+      "xml_path": ".runtime/f2-t07-full-chain/third.xml",
+      "xml_sha256": "f3edb0c7c705edfdec52a815b2c905eb492c5dce4a8b9cfffff94573e8bdb660"
+    },
+    {
+      "cause_or_scope": "Raw holds table has no combination_id; membership must be joined through combination_members.",
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 2,
+        "PASS": 1,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 21.442,
+      "exit_code": 1,
+      "log_path": ".runtime/f2-t07-full-chain/proof-check.log",
+      "log_sha256": "0913cf15632664944a237817fc2044a17c4addeaece5bc1d9e592b9ed0eab35d",
+      "name": "proof-check",
+      "operator": "ROOT",
+      "run_path": ".runtime/f2-t07-full-chain/proof-check-run.json",
+      "run_sha256": "4ca68331832755ecfa6a946b0eea79c58669cfc994fe956cb1d48e369903b872",
+      "source_commit": null,
+      "source_drift": [],
+      "source_manifest_sha256": "34cfb0aae5e13ef22923178d55246373ca773f022427845b346841e11b931c6e",
+      "test_count": 3,
+      "test_source_sha256": "e3f43f14b7743e1b1b742f869238a2de1f35a109891a9f754e03ecf0f3f13b93",
+      "xml_path": ".runtime/f2-t07-full-chain/proof-check.xml",
+      "xml_sha256": "3e2c30405a94c7e039004fa1ecc311909c1054ad079eb14de565118b2dc1d485"
+    },
+    {
+      "cause_or_scope": "Two prior proof cases passed after corrected join and plan.events; not a complete module.",
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "PASS": 2,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 28.096,
+      "exit_code": 0,
+      "log_path": ".runtime/f2-t07-full-chain/proof-check-second.log",
+      "log_sha256": "7a0321716a0f319e6bba31becde19ce9b7625a8eaed80d8c1e2d4e27ac70832d",
+      "name": "proof-check-second",
+      "operator": "ROOT",
+      "run_path": ".runtime/f2-t07-full-chain/proof-check-second-run.json",
+      "run_sha256": "948632487ddb21eedee09b0640bd706a1490707c86e950ab67f5eb0d4e4e0601",
+      "source_commit": null,
+      "source_drift": [],
+      "source_manifest_sha256": "6ad22728aec950020ffe4a81f277f9b6581cd58671a5177a3d7a99441a3883a7",
+      "test_count": 2,
+      "test_source_sha256": "75f84ec6b2d5a028abb7f0c52ce3def1810210155155470348aee24876616bfb",
+      "xml_path": ".runtime/f2-t07-full-chain/proof-check-second.xml",
+      "xml_sha256": "2c106dd75b9180d043cbc11e531c0e0cfccf83cef48b14c7941f57e38ff87da0"
+    },
+    {
+      "cause_or_scope": "Ten-case complete new module passed; source remains uncommitted in this window.",
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "PASS": 10,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 92.302,
+      "exit_code": 0,
+      "log_path": ".runtime/f2-t07-full-chain/complete-chain.log",
+      "log_sha256": "9062426b214dea3f3275a1b843fe85b1a22e727a78987b677f60b21c05f6a213",
+      "name": "complete-chain",
+      "operator": "ROOT",
+      "run_path": ".runtime/f2-t07-full-chain/complete-chain-run.json",
+      "run_sha256": "03c26a5d2502ba66aa4c8a4edec81d0ec5fe2eed03a54b701e945e6bbfcfd2a2",
+      "source_commit": null,
+      "source_drift": [],
+      "source_manifest_sha256": "9611e09d5d5bbc3839a1f46175cf01381aceb1cdc79d8e5dc92605949068f154",
+      "test_count": 10,
+      "test_source_sha256": "df8e5407e8cda18f54f12755c0f7302ba6e1ada65ba38d4478c25ba09bfedd1e",
+      "xml_path": ".runtime/f2-t07-full-chain/complete-chain.xml",
+      "xml_sha256": "ea10657995dc30090848cebb0ad9dee1590e43a94ec85986515109b8dc193eff"
+    }
+  ],
+  "scope": "Read-only current T07 finite ordinary HTTP/PG/CLI-worker driver and six root evidence windows; no independent business execution in this phase.",
+  "status": "LIMITED_STATIC_REVIEW"
+}

@@ -1,0 +1,186 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="10" skipped="0" tests="10" time="26.019" timestamp="2026-10-11T16:29:06.816912+00:00" hostname="synthetic-fixture-host"><testcase classname="tests.test_f2_t07_full_chain" name="test_fresh_ordinary_chain_exposes_missing_production_run_access_without_repair" time="3.620"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and {'id': 'f6ad1...'VERIFY', ...} == {'id': 'f6ad1...xture-a', ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Left contains 5 more items:&#10;  {'actor_ref': &quot;[REDACTED opaque fixture value]&quot;,&#10;   'current_plan': True,&#10;   'expected_revision': 1,&#10;   'historical_only': True,...&#10;  &#10;  ...Full output truncated (65 lines hidden), use '-vv' to show)">tests/test_f2_t07_full_chain.py:265: in test_fresh_ordinary_chain_exposes_missing_production_run_access_without_repair
+    authority = u.authority(); u.adopt(p); u.verify(p, 'P1'); u.resources(p); u.verify(p, 'P2')
+                                           ^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:167: in verify
+    assert recovery['status'] == 'COMMITTED' and recovery['event'] == done['event']
+E   AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E     
+E       COMMITTED and {'id': 'f6ad1...'VERIFY', ...} == {'id': 'f6ad1...xture-a', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Left contains 5 more items:
+E     {'actor_ref': "[REDACTED opaque fixture value]",
+E      'current_plan': True,
+E      'expected_revision': 1,
+E      'historical_only': True,...
+E     
+E     ...Full output truncated (65 lines hidden), use '-vv' to show)</failure></testcase><testcase classname="tests.test_f2_t07_full_chain" name="test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history" time="2.452"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and {'id': '907e5...'VERIFY', ...} == {'id': '907e5...xture-a', ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Left contains 5 more items:&#10;  {'actor_ref': &quot;[REDACTED opaque fixture value]&quot;,&#10;   'current_plan': True,&#10;   'expected_revision': 1,&#10;   'historical_only': True,...&#10;  &#10;  ...Full output truncated (63 lines hidden), use '-vv' to show)">tests/test_f2_t07_full_chain.py:277: in test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history
+    u = chain; p, g, data, d, s = u.completed('first')
+                                  ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:216: in completed
+    self.adopt(p); self.verify(p, 'P1')
+                   ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:167: in verify
+    assert recovery['status'] == 'COMMITTED' and recovery['event'] == done['event']
+E   AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E     
+E       COMMITTED and {'id': '907e5...'VERIFY', ...} == {'id': '907e5...xture-a', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Left contains 5 more items:
+E     {'actor_ref': "[REDACTED opaque fixture value]",
+E      'current_plan': True,
+E      'expected_revision': 1,
+E      'historical_only': True,...
+E     
+E     ...Full output truncated (63 lines hidden), use '-vv' to show)</failure></testcase><testcase classname="tests.test_f2_t07_full_chain" name="test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history" time="2.502"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and {'id': '933c4...'VERIFY', ...} == {'id': '933c4...xture-a', ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Left contains 5 more items:&#10;  {'actor_ref': &quot;[REDACTED opaque fixture value]&quot;,&#10;   'current_plan': True,&#10;   'expected_revision': 1,&#10;   'historical_only': True,...&#10;  &#10;  ...Full output truncated (63 lines hidden), use '-vv' to show)">tests/test_f2_t07_full_chain.py:296: in test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history
+    u = chain; p, g, data, d, s = u.completed(feedback=True)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:216: in completed
+    self.adopt(p); self.verify(p, 'P1')
+                   ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:167: in verify
+    assert recovery['status'] == 'COMMITTED' and recovery['event'] == done['event']
+E   AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E     
+E       COMMITTED and {'id': '933c4...'VERIFY', ...} == {'id': '933c4...xture-a', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Left contains 5 more items:
+E     {'actor_ref': "[REDACTED opaque fixture value]",
+E      'current_plan': True,
+E      'expected_revision': 1,
+E      'historical_only': True,...
+E     
+E     ...Full output truncated (63 lines hidden), use '-vv' to show)</failure></testcase><testcase classname="tests.test_f2_t07_full_chain" name="test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[fixture-b]" time="2.416"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and {'id': '0677a...'VERIFY', ...} == {'id': '0677a...xture-a', ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Left contains 5 more items:&#10;  {'actor_ref': &quot;[REDACTED opaque fixture value]&quot;,&#10;   'current_plan': True,&#10;   'expected_revision': 1,&#10;   'historical_only': True,...&#10;  &#10;  ...Full output truncated (63 lines hidden), use '-vv' to show)">tests/test_f2_t07_full_chain.py:317: in test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied
+    u = chain; p, _, _, d, s = u.completed()
+                               ^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:216: in completed
+    self.adopt(p); self.verify(p, 'P1')
+                   ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:167: in verify
+    assert recovery['status'] == 'COMMITTED' and recovery['event'] == done['event']
+E   AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E     
+E       COMMITTED and {'id': '0677a...'VERIFY', ...} == {'id': '0677a...xture-a', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Left contains 5 more items:
+E     {'actor_ref': "[REDACTED opaque fixture value]",
+E      'current_plan': True,
+E      'expected_revision': 1,
+E      'historical_only': True,...
+E     
+E     ...Full output truncated (63 lines hidden), use '-vv' to show)</failure></testcase><testcase classname="tests.test_f2_t07_full_chain" name="test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[fixture-c]" time="2.406"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and {'id': '7d2ea...'VERIFY', ...} == {'id': '7d2ea...xture-a', ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Left contains 5 more items:&#10;  {'actor_ref': &quot;[REDACTED opaque fixture value]&quot;,&#10;   'current_plan': True,&#10;   'expected_revision': 1,&#10;   'historical_only': True,...&#10;  &#10;  ...Full output truncated (63 lines hidden), use '-vv' to show)">tests/test_f2_t07_full_chain.py:317: in test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied
+    u = chain; p, _, _, d, s = u.completed()
+                               ^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:216: in completed
+    self.adopt(p); self.verify(p, 'P1')
+                   ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:167: in verify
+    assert recovery['status'] == 'COMMITTED' and recovery['event'] == done['event']
+E   AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E     
+E       COMMITTED and {'id': '7d2ea...'VERIFY', ...} == {'id': '7d2ea...xture-a', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Left contains 5 more items:
+E     {'actor_ref': "[REDACTED opaque fixture value]",
+E      'current_plan': True,
+E      'expected_revision': 1,
+E      'historical_only': True,...
+E     
+E     ...Full output truncated (63 lines hidden), use '-vv' to show)</failure></testcase><testcase classname="tests.test_f2_t07_full_chain" name="test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[executor-b]" time="2.454"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and {'id': '3c9a8...'VERIFY', ...} == {'id': '3c9a8...xture-a', ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Left contains 5 more items:&#10;  {'actor_ref': &quot;[REDACTED opaque fixture value]&quot;,&#10;   'current_plan': True,&#10;   'expected_revision': 1,&#10;   'historical_only': True,...&#10;  &#10;  ...Full output truncated (63 lines hidden), use '-vv' to show)">tests/test_f2_t07_full_chain.py:317: in test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied
+    u = chain; p, _, _, d, s = u.completed()
+                               ^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:216: in completed
+    self.adopt(p); self.verify(p, 'P1')
+                   ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:167: in verify
+    assert recovery['status'] == 'COMMITTED' and recovery['event'] == done['event']
+E   AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E     
+E       COMMITTED and {'id': '3c9a8...'VERIFY', ...} == {'id': '3c9a8...xture-a', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Left contains 5 more items:
+E     {'actor_ref': "[REDACTED opaque fixture value]",
+E      'current_plan': True,
+E      'expected_revision': 1,
+E      'historical_only': True,...
+E     
+E     ...Full output truncated (63 lines hidden), use '-vv' to show)</failure></testcase><testcase classname="tests.test_f2_t07_full_chain" name="test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[unassigned]" time="2.235"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and {'id': 'a42c3...'VERIFY', ...} == {'id': 'a42c3...xture-a', ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Left contains 5 more items:&#10;  {'actor_ref': &quot;[REDACTED opaque fixture value]&quot;,&#10;   'current_plan': True,&#10;   'expected_revision': 1,&#10;   'historical_only': True,...&#10;  &#10;  ...Full output truncated (63 lines hidden), use '-vv' to show)">tests/test_f2_t07_full_chain.py:317: in test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied
+    u = chain; p, _, _, d, s = u.completed()
+                               ^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:216: in completed
+    self.adopt(p); self.verify(p, 'P1')
+                   ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:167: in verify
+    assert recovery['status'] == 'COMMITTED' and recovery['event'] == done['event']
+E   AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E     
+E       COMMITTED and {'id': 'a42c3...'VERIFY', ...} == {'id': 'a42c3...xture-a', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Left contains 5 more items:
+E     {'actor_ref': "[REDACTED opaque fixture value]",
+E      'current_plan': True,
+E      'expected_revision': 1,
+E      'historical_only': True,...
+E     
+E     ...Full output truncated (63 lines hidden), use '-vv' to show)</failure></testcase><testcase classname="tests.test_f2_t07_full_chain" name="test_current_owner_revocation_blocks_cold_original_material_key_and_delivery_read" time="2.550"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and {'id': 'b9b32...'VERIFY', ...} == {'id': 'b9b32...xture-a', ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Left contains 5 more items:&#10;  {'actor_ref': &quot;[REDACTED opaque fixture value]&quot;,&#10;   'current_plan': True,&#10;   'expected_revision': 1,&#10;   'historical_only': True,...&#10;  &#10;  ...Full output truncated (63 lines hidden), use '-vv' to show)">tests/test_f2_t07_full_chain.py:328: in test_current_owner_revocation_blocks_cold_original_material_key_and_delivery_read
+    u = chain; p, _, _, _, _ = u.completed()
+                               ^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:216: in completed
+    self.adopt(p); self.verify(p, 'P1')
+                   ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:167: in verify
+    assert recovery['status'] == 'COMMITTED' and recovery['event'] == done['event']
+E   AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E     
+E       COMMITTED and {'id': 'b9b32...'VERIFY', ...} == {'id': 'b9b32...xture-a', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Left contains 5 more items:
+E     {'actor_ref': "[REDACTED opaque fixture value]",
+E      'current_plan': True,
+E      'expected_revision': 1,
+E      'historical_only': True,...
+E     
+E     ...Full output truncated (63 lines hidden), use '-vv' to show)</failure></testcase><testcase classname="tests.test_f2_t07_full_chain" name="test_offer_cancel_retains_capacity_and_history_until_independent_release" time="2.323"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and {'id': '6971f...'VERIFY', ...} == {'id': '6971f...xture-a', ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Left contains 5 more items:&#10;  {'actor_ref': &quot;[REDACTED opaque fixture value]&quot;,&#10;   'current_plan': True,&#10;   'expected_revision': 1,&#10;   'historical_only': True,...&#10;  &#10;  ...Full output truncated (63 lines hidden), use '-vv' to show)">tests/test_f2_t07_full_chain.py:339: in test_offer_cancel_retains_capacity_and_history_until_independent_release
+    u = chain; p = u.prepared(); u.adopt(p); u.verify(p, 'P1')
+                                             ^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:167: in verify
+    assert recovery['status'] == 'COMMITTED' and recovery['event'] == done['event']
+E   AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E     
+E       COMMITTED and {'id': '6971f...'VERIFY', ...} == {'id': '6971f...xture-a', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Left contains 5 more items:
+E     {'actor_ref': "[REDACTED opaque fixture value]",
+E      'current_plan': True,
+E      'expected_revision': 1,
+E      'historical_only': True,...
+E     
+E     ...Full output truncated (63 lines hidden), use '-vv' to show)</failure></testcase><testcase classname="tests.test_f2_t07_full_chain" name="test_unsupported_new_goal_and_invalid_inputs_do_not_erase_prior_chain" time="2.575"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and {'id': 'db6a2...'VERIFY', ...} == {'id': 'db6a2...xture-a', ...}&#10;  &#10;  Omitting 6 identical items, use -vv to show&#10;  Left contains 5 more items:&#10;  {'actor_ref': &quot;[REDACTED opaque fixture value]&quot;,&#10;   'current_plan': True,&#10;   'expected_revision': 1,&#10;   'historical_only': True,...&#10;  &#10;  ...Full output truncated (63 lines hidden), use '-vv' to show)">tests/test_f2_t07_full_chain.py:363: in test_unsupported_new_goal_and_invalid_inputs_do_not_erase_prior_chain
+    u = chain; p, _, _, _, _ = u.completed()
+                               ^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:216: in completed
+    self.adopt(p); self.verify(p, 'P1')
+                   ^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:167: in verify
+    assert recovery['status'] == 'COMMITTED' and recovery['event'] == done['event']
+E   AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E     
+E       COMMITTED and {'id': 'db6a2...'VERIFY', ...} == {'id': 'db6a2...xture-a', ...}
+E     
+E     Omitting 6 identical items, use -vv to show
+E     Left contains 5 more items:
+E     {'actor_ref': "[REDACTED opaque fixture value]",
+E      'current_plan': True,
+E      'expected_revision': 1,
+E      'historical_only': True,...
+E     
+E     ...Full output truncated (63 lines hidden), use '-vv' to show)</failure></testcase></testsuite></testsuites>
