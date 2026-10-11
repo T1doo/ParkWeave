@@ -484,3 +484,10 @@ ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKI
 最后cold临时parkweave已删除，历史Run及Case不再存活；当时driver仅企业/资料专员，未初始化执行者。receipt-executor-fixture-a仅原launcher显式夹具建议，不能认作当前已有身份；本轮不创建实际新Run绑定。TTL不存在，撤销须原owner方法精确active=False且历史保留。当前路径仍只到事实和双角色资料确认。原生installed还需实际获准的维护/target/数据目录/新库范围，在暂停边界之外单独验证；本轮Linux不是Windows，TLS/GSS等v1不支持。
 
 详见[F2/ENG104](F2/ENG104-CreationReceiptAdapter.md)与[机器证据](integration/ENG104-CreationReceiptEvidence.json)。普通开发同步及精确HEAD CI另留终态；F1未签收/F2并行、PR0/正式ATEX/Win11未完成，R4关闭/真实模型预算0，原环境/备份保留。
+
+
+## F2-T01 声明事实 Case 独立 READ 历史来源（2026-10-11）
+
+从实际 dev873e426255cb62c55cf485cb81e1d1c3c706c373 的独立候选实现当前本人/租户/Case/Run、SERVICE_PREPARATION 三字段 READ 来源合同；显式用途与选择对齐原持久事件，当前选中完整来源/版本/UTC期限/撤回核验，固定opaque投影，不恢复执行或证明，不新增授权/路由/登记。精确源码 f2298026997376e4651e6b6f65c220d4bbb8e38f，378冻结路径0漂移，root与独审分别137PASS（55新纯合同+35声明事实进程内PG+1普通Case兼容+46原纯投影回归）。初次fixture缺双资源和嵌套类型缺陷各0PASS1FAIL原日志保留；修后原断言不放宽。独审35自有PID代际退出，无资源/访问签名。未集成摘要页35a2edb四提交排除，浏览器管理员拒绝仍暂停；持久可信登记/完整发行者重启/真实网络/Windows/全AT/CI未签收，已有317不转算。
+
+合同与脱敏机器证据见 [F2/FactHistoryReadSource](F2/FactHistoryReadSource.md)。原日志/JUnit仅私有runtime，正常开发快进保存；不改main、强推、部署或真实模型/批准/履约。

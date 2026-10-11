@@ -11,3 +11,9 @@
 沿原只读事务前后核查并复用事实字段协作锁，非协作变更由快照比较拒绝；不宣称全部来源原子性。完整 issuer 重启/持久登记、真实网络/页面验收仍未完成。浏览器 data: 管理拒绝持续暂停；本片不启动浏览器、不切换 URL、不更改策略。纯合同、已有隔离 PG 的进程内测试与独立审查只为本片提供证据，旧 317 项不重复作为新成果。
 
 末端时效：目录/资源/材料/数据库身份处理之后再次核对独立事实 READ 描述；描述读取末尾再核字段权限和数据库时钟下的来源有效期。目录阶段注入有界延时的真实数据库时钟负测覆盖等待跨期限，不声称证明另进程真实锁竞争。嵌套收据与来源逐项递归检查类型和值，不能用 Python 的 True==1 或 17==17.0 替代来源完整性。
+
+精确源码 `f2298026997376e4651e6b6f65c220d4bbb8e38f`：378源码路径冻结 manifest SHA256 `48ab8244776ed134207d35fd536c6602743469bbc72361f3a9c76c2cff7438a2`，root与独审前后零漂移。root和独审分别实际137 PASS/0FAIL/0ERROR/0SKIP；55新纯合同、35声明事实隔离PG进程内、1普通Case兼容、46原纯投影相关回归。独审collection/JUnit 137 distinct节点完全一致，35自有PID代际及wrapper退出，资源已释放。结论 LIMITED_PASS，不签页面、实际网络或完整产品验收。
+
+脱敏证据：[root报告](evidence/fact-history-read-source/root-report-safe.json)、[独审报告](evidence/fact-history-read-source/independent-report-safe.json)（SHA256 `d063c67f3e344a1a8b83e9e7eaba00f1cfe0813d51abda6b058f68fe0804b2cc`）。独审未重复复现旧开发字节；原fixture缺双资源0PASS1FAIL、嵌套类型缺陷根侧实际复现0PASS1FAIL日志均保留，修后原断言未放宽。原旧实例失败、页面管理员拒绝和已有317范围不改签或转算。原日志/JUnit/进程argv只留私有runtime，不提交公开仓库。
+
+不需要新权限即可完成上述合同；后续持久化必须另明确登记维护者、受信安装/数据库绑定、绝对期限和撤销维护边界。本片不自动接纳旧历史或持久化proof，原 configured_app 保持默认拒绝，原完整GET/POST资格不变。摘要页候选 `35a2edb76159e2d0d43ca4dc7e6e7a812aaa394c` 的四提交不在本片开发祖先中。Windows原生、CI和全AT未验收。
