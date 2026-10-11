@@ -2,7 +2,8 @@
 
 Old proof is checked as document data, never issued as execution authority.
 The caller's server-owned baselines are independent of the untrusted records.
-There is deliberately no file loader, provider attachment or HTTP entry point.
+There is deliberately no file loader or provider attachment. The ASGI summary
+entry point requires explicit server injection and never registers history.
 """
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -196,7 +197,7 @@ def summaries(stage, baseline, context, rows, key=None):
     return result
 
 
-def current_context(store, c, token, preparation_id):
+def current_context(store, c, token, preparation_id, case_id=None):
     """Existing capabilities only; no bridge, assignment, EXECUTE or PREPARE."""
     p = store.auth(c, token, lock=True)
     store.check_capability(c, p, 'READ')
@@ -206,6 +207,8 @@ def current_context(store, c, token, preparation_id):
         (preparation_id, p['id'], p['park_id'], p['org_id'])).fetchone()
     if parent is None or parent['namespace'] != 'SYNTHETIC':
         raise Denied('own synthetic preparation required')
+    if case_id is not None and str(parent['case_id']) != str(case_id):
+        raise Denied('exact history Case required')
     run = store.scoped_run(c, p, parent['run_id'])
     case = c.execute('SELECT id,run_id,park_id,org_id,source FROM cases WHERE id=%s', (parent['case_id'],)).fetchone()
     if (run['namespace'] != 'SYNTHETIC' or case is None or
@@ -254,7 +257,7 @@ def current_context(store, c, token, preparation_id):
 
 
 class MemoryHistorySummaryReader:
-    """Explicit test/server memory adapter, never attached to existing API routes.
+    """Explicit test/server memory adapter, separate from execution API routes.
 
     Mappings remain server-owned so expiry/revocation is consulted on every call.
     Rows and baselines are copied for each projection and rechecked before return.
@@ -270,20 +273,31 @@ class MemoryHistorySummaryReader:
         return tuple(dict(r) for r in rows)
 
     def read(self, store, token, preparation_id, key=None):
+        return self._read(store, token, preparation_id, key)
+
+    def read_case(self, store, token, case_id, preparation_id, key=None):
+        if type(case_id) is not UUID:
+            raise Denied('exact history Case required')
+        return self._read(store, token, preparation_id, key, case_id)
+
+    def _read(self, store, token, preparation_id, key, case_id=None):
         key = _key(key)
+        stage = self.stage
         with store.connect() as c:
             c.execute('SET TRANSACTION READ ONLY')
             c.execute("SET LOCAL statement_timeout='3s'")
             c.execute("SET LOCAL lock_timeout='3s'")
-            before = current_context(store, c, token, preparation_id)
+            before = current_context(store, c, token, preparation_id, case_id)
             baseline = self.baselines.get(str(preparation_id))
             rows = self._rows(preparation_id)
-            result = summaries(self.stage, baseline, before, rows, key)
-            after = current_context(store, c, token, preparation_id)
+            result = summaries(stage, baseline, before, rows, key)
+            after = current_context(store, c, token, preparation_id, case_id)
             if (before != ReadContext(after.owner, after.park, after.org, after.preparation, after.case,
                     after.run, after.database, after.source_sha256, before.now) or
-                    baseline != self.baselines.get(str(preparation_id)) or
+                    self.stage != stage or baseline != self.baselines.get(str(preparation_id)) or
                     rows != self._rows(preparation_id)):
                 raise Denied('history read context changed')
-            _baseline(baseline, after, self.stage)
+            _baseline(baseline, after, stage)
+            if case_id is not None:
+                result.update(case_id=before.case, stage=stage)
             return result

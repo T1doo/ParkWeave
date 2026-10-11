@@ -11,7 +11,7 @@ from .store import Store, Denied, Conflict
 from .run_access_candidate import RunCommand
 
 
-def create_app(store: Store) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None) -> FastAPI:
     app = FastAPI(title="ParkWeave synthetic foundation", version="0.1.0")
     from . import case_resource_delivery as delivery, resource_bundles as bundles
 
@@ -102,6 +102,15 @@ def create_app(store: Store) -> FastAPI:
         if not authorization or not authorization.startswith("Bearer "):
             raise HTTPException(401, "session required")
         return authorization[7:]
+
+    @app.get('/api/cases/{case_id}/preparations/{preparation_id}/history-summary/{stage}')
+    def history_summary(case_id: UUID, preparation_id: UUID, stage: Literal['P4', 'P5'],
+                        authorization: str | None = Header(default=None)):
+        from .history_summary import MemoryHistorySummaryReader
+        session = token(authorization)
+        if type(summary_reader) is not MemoryHistorySummaryReader or summary_reader.stage != stage:
+            raise Denied('explicit matching history summary reader required')
+        return summary_reader.read_case(store, session, case_id, preparation_id)
 
     @app.get("/", response_class=HTMLResponse)
     def index():
