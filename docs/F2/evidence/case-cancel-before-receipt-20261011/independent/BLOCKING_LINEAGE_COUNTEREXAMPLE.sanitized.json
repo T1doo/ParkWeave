@@ -1,0 +1,128 @@
+{
+  "conclusion": "BLOCKED_UNTIL_REPAIR_AND_RETEST",
+  "cross_scope_recheck": {
+    "fixture-b": "PASS; CLI exit0 empty stdout/stderr; Run SUCCEEDED, operation VERIFIED, one Case",
+    "fixture-c": "PASS; CLI exit0 empty stdout/stderr; Run SUCCEEDED, operation VERIFIED, one Case",
+    "limitation": "Original failing worker persistent state/stdout were not recorded, so this reproduction does not establish the original cause. Short-lease load remains an inference only."
+  },
+  "evidence_source_snapshot_sha256": "4013d8642374653d2874e91d6e179b4cdb590aaddd3a2cd5fbc0f7d211671740",
+  "finding": {
+    "actual_result": "Both pending-handoff and new-material subsequent ACCEPT+CREATE stripped of all lineage extras while original REOFFER retained: GET can_cancel True/blockers empty and POST200 COMMITTED, persistent Case CANCELLED",
+    "location": "src/parkweave/case_cancellation_before_receipt.py::_manual_lineage, if extras branch",
+    "minimal_repair": "Always inspect original OFFER/REOFFER extras before deciding a step is initial; require proper predecessor proof for later accepted generation. Do not allow empty extras to skip original offered event.",
+    "severity": "HIGH"
+  },
+  "phase": "BLOCKING_LINEAGE_COUNTEREXAMPLE",
+  "raw_evidence_unchanged": [
+    "frozen-review.xml",
+    "frozen-review.log",
+    "pre-fix-extra-probes.xml",
+    "pre-fix-extra-probes.log",
+    "stripped-handoff.json",
+    "stripped-new_material.json",
+    "cross-scope-worker-fixture-b.json",
+    "cross-scope-worker-fixture-c.json"
+  ],
+  "remaining_blocker": "Actual lineage repair and fresh owned PG verification; no final signed source until parent publishes corrected manifest.",
+  "source_product_parent_reported": "d191f0b6edd4536e4d13f7f745b634ee993516c2",
+  "windows": [
+    {
+      "ERROR": 0,
+      "FAIL": 0,
+      "PASS": 314,
+      "SKIP": 0,
+      "argv": [
+        "@repo/.venv/bin/python",
+        "-m",
+        "pytest",
+        "tests/test_case_cancellation_before_receipt.py",
+        "tests/test_case_cancellation.py",
+        "tests/test_case_cancellation_offline.py",
+        "tests/test_case_fact_clarifications.py",
+        "tests/test_pending_receipt_handoff.py",
+        "-q",
+        "--tb=short",
+        "--junitxml=@repo/.runtime/case-cancel-before-receipt/independent-review/frozen-review.xml"
+      ],
+      "atexit_cleanup_diagnostic": false,
+      "browser_attempts": 0,
+      "elapsed_seconds": 297.441,
+      "ended_utc": "2026-10-11T13:39:43.395073+00:00",
+      "exit_code": 0,
+      "failures": [],
+      "log_sha256": "3727623a5864ddc05208a8578900115a169ab007e78c8ec9afe76e5094e3027f",
+      "owned_fixture": "fresh independent pytest process using original conftest; no inherited DSN or parent DB",
+      "phase": "frozen-review",
+      "pytest_pid": 178714,
+      "source_drift_after": [
+        "scripts/linux_fixture_server.py",
+        "tests/normal_recovery_process.py",
+        "tests/test_authorization_files.py",
+        "tests/test_case_fact_bundle.py",
+        "tests/test_case_lifecycle.py",
+        "tests/test_case_opportunities.py",
+        "tests/test_controlled_plans.py",
+        "tests/test_executor_receipts.py",
+        "tests/test_lifecycle_diagnostics.py",
+        "tests/test_linux_fixture_startup.py",
+        "tests/test_material_objections.py",
+        "tests/test_material_reuse.py",
+        "tests/test_request_intents.py",
+        "tests/test_resource_combinations.py",
+        "tests/test_resource_holds.py",
+        "tests/test_worker_gateway.py"
+      ],
+      "source_drift_before": [],
+      "source_file_count": 401,
+      "source_head_parent_reported": "d191f0b6edd4536e4d13f7f745b634ee993516c2",
+      "source_manifest_sha256": "a65f4e40c6d94d2b72dd578483cc36ee1de6052c0809a4dc6cbd4ded07030b2a",
+      "started_utc": "2026-10-11T13:34:45.954057+00:00",
+      "tests": 314,
+      "unique_ids": 314,
+      "xml_sha256": "0c97e29b4d62913f21c8b42223e0f43976e1ea3e4c573ef89f6ac7c738a3d794"
+    },
+    {
+      "ERROR": 0,
+      "FAIL": 2,
+      "PASS": 9,
+      "SKIP": 0,
+      "argv": [
+        "@repo/.venv/bin/python",
+        "-m",
+        "pytest",
+        ".runtime/case-cancel-before-receipt/independent-review/test_independent_probes.py",
+        "-q",
+        "--tb=short",
+        "--junitxml=@repo/.runtime/case-cancel-before-receipt/independent-review/pre-fix-extra-probes.xml"
+      ],
+      "atexit_cleanup_diagnostic": false,
+      "browser_attempts": 0,
+      "elapsed_seconds": 22.576,
+      "ended_utc": "2026-10-11T13:40:27.694348+00:00",
+      "exit_code": 1,
+      "failures": [
+        {
+          "id": ".runtime.case-cancel-before-receipt.independent-review.test_independent_probes::test_stripped_later_accept_and_create_extras_cannot_become_initial_proof[handoff]",
+          "outcome": "FAIL"
+        },
+        {
+          "id": ".runtime.case-cancel-before-receipt.independent-review.test_independent_probes::test_stripped_later_accept_and_create_extras_cannot_become_initial_proof[new_material]",
+          "outcome": "FAIL"
+        }
+      ],
+      "log_sha256": "132dece31419c58f7ba7e630ac762b00fb28639e6780da2046ee7d0c03977e8b",
+      "owned_fixture": "fresh independent pytest process using original conftest; no inherited DSN or parent DB",
+      "phase": "pre-fix-extra-probes",
+      "pytest_pid": 190917,
+      "source_drift_after": [],
+      "source_drift_before": [],
+      "source_file_count": 401,
+      "source_head_parent_reported": "d191f0b6edd4536e4d13f7f745b634ee993516c2",
+      "source_manifest_sha256": "68419e1656189ddbe052bb983e10a41d11376271040401b2734db17d507657d1",
+      "started_utc": "2026-10-11T13:40:05.118567+00:00",
+      "tests": 11,
+      "unique_ids": 11,
+      "xml_sha256": "700a2d46eb700eafeab0681736ae341b39f8fcf7aec5214197d235c7b73ca9a0"
+    }
+  ]
+}

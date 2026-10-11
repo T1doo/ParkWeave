@@ -1,0 +1,88 @@
+...................FF..F..........................F..................... [ 88%]
+..FFFF...                                                                [100%]
+=================================== FAILURES ===================================
+_____ test_unproven_or_effectful_origin_explicitly_refused[step_namespace] _____
+tests/test_case_cancellation_before_receipt.py:97: in test_unproven_or_effectful_origin_explicitly_refused
+    elif damage=='step_namespace':c.execute("UPDATE service_receipt_steps SET namespace='PREVIEW_EXECUTION'")
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.CheckViolation: new row for relation "service_receipt_steps" violates check constraint "service_receipt_steps_namespace_check"
+E   DETAIL:  Failing row contains (a3be618d-dc76-4eee-8d46-52acedce850f, 0159b464-f98c-4739-97aa-93cb95335260, 0b0f5c71-70f4-4d04-a1ff-fe317bc34f3e, 954eaaad-05bd-4aa1-89c3-aaa38bffa35a, fixture-a, executor-a, park-a, org-a, synthetic-material-preparation, 1, 5, eee5314bde601bd014bfee98f93b150327169106d1e46b64f7900e985e5bbd0d, SYNTHETIC资料准备, AWAITING_RECEIPT, 1, null, PREVIEW_EXECUTION, 2026-10-11 13:19:53.79641+00).
+_____ test_unproven_or_effectful_origin_explicitly_refused[closed_history] _____
+tests/test_case_cancellation_before_receipt.py:98: in test_unproven_or_effectful_origin_explicitly_refused
+    elif damage=='closed_history':c.execute("INSERT INTO case_local_events(id,preparation_id,actor_id,request_key,fingerprint,revision,cycle,action,payload) VALUES(%s,%s,'fixture-a','synthetic-close',repeat('0',64),1,1,'CLOSE_LOCAL_RECORD','{}')",(uuid4(),p['preparation_id']))
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.ForeignKeyViolation: insert or update on table "case_local_events" violates foreign key constraint "case_local_events_preparation_id_fkey"
+E   DETAIL:  Key (preparation_id)=(80405f0f-a8b1-401d-b7c8-73c3da923735) is not present in table "case_local_lifecycles".
+________ test_unproven_or_effectful_origin_explicitly_refused[external] ________
+tests/test_case_cancellation_before_receipt.py:102: in test_unproven_or_effectful_origin_explicitly_refused
+    elif damage=='external':c.execute("UPDATE cases SET external_acceptance='SUBMITTED' WHERE id=%s",(p['case_id'],))
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.CheckViolation: new row for relation "cases" violates check constraint "cases_external_acceptance_check"
+E   DETAIL:  Failing row contains (51e093c1-e1f1-4a71-9541-cc2ef25509cb, efad4d06-cd10-4181-96df-00a58dfbfd47, park-a, org-a, SYNTHETIC资料准备, NEEDS_INPUT, SYNTHETIC, SUBMITTED, NO_EVIDENCE).
+_ test_other_writer_wins_real_lock_wait_then_cancel_rechecks_complete_source[plan] _
+tests/test_case_cancellation_before_receipt.py:195: in test_other_writer_wins_real_lock_wait_then_cancel_rechecks_complete_source
+    assert sorted(results)==sorted([(writer,200 if writer in ('submit','accept','material') else 201),('cancel',409)])
+E   AssertionError: assert [('cancel', 2...('plan', 409)] == [('cancel', 4...('plan', 201)]
+E     
+E     At index 0 diff: ('cancel', 200) != ('cancel', 409)
+E     Use -v to get more diff
+_ test_receipt_parent_bypass_all_commands_and_legacy_create_frozen[ACKNOWLEDGE] _
+tests/test_case_cancellation_before_receipt.py:215: in test_receipt_parent_bypass_all_commands_and_legacy_create_frozen
+    assert act(f,row,action,**extra).status_code==409 and legacy_create(f,p)[0].status_code==409
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_executor_receipts.py:38: in act
+    else:body.update(reason='SYNTHETIC owner decision',receipt_sha256=row['current_receipt']['source_sha256'])
+                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+_ test_receipt_parent_bypass_all_commands_and_legacy_create_frozen[REQUEST_CHANGES] _
+tests/test_case_cancellation_before_receipt.py:215: in test_receipt_parent_bypass_all_commands_and_legacy_create_frozen
+    assert act(f,row,action,**extra).status_code==409 and legacy_create(f,p)[0].status_code==409
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_executor_receipts.py:38: in act
+    else:body.update(reason='SYNTHETIC owner decision',receipt_sha256=row['current_receipt']['source_sha256'])
+                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+___ test_receipt_parent_bypass_all_commands_and_legacy_create_frozen[REOPEN] ___
+tests/test_case_cancellation_before_receipt.py:215: in test_receipt_parent_bypass_all_commands_and_legacy_create_frozen
+    assert act(f,row,action,**extra).status_code==409 and legacy_create(f,p)[0].status_code==409
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_executor_receipts.py:38: in act
+    else:body.update(reason='SYNTHETIC owner decision',receipt_sha256=row['current_receipt']['source_sha256'])
+                                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   TypeError: 'NoneType' object is not subscriptable
+__ test_cancelled_history_reads_remain_free_of_plan_invalidation[controlled] ___
+tests/test_case_cancellation_before_receipt.py:221: in test_cancelled_history_reads_remain_free_of_plan_invalidation
+    wrap_old_guards(monkeypatch);old.test_historical_plan_get_does_not_persist_implicit_invalidation(link_fixture,kind)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_case_cancellation.py:264: in test_historical_plan_get_does_not_persist_implicit_invalidation
+    assert create(f,p).status_code==201;assert check(f,p,'P1').status_code==200
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert 409 == 201
+E    +  where 409 = <Response [409 Conflict]>.status_code
+E    +    where <Response [409 Conflict]> = <function create at 0x7ff9d1432660>((<parkweave.store.Store object at 0x7ff9d12b57c0>, <parkweave.store.Store object at 0x7ff9d12b4320>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7ff9cb7bf560>), {'preparation_id': '4eb24191-4da0-4a92-b33a-299a6a2f7c3c', 'case_id': 'ecebbf77-bc5e-4f9b-8f1c-1edfd4a181eb', 'run_id': 'bb3b228f-a44e-4ad7-8ee2-5ec81e4f3b21', 'revision': 5, ...})
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_case_cancellation_before_receipt.py::test_full_manual_lineage_preserved_cancel_replay_and_cold_read[accepted]
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_cancellation_before_receipt.py::test_unproven_or_effectful_origin_explicitly_refused[step_namespace]
+FAILED tests/test_case_cancellation_before_receipt.py::test_unproven_or_effectful_origin_explicitly_refused[closed_history]
+FAILED tests/test_case_cancellation_before_receipt.py::test_unproven_or_effectful_origin_explicitly_refused[external]
+FAILED tests/test_case_cancellation_before_receipt.py::test_other_writer_wins_real_lock_wait_then_cancel_rechecks_complete_source[plan]
+FAILED tests/test_case_cancellation_before_receipt.py::test_receipt_parent_bypass_all_commands_and_legacy_create_frozen[ACKNOWLEDGE]
+FAILED tests/test_case_cancellation_before_receipt.py::test_receipt_parent_bypass_all_commands_and_legacy_create_frozen[REQUEST_CHANGES]
+FAILED tests/test_case_cancellation_before_receipt.py::test_receipt_parent_bypass_all_commands_and_legacy_create_frozen[REOPEN]
+FAILED tests/test_case_cancellation_before_receipt.py::test_cancelled_history_reads_remain_free_of_plan_invalidation[controlled]
+8 failed, 73 passed, 2 warnings in 60.78s (0:01:00)

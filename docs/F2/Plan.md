@@ -511,3 +511,9 @@ ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKI
 从实际 dev873e426255cb62c55cf485cb81e1d1c3c706c373 的独立候选实现当前本人/租户/Case/Run、SERVICE_PREPARATION 三字段 READ 来源合同；显式用途与选择对齐原持久事件，当前选中完整来源/版本/UTC期限/撤回核验，固定opaque投影，不恢复执行或证明，不新增授权/路由/登记。精确源码 f2298026997376e4651e6b6f65c220d4bbb8e38f，378冻结路径0漂移，root与独审分别137PASS（55新纯合同+35声明事实进程内PG+1普通Case兼容+46原纯投影回归）。初次fixture缺双资源和嵌套类型缺陷各0PASS1FAIL原日志保留；修后原断言不放宽。独审35自有PID代际退出，无资源/访问签名。未集成摘要页35a2edb四提交排除，浏览器管理员拒绝仍暂停；持久可信登记/完整发行者重启/真实网络/Windows/全AT/CI未签收，已有317不转算。
 
 合同与脱敏机器证据见 [FactHistoryReadSource](FactHistoryReadSource.md)。原日志/JUnit仅私有runtime，正常开发快进保存；不改main、强推、部署或真实模型/批准/履约。
+
+## 企业 Case 有限取消闭环（2026-10-11）
+
+按原产品 §5.5/§7.1/§7.4，从已签收首次接单前取消交付396602继续，独立开发分支 `dev/f2-case-cancel-before-receipt-20261011` 实现已真实接单但全部历史本地人工步骤从未提交回执的普通SYNTHETIC企业取消。旧入口保留首次接单前拒绝边界，新入口当前owner READ/PREPARE/EXECUTE、精确Case/资料/生命周期/来源与理由确认；原键同参回放、异参冲突，未知响应仅GET原键。取消与SUBMIT、重接单、换人、材料、计划、资源关联共parent锁；实际接单/步骤/Run/预约与容量保留，独立释放按原权限，所有晚写及旧通知/UI动作重核，历史GET不隐式失效计划。
+
+源码 `3fc6fa712f14820d88fcf8cd94fa70fcf6120e0c`，401路径零漂移；最终单窗37完整模块1390PASS/0FAIL/0ERROR/1WindowsSKIP，保留上一1271标识、新增120，退出0。独审最终132PASS，另11反例PASS；实际世代剥除产品缺陷的原2FAIL、夹具/版本/wheel失败和中断原件均公开脱敏保留。限定合同、源码/窗口/失败映射及可读证据见 [取消合同](CaseCancellationBeforeReceiptContract.md)、[交付证据](CaseCancellationBeforeReceiptEvidence.md)。取消后恢复、已有提交/确认/关闭或隔离/外部效果不在本片；浏览器管理员拒绝未重试，生产迁移/部署和真实模型未运行，原protected分支保持。下一步父审按独立分支与原件限定签收，不转签完整生命周期或全AT。

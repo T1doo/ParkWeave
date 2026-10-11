@@ -1,0 +1,130 @@
+{
+  "checks_static": [
+    "Common parent/dispatch/Case/local locks and event/state commit retained. New full-history bounded queries fail closed on overflow.",
+    "Shared original-key helper binds explicit action/scope, owner/key/Case/parent/revisions/source hash/fingerprint; committed state checked for new GET and POST recovery. Old API keeps before-accept checks enabled by default.",
+    "Migration031 only adds new local event action; verified original fixture owner/ticket and30 prerequisite gates retained; no new table/Grant/registry.",
+    "New API routes validate UUID/model and reuse existing bounded original key function.",
+    "New tests cover historical receipt including old generation/reopen, several corruption/authority paths, cancellation/read preservation, key concurrency, actual parent lock-wait both directions for six writer classes, event failure, capacity and notices; reading tests is not runtime validation."
+  ],
+  "closed_preliminary_risks_static": [
+    {
+      "evidence": "ACCEPT/CREATE extras compared by canonical representation; precise expected key set and typed fields, historical predecessor acceptance/entity and original OFFER/REOFFER extra binding checked.",
+      "id": "R1",
+      "status": "SOURCE_FIX_PRESENT"
+    },
+    {
+      "evidence": "All run assignment rows inspected, any managed_access !=None denies; inactive metadata not exempt; plain Store re-read added to counterexample.",
+      "id": "R2",
+      "status": "SOURCE_FIX_PRESENT"
+    },
+    {
+      "evidence": "Handoff max gate allows29/30/31 only and retains29 prerequisite, exact Store type and all provider/preview exclusions.",
+      "id": "R4",
+      "status": "SOURCE_FIX_PRESENT"
+    }
+  ],
+  "conclusion": "FIXES_REQUESTED_STATIC_ONLY; not a formal runtime sign-off",
+  "created_utc": "2026-10-11T13:23:58.866795+00:00",
+  "execution": {
+    "Git": "NOT RUN",
+    "browser": "NOT RUN",
+    "postgresql": "NOT RUN",
+    "product_tests_git_writes": 0,
+    "tests": "NOT RUN"
+  },
+  "findings": [
+    {
+      "id": "F1",
+      "impact": "Whole-event JSONB damage to non-object payload []/string/number can raise AttributeError, causing an uncontrolled failure instead of explicit cancellation blocker/409. Healthy complete histories are unaffected.",
+      "kind": "PRODUCT_ERROR_FLOW",
+      "location": "src/parkweave/case_cancellation_before_receipt.py::_manual_lineage and service_dispatches.py::_typed_fields_equal",
+      "minimal_fix": "At each event-proof boundary validate isinstance(payload,dict) or raise ValueError, and add complete-payload non-object counterexamples for ACCEPT, CREATE and original OFFER/REOFFER.",
+      "severity": "MEDIUM",
+      "status": "STATIC_DETERMINISTIC_EXCEPTION_PATH; NOT executed",
+      "witness": "_typed_fields_equal uses actual.get(k); _manual_lineage directly passes e/create/offered payload and catches only KeyError, TypeError, ValueError"
+    },
+    {
+      "id": "F2",
+      "impact": "The rejected migration must preserve committed future marker32; current expected31 falsely fails correct rollback behavior.",
+      "kind": "TEST_ORACLE",
+      "location": "tests/test_case_fact_clarifications.py::test_migration_refuses_future_version_even_with_retained_24_and_valid_receipt",
+      "minimal_fix": "Only change the post-rejection max version oracle to32; preserve original025 future-version refusal and all business rollback checks.",
+      "severity": "MEDIUM",
+      "status": "STATIC_DETERMINISTIC_ORACLE_MISMATCH; NOT executed",
+      "witness": "Committed INSERT INTO schema_version VALUES(32) followed by expected migration025 rejection and SELECT max(version) asserted ==31"
+    },
+    {
+      "id": "F3",
+      "impact": "The intended repeated029 check is blocked by an unrelated later marker before its uniqueness assertions.",
+      "kind": "TEST_FIXTURE",
+      "location": "tests/test_pending_receipt_handoff.py::test_migration29_repeat_preserves_rows_and_enforces_unique_receipt_per_offer",
+      "minimal_fix": "Remove current later30/31 markers only inside the existing explicit ticket/rollback transaction; retain029 strict max gate and verify history/uniqueness unchanged.",
+      "severity": "MEDIUM",
+      "status": "STATIC_DETERMINISTIC_FIXTURE_MISMATCH; NOT executed",
+      "witness": "Repeat029 test deletes only schema_version30 while current fixture includes31; migration029 permits max28/29 only"
+    }
+  ],
+  "hash_limit": "Point-in-time hashes captured when writing this report; sole writer may be applying fixes. Witness snippets describe bytes observed during preceding source reads, not a final freeze.",
+  "pending": [
+    "F1/F2/F3 fix and actual proof after final freeze.",
+    "UI remains explicitly excluded while under development.",
+    "Independent PG/ASGI/NodeVM validation awaits separate authorization; no current test results are asserted.",
+    "Historical before-accept raw failures/reports and first preliminary static report remain untouched."
+  ],
+  "phase": "FOLLOWUP_BACKEND_STATIC_REVIEW",
+  "scope": "new backend module, shared original-key helpers, migration031/loader, API, new tests and affected migration test oracles; unfinished UI excluded",
+  "selected_current_hashes": [
+    {
+      "path": "src/parkweave/case_cancellation_before_receipt.py",
+      "sha256": "fcda52120c23990b3952a54ec98c21ca2b7e7e0c289391f3143576633b7aaa6d"
+    },
+    {
+      "path": "src/parkweave/case_cancellation.py",
+      "sha256": "16dceaeb8f0de4a23f1e50cb4d9f2bc18c38c2ed337c1d1e7677c81c63161387"
+    },
+    {
+      "path": "src/parkweave/service_dispatches.py",
+      "sha256": "da38b26926947da5e9d034510258ca8af19922d897b712f50c649858b37fc50b"
+    },
+    {
+      "path": "src/parkweave/executor_receipts.py",
+      "sha256": "c5e0cd601a31abddd0a2e272ba2a9b5e2ea3c37fb24ef1ddfeb050fd17485ffa"
+    },
+    {
+      "path": "src/parkweave/preparation.py",
+      "sha256": "74c7cf64eec9b2578da879812dac350669711408bb438c14d2a704f3c446bba2"
+    },
+    {
+      "path": "src/parkweave/migration-031.sql",
+      "sha256": "906b70e775e70e7706558395ab779a0bfbe2b598004fac29b0eb30d3181e1eac"
+    },
+    {
+      "path": "src/parkweave/store.py",
+      "sha256": "52bd555cc6d96803eafd5568fa340b75567110c07d8441cbd40edba19de8073b"
+    },
+    {
+      "path": "src/parkweave/api.py",
+      "sha256": "8191a59709b2f8d328f64378226fdb3711d8ff6ce69c17a895d8bfbd6efe70ab"
+    },
+    {
+      "path": "tests/test_case_cancellation_before_receipt.py",
+      "sha256": "ed754cf557017f1fda8764b7cf01bfd046694762e1a2f6625ebc45549da1b5ed"
+    },
+    {
+      "path": "tests/test_case_cancellation.py",
+      "sha256": "30ad3c386c49614da9a95befb36ecbe5467d5b3010804a49739f1b01003f9956"
+    },
+    {
+      "path": "tests/test_case_fact_clarifications.py",
+      "sha256": "dd2618371efd9ea206d8a58912e7861f2d0cfa8d7396628b82004023fa75a03b"
+    },
+    {
+      "path": "tests/test_pending_receipt_handoff.py",
+      "sha256": "37ebe4c4f984f42fe3ffc0fbe0fd2fe12188cd7587f07a78aa42d307e13114e7"
+    },
+    {
+      "path": "docs/F2/CaseCancellationBeforeReceiptContract.md",
+      "sha256": "a62aad6413510d19470740ced8a5fa3e596617a6330a1d22d628c9271b5bd1eb"
+    }
+  ]
+}

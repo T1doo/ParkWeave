@@ -1,0 +1,29 @@
+{
+  "full_archive_check": {
+    "argv": [
+      "git",
+      "diff",
+      "--cached",
+      "--check"
+    ],
+    "exit_code": 2,
+    "stdout": "docs/F2/evidence/case-cancel-before-receipt-20261011/independent/pre-fix-extra-probes.sanitized.log:7: trailing whitespace.\n+E     \ndocs/F2/evidence/case-cancel-before-receipt-20261011/independent/pre-fix-extra-probes.sanitized.log:14: trailing whitespace.\n+E     \ndocs/F2/evidence/case-cancel-before-receipt-20261011/independent/pre-fix-extra-probes.sanitized.xml:5: trailing whitespace.\n+E     \ndocs/F2/evidence/case-cancel-before-receipt-20261011/independent/pre-fix-extra-probes.sanitized.xml:10: trailing whitespace.\n+E     \ndocs/F2/evidence/case-cancel-before-receipt-20261011/root/first.sanitized.log:32: trailing whitespace.\n+E     \ndocs/F2/evidence/case-cancel-before-receipt-20261011/root/first.sanitized.xml:23: trailing whitespace.\n+E     \n",
+    "stderr": ""
+  },
+  "metadata_helpers_and_docs_check": {
+    "argv": [
+      "git",
+      "diff",
+      "--cached",
+      "--check",
+      "--",
+      ".",
+      ":(glob,exclude)**/*.sanitized.xml",
+      ":(glob,exclude)**/*.sanitized.log"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  "classification": "Six unchanged pytest failure E-lines contain original trailing whitespace in four raw-evidence exports. Preserve exact sanitized payloads and hashes; no whitespace configuration changed. This is not a product test failure. All source, metadata, helper and prose changes pass the scoped check."
+}
