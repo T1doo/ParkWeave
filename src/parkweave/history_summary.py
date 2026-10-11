@@ -2,7 +2,7 @@
 
 Old proof is checked as document data, never issued as execution authority.
 The caller's server-owned baselines are independent of the untrusted records.
-There is deliberately no file loader, provider attachment or HTTP entry point.
+There is deliberately no file loader or provider attachment.
 """
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -262,12 +262,21 @@ class MemoryHistorySummaryReader:
         return tuple(dict(r) for r in rows)
 
     def read(self, store, token, preparation_id, key=None):
+        return self._read(store, token, preparation_id, key)
+
+    def read_case(self, store, token, case_id, preparation_id, key=None):
+        result = self._read(store, token, preparation_id, key, str(case_id))
+        return dict(result, case_id=str(case_id), stage=self.stage)
+
+    def _read(self, store, token, preparation_id, key, expected_case=None):
         key = _key(key)
         with store.connect() as c:
             c.execute('SET TRANSACTION READ ONLY')
             c.execute("SET LOCAL statement_timeout='3s'")
             c.execute("SET LOCAL lock_timeout='3s'")
             before = current_context(store, c, token, preparation_id)
+            if expected_case is not None and before.case != expected_case:
+                raise Denied('current owner Case preparation required')
             baseline = self.baselines.get(str(preparation_id))
             rows = self._rows(preparation_id)
             result = summaries(self.stage, baseline, before, rows, key)

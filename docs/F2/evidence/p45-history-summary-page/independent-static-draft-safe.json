@@ -1,0 +1,81 @@
+{
+  "decision": "CHANGES_REQUIRED_NOT_ACCEPTED",
+  "review_type": "STATIC_WORKING_DRAFT_ONLY",
+  "base_delivery_sha": "873e426255cb62c55cf485cb81e1d1c3c706c373",
+  "contract_sha": "853c2c27e8933b6c3da053a5137cca89738200c3",
+  "observed_HEAD": "853c2c27e8933b6c3da053a5137cca89738200c3",
+  "not_final_frozen_product_source": true,
+  "observed_working_file_sha256": {
+    "src/parkweave/api.py": "202ab4c894872c1d73e36bdbe285697a1e0cf138befa9efdcd00f1f6659ecf92",
+    "src/parkweave/history_summary.py": "766fe1813249abdbeff311552b9e5754b0a5e2be35100e2fac3a2c09e6e0dee4",
+    "src/parkweave/web.html": "a3781e928698b765e7adb784d9bed03822783934d01d1352846ec612c45e70de"
+  },
+  "findings": [
+    {
+      "id": "PRIVATE_SUMMARY_DOM_CLEARING_MISSING_FOR_PROGRAMMATIC_SESSION_AND_NAVIGATION",
+      "status": "STATIC_CONFIRMED_NOT_RUNTIME_TESTED",
+      "evidence": "clearHistorySummary is called only by its own input listeners, tab click listener, and own request. Original pagehide/pageshow sets token.value empty and calls token.oninput property; that does not dispatch the new addEventListener input listener. clearGeneric and clearPreparation do not clear the summary DOM. Already displayed private summary can remain after this original identity clearing path.",
+      "expected": "Invalidate and clear private summary through the original shared generic/session and preparation navigation cleanup paths, including pagehide/BFCache and programmatic handlers."
+    },
+    {
+      "id": "SUMMARY_GENERATION_NOT_INVALIDATED_BY_PROGRAMMATIC_RUN_A_B_A_OR_PREPARATION_SWITCH",
+      "status": "STATIC_CONFIRMED_NOT_RUNTIME_TESTED",
+      "evidence": "Original record directory selection changes run.value and invokes run.oninput property, which only clears generic/run-access state. It does not dispatch summary input listeners. A run A-to-B-to-A switch can therefore leave summary generation unchanged and make an older summary success/denial current again. Original clearPreparation/loadPreparation also do not invalidate or clear the independent summary display.",
+      "expected": "Route the shared generic/run and preparation clear/change paths through summary generation invalidation so earlier responses stay stale even after context values return to their earlier values."
+    }
+  ],
+  "acceptable_static_direction": [
+    "Default None and exact MemoryHistorySummaryReader/stage gate; configured_app receives no injection or registry file/env switch",
+    "Case correlation checked within existing READ_ONLY read before history row decoding",
+    "Original absolute baseline current READ source guards remain; no execution or persistent enrollment restoration",
+    "New panel uses separate fixed-whitelist bounded typed projection with text nodes and current context checks before response body/render; no old full document/proof rendering",
+    "New request invalidates older same-context request; disabled/missing registration shown unavailable rather than empty authorized history",
+    "FAILED/NEEDS_INPUT and historical verification qualifiers preserved"
+  ],
+  "parent_owned_health_probe": {
+    "independent_reviewer_did_not_run_this_probe": true,
+    "actual_counts": {
+      "passed": 0,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0
+    },
+    "natural_exit": true,
+    "launch_new_page_reported_success": true,
+    "navigation_denial": "net::ERR_BLOCKED_BY_ADMINISTRATOR",
+    "classification": "ACTUAL_ADMINISTRATOR_ACCESS_DENIAL",
+    "log_sha256": "32f6b8b8b517d97c321b0f7ebd28bcdfb2a09060248e9f996a1249ae805a1a63",
+    "safe_execution_sha256": "efb83d5453de8eed05f412d746917d816eb96a36d07270d514b530714913798f",
+    "remaining_owned_live": [],
+    "generic_signature_scan_empty_does_not_negate_explicit_admin_denial": true,
+    "no_alternate_navigation_host_configuration_retry_or_resource_test_after_denial": true
+  },
+  "acceptance_status": {
+    "new_API_PG_HTTP_tests": "NOT_RUN",
+    "Chromium_feature_tests": "NOT_RUN",
+    "independent_runtime_tests": "NOT_RUN",
+    "new_slice_LIMITED_PASS": "NOT_SIGNED",
+    "production_registration_API_configuration_and_enrollment": "NOT_AUTHORIZED_NOT_RUN",
+    "full_issuer_PG_cold_recovery": "OPEN_NOT_RUN",
+    "old_231PASS_summary_slice_not_trans_signed_to_this_new_draft": true,
+    "old_summary_reports_failures_and_private_raws_untouched": true,
+    "remote_current_refs_CI": "UNVERIFIED_NO_RETRY",
+    "dev_integration_push": "BLOCKED_NOT_PERFORMED"
+  },
+  "prior_contract_static_report_sha256": "882cd25b4d70e8dafb2dbecb26c074244922280270af0c60aeaa8564ba85e32a",
+  "recommended_future_work_after_explicit_blocker_resolution": [
+    "Correct static cleanup findings within original shared page flows",
+    "Freeze exact new source then run isolated current-READ/default-off old-gate/API privacy assertions",
+    "Run actual loopback Chromium including pagehide/pageshow, property-only programmatic run A-B-A and preparation changes, late success/403 and invalid input or newer request races",
+    "Preserve present denial and draft findings; do not substitute different navigation or static inspection for the failed health gate"
+  ],
+  "reviewer_operations": {
+    "only_read_source_contract_private_parent_safe_health_evidence": true,
+    "writes_only_own_private_safe_JSON": true,
+    "PG_HTTP_browser_pytest_started": false,
+    "network_or_CI_calls": false,
+    "product_source_tests_public_docs_Git_modified": false,
+    "credentials_configuration_permissions_limits_locks_unknown_processes_changed": false,
+    "no_retry_or_workaround_for_denial": true
+  }
+}

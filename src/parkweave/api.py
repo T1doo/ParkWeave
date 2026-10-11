@@ -11,7 +11,7 @@ from .store import Store, Denied, Conflict
 from .run_access_candidate import RunCommand
 
 
-def create_app(store: Store) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None) -> FastAPI:
     app = FastAPI(title="ParkWeave synthetic foundation", version="0.1.0")
     from . import case_resource_delivery as delivery, resource_bundles as bundles
 
@@ -131,6 +131,16 @@ def create_app(store: Store) -> FastAPI:
     @app.get("/api/runs/{run_id}")
     def read(run_id: UUID, authorization: str | None = Header(default=None)):
         return store.read(token(authorization), run_id)
+
+    @app.get('/api/cases/{case_id}/preparations/{preparation_id}/history-summary/{stage}')
+    def history_summary(case_id: UUID, preparation_id: UUID, stage: Literal['P4', 'P5'],
+                        authorization: str | None = Header(default=None),
+                        request_key: str | None = Query(default=None, min_length=1, max_length=128)):
+        from .history_summary import MemoryHistorySummaryReader
+        session = token(authorization)
+        if type(summary_reader) is not MemoryHistorySummaryReader or summary_reader.stage != stage:
+            raise Denied('history summary unavailable')
+        return summary_reader.read_case(store, session, case_id, preparation_id, request_key)
 
     def access_bridge():
         bridge = getattr(store, '_isolated_run_access', None)

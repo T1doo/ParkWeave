@@ -27,6 +27,17 @@
 <label>原请求编号<input id="receipt-history-key" maxlength="128" autocomplete="off"></label>
 <button id="receipt-history-read" class="secondary">只读核对原历史</button><p id="receipt-history-error" role="alert"></p><div id="receipt-history-result" aria-live="polite"></div>
 </section>
+<section id="history-summary-panel" class="combination-panel">
+<h3>本人 Case 的历史摘要</h3>
+<p>仅回看合成本地记录的状态与事件。服务未登记、登记失效或当前读取权限不足时，摘要不可用；不展示材料正文、报告或证明。</p>
+<label>原 Case 编号<input id="history-summary-case" maxlength="36" autocomplete="off"></label>
+<label>原资料事项编号<input id="history-summary-preparation" maxlength="36" autocomplete="off"></label>
+<label>历史阶段<select id="history-summary-stage"><option value="P5">本地关闭与重开</option><option value="P4">本地回执</option></select></label>
+<label>原请求编号（可选）<input id="history-summary-key" maxlength="128" autocomplete="off"></label>
+<button id="history-summary-read" class="secondary" type="button">只读核对摘要</button>
+<p id="history-summary-status" role="status" aria-live="polite"></p><p id="history-summary-error" role="alert"></p>
+<div id="history-summary-result" aria-live="polite"></div>
+</section>
 <script>
 const $=id=>document.getElementById(id);const show=x=>{$('result').textContent=JSON.stringify(x,null,2);$('page-feedback').dataset.tone=x.error?'error':'success';$('page-feedback').textContent=x.error||'本地运行记录已更新；外部受理与线下履约状态需分别核对。';};
 let pageGeneration=0;const pageResponses=new WeakMap();
@@ -1317,5 +1328,52 @@ $('receipt-history-read').onclick=async()=>{
   box.append(textElement('p','接单一致性元数据报告，不代表真实材料服务交付或真人批准。'),textElement('p','保留全部目标：'+d.required_goals.join('；')+'。P5未执行，Case未完成。'),textElement('p','PENDING通知意图 '+a.outbox.length+'，未消费；正式业务写入0。'));
  }catch(e){if(current()){$('receipt-history-result').replaceChildren();$('receipt-history-error').textContent=e.message;}}
  finally{if(current())$('receipt-history-read').disabled=false;}
+};
+
+let historySummaryGeneration=0;
+function clearHistorySummary(){historySummaryGeneration++;$('history-summary-result').replaceChildren();$('history-summary-error').textContent='';$('history-summary-status').textContent='';}
+for(const id of ['token','run','history-summary-case','history-summary-preparation','history-summary-stage','history-summary-key'])$(id).addEventListener('input',clearHistorySummary);
+for(const tab of document.querySelectorAll('[data-tab]'))tab.addEventListener('click',clearHistorySummary);
+function summaryExact(x,keys){return x!==null&&typeof x==='object'&&!Array.isArray(x)&&Object.keys(x).sort().join('|')===[...keys].sort().join('|');}
+function summaryCanonical(x){return JSON.stringify(x,(k,v)=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntries(Object.entries(v).sort(([a],[b])=>a.localeCompare(b))):v);}
+function checkedHistorySummary(x,c){
+ const uuid=v=>typeof v==='string'&&/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v);
+ const key=v=>typeof v==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(v);
+ const scopes={P4:'ISOLATED_REGISTERED_P4_RECEIPT_EXECUTION_PREVIEW',P5:'ISOLATED_REGISTERED_P5_LOCAL_CASE_EXECUTION_PREVIEW'};
+ const envelope=['scope','namespace','preparation_id','history','summary_only','read_only','execution_available','execution_qualification','automatically_replayed','formal_writes','new_grants','case_goal_completed','source_atomicity','source_consistency','case_id','stage'];
+ if(c.key)envelope.push('request_key','status','result');
+ if(!summaryExact(x,envelope)||x.case_id!==c.case||x.preparation_id!==c.preparation||x.stage!==c.stage||x.scope!==scopes[c.stage]||typeof x.namespace!=='string'||!x.namespace||x.namespace.length>200||x.summary_only!==true||x.read_only!==true||x.execution_available!==false||x.execution_qualification!=='NOT_EVALUATED'||x.automatically_replayed!==false||x.formal_writes!==0||x.new_grants!==false||x.case_goal_completed!==false||x.source_atomicity!==false||x.source_consistency!=='COOPERATIVE_GUARDS_WITH_SNAPSHOT_COMPARISON'||!Array.isArray(x.history)||x.history.length>16)throw Error('摘要响应无法核对，保持不可用。');
+ const ids=new Set(),keys=new Set();
+ const events=(v,allowed)=>Array.isArray(v)&&v.length<=3&&v.every(e=>summaryExact(e,['action','revision'])&&allowed.includes(e.action)&&Number.isInteger(e.revision)&&e.revision>=1&&e.revision<=3);
+ for(const row of x.history){
+  const d=row?.summary,fields=['id','request_key','stage','state','p4_state','review_decision','receipt_events','namespace','qualification','formal_writes','case_goal_completed','external_acceptance','offline_fulfillment'];
+  if(c.stage==='P5')fields.push('p5_state','lifecycle_sequence','lifecycle_events','past_case_state','past_cycle','verification_at_execution');
+  if(!summaryExact(row,['summary','source_state'])||!['SNAPSHOT_MATCH','STALE'].includes(row.source_state)||!summaryExact(d,fields)||!uuid(d.id)||ids.has(d.id)||!key(d.request_key)||keys.has(d.request_key)||d.stage!==c.stage||!['SUCCEEDED','FAILED'].includes(d.state)||!['NOT_EXECUTED','FAILED','LOCAL_ACKNOWLEDGED','CHANGES_REQUESTED'].includes(d.p4_state)||!['ACKNOWLEDGE','REQUEST_CHANGES'].includes(d.review_decision)||!events(d.receipt_events,['CREATE','SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES'])||d.namespace!=='SYNTHETIC'||d.qualification!=='NOT_EVALUATED'||d.formal_writes!==0||d.case_goal_completed!==false||d.external_acceptance!=='NOT_SUBMITTED'||d.offline_fulfillment!=='NO_EVIDENCE')throw Error('摘要字段无法核对，保持不可用。');
+  if(c.stage==='P5'&&(!['NOT_EXECUTED','FAILED','READY','LOCAL_RECORD_CLOSED','REOPENED'].includes(d.p5_state)||!['REVALIDATE','REVALIDATE_CLOSE','REVALIDATE_CLOSE_REOPEN'].includes(d.lifecycle_sequence)||!events(d.lifecycle_events,['REVALIDATE','CLOSE_LOCAL_RECORD','REOPEN'])||!(d.past_case_state===null&&d.past_cycle===null&&d.verification_at_execution===null||['NEEDS_INPUT','WAITING_CONFIRMATION','REOPENED'].includes(d.past_case_state)&&[1,2].includes(d.past_cycle)&&typeof d.verification_at_execution==='boolean')))throw Error('历史轮次无法核对，保持不可用。');
+  ids.add(d.id);keys.add(d.request_key);
+ }
+ if(c.key){const hits=x.history.filter(r=>r.summary.request_key===c.key);if(x.request_key!==c.key||!(x.status==='NOT_OBSERVED'&&x.result===null&&hits.length===0||x.status==='COMMITTED'&&hits.length===1&&summaryCanonical(x.result)===summaryCanonical(hits[0].summary)))throw Error('原请求与摘要无法核对，保持不可用。');}
+ return x;
+}
+$('history-summary-read').onclick=async()=>{
+ clearHistorySummary();
+ const c={generation:historySummaryGeneration,token:$('token').value,run:$('run').value,case:$('history-summary-case').value,preparation:$('history-summary-preparation').value,stage:$('history-summary-stage').value,key:$('history-summary-key').value};
+ const current=()=>c.generation===historySummaryGeneration&&c.token===$('token').value&&c.run===$('run').value&&c.case===$('history-summary-case').value&&c.preparation===$('history-summary-preparation').value&&c.stage===$('history-summary-stage').value&&c.key===$('history-summary-key').value;
+ try{
+  if(!c.token||![c.case,c.preparation].every(v=>/^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(v))||c.key&&!/^[A-Za-z0-9_-]{1,128}$/.test(c.key))throw Error('请填写当前会话、原 Case 与事项编号，并核对原请求编号。');
+  $('history-summary-status').textContent='正在只读核对摘要…';
+  const path='/api/cases/'+encodeURIComponent(c.case)+'/preparations/'+encodeURIComponent(c.preparation)+'/history-summary/'+c.stage+(c.key?'?request_key='+encodeURIComponent(c.key):'');
+  const response=await fetch(path,{headers:{Authorization:'Bearer '+c.token},cache:'no-store'});
+  if(!current())return;
+  if(!response.ok)throw Error('当前历史摘要不可用：服务未登记、登记失效或当前读取权限不足。');
+  const raw=await response.text();if(!current())return;if(raw.length>65536)throw Error('摘要响应超出范围，保持不可用。');
+  const x=checkedHistorySummary(JSON.parse(raw),c),box=$('history-summary-result');
+  $('history-summary-status').textContent='历史摘要已核对；当前执行资格未评估。';
+  box.append(textElement('p','仅合成本地历史；不会重放、批准或履约。Case未完成，正式业务/权限/通知写入0。'));
+  if(c.key&&x.status==='NOT_OBSERVED'){box.append(textElement('p','未观察到原请求；保持未决，不代表已完成或可以执行。'));return;}
+  const rows=c.key?x.history.filter(r=>r.summary.request_key===c.key):x.history;
+  if(!rows.length)box.append(textElement('p','有效登记范围内没有历史摘要；不代表已完成或可以执行。'));
+  for(const r of rows){const d=r.summary;box.append(textElement('strong',d.stage+' '+d.state+' · '+r.source_state),textElement('p','原请求 '+d.request_key+' · 本地回执 '+d.p4_state+' · 企业历史决定 '+d.review_decision),textElement('p','回执事件 '+(d.receipt_events.map(e=>e.action+' / '+e.revision).join(' → ')||'未执行')));if(c.stage==='P5')box.append(textElement('p','本地生命周期 '+d.p5_state+' · 历史 Case '+(d.past_case_state||'未执行')+' · 历史轮次 '+(d.past_cycle??'无')+' · 当时校验 '+(d.verification_at_execution??'未执行')),textElement('p','生命周期事件 '+(d.lifecycle_events.map(e=>e.action+' / '+e.revision).join(' → ')||'未执行')));}
+ }catch(e){if(current()){$('history-summary-result').replaceChildren();$('history-summary-status').textContent='';$('history-summary-error').textContent=e instanceof SyntaxError?'摘要响应无法核对，保持不可用。':e.message;}}
 };
 </script></html>
