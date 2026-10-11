@@ -89,13 +89,30 @@ def test_exact_projection_no_values_or_proof():
     assert_public_projection_only(result, expected_digest)
 
 
+def assert_input_unchanged(actual, original):
+    """Exact fixture types and values, including JSON object keys and lists."""
+    assert type(actual) is type(original), 'input value type changed'
+    if type(original) is dict:
+        assert all(type(key) is str for key in actual), 'input key type changed'
+        assert all(type(key) is str for key in original)
+        assert actual.keys() == original.keys(), 'input keys changed'
+        for key in original:
+            assert_input_unchanged(actual[key], original[key])
+    elif type(original) in (list, tuple):
+        assert len(actual) == len(original), 'input sequence length changed'
+        for value, previous in zip(actual, original):
+            assert_input_unchanged(value, previous)
+    else:
+        assert actual == original, 'input value changed'
+
+
 def test_projection_does_not_mutate_input_independently_of_output_assertions():
     args = sample()
     before = deepcopy(args)
     try:
         read.project(*args)
     finally:
-        assert args == before
+        assert_input_unchanged(args, before)
 
 
 def test_leakage_oracle_accepts_actual_legal_digest_containing_numeric_fact_text():
@@ -167,6 +184,36 @@ def test_leakage_oracle_rejects_private_key_alias_with_custom_equality():
     assert private_excerpt in json.dumps(result)
     with pytest.raises(AssertionError, match='non-string output key'):
         assert_public_projection_only(result, 'a'*64)
+
+
+@pytest.mark.parametrize('change', ['source_value_float', 'source_revision_bool', 'principal_active_int', 'applicable_int'])
+@pytest.mark.parametrize('raise_after', [False, True])
+def test_leakage_oracle_input_guard_rejects_equal_numeric_type_mutation(monkeypatch, change, raise_after):
+    def mutating_project(parent, principal, receipts, sources, applicable, now):
+        if change == 'source_value_float':
+            next(row for row in sources if row['field_name'] == 'employees')['value'] = 17.0
+        elif change == 'source_revision_bool':
+            sources[0]['revision'] = True
+        elif change == 'principal_active_int':
+            principal['active'] = 1
+        else:
+            applicable[next(iter(applicable))] = 1
+        if raise_after:
+            raise RuntimeError('synthetic projection failure after mutation')
+        return {}
+
+    monkeypatch.setattr(read, 'project', mutating_project)
+    with pytest.raises(AssertionError, match='input value type changed'):
+        test_projection_does_not_mutate_input_independently_of_output_assertions()
+
+
+def test_leakage_oracle_input_guard_preserves_original_error_without_mutation(monkeypatch):
+    def failing_project(*args):
+        raise RuntimeError('synthetic projection failure without mutation')
+
+    monkeypatch.setattr(read, 'project', failing_project)
+    with pytest.raises(RuntimeError, match='failure without mutation'):
+        test_projection_does_not_mutate_input_independently_of_output_assertions()
 
 
 @pytest.mark.parametrize('change', ['owner','park','org','case','run','inactive','role','purpose','fields','bool_version',
