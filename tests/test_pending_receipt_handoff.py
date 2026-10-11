@@ -213,6 +213,32 @@ def test_no_handoff_marker_cannot_use_removed_material_generation_unique_constra
  with f[1].connect() as c:c.execute("UPDATE service_dispatch_events SET payload=payload-'handoff_kind' WHERE offer_id=%s",(UUID(pending['current_offer']['id']),))
  before=snapshot(f);assert decide(f,pending,'ACCEPT').status_code==409 and snapshot(f)==before
 
+
+@pytest.mark.parametrize('field,kind',[('predecessor_receipt_revision','bool'),('previous_preparation_revision','float'),('accepted_preparation_revision','float')])
+def test_json_lineage_revision_type_is_exact_and_refused_before_accept(receipt_fixture,field,kind):
+ from psycopg.types.json import Jsonb
+ f=receipt_fixture;parent,row=accepted(f);pending=post(f,row,body_for(f,parent,row)).json()
+ with f[1].connect() as c:
+  event=c.execute("SELECT payload FROM service_dispatch_events WHERE offer_id=%s AND action='REOFFER'",(UUID(pending['current_offer']['id']),)).fetchone()['payload']
+  assert type(event[field]) is int
+  if kind=='bool':assert event[field]==1
+  event[field]=True if kind=='bool' else float(event[field])
+  c.execute("UPDATE service_dispatch_events SET payload=%s WHERE offer_id=%s AND action='REOFFER'",(Jsonb(event),UUID(pending['current_offer']['id'])))
+  actual=c.execute("SELECT payload FROM service_dispatch_events WHERE offer_id=%s AND action='REOFFER'",(UUID(pending['current_offer']['id']),)).fetchone()['payload'][field]
+  assert type(actual) is (bool if kind=='bool' else float)
+ before=snapshot(f);assert decide(f,pending,'ACCEPT').status_code==409 and snapshot(f)==before
+
+
+def test_json_original_acceptance_revision_type_cannot_prove_pending_predecessor(receipt_fixture):
+ from psycopg.types.json import Jsonb
+ f=receipt_fixture;parent,row=accepted(f);body=body_for(f,parent,row)
+ with f[1].connect() as c:
+  event=c.execute("SELECT payload FROM service_dispatch_events WHERE offer_id=%s AND action='ACCEPT'",(UUID(row['current_offer']['id']),)).fetchone()['payload']
+  assert type(event['revision']) is int;event['revision']=float(event['revision'])
+  c.execute("UPDATE service_dispatch_events SET payload=%s WHERE offer_id=%s AND action='ACCEPT'",(Jsonb(event),UUID(row['current_offer']['id'])))
+  assert type(c.execute("SELECT payload FROM service_dispatch_events WHERE offer_id=%s AND action='ACCEPT'",(UUID(row['current_offer']['id']),)).fetchone()['payload']['revision']) is float
+ before=snapshot(f);assert not catalog(f,parent)['can_reassign'];assert post(f,row,body).status_code==409 and snapshot(f)==before
+
 @pytest.mark.parametrize('attribute',['_isolated_run_access','_isolated_dispatch_execution_preview','_isolated_receipt_execution_preview'])
 def test_isolated_adapter_paths_do_not_enable_handoff(receipt_fixture,attribute):
  f=receipt_fixture;parent,row=accepted(f);b=sd.Reassign(**body_for(f,parent,row));setattr(f[0],attribute,object())

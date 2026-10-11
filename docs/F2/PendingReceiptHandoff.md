@@ -35,3 +35,5 @@ Schema29仅去掉同材料版本最多一个receipt的旧约束，新增offer.re
 原浏览器 `data: ERR_BLOCKED_BY_ADMINISTRATOR` 保持；不启动浏览器、不换URL/工具、无模型/部署/main或既有dev整合。完整AT/F2、真实履约、多worker、Windows/浏览器与持久信任登记不由此签收。初轮基线复现的collection error与修正后的真实需求FAIL均保留，不能把它们算成新实现PASS。
 
 本片28项源码/测试/说明修改由本线程根作者产生，现有文件mtime为2026-10-11 09:52:50–10:05:04 UTC，需求复现始于09:49。独审只读，已完成静态审查，未发现阻断；尚须对冻结SHA运行独立探针。冻结前作者JUnit依次为131例（129 PASS/2 FAIL，outbox测试误把同一事件的两个收件人当成一行）、256例（255 PASS/1 FAIL，新唯一约束先阻止了旧corrupt-pointer测试的造坏数据）、331例（330 PASS/1 FAIL，未来版本测试误用当前29而非30），离线NodeVM另9 PASS。已分别修正测试oracle/一次性fixture造坏方式/未来marker，原失败记录私有保全；这些预冻结成绩不作为最终源码签收。最终冻结SHA、精确测试计数和独审记录随证据单独归档。
+
+独审在初冻a5ea0c61后发现owned数据库事件完整性负控：JSON整数前代revision被改成布尔true仍通过Python值比较。交接现对原实际ACCEPT及REOFFER前代的必需字段同时核对Python类型与值，浮点数也不作为整数版本证明。根测试从原字段动态构造float、在JSONB重新读取后断言实际类型，再验证409与完整事务无写。仅有数据库owner能够布置此负控；它不证明外部用户能修改事件或获得新权限。原始独审失败及探针构造失败分别保留，最终SHA证据说明修复和复验结果。

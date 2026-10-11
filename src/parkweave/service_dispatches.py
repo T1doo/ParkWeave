@@ -36,6 +36,11 @@ class Reassign(BaseModel):
     reason: str = Field(min_length=1, max_length=1000)
 
 
+def _typed_fields_equal(actual, expected):
+    # JSON booleans and floating-point numbers cannot prove integer revisions.
+    return all(type(actual.get(k)) is type(v) and actual.get(k) == v for k,v in expected.items())
+
+
 def _handoff_enabled(store, c):
     from .isolated_local_execution import provider
     return type(store) is Store and provider(store) is None and \
@@ -55,6 +60,10 @@ def _handoff_predecessor(store, c, parent, root, *, write=False, accepting=False
         return None
     accepted=_latest_accepted(c,root)
     if not accepted or not _fresh(parent,accepted,c,store):return None
+    acceptance=dict(dispatch_id=str(root['id']),offer_id=str(accepted['id']),
+                    receipt_step_id=str(accepted['receipt_step_id']),revision=accepted['acceptance_revision'],
+                    action='ACCEPT',state='ACCEPTED',actor_id=accepted['executor_id'],executor_id=accepted['executor_id'])
+    if not _typed_fields_equal(accepted['acceptance_payload'],acceptance):return None
     step=receipts._locked(c,accepted['receipt_step_id'],write=write)
     fields=('run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
     if (not step or step['namespace']!='SYNTHETIC' or step['state']!='AWAITING_RECEIPT'
@@ -387,7 +396,7 @@ def command(store, token, id, key, data):
                     if not predecessor:raise Conflict('pending manual receipt predecessor is no longer current')
                     accepted,previous_step=predecessor
                     expected=_handoff_binding(parent,accepted,previous_step)
-                    if (any(offered_event['payload'].get(k)!=v for k,v in expected.items())
+                    if (not _typed_fields_equal(offered_event['payload'],expected)
                         or accepted['executor_id']==p['id']):
                         raise Conflict('exact reassignment offer lineage required')
                     lineage=expected
