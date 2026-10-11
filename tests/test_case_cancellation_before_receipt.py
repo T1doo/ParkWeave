@@ -77,6 +77,42 @@ def test_any_historical_submission_refuses_even_reopen_or_new_empty_generation(r
  assert post(f,p).status_code==409 and old.snapshot(f)==before
 
 
+@pytest.mark.parametrize('kind',['handoff','new_material'])
+@pytest.mark.parametrize('strip_offered',[False,True])
+def test_later_generation_cannot_become_initial_by_stripping_lineage(receipt_fixture,kind,strip_offered):
+ from psycopg.types.json import Jsonb
+ f=receipt_fixture;p,d=accepted(f)
+ if kind=='handoff':
+  f[1].assign_status('unassigned',UUID(p['run_id']),active=True)
+  r=reassign(f,d,body_for(f,p,d));assert r.status_code==201,r.text
+ else:
+  original=d['receipt_step_id'];p=material(f,p,'REOPEN',reason='SYNTHETIC new material').json()
+  p=material(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC review').json()
+  p=material(f,p,'CONFIRM',reason='SYNTHETIC confirmation').json()
+  r=offer(f,p,revision=d['revision'],recovery_receipt_step_id=original)[0];assert r.status_code==201,r.text
+ r=decide(f,r.json(),'ACCEPT');assert r.status_code==200,r.text;d=r.json()
+ dispatch_base={'dispatch_id','offer_id','receipt_step_id','revision','action','state','actor_id','executor_id','reason'}
+ create_base={'step_id','revision','state','action','actor_id','scope','dispatch_id','offer_id','reason'}
+ with f[1].connect() as c:
+  for table,identity,actions,keys in [('service_dispatch_events','offer_id',['ACCEPT','REOFFER'] if strip_offered else ['ACCEPT'],dispatch_base),('service_receipt_events','step_id',['CREATE'],create_base)]:
+   id=d['current_offer']['id'] if identity=='offer_id' else d['receipt_step_id']
+   events=c.execute('SELECT id,payload FROM '+table+' WHERE '+identity+'=%s AND action=ANY(%s)',(id,actions)).fetchall()
+   for event in events:
+    assert event['payload'].keys()-keys
+    c.execute('UPDATE '+table+' SET payload=%s WHERE id=%s',(Jsonb({k:v for k,v in event['payload'].items() if k in keys}),event['id']))
+ before=old.snapshot(f);x=get(f,p);assert x.status_code==200 and not x.json()['can_cancel']
+ assert 'EXACT_MANUAL_ACCEPTANCE_AND_CREATE_PROOF_REQUIRED' in x.json()['blockers']
+ assert post(f,p).status_code==409 and old.snapshot(f)==before
+
+
+def test_initial_actual_acceptance_after_declined_offer_remains_supported(receipt_fixture):
+ f=receipt_fixture;p=ready(f);d=offer(f,p)[0];assert d.status_code==201
+ d=decide(f,d.json(),'DECLINE');assert d.status_code==200
+ d=offer(f,p,revision=d.json()['revision'])[0];assert d.status_code==201
+ d=decide(f,d.json(),'ACCEPT');assert d.status_code==200
+ assert get(f,p).json()['can_cancel'] and post(f,p).status_code==200
+
+
 @pytest.mark.parametrize('damage',['legacy','unaccepted','accept_actor','accept_fingerprint','create_fingerprint','create_payload','step_revision','step_namespace','closed_history','isolated_provider','managed_cold','external','run_proof','handoff_extra','handoff_boolean'])
 def test_unproven_or_effectful_origin_explicitly_refused(receipt_fixture,damage):
  from psycopg.types.json import Jsonb

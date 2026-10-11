@@ -70,6 +70,13 @@ def _manual_lineage(store,c,parent,root):
             extras={k:v for k,v in e['payload'].items() if k not in {*expected,'reason'}}
             create_extras={k:v for k,v in create['payload'].items() if k not in expected_create}
             if prep.canonical(extras)!=prep.canonical(create_extras):raise ValueError()
+            offered=c.execute("SELECT payload FROM service_dispatch_events WHERE offer_id=%s AND action IN ('OFFER','REOFFER') ORDER BY revision LIMIT 1",(o['id'],)).fetchone()
+            if not offered or not isinstance(offered['payload'],dict):raise ValueError()
+            offered_extras={k:v for k,v in offered['payload'].items() if k not in {*expected,'reason'}}
+            if prep.canonical(extras)!=prep.canonical(offered_extras):raise ValueError()
+            # A later acceptance cannot become an initial one by stripping the
+            # same lineage fields from both ACCEPT and CREATE (or REOFFER).
+            if e['id']!=accepts[0]['id'] and not extras:raise ValueError()
             if extras:
                 predecessor=next((x for x in offers if str(x['id'])==extras.get('predecessor_offer_id')),None)
                 previous=by_step.get(predecessor['receipt_step_id']) if predecessor else None
@@ -85,8 +92,7 @@ def _manual_lineage(store,c,parent,root):
                 elif predecessor['executor_id']!=o['executor_id'] or predecessor['preparation_revision']>=o['preparation_revision']:
                     raise ValueError()
                 if set(extras)!=set(expected_extras) or not sd._typed_fields_equal(extras,expected_extras):raise ValueError()
-                offered=c.execute("SELECT payload FROM service_dispatch_events WHERE offer_id=%s AND action IN ('OFFER','REOFFER') ORDER BY revision LIMIT 1",(o['id'],)).fetchone()
-                if not offered or not isinstance(offered['payload'],dict) or not sd._typed_fields_equal(offered['payload'],expected_extras):raise ValueError()
+                if not sd._typed_fields_equal(offered['payload'],expected_extras):raise ValueError()
             bound.add(s['id'])
             proofs.append(dict(accept_event_id=str(e['id']),accept_revision=e['revision'],accept_fingerprint=fp,
                 accept_payload_sha256=digest(prep.canonical(e['payload'])),create_event_id=str(create['id']),

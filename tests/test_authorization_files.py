@@ -53,8 +53,10 @@ def test_cross_scope_even_with_misconfigured_assignment_zero_effect(runtime,user
     assert api.get('/api/runs/'+run,headers=auth(tokens,user)).status_code==403
     assert api.post('/api/runs/'+run+'/cancel',headers=auth(tokens,user)).status_code==403
     assert counts(owner)==before
-    worker(runtime)
-    assert counts(owner)['cases']==1
+    result=worker(runtime)
+    with owner.connect() as c:
+        state=c.execute('SELECT r.state,r.fence,o.state operation_state FROM runs r JOIN operations o ON o.run_id=r.id WHERE r.id=%s',(run,)).fetchone()
+    assert counts(owner)['cases']==1,dict(worker_stdout=result.stdout,worker_stderr=result.stderr,persistent_run_operation=state)
 
 
 @pytest.mark.parametrize('action',['case.create','facts.assess','fault.record'])
@@ -306,7 +308,7 @@ def test_additive_unreleased_grant_scope_migration_preserves_withdrawal(fixture)
     with owner.connect() as c:
         grant=c.execute("SELECT active,park_id,org_id FROM capability_grants WHERE principal_id='fixture-a' AND capability='EXECUTE'").fetchone()
         assert grant=={'active':False,'park_id':'park-a','org_id':'org-a'}
-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==30
+        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==31
     store.finish(store.claim('current-worker'))
     assert store.read(tokens['fixture-a'],run)['operation']['state']=='FAILED_SAFE'
     assert counts(owner)['cases']==0

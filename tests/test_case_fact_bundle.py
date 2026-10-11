@@ -192,9 +192,10 @@ def test_migration030_actual_receipt_idempotence_future_rejection_no_grants(prep
  sql=Path('src/parkweave/migration-030.sql').read_text()
  with pytest.raises(psycopg.errors.RaiseException,match='creation ticket required'):
   with f[1].connect() as c:c.execute(sql)
- with f[1].connect() as c:f[1]._case_fact_fixture_receipt.authorize_migration(c);c.execute(sql)
+ with f[1].connect() as c:
+  f[1]._case_fact_fixture_receipt.authorize_migration(c);c.execute('DELETE FROM schema_version WHERE version=31');c.execute(sql);c.rollback()
  assert snapshot(f)==before
- with f[1].connect() as c:c.execute('INSERT INTO schema_version VALUES(31)')
+ with f[1].connect() as c:c.execute('INSERT INTO schema_version VALUES(32)')
  with pytest.raises(Conflict,match='newer than this code'):f[1].migrate()
 
 
