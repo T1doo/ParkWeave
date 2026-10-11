@@ -56,7 +56,7 @@ def case_write_guard(c,parent):
     # obtains UPDATE on that same parent before dispatch and the final Case lock.
     # A plain read here preserves resource/dispatch -> Case lock ordering.
     if c.autocommit:raise Conflict('transactional Case write required')
-    if case_cancelled(c,parent):raise Conflict('Case cancelled before first acceptance; historical reads only')
+    if case_cancelled(c,parent):raise Conflict('Case cancelled; historical reads only')
 
 def scoped(store,c,p,id,write=False,business_write=False):
     capability='PREPARE' if p['role']=='enterprise_operator' else 'REVIEW_ASSIGNED'

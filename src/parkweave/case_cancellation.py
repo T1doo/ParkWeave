@@ -47,7 +47,7 @@ def _locks(c,parent,write=False):
     return root,case,local
 
 
-def _source(c,parent,root,case,local):
+def _source(c,parent,root,case,local,*,check_before_accept=True):
     run=c.execute('SELECT * FROM runs WHERE id=%s',(parent['run_id'],)).fetchone()
     op=c.execute('SELECT * FROM operations WHERE run_id=%s',(parent['run_id'],)).fetchone()
     issues=[]
@@ -75,9 +75,9 @@ def _source(c,parent,root,case,local):
     if case and (case['external_acceptance']!='NOT_SUBMITTED' or case['offline_fulfillment']!='NO_EVIDENCE'):
         issues.append('CASE_FULFILLMENT_NOT_SUPPORTED')
     # Check the entire lineage, never only the currently selected offer.
-    if c.execute("SELECT 1 FROM service_dispatch_events e JOIN service_dispatches d ON d.id=e.dispatch_id WHERE d.preparation_id=%s AND e.action='ACCEPT' LIMIT 1",(parent['id'],)).fetchone() or c.execute("SELECT 1 FROM service_dispatch_offers o JOIN service_dispatches d ON d.id=o.dispatch_id WHERE d.preparation_id=%s AND (o.state='ACCEPTED' OR o.receipt_step_id IS NOT NULL) LIMIT 1",(parent['id'],)).fetchone():
+    if check_before_accept and (c.execute("SELECT 1 FROM service_dispatch_events e JOIN service_dispatches d ON d.id=e.dispatch_id WHERE d.preparation_id=%s AND e.action='ACCEPT' LIMIT 1",(parent['id'],)).fetchone() or c.execute("SELECT 1 FROM service_dispatch_offers o JOIN service_dispatches d ON d.id=o.dispatch_id WHERE d.preparation_id=%s AND (o.state='ACCEPTED' OR o.receipt_step_id IS NOT NULL) LIMIT 1",(parent['id'],)).fetchone()):
         issues.append('HISTORICAL_ACCEPTANCE_NOT_SUPPORTED')
-    if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s OR case_id=%s LIMIT 1',(parent['id'],parent['case_id'])).fetchone():
+    if check_before_accept and c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s OR case_id=%s LIMIT 1',(parent['id'],parent['case_id'])).fetchone():
         issues.append('RECEIPT_STEP_NOT_SUPPORTED')
     if (local and local['state']=='LOCAL_RECORD_CLOSED') or c.execute("SELECT 1 FROM case_local_events WHERE preparation_id=%s AND action='CLOSE_LOCAL_RECORD' LIMIT 1",(parent['id'],)).fetchone():
         issues.append('LOCAL_CLOSURE_NOT_SUPPORTED')
@@ -108,16 +108,16 @@ def _view(store,c,p,parent,root,case,local):
         case_goal_completed=False)
 
 
-def _original(c,p,parent,key):
+def _original(c,p,parent,key,*,scope=SCOPE,action=ACTION):
     old=c.execute('SELECT * FROM case_local_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
     if not old:return None
-    if old['preparation_id']!=parent['id'] or old['action']!=ACTION:raise Conflict('original cancellation request scope mismatch')
+    if old['preparation_id']!=parent['id'] or old['action']!=action:raise Conflict('original cancellation request scope mismatch')
     try:
         event=old['payload'];data=Cancel.model_validate(event['request']);snapshot=old['snapshot']
-        if (event['scope']!=SCOPE or event['actor_id']!=p['id'] or event['request_key']!=key or
+        if (event['scope']!=scope or event['actor_id']!=p['id'] or event['request_key']!=key or
             event['preparation_id']!=str(parent['id']) or event['case_id']!=str(parent['case_id']) or
             event['revision']!=old['revision'] or event['cycle']!=old['cycle'] or
-            event['case_state']!='CANCELLED' or event['action']!=ACTION or event['resource_release_automatic'] is not False or
+            event['case_state']!='CANCELLED' or event['action']!=action or event['resource_release_automatic'] is not False or
             data.case_id!=parent['case_id'] or data.expected_lifecycle_revision+1!=old['revision'] or
             snapshot['lifecycle_cycle']!=old['cycle'] or snapshot['case_id']!=str(parent['case_id']) or
             snapshot['preparation_id']!=str(parent['id']) or snapshot['preparation_revision']!=data.expected_preparation_revision or
@@ -128,7 +128,7 @@ def _original(c,p,parent,key):
     return old
 
 
-def _result(old):return dict(scope=SCOPE,status='COMMITTED',event_id=str(old['id']),event=old['payload'],
+def _result(old):return dict(scope=old['payload']['scope'],status='COMMITTED',event_id=str(old['id']),event=old['payload'],
     historical_only=True,automatically_replayed=False,resource_release_automatic=False)
 
 
@@ -174,14 +174,19 @@ def cancel(store,token,id,key,data):
         if (data.case_id!=parent['case_id'] or data.expected_preparation_revision!=parent['revision'] or
             data.expected_lifecycle_revision!=(local['revision'] if local else 0) or data.expected_source_sha256!=digest(prep.canonical(source))):
             raise Conflict('exact Case and material source version required; refresh and explicitly confirm')
-        cycle=local['cycle'] if local else 1
-        if local:
-            local=c.execute("UPDATE case_local_lifecycles SET revision=revision+1,state='CANCELLED',verified_snapshot=NULL,verified_sha256=NULL WHERE preparation_id=%s RETURNING *",(id,)).fetchone()
-        else:
-            local=c.execute("INSERT INTO case_local_lifecycles(preparation_id,case_id,revision,cycle,state) VALUES(%s,%s,1,1,'CANCELLED') RETURNING *",(id,parent['case_id'])).fetchone()
-        c.execute("UPDATE cases SET state='CANCELLED' WHERE id=%s",(parent['case_id'],))
-        event=dict(scope=SCOPE,action=ACTION,actor_id=p['id'],request_key=key,preparation_id=str(id),case_id=str(parent['case_id']),
-            revision=local['revision'],cycle=cycle,case_state='CANCELLED',resource_release_automatic=False,request=data.model_dump(mode='json'))
-        old=c.execute('INSERT INTO case_local_events(id,preparation_id,actor_id,request_key,fingerprint,revision,cycle,action,payload,snapshot) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *',
-            (uuid4(),id,p['id'],key,fp,local['revision'],cycle,ACTION,Jsonb(event),Jsonb(source))).fetchone()
-        return _result(old)
+        return _commit(c,p,parent,local,key,data,fp,source)
+
+
+def _commit(c,p,parent,local,key,data,fp,source,*,scope=SCOPE,action=ACTION):
+    """Caller has proved its bounded policy and holds parent/dispatch/Case locks."""
+    id=parent['id'];cycle=local['cycle'] if local else 1
+    if local:
+        local=c.execute("UPDATE case_local_lifecycles SET revision=revision+1,state='CANCELLED',verified_snapshot=NULL,verified_sha256=NULL WHERE preparation_id=%s RETURNING *",(id,)).fetchone()
+    else:
+        local=c.execute("INSERT INTO case_local_lifecycles(preparation_id,case_id,revision,cycle,state) VALUES(%s,%s,1,1,'CANCELLED') RETURNING *",(id,parent['case_id'])).fetchone()
+    c.execute("UPDATE cases SET state='CANCELLED' WHERE id=%s",(parent['case_id'],))
+    event=dict(scope=scope,action=action,actor_id=p['id'],request_key=key,preparation_id=str(id),case_id=str(parent['case_id']),
+        revision=local['revision'],cycle=cycle,case_state='CANCELLED',resource_release_automatic=False,request=data.model_dump(mode='json'))
+    old=c.execute('INSERT INTO case_local_events(id,preparation_id,actor_id,request_key,fingerprint,revision,cycle,action,payload,snapshot) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *',
+        (uuid4(),id,p['id'],key,fp,local['revision'],cycle,action,Jsonb(event),Jsonb(source))).fetchone()
+    return _result(old)

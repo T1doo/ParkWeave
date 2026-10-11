@@ -340,7 +340,7 @@ def test_cancelled_handoff_and_material_reuse_bypasses_rejected(link_fixture):
 def test_cancel_migration_requires_actual_creation_ticket_and_existing_rights_unchanged(receipt_fixture):
  from pathlib import Path
  f=receipt_fixture;p=ready(f);assert post(f,p).status_code==200;before=snapshot(f)
- sql=Path('src/parkweave/migration-030.sql').read_text()
+ sql=Path('src/parkweave/migration-031.sql').read_text()
  with pytest.raises(psycopg.errors.RaiseException,match='creation ticket required'):
   with f[1].connect() as c:c.execute(sql)
  with f[1].connect() as c:
@@ -350,7 +350,7 @@ def test_cancel_migration_requires_actual_creation_ticket_and_existing_rights_un
  assert snapshot(f)==before
  with pytest.raises(psycopg.errors.InsufficientPrivilege):
   with f[0].connect() as c:c.execute("DELETE FROM case_local_events WHERE action='CANCEL_BEFORE_ACCEPT'")
- with f[1].connect() as c:c.execute('INSERT INTO schema_version VALUES(31)')
+ with f[1].connect() as c:c.execute('INSERT INTO schema_version VALUES(32)')
  with pytest.raises(Conflict,match='newer than this code'):f[1].migrate()
 
 

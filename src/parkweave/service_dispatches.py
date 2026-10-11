@@ -48,7 +48,7 @@ def _handoff_enabled(store, c):
             '_isolated_run_access','_isolated_local_execution','_isolated_execution_preview',
             '_isolated_resource_execution_preview','_isolated_dispatch_execution_preview',
             '_isolated_receipt_execution_preview','_isolated_lifecycle_execution_preview')) and \
-        c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] in (29,30) and \
+        c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] in (29,30,31) and \
         bool(c.execute('SELECT 1 FROM schema_version WHERE version=29').fetchone())
 
 
