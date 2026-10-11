@@ -126,7 +126,7 @@ def _sha(snapshot,cycle):return digest(prep.canonical({'cycle':cycle,'sources':s
 
 
 def _view(c,p,parent,case,row,issues=None,snapshot=None,event=None):
-    owner=p['role']=='enterprise_operator';can_write=owner and p.get('_local_case_write',False) and case['state']!='CANCELLED';cycle=row['cycle'] if row else 1
+    owner=p['role']=='enterprise_operator';can_write=owner and p.get('_local_case_write',False) and case['state'] not in ('CANCELLED','RECONCILING');cycle=row['cycle'] if row else 1
     current_sha=_sha(snapshot,cycle) if snapshot is not None else None
     current=bool(row and row['verified_sha256'] and current_sha==row['verified_sha256'] and not any(issues.values())) if issues is not None else None
     history=c.execute('SELECT revision,cycle,action,payload,created_at FROM case_local_events WHERE preparation_id=%s ORDER BY revision',(parent['id'],)).fetchall()

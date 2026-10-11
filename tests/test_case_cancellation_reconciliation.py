@@ -1,0 +1,463 @@
+"""Cancellation intent and explicit owner result reconciliation on owned PG."""
+from uuid import UUID,uuid4
+from concurrent.futures import ThreadPoolExecutor
+import threading
+import psycopg,pytest
+from psycopg.types.json import Jsonb
+from parkweave import case_cancellation_reconciliation as cr,preparation as prep
+from parkweave.store import Store,Conflict,digest
+from test_preparation import preparation_fixture,headers,command as material
+from test_executor_receipts import receipt_fixture,act,create as legacy_create
+from test_case_resources import link_fixture,group,post as bind
+from test_service_dispatches import offer,command as decide,read as dispatch_read
+from test_pending_receipt_handoff import body_for,post as reassign
+from test_case_cancellation_before_receipt import accepted,generation
+import test_case_cancellation as before_accept
+import test_case_cancellation_before_receipt as before_receipt
+
+PATH='/case-cancellation-reconciliation'
+def get(f,p,user='fixture-a'):
+ return f[3].get('/api/preparations/'+p['preparation_id']+PATH,headers=headers(f[2],user))
+def body(f,p,action='REQUEST_CANCEL',outcome='KNOWN_LOCAL_RESULT'):
+ r=get(f,p);assert r.status_code==200,r.text;x=r.json()
+ result=dict(action=action,case_id=x['case_id'],expected_preparation_revision=x['preparation_revision'],expected_lifecycle_revision=x['lifecycle_revision'],expected_source_sha256=x['source_sha256'],confirm=True,reason='SYNTHETIC explicit owner '+action)
+ if action!='REQUEST_CANCEL':result['request_event_id']=x['request_event_id']
+ if action=='RECONCILE':result['receipts']=[dict(**{k:h[k] for k in ('step_id','receipt_id','version','receipt_sha256')},outcome=outcome) for h in x['receipts']]
+ if action=='CONFIRM_CANCEL':result['reconciliation_event_id']=x['reconciliation_event_id']
+ return result
+def post(f,p,data=None,key=None,user='fixture-a'):
+ return f[3].post('/api/preparations/'+p['preparation_id']+PATH,headers=headers(f[2],user,key or uuid4().hex),json=data or body(f,p))
+def recover(f,p,key,user='fixture-a'):
+ return f[3].get('/api/preparations/'+p['preparation_id']+PATH+'/recovery/'+key,headers=headers(f[2],user))
+def submitted(f):
+ p,d=accepted(f);r=act(f,generation(f,d),'SUBMIT');assert r.status_code==200,r.text
+ return p,d,r.json()
+
+
+def test_three_explicit_stages_preserve_facts_and_original_keys(link_fixture):
+ f=link_fixture;p,d,row=submitted(f);initial=before_accept.snapshot(f)
+ x=get(f,p);assert x.status_code==200 and x.json()['can_request'],x.text
+ assert before_accept.post(f,p).status_code==409 and before_receipt.post(f,p).status_code==409
+ keys=[];requests=[];events=[]
+ for action in ('REQUEST_CANCEL','RECONCILE','CONFIRM_CANCEL'):
+  data=body(f,p,action);key=uuid4().hex;r=post(f,p,data,key);assert r.status_code==200,r.text
+  assert r.json()['event']['case_state']==('CANCELLED' if action=='CONFIRM_CANCEL' else 'RECONCILING')
+  assert post(f,p,data,key).json()==r.json();assert post(f,p,{**data,'reason':'different'},key).status_code==409
+  keys.append(key);requests.append(data);events.append(r.json()['event'])
+ final=before_accept.snapshot(f)
+ assert all(initial[t]==final[t] for t in initial if t not in ('cases','case_local_lifecycles','case_local_events'))
+ for key,data,event in zip(keys,requests,events):
+  r=recover(f,p,key);assert r.status_code==200,r.text
+  assert r.json()['event']==event and r.json()['current']['case_state']=='CANCELLED'
+  assert post(f,p,data,key).json()['event']==event
+  cold=cr.recover(Store(f[0].dsn),f[2]['fixture-a'],UUID(p['preparation_id']),key)
+  assert cold['event']==event and cold['current']['case_state']=='CANCELLED'
+ assert before_accept.snapshot(f)==final
+
+
+def test_unresolved_results_remain_reconciling_until_separate_confirmation(receipt_fixture):
+ f=receipt_fixture;p,d,row=submitted(f)
+ assert post(f,p).status_code==200
+ r=post(f,p,body(f,p,'RECONCILE','UNRESOLVED'));assert r.status_code==200,r.text
+ x=get(f,p).json();assert x['case_state']=='RECONCILING' and not x['can_confirm']
+ initial=before_accept.snapshot(f)
+ assert post(f,p,body(f,p,'CONFIRM_CANCEL')).status_code==409
+ assert before_accept.snapshot(f)==initial
+ assert post(f,p,body(f,p,'RECONCILE')).status_code==200
+ assert get(f,p).json()['case_state']=='RECONCILING'
+ assert post(f,p,body(f,p,'CONFIRM_CANCEL')).status_code==200
+
+
+@pytest.mark.parametrize('state',['RECORDED','ACKNOWLEDGED','CHANGES_REQUESTED','REOPENED'])
+def test_request_does_not_erase_original_decisions_or_implicitly_ack(receipt_fixture,state):
+ f=receipt_fixture;p,d,row=submitted(f)
+ if state!='RECORDED':
+  action={'ACKNOWLEDGED':'ACKNOWLEDGE','CHANGES_REQUESTED':'REQUEST_CHANGES','REOPENED':'REOPEN'}[state]
+  r=act(f,row,action);assert r.status_code==200,r.text
+ initial=before_accept.snapshot(f);r=post(f,p);assert r.status_code==200,r.text
+ x=get(f,p).json();assert x['case_state']=='RECONCILING' and not x['can_confirm'] and len(x['receipts'])==1
+ final=before_accept.snapshot(f)
+ assert all(initial[t]==final[t] for t in initial if t not in ('cases','case_local_lifecycles','case_local_events'))
+
+
+@pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a','unassigned'])
+def test_current_owner_only_all_stages_and_cold_key(receipt_fixture,user):
+ f=receipt_fixture;p,d,row=submitted(f);data=body(f,p);key=uuid4().hex
+ assert get(f,p,user).status_code==403 and post(f,p,data,key,user).status_code==403 and recover(f,p,key,user).status_code==403
+
+
+def test_no_submission_keeps_old_before_receipt_boundary(receipt_fixture):
+ f=receipt_fixture;p,d=accepted(f);x=get(f,p).json()
+ assert not x['can_request'] and 'HISTORICAL_MANUAL_SUBMISSION_REQUIRED' in x['blockers']
+ assert post(f,p).status_code==409
+ assert before_receipt.post(f,p).status_code==200
+
+
+@pytest.mark.parametrize('history',['correction','reopen','handoff_then_submit','material_new_empty','material_both_submitted'])
+def test_all_manual_generations_and_versions_require_complete_explicit_outcomes(receipt_fixture,history):
+ f=receipt_fixture
+ if history=='handoff_then_submit':
+  p,d=accepted(f);f[1].assign_status('unassigned',UUID(p['run_id']),active=True)
+  d=reassign(f,d,body_for(f,p,d)).json();d=decide(f,d,'ACCEPT').json()
+  row=act(f,generation(f,d,'unassigned'),'SUBMIT',user='unassigned').json()
+ else:
+  p,d,row=submitted(f)
+  if history in ('correction','reopen'):
+   row=act(f,row,'REQUEST_CHANGES' if history=='correction' else 'REOPEN').json()
+   row=act(f,row,'SUBMIT',text='SYNTHETIC revised manual result').json()
+  else:
+   p=material(f,p,'REOPEN',reason='SYNTHETIC new material').json()
+   p=material(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC reviewed').json()
+   p=material(f,p,'CONFIRM',reason='SYNTHETIC confirmed').json()
+   d=offer(f,p,revision=d['revision'],recovery_receipt_step_id=d['receipt_step_id'])[0].json();d=decide(f,d,'ACCEPT').json()
+   if history=='material_both_submitted':row=act(f,generation(f,d),'SUBMIT').json()
+ x=get(f,p);assert x.status_code==200 and x.json()['can_request'],x.text
+ count=1 if history in ('handoff_then_submit','material_new_empty') else 2
+ assert len(x.json()['receipts'])==count;before=before_accept.snapshot(f)
+ assert post(f,p).status_code==200
+ data=body(f,p,'RECONCILE');assert len(data['receipts'])==count
+ if count==2:assert post(f,p,{**data,'receipts':data['receipts'][:1]}).status_code==409
+ assert post(f,p,data).status_code==200 and post(f,p,body(f,p,'CONFIRM_CANCEL')).status_code==200
+ after=before_accept.snapshot(f)
+ assert all(before[t]==after[t] for t in before if t not in ('cases','case_local_lifecycles','case_local_events'))
+
+
+@pytest.mark.parametrize('action',cr.ACTIONS)
+@pytest.mark.parametrize('cap',['READ','PREPARE','EXECUTE','INACTIVE'])
+def test_current_revocation_every_phase_and_original_key(receipt_fixture,action,cap):
+ f=receipt_fixture;p,d,row=submitted(f)
+ if action!='REQUEST_CANCEL':assert post(f,p).status_code==200
+ if action=='CONFIRM_CANCEL':assert post(f,p,body(f,p,'RECONCILE')).status_code==200
+ data=body(f,p,action);key=uuid4().hex;assert post(f,p,data,key).status_code==200
+ with f[1].connect() as c:
+  f[1].lock_principal(c,'fixture-a',exclusive=True)
+  if cap=='INACTIVE':c.execute("UPDATE principals SET active=false WHERE id='fixture-a'")
+  elif cap=='PREPARE':c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+  else:c.execute('UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability=%s',('fixture-a',cap))
+ before=before_accept.snapshot(f);assert post(f,p,data,key).status_code==403
+ assert recover(f,p,key).status_code==(200 if cap=='EXECUTE' else 403)
+ if cap=='EXECUTE':
+  x=get(f,p).json();assert not any(x[k] for k in ('can_request','can_reconcile','can_confirm'))
+ assert before_accept.snapshot(f)==before
+
+
+@pytest.mark.parametrize('action',cr.ACTIONS)
+@pytest.mark.parametrize('same_key,same_body',[(True,True),(True,False),(False,True)])
+def test_actual_key_concurrency_one_event_each_phase(receipt_fixture,action,same_key,same_body):
+ f=receipt_fixture;p,d,row=submitted(f)
+ if action!='REQUEST_CANCEL':assert post(f,p).status_code==200
+ if action=='CONFIRM_CANCEL':assert post(f,p,body(f,p,'RECONCILE')).status_code==200
+ data=body(f,p,action);key=uuid4().hex
+ def run(i):
+  try:return cr.command(Store(f[0].dsn),f[2]['fixture-a'],UUID(p['preparation_id']),key if same_key else str(i),cr.Command.model_validate({**data,'reason':data['reason'] if same_body else str(i)}))
+  except Conflict:return 'CONFLICT'
+ with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(run,range(2)))
+ if same_key and same_body:assert results[0]==results[1]
+ else:assert results.count('CONFLICT')==1
+ with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM case_local_events WHERE action=%s',(action,)).fetchone()['n']==1
+
+
+@pytest.mark.parametrize('action',cr.ACTIONS)
+def test_event_failure_rolls_back_whole_phase(receipt_fixture,action):
+ f=receipt_fixture;p,d,row=submitted(f)
+ if action!='REQUEST_CANCEL':assert post(f,p).status_code==200
+ if action=='CONFIRM_CANCEL':assert post(f,p,body(f,p,'RECONCILE')).status_code==200
+ data=body(f,p,action);before=before_accept.snapshot(f)
+ with f[1].connect() as c:
+  c.execute("CREATE FUNCTION fail_reconcile_event() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN IF NEW.action='"+action+"' THEN RAISE EXCEPTION 'SYNTHETIC reconciliation fault'; END IF; RETURN NEW; END$$")
+  c.execute('CREATE TRIGGER fail_reconcile_event BEFORE INSERT ON case_local_events FOR EACH ROW EXECUTE FUNCTION fail_reconcile_event()')
+ with pytest.raises(psycopg.errors.RaiseException,match='SYNTHETIC reconciliation fault'):
+  cr.command(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,cr.Command.model_validate(data))
+ assert before_accept.snapshot(f)==before
+
+
+@pytest.mark.parametrize('field',['case_id','expected_preparation_revision','expected_lifecycle_revision','expected_source_sha256'])
+@pytest.mark.parametrize('action',cr.ACTIONS)
+def test_exact_owner_cas_all_stages(receipt_fixture,field,action):
+ f=receipt_fixture;p,d,row=submitted(f)
+ if action!='REQUEST_CANCEL':assert post(f,p).status_code==200
+ if action=='CONFIRM_CANCEL':assert post(f,p,body(f,p,'RECONCILE')).status_code==200
+ data=body(f,p,action);data[field]=str(uuid4()) if field=='case_id' else '0'*64 if field=='expected_source_sha256' else data[field]+1
+ before=before_accept.snapshot(f);assert post(f,p,data).status_code==409 and before_accept.snapshot(f)==before
+
+
+@pytest.mark.parametrize('value',[False,1,'true',None])
+def test_confirmation_is_explicit_strict_boolean(receipt_fixture,value):
+ f=receipt_fixture;p,d,row=submitted(f);data=body(f,p);data['confirm']=value;before=before_accept.snapshot(f)
+ assert post(f,p,data).status_code==422 and before_accept.snapshot(f)==before
+
+
+@pytest.mark.parametrize('value',[[],None,7,'invalid'])
+def test_nonobject_run_input_fails_closed_without_500(receipt_fixture,value):
+ f=receipt_fixture;p,d,row=submitted(f)
+ with f[1].connect() as c:c.execute('UPDATE runs SET input=%s WHERE id=%s',(Jsonb(value),p['run_id']))
+ before=before_accept.snapshot(f);x=get(f,p);assert x.status_code==200 and not x.json()['can_request'],x.text
+ assert post(f,p).status_code==409 and before_accept.snapshot(f)==before
+
+
+@pytest.mark.parametrize('damage',['submit_actor','submit_fingerprint','submit_payload','receipt_text','receipt_version','step_pointer','legacy','adapter','closed','isolated','managed','external'])
+def test_damaged_manual_or_effectful_sources_refuse_without_writes(receipt_fixture,damage):
+ f=receipt_fixture;p,d,row=submitted(f)
+ with f[1].connect() as c:
+  if damage=='submit_actor':c.execute("UPDATE service_receipt_events SET actor_id='fixture-a' WHERE action='SUBMIT'")
+  elif damage=='submit_fingerprint':c.execute("UPDATE service_receipt_events SET fingerprint=repeat('0',64) WHERE action='SUBMIT'")
+  elif damage=='submit_payload':c.execute("UPDATE service_receipt_events SET payload=jsonb_set(payload,'{revision}','true') WHERE action='SUBMIT'")
+  elif damage=='receipt_text':c.execute("UPDATE service_step_receipts SET text='SYNTHETIC tampered'")
+  elif damage=='receipt_version':c.execute('UPDATE service_step_receipts SET version=2')
+  elif damage=='step_pointer':c.execute('UPDATE service_receipt_steps SET current_receipt_id=NULL')
+  elif damage=='legacy':c.execute("UPDATE service_receipt_events SET payload=payload-'dispatch_id' WHERE action='CREATE'")
+  elif damage=='adapter':c.execute('ALTER TABLE service_step_receipts ADD COLUMN adapter_execution jsonb');c.execute("UPDATE service_step_receipts SET adapter_execution='{}'")
+  elif damage=='closed':
+   c.execute("INSERT INTO case_local_lifecycles(preparation_id,case_id,revision,cycle,state) VALUES(%s,%s,1,1,'REOPENED')",(p['preparation_id'],p['case_id']))
+   c.execute("INSERT INTO case_local_events(id,preparation_id,actor_id,request_key,fingerprint,revision,cycle,action,payload) VALUES(%s,%s,'fixture-a','synthetic-close',repeat('0',64),1,1,'CLOSE_LOCAL_RECORD','{}')",(uuid4(),p['preparation_id']))
+  elif damage=='isolated':f[0]._isolated_execution_preview=object()
+  elif damage=='managed':c.execute('ALTER TABLE run_assignments ADD COLUMN managed_access jsonb');c.execute("UPDATE run_assignments SET managed_access='{}'")
+  elif damage=='external':c.execute('ALTER TABLE cases DROP CONSTRAINT cases_external_acceptance_check');c.execute("UPDATE cases SET external_acceptance='SUBMITTED'")
+ before=before_accept.snapshot(f);x=get(f,p);assert x.status_code==200 and not x.json()['can_request'],x.text
+ assert post(f,p).status_code==409 and before_accept.snapshot(f)==before
+ if damage=='managed':assert not cr.read(Store(f[0].dsn),f[2]['fixture-a'],UUID(p['preparation_id']))['can_request']
+
+
+@pytest.mark.parametrize('damage',['case','local','revision','snapshot_top','prior_heads','event_actor','event_reason'])
+def test_original_key_detects_corrupted_current_phase_and_rehashed_top_snapshot(receipt_fixture,damage):
+ f=receipt_fixture;p,d,row=submitted(f);data=body(f,p);key=uuid4().hex;result=post(f,p,data,key);assert result.status_code==200
+ with f[1].connect() as c:
+  if damage=='case':c.execute("UPDATE cases SET state='NEEDS_INPUT'")
+  elif damage=='local':c.execute("UPDATE case_local_lifecycles SET state='REOPENED'")
+  elif damage=='revision':c.execute('UPDATE case_local_lifecycles SET revision=revision+1')
+  else:
+   e=c.execute('SELECT * FROM case_local_events WHERE request_key=%s',(key,)).fetchone();payload=e['payload'];snapshot=e['snapshot']
+   if damage=='snapshot_top':snapshot['preparation_revision']+=1;payload['request']['expected_preparation_revision']+=1
+   elif damage=='prior_heads':snapshot['cancellation_events']=[dict(id=str(uuid4()))]
+   elif damage=='event_actor':payload['actor_id']='fixture-b'
+   else:payload['request']['reason']='SYNTHETIC forged reason'
+   payload['request']['expected_source_sha256']=digest(prep.canonical(snapshot))
+   fp=e['fingerprint'] if damage=='event_reason' else cr._fingerprint(UUID(p['preparation_id']),cr.Command.model_validate(payload['request']))
+   c.execute('UPDATE case_local_events SET payload=%s,snapshot=%s,fingerprint=%s WHERE id=%s',(Jsonb(payload),Jsonb(snapshot),fp,e['id']))
+ before=before_accept.snapshot(f);assert recover(f,p,key).status_code==post(f,p,data,key).status_code==409
+ assert before_accept.snapshot(f)==before
+
+
+def competitor(f,p,d,row,writer):
+ if writer=='submit':
+  row=act(f,row,'REQUEST_CHANGES').json();return lambda:act(f,row,'SUBMIT')
+ if writer=='ack':return lambda:act(f,row,'ACKNOWLEDGE')
+ if writer in ('handoff','accept'):
+  p=material(f,p,'REOPEN',reason='SYNTHETIC new input').json();p=material(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC review').json();p=material(f,p,'CONFIRM',reason='SYNTHETIC confirm').json()
+  pending=offer(f,p,revision=d['revision'],recovery_receipt_step_id=d['receipt_step_id'])[0].json()
+  if writer=='accept':return lambda:decide(f,pending,'ACCEPT')
+  pending=decide(f,pending,'ACCEPT').json();f[1].assign_status('unassigned',UUID(p['run_id']),active=True)
+  b=body_for(f,p,pending);return lambda:reassign(f,pending,b)
+ if writer=='material':return lambda:material(f,p,'ADD_EVIDENCE',slot='need_summary',text='SYNTHETIC next',source_kind='USER_STATEMENT',source_label='SYNTHETIC next')
+ if writer=='link':
+  g=group(f);return lambda:bind(f,p,g)
+ return before_receipt.competing(f,p,d,'plan')
+
+
+@pytest.mark.parametrize('writer',['submit','ack','accept','handoff','material','plan','link'])
+def test_request_wins_actual_pg_locks_and_freezes_late_business_writer(link_fixture,writer):
+ f=link_fixture;p,d,row=submitted(f);write=competitor(f,p,d,row,writer);data=body(f,p);results=[]
+ with f[1].connect() as blocker:
+  blocker.execute('SELECT * FROM cases WHERE id=%s FOR UPDATE',(p['case_id'],))
+  request=threading.Thread(target=lambda:results.append(('request',post(f,p,data).status_code)));request.start();before_accept.wait_for_pg_lock(f,'SELECT * FROM cases WHERE id=')
+  other=threading.Thread(target=lambda:results.append((writer,write().status_code)));other.start();before_accept.wait_for_pg_lock(f,'FROM preparations WHERE id=')
+ request.join(6);other.join(6);assert not request.is_alive() and not other.is_alive()
+ assert sorted(results)==sorted([('request',200),(writer,409)]) and get(f,p).json()['case_state']=='RECONCILING'
+
+
+@pytest.mark.parametrize('writer',['submit','ack','accept','handoff','material','plan','link'])
+def test_business_writer_wins_actual_pg_wait_and_old_request_cas_refuses(link_fixture,writer,monkeypatch):
+ f=link_fixture;p,d,row=submitted(f);write=competitor(f,p,d,row,writer);data=body(f,p)
+ entered=threading.Event();release=threading.Event();results=[];original=prep.case_write_guard;once=[]
+ def pause(c,parent):
+  original(c,parent)
+  if not once:once.append(True);entered.set();assert release.wait(5)
+ monkeypatch.setattr(prep,'case_write_guard',pause)
+ other=threading.Thread(target=lambda:results.append((writer,write().status_code)));other.start();assert entered.wait(3)
+ request=threading.Thread(target=lambda:results.append(('request',post(f,p,data).status_code)));request.start()
+ try:before_accept.wait_for_pg_lock(f,'FROM preparations WHERE id=')
+ finally:release.set()
+ other.join(6);request.join(6);assert not other.is_alive() and not request.is_alive()
+ assert sorted(results)==sorted([(writer,201 if writer in ('handoff','plan','link') else 200),('request',409)])
+ assert get(f,p).json()['case_state']!='RECONCILING' and post(f,p).status_code==200
+
+
+@pytest.mark.parametrize('action',['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'])
+def test_receipt_parent_bypass_and_legacy_create_frozen_during_reconciliation(receipt_fixture,action):
+ f=receipt_fixture;p,d,row=submitted(f);assert post(f,p).status_code==200;before=before_accept.snapshot(f)
+ assert act(f,row,action).status_code==409 and legacy_create(f,p)[0].status_code==409
+ assert before_accept.snapshot(f)==before
+ x=generation(f,d)
+ assert x['case_reconciling'] and not x['case_cancelled'] and not x['can_submit'] and not x['local_execution']['can_execute']
+
+
+def test_resource_capacity_preserved_and_independent_release_during_reconciliation(link_fixture):
+ from test_resource_combinations import cancel
+ from parkweave import resource_holds as rh
+ f=link_fixture;p,d,row=submitted(f);g=group(f);assert bind(f,p,g).status_code==201
+ before=before_accept.snapshot(f);assert post(f,p).status_code==200
+ after=before_accept.snapshot(f);assert before['synthetic_resource_holds']==after['synthetic_resource_holds']
+ with f[1].connect() as c:
+  for m in g['members']:
+   h=c.execute('SELECT * FROM synthetic_resource_holds WHERE id=%s',(m['id'],)).fetchone();assert h['state']=='CONFIRMED' and rh._peak(c,h['resource_id'],h['starts_at'],h['ends_at'],rh._now(c))>=h['quantity']
+ assert cancel(f,g['id']).status_code==200 and get(f,p).json()['case_state']=='RECONCILING'
+ assert post(f,p,body(f,p,'RECONCILE')).status_code==200 and post(f,p,body(f,p,'CONFIRM_CANCEL')).status_code==200
+
+
+def test_pending_notifications_open_rechecks_reconciling_without_false_withdraw(receipt_fixture):
+ from parkweave import dispatch_notices as dn
+ from test_dispatch_notices import drain,inbox,act as notice_act
+ f=receipt_fixture;p,d,row=submitted(f);assert dn.consume(f[0]);assert post(f,p).status_code==200;drain(f)
+ with f[1].connect() as c:rows=c.execute('SELECT * FROM dispatch_notices').fetchall()
+ for n in rows:
+  item=inbox(f,n['recipient_id']).json()['items'][0];assert item['case_reconciling'] and not item['case_cancelled'] and not item['actionable']
+  assert notice_act(f,n['recipient_id'],item,'OPEN').json()['notice']['case_reconciling']
+ with f[1].connect() as c:assert not c.execute("SELECT 1 FROM service_dispatch_events WHERE action='WITHDRAW'").fetchone()
+
+
+def test_legitimate_local_prefix_capacity_62_63_64_and_all_original_keys(link_fixture):
+ from test_case_lifecycle import built,read as local_read,act as local_act
+ from test_resource_combinations import cancel
+ f=link_fixture;p,g,d,row=built(f)
+ for i in range(61):
+  if i:
+   assert cancel(f,g['id']).status_code==200;g=group(f)
+   r=bind(f,p,g,revision=i);assert r.status_code==201,r.text
+  r=local_act(f,p,local_read(f,p).json(),'REVALIDATE');assert r.status_code==200,r.text
+ data=body(f,p);key=uuid4().hex;assert data['expected_lifecycle_revision']==61
+ assert post(f,p,data,key).status_code==200
+ unknown=body(f,p,'RECONCILE','UNRESOLVED');before=before_accept.snapshot(f)
+ assert post(f,p,unknown).status_code==409 and before_accept.snapshot(f)==before
+ r=body(f,p,'RECONCILE');rk=uuid4().hex;assert post(f,p,r,rk).status_code==200
+ final=body(f,p,'CONFIRM_CANCEL');fk=uuid4().hex;assert post(f,p,final,fk).status_code==200
+ assert get(f,p).json()['lifecycle_revision']==64 and not get(f,p).json()['blockers']
+ for b,k in [(data,key),(r,rk),(final,fk)]:assert recover(f,p,k).status_code==post(f,p,b,k).status_code==200
+
+
+@pytest.mark.parametrize('action,user',[(a,'fixture-a' if a in ('ADD_EVIDENCE','CONFIRM','REOPEN') else 'prep-specialist-fixture-a') for a in prep.PreparationCommand.model_fields['action'].annotation.__args__])
+def test_all_material_commands_frozen_during_reconciliation(receipt_fixture,action,user):
+ f=receipt_fixture;p,d,row=submitted(f);assert post(f,p).status_code==200;before=before_accept.snapshot(f)
+ extra=dict(slot='need_summary',text='SYNTHETIC blocked',source_kind='USER_STATEMENT',source_label='blocked') if action=='ADD_EVIDENCE' else dict(reason='SYNTHETIC blocked')
+ r=material(f,p,action,user,**extra);assert r.status_code==409 and 'RECONCILING' in r.text and before_accept.snapshot(f)==before
+
+
+@pytest.mark.parametrize('endpoint',before_accept.test_all_case_business_write_families_reject_cancelled_before_other_prerequisites.pytestmark[0].args[1])
+def test_all_business_write_families_frozen_during_reconciliation(link_fixture,endpoint):
+ from parkweave.controlled_plans import TEMPLATE_SHA
+ f=link_fixture;p,d,row=submitted(f);assert post(f,p).status_code==200;before=before_accept.snapshot(f);rev=p['revision'];sha='0'*64;uid=str(uuid4())
+ payloads={
+ 'request-intent':dict(expected_preparation_revision=rev,request_text='SYNTHETIC request',required_goals=[]),
+ 'readiness':dict(expected_preparation_revision=rev,expected_source_sha256=sha),
+ 'planning-preview':dict(expected_preparation_revision=rev,expected_source_sha256=sha),
+ 'material-draft':dict(expected_preparation_revision=rev,expected_source_sha256=sha,expected_reviewer_id='prep-specialist-fixture-a',confirm_material_share=True),
+ 'fact-clarifications/declare':dict(expected_preparation_revision=rev,profile='LOCAL_SERVICE_PREPARATION_FACTS_V1',purpose='SERVICE_PREPARATION',reason='SYNTHETIC'),
+ 'fact-clarifications/confirm':dict(expected_preparation_revision=rev,expected_clarification_revision=1,expected_source_sha256=sha,choices=[dict(field=a,assertion_id=str(uuid4()),expected_assertion_revision=1,expected_assertion_fingerprint=sha) for a in ('region','employees','service_need')],reason='SYNTHETIC'),
+ 'fact-bundle/commands':dict(action='WITHDRAW',expected_preparation_revision=rev,expected_bundle_revision=0,expected_source_sha256=sha,source_id=uid,reason='SYNTHETIC'),
+ 'opportunities/commands':dict(action='REFRESH',expected_revision=0,expected_source_sha256=sha,reason='SYNTHETIC'),
+ 'material-objections':dict(action='RAISE',expected_preparation_revision=rev,expected_version=0,binding_sha256=sha,reason='SYNTHETIC'),
+ 'service-case-plan':dict(expected_preparation_revision=rev,expected_request_revision=1,expected_source_sha256=sha,required_goals=['LOCAL_MATERIAL_PREPARATION'],reason='SYNTHETIC'),
+ 'service-case-plan/commands':dict(action='BEGIN',step_id=uid,expected_revision=1,reason='SYNTHETIC'),
+ 'controlled-plan':dict(template_sha256=TEMPLATE_SHA,expected_preparation_revision=rev,required_goals=['LOCAL_SYNTHETIC_COORDINATION_RECORDS']),
+ 'controlled-plan/commands':dict(action='CHECK_STEP',step='P1',expected_revision=1,expected_source_sha256=sha,reason='SYNTHETIC'),
+ 'local-case/commands':dict(action='REOPEN',expected_revision=1,expected_cycle=1,reason='SYNTHETIC'),
+ 'resource-link':dict(combination_id=uid,expected_preparation_revision=rev,expected_link_revision=0,reason='SYNTHETIC'),
+ 'resource-delivery':dict(members=[dict(hold_id=str(uuid4()),expected_revision=1) for _ in range(3)],expected_preparation_revision=rev,expected_plan_revision=1,expected_source_sha256=sha,valid_until='2026-10-11T12:00:00Z',reason='SYNTHETIC')}
+ r=f[3].post('/api/preparations/'+p['preparation_id']+'/'+endpoint,headers=headers(f[2],key=uuid4().hex),json=payloads[endpoint])
+ assert r.status_code==409 and 'RECONCILING' in r.text and before_accept.snapshot(f)==before
+
+
+@pytest.mark.parametrize('kind',['controlled','registered'])
+def test_history_get_and_rejected_plan_callbacks_do_not_invalidate_after_request(link_fixture,kind):
+ f=link_fixture
+ if kind=='controlled':
+  from test_controlled_plans import through
+  p,g,d,row=through(f)
+ else:
+  p,d,row=submitted(f)
+  from test_request_intents import save
+  from test_service_case_steps import adopt
+  p=save(f,p,goals=['LOCAL_MATERIAL_PREPARATION']).json();assert adopt(f,p).status_code==201
+ assert post(f,p).status_code==200
+ with f[1].connect() as c:c.execute("UPDATE preparation_catalog SET source=source||'{\"revision\":\"changed\"}'::jsonb")
+ before=before_accept.snapshot(f)
+ for path in ['','/readiness','/material-draft','/fact-clarifications','/controlled-plan','/service-case-plan','/service-case-plan/command-recovery','/planning-preview','/local-case','/case-path','/goal-results']:
+  r=f[3].get('/api/preparations/'+p['preparation_id']+path,headers=headers(f[2]));assert r.status_code==200,(path,r.text)
+  assert before_accept.snapshot(f)==before,path
+ local=f[3].get('/api/preparations/'+p['preparation_id']+'/local-case',headers=headers(f[2])).json()
+ assert not any(local[k] for k in ('can_revalidate','can_close_local_record','can_reopen'))
+
+
+def test_rejected_original_receipt_key_cannot_replay_after_request(receipt_fixture):
+ f=receipt_fixture;p,d=accepted(f);row=generation(f,d);key=uuid4().hex;r=act(f,row,'SUBMIT',key=key);assert r.status_code==200
+ assert post(f,p).status_code==200;before=before_accept.snapshot(f)
+ assert act(f,row,'SUBMIT',key=key).status_code==409 and before_accept.snapshot(f)==before
+
+
+def test_resource_revocation_does_not_expand_case_rights_or_release(link_fixture):
+ from test_resource_combinations import cancel
+ f=link_fixture;p,d,row=submitted(f);g=group(f);assert bind(f,p,g).status_code==201
+ with f[1].connect() as c:c.execute("UPDATE synthetic_resource_grants SET active=false WHERE principal_id='fixture-a'")
+ x=get(f,p).json();assert x['can_request'] and all(set(link)=={'id','revision','sha256'} for link in x['source']['immutable_source']['resource_links'])
+ assert post(f,p).status_code==200;before=before_accept.snapshot(f)
+ assert cancel(f,g['id']).status_code==403 and before_accept.snapshot(f)==before
+
+
+def test_independent_resource_release_and_request_can_both_commit(link_fixture):
+ from test_resource_combinations import cancel
+ f=link_fixture;p,d,row=submitted(f);g=group(f);assert bind(f,p,g).status_code==201;data=body(f,p)
+ with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(lambda a:post(f,p,data) if a=='request' else cancel(f,g['id']),['request','release']))
+ assert [r.status_code for r in results]==[200,200] and get(f,p).json()['case_state']=='RECONCILING'
+
+
+def test_migration_032_keeps_ticket_native_and_original_privileges(link_fixture):
+ from pathlib import Path
+ f=link_fixture;sql=Path('src/parkweave/migration-032.sql').read_text()
+ with pytest.raises(psycopg.errors.RaiseException,match='creation ticket required'):
+  with f[1].connect() as c:c.execute(sql)
+ with f[1].connect() as c:
+  rights=c.execute("SELECT grantee,table_name,privilege_type FROM information_schema.role_table_grants WHERE grantee='parkweave_app' ORDER BY table_name,privilege_type").fetchall()
+  f[1]._case_fact_fixture_receipt.authorize_migration(c);c.execute(sql)
+  assert c.execute("SELECT grantee,table_name,privilege_type FROM information_schema.role_table_grants WHERE grantee='parkweave_app' ORDER BY table_name,privilege_type").fetchall()==rights
+  c.rollback()
+ for sql in ['DELETE FROM case_local_events','UPDATE case_local_events SET payload=payload','UPDATE case_local_lifecycles SET case_id=case_id']:
+  with pytest.raises(psycopg.errors.InsufficientPrivilege):
+   with f[0].connect() as c:c.execute(sql)
+
+
+def test_foreign_bound_step_refuses_and_never_exports_receipt_body(receipt_fixture):
+ f=receipt_fixture;p,d,row=submitted(f);private=row['current_receipt']['text']
+ with f[1].connect() as c:c.execute("UPDATE service_receipt_steps SET owner_id='fixture-b'")
+ before=before_accept.snapshot(f);r=get(f,p);assert r.status_code==200 and r.json()['blockers'] and not r.json()['receipts'] and private not in r.text
+ assert post(f,p).status_code==409 and before_accept.snapshot(f)==before
+
+
+@pytest.mark.parametrize('damage',['actor','fingerprint','snapshot','payload','cycle','revision_gap','local_state','local_snapshot','local_sha','case_state'])
+def test_complete_original_local_prefix_proof_required(link_fixture,damage):
+ from test_case_lifecycle import built,read as local_read,act as local_act
+ f=link_fixture;p,g,d,row=built(f);assert local_act(f,p,local_read(f,p).json(),'REVALIDATE').status_code==200
+ with f[1].connect() as c:
+  if damage=='actor':c.execute("UPDATE case_local_events SET actor_id='fixture-b'")
+  elif damage=='fingerprint':c.execute("UPDATE case_local_events SET fingerprint=repeat('0',64)")
+  elif damage=='snapshot':c.execute("UPDATE case_local_events SET snapshot=jsonb_set(snapshot,'{case_id}',to_jsonb(%s::text))",(str(uuid4()),))
+  elif damage=='payload':c.execute("UPDATE case_local_events SET payload=jsonb_set(payload,'{cycle}','true')")
+  elif damage=='cycle':c.execute('UPDATE case_local_events SET cycle=2');c.execute('UPDATE case_local_lifecycles SET cycle=2')
+  elif damage=='revision_gap':c.execute('UPDATE case_local_events SET revision=2');c.execute('UPDATE case_local_lifecycles SET revision=2')
+  elif damage=='local_state':c.execute("UPDATE case_local_lifecycles SET state='REOPENED',verified_snapshot=NULL,verified_sha256=NULL")
+  elif damage=='local_snapshot':c.execute("UPDATE case_local_lifecycles SET verified_snapshot='{}'")
+  elif damage=='local_sha':c.execute("UPDATE case_local_lifecycles SET verified_sha256=repeat('0',64)")
+  else:c.execute("UPDATE cases SET state='NEEDS_INPUT'")
+ before=before_accept.snapshot(f);x=get(f,p).json();assert 'EXACT_CANCELLATION_PHASE_PROOF_REQUIRED' in x['blockers'] and not x['can_request']
+ assert post(f,p).status_code==409 and before_accept.snapshot(f)==before
+
+
+@pytest.mark.parametrize('damage',['unearned_cycle','unearned_initial_state'])
+def test_rehashed_first_request_requires_proven_original_cycle_and_case_state(receipt_fixture,damage):
+ f=receipt_fixture;p,d,row=submitted(f);data=body(f,p);key=uuid4().hex;assert post(f,p,data,key).status_code==200
+ with f[1].connect() as c:
+  e=c.execute('SELECT * FROM case_local_events WHERE request_key=%s',(key,)).fetchone();payload=e['payload'];snapshot=e['snapshot'];cycle=1
+  if damage=='unearned_cycle':cycle=2;payload['cycle']=2;snapshot['lifecycle_cycle']=2;c.execute('UPDATE case_local_lifecycles SET cycle=2')
+  else:snapshot['case_state']='WAITING_CONFIRMATION'
+  payload['request']['expected_source_sha256']=digest(prep.canonical(snapshot));fp=cr._fingerprint(UUID(p['preparation_id']),cr.Command.model_validate(payload['request']))
+  c.execute('UPDATE case_local_events SET payload=%s,snapshot=%s,fingerprint=%s,cycle=%s WHERE id=%s',(Jsonb(payload),Jsonb(snapshot),fp,cycle,e['id']))
+ before=before_accept.snapshot(f);assert get(f,p).json()['blockers'] and recover(f,p,key).status_code==post(f,p,data,key).status_code==409
+ assert before_accept.snapshot(f)==before

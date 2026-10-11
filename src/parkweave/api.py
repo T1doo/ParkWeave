@@ -556,6 +556,16 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
     @app.get('/api/preparations/{preparation_id}/case-cancellation-before-receipt/recovery/{request_key}')
     def case_cancellation_before_receipt_recover(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
         return receipt_cancel.recover(store,token(authorization),preparation_id,resource_key(request_key))
+    from . import case_cancellation_reconciliation as cancel_reconciliation
+    @app.get('/api/preparations/{preparation_id}/case-cancellation-reconciliation')
+    def case_cancellation_reconciliation_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return cancel_reconciliation.read(store,token(authorization),preparation_id)
+    @app.post('/api/preparations/{preparation_id}/case-cancellation-reconciliation')
+    def case_cancellation_reconciliation_command(preparation_id: UUID,data: cancel_reconciliation.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return cancel_reconciliation.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+    @app.get('/api/preparations/{preparation_id}/case-cancellation-reconciliation/recovery/{request_key}')
+    def case_cancellation_reconciliation_recover(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return cancel_reconciliation.recover(store,token(authorization),preparation_id,resource_key(request_key))
     from . import receipt_history_recovery as receipt_history
     def receipt_history_client():
         client=getattr(store,'_isolated_receipt_history',None)

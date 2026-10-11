@@ -150,7 +150,7 @@ def test_bounded_shape_rejects_without_mutation(preparation_fixture,alter):
 
 def test_existing_database_migration_requires_receipt(preparation_fixture):
     f=preparation_fixture
-    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==31
+    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==32
     # Current Linux version 29 is restart-compatible without rerunning migration or fresh receipt.
     Store(f[1].dsn).migrate()
 

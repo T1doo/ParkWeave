@@ -137,7 +137,7 @@ def consume(store,*,crash_before_ack=False):
                     p=c.execute('SELECT * FROM principals WHERE id=%s',(candidate['recipient_id'],)).fetchone()
                     source=_source(c,candidate['event_id'])
                     try:
-                        parent,_=_authority(store,c,p,source);allowed=not sd.prep.case_cancelled(c,parent)
+                        parent,_=_authority(store,c,p,source);allowed=not sd.prep.case_write_blocked(c,parent)
                     except Denied:allowed=False
                     row=c.execute("SELECT * FROM dispatch_notice_outbox WHERE event_id=%s AND recipient_id=%s AND state='PENDING' FOR UPDATE SKIP LOCKED",(candidate['event_id'],candidate['recipient_id'])).fetchone()
                     if not row:continue
@@ -155,12 +155,12 @@ def consume(store,*,crash_before_ack=False):
         return False
 
 
-def _item(source,row,root,*,cancelled=False):
+def _item(source,row,root,*,cancelled=False,reconciling=False):
     return dict(event_id=source['event_id'],preparation_id=source['preparation_id'],dispatch_id=source['dispatch_id'],
                 revision=source['revision'],action=source['action'],created_at=source['created_at'],
                 delivered_at=row['delivered_at'],open_requested_at=row['seen_at'],read_at=row['read_at'],
-                case_cancelled=cancelled,actionable=not cancelled and source['offer_id']==root['current_offer_id'] and source['action'] in ('OFFER','REOFFER'),
-                historical=cancelled or source['revision']!=root['revision'] or source['offer_id']!=root['current_offer_id'])
+                case_cancelled=cancelled,case_reconciling=reconciling,case_write_blocked=cancelled or reconciling,actionable=not (cancelled or reconciling) and source['offer_id']==root['current_offer_id'] and source['action'] in ('OFFER','REOFFER'),
+                historical=cancelled or reconciling or source['revision']!=root['revision'] or source['offer_id']!=root['current_offer_id'])
 
 
 def _recipient(store,c,token):
@@ -201,7 +201,7 @@ def list_items(store,token,*,cursor=None,navigation=None):
                 source=_source(c,row['event_id'])
                 parent,root=_authority(store,c,p,source)
             except Denied:continue
-            items.append(_item(source,row,root,cancelled=sd.prep.case_cancelled(c,parent)))
+            items.append(_item(source,row,root,cancelled=sd.prep.case_cancelled(c,parent),reconciling=sd.prep.case_state(c,parent)=='RECONCILING'))
             if len(items)==LIST_RETURN_LIMIT:break
         # Reaching either bound means "continue scanning", not a disclosed total
         # or a guarantee that the next page contains authorized notices. Advance
@@ -227,7 +227,7 @@ def _get(store,c,token,id):
 def read(store,token,id):
     with store.connect() as c:
         p,source,root,row,parent=_get(store,c,token,id)
-        return dict(scope=SCOPE,notice=_item(source,row,root,cancelled=sd.prep.case_cancelled(c,parent)),external_send=False,case_goal_completed=False)
+        return dict(scope=SCOPE,notice=_item(source,row,root,cancelled=sd.prep.case_cancelled(c,parent),reconciling=sd.prep.case_state(c,parent)=='RECONCILING'),external_send=False,case_goal_completed=False)
 
 
 @bounded
@@ -241,4 +241,4 @@ def command(store,token,id,data):
         else:
             if row['seen_at'] is None:raise Conflict('request to open notice required before marking read')
             row=c.execute('UPDATE dispatch_notices SET read_at=coalesce(read_at,clock_timestamp()) WHERE event_id=%s AND recipient_id=%s RETURNING *',(id,p['id'])).fetchone()
-        return dict(scope=SCOPE,notice=_item(source,row,root,cancelled=sd.prep.case_cancelled(c,parent)),external_send=False,case_goal_completed=False)
+        return dict(scope=SCOPE,notice=_item(source,row,root,cancelled=sd.prep.case_cancelled(c,parent),reconciling=sd.prep.case_state(c,parent)=='RECONCILING'),external_send=False,case_goal_completed=False)

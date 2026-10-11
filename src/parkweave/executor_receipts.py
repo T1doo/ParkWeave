@@ -144,13 +144,14 @@ def _view(c,p,row,parent,event=None,store=None):
     from .isolated_local_execution import view as execution_view
     cancelled=prep.case_cancelled(c,parent) if parent else False
     execution=execution_view(store,c,p,row,parent,receipt,is_current)
-    if cancelled:execution={**execution,'can_execute':False}
-    return dict(scope=SCOPE,role=p['role'],step=row,current_receipt=receipt,case_cancelled=cancelled,
+    blocked=prep.case_write_blocked(c,parent) if parent else False
+    if blocked:execution={**execution,'can_execute':False}
+    return dict(scope=SCOPE,role=p['role'],step=row,current_receipt=receipt,case_cancelled=cancelled,case_reconciling=bool(parent and prep.case_state(c,parent)=='RECONCILING'),case_write_blocked=blocked,
         local_execution=execution,
         history=c.execute('SELECT revision,action,payload,created_at FROM service_receipt_events WHERE step_id=%s ORDER BY revision',(row['id'],)).fetchall(),
         receipt_history=c.execute('SELECT * FROM service_step_receipts WHERE step_id=%s ORDER BY version',(row['id'],)).fetchall(),
         dependency='CURRENT' if is_current and _fresh(row,parent,c,store) else 'DEPENDENCY_CHANGED',event=event,
-        is_current_step=is_current,can_submit=not cancelled and is_current and p['role']=='service_executor' and row['state'] in ('AWAITING_RECEIPT','CHANGES_REQUESTED') and _fresh(row,parent,c,store),record_mode='CURRENT_GENERATION' if is_current else 'HISTORICAL_GENERATION',
+        is_current_step=is_current,can_submit=not blocked and is_current and p['role']=='service_executor' and row['state'] in ('AWAITING_RECEIPT','CHANGES_REQUESTED') and _fresh(row,parent,c,store),record_mode='CURRENT_GENERATION' if is_current else 'HISTORICAL_GENERATION',
         replay_mode=('CURRENT_COMMITTED_EVENT' if is_current else 'HISTORICAL_COMMITTED_EVENT') if event else None,
         qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',case_goal_completed=False)
 
@@ -162,7 +163,7 @@ def catalog(store,token,id):
         row=prep.scoped(store,c,p,id);store.check_capability(c,p,'EXECUTE')
         rows = store.assigned_executors(c,row['run_id'],p['park_id'],p['org_id'])
         cancelled=prep.case_cancelled(c,row)
-        return dict(scope=SCOPE,preparation_revision=row['revision'],case_cancelled=cancelled,ready=row['state']=='LOCAL_CONFIRMED' and not cancelled,executors=rows)
+        return dict(scope=SCOPE,preparation_revision=row['revision'],case_cancelled=cancelled,case_reconciling=prep.case_state(c,row)=='RECONCILING',case_write_blocked=prep.case_write_blocked(c,row),ready=row['state']=='LOCAL_CONFIRMED' and not prep.case_write_blocked(c,row),executors=rows)
 
 def _insert_step(c,parent,executor_id):
     return c.execute("""INSERT INTO service_receipt_steps(id,preparation_id,run_id,case_id,owner_id,executor_id,park_id,org_id,service_id,service_version,
@@ -282,7 +283,7 @@ def command(store,token,id,key,data):
 def list_steps(store,token):
     with store.connect() as c:
         p=_auth(store,c,token);owner=p['role']=='enterprise_operator'
-        rows=c.execute("""SELECT s.id,s.goal,s.state,s.revision,s.run_id,(cs.state='CANCELLED') AS case_cancelled FROM service_receipt_steps s JOIN cases cs ON cs.id=s.case_id
+        rows=c.execute("""SELECT s.id,s.goal,s.state,s.revision,s.run_id,(cs.state='CANCELLED') AS case_cancelled,(cs.state='RECONCILING') AS case_reconciling,(cs.state IN ('RECONCILING','CANCELLED')) AS case_write_blocked FROM service_receipt_steps s JOIN cases cs ON cs.id=s.case_id
           WHERE s.park_id=%s AND s.org_id=%s AND s."""+('owner_id' if owner else 'executor_id')+"""=%s
           AND (SELECT principal_id FROM runs WHERE id=s.run_id) = s.owner_id
           """+('' if owner else "AND EXISTS(SELECT 1 FROM run_assignments a WHERE a.run_id=s.run_id AND a.principal_id=%s AND a.park_id=s.park_id AND a.org_id=s.org_id AND a.active)")+" ORDER BY s.created_at DESC,s.id DESC LIMIT 101",(p['park_id'],p['org_id'],p['id'],*(() if owner else (p['id'],)))).fetchall()

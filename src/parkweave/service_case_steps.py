@@ -191,7 +191,7 @@ def persist_rejected_observation(store,error):
     with store.connect() as c:
         c.execute("SET LOCAL lock_timeout='3s'")
         parent=c.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(error.preparation_id,)).fetchone()
-        if not parent or prep.case_cancelled(c,parent):return
+        if not parent or prep.case_write_blocked(c,parent):return
         plan=parent.get('service_case_plan')
         if plan and plan['id']==error.plan_id and plan['revision']==error.revision:
             _invalidate(plan,error.index)
@@ -199,7 +199,7 @@ def persist_rejected_observation(store,error):
 
 
 def _inspect(store,c,parent,plan,observe=True,fresh_clock=False):
-    if prep.case_cancelled(c,parent):observe=False
+    if prep.case_write_blocked(c,parent):observe=False
     dependencies.plan_proof(parent,plan)
     if any(e['action'] in ('LOCK','UNLOCK') for e in plan['events']) or any(s.get('manual_lock') is not None for s in plan['steps']):
         _recovery_proofs(parent)
@@ -267,7 +267,7 @@ def _allowed(p,step,states,binding_issues,issues,sources,revision,lock_count=0):
 
 def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
     owner=p['role']=='enterprise_operator';cp._write_flag(store,c,p)
-    cancelled=prep.case_cancelled(c,parent)
+    cancelled=prep.case_write_blocked(c,parent)
     if cancelled:p['_plan_write']=False;observe=False
     context=dict(role=p['role'],actor_ref=cp._hash(dict(actor_id=p['id'])),preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),
                  preparation_revision=parent['revision'],request_revision=(parent.get('request_intent') or {}).get('revision',0),

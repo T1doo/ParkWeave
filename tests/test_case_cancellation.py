@@ -345,12 +345,16 @@ def test_cancel_migration_requires_actual_creation_ticket_and_existing_rights_un
   with f[1].connect() as c:c.execute(sql)
  with f[1].connect() as c:
   grants=c.execute("SELECT grantee,table_name,privilege_type FROM information_schema.role_table_grants WHERE grantee='parkweave_app' ORDER BY table_name,privilege_type").fetchall()
-  f[1]._case_fact_fixture_receipt.authorize_migration(c);c.execute(sql)
+  f[1]._case_fact_fixture_receipt.authorize_migration(c)
+  # Prior031 SQL replay only, under the original ticket and rolled back;
+  # current032 and all business bytes remain installed outside this transaction.
+  c.execute('DELETE FROM schema_version WHERE version=32');c.execute(sql)
   assert c.execute("SELECT grantee,table_name,privilege_type FROM information_schema.role_table_grants WHERE grantee='parkweave_app' ORDER BY table_name,privilege_type").fetchall()==grants
+  c.rollback()
  assert snapshot(f)==before
  with pytest.raises(psycopg.errors.InsufficientPrivilege):
   with f[0].connect() as c:c.execute("DELETE FROM case_local_events WHERE action='CANCEL_BEFORE_ACCEPT'")
- with f[1].connect() as c:c.execute('INSERT INTO schema_version VALUES(32)')
+ with f[1].connect() as c:c.execute('INSERT INTO schema_version VALUES(33)')
  with pytest.raises(Conflict,match='newer than this code'):f[1].migrate()
 
 

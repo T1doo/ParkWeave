@@ -37,7 +37,7 @@ def persist_rejected_observation(store,error):
     with store.connect() as c:
         c.execute("SET LOCAL lock_timeout='3s'")
         parent=c.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(error.preparation_id,)).fetchone()
-        if not parent or prep.case_cancelled(c,parent):return
+        if not parent or prep.case_write_blocked(c,parent):return
         row=_row(c,error.preparation_id)
         if row and row['id']==error.plan_id and row['revision']==error.revision:
             invalidate(c,error.preparation_id,error.index)
@@ -76,7 +76,7 @@ def _creation_blockers(c,parent):
     blockers=[reason for reason,table,column in dependencies
       if c.execute('SELECT 1 FROM '+table+' WHERE '+column+'=%s',(parent['id'],)).fetchone()]
     if intents.state(parent) not in ('NOT_RECORDED','SUPPORTED_LOCAL'):blockers.append('REQUEST_GOAL_COVERAGE_REQUIRED')
-    if prep.case_cancelled(c,parent):blockers.append('CASE_CANCELLED')
+    if prep.case_write_blocked(c,parent):blockers.append('CASE_CANCELLATION_RECONCILING' if prep.case_state(c,parent)=='RECONCILING' else 'CASE_CANCELLED')
     return blockers
 
 def _auth(store,c,token,id,write=False):
@@ -163,7 +163,7 @@ def invalidate(c,id,index):
         c.execute('UPDATE controlled_plans SET invalidated_from=least(coalesce(invalidated_from,%s),%s),invalidated_at=coalesce(invalidated_at,clock_timestamp()) WHERE preparation_id=%s',(index,index,id))
 
 def _inspect(store,c,parent,row,observe=True):
-    if prep.case_cancelled(c,parent):observe=False
+    if prep.case_write_blocked(c,parent):observe=False
     if row['template_sha256']!=TEMPLATE_SHA:raise Conflict('fixed template version/hash unavailable')
     issues,snapshots=_sources(store,c,parent);bad=None
     for i,s in enumerate(STEPS,1):
@@ -216,7 +216,7 @@ def _view(c,p,parent,row,issues,snapshots,states,event=None):
     next_ready=next_step is None or not issues[next_step]
     access_blocked='EXISTING_RUN_ASSIGNMENT_REQUIRED' in issues['P3']
     state='LOCAL_RECORDS_CHECKED' if next_step is None else 'BLOCKED' if not next_ready or access_blocked else 'NEEDS_RECHECK' if any(v=='NEEDS_RECHECK' for v in states.values()) else 'IN_PROGRESS'
-    return dict(scope=SCOPE,role=p['role'],preparation_id=parent['id'],preparation_revision=parent['revision'],plan_id=row['id'],revision=row['revision'],
+    return dict(scope=SCOPE,role=p['role'],case_id=parent['case_id'],preparation_id=parent['id'],preparation_revision=parent['revision'],plan_id=row['id'],revision=row['revision'],
       request_intent=intents.view(parent) if owner else None,request_coverage_state=intents.state(parent),
       template_sha256=row['template_sha256'],template_version=1,state=state,steps=steps,next_step=next_step,
       history=history,event=event,source_snapshots=snapshots if owner else None,
@@ -245,12 +245,12 @@ def _old(c,p,id,key,fp):
 def read(store,token,id):
     with store.connect() as c:
         p,parent=_auth(store,c,token,id);_write_flag(store,c,p);row=_row(c,id)
-        if prep.case_cancelled(c,parent):p['_plan_write']=False
+        if prep.case_write_blocked(c,parent):p['_plan_write']=False
         if not row:
             owner=p['role']=='enterprise_operator'
             blockers=_creation_blockers(c,parent) if owner else None
             if owner and not p['_plan_write']:blockers.append('CURRENT_EXECUTE_AUTHORITY_REQUIRED')
-            return dict(scope=SCOPE,role=p['role'],preparation_id=id,plan_id=None,template_sha256=TEMPLATE_SHA,
+            return dict(scope=SCOPE,role=p['role'],case_id=parent['case_id'],preparation_id=id,plan_id=None,template_sha256=TEMPLATE_SHA,
               can_create=owner and p['_plan_write'] and not blockers,creation_blockers=blockers,
               request_intent=intents.view(parent) if owner else None,request_coverage_state=intents.state(parent),
               state='NOT_STARTED',preparation_revision=parent['revision'])

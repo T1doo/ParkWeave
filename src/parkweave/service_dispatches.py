@@ -48,7 +48,7 @@ def _handoff_enabled(store, c):
             '_isolated_run_access','_isolated_local_execution','_isolated_execution_preview',
             '_isolated_resource_execution_preview','_isolated_dispatch_execution_preview',
             '_isolated_receipt_execution_preview','_isolated_lifecycle_execution_preview')) and \
-        c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] in (29,30,31) and \
+        c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] in (29,30,31,32) and \
         bool(c.execute('SELECT 1 FROM schema_version WHERE version=29').fetchone())
 
 
@@ -197,8 +197,8 @@ def _event(c, p, root, offer, key, fp, action, reason, **extra):
 
 
 def _view(c, p, parent, root, event=None,store=None):
-    cancelled=prep.case_cancelled(c,parent)
-    result = dict(scope=SCOPE, case_cancelled=cancelled, can_accept=False, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
+    cancelled=prep.case_cancelled(c,parent);blocked=prep.case_write_blocked(c,parent)
+    result = dict(scope=SCOPE, case_id=parent['case_id'], case_cancelled=cancelled, case_reconciling=prep.case_state(c,parent)=='RECONCILING', case_write_blocked=blocked, can_accept=False, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
                   service_id=parent['service_id'], service_version=parent['service_version'],
                   preparation_revision=parent['revision'], dispatch_id=root['id'] if root else None,
                   revision=root['revision'] if root else 0, current_offer=None, offers=[], history=[], event=event,
@@ -221,7 +221,7 @@ def _view(c, p, parent, root, event=None,store=None):
     if offer['id']==root['current_offer_id']:
         result.update(current_receipt_step_id=offer['receipt_step_id'] if offer['state']=='ACCEPTED' else None,
                       **_recovery_flags(c,p,parent,root,store))
-    if cancelled:result.update(can_reoffer=False,reoffer_kind=None)
+    if blocked:result.update(can_reoffer=False,reoffer_kind=None)
     else:result['can_accept']=executor and result['is_current_offer'] and offer['state']=='OFFERED' and result['dependency']=='CURRENT'
     return result
 
@@ -243,8 +243,8 @@ def catalog(store, token, id):
         handoff=_handoff_predecessor(store,c,parent,root)
         handoff_rows=[r for r in rows if handoff and r['id']!=handoff[0]['executor_id']]
         return dict(scope=SCOPE, preparation_revision=parent['revision'], dispatch_revision=root['revision'] if root else 0,
-                    case_cancelled=prep.case_cancelled(c,parent),ready=ready and bool(rows) and not prep.case_cancelled(c,parent), executors=rows, has_receipt_step=existing, history_limit_reached=limited,
-                    can_reassign=bool(handoff_rows) and not prep.case_cancelled(c,parent),reassignment_executors=handoff_rows,
+                    case_cancelled=prep.case_cancelled(c,parent),case_reconciling=prep.case_state(c,parent)=='RECONCILING',case_write_blocked=prep.case_write_blocked(c,parent),ready=ready and bool(rows) and not prep.case_write_blocked(c,parent), executors=rows, has_receipt_step=existing, history_limit_reached=limited,
+                    can_reassign=bool(handoff_rows) and not prep.case_write_blocked(c,parent),reassignment_executors=handoff_rows,
                     reassignment_actor_id=p['id'],
                     reassignment_predecessor=_handoff_binding(parent,*handoff) if handoff else None,
                     **_recovery_flags(c,p,parent,root,store))

@@ -344,9 +344,11 @@ CREATE TRIGGER immutable_delete BEFORE DELETE ON previews BEGIN SELECT RAISE(ABO
             with self._database() as db:
                 self._guard(store,c,token,p)
                 view = self._view(db,p,parent,current)
-                if prep.case_cancelled(c,parent):
+                if prep.case_write_blocked(c,parent):
                     view['execution_available']=False
-                    view['case_cancelled']=True
+                    view['case_cancelled']=prep.case_cancelled(c,parent)
+                    view['case_reconciling']=prep.case_state(c,parent)=='RECONCILING'
+                    view['case_write_blocked']=True
                 if key is not None:
                     old = db.execute('SELECT * FROM previews WHERE owner=? AND request_key=?',(p['id'],key)).fetchone()
                     if old and old['preparation'] != str(id):

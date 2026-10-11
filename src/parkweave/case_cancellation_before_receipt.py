@@ -22,7 +22,7 @@ def _head(value):
     return dict(id=data.get('id'),revision=data.get('revision'),sha256=digest(prep.canonical(data)))
 
 
-def _manual_lineage(store,c,parent,root):
+def _manual_lineage(store,c,parent,root,*,allow_manual_receipts=False):
     issues=[]
     if not sd._handoff_enabled(store,c):issues.append('ORDINARY_MANUAL_CASE_REQUIRED')
     if any(a.get('managed_access') is not None for a in c.execute('SELECT * FROM run_assignments WHERE run_id=%s',(parent['run_id'],)).fetchall()):
@@ -33,7 +33,7 @@ def _manual_lineage(store,c,parent,root):
         WHERE s.preparation_id=%s OR s.case_id=%s ORDER BY e.id LIMIT 65""",(parent['id'],parent['case_id'])).fetchall()
     submitted=c.execute('''SELECT 1 FROM service_step_receipts r JOIN service_receipt_steps s ON s.id=r.step_id
         WHERE s.preparation_id=%s OR s.case_id=%s LIMIT 1''',(parent['id'],parent['case_id'])).fetchone()
-    if submitted or any(e['action']!='CREATE' for e in events):issues.append('HISTORICAL_RECEIPT_SUBMISSION_NOT_SUPPORTED')
+    if not allow_manual_receipts and (submitted or any(e['action']!='CREATE' for e in events)):issues.append('HISTORICAL_RECEIPT_SUBMISSION_NOT_SUPPORTED')
     offers=c.execute('SELECT * FROM service_dispatch_offers WHERE dispatch_id=%s ORDER BY id LIMIT 65',
                      (root['id'],)).fetchall() if root else []
     accepts=c.execute("SELECT * FROM service_dispatch_events WHERE dispatch_id=%s AND action='ACCEPT' ORDER BY revision LIMIT 65",
@@ -53,11 +53,12 @@ def _manual_lineage(store,c,parent,root):
                 raise ValueError()
             request=sd.Command(action='ACCEPT',expected_revision=e['revision']-1,reason=e['payload']['reason'])
             fp=digest(prep.canonical(dict(dispatch_id=str(root['id']),**request.model_dump(mode='json'))))
-            creates=[x for x in events if x['step_id']==s['id']]
+            creates=[x for x in events if x['step_id']==s['id'] and (not allow_manual_receipts or x['action']=='CREATE')]
             fields=('preparation_id','run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
             if (s['id'] in bound or any(s[k]!=parent['id' if k=='preparation_id' else k] for k in fields)
-                or s['namespace']!='SYNTHETIC' or s['state']!='AWAITING_RECEIPT' or s['revision']!=1
-                or s['current_receipt_id'] is not None or s['executor_id']!=o['executor_id']
+                or s['namespace']!='SYNTHETIC'
+                or (not allow_manual_receipts and (s['state']!='AWAITING_RECEIPT' or s['revision']!=1 or s['current_receipt_id'] is not None))
+                or s['executor_id']!=o['executor_id']
                 or s['preparation_revision']!=o['preparation_revision'] or s['preparation_sha256']!=o['preparation_sha256']
                 or e['fingerprint']!=fp or len(creates)!=1):raise ValueError()
             create=creates[0]

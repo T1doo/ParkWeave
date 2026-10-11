@@ -65,7 +65,7 @@ def _source(c,parent,root,case,local,*,check_before_accept=True):
             raise ValueError()
     except (TypeError,KeyError,ValueError):issues.append('ORDINARY_SYNTHETIC_CASE_REQUIRED')
     if (not run or run['state']!='SUCCEEDED' or run['success_scope']!='LOCAL_CASE_CREATED'
-        or run['input'].get('action','case.create')!='case.create' or not op or op['action']!='case.create'
+        or not isinstance(run['input'],dict) or run['input'].get('action','case.create')!='case.create' or not op or op['action']!='case.create'
         or op['state']!='VERIFIED' or not isinstance(receipt,dict) or receipt.get('verified') is not True or receipt!={'case_id':str(parent['case_id']), 'source':'LOCAL_DATABASE',
             'verified':True,'success_scope':'LOCAL_CASE_CREATED'}):
         issues.append('VERIFIED_SUCCESSFUL_CASE_CREATION_REQUIRED')

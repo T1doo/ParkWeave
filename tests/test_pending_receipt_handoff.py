@@ -200,7 +200,7 @@ def test_migration29_repeat_preserves_rows_and_enforces_unique_receipt_per_offer
  f=receipt_fixture;parent,row=accepted(f);before=snapshot(f);f[1].migrate();assert snapshot(f)==before
  from pathlib import Path
  with f[1].connect() as c:
-  f[1]._case_fact_fixture_receipt.authorize_migration(c);c.execute('DELETE FROM schema_version WHERE version IN (30,31)');c.execute(Path('src/parkweave/migration-029.sql').read_text());c.rollback()
+  f[1]._case_fact_fixture_receipt.authorize_migration(c);c.execute('DELETE FROM schema_version WHERE version IN (30,31,32)');c.execute(Path('src/parkweave/migration-029.sql').read_text());c.rollback()
  assert snapshot(f)==before
  pending=post(f,row,body_for(f,parent,row)).json()
  with pytest.raises(psycopg.errors.UniqueViolation):
