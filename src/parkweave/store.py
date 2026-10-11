@@ -120,7 +120,7 @@ class Store:
             c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
             c.execute(Path(__file__).with_name("schema.sql").read_text(encoding='utf-8'))
             version = c.execute("SELECT max(version) version FROM schema_version").fetchone()["version"]
-            if version > 28:
+            if version > 29:
                 raise Conflict("database version newer than this code")
             if version < 2:
                 c.execute(Path(__file__).with_name("migration-002.sql").read_text(encoding='utf-8'))
@@ -221,6 +221,16 @@ class Store:
                     c.execute(Path(__file__).with_name('migration-028.sql').read_text(encoding='utf-8'))
                 elif type(receipt) is not NativeDatabaseCreationEvidence:
                     raise Denied('Linux isolated fixture receipt required for migration 028')
+
+            if version < 29:
+                receipt=getattr(self,'_case_fact_fixture_receipt',None)
+                from .case_fact_clarifications import FixtureDatabaseEvidence
+                from .installed_fixture_receipt import NativeDatabaseCreationEvidence
+                if type(receipt) is FixtureDatabaseEvidence:
+                    receipt.authorize_migration(c)
+                    c.execute(Path(__file__).with_name('migration-029.sql').read_text(encoding='utf-8'))
+                elif type(receipt) is not NativeDatabaseCreationEvidence:
+                    raise Denied('Linux isolated fixture receipt required for migration 029')
 
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""

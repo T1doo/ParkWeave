@@ -4,7 +4,7 @@ from uuid import UUID, uuid4
 from pydantic import BaseModel, ConfigDict, Field
 from psycopg.types.json import Jsonb
 from . import preparation as prep, executor_receipts as receipts
-from .store import Denied, Conflict, digest
+from .store import Store, Denied, Conflict, digest
 
 SCOPE = 'SYNTHETIC_INTERNAL_DISPATCH_ONLY'
 
@@ -23,6 +23,61 @@ class Command(BaseModel):
     action: Literal['ACCEPT', 'DECLINE', 'WITHDRAW']
     expected_revision: int = Field(ge=1, le=64)
     reason: str = Field(min_length=1, max_length=1000)
+
+
+class Reassign(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, str_strip_whitespace=True)
+    expected_preparation_revision: int = Field(ge=1, le=64)
+    expected_dispatch_revision: int = Field(ge=1, le=62)
+    predecessor_offer_id: UUID = Field(strict=False)
+    predecessor_receipt_step_id: UUID = Field(strict=False)
+    expected_receipt_revision: int = Field(ge=1, le=64)
+    executor_id: str = Field(min_length=1, max_length=100)
+    reason: str = Field(min_length=1, max_length=1000)
+
+
+def _handoff_enabled(store, c):
+    from .isolated_local_execution import provider
+    return type(store) is Store and provider(store) is None and \
+        not any(getattr(store,name,None) is not None for name in (
+            '_isolated_run_access','_isolated_local_execution','_isolated_execution_preview',
+            '_isolated_resource_execution_preview','_isolated_dispatch_execution_preview',
+            '_isolated_receipt_execution_preview','_isolated_lifecycle_execution_preview')) and \
+        c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 29
+
+
+def _handoff_predecessor(store, c, parent, root, *, write=False, accepting=False):
+    if not root or not _handoff_enabled(store, c) or root['revision'] > (63 if accepting else 62):
+        return None
+    current=c.execute('SELECT state FROM service_dispatch_offers WHERE id=%s',
+                      (root['current_offer_id'],)).fetchone()
+    if not current or current['state'] not in (('OFFERED',) if accepting else ('ACCEPTED','DECLINED','WITHDRAWN')):
+        return None
+    accepted=_latest_accepted(c,root)
+    if not accepted or not _fresh(parent,accepted,c,store):return None
+    step=receipts._locked(c,accepted['receipt_step_id'],write=write)
+    fields=('run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
+    if (not step or step['namespace']!='SYNTHETIC' or step['state']!='AWAITING_RECEIPT'
+        or step['current_receipt_id'] is not None or step['preparation_id']!=parent['id']
+        or any(step[k]!=parent[k] for k in fields)
+        or step['executor_id']!=accepted['executor_id']
+        or step['preparation_revision']!=accepted['preparation_revision']
+        or step['preparation_sha256']!=accepted['preparation_sha256']
+        or c.execute('SELECT 1 FROM service_step_receipts WHERE step_id=%s LIMIT 1',
+                     (step['id'],)).fetchone()
+        or c.execute("SELECT 1 FROM service_receipt_events WHERE step_id=%s AND action<>'CREATE' LIMIT 1",
+                     (step['id'],)).fetchone()):return None
+    return accepted,step
+
+
+def _handoff_binding(parent, accepted, step):
+    return dict(handoff_kind='PENDING_MANUAL_RECEIPT',predecessor_offer_id=str(accepted['id']),
+                predecessor_receipt_step_id=str(step['id']),predecessor_executor_id=accepted['executor_id'],
+                predecessor_receipt_revision=step['revision'],
+                previous_preparation_revision=accepted['preparation_revision'],
+                previous_preparation_sha256=accepted['preparation_sha256'],
+                accepted_preparation_revision=parent['revision'],
+                accepted_preparation_sha256=parent['review_sha256'])
 
 
 def _auth(store, c, token):
@@ -172,8 +227,13 @@ def catalog(store, token, id):
         limited = bool(root and root['revision'] >= 63)
         ready = receipts.material_current(c,parent,store) and not limited and ((not existing and (not current or current['state'] in ('DECLINED', 'WITHDRAWN'))) or bool(recovery))
         if recovery:rows=[r for r in rows if r['id']==recovery['executor_id']]
+        handoff=_handoff_predecessor(store,c,parent,root)
+        handoff_rows=[r for r in rows if handoff and r['id']!=handoff[0]['executor_id']]
         return dict(scope=SCOPE, preparation_revision=parent['revision'], dispatch_revision=root['revision'] if root else 0,
                     ready=ready and bool(rows), executors=rows, has_receipt_step=existing, history_limit_reached=limited,
+                    can_reassign=bool(handoff_rows),reassignment_executors=handoff_rows,
+                    reassignment_actor_id=p['id'],
+                    reassignment_predecessor=_handoff_binding(parent,*handoff) if handoff else None,
                     **_recovery_flags(c,p,parent,root,store))
 
 
@@ -192,6 +252,59 @@ def read(store, token, id):
         if not root: raise Denied('dispatch unavailable')
         parent = _parent(store, c, p, root['preparation_id'])
         return _view(c, p, parent, _root(c, parent),store=store)
+
+
+@receipts.bounded
+def reassign(store, token, id, key, data):
+    if type(data) is not Reassign:raise Denied('typed reassignment required')
+    fp=digest(prep.canonical(dict(dispatch_id=str(id),type='PENDING_RECEIPT_HANDOFF',
+                                 **data.model_dump(mode='json'))))
+    with store.connect() as c:
+        p=_auth(store,c,token)
+        if p['role']!='park_specialist':raise Denied('assigned preparation reviewer required')
+        _key(c,p,key)
+        base=c.execute('SELECT preparation_id FROM service_dispatches WHERE id=%s',(id,)).fetchone()
+        if not base:raise Denied('dispatch unavailable')
+        parent=_parent(store,c,p,base['preparation_id'],write=True);root=_root(c,parent,write=True)
+        if not _handoff_enabled(store,c):raise Conflict('manual receipt handoff is not installed or available')
+        receipts._executor(store,c,data.executor_id,parent['run_id'])
+        _party(store,c,parent,parent['owner_id'],'PREPARE')
+        old=_replay(c,p,key,fp,root)
+        if old:return _view(c,p,parent,root,old,store)
+        from .controlled_plans import gate
+        gate(store,c,parent,2)
+        if parent['revision']!=data.expected_preparation_revision or root['revision']!=data.expected_dispatch_revision:
+            raise Conflict('current preparation and dispatch revisions required')
+        predecessor=_handoff_predecessor(store,c,parent,root,write=True)
+        if not predecessor:raise Conflict('current accepted manual step without any receipt required')
+        accepted,step=predecessor
+        if (accepted['id']!=data.predecessor_offer_id or step['id']!=data.predecessor_receipt_step_id
+            or step['revision']!=data.expected_receipt_revision or accepted['executor_id']==data.executor_id):
+            raise Conflict('exact pending predecessor and different executor required')
+        oid=uuid4()
+        root=c.execute('UPDATE service_dispatches SET revision=revision+1,current_offer_id=%s WHERE id=%s RETURNING *',
+                       (oid,root['id'])).fetchone()
+        offered=c.execute("INSERT INTO service_dispatch_offers(id,dispatch_id,executor_id,preparation_revision,preparation_sha256,reason,state) VALUES(%s,%s,%s,%s,%s,%s,'OFFERED') RETURNING *",
+                          (oid,root['id'],data.executor_id,parent['revision'],parent['review_sha256'],data.reason)).fetchone()
+        return _view(c,p,parent,root,_event(c,p,root,offered,key,fp,'REOFFER',data.reason,
+                                          **_handoff_binding(parent,accepted,step)),store)
+
+
+@receipts.bounded
+def recover_reassignment(store, token, id, key):
+    with store.connect() as c:
+        p=_auth(store,c,token)
+        if p['role']!='park_specialist':raise Denied('assigned preparation reviewer required')
+        base=c.execute('SELECT preparation_id FROM service_dispatches WHERE id=%s',(id,)).fetchone()
+        if not base:raise Denied('dispatch unavailable')
+        parent=_parent(store,c,p,base['preparation_id']);root=_root(c,parent)
+        old=c.execute('SELECT * FROM service_dispatch_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+        if old and (old['dispatch_id']!=root['id'] or old['action']!='REOFFER'
+                    or old['payload'].get('handoff_kind')!='PENDING_MANUAL_RECEIPT'):
+            raise Conflict('original reassignment request scope mismatch')
+        return dict(scope=SCOPE,dispatch_id=str(id),preparation_id=str(parent['id']),request_key=key,
+                    status='COMMITTED' if old else 'NOT_OBSERVED',event=old['payload'] if old else None,
+                    historical_only=True,automatically_replayed=False)
 
 
 @receipts.bounded
@@ -268,20 +381,31 @@ def command(store, token, id, key, data):
             offered_event=c.execute("SELECT payload FROM service_dispatch_events WHERE offer_id=%s AND action IN ('OFFER','REOFFER') ORDER BY revision LIMIT 1",(own['id'],)).fetchone()
             predecessor_id=(offered_event['payload'].get('predecessor_receipt_step_id') if offered_event else None)
             if existing:
-                predecessor=c.execute('SELECT * FROM service_receipt_steps WHERE id=%s AND preparation_id=%s',(predecessor_id,parent['id'])).fetchone() if predecessor_id else None
-                payload=offered_event['payload'] if offered_event else {}
-                predecessor_offer=_latest_accepted(c,root)
-                expected=dict(predecessor_offer_id=str(predecessor_offer['id']),
-                              predecessor_receipt_step_id=str(predecessor_offer['receipt_step_id']),
-                              previous_preparation_revision=predecessor_offer['preparation_revision'],
-                              previous_preparation_sha256=predecessor_offer['preparation_sha256'],
-                              accepted_preparation_revision=own['preparation_revision'],
-                              accepted_preparation_sha256=own['preparation_sha256']) if predecessor_offer else {}
-                if not predecessor or not predecessor_offer or not expected or any(payload.get(k)!=v for k,v in expected.items()) or predecessor_offer['executor_id']!=p['id'] or predecessor['executor_id']!=p['id'] or predecessor['preparation_revision']!=predecessor_offer['preparation_revision'] or predecessor['preparation_sha256']!=predecessor_offer['preparation_sha256'] or predecessor['preparation_revision']>=parent['revision']:
-                    raise Conflict('preparation already has receipt step; explicit new material offer required')
-                if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s AND preparation_revision=%s',(parent['id'],parent['revision'])).fetchone():
-                    raise Conflict('current preparation already has receipt generation')
-                lineage=expected
+                handoff=offered_event and offered_event['payload'].get('handoff_kind')=='PENDING_MANUAL_RECEIPT'
+                if handoff:
+                    predecessor=_handoff_predecessor(store,c,parent,root,write=True,accepting=True)
+                    if not predecessor:raise Conflict('pending manual receipt predecessor is no longer current')
+                    accepted,previous_step=predecessor
+                    expected=_handoff_binding(parent,accepted,previous_step)
+                    if (any(offered_event['payload'].get(k)!=v for k,v in expected.items())
+                        or accepted['executor_id']==p['id']):
+                        raise Conflict('exact reassignment offer lineage required')
+                    lineage=expected
+                else:
+                    predecessor=c.execute('SELECT * FROM service_receipt_steps WHERE id=%s AND preparation_id=%s',(predecessor_id,parent['id'])).fetchone() if predecessor_id else None
+                    payload=offered_event['payload'] if offered_event else {}
+                    predecessor_offer=_latest_accepted(c,root)
+                    expected=dict(predecessor_offer_id=str(predecessor_offer['id']),
+                                  predecessor_receipt_step_id=str(predecessor_offer['receipt_step_id']),
+                                  previous_preparation_revision=predecessor_offer['preparation_revision'],
+                                  previous_preparation_sha256=predecessor_offer['preparation_sha256'],
+                                  accepted_preparation_revision=own['preparation_revision'],
+                                  accepted_preparation_sha256=own['preparation_sha256']) if predecessor_offer else {}
+                    if not predecessor or not predecessor_offer or not expected or any(payload.get(k)!=v for k,v in expected.items()) or predecessor_offer['executor_id']!=p['id'] or predecessor['executor_id']!=p['id'] or predecessor['preparation_revision']!=predecessor_offer['preparation_revision'] or predecessor['preparation_sha256']!=predecessor_offer['preparation_sha256'] or predecessor['preparation_revision']>=parent['revision']:
+                        raise Conflict('preparation already has receipt step; explicit new material offer required')
+                    if c.execute('SELECT 1 FROM service_receipt_steps WHERE preparation_id=%s AND preparation_revision=%s',(parent['id'],parent['revision'])).fetchone():
+                        raise Conflict('current preparation already has receipt generation')
+                    lineage=expected
             step = receipts._insert_step(c, parent, p['id']); step_id = step['id']
             receipts._event(c, p, step, 'dispatch-accept:' + str(own['id']), fp, 'CREATE', dispatch_id=str(root['id']), offer_id=str(own['id']), reason=data.reason,**lineage)
         states = {'ACCEPT':'ACCEPTED', 'DECLINE':'DECLINED', 'WITHDRAW':'WITHDRAWN'}

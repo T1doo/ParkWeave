@@ -422,7 +422,15 @@ def test_corrupt_previous_accept_event_cannot_authorize_new_generation(receipt_f
 def test_corrupt_current_offer_pointer_never_falls_back_to_any_historical_step(receipt_fixture):
     f = receipt_fixture
     parent, _, old, _, current, new = recovered(f)
+    # Schema29 blocks this duplicate pointer at SQL level. Also retain the
+    # original trusted-owner corruption oracle after disabling that constraint
+    # only in this disposable fixture; no installed database is touched.
+    with pytest.raises(psycopg.errors.UniqueViolation):
+        with f[1].connect() as c:
+            c.execute('UPDATE service_dispatch_offers SET receipt_step_id=%s WHERE id=%s',
+                      (old['step']['id'], current['current_offer']['id']))
     with f[1].connect() as c:
+        c.execute('ALTER TABLE service_dispatch_offers DROP CONSTRAINT service_dispatch_receipt_generation_key')
         c.execute('UPDATE service_dispatch_offers SET receipt_step_id=%s WHERE id=%s',
                   (old['step']['id'], current['current_offer']['id']))
     before = records(f)

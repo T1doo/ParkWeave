@@ -44,10 +44,10 @@ try:
  with owner.connect() as c:owner._case_fact_fixture_receipt=cluster.record_created_database(c)
  owner.migrate();owner.migrate()
  with owner.connect() as c:
-  assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==28
+  assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==29
   assert c.execute("SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='preparations' AND column_name='opportunities'").fetchone()['data_type']=='jsonb'
   assert c.execute("SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='preparations' AND column_name='fact_bundle'").fetchone()['data_type']=='jsonb'
- print(json.dumps({'wheel_installed':True,'fixture_schema':28,'opportunity_column':'jsonb','migration_repeated':True}))
+ print(json.dumps({'wheel_installed':True,'fixture_schema':29,'opportunity_column':'jsonb','migration_repeated':True}))
 finally:
  if created:
   with psycopg.connect(make_conninfo(cfg['dsn'],connect_timeout=2,options='-c lock_timeout=1000 -c statement_timeout=5000'),autocommit=True) as c:
@@ -55,7 +55,7 @@ finally:
 '''
  result=subprocess.run([sys.executable,'-c',script],input=json.dumps(dict(installed=str(installed),dsn=pg.get_uri(),data=str(pg.pgdata))),cwd=tmp_path,env=minimal_environment(os.environ),text=True,capture_output=True,timeout=60)
  assert result.returncode==0,result.stderr
- assert json.loads(result.stdout)==dict(wheel_installed=True,fixture_schema=28,opportunity_column='jsonb',migration_repeated=True)
+ assert json.loads(result.stdout)==dict(wheel_installed=True,fixture_schema=29,opportunity_column='jsonb',migration_repeated=True)
 
 def get(f,p,user='fixture-a'):
  return f[3].get('/api/preparations/'+p['preparation_id']+'/opportunities',headers=headers(f[2],user))
@@ -166,7 +166,7 @@ def test_fixture_only_migration_retains_business_and_authority_and_no_new_grants
  with pytest.raises(psycopg.errors.RaiseException,match='creation ticket required'):
   with f[1].connect() as c:c.execute(sql)
  with f[1].connect() as c:
-  c.execute('DELETE FROM schema_version WHERE version=28')  # isolated prior27 SQL replay, wholly rolled back
+  c.execute('DELETE FROM schema_version WHERE version>=28')  # isolated prior27 SQL replay, wholly rolled back
   f[1]._case_fact_fixture_receipt.authorize_migration(c);c.execute(sql);c.rollback()
  assert business(f,True)==before
  with f[1].connect() as c:c.execute('ALTER TABLE preparations DROP COLUMN opportunities')

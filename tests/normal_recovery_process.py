@@ -108,7 +108,7 @@ def run_phase(root,phase):
                 assert api.poll() is None
                 try:
                     r=client.get('/health')
-                    return r.status_code==200 and r.json()['process_id']==api.pid and r.json()['schema']==28
+                    return r.status_code==200 and r.json()['process_id']==api.pid and r.json()['schema']==29
                 except httpx.TransportError:return False
             wait(healthy)
             worker=subprocess.Popen([sys.executable,'-m','parkweave.worker'],env=env,cwd=REPO,stdout=log,stderr=log)

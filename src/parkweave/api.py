@@ -632,6 +632,15 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
     def dispatch_read(dispatch_id: UUID,authorization: str | None=Header(default=None)):
         return dispatches.read(store,token(authorization),dispatch_id)
 
+    @app.post('/api/service-dispatches/{dispatch_id}/reassign',status_code=201)
+    def dispatch_reassign(dispatch_id: UUID,data: dispatches.Reassign,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return dispatches.reassign(store,token(authorization),dispatch_id,resource_key(idempotency_key),data)
+
+    @app.get('/api/service-dispatches/{dispatch_id}/reassignment-recovery/{request_key}')
+    def dispatch_reassignment_recovery(dispatch_id: UUID,request_key: str,response: Response,authorization: str | None=Header(default=None)):
+        response.headers['Cache-Control']='no-store'
+        return dispatches.recover_reassignment(store,token(authorization),dispatch_id,resource_key(request_key))
+
     @app.post('/api/service-dispatches/{dispatch_id}/commands')
     def dispatch_command(dispatch_id: UUID,data: dispatches.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return dispatches.command(store,token(authorization),dispatch_id,resource_key(idempotency_key),data)
