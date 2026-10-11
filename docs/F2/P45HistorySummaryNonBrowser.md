@@ -1,0 +1,28 @@
+# History summary: non-browser continuation only
+
+Repair source: `afebfd0519abf96143f540883ddef132dd69cc0f`, on `acceptance/history-summary-page-20261011`, based on development delivery `873e426255cb62c55cf485cb81e1d1c3c706c373`. This is an unaccepted draft; it is not integrated into development.
+
+The supervising thread explicitly authorized independent work that does not use a browser after the [blocked navigation and static draft findings](P45HistorySummaryPage.md). The original Chromium `data:` navigation refusal and all original raw logs remain preserved. No browser was restarted, alternate URL/protocol used, or security/network/browser configuration changed. Browser acceptance remains **BLOCKED**.
+
+The repair invalidates and clears the summary through the original generic/session, preparation, plan, local Case, and service Case cleanup and load paths, including programmatic property handlers and pagehide/BFCache restoration. The generation variable is initialized before those paths. A stale success or denial cannot become current again after the tested A-to-B-to-A transitions. The summary GET and page now share the reader's existing bounded opaque key alphabet; original full-document GET/provider and POST key gates are unchanged.
+
+The new GET remains separate, default-off (`summary_reader=None`), and accepts only an explicitly injected exact memory reader for its stage. Requested Case is checked in the existing READ-only transaction before history decode. Current READ, trusted registration binding/validity/revocation, fixed projection, and final guards remain necessary; withdrawing EXECUTE does not withdraw READ. The normal configured app does not construct, load, register, or attach a summary reader. There is no new POST, grant or production activation.
+
+Root tests executed on the exact repair source: **314 passed, 0 failed, 0 errors, 0 skipped**, with 377 source paths frozen and zero drift. Collected node identities and JUnit identities match exactly in each serial window:
+
+| Scope | Passed | What was executed |
+| --- | ---: | --- |
+| Pure summary policy | 46 | Existing anchored P4/P5 pure tests rerun on the repair source |
+| Page script logic | 58 | Complete actual web script in Node VM with a synthetic DOM; 17 original/input clearing paths across rendered and pending success/denial, newest request, private/uncorrelated replies, unavailable state |
+| CI diagnostics | 59 | Existing diagnostic checks and exact fixed function allowlist, including 11 new function IDs |
+| Summary API | 31 | In-process ASGI TestClient and isolated synthetic PG; default/exact-type/stage gates, current READ, EXECUTE withdrawal, failed and successful P4/P5 close/reopen summaries, missing/expired/revoked registration, owner/Case gates before decode, bounded keys, no private projection, old GET/POST/history still closed |
+| Summary Store | 33 | Existing actual synthetic Store/document/current source guards rerun |
+| Old P4 / P5 / complete history | 87 | Existing 29 + 38 + 20 non-browser tests rerun, without loosening assertions or provider gates |
+
+Node VM checks do not verify real browser event propagation, navigation, layout, CSP, BFCache execution or Chromium response races. Blocked load-entry unit checks do not prove successful real Case navigation. New summary TestClient requests use no HTTP listener or real external API. The old 87 regressions retain their original synthetic issuer/loopback transport tests; those test existing history boundaries and are not a new summary HTTP listener or browser navigation. Reads preserve formal business, permissions and outbox snapshots and original SQLite bytes; the existing denial audit is excluded from the formal snapshot and may append for denied HTTP requests.
+
+Six development failure windows remain in private logs: one fixture unpack mistake, four missing synthetic-DOM harness facilities, and an expanded successful fixture using a key refused by the original POST gate. The failing assertions remain; fixture/harness setup was corrected. The frozen runs supersede those development results within their stated scopes only. Previous browser denial and old static CHANGES_REQUIRED reports remain unchanged. The earlier 231 PASS belongs to its earlier source and is not transferred here.
+
+Independent exact-source non-browser execution passed **317 distinct tests: 314 specified + 3 private pure logic counterexamples**, with 0 failures/errors/skips. Its collection/JUnit sets match exactly, 377 paths have zero drift, and all 624 known owned PID generations exited. Final active PG/API/worker/Chromium/pytest scan is empty. The independent decision is **NON_BROWSER_SCOPE_VERIFIED**; the overall feature is **BROWSER_BLOCKED_NOT_ACCEPTED**. See [independent safe evidence](evidence/p45-history-summary-nonbrowser/independent-report-safe.json) (SHA256 `b983c71bcb74a5847772835410b87a0fa069c073c6b482a0c30301696ce2e746`) and [root evidence](evidence/p45-history-summary-nonbrowser/root-report-safe.json) and [377-path freeze](evidence/p45-history-summary-nonbrowser/source-freeze.json). Raw logs, JUnit and process-generation evidence remain private in `.runtime/history-summary-nonbrowser-20261011/`.
+
+New summary loopback HTTP, Chromium feature acceptance, production registry activation and full issuer cold recovery are not established. The root receipt's product loopback HTTP NOT_RUN field refers to this new summary feature, not the original transport regressions. The current CI result is unverified; Actions REST was not retried. Original Git read-only access succeeded for unchanged dev/main and an absent temporary branch. Any delivery is limited to the authorized temporary branch and will not mark this draft complete or integrate dev.

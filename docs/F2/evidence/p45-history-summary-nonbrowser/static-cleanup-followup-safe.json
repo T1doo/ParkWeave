@@ -1,0 +1,51 @@
+{
+  "decision": "STATIC_CLEANUP_PARTIALLY_CORRECTED_OTHER_CASE_ENTRY_COVERAGE_REQUIRED",
+  "review_type": "READ_ONLY_WORKING_DRAFT",
+  "observed_HEAD": "5df2fece3a8a44c81fb0bc575fc29f5ccadff340",
+  "web_sha256_at_review": "fae56c3e55b2e57124b1d7d63cc2423893ba864282daffbf73f03db5d0381949",
+  "original_blocked_report_sha256": "51e0607c1b979f2755ca6749f4c621236e67d2c5eceab3aef2fb98b0b806cb56",
+  "original_blocked_report_unchanged": true,
+  "corrected_static_paths": [
+    "summary generation initialized at script beginning before earlier shared cleanup may call it",
+    "clearGeneric invalidates and clears summary for property-only run/session handlers",
+    "clearPreparation and loadPreparation entry invalidate summary before previous flow guards",
+    "loadPlan entry invalidates summary",
+    "pagehide and persisted pageshow explicitly clear summary before clearing token and calling original token.oninput"
+  ],
+  "remaining_static_finding": {
+    "id": "DIRECT_LOCAL_CASE_AND_SERVICE_CASE_PLAN_NAVIGATION_NOT_COVERED",
+    "runtime_status": "NOT_TESTED",
+    "code_paths": [
+      "loadLocalCase -> clearLocalCase/clearPlan",
+      "loadServiceCasePlan -> clearServiceCasePlan/clearPlan"
+    ],
+    "observation": "Direct Case navigation changes the selected Case outside the summary manual Case/preparation/run input fields. Those entry and shared clear functions do not invalidate historySummaryGeneration or clear old summary DOM. Its current predicate may therefore still accept a delayed old response after such navigation.",
+    "minimal_options": [
+      "Invalidate summary at both loadLocalCase and loadServiceCasePlan entries",
+      "Alternatively cover their original shared clearLocalCase/clearPlan/clearServiceCasePlan paths without changing original authorization or recovery semantics"
+    ],
+    "required_finite_pure_logic_oracles": [
+      "Property-only run A-B-A and token property handler clear DOM and increment generation",
+      "pagehide and persisted pageshow clear private summary despite addEventListener input never being dispatched",
+      "Direct local Case and service Case plan navigation invalidates pending old success/403 and clears old DOM",
+      "Same-context new invalid-input attempt makes older response stale"
+    ]
+  },
+  "authorization_boundary": {
+    "browser_remains_BLOCKED": true,
+    "no_url_protocol_proxy_config_new_session_or_browser_retry": true,
+    "no_PG_HTTP_browser_pytest_resource_started_by_reviewer": true,
+    "source_tests_publicdocs_Git_modified_by_reviewer": false,
+    "writes_own_private_safe_evidence_only": true,
+    "await_final_SHA_and_explicit_nonbrowser_resource_handoff": true
+  },
+  "acceptance_status": {
+    "static_only": true,
+    "new_slice_runtime_results": "NOT_RUN",
+    "pure_JS_or_inprocess_HTTP_not_equivalent_to_actual_browser": true,
+    "browser_visual_navigation_CSP_timing_acceptance": "BLOCKED_NOT_RUN",
+    "persistent_registration_and_full_cold_recovery": "OPEN_NOT_RUN",
+    "old_231PASS_and_old_blocked_failure_not_trans_signed": true,
+    "remote_CI": "UNVERIFIED_NO_RETRY"
+  }
+}
