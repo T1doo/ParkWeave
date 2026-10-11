@@ -1,0 +1,88 @@
+{
+  "source_commit": "8e3e2f23d9380333f21e37b157d1d7d8c132e976",
+  "parent_commit": "b1beff467dbc54c77eea985ca2b7208f70b202ec",
+  "branch": "acceptance/fact-history-leakage-oracle-20261011",
+  "production_src_tree_unchanged": "dfce221fe8dc50ad14eed753f44ce833f7a83130",
+  "changed_source_files": [
+    "tests/test_fact_history_read_source.py"
+  ],
+  "scope": "test oracle only; no production changes, trust root, authorization or recovery acceptance",
+  "controls_command": "python -m pytest tests/test_fact_history_read_source.py -k oracle -q",
+  "controls_passed": 87,
+  "controls_deselected": 56,
+  "deterministic_legal_digest_with_17": "1ab214b54e972ae2231da520785615e66a899c101a448b4c8b963508627d5717",
+  "input_mutation_check": "Separate test invokes projection in try/finally; exact recursive types/values/str keys checked on return or exception. Final controls reject same-value float/int/bool replacements. Historical old failing runs did not reach their equality input check.",
+  "historical_failures": {
+    "retained_unchanged": [
+      "docs/F2/evidence/history-registration-contract/root/final.log",
+      "docs/F2/evidence/history-registration-contract/root/verified.log"
+    ],
+    "counts_each": {
+      "passed": 250,
+      "failed": 1
+    },
+    "hashes": {
+      "docs/F2/evidence/history-registration-contract/root/final.log": "69f1a779e303785d0e61f45d27f21d5d31c8f6e981e9d26b67050c4d9ccee09a",
+      "docs/F2/evidence/history-registration-contract/root/verified.log": "7919854d81577dd2c661a8d1293f50d892ef946b8110a0e6103984d01662f4dc"
+    }
+  },
+  "execution_boundary": "pure synthetic only; no PG/network/browser/listener/model/business/credential or permission changes",
+  "runtime_python": "/tmp/parkweave-summary-venv/bin/python",
+  "status": "final independent review PASS; actual expanded suite339 PASS; production unchanged; candidate delivery ready",
+  "controls_runs": [
+    {
+      "artifact": "oracle-controls",
+      "source_commit": "c78c4922e2ebdb85fc43c89ee70dbb36678b8a69",
+      "passed": 77,
+      "deselected": 56,
+      "role": "preliminary controls, not final attestation"
+    },
+    {
+      "artifact": "oracle-controls-fixed",
+      "source_commit": "2ec890fde2e707dfdb440e2be280c9f73ec49664",
+      "passed": 78,
+      "deselected": 56,
+      "role": "preliminary controls, not final attestation"
+    },
+    {
+      "artifact": "oracle-controls-final",
+      "source_commit": "8e3e2f23d9380333f21e37b157d1d7d8c132e976",
+      "passed": 87,
+      "deselected": 56,
+      "role": "final controls"
+    }
+  ],
+  "review_discovered_and_fixed": [
+    "Custom string-subclass key can alias a whitelist key but serialize private excerpt; now all output keys must be exact str.",
+    "Ordinary equality input check misses int17 to float17.0 and bool/int substitutions; now exact recursive comparison in finally."
+  ],
+  "test_file_sha256": "ea1fcbd03b6ad019923cfee0ceb54aec4c7b34b6c85395fbe5f46452cfa38849",
+  "expanded_suite": {
+    "command": "python -m pytest tests/test_history_registration_contract.py tests/test_history_summary.py tests/test_fact_history_read_source.py -q",
+    "source_commit": "8e3e2f23d9380333f21e37b157d1d7d8c132e976",
+    "passed": 339,
+    "failed": 0,
+    "errors": 0,
+    "skipped": 0,
+    "classes": {
+      "tests.test_history_registration_contract": 150,
+      "tests.test_history_summary": 46,
+      "tests.test_fact_history_read_source": 143
+    },
+    "ordered_after_independent_pass": true,
+    "case_growth": "Original 251-case scope + 87 new oracle controls + 1 independently collected input-nonmutation test = 339 cases. Controls87 are a subset of339, not additional unique pass count."
+  },
+  "warning": "Existing Starlette/httpx TestClient deprecation only; no dependency changes.",
+  "independent_review": {
+    "source_commit": "8e3e2f23d9380333f21e37b157d1d7d8c132e976",
+    "passed": 48,
+    "failed": 0,
+    "manifest_sha256": "45e7852259ff4ed00c6af46a2e8815caf9fe588610f6b197d04f37f3053aa277",
+    "historical_c78_defect_repro": {
+      "tests": 2,
+      "failed": 2,
+      "role": "Preserved actual detection failures; final controls independently verify fixes."
+    },
+    "conclusion": "PASS within test-only scope; no remaining blocking defects, protection preserved and strengthened."
+  }
+}

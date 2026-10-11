@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="0.163" timestamp="2026-10-11T08:26:31.575404+00:00" hostname="e81516388b81"><testcase classname="test_key_alias_defect" name="test_oracle_rejects_private_str_key_alias" time="0.001"><failure message="Failed: DID NOT RAISE AssertionError">def test_oracle_rejects_private_str_key_alias():
+        class PrivateKey(str):
+            def __hash__(self):return hash('qualification')
+            def __eq__(self,other):return other=='qualification'
+        result=oracle.public_projection('a'*64)
+        value=result.pop('qualification')
+        result[PrivateKey('PRIVATE_EXCERPT_KEY')]=value
+        assert 'PRIVATE_EXCERPT_KEY' in json.dumps(result)
+&gt;       with pytest.raises(AssertionError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AssertionError
+
+/tmp/parkweave-oracle-independent-review/test_key_alias_defect.py:17: Failed</failure></testcase><testcase classname="test_key_alias_defect" name="test_input_nonmutation_rejects_equal_float_replacement" time="0.002"><failure message="Failed: DID NOT RAISE AssertionError">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fb44973b110&gt;
+
+    def test_input_nonmutation_rejects_equal_float_replacement(monkeypatch):
+        def equal_value_mutation(*args):
+            row=next(row for row in args[3] if row['field_name']=='employees')
+            assert type(row['value']) is int
+            row['value']=17.0
+            return {}
+        monkeypatch.setattr(oracle.read,'project',equal_value_mutation)
+&gt;       with pytest.raises(AssertionError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AssertionError
+
+/tmp/parkweave-oracle-independent-review/test_key_alias_defect.py:27: Failed</failure></testcase></testsuite></testsuites>

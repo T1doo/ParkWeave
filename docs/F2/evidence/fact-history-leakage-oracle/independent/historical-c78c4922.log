@@ -1,0 +1,37 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+__________________ test_oracle_rejects_private_str_key_alias ___________________
+
+    def test_oracle_rejects_private_str_key_alias():
+        class PrivateKey(str):
+            def __hash__(self):return hash('qualification')
+            def __eq__(self,other):return other=='qualification'
+        result=oracle.public_projection('a'*64)
+        value=result.pop('qualification')
+        result[PrivateKey('PRIVATE_EXCERPT_KEY')]=value
+        assert 'PRIVATE_EXCERPT_KEY' in json.dumps(result)
+>       with pytest.raises(AssertionError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AssertionError
+
+/tmp/parkweave-oracle-independent-review/test_key_alias_defect.py:17: Failed
+____________ test_input_nonmutation_rejects_equal_float_replacement ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fb44973b110>
+
+    def test_input_nonmutation_rejects_equal_float_replacement(monkeypatch):
+        def equal_value_mutation(*args):
+            row=next(row for row in args[3] if row['field_name']=='employees')
+            assert type(row['value']) is int
+            row['value']=17.0
+            return {}
+        monkeypatch.setattr(oracle.read,'project',equal_value_mutation)
+>       with pytest.raises(AssertionError):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE AssertionError
+
+/tmp/parkweave-oracle-independent-review/test_key_alias_defect.py:27: Failed
+=========================== short test summary info ============================
+FAILED ../../tmp/parkweave-oracle-independent-review/test_key_alias_defect.py::test_oracle_rejects_private_str_key_alias
+FAILED ../../tmp/parkweave-oracle-independent-review/test_key_alias_defect.py::test_input_nonmutation_rejects_equal_float_replacement
+2 failed in 0.16s
