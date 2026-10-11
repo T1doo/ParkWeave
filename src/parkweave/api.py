@@ -135,7 +135,8 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
     @app.get('/api/cases/{case_id}/preparations/{preparation_id}/history-summary/{stage}')
     def history_summary(case_id: UUID, preparation_id: UUID, stage: Literal['P4', 'P5'],
                         authorization: str | None = Header(default=None),
-                        request_key: str | None = Query(default=None, min_length=1, max_length=128)):
+                        request_key: str | None = Query(default=None, min_length=1, max_length=128,
+                                                       pattern=r'^[A-Za-z0-9._:-]+$')):
         from .history_summary import MemoryHistorySummaryReader
         session = token(authorization)
         if type(summary_reader) is not MemoryHistorySummaryReader or summary_reader.stage != stage:
