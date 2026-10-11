@@ -1,5 +1,11 @@
 # Ordinary PostgreSQL single-Run access protocol (disabled)
 
+The signed decision-only delivery remains at source
+`213a6b9083a4f0f10f6b71bcd0da10d826c78a46`. The subsequent optional effective
+provider and owned synthetic activation boundary are defined in
+[NativeRunAccessActivationContract.md](NativeRunAccessActivationContract.md).
+Production remains disabled; the statements below describe the decision slice.
+
 This slice persists requests, independent decisions, proposed leases and their
 immutable command receipts in one PostgreSQL transaction. It does not install
 production storage, adopt an approval policy, or create/update a Run assignment,

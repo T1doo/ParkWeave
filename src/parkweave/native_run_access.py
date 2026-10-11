@@ -115,10 +115,31 @@ def issue_decision_test_permit(owner, proof, *, approver_ids, seconds=600):
 
 
 class NativeRunAccess:
-    def __init__(self, store, *, test_permit=None):
+    def __init__(self, store, *, test_permit=None, activation_permit=None):
         if getattr(store, '_isolated_run_access', None) is not None:
             raise Denied('ordinary and isolated access providers cannot be combined')
         self.store, self.test_permit = store, test_permit
+        self.activation_permit=activation_permit
+
+    def assignment_allowed(self,c,p,run_id,assignment):
+        from .native_run_access_activation import effective
+        return effective(self,c,p,run_id,assignment)
+
+    def activate(self,token,run_id,key,data):
+        from .native_run_access_activation import activate
+        return activate(self,token,run_id,key,data)
+
+    @staticmethod
+    def _key_receipt(c,actor,key):
+        return c.execute("""SELECT e FROM runs r CROSS JOIN LATERAL
+            jsonb_array_elements(coalesce(r.native_run_access_protocol->'events','[]'::jsonb)
+              ||coalesce(to_jsonb(r)->'native_run_access_activation'->'events','[]'::jsonb)) e
+            WHERE e->>'actor_id'=%s AND e->>'request_key'=%s LIMIT 1""",(actor,key)).fetchone()
+
+    @staticmethod
+    def _access_lock(c,run_id,exclusive=False):
+        fn='pg_advisory_xact_lock' if exclusive else 'pg_advisory_xact_lock_shared'
+        c.execute('SELECT '+fn+'(hashtextextended(%s,0))',('native-effective-access:'+str(run_id),))
 
     def _permit(self, c):
         permit = self.test_permit
@@ -232,11 +253,11 @@ class NativeRunAccess:
 
     def _authority_snapshot(self,c,run,target_id=None):
         ids=sorted({run['principal_id'],*([target_id] if target_id else [])})
-        principals=c.execute('SELECT id,role,active,park_id,org_id FROM principals WHERE id=ANY(%s) ORDER BY id',(ids,)).fetchall()
-        grants=c.execute("""SELECT principal_id,capability,active,revision,park_id,org_id
+        principals=c.execute('SELECT id,role,active,park_id,org_id,xmin::text generation FROM principals WHERE id=ANY(%s) ORDER BY id',(ids,)).fetchall()
+        grants=c.execute("""SELECT principal_id,capability,active,revision,park_id,org_id,xmin::text generation
             FROM capability_grants WHERE principal_id=ANY(%s) AND capability IN ('READ','EXECUTE')
             ORDER BY principal_id,capability""",(ids,)).fetchall()
-        preparation=c.execute("SELECT principal_id,active,park_id,org_id FROM preparation_grants WHERE principal_id=%s AND capability='PREPARE'",(run['principal_id'],)).fetchall()
+        preparation=c.execute("SELECT principal_id,active,park_id,org_id,xmin::text generation FROM preparation_grants WHERE principal_id=%s AND capability='PREPARE'",(run['principal_id'],)).fetchall()
         return dict(principals=principals,grants=grants,preparation=preparation)
 
     def _view(self, c, p, run):
@@ -269,7 +290,7 @@ class NativeRunAccess:
                 WHERE p.park_id=%s AND p.org_id=%s AND p.active AND p.role='service_executor'
                 AND g.active AND g.capability='READ' ORDER BY p.id LIMIT 100""",
                 (run['park_id'],run['org_id'])).fetchall()
-        return dict(namespace=NAMESPACE,scope={k:source[k] for k in ('park_id','org_id','run_id')},
+        result=dict(namespace=NAMESPACE,scope={k:source[k] for k in ('park_id','org_id','run_id')},
                     revision=revision,run_revision=run['revision'],authority_sha256=_hash(authority),
                     state=state,request=deepcopy(request),history=deepcopy(ledger.get('events',[])),
                     leases=deepcopy(ledger.get('leases',[])),lease_id=ledger.get('lease_id'),
@@ -288,6 +309,8 @@ class NativeRunAccess:
                     candidate_access_available=False,actual_run_access=False,
                     actual_assignment_written=False,deployment_enabled=False,
                     qualification_truth='UNKNOWN')
+        from .native_run_access_activation import augment_view
+        return augment_view(self,c,p,run,result)
 
     @_bounded
     def read(self, token, run_id):
@@ -308,10 +331,13 @@ class NativeRunAccess:
             p=self.store.auth(c,token,lock=True)
             run=self._run(c,p,run_id)
             self._authorize_read(c,p,run)
-            events=(run.get('native_run_access_protocol') or {}).get('events',[])
+            events=((run.get('native_run_access_protocol') or {}).get('events',[])+
+                    (run.get('native_run_access_activation') or {}).get('events',[]))
             receipt=next((e for e in events if e['actor_id']==p['id'] and e['request_key']==key),None)
+            current=self._view(c,p,run)
             return dict(found=receipt is not None,receipt=deepcopy(receipt),
-                        namespace=NAMESPACE,actual_run_access=False,actual_assignment_written=False)
+                        namespace=NAMESPACE,actual_run_access=current['actual_run_access'],
+                        actual_assignment_written=current['actual_assignment_written'])
 
     @staticmethod
     def _key(key):
@@ -353,13 +379,11 @@ class NativeRunAccess:
             # Serializes with material, dispatch/ACCEPT, resource association and
             # cancellation before taking any Case lock; no Run→parent lock inversion.
             parent=self._parent(c,run,write=True)
+            self._access_lock(c,run_id,exclusive=True)
             run=c.execute('SELECT * FROM runs WHERE id=%s FOR UPDATE',(run_id,)).fetchone()
             self._authorize_read(c,p,run)
             permit=self._permit(c)
-            old=c.execute("""SELECT e FROM runs r CROSS JOIN LATERAL
-                jsonb_array_elements(coalesce(r.native_run_access_protocol->'events','[]'::jsonb)) e
-                WHERE e->>'actor_id'=%s AND e->>'request_key'=%s LIMIT 1""",
-                (p['id'],key)).fetchone()
+            old=self._key_receipt(c,p['id'],key)
             if old:
                 if old['e']['fingerprint']!=fp:
                     raise Conflict('original request key fingerprint mismatch')
@@ -412,7 +436,8 @@ class NativeRunAccess:
                             datetime.fromisoformat(approved['valid_until'])>datetime.fromisoformat(requested['valid_until'])):
                         raise Conflict('approval may only shrink requested interval')
                     lease_id=str(uuid4())
-                    request.update(approver_id=p['id'],approved_validity=approved)
+                    request.update(approver_id=p['id'],approved_validity=approved,
+                                   approver_authority=self._authority_snapshot(c,run,p['id']))
                     ledger['leases'].append(dict(id=lease_id,state='NON_EFFECTIVE',
                         request_id=request['request_id'],source=source,validity=approved))
                     ledger['lease_id']=lease_id
@@ -449,12 +474,3 @@ class NativeRunAccess:
                 if datetime.fromisoformat(interval['valid_until'])<=_now(c):
                     raise Conflict('decision interval expired before completion')
             return receipt
-
-
-def native_assignment_allowed(c, p, run_id, assignment):
-    """Fail closed: there is no adopted effective-access provider in this slice.
-
-    A durable decision is not authority. Never treat marked rows as legacy,
-    including cold Store instances, unknown namespaces and mixed provenance.
-    """
-    return False

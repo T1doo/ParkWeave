@@ -272,13 +272,13 @@ def test_case_cancel_blocks_approve_preserves_history_recovery_and_request_cance
 
 def test_native_marker_is_never_legacy_even_with_cold_store(native_fixture):
     a=native_fixture;f,parent,_,_=a
-    # No assignment write: exercise the predicate against a supplied marked row
-    # within the actual app-role transaction; future effective activation is NOT RUN.
+    # An unpersisted supplied row has no trustworthy legacy provenance once
+    # native storage exists. Cold stores deny it rather than losing a marker.
     with f[0].connect() as c:
         p=f[0].auth(c,f[2]['executor-a'],lock=True)
         assignment=dict(principal_id=p['id'],run_id=UUID(parent['run_id']),park_id=p['park_id'],org_id=p['org_id'],active=True)
         cold=Store(f[0].dsn)
-        assert cold.assignment_allowed(c,p,parent['run_id'],assignment=assignment)
+        assert not cold.assignment_allowed(c,p,parent['run_id'],assignment=assignment)
         for marker in (None,{},dict(namespace=native.NAMESPACE),dict(namespace='UNKNOWN')):
             marked=dict(assignment,native_access=marker)
             assert not cold.assignment_allowed(c,p,parent['run_id'],assignment=marked)

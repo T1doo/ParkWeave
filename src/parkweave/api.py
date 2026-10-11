@@ -201,6 +201,18 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
                 raise HTTPException(422, 'invalid native UTC command')
         return access_bridge().command(token(authorization), run_id, idempotency_key, data)
 
+    from .native_run_access_activation import Activate
+
+    @app.post('/api/runs/{run_id}/access/activate')
+    def run_access_activate(run_id: UUID, data: Activate,
+                            authorization: str | None = Header(default=None),
+                            idempotency_key: str = Header()):
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):
+            raise HTTPException(422,'invalid original request key')
+        if getattr(store,'_isolated_run_access',None) is not None:
+            raise Denied('ordinary activation unavailable for isolated provider')
+        return access_bridge().activate(token(authorization),run_id,idempotency_key,data)
+
     @app.get("/api/runs/{run_id}/plan-revisions")
     def plan_revisions(run_id: UUID, authorization: str | None = Header(default=None)):
         return {'revisions':store.read_plan_revisions(token(authorization),run_id)}

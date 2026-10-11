@@ -97,12 +97,13 @@ BEGIN
   IF action='REQUEST' THEN
     IF last_event->>'actor_id' IS DISTINCT FROM NEW.principal_id OR
        NEW.native_run_access_protocol->'lease_id' IS DISTINCT FROM 'null'::jsonb OR
-       request ? 'approver_id' OR request ? 'approved_validity' THEN
+       request ? 'approver_id' OR request ? 'approved_validity' OR request ? 'approver_authority' THEN
       RAISE EXCEPTION 'native request belongs to owner and begins without a lease';
     END IF;
   ELSIF action='APPROVE' THEN
     lease := new_leases->(jsonb_array_length(new_leases)-1);
-    IF (request-'approver_id'-'approved_validity') IS DISTINCT FROM previous_request OR
+    IF (request-'approver_id'-'approved_validity'-'approver_authority') IS DISTINCT FROM previous_request OR
+       jsonb_typeof(request->'approver_authority') IS DISTINCT FROM 'object' OR
        request->>'approver_id' IS DISTINCT FROM last_event->>'actor_id' OR
        last_event->>'actor_id' IN (request->>'requester_id',request->>'target_id') OR
        lease->>'id' IS NULL OR lease->>'id' IS DISTINCT FROM NEW.native_run_access_protocol->>'lease_id' OR

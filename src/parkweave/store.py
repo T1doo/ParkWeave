@@ -61,9 +61,13 @@ class Store:
         self.file_root = file_root
 
     def connect(self):
-        if getattr(self, '_isolated_run_access', None) is None and getattr(self, '_isolated_plan_approval', None) is None:
+        if all(getattr(self, name, None) is None for name in
+               ('_isolated_run_access','_isolated_plan_approval','_native_run_access')):
             return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
-        c = _AccessConnection.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
+        return self._guarded_connect()
+
+    def _guarded_connect(self, dsn=None):
+        c = _AccessConnection.connect(dsn or self.dsn, row_factory=dict_row, connect_timeout=2)
         c._access_store = self
         c._managed_checks = set()
         c._approval_store = self
@@ -75,13 +79,26 @@ class Store:
         a = assignment if assignment is not None else c.execute(
             'SELECT * FROM run_assignments WHERE principal_id=%s AND run_id=%s',
             (p['id'], run_id)).fetchone()
+        if assignment is not None and 'native_access' not in assignment and isinstance(c,psycopg.Connection):
+            stored=c.execute('SELECT * FROM run_assignments WHERE principal_id=%s AND run_id=%s',
+                             (p['id'],run_id)).fetchone()
+            if not stored or self.native_assignment_marked(c,stored):return False
+            a=stored
         if (not a or not a['active'] or not p['active'] or
             (a['principal_id'], str(a['run_id']), a['park_id'], a['org_id']) !=
             (p['id'], str(run_id), p['park_id'], p['org_id'])):
             return False
         if self.native_assignment_marked(c, a):
-            from .native_run_access import native_assignment_allowed
-            return native_assignment_allowed(c, p, run_id, a)
+            if c.autocommit or a.get('managed_access') is not None:
+                return False
+            bridge=getattr(self,'_native_run_access',None)
+            if bridge is None or not bridge.assignment_allowed(c,p,run_id,a):
+                return False
+            if track:
+                if not isinstance(c,_AccessConnection):
+                    raise Denied('native access requires guarded Store transaction')
+                c._managed_checks.add((p['id'],str(run_id)))
+            return True
         if a.get('managed_access') is None:
             return True
         if c.autocommit:
@@ -97,9 +114,8 @@ class Store:
 
     @staticmethod
     def native_assignment_marked(c, assignment):
-        if 'native_access' not in assignment:
-            return False
-        if assignment['native_access'] is not None:
+        if 'native_access' not in assignment:return False
+        if assignment.get('native_access') is not None:
             return True
         # psycopg decodes both SQL NULL and JSON null as None. Only actual
         # SQL NULL is a legacy row; unknown supplied provenance fails closed.
@@ -107,10 +123,17 @@ class Store:
             table_schema='public' AND table_name='run_assignments' AND
             column_name='native_access' AND data_type='jsonb'""").fetchone()
         if not installed:
-            return True
+            return 'native_access' in assignment
         row=c.execute('SELECT native_access IS NOT NULL marked FROM run_assignments WHERE principal_id=%s AND run_id=%s',
                       (assignment['principal_id'],assignment['run_id'])).fetchone()
-        return not row or row['marked']
+        if not row or row['marked']:return True
+        # Historical native provenance cannot be downgraded by a replacement
+        # SQL-NULL legacy row, including in cold stores without enablement.
+        history=c.execute("""SELECT 1 FROM runs r CROSS JOIN LATERAL
+            jsonb_array_elements(coalesce(to_jsonb(r)->'native_run_access_activation'->'events','[]'::jsonb)) e
+            WHERE r.id=%s AND e->'binding'->>'executor_id'=%s LIMIT 1""",
+            (assignment['run_id'],assignment['principal_id'])).fetchone()
+        return bool(history)
 
     def assigned_executors(self, c, run_id, park_id, org_id):
         rows = c.execute("""SELECT e.* FROM principals e JOIN run_assignments a
