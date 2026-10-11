@@ -44,24 +44,39 @@ def metadata_scrub(value, counts):
     return value
 
 
+def static_code(path):
+    return path.suffix in ['.py','.js','.diff'] or path.name.endswith(('.py.txt','.js.txt','.sql.txt','.html.txt'))
+
+
+def check_json_credentials(value):
+    if isinstance(value,dict):
+        for k,v in value.items():
+            if k.lower() in ('token','id_token','secret','auth','session','tokens','authorization','password','access_token','refresh_token','session_token','session_key','credentials','dsn','database_uri','database_url','connection_uri'):
+                assert v is None or isinstance(v,(bool,int)) or v=='', 'runtime credential-bearing JSON key rejected: '+k
+            check_json_credentials(v)
+    elif isinstance(value,list):
+        for v in value:check_json_credentials(v)
+
+
 def main():
     final = json.loads((PRIVATE / 'full-final-run.json').read_text())
     assert final['exit_code']==0 and not final['source_drift'] and not final['uncommitted_source'] and not final['prior_test_ids_missing'], 'require actual frozen final full PASS'
     names = [n for n in ['first','second','third','fourth','fifth','sixth','schema-oracles','schema-oracles-corrected','full-attempt-1','full-final'] if (PRIVATE/(n+'.xml')).exists()]
     candidates = [(PRIVATE / (name + suffix), 'root')
                   for name in names for suffix in ['.xml', '.log']]
-    candidates += [(p,'') for p in sorted(PRIVATE.glob('*.json')) if p.name.endswith('-run.json') or p.name.endswith('-source-manifest.json') or p.name in ['node-and-ast.json','final-source-manifest.json','final-node-and-ast.json','source-freeze-node-and-ast.json']]
+    candidates += [(p,'') for p in sorted(PRIVATE.glob('*.json')) if p.name not in ['delivery-after-push-verification.json']]
     candidates += [(p,'root') for p in sorted(PRIVATE.glob('run_window*.py'))]
     candidates += [(p,'root/schema-oracle-before') for p in sorted((PRIVATE/'schema-oracle-before').glob('*')) if p.suffix in ['.py','.json']]
     review = PRIVATE / 'independent-review'
     candidates += [(p, str(Path('independent') / p.relative_to(review).parent))
                    for p in sorted(review.rglob('*'))
-                   if p.is_file() and p.suffix in ['.xml', '.log', '.json', '.md', '.py', '.txt', '.js']
+                   if p.is_file() and p.suffix in ['.xml', '.log', '.json', '.md', '.py', '.txt', '.js', '.diff']
                    and '__pycache__' not in p.parts]
     prior_manifest=OUTPUT/'archive-manifest.json'
     if prior_manifest.exists():
         candidates=[(ROOT/e['original_local_path'],str(Path(e['exported_path']).parent)) for e in json.loads(prior_manifest.read_text())['artifacts']]
         candidates=[(p,'' if label=='.' else label) for p,label in candidates]
+    whitelist=json.loads((PRIVATE/'archive-static-whitelist.json').read_text())
     entries = []
     for p, label in candidates:
         original = p.read_bytes()
@@ -84,9 +99,11 @@ def main():
             exported = ET.tostring(tree, encoding='utf-8', xml_declaration=True)
             outcomes = dict(Counter(status for _, _, _, status in before[0]))
         elif p.suffix == '.json':
-            exported = (json.dumps(metadata_scrub(json.loads(original), counts),
+            data=json.loads(original);check_json_credentials(data)
+            exported = (json.dumps(metadata_scrub(data, counts),
                                    indent=2, sort_keys=True) + '\n').encode()
-        elif p.suffix in ['.py','.js'] or 'frozen-' in p.name or p.name.endswith('.py.txt'):
+        elif static_code(p):
+            assert whitelist.get(str(p.relative_to(ROOT)))==sha(original), 'static input not in exact SHA allowlist: '+str(p)
             # Static reviewer/helper code contains no runtime authentication
             # values. Preserve its original bytes, including long scope names.
             exported = original
@@ -103,7 +120,8 @@ def main():
             exported = gzip.compress(exported, mtime=0)
             compression = 'gzip'
         target.write_bytes(exported)
-        entries.append(dict(original_local_path=str(p.relative_to(ROOT)),
+        classification='STATIC_CODE_EXACT_SHA_ALLOWLIST' if static_code(p) else 'JSON_METADATA' if p.suffix=='.json' else 'JUNIT' if p.suffix=='.xml' else 'STDOUT_OR_REPORT'
+        entries.append(dict(classification=classification,original_local_path=str(p.relative_to(ROOT)),
                             original_sha256=sha(original), original_bytes=len(original),
                             exported_path=str(target.relative_to(OUTPUT)),
                             exported_sha256=sha(exported), exported_bytes=len(exported),

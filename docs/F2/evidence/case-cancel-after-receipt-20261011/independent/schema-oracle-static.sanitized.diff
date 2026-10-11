@@ -1,0 +1,152 @@
+--- sixth/tests/test_case_fact_bundle.py
++++ candidate/tests/test_case_fact_bundle.py
+@@ -193,9 +193,9 @@
+  with pytest.raises(psycopg.errors.RaiseException,match='creation ticket required'):
+   with f[1].connect() as c:c.execute(sql)
+  with f[1].connect() as c:
+-  f[1]._case_fact_fixture_receipt.authorize_migration(c);c.execute('DELETE FROM schema_version WHERE version=31');c.execute(sql);c.rollback()
++  f[1]._case_fact_fixture_receipt.authorize_migration(c);c.execute('DELETE FROM schema_version WHERE version IN (31,32)');c.execute(sql);c.rollback()
+  assert snapshot(f)==before
+- with f[1].connect() as c:c.execute('INSERT INTO schema_version VALUES(32)')
++ with f[1].connect() as c:c.execute('INSERT INTO schema_version VALUES(33)')
+  with pytest.raises(Conflict,match='newer than this code'):f[1].migrate()
+ 
+ 
+--- sixth/tests/test_case_fact_clarifications.py
++++ candidate/tests/test_case_fact_clarifications.py
+@@ -295,7 +295,7 @@
+         c.execute(MIGRATION.with_name('migration-031.sql').read_text())
+     assert business(f)==before and authority(f)==permissions
+     with f[1].connect() as c:
+-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==31
++        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==32
+         assert c.execute("SELECT pg_get_constraintdef(oid) d FROM pg_constraint WHERE conname='preparation_events_action_check'").fetchone()['d'].count('CONFIRM_FACT_PURPOSE')==1
+     # Test a clean DDL rollback on this same isolated fixture, not a production downgrade.
+     with f[1].connect() as c:
+@@ -575,7 +575,7 @@
+         with pytest.raises(psycopg.errors.RaiseException, match='creation ticket required'):
+             with owner.connect() as c: c.execute(MIGRATION.read_text())
+         with owner.connect() as c:
+-            receipt.authorize_migration(c); c.execute(MIGRATION.with_name('migration-031.sql').read_text())
++            receipt.authorize_migration(c); c.execute('DELETE FROM schema_version WHERE version=32'); c.execute(MIGRATION.with_name('migration-031.sql').read_text())
+             assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 31
+             assert c.execute('SELECT current_database() d').fetchone()['d'] == 'parkweave'
+             assert c.execute("SELECT to_regclass('pg_temp.parkweave_fixture_migration_receipt') marker").fetchone()['marker'] is not None
+@@ -626,13 +626,13 @@
+ 
+ 
+ def test_migration_refuses_future_version_even_with_retained_24_and_valid_receipt(f):
+-    with f[1].connect() as c: c.execute('INSERT INTO schema_version VALUES(32)')
++    with f[1].connect() as c: c.execute('INSERT INTO schema_version VALUES(33)')
+     before = business(f)
+     with pytest.raises(psycopg.errors.RaiseException, match='schema 24 prerequisite'):
+         with f[1].connect() as c:
+             authorize_migration(f[1], c); c.execute(MIGRATION.read_text())
+     with f[1].connect() as c:
+-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 32
++        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 33
+     assert business(f) == before
+ 
+ 
+--- sixth/tests/test_controlled_plans.py
++++ candidate/tests/test_controlled_plans.py
+@@ -203,7 +203,7 @@
+         roles=Path('src/parkweave/roles.sql').read_text().replace('GRANT CONNECT ON DATABASE parkweave','GRANT CONNECT ON DATABASE '+psycopg.sql.Identifier(c.info.dbname).as_string(c),1)
+         c.execute(roles)
+         assert c.execute('SELECT * FROM capability_grants ORDER BY principal_id,capability').fetchall()==grants
+-        assert c.execute('SELECT max(version) n FROM schema_version').fetchone()['n']==31
++        assert c.execute('SELECT max(version) n FROM schema_version').fetchone()['n']==32
+     assert counts(f)[:2]==[0,0] and create(f,p).status_code==409
+     for sql in ('DELETE FROM controlled_plans','UPDATE controlled_plans SET template_sha256=template_sha256','UPDATE controlled_plans SET id=id','DELETE FROM controlled_plan_events','UPDATE controlled_plan_events SET payload=payload','UPDATE capability_grants SET active=active','UPDATE run_assignments SET active=active'):
+         with pytest.raises(psycopg.errors.InsufficientPrivilege):
+--- sixth/tests/test_lifecycle_diagnostics.py
++++ candidate/tests/test_lifecycle_diagnostics.py
+@@ -74,7 +74,7 @@
+         store.migrate()
+         with store.connect() as c:c.execute((ROOT/'src/parkweave/roles.sql').read_text(encoding='utf-8'))
+         assert isinstance(lifecycle.check_dsn_scope(app,app=True),str)
+-        with Store(app).connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==31
++        with Store(app).connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==32
+         with pytest.raises(lifecycle.BoundaryError) as privileged:lifecycle.check_dsn_scope(owner,app=True)
+         assert diagnostic.failure(privileged.value)['boundary_reason']=='APP_ROLE_REFUSED'
+     finally:
+--- sixth/tests/test_material_objections.py
++++ candidate/tests/test_material_objections.py
+@@ -150,7 +150,7 @@
+ 
+ def test_existing_database_migration_requires_receipt(preparation_fixture):
+     f=preparation_fixture
+-    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==31
++    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==32
+     # Current Linux version 29 is restart-compatible without rerunning migration or fresh receipt.
+     Store(f[1].dsn).migrate()
+ 
+--- sixth/tests/test_material_reuse.py
++++ candidate/tests/test_material_reuse.py
+@@ -121,7 +121,7 @@
+     assert read(f, source).json() == original_source
+     assert authority(f) == permissions
+     with f[1].connect() as c:
+-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 31
++        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] == 32
+         assert c.execute('SELECT count(*) n FROM runs').fetchone()['n'] == 2
+ 
+ 
+--- sixth/tests/test_request_intents.py
++++ candidate/tests/test_request_intents.py
+@@ -79,7 +79,7 @@
+         c.execute('DELETE FROM schema_version WHERE version>=19')
+     f[1].migrate();f[1].migrate()
+     with f[1].connect() as c:
+-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==31
++        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==32
+         assert c.execute('SELECT * FROM preparation_events').fetchall()==history
+         assert c.execute('SELECT * FROM capability_grants ORDER BY principal_id,capability').fetchall()==grants
+         assert c.execute('SELECT request_intent FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['request_intent'] is None
+--- sixth/tests/test_resource_combinations.py
++++ candidate/tests/test_resource_combinations.py
+@@ -222,7 +222,7 @@
+         c.execute('DELETE FROM schema_version WHERE version>=12')
+     f[1].migrate();f[1].migrate()
+     with f[1].connect() as c:
+-        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==31
++        assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==32
+         c.execute('GRANT SELECT,INSERT ON synthetic_resource_combinations,synthetic_resource_combination_members,synthetic_resource_combination_receipts TO parkweave_app')
+         c.execute('GRANT UPDATE(state) ON synthetic_resource_combinations TO parkweave_app')
+         payload=c.execute("SELECT payload FROM synthetic_resource_receipts WHERE action='CONFIRM'").fetchone()['payload']
+--- sixth/tests/test_resource_holds.py
++++ candidate/tests/test_resource_holds.py
+@@ -233,7 +233,7 @@
+         c.execute('DROP TABLE case_resource_links,resource_case_claims; DROP TABLE service_receipt_events,service_step_receipts,service_receipt_steps CASCADE; DROP TABLE synthetic_resource_combination_receipts,synthetic_resource_combination_members,synthetic_resource_combinations,synthetic_resource_receipts,synthetic_resource_holds,synthetic_resource_grants,synthetic_resources')
+         c.execute('DELETE FROM schema_version WHERE version>=10')
+     f[1].migrate();f[1].migrate();assert read_preparation(f,row).json()==before
+-    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==31
++    with f[1].connect() as c:assert c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==32
+ 
+ 
+ def test_same_request_key_cannot_cross_registered_resource(resource_fixture):
+--- sixth/tests/test_worker_gateway.py
++++ candidate/tests/test_worker_gateway.py
+@@ -176,7 +176,7 @@
+     before=store.read(tokens['fixture-a'],run)
+     owner.migrate();owner.migrate()
+     assert store.read(tokens['fixture-a'],run)==before
+-    assert client.get('/health').json()['schema']==31
++    assert client.get('/health').json()['schema']==32
+ 
+ 
+ def test_invalid_receipt_rejected_by_actual_worker_gateway(runtime):
+@@ -218,11 +218,11 @@
+             c.execute("INSERT INTO cases VALUES(%s,%s,'park-a','org-a','合成：历史记录','NEEDS_INPUT','SYNTHETIC','NOT_SUBMITTED','NO_EVIDENCE')",(case,run))
+         owner.migrate();owner.migrate()
+         with owner.connect() as c:
+-            assert c.execute('SELECT max(version) version FROM schema_version').fetchone()['version']==31
++            assert c.execute('SELECT max(version) version FROM schema_version').fetchone()['version']==32
+             assert c.execute('SELECT id,state,receipt FROM operations').fetchone()=={'id':op,'state':'VERIFIED','receipt':receipt}
+             assert c.execute('SELECT id,state FROM cases').fetchone()=={'id':case,'state':'NEEDS_INPUT'}
+             assert c.execute('SELECT state,control_intent FROM runs').fetchone()=={'state':'SUCCEEDED','control_intent':'CONTINUE'}
+-            c.execute('INSERT INTO schema_version VALUES(32)')
++            c.execute('INSERT INTO schema_version VALUES(33)')
+         with pytest.raises(Conflict):owner.migrate()
+         with owner.connect() as c:assert c.execute('SELECT count(*) n FROM cases').fetchone()['n']==1
+     finally:

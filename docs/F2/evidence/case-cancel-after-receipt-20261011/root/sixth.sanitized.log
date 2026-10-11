@@ -1,0 +1,20 @@
+........................................................................ [ 85%]
+.......F....                                                             [100%]
+=================================== FAILURES ===================================
+_____________ test_upgrade_minimal_permissions_no_legacy_backfill ______________
+tests/test_controlled_plans.py:206: in test_upgrade_minimal_permissions_no_legacy_backfill
+    assert c.execute('SELECT max(version) n FROM schema_version').fetchone()['n']==31
+E   assert 32 == 31
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_controlled_plans.py::test_template_readiness_matches_historical_create_rejection[resource-EXISTING_CASE_RESOURCE_LINK]
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_controlled_plans.py::test_upgrade_minimal_permissions_no_legacy_backfill
+1 failed, 83 passed, 2 warnings in 52.21s

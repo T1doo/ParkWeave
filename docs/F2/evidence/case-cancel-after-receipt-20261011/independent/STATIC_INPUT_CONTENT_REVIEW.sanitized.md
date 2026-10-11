@@ -1,0 +1,11 @@
+# 静态归档输入逐件内容独审
+
+**LIMITED_STATIC_CONTENT_PASS_PENDING_ACTUAL_EXPORT。** 55件精确静态输入可以按本清单hash原字节公开复制；未发现运行时凭据。未签root38或未创建的完整归档。
+
+已读55件完整UTF8字节、核对hash及相关凭据上下文：root2个运行driver、10个旧schema Python快照、independent43个源码/Node探针/差异。完整repo-relative路径和hash清单 `static-code-candidates-reviewed.json`，SHA256 `902d0e18361454d70f7d925b441e5b04d800917f7cd986ed28a66d1326435a96`。逐件分类、相关行号及内容判断在本JSON。
+
+离线Node PRIVATE_TOKEN/PRIVATE_REASON是明确占位字符串；HTML中密码输入为空，Bearer只由动态context.token组成；Python token/dsn只引用运行fixture变量。旧test_lifecycle_diagnostics的password=secret/私有路径POISON是明确诊断注入测试哨兵，非实际凭据；仅该精确hash获准复制。这不批准未知后缀文件或任何新增字节。
+
+当前helper增加token/id_token/secret/auth/session精确key拒绝；纯函数5个合成dummy检查均拒绝，当前147个候选JSON纯函数校验通过。未运行业务测试/export/delivery main/Git/浏览器，未修改product/tests/docs或任何旧签署文件。
+
+最终归档必须核实际whitelist与这55精确输入相同、逐件原/导出/payload hash与classification保持，另核34原失败同ID关系、405 freeze与旧149目录；需在root38真实结束后另阶段签署。

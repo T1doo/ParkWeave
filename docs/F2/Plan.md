@@ -517,3 +517,12 @@ ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKI
 按原产品 §5.5/§7.1/§7.4，从已签收首次接单前取消交付396602继续，独立开发分支 `dev/f2-case-cancel-before-receipt-20261011` 实现已真实接单但全部历史本地人工步骤从未提交回执的普通SYNTHETIC企业取消。旧入口保留首次接单前拒绝边界，新入口当前owner READ/PREPARE/EXECUTE、精确Case/资料/生命周期/来源与理由确认；原键同参回放、异参冲突，未知响应仅GET原键。取消与SUBMIT、重接单、换人、材料、计划、资源关联共parent锁；实际接单/步骤/Run/预约与容量保留，独立释放按原权限，所有晚写及旧通知/UI动作重核，历史GET不隐式失效计划。
 
 源码 `3fc6fa712f14820d88fcf8cd94fa70fcf6120e0c`，401路径零漂移；最终单窗37完整模块1390PASS/0FAIL/0ERROR/1WindowsSKIP，保留上一1271标识、新增120，退出0。独审最终132PASS，另11反例PASS；实际世代剥除产品缺陷的原2FAIL、夹具/版本/wheel失败和中断原件均公开脱敏保留。限定合同、源码/窗口/失败映射及可读证据见 [取消合同](CaseCancellationBeforeReceiptContract.md)、[交付证据](CaseCancellationBeforeReceiptEvidence.md)。取消后恢复、已有提交/确认/关闭或隔离/外部效果不在本片；浏览器管理员拒绝未重试，生产迁移/部署和真实模型未运行，原protected分支保持。下一步父审按独立分支与原件限定签收，不转签完整生命周期或全AT。
+
+
+## 已有本地人工回执后的取消请求与核对（2026-10-11）
+
+从父审限定签收189379/source3fc6的原开发计划§7.4继续，在正常独立分支 `dev/f2-case-cancel-after-receipt-20261011` 实现普通已核实成功SYNTHETIC、已有真实人工SUBMIT且无外部效果的三次明确动作：owner REQUEST_CANCEL原子记录请求并RECONCILING冻结所有新业务写；另行RECONCILE全部历史回执精确版本/正文SHA/原SUBMIT与企业决定，UNRESOLVED继续RECONCILING；另行明确CONFIRM_CANCEL绑定原请求/最新全部KNOWN结果，原子CANCELLED。原回执/ACK/所有世代/Run/资料/资源保留，资源容量仍占用、按原自身权限独立释放。原首次接单前/从未SUBMIT取消限制不放宽，不实现恢复、外部履约、关闭历史或完整Case生命周期。
+
+有限合同先冻结；源码 `796b41ad8939ba1d067f84f137a4d2a1861f06d4`，405文件首尾零漂移。最终单窗38完整模块1560PASS/0FAIL/0ERROR/1原WindowsSKIP、exit0，1561唯一ID保留全部旧1391、新增170。独立第六226PASS（141新后端+51离线UI+34自有probe），最终相对第六仅十个旧schema测试oracle修订，产品代码不变、逐diff静态核授权/历史/rollback未减少；不冒称最终清单下另跑226。10个真实产品FAIL与2个独立oracle FAIL同ID通过；全部根和独立34 FAIL/ERROR原件与same-ID映射公开脱敏保留，standalone Node原exit1/原probe修后exit0另记。249证据冻结件、55静态精确hash白名单、旧两片149文件全集字节保留。
+
+详见 [有限合同](CaseCancellationReconciliationContract.md)、[交付证据](CaseCancellationReconciliationEvidence.md)、[可读归档](evidence/case-cancel-after-receipt-20261011/README.md)。真实owned PG双向锁等待、全部写入口/冷GET、撤权跨租户、同异key、事件回滚、UNKNOWN/迟到UI和资源容量/独立释放均在有限测试范围内。父审下一步以完整SHA和正常独立远端分支限定签收，非全仓/AT；历史Case_count0根因仍UNCONFIRMED，浏览器管理员拒绝0次重试，Windows/native、生产迁移/部署/真实模型NOT RUN，protected分支保持。

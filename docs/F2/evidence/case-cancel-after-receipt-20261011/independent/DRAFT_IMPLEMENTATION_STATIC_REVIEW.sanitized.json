@@ -1,0 +1,105 @@
+{
+  "actual_results": {
+    "ERROR": 0,
+    "FAIL": 0,
+    "Git": "NOT_OPERATED",
+    "PASS": 0,
+    "PG": "NOT_RUN",
+    "SKIP": 0,
+    "TESTS": "NOT_RUN",
+    "browser_attempts": 0,
+    "source_tests_docs_mutations": 0,
+    "writes": "only own new runtime"
+  },
+  "findings": [
+    {
+      "functions": [
+        "_source",
+        "recover",
+        "command"
+      ],
+      "id": "DRAFT-H1",
+      "minimum_fix": "Separate immutable proof defects from new-action capacity. When full phase proves a legitimate terminal64, do not classify final historical recovery as proof failure; retain command/view capacity bounds. Preserve old entry behavior.",
+      "observation": "Legitimate request at local61 creates62; all-known reconcile creates63; confirm creates64. Next cc._source returns LOCAL_HISTORY_LIMIT_REACHED. New recover rejects any current blocker and same-key POST rejects any issue before returning the original event, so a legitimately committed final result at64 is not recoverable.",
+      "path": "src/parkweave/case_cancellation_reconciliation.py",
+      "required_probe": "Actual61\u219262\u219263\u219264 full flow, final original-key GET and POST plus original REQUEST/RECONCILE keys after terminal. Repeat old before-accept/before-receipt final recovery boundaries.",
+      "runtime_status": "NOT_RUN",
+      "severity": "HIGH",
+      "status": "OPEN_STATIC_CONTROL_FLOW"
+    },
+    {
+      "functions": [
+        "_record",
+        "_phase"
+      ],
+      "id": "DRAFT-H2",
+      "minimum_fix": "Reconstruct each full expected historical snapshot from current immutable/base bindings, exact pre-event lifecycle revision/cycle/phase and preceding cancellation summaries; canonical equality, strict types/shape and required event capacity transitions. Bind first new event to the prior local ledger where that historical head exists.",
+      "observation": "Top snapshot.preparation_revision and request.expected_preparation_revision are compared only to each other. _phase compares only immutable_source_sha to actual current immutable source; it does not reconstruct exact snapshot base fields. Keep genuine immutable prep7, set top snapshot/request prep8, rehash expected_source/fingerprint and later prior summaries: listed comparisons can pass although original CAS prep8 was never a valid server source. Boolean mutable cycle or other top-field rehash variations need the same defense.",
+      "path": "src/parkweave/case_cancellation_reconciliation.py",
+      "required_probe": "Owned corrupted/rehashed first request and later assessment top-field inconsistency, including prep/material/run/dispatch/service/cycle fields and unexpected source keys. Reject every original-key GET/POST/final without writes.",
+      "runtime_status": "NOT_RUN",
+      "severity": "HIGH",
+      "status": "OPEN_STATIC_PROOF_COUNTEREXAMPLE"
+    },
+    {
+      "followup_observation": "P1 isolated_execution_preview clamp now uses case_write_blocked in saved draft; its terminal cancelled flag remains separate. This adjustment is observed statically only.",
+      "id": "DRAFT-M1",
+      "minimum_fix": "All lifecycle action projections must respect Case write-blocked states. Other P1/P2/P3/P4 read projections and late UI states need the same blocked predicate.",
+      "observation": "can_write excludes only CANCELLED. Valid RECONCILING with all old material/ACK/resource prerequisites can still return can_revalidate=true, even though the write endpoint correctly rejects.",
+      "path": "src/parkweave/case_lifecycle.py:129",
+      "required_probe": "Owner local lifecycle GET and all history preview GETs under RECONCILING expose no business actions and persist no metadata writes.",
+      "runtime_status": "NOT_RUN",
+      "severity": "MEDIUM",
+      "status": "OPEN_STATIC_PROJECTION"
+    },
+    {
+      "functions": [
+        "_source"
+      ],
+      "id": "DRAFT-M2",
+      "minimum_fix": "Validate actual input dict before the action read; preserve strict fingerprint/Intake/verified creation receipt checks.",
+      "observation": "Intake validation records a bad non-object run.input as an issue, then the successful-run branch still directly calls run.input.get. None/list/integer JSON can raise AttributeError instead of explicit source blocker. New three-stage entry shares this path.",
+      "path": "src/parkweave/case_cancellation.py",
+      "required_probe": "Whole Run.input JSON shapes None/list/number/string explicitly refuse with no writes in old/new cancellation views and commands.",
+      "runtime_status": "NOT_RUN",
+      "severity": "MEDIUM",
+      "status": "OPEN_INHERITED_SOURCE_SHAPE"
+    },
+    {
+      "functions": [
+        "_phase"
+      ],
+      "id": "DRAFT-M3",
+      "minimum_fix": "Historical replay must enforce all original stage preconditions/capacity together with source and causal proof.",
+      "observation": "Historical phase replay does not repeat REQUEST expected_lifecycle_revision<=61 or the RECONCILE-at62 rule forbidding UNRESOLVED. Corrupted/rehashed records can be classified as a valid committed phase although that original transition was impossible under command.",
+      "path": "src/parkweave/case_cancellation_reconciliation.py",
+      "required_probe": "Forged REQUEST starting at62/63 and forged UNRESOLVED assessment at63 refuse recovery/confirm; valid last-capacity all-known sequence remains recoverable.",
+      "runtime_status": "NOT_RUN",
+      "severity": "MEDIUM",
+      "status": "OPEN_PHASE_REPLAY_CAPACITY"
+    }
+  ],
+  "format": "INDEPENDENT_DRAFT_IMPLEMENTATION_STATIC_REVIEW",
+  "historical_evidence": "All prior signed reports preserved. Historical worker Case_count0 cause remains UNCONFIRMED; no new permission/lease fix claimed.",
+  "not_runtime_signoff": true,
+  "observed_at_utc": "2026-10-11T14:52:46.374674+00:00",
+  "pending_or_unreviewed": [
+    "UI not implemented; no product UI signoff or browser run",
+    "Root first12 basic runtime window is parent-owned and not independently counted here",
+    "Full per-action capacity and reconstructed phase snapshots require actual independent owned-PG probes after parent fixes/authorization",
+    "Malformed foreign-bound history projection confidentiality should be tested before exporting raw unproven receipt content; no runtime leak claimed"
+  ],
+  "positive_static_checks": [
+    "Dedicated owner ledger preserves receipt/step/SUBMIT/ACK history; no use of old receipt command as reconciliation",
+    "Default allow_manual_receipts=False retains old no-submission helper behavior; later ACCEPT requires original OFFER/REOFFER extras and predecessor",
+    "Manual ledger reconstructs SUBMIT and owner decision fingerprints, exact keys/types/state transitions/revisions/current receipt pointer and digest actual text; all naked receipts detected",
+    "Current owner capabilities/CAS/key scope checked under shared original lock order; all operations/event+Case/local changes in same transaction",
+    "New blocked-state business guard covers existing receipt_parent before replay; terminal predicate remains distinct",
+    "Both plan inspect and both rejected-observation persistence branches use blocked predicate; original authorized resource release stays independent",
+    "Migration032 repeats original creation-ticket/current owner/transaction/table scope, extends only existing finite CHECKs; no new table/role/business grant"
+  ],
+  "reconciliation_draft_sha256": "56ab6d808a6731bbe896304fb2d7516354044e913fcee6c8d0ac01f632e0cff2",
+  "snapshot_manifest_sha256": "a9615fa88c39bbd823b578a17ad602ade5a68639a824c822e7cb77a54e774879",
+  "source_snapshot_manifest": "draft-static-source-snapshot.json",
+  "status": "STATIC_BLOCKED_PENDING_FIX_AND_RUNTIME"
+}

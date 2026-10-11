@@ -1,0 +1,90 @@
+{
+  "browser_attempts": 0,
+  "findings": [
+    {
+      "actual_failed_examples": [
+        "controlled_plan_other_case: planView has preparation_id and source_snapshots.P1.case_id, without top case_id; plan-P1 blocked as unrelated Case A",
+        "delivery_other_case: quote context selects Case B, delivery-confirm blocked as unrelated Case A",
+        "approval_propose_other_case: no previous approval view, quote context selects Case B; proposal blocked as Case A",
+        "receipt_create_uses_current_preparation: creation belongs to preparation A, receiptView shows B; unknown-request Case A creation is allowed as B"
+      ],
+      "id": "AR-UI-003",
+      "location": "src/parkweave/web.html:534",
+      "minimal_fix": "Derive target from each handler command context/preparation mapping. Receipt CREATE uses preparation/creation context; existing receipt operations use receipt step. Use controlled-plan P1 source/preparation mapping and delivery quote/selection rather than unrelated preparation fallback.",
+      "problem": "Action target fallback uses an unrelated preparation Case rather than the action own context",
+      "server_bypass_observed": false,
+      "severity": "MEDIUM"
+    }
+  ],
+  "independent_complete_new_modules": "NOT RUN on this interim source; run complete backend/offline modules on next stable/final source",
+  "old_reports_unchanged": true,
+  "remaining_limits": [
+    "No repository-wide PASS asserted.",
+    "Unconfirmed old fixture-b Case0 root cause remains unchanged."
+  ],
+  "resolved_prior_findings": [
+    {
+      "id": "AR-UI-001",
+      "same_actual_failed_ids_retest": "1 PASS"
+    },
+    {
+      "id": "AR-PROOF-002",
+      "same_actual_failed_ids_retest": "5 PASS"
+    }
+  ],
+  "source_files": 405,
+  "source_head": "NOT_FINAL_UNCOMMITTED_WINDOW",
+  "source_manifest_sha256": "d51af3cccec273588727773f5ab2e8989891b5f9cf11bc20806c8ed87e2f65de",
+  "status": "BLOCKED_PENDING_CURRENT_CASE_ACTION_TARGET_FIX",
+  "test_windows": [
+    {
+      "ERROR": 0,
+      "FAIL": 0,
+      "PASS": 30,
+      "SKIP": 0,
+      "exit_code": 0,
+      "failures": [],
+      "log_sha256": "96cb7a0974f1b3914d59f8868f81c70eb9c9ae234d16f85c1fd799cc47b7d79e",
+      "phase": "fifth-full-independent-probes",
+      "source_drift_after": [],
+      "source_drift_before": [],
+      "source_file_count": 405,
+      "source_manifest_sha256": "d51af3cccec273588727773f5ab2e8989891b5f9cf11bc20806c8ed87e2f65de",
+      "tests": 30,
+      "xml_sha256": "824212fe2795cd7ba26fae3f4304a978f56c846eab90d89ec9d0e6b5be9a019e"
+    },
+    {
+      "ERROR": 0,
+      "FAIL": 4,
+      "PASS": 0,
+      "SKIP": 0,
+      "exit_code": 1,
+      "failures": [
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_cross_case_ui::test_case_capture_uses_action_owned_case_not_unrelated_preparation[controlled_plan_other_case]",
+          "outcome": "FAIL"
+        },
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_cross_case_ui::test_case_capture_uses_action_owned_case_not_unrelated_preparation[delivery_other_case]",
+          "outcome": "FAIL"
+        },
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_cross_case_ui::test_case_capture_uses_action_owned_case_not_unrelated_preparation[approval_propose_other_case]",
+          "outcome": "FAIL"
+        },
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_cross_case_ui::test_case_capture_uses_action_owned_case_not_unrelated_preparation[receipt_create_uses_current_preparation]",
+          "outcome": "FAIL"
+        }
+      ],
+      "log_sha256": "1c460fb8553ea68360d604401b87b1010c05b41d1c60b0e978f1785d7f16a621",
+      "phase": "fifth-cross-case-capture",
+      "source_drift_after": [],
+      "source_drift_before": [],
+      "source_file_count": 405,
+      "source_manifest_sha256": "d51af3cccec273588727773f5ab2e8989891b5f9cf11bc20806c8ed87e2f65de",
+      "tests": 4,
+      "xml_sha256": "afa95c3160a814dc115807d39d70c54ce99eb34164fa3b999df7c1f91459d192"
+    }
+  ]
+}

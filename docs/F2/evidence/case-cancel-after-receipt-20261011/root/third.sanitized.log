@@ -1,0 +1,81 @@
+....................................................................F... [ 42%]
+.......F............F.......F.....................F..................... [ 84%]
+.........................F                                               [100%]
+=================================== FAILURES ===================================
+___ test_damaged_manual_or_effectful_sources_refuse_without_writes[adapter] ____
+tests/test_case_cancellation_reconciliation.py:209: in test_damaged_manual_or_effectful_sources_refuse_without_writes
+    elif damage=='adapter':c.execute("UPDATE service_step_receipts SET adapter_execution='{}'")
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.UndefinedColumn: column "adapter_execution" of relation "service_step_receipts" does not exist
+E   LINE 1: UPDATE service_step_receipts SET adapter_execution='{}'
+E                                            ^
+_ test_original_key_detects_corrupted_current_phase_and_rehashed_top_snapshot[event_reason] _
+tests/test_case_cancellation_reconciliation.py:237: in test_original_key_detects_corrupted_current_phase_and_rehashed_top_snapshot
+    before=before_accept.snapshot(f);assert recover(f,p,key).status_code==post(f,p,data,key).status_code==409
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: assert 200 == 409
+E    +  where 200 = <Response [200 OK]>.status_code
+E    +    where <Response [200 OK]> = recover((<parkweave.store.Store object at 0x7f147733c710>, <parkweave.store.Store object at 0x7f14775c00e0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f147c2f0260>), {'preparation_id': 'ae485223-dda5-4617-b61b-d6c75609d0b5', 'case_id': 'a9d50bd0-662f-40da-88f4-5bb1f9231486', 'run_id': '750ebf27-cdc1-4ab0-8b06-b74138cc5c24', 'revision': 5, ...}, 'b5d49bc4844d4084a95513c034ccad6d')
+E    +  and   409 = <Response [409 Conflict]>.status_code
+E    +    where <Response [409 Conflict]> = post((<parkweave.store.Store object at 0x7f147733c710>, <parkweave.store.Store object at 0x7f14775c00e0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f147c2f0260>), {'preparation_id': 'ae485223-dda5-4617-b61b-d6c75609d0b5', 'case_id': 'a9d50bd0-662f-40da-88f4-5bb1f9231486', 'run_id': '750ebf27-cdc1-4ab0-8b06-b74138cc5c24', 'revision': 5, ...}, {'action': 'REQUEST_CANCEL', 'case_id': 'a9d50bd0-662f-40da-88f4-5bb1f9231486', 'expected_preparation_revision': 5, 'expected_lifecycle_revision': 0, ...}, 'b5d49bc4844d4084a95513c034ccad6d')
+__ test_business_writer_wins_actual_pg_wait_and_old_request_cas_refuses[plan] __
+tests/test_case_cancellation_reconciliation.py:282: in test_business_writer_wins_actual_pg_wait_and_old_request_cas_refuses
+    assert sorted(results)==sorted([(writer,201 if writer in ('handoff','plan','link') else 200),('request',409)])
+E   AssertionError: assert [('plan', 409...equest', 200)] == [('plan', 201...equest', 409)]
+E     
+E     At index 0 diff: ('plan', 409) != ('plan', 201)
+E     Use -v to get more diff
+_____ test_legitimate_local_prefix_capacity_62_63_64_and_all_original_keys _____
+tests/test_case_cancellation_reconciliation.py:323: in test_legitimate_local_prefix_capacity_62_63_64_and_all_original_keys
+    r=local_act(f,p,local_read(f,p).json(),'REVALIDATE');assert r.status_code==200,r.text
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: {"detail":"current cycle already validated"}
+E   assert 409 == 200
+E    +  where 409 = <Response [409 Conflict]>.status_code
+_ test_history_get_and_rejected_plan_callbacks_do_not_invalidate_after_request[controlled] _
+tests/test_case_cancellation_reconciliation.py:371: in test_history_get_and_rejected_plan_callbacks_do_not_invalidate_after_request
+    assert create(f,p).status_code==201
+E   AssertionError: assert 409 == 201
+E    +  where 409 = <Response [409 Conflict]>.status_code
+E    +    where <Response [409 Conflict]> = <function create at 0x7f147d0254e0>((<parkweave.store.Store object at 0x7f1477034740>, <parkweave.store.Store object at 0x7f147c2e6a20>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f147730c920>), {'preparation_id': 'ea98e522-4dbf-4e24-b24a-4989d8383015', 'case_id': '64b59591-ffca-4705-b3b3-165c0c053498', 'run_id': '0bd17bda-2ac3-41d8-a4fb-d09e92bfc195', 'revision': 5, ...})
+______ test_manual_receipt_cancellation_reconciliation_ui[late_dispatch] _______
+tests/test_case_cancellation_offline.py:26: in test_manual_receipt_cancellation_reconciliation_ui
+    assert result.returncode==0,result.stderr
+E   AssertionError: evalmachine.<anonymous>:21
+E       dispatchPendingUI();$('dispatch-error').textContent=dispatchPending?'原操作结果尚未确认；请使用原操作重试。':'';$('page-feedback').textContent='';
+E       ^
+E     
+E     ReferenceError: dispatchPendingUI is not defined
+E         at renderDispatch (evalmachine.<anonymous>:21:3)
+E         at evalmachine.<anonymous>:1:1
+E         at Script.runInContext (node:vm:149:12)
+E         at Object.runInContext (node:vm:301:6)
+E         at run (@repo/tests/case_cancellation_reconciliation_offline.js:16:47)
+E         at @repo/tests/case_cancellation_reconciliation_offline.js:68:4
+E         at Object.<anonymous> (@repo/tests/case_cancellation_reconciliation_offline.js:72:3)
+E         at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E         at Object..js (node:internal/modules/cjs/loader:2003:10)
+E         at Module.load (node:internal/modules/cjs/loader:1594:32)
+E     
+E   assert 1 == 0
+E    +  where 1 = CompletedProcess(args=['@execution/[REDACTED]/', 'tests/case_cancellatio...bject..js (node:internal/modules/cjs/loader:2003:10)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n").returncode
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_case_cancellation_reconciliation.py::test_three_explicit_stages_preserve_facts_and_original_keys
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_cancellation_reconciliation.py::test_damaged_manual_or_effectful_sources_refuse_without_writes[adapter]
+FAILED tests/test_case_cancellation_reconciliation.py::test_original_key_detects_corrupted_current_phase_and_rehashed_top_snapshot[event_reason]
+FAILED tests/test_case_cancellation_reconciliation.py::test_business_writer_wins_actual_pg_wait_and_old_request_cas_refuses[plan]
+FAILED tests/test_case_cancellation_reconciliation.py::test_legitimate_local_prefix_capacity_62_63_64_and_all_original_keys
+FAILED tests/test_case_cancellation_reconciliation.py::test_history_get_and_rejected_plan_callbacks_do_not_invalidate_after_request[controlled]
+FAILED tests/test_case_cancellation_offline.py::test_manual_receipt_cancellation_reconciliation_ui[late_dispatch]
+6 failed, 164 passed, 2 warnings in 130.42s (0:02:10)

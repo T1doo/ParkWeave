@@ -1,0 +1,88 @@
+"""Cancellation intent and explicit owner result reconciliation on owned PG."""
+from uuid import UUID,uuid4
+import pytest
+from parkweave import case_cancellation_reconciliation as cr
+from parkweave.store import Store
+from test_preparation import preparation_fixture,headers,command as material
+from test_executor_receipts import receipt_fixture,act
+from test_case_resources import link_fixture
+from test_case_cancellation_before_receipt import accepted,generation
+import test_case_cancellation as before_accept
+import test_case_cancellation_before_receipt as before_receipt
+
+PATH='/case-cancellation-reconciliation'
+def get(f,p,user='fixture-a'):
+ return f[3].get('/api/preparations/'+p['preparation_id']+PATH,headers=headers(f[2],user))
+def body(f,p,action='REQUEST_CANCEL',outcome='KNOWN_LOCAL_RESULT'):
+ r=get(f,p);assert r.status_code==200,r.text;x=r.json()
+ result=dict(action=action,case_id=x['case_id'],expected_preparation_revision=x['preparation_revision'],expected_lifecycle_revision=x['lifecycle_revision'],expected_source_sha256=x['source_sha256'],confirm=True,reason='SYNTHETIC explicit owner '+action)
+ if action!='REQUEST_CANCEL':result['request_event_id']=x['request_event_id']
+ if action=='RECONCILE':result['receipts']=[dict(**{k:h[k] for k in ('step_id','receipt_id','version','receipt_sha256')},outcome=outcome) for h in x['receipts']]
+ if action=='CONFIRM_CANCEL':result['reconciliation_event_id']=x['reconciliation_event_id']
+ return result
+def post(f,p,data=None,key=None,user='fixture-a'):
+ return f[3].post('/api/preparations/'+p['preparation_id']+PATH,headers=headers(f[2],user,key or uuid4().hex),json=data or body(f,p))
+def recover(f,p,key,user='fixture-a'):
+ return f[3].get('/api/preparations/'+p['preparation_id']+PATH+'/recovery/'+key,headers=headers(f[2],user))
+def submitted(f):
+ p,d=accepted(f);r=act(f,generation(f,d),'SUBMIT');assert r.status_code==200,r.text
+ return p,d,r.json()
+
+
+def test_three_explicit_stages_preserve_facts_and_original_keys(link_fixture):
+ f=link_fixture;p,d,row=submitted(f);initial=before_accept.snapshot(f)
+ x=get(f,p);assert x.status_code==200 and x.json()['can_request'],x.text
+ assert before_accept.post(f,p).status_code==409 and before_receipt.post(f,p).status_code==409
+ keys=[];requests=[];events=[]
+ for action in ('REQUEST_CANCEL','RECONCILE','CONFIRM_CANCEL'):
+  data=body(f,p,action);key=uuid4().hex;r=post(f,p,data,key);assert r.status_code==200,r.text
+  assert r.json()['event']['case_state']==('CANCELLED' if action=='CONFIRM_CANCEL' else 'RECONCILING')
+  assert post(f,p,data,key).json()==r.json();assert post(f,p,{**data,'reason':'different'},key).status_code==409
+  keys.append(key);requests.append(data);events.append(r.json()['event'])
+ final=before_accept.snapshot(f)
+ assert all(initial[t]==final[t] for t in initial if t not in ('cases','case_local_lifecycles','case_local_events'))
+ for key,data,event in zip(keys,requests,events):
+  r=recover(f,p,key);assert r.status_code==200,r.text
+  assert r.json()['event']==event and r.json()['current']['case_state']=='CANCELLED'
+  assert post(f,p,data,key).json()['event']==event
+  cold=cr.recover(Store(f[0].dsn),f[2]['fixture-a'],UUID(p['preparation_id']),key)
+  assert cold['event']==event and cold['current']['case_state']=='CANCELLED'
+ assert before_accept.snapshot(f)==final
+
+
+def test_unresolved_results_remain_reconciling_until_separate_confirmation(receipt_fixture):
+ f=receipt_fixture;p,d,row=submitted(f)
+ assert post(f,p).status_code==200
+ r=post(f,p,body(f,p,'RECONCILE','UNRESOLVED'));assert r.status_code==200,r.text
+ x=get(f,p).json();assert x['case_state']=='RECONCILING' and not x['can_confirm']
+ initial=before_accept.snapshot(f)
+ assert post(f,p,body(f,p,'CONFIRM_CANCEL')).status_code==409
+ assert before_accept.snapshot(f)==initial
+ assert post(f,p,body(f,p,'RECONCILE')).status_code==200
+ assert get(f,p).json()['case_state']=='RECONCILING'
+ assert post(f,p,body(f,p,'CONFIRM_CANCEL')).status_code==200
+
+
+@pytest.mark.parametrize('state',['RECORDED','ACKNOWLEDGED','CHANGES_REQUESTED','REOPENED'])
+def test_request_does_not_erase_original_decisions_or_implicitly_ack(receipt_fixture,state):
+ f=receipt_fixture;p,d,row=submitted(f)
+ if state!='RECORDED':
+  action={'ACKNOWLEDGED':'ACKNOWLEDGE','CHANGES_REQUESTED':'REQUEST_CHANGES','REOPENED':'REOPEN'}[state]
+  r=act(f,row,action);assert r.status_code==200,r.text
+ initial=before_accept.snapshot(f);r=post(f,p);assert r.status_code==200,r.text
+ x=get(f,p).json();assert x['case_state']=='RECONCILING' and not x['can_confirm'] and len(x['receipts'])==1
+ final=before_accept.snapshot(f)
+ assert all(initial[t]==final[t] for t in initial if t not in ('cases','case_local_lifecycles','case_local_events'))
+
+
+@pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a','unassigned'])
+def test_current_owner_only_all_stages_and_cold_key(receipt_fixture,user):
+ f=receipt_fixture;p,d,row=submitted(f);data=body(f,p);key=uuid4().hex
+ assert get(f,p,user).status_code==403 and post(f,p,data,key,user).status_code==403 and recover(f,p,key,user).status_code==403
+
+
+def test_no_submission_keeps_old_before_receipt_boundary(receipt_fixture):
+ f=receipt_fixture;p,d=accepted(f);x=get(f,p).json()
+ assert not x['can_request'] and 'HISTORICAL_MANUAL_SUBMISSION_REQUIRED' in x['blockers']
+ assert post(f,p).status_code==409
+ assert before_receipt.post(f,p).status_code==200

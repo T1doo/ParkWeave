@@ -1,0 +1,192 @@
+{
+  "findings": [
+    {
+      "actual_failed_ids": [
+        "test_unknown_handle_ui::test_cold_unknown_request_blocks_all_case_business_form_submits"
+      ],
+      "id": "AR-UI-001",
+      "location": "src/parkweave/web.html:534",
+      "minimal_fix": "Cover all current-Case business form/click handlers while preserving independent resource releases and history GETs.",
+      "missing_forms": [
+        "material-reuse-form",
+        "request-intent-form",
+        "fb-form",
+        "opp-import",
+        "receipt-submit",
+        "receipt-local-execution-form",
+        "resource-binding-confirm-form"
+      ],
+      "problem": "Unknown REQUEST_CANCEL opaque handle cold hydration does not block seven Case business form submits in the production capture listener",
+      "server_bypass_observed": false,
+      "severity": "MEDIUM"
+    },
+    {
+      "actual_failed_examples": [
+        "state REOPENED without REOPEN event",
+        "verified_snapshot replaced",
+        "verified_sha256 replaced",
+        "consistently rehashed first REQUEST cycle 2 without old prefix",
+        "consistently rehashed first REQUEST initial WAITING_CONFIRMATION without REVALIDATE"
+      ],
+      "id": "AR-PROOF-002",
+      "location": "src/parkweave/case_cancellation_reconciliation.py:129",
+      "minimal_fix": "Bind local READY/verified snapshot/SHA and Case WAITING_CONFIRMATION to last legitimate REVALIDATE; global/new cycle must be 1; first request old Case state must be NEEDS_INPUT with no prefix, WAITING_CONFIRMATION with valid prefix.",
+      "observed": "First three GET can_request=true and REQUEST POST200. Last two GET can_reconcile=true and original-key recovery200.",
+      "problem": "Current prior-REVALIDATE local projection and prefix-derived initial Case state/cycle are not verified",
+      "severity": "MEDIUM"
+    }
+  ],
+  "limits": [
+    "No browser attempts (0).",
+    "No whole repository pass asserted.",
+    "Root third/fourth windows are separate; this report covers only independently executed windows.",
+    "Unknown historical cross-scope fixture-b Case0 root cause remains unconfirmed.",
+    "Old signed reports and original failed windows unchanged."
+  ],
+  "probe_oracle_failures": [
+    {
+      "id": "test_independent_resource_release_preserves_historical_request_recovery",
+      "reason": "Owned holds correct state RELEASED; independent oracle incorrectly expected CANCELLED.",
+      "same_id_retest": "PASS"
+    },
+    {
+      "id": "test_independent_opaque_ui_and_explicit_phase[future_handle]",
+      "reason": "Independent future offset 1 ms was consumed by Date.now; unresolved fake POST promise left Node empty stdout. Fixed fixture uses 60 seconds above max.",
+      "same_id_retest": "PASS"
+    }
+  ],
+  "root_writer": "parent only; independent runtime evidence only",
+  "snapshot_manifest": "fourth-frozen-source-snapshot.json",
+  "source_files": 405,
+  "source_head": "NOT_FINAL_UNCOMMITTED_WINDOW",
+  "source_manifest_sha256": "071ef59e5838bc64e4b2bb6cb35e867eb416bb99ce16baa42c15406bd85239e0",
+  "status": "BLOCKED_PENDING_PRODUCT_UI_AND_LOCAL_PROOF_FIX",
+  "test_windows": [
+    {
+      "ERROR": 0,
+      "FAIL": 2,
+      "PASS": 22,
+      "SKIP": 0,
+      "atexit_cleanup_diagnostic": false,
+      "elapsed_seconds": 22.872,
+      "exit_code": 1,
+      "failures": [
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_independent_probes::test_independent_resource_release_preserves_historical_request_recovery",
+          "outcome": "FAIL"
+        },
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_independent_probes::test_independent_opaque_ui_and_explicit_phase[future_handle]",
+          "outcome": "FAIL"
+        }
+      ],
+      "log_sha256": "c262f524fb7b6373ba1dd658f25d93fc84a7721405a55057e62eecee31c33deb",
+      "phase": "fourth-extra-probes",
+      "source_drift_after": [],
+      "source_drift_before": [],
+      "source_file_count": 405,
+      "source_manifest_sha256": "071ef59e5838bc64e4b2bb6cb35e867eb416bb99ce16baa42c15406bd85239e0",
+      "tests": 24,
+      "xml_sha256": "3fc6c16264afdbf7c525e3b24f051eec6eff198fdc68b49a2ff07a834480ac9c"
+    },
+    {
+      "ERROR": 0,
+      "FAIL": 0,
+      "PASS": 2,
+      "SKIP": 0,
+      "atexit_cleanup_diagnostic": false,
+      "elapsed_seconds": 5.008,
+      "exit_code": 0,
+      "failures": [],
+      "log_sha256": "caff4760207e38fc4ee5ad6430d5da31aefac5a0a7ebbeec587100df74684da4",
+      "phase": "fourth-oracle-retest",
+      "source_drift_after": [],
+      "source_drift_before": [],
+      "source_file_count": 405,
+      "source_manifest_sha256": "071ef59e5838bc64e4b2bb6cb35e867eb416bb99ce16baa42c15406bd85239e0",
+      "tests": 2,
+      "xml_sha256": "e12c167fa28b1c269443533b0fcc16061516ae31740e996f21140b1af426ea4c"
+    },
+    {
+      "ERROR": 0,
+      "FAIL": 1,
+      "PASS": 0,
+      "SKIP": 0,
+      "atexit_cleanup_diagnostic": false,
+      "elapsed_seconds": 0.598,
+      "exit_code": 1,
+      "failures": [
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_unknown_handle_ui::test_cold_unknown_request_blocks_all_case_business_form_submits",
+          "outcome": "FAIL"
+        }
+      ],
+      "log_sha256": "e9daf7ca4b04eeb776b54491e4f7a9dca190cc9fb6a9bb8eedcd90e75956c45c",
+      "phase": "fourth-cold-hydrate-failure",
+      "source_drift_after": [],
+      "source_drift_before": [],
+      "source_file_count": 405,
+      "source_manifest_sha256": "071ef59e5838bc64e4b2bb6cb35e867eb416bb99ce16baa42c15406bd85239e0",
+      "tests": 1,
+      "xml_sha256": "3be0287be8a797e3a35c9c94d256801fc664a61410da862e504ad00108a44af6"
+    },
+    {
+      "ERROR": 0,
+      "FAIL": 3,
+      "PASS": 0,
+      "SKIP": 0,
+      "atexit_cleanup_diagnostic": false,
+      "elapsed_seconds": 5.007,
+      "exit_code": 1,
+      "failures": [
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_local_prefix_projection::test_request_requires_exact_latest_preexisting_local_projection[state]",
+          "outcome": "FAIL"
+        },
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_local_prefix_projection::test_request_requires_exact_latest_preexisting_local_projection[verified_snapshot]",
+          "outcome": "FAIL"
+        },
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_local_prefix_projection::test_request_requires_exact_latest_preexisting_local_projection[verified_sha]",
+          "outcome": "FAIL"
+        }
+      ],
+      "log_sha256": "26e820fa5fd39cfd20fa2a28505cda26e1bab52ec450c14f3e5eb5740c1206dc",
+      "phase": "fourth-prefix-projection",
+      "source_drift_after": [],
+      "source_drift_before": [],
+      "source_file_count": 405,
+      "source_manifest_sha256": "071ef59e5838bc64e4b2bb6cb35e867eb416bb99ce16baa42c15406bd85239e0",
+      "tests": 3,
+      "xml_sha256": "99b22cda55d579b1adb9e7282562192bb5d949d7d05ee28ac1cf5a3626aa0351"
+    },
+    {
+      "ERROR": 0,
+      "FAIL": 2,
+      "PASS": 0,
+      "SKIP": 0,
+      "atexit_cleanup_diagnostic": false,
+      "elapsed_seconds": 6.307,
+      "exit_code": 1,
+      "failures": [
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_rehashed_initial_phase::test_rehashed_initial_request_requires_prefix_derived_cycle_and_case_state[unearned_cycle]",
+          "outcome": "FAIL"
+        },
+        {
+          "id": ".runtime.case-cancel-after-receipt.independent-review.test_rehashed_initial_phase::test_rehashed_initial_request_requires_prefix_derived_cycle_and_case_state[unearned_initial_state]",
+          "outcome": "FAIL"
+        }
+      ],
+      "log_sha256": "00a86a74faf52b4a60003c49c7d6c5e1f744f36f722f57c032964b56f67838f9",
+      "phase": "fourth-rehashed-initial",
+      "source_drift_after": [],
+      "source_drift_before": [],
+      "source_file_count": 405,
+      "source_manifest_sha256": "071ef59e5838bc64e4b2bb6cb35e867eb416bb99ce16baa42c15406bd85239e0",
+      "tests": 2,
+      "xml_sha256": "14232f853e6f70c66cf6f9fb5b1f26082b50458d9ea48a67e87acbf28ffb3d16"
+    }
+  ]
+}

@@ -1,0 +1,212 @@
+{
+  "accepted_contract": [
+    "Ordinary verified SYNTHETIC/manual receipt only, all generations, no isolation/external/closure",
+    "REQUEST_CANCEL always Case/local RECONCILING and freezes business writes",
+    "Dedicated owner RECONCILE complete exact historical receipt set with KNOWN_LOCAL_RESULT or UNRESOLVED",
+    "Separate explicit CONFIRM_CANCEL only latest complete all-known exact source",
+    "All original material/dispatch/receipt/plan/resource/lifecycle writes frozen, current owner history and independent resource release preserved",
+    "Original successful Run and immutable history retained; no physical fulfillment or full lifecycle claim",
+    "Same-key exact historical event/current-phase recovery and no automatic lost-response POST",
+    "Owned creation-ticket migration32, no business Grant/registry/role expansion"
+  ],
+  "actual_verification": {
+    "BROWSER": "NOT_RUN",
+    "ERROR": 0,
+    "FAIL": 0,
+    "Git": "NOT_OPERATED",
+    "PASS": 0,
+    "PG": "NOT_RUN",
+    "SKIP": 0,
+    "STATIC_READ": "COMPLETE",
+    "TESTS": "NOT_RUN",
+    "browser_attempts": 0,
+    "product_tests_docs_mutations": 0,
+    "writes": "own new runtime only"
+  },
+  "base_delivery_sha": "189379b7f7c94dfacfff697ad06a4ea1a5780048",
+  "base_product_source_sha": "3fc6fa712f14820d88fcf8cd94fa70fcf6120e0c",
+  "branch_parent_reported": "dev/f2-case-cancel-after-receipt-20261011",
+  "contract_blockers": [],
+  "contract_direction": "NO_CONTRACT_BLOCKER_FOUND",
+  "contract_path": "docs/F2/CaseCancellationReconciliationContract.md",
+  "contract_sha256": "a2302d0f69dd20932d78cd21aa64099ddb9a19a273641d715eab61343930c9b4",
+  "format": "STATIC_CONTRACT_REVIEW_NOT_RUNTIME_SIGNOFF",
+  "known_historical_limit": "Old worker Case_count0 root cause remains UNCONFIRMED; no permission or lease fix claimed. Old signed evidence/reports untouched.",
+  "observation_limits": "Instantaneous source/doc hashes at static stage, not final implementation freeze. No Git operation or runtime verification by reviewer in this stage.",
+  "observed_at_utc": "2026-10-11T14:39:26.044348+00:00",
+  "parent_reported_contract_commit": "4416a3b",
+  "pending": "Implementation and frozen-runtime independent review are not performed or signed in this static stage.",
+  "planned_runtime_acceptance_NOT_RUN": [
+    "Owned PG bidirectional request versus SUBMIT/ACK/correction/reopen/handoff/material/plan/link lock waits, with same-key old command replay refusal after request",
+    "REQUEST/RECONCILE/CONFIRM same and different key/body concurrency; stage source CAS, event insertion failure full rollback",
+    "All receipt generations and row/event/state/pointer/fingerprint corruption, including original stripped later ACCEPT/CREATE lineage and orphan receipts",
+    "Owner/cross-tenant/non-owner/revocation, historical executor revocation, persistent inactive managed_access/coldStore and all adapter history",
+    "Every business family/parent bypass freeze; historical GET snapshot remains unchanged including delayed rejected-observation metadata",
+    "Unknown result/omission/duplicate/stale assessment blocks final; current all-known manual result plus independent confirmation commits one terminal event",
+    "Lost response GET original stage/key after later legitimate phases; corrupted state/event/chain rejection; offline original page late reply/notice/receipt clamps",
+    "Capacity preserved and independent release permission/lock behavior; bounded ledger reserves viable finalization slots",
+    "Owned migration32 ticket/idempotence/future33 refusal/installed wheel; complete frozen38 related modules retaining1391 prior IDs"
+  ],
+  "read_F2_plan_scope": "Current cancellation delivery, original material/receipt contract, remaining T04/T05/T07 and historical explicit boundaries; no historical test score inherited",
+  "read_product_sections": [
+    "5.5 complete",
+    "7.1 complete",
+    "7.4 complete; surrounding7.2/7.3 read for receipt/idempotency context"
+  ],
+  "risk_register": [
+    {
+      "id": "R1",
+      "locations": [
+        "src/parkweave/preparation.py:47",
+        "src/parkweave/preparation.py:54",
+        "src/parkweave/migration-030.sql:42"
+      ],
+      "minimum_rule": "Keep terminal state semantics separate. Add explicit frozen business state for RECONCILING/CANCELLED; update all business write guards and projections. Request/event plus both Case/local RECONCILING commit atomically, null obsolete verified snapshot; final/event plus both CANCELLED atomically.",
+      "risk": "Existing terminal cancellation predicate recognizes only CANCELLED; reusing it as RECONCILING may either leave writes open or falsely display terminal cancellation",
+      "severity": "HIGH_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R2",
+      "locations": [
+        "src/parkweave/executor_receipts.py:79",
+        "src/parkweave/executor_receipts.py:206",
+        "src/parkweave/service_dispatches.py:282",
+        "src/parkweave/case_resources.py:89"
+      ],
+      "minimum_rule": "Dedicated owner reconciliation ledger only. Existing receipt command/execute-local/legacy CREATE all remain frozen before replay. Cover offer/reoffer/accept/decline/withdraw/handoff, every material/fact/plan/preview/lifecycle/resource-link composition path; FOR UPDATE-only GET remains readable.",
+      "risk": "A narrow receipt endpoint exception or replay before guard could permit later SUBMIT/ACK/correction/reopen or executor/resource composition bypass",
+      "severity": "HIGH_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R3",
+      "locations": [
+        "src/parkweave/case_cancellation_before_receipt.py:25",
+        "src/parkweave/executor_receipts.py:130",
+        "src/parkweave/executor_receipts.py:258"
+      ],
+      "minimum_rule": "Private allow_manual_receipts defaultFalse preserves old entry semantics. New path must independently prove all generations: exact OFFER/REOFFER/ACCEPT/CREATE extensions including later predecessor, exact actor/entity/types/fingerprint; every receipt row corresponds to one exact manual SUBMIT; reconstruct all enterprise decision commands, contiguous revisions/state/current-pointer transitions and hash actual receipt text. Reject naked rows/events, non-object payloads, booleans masquerading as revisions, extra/missing payload bindings and history overflow.",
+      "risk": "Allowing receipts by merely disabling the no-receipt checks loses full event/step generation proof and can accept orphan or stripped lineage",
+      "severity": "HIGH_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R4",
+      "locations": [
+        "src/parkweave/executor_receipts.py:114",
+        "src/parkweave/case_cancellation_before_receipt.py:28"
+      ],
+      "minimum_rule": "Inspect every receipt generation and historical event for adapter_execution/record_mode; deny all isolated provider flags and any persisted managed_access regardless active state/coldStore. Require original VERIFIED successful local creation and no external/offline effect or any closure history. No Run or creation operation rewrite.",
+      "risk": "Only current receipt/Store provider inspection misses older adapter effects or inactive persistent managed access",
+      "severity": "HIGH_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R5",
+      "locations": [
+        "docs/F2/CaseCancellationReconciliationContract.md"
+      ],
+      "minimum_rule": "REQUEST always RECONCILING even pre-existing ACK. RECONCILE exact full receipt set, no duplicates/omissions, explicit KNOWN_LOCAL_RESULT or UNRESOLVED, bound request and source; preserve steps/receipts/ACK. CONFIRM is separate explicit owner action bound latest complete assessment and current proof; unknown/changed source stays RECONCILING.",
+      "risk": "An incomplete or stale assessment can be mislabeled all-known or confirmation can follow automatically",
+      "severity": "HIGH_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R6",
+      "locations": [
+        "src/parkweave/case_cancellation.py:47",
+        "src/parkweave/case_cancellation.py:152"
+      ],
+      "minimum_rule": "Three-action scope-aware original proof and immutable causal chain. Original REQUEST/RECONCILE keys return historical event plus independently verified current head after legal advancement. Same key altered body/case/action/scope conflicts; no rollback of phase or automatic re-POST after lost response.",
+      "risk": "Old original-key state proof requires local revision equal to old terminal event and cannot recover legitimate intermediate requests after later revisions",
+      "severity": "MEDIUM_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R7",
+      "locations": [
+        "src/parkweave/case_cancellation.py:79",
+        "src/parkweave/case_lifecycle.py:25"
+      ],
+      "minimum_rule": "Explicitly reserve required assessment and terminal capacity before accepting request/assessment. Define whole-history cardinality bounds, payload limits and failure behavior; never use latest-only LIMIT to silently ignore old receipts. Reject overflow without partial event/state.",
+      "risk": "A request or repeated unresolved assessment could exhaust the bounded64-event ledger before a legal assessment/final confirmation",
+      "severity": "HIGH_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R8",
+      "locations": [
+        "src/parkweave/controlled_plans.py:27",
+        "src/parkweave/controlled_plans.py:165",
+        "src/parkweave/service_case_steps.py:190",
+        "src/parkweave/service_case_steps.py:201"
+      ],
+      "minimum_rule": "Frozen predicate must disable persisted observation in both _inspect and both persist_rejected_observation paths; read-only projections may compute changed state without persisting. Reconciliation must not call original P3/P4 gates or invalidate(4). Source dependency heads id/revision/SHA avoid revoked resource content leakage.",
+      "risk": "GET inspection or rejected-command follow-up metadata transaction can implicitly invalidate plans after request freezes business state",
+      "severity": "HIGH_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R9",
+      "locations": [
+        "src/parkweave/executor_receipts.py:140",
+        "src/parkweave/executor_receipts.py:285",
+        "src/parkweave/service_dispatches.py:199",
+        "src/parkweave/dispatch_notices.py:158",
+        "src/parkweave/web.html:470",
+        "src/parkweave/web.html:643"
+      ],
+      "minimum_rule": "Server read/list/notice fields distinguish case_reconciling, case_cancelled and writes_frozen. All ordinary submission/execution/dispatch actions false while frozen. UI same-Case principal/generation/revision latch prevents late replies from downgrading phase; stage-aware opaque recovery handles, GET only, NOT_OBSERVED remains unknown; each request/assessment/final action explicit.",
+      "risk": "Late old reply or old notification can revive actionable UI or confuse cancellation request with terminal cancellation",
+      "severity": "HIGH_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R10",
+      "locations": [
+        "src/parkweave/case_resources.py:89",
+        "src/parkweave/resource_combinations.py",
+        "src/parkweave/resource_holds.py"
+      ],
+      "minimum_rule": "Retain resource links/claims/holds/capacity; independent release/group cancellation keeps original current rights/locks. Associate delivery frozen under parent. Binding of historical dependency heads must not export resource details or demand release rights merely to cancel Case. Independent release may legitimately change hold state; do not rebind or automatically invalidate plan.",
+      "risk": "Cancellation can accidentally release resources, demand stale resource authority, or claim cross-action atomicity with independent release",
+      "severity": "MEDIUM_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R11",
+      "locations": [
+        "src/parkweave/executor_receipts.py:65",
+        "src/parkweave/executor_receipts.py:218"
+      ],
+      "minimum_rule": "Dedicated owner history uses current owner READ/PREPARE/EXECUTE and exact recorded actor/provenance, not a fresh current executor grant or current-step rebind. Historical facts remain intact; no new executor write permission or adapter downgrade.",
+      "risk": "Using current executor authorization/fresh preparation as mandatory historical proof can make owner reconciliation of valid old results impossible after withdrawal or new generation",
+      "severity": "MEDIUM_IMPLEMENTATION_GATE"
+    },
+    {
+      "id": "R12",
+      "locations": [
+        "src/parkweave/service_dispatches.py:44",
+        "src/parkweave/migration-031.sql",
+        "pyproject.toml",
+        "scripts/linux_fixture_server.py"
+      ],
+      "minimum_rule": "Schema32 only finite existing CHECK additions; original owner/DB/transaction ticket protections unchanged. Extend ordinary helper max-version list with required29 prerequisite, include032 explicit package-data. Update current/future32/33 test oracles and old-version rollback fixtures, preserving migration strict refusals and all1391 existing IDs.",
+      "risk": "Schema32 breaks strict ordinary helper/version fixture/wheel/startup gates or can be applied without original creation ticket",
+      "severity": "MEDIUM_IMPLEMENTATION_GATE"
+    }
+  ],
+  "source_observation_sha256": {
+    "docs/F2/CaseCancellationReconciliationContract.md": "a2302d0f69dd20932d78cd21aa64099ddb9a19a273641d715eab61343930c9b4",
+    "docs/F2/Plan.md": "a8404f8d002ac5e1dcdaf857e5aef06b311eb43344eede911c8ff222120262a2",
+    "docs/sources/V1/\u5e73\u53f0\u4ea7\u54c1\u8bbe\u8ba1 (2).md": "48ff72723678546500973b6ad45ae841320cda69f08f9ca24013137ae5e7b02b",
+    "src/parkweave/case_cancellation.py": "16dceaeb8f0de4a23f1e50cb4d9f2bc18c38c2ed337c1d1e7677c81c63161387",
+    "src/parkweave/case_cancellation_before_receipt.py": "f6cc8f1bb3313c94b02ad32ed9b9bff8a3c892e64895ff719ce24f900fbca010",
+    "src/parkweave/case_lifecycle.py": "d0fcd645a1cae3e9a259b23ef540680099f52f80241938b0cc5e82985fa2a0c8",
+    "src/parkweave/case_resources.py": "b182841382aa1111a80f69b23344b6d20fb7de9e9dc380f1c4817cbf8ea44bef",
+    "src/parkweave/controlled_plans.py": "9440cf771575d0e3e90b1a9418dc10eed632bcf487528a07bb372f9091f715f5",
+    "src/parkweave/dispatch_notices.py": "8bbad7a55c6b40b0a58a9111d7d23c9300bac692daa7d31f2a183009342280ad",
+    "src/parkweave/executor_receipts.py": "c5e0cd601a31abddd0a2e272ba2a9b5e2ea3c37fb24ef1ddfeb050fd17485ffa",
+    "src/parkweave/migration-030.sql": "c50c7224db5723611a79bac721238c66683608b18a6bfef4e72c4ce7d29d3f03",
+    "src/parkweave/migration-031.sql": "906b70e775e70e7706558395ab779a0bfbe2b598004fac29b0eb30d3181e1eac",
+    "src/parkweave/preparation.py": "74c7cf64eec9b2578da879812dac350669711408bb438c14d2a704f3c446bba2",
+    "src/parkweave/resource_combinations.py": "acb909de69aa4a4cbced140adb5df4ec203b797a8fc4dda36a773d94fe35d496",
+    "src/parkweave/resource_holds.py": "5c1cf1ce89298150b9ac32c962ccf1e6a14736a9cc32379c48bca2c611966f72",
+    "src/parkweave/service_case_steps.py": "e5e10d4a174021753fa5a7c8a5ba34e7f0642c1b322853d1ba32c68716283e30",
+    "src/parkweave/service_dispatches.py": "da38b26926947da5e9d034510258ca8af19922d897b712f50c649858b37fc50b",
+    "src/parkweave/service_plan_approval.py": "b32ccee3b2320d912536e578987d7dfb5a0b0edcfc0a89b5f070af082ece3cfb",
+    "src/parkweave/web.html": "e5dcbcd764b8a29d5f4942fade44ed4ecb9c0c1ab06e6a5c3f225f16eee205d3"
+  },
+  "status": "STATIC_REVIEW_COMPLETE"
+}
