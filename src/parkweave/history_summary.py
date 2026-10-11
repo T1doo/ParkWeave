@@ -166,7 +166,7 @@ def summaries(stage, baseline, context, rows, key=None):
                     not 1 <= e['revision'] <= 3 for e in values):
                 raise Denied('supported bounded historical event required')
             return [dict(action=e['action'], revision=e['revision']) for e in values]
-        if final and (final['case_state'] not in ('WAITING_CONFIRMATION', 'REOPENED') or
+        if final and (final['case_state'] not in ('NEEDS_INPUT', 'WAITING_CONFIRMATION', 'REOPENED') or
                 type(final['cycle']) is not int or final['cycle'] not in (1, 2) or
                 type(final['verification_current']) is not bool):
             raise Denied('supported historical lifecycle summary required')

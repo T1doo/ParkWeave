@@ -29,14 +29,14 @@ def memory_reader(f,p,e,stage):
     return cold,hs.MemoryHistorySummaryReader(stage,{context.preparation:baseline},{context.preparation:rows}),baseline
 
 
-@pytest.mark.parametrize('stage,mode',[('P4','ACKNOWLEDGE'),('P4','REQUEST_CHANGES'),('P5','REVALIDATE'),('P5','REVALIDATE_CLOSE'),('P5','REVALIDATE_CLOSE_REOPEN')])
-def test_actual_original_documents_read_without_execution_and_old_http_stays_closed(lifecycle_fixture,stage,mode):
+@pytest.mark.parametrize('stage,mode,decision',[('P4','ACKNOWLEDGE',None),('P4','REQUEST_CHANGES',None),('P5','REVALIDATE','ACKNOWLEDGE'),('P5','REVALIDATE_CLOSE','ACKNOWLEDGE'),('P5','REVALIDATE_CLOSE_REOPEN','ACKNOWLEDGE'),('P5','REVALIDATE_CLOSE_REOPEN','REQUEST_CHANGES')])
+def test_actual_original_documents_read_without_execution_and_old_http_stays_closed(lifecycle_fixture,stage,mode,decision):
     f,p,_,_,_,p4e,p5e,_=lifecycle_fixture;e=p4e if stage=='P4' else p5e
     key=uuid4().hex
-    b=p4_body(f,p,mode) if stage=='P4' else p5_body(f,p,mode)
+    b=p4_body(f,p,mode) if stage=='P4' else p5_body(f,p,mode,decision)
     response=p4_execute(f,p,b,key) if stage=='P4' else p5_execute(f,p,b,key)
     assert response.status_code==201,response.text
-    original=response.json()['result'];assert original['state']=='SUCCEEDED'
+    original=response.json()['result'];assert original['state']==('FAILED' if stage=='P5' and decision=='REQUEST_CHANGES' else 'SUCCEEDED')
     cold,reader,baseline=memory_reader(f,p,e,stage)
     f[1].revoke_capability('fixture-a','EXECUTE')
     with f[1].connect() as c:
@@ -51,6 +51,10 @@ def test_actual_original_documents_read_without_execution_and_old_http_stays_clo
         assert summary['past_case_state']==final['case_state'] and summary['past_cycle']==final['cycle']
         assert summary['verification_at_execution'] is final['verification_current']
         assert summary['past_case_state']!='FULFILLED'
+        assert summary['p5_state']==original['artifact']['p5_state']
+        if decision=='REQUEST_CHANGES':
+            assert summary['state']=='FAILED' and summary['past_case_state']=='NEEDS_INPUT'
+            assert summary['verification_at_execution'] is False
     assert reader.read(cold,f[2]['fixture-a'],UUID(p['preparation_id']),'absent')['result'] is None
     route='receipt' if stage=='P4' else 'lifecycle'
     assert f[3].get('/api/preparations/'+p['preparation_id']+'/'+route+'-execution-preview',headers=headers(f[2])).status_code==403
