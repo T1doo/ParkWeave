@@ -11,7 +11,7 @@ import pytest
     'change_resource', 'change_start', 'change_end', 'change_quantity',
     'change_search_from', 'change_search_until', 'two_searches_latest_wins',
     'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
-    'too_many_results', 'original_flow_explicit'])
+    'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
 def test_actual_resource_suggestions_with_offline_doubles(mode):
     result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
                             cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)

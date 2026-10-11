@@ -1124,6 +1124,7 @@ function bundleControls(){
   $('bundle-confirm').disabled=locked||n<3||n>8;
   $('bundle-recover').disabled=bundleBusy;
   if(locked){for(const b of document.querySelectorAll('#resource-form button,#resource-hold-items button,#combination-items button,#combination-confirm'))b.disabled=true;
+    $('resource-alternatives').disabled=false;
     $('bundle-status').textContent=bundleBusy?'正在核对原组合操作。':'原组合结果未知，请先只读核对原请求；未观察到记录不代表未提交。';}
 }
 async function bundleIdentify(c){const x=await resourceCall('/api/resource-bundles','GET',undefined,undefined,c);if(typeof x.actor_id!=='string')throw Error('组合身份响应不匹配');bundleActor=x.actor_id;bundleControls();return x;}

@@ -45,6 +45,16 @@ const buttons=()=> $('resource-alternative-results').children.filter(e=>e.tagNam
    const writing=$('resource-form').onsubmit({preventDefault(){}});check(calls.length===3&&calls[2].path.endsWith('/holds')&&calls[2].options.headers['Idempotency-Key']);const h={id:'hold-owned',resource_id:rid,state:'HELD',quantity:2,purpose:'owned',resource_revision:1,starts_at:'2026-10-12T11:15:00Z',ends_at:'2026-10-12T12:15:00Z',expires_at:'2026-10-11T12:02:00Z'};finish(2,201,{hold:h});await writing;
    const card=$('resource-current').children[0],confirm=card.children.find(e=>e.dataset.resourceAction==='confirm');check(!!confirm&&calls.length===3);const confirming=confirm.onclick();check(calls.length===4&&calls[3].path.endsWith('/confirm'));finish(3,200,{hold:{...h,state:'CONFIRMED'}});await confirming;
   }
+ }else if(mode==='unknown_bundle_controls'){
+  context.bundleLocked=()=>true;context.bundleBusyContext=null;
+  const formButtons=['resource-preview','resource-hold','resource-alternatives'].map($);
+  context.document.querySelectorAll=()=>formButtons;
+  const controls=html.slice(html.indexOf('function bundleControls(){'),html.indexOf('async function bundleIdentify'));
+  vm.runInContext(controls+'\nbundleControls();',context);
+  check(!$('resource-alternatives').disabled&&$('resource-hold').disabled&&$('resource-preview').disabled);
+  const p=start();finish(0,200,result());await p;check(buttons().length===1);
+  buttons()[0].onclick();check(calls.length===1&&$('resource-hold').disabled&&$('resource-preview').disabled);
+  await $('resource-form').onsubmit({preventDefault(){}});check(calls.length===1);
  }else if(mode==='empty_grid'||mode==='truncated_grid'){
   const p=start(),x=result();if(mode==='empty_grid')x.items=[];else x.results_truncated=true;finish(0,200,x);await p;
   check(content($('resource-alternative-results')).includes(mode==='empty_grid'?'所查网格未找到':'还有更晚'));check($('resource-hold').disabled&&calls.length===1);
