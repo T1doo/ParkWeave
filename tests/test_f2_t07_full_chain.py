@@ -293,7 +293,8 @@ class Chain:
                 ended_utc=datetime.now(timezone.utc).isoformat(), exit_code=child.returncode,
                 stdout=stdout, stderr=stderr, DSN_recorded=False, configured_app=True, mock=False))
             self.api_processes[-1].update(health=locals().get('health'), termination_timeout=timed_out)
-            assert not timed_out and child.returncode == 0
+            # uvicorn may re-raise the owned SIGTERM after graceful shutdown.
+            assert not timed_out and child.returncode in (0, -15)
 
     def assert_outputs(self, p, combo, d, s, outputs):
         """Read persisted provenance independently of goal-results' own projection."""
