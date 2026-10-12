@@ -1,0 +1,68 @@
+........................................................................ [ 57%]
+..................................................FFF.                   [100%]
+=================================== FAILURES ===================================
+________ test_explicit_excess_dml_cannot_be_overridden_by_false_summary ________
+
+    def test_explicit_excess_dml_cannot_be_overridden_by_false_summary():
+        catalog = synthetic_catalog()
+        catalog['unneeded_writer_permissions'] = ['INSERT:principals.id']
+        assert catalog['privileges']['writer:unneeded_write'] is False
+        report = preflight.analyze(synthetic_spec(catalog), catalog)
+>       assert report['status'] == 'REFUSED', report
+E       AssertionError: {'schema': 'parkweave-native-writer-preflight/1', 'mode': 'OFFLINE_UNVERIFIED_SNAPSHOT', 'installation_authorized': False, 'activation_enabled': False, ...}
+E       assert 'PASS' == 'REFUSED'
+E         
+E         - REFUSED
+E         + PASS
+
+.runtime/native-run-access-preinstall-review-20261012/probes/test_preflight_independent.py:23: AssertionError
+_____________ test_missing_writer_membership_is_unknown_not_false ______________
+
+    def test_missing_writer_membership_is_unknown_not_false():
+        catalog = synthetic_catalog()
+        del catalog['roles']['synthetic_app']['writer_membership']
+        report = preflight.analyze(synthetic_spec(catalog), catalog)
+>       assert report['status'] == 'REFUSED', report
+E       AssertionError: {'schema': 'parkweave-native-writer-preflight/1', 'mode': 'OFFLINE_UNVERIFIED_SNAPSHOT', 'installation_authorized': False, 'activation_enabled': False, ...}
+E       assert 'PASS' == 'REFUSED'
+E         
+E         - REFUSED
+E         + PASS
+
+.runtime/native-run-access-preinstall-review-20261012/probes/test_preflight_independent.py:30: AssertionError
+________ test_existing_predefined_server_program_role_is_not_restricted ________
+
+[REDACTED synthetic fixture authentication locals]
+
+    def test_existing_predefined_server_program_role_is_not_restricted(fixture):
+        _, owner, _, _ = fixture
+        spec = owned_spec(fixture)
+        spec['policy']['writer_role'] = 'pg_execute_server_program'
+        with owner.connect() as connection:
+            snapshot = preflight.collect_owned_catalog(connection, owner._case_fact_fixture_receipt, spec)
+        report = preflight.analyze(spec, snapshot)
+        role = snapshot['roles']['pg_execute_server_program']
+        assert not any(role[key] for key in ('superuser', 'createdb', 'createrole', 'replication', 'bypass_rls'))
+>       assert check(report, 'role.writer')['status'] == 'REFUSED', {'role': role, 'check': check(report, 'role.writer')}
+E       AssertionError: {'role': {'superuser': False, 'createdb': False, 'createrole': False, 'replication': False, ...}, 'check': {'check': 'role.writer', 'status': 'PASS', 'reason': 'EXISTING_RESTRICTED_NONOWNER_ROLE_AND_MEMBERSHIPS; no role creation'}}
+E       assert 'PASS' == 'REFUSED'
+E         
+E         - REFUSED
+E         + PASS
+
+.runtime/native-run-access-preinstall-review-20261012/probes/test_preflight_independent.py:42: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_native_run_access_preflight.py::test_actual_owned_pg_collector_is_readonly_no_ticket_business_reads_or_locks
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/native-run-access-preinstall-review-20261012/probes/test_preflight_independent.py::test_explicit_excess_dml_cannot_be_overridden_by_false_summary
+FAILED .runtime/native-run-access-preinstall-review-20261012/probes/test_preflight_independent.py::test_missing_writer_membership_is_unknown_not_false
+FAILED .runtime/native-run-access-preinstall-review-20261012/probes/test_preflight_independent.py::test_existing_predefined_server_program_role_is_not_restricted
+3 failed, 123 passed, 2 warnings in 5.04s

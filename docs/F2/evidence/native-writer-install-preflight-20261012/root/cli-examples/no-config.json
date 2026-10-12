@@ -1,0 +1,65 @@
+{
+  "activation_enabled": false,
+  "changes": [],
+  "checks": [
+    {
+      "check": "installation_configuration",
+      "missing": [
+        "policy",
+        "installer_role",
+        "permission_strategy",
+        "protected_location",
+        "api_uid",
+        "writer_uid",
+        "transport",
+        "policy_source_ref",
+        "key_source_ref",
+        "host_pin_source_ref",
+        "parent_lock_column",
+        "object_owners.schema_version",
+        "object_owners.principals",
+        "object_owners.capability_grants",
+        "object_owners.preparation_grants",
+        "object_owners.action_grants",
+        "object_owners.field_grants",
+        "object_owners.runs",
+        "object_owners.operations",
+        "object_owners.cases",
+        "object_owners.preparations",
+        "object_owners.preparation_evidence",
+        "object_owners.case_local_lifecycles",
+        "object_owners.run_assignments",
+        "object_owners.authorization_audit"
+      ],
+      "status": "MISSING_CONFIG"
+    },
+    {
+      "check": "independent_os_identity",
+      "qualification": "DECLARED_ONLY; actual OS isolation/key/pin not verified",
+      "status": "MISSING_CONFIG"
+    },
+    {
+      "check": "database_catalog",
+      "reason": "NO_SNAPSHOT; tool never discovers or opens a database",
+      "status": "NOT_CONNECTED"
+    }
+  ],
+  "formal_at35": "NOT_RUN",
+  "installation_authorized": false,
+  "installation_status": "APPROVAL_REQUIRED",
+  "minimum_installation_authorization": [
+    "Trusted actual database/catalog/source and existing restricted identities; offline/owned snapshots are not production proof",
+    "Explicit reviewed additive objects and exact effective ACL delta or separately implemented narrow interface, with manual rollback",
+    "Protected production launcher/UID separation/policy/key/pin and restart/key lifecycle; no credentials supplied to this tool",
+    "Separate authorization for production installation and enablement; Windows native/AT35 remain NOT_RUN"
+  ],
+  "mode": "OFFLINE_UNVERIFIED_SNAPSHOT",
+  "production_connected": false,
+  "schema": "parkweave-native-writer-preflight/1",
+  "status": "MISSING_CONFIG",
+  "storage_source_sha256": {
+    "native-run-access-activation-storage.sql": "3977356116b78b747a4c914e37bd7ed92ecf4619d63409a87013a87639f9bfb4",
+    "native-run-access-storage.sql": "1906fb5689a490962ffe078042a769c2f82716513620f659b1d6ceb6c6d34184"
+  },
+  "windows_native": "NOT_RUN"
+}

@@ -41,6 +41,8 @@ native storage 两个 SQL 文件目前仅由原允许 UUID 合成 fixture contro
 
 所有离线输入及 owned 快照均保持 `installation_authorized=false`、`activation_enabled=false`、`production_connected=false` 和 `installation_status=APPROVAL_REQUIRED`。PASS 仅表示本次快照比较无已检测差异；不能转为真实生产安装、Windows 或正式 AT35 验收。真正安装仍缺可信真实目录/会话/来源证明、受限身份与精确对象/ACL方案（含回退）、受保护 launcher/policy/key/pin，以及针对实际安装与启用的独立动作授权。
 
+成员关系检查保守拒绝已知管理员、owner、writer 和所有 `pg_` 系统角色；任意自定义 NOINHERIT/SET ROLE 的额外权限链仍需独立核验，不宣称完整生产权限证明。预检源码 `d95cee3dc18052dc619e94f5826d79f7e5c76d3c` 实际根125 PASS、独审130 PASS（重叠125，另5独立探针），均0 FAIL/ERROR/SKIP；原834窗口的3 FAIL及同ID修复复验保留。详见[实际窗口与归档核验](evidence/native-writer-install-preflight-20261012/validation.json)及[独立限定审查](evidence/native-writer-install-preflight-20261012/independent/REVIEW.md)，不合并窗口或声称实际安装。
+
 收据需维持 policy SHA 和 issuer/key_id。本片 HMAC 由私有 writer 验证，API 不持 key；生产尚未决定安全密钥存储/发行、旧 key 只读验证、轮换及灾难恢复。更换 key/policy 不得自动重新签历史或延长租约；当前换 key 的 reference 明确拒绝旧证明。旧 policy 一次 REQUEST 用尽后不能从本片自动新建或续授。
 
 ## OS 与重启边界

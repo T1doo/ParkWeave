@@ -1,0 +1,80 @@
+{
+  "actual_counts": {
+    "ERROR": 0,
+    "FAIL": 3,
+    "PASS": 123,
+    "SKIP": 0
+  },
+  "conclusion": "BLOCKED",
+  "findings": [
+    {
+      "file": "src/parkweave/native_run_access_preflight.py",
+      "line": 315,
+      "reason": "Explicit extra DML list is returned without imposing refusal; false summary masks this positive evidence.",
+      "severity": "HIGH",
+      "test_id": {
+        "classname": ".runtime.native-run-access-preinstall-review-20261012.probes.test_preflight_independent",
+        "name": "test_explicit_excess_dml_cannot_be_overridden_by_false_summary",
+        "outcome": "FAIL",
+        "time": "0.002"
+      }
+    },
+    {
+      "file": "src/parkweave/native_run_access_preflight.py",
+      "line": 123,
+      "reason": "Omitted writer_membership is silently defaulted to false, permitting an incomplete snapshot to PASS.",
+      "severity": "HIGH",
+      "test_id": {
+        "classname": ".runtime.native-run-access-preinstall-review-20261012.probes.test_preflight_independent",
+        "name": "test_missing_writer_membership_is_unknown_not_false",
+        "outcome": "FAIL",
+        "time": "0.001"
+      }
+    },
+    {
+      "file": "src/parkweave/native_run_access_preflight.py",
+      "line": 385,
+      "reason": "Predefined pg_execute_server_program role has false ordinary admin flags, is missed by dangerous membership predicate, and is incorrectly reported as role.writer PASS.",
+      "severity": "HIGH",
+      "test_id": {
+        "classname": ".runtime.native-run-access-preinstall-review-20261012.probes.test_preflight_independent",
+        "name": "test_existing_predefined_server_program_role_is_not_restricted",
+        "outcome": "FAIL",
+        "time": "0.620"
+      }
+    }
+  ],
+  "not_run": [
+    "production database connection",
+    "production installation",
+    "activation",
+    "Windows native",
+    "formal AT35",
+    "browser"
+  ],
+  "original_evidence": {
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/preflight-at-window.py.txt": "0e766085e158fb2da8a808f7a45900ca7f58f76fc0a78fd57b5802824e4bf27b",
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/probe-inputs-after.json": "9b25deea5e2614d39f683e66a9f9f717f28c0732b0b973024a3121e71f6a5b6f",
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/probe-inputs-before.json": "9b25deea5e2614d39f683e66a9f9f717f28c0732b0b973024a3121e71f6a5b6f",
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/results.xml": "ef0b9a7d0bebe33f915a38820418c4743b4fedfab780184cb51940d90679d744",
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/run.json": "3f6dbfd8923997099b3c2865907513bc2007d246b7f372a35410d1566b5a16d1",
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/runner-at-window.py": "a66e64148c79d8b2eb9ebf62da0f2c53c9126ea7b24bf2c713ff53bbb79605e5",
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/running.json": "daed5ea07b0227bacd3d85e50f6ea35b29c8ec1a6870462d9bff18379ca84af2",
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/source-after.json": "1618760b04b3621a00261fc9099748dce239c93ef17cf2bfc5d3cefde0afb4ee",
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/source-before.json": "1618760b04b3621a00261fc9099748dce239c93ef17cf2bfc5d3cefde0afb4ee",
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/stdout.log": "73390a231e508f79c5034670ab82ab418e96bf794bd5aae0eb9301bb0302c971"
+  },
+  "original_window": "initial-frozen",
+  "positive_boundary": "Pending caller transaction refused before any collector SQL and remains INTRANS. Original issued owned UUID fixture only; no additional role/GRANT/permission changes.",
+  "source_changed": [],
+  "source_file_count": 422,
+  "source_head": "83431f445cec9ef8a0448aaf8714d29eaa01dbfa",
+  "source_manifest_sha256": "1618760b04b3621a00261fc9099748dce239c93ef17cf2bfc5d3cefde0afb4ee",
+  "static_inputs": {
+    ".runtime/native-run-access-preinstall-review-20261012/initial-frozen/preflight-at-window.py.txt": "0e766085e158fb2da8a808f7a45900ca7f58f76fc0a78fd57b5802824e4bf27b",
+    ".runtime/native-run-access-preinstall-review-20261012/probes/test_preflight_independent.py": "eaa2882fdf72d7960c27b321e402153d1b94bd7a2382275fcead7609a20ba0b2",
+    ".runtime/native-run-access-preinstall-review-20261012/run_review_window.py": "a66e64148c79d8b2eb9ebf62da0f2c53c9126ea7b24bf2c713ff53bbb79605e5"
+  },
+  "unique_test_ids": 126
+}
