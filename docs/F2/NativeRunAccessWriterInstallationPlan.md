@@ -85,3 +85,7 @@ fresh source/generation/beneficiary条件仍由原REQUEST/APPROVE/ACTIVATE事务
 源码检查覆盖全部节点，拒未批准资源、缓存/扩展与可写/非root/symlink来源；连接首SQL覆盖Connection与游标四种入口。真实Engine与默认Store入口须接受实际sealed FD发行的精确bound check，Store另拒临时替代guard及实例方法覆盖；DI不能监听或自授物理权限。READ/REVOKE历史例外、原canonical业务路径和原请求键保持。
 
 本轮未连接PG、启动writer/host服务、改UID/GID/凭据/ACL/安全owner/mode或部署。原7项实际owned PG用例及全部新受限物理验收均NOT_RUN；独审另因全局Popen禁止而未跑原CLI，主测已跑该离线CLI。浏览器0次，历史Chromium data: ERR_BLOCKED_BY_ADMINISTRATOR拒绝保留且未重试。先前5173份证据字节不变；本次仅按明确清单导出合成测试原件，普通开发分支为`dev/f2-native-writer-install-preflight-20261012`。真实隔离trial仍须上述独立动作授权与已有可信OS/PG/秘密环境，代码和纯DI结果不能替代该验收。
+
+## 已批准的单次新 VM 验收结果
+
+用户随后明确批准一次免费的 GitHub 标准 `ubuntu-24.04` 新 VM 隔离验收，冻结源码 `86bd07ef65135d749d6f0f9e9ae43039c4bd8fc8` 已在独立分支正常推送并只运行一次。实际结果 **FAIL：3 PASS / 1 FAIL / 13 NOT_RUN**，`PG_SETUP` / `CHECK_FAILED`，自有进程清理成功；失败标签 `ACTUAL_ROLE_ACL` 不等于已确认 ACL 缺陷，内部根因未知。其余受限物理合同未获得验收，未修代码或重跑。原始公开摘要、纯测试失败与独审签收见[单次实际验收记录](RestrictedLinuxTrialOnceAcceptance-20261012.md)。本段更新实际进展，保留前述各冻结阶段的历史资格范围；再次修订运行或试跑需用户下一明确决定。

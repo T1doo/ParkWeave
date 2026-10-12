@@ -1,0 +1,9 @@
+# Independent actual-summary review
+
+Actual isolated trial FAIL, source `86bd07ef65135d749d6f0f9e9ae43039c4bd8fc8`, run 38256730195 / job 114836607019, first run and attempt. The exact two permitted public log lines were read and SHA-bound; the closed summary passes its schema check and reports 3 PASS / 1 FAIL / 13 NOT_RUN, exit1.
+
+PASS: REAL_IDENTITIES, FRESH_CLUSTER, OWNED_STOP. FAIL: ACTUAL_ROLE_ACL. Phase PG_SETUP, error CHECK_FAILED, cleanup true. This failure label does not prove a particular ACL violation or authority refusal: setup failed before later checks, and the private diagnostic is unavailable after the VM ended. Specific cause remains UNKNOWN. Protected copy/dependency preparation occurred, but adapter PROTECTED_RUNTIME validation is NOT_RUN and cannot be called PASS. The remaining 13 NOT_RUN cases are not accepted.
+
+Pre-trigger LIMITED_PASS covered static workflow/code and pure synthetic tests only and preceded the one authorized push; it is preserved and never upgraded to actual acceptance. Root's actual pure JUnit166 exactly intersects the independent first window166 shared cases. Independent169P3 precondition-F and corrected3P remain separate invocations. The four exact pure stdout/JUnit files may be copied publicly: no runtime credentials or VM private output appear. All VM private logs stay unpublished.
+
+Parent's distinct MCP metadata reports completed/failure and artifacts empty; the child performed no remote action. The earlier CLI repository GET Forbidden remains stopped and unrecovered. No retry, code repair, second trigger, service or permission action was performed by this review. The authorized trigger is consumed. Current physical acceptance is blocked by the FAIL and 13 NOT_RUN; a future trial requires the next explicit decision, not an automatic rerun.
