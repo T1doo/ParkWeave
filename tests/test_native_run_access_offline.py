@@ -5,7 +5,7 @@ import subprocess
 import pytest
 
 
-@pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation'])
+@pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
 def test_native_run_access_ui(mode):
     node=shutil.which('node')
     assert node,'offline Node is required'

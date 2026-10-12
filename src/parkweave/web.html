@@ -1078,9 +1078,15 @@ function renderNativeRunAccess(status,view,c){
  if(active)runAccessExpiryTimer=setTimeout(()=>{if(!runAccessCurrent(c))return;renderNativeRunAccess(status,{...view,actual_run_access:false,projection_state:'NON_EFFECTIVE'},c);$('run-access-error').textContent='访问期限已到；请重新读取当前范围。';},Math.max(0,Math.min(2147483647,leaseDeadline-Date.now())));
  const deadline=runAccessAuthorityDeadline(status);if(live&&deadline!==null)runAccessAuthorityTimer=setTimeout(()=>{if(!runAccessCurrent(c))return;renderNativeRunAccess({...status,enabled:false},{...view,enabled:false},c);},Math.max(0,Math.min(2147483647,deadline-Date.now())));
 }
+function nativeWriterCommandMatches(receipt,body){
+ const command=receipt?.writer_command;if(!command||typeof command!=='object')return false;
+ const ordered=v=>Array.isArray(v)?v.map(ordered):v&&typeof v==='object'?Object.fromEntries(Object.keys(v).sort().map(k=>[k,ordered(v[k])])):v;
+ return Object.keys(body).every(k=>JSON.stringify(ordered(command[k]))===JSON.stringify(ordered(body[k])));
+}
 async function recoverNativeRunAccess(p){
  if(!runAccessCurrent(p.context))return;p.stage='SUBMITTING';$('run-access-retry').disabled=true;
  try{const x=await runAccessCall(p.path+'/'+encodeURIComponent(p.key),'GET',undefined,undefined,p.context);requireRunAccess(p.context);
+  if(p.writer&&(x.writer_receipt_verified!==true||!nativeWriterCommandMatches(x.receipt,p.body)))throw Error('原请求正文或可信签发证明尚不可核对；保留原编号继续GET核对，不自动重发。');
   const receipt=x.receipt;if(x.found!==true){p.stage='UNKNOWN';$('run-access-error').textContent='原请求尚未观察到结果；保留编号继续GET核对，不自动重发。';return;}
   if(x.namespace!=='ORDINARY_PG_RUN_ACCESS_DECISION_V1'||receipt?.namespace!==x.namespace||receipt.run_id!==p.context.runId||receipt.request_key!==p.key||receipt.action!==p.body.action||receipt.reason!==p.body.reason||receipt.actual_run_access!==false||receipt.actual_assignment_written!==false)throw Error('原请求结果范围或决定证明不匹配；保留编号继续核对。');
   runAccessPending=null;await loadRunAccess(p.context.runId);
@@ -1098,7 +1104,7 @@ async function sendRunAccess(action,extra={}){
  if(!runAccessAuthorityLive(runAccessStatusView)||!runAccessAuthorityLive(runAccessView)){expireRunAccessAuthority(runAccessStatusGeneration,c.token);throw Error('隔离演示审批会话已到期，当前操作已关闭。');}
  if(action==='REQUEST'&&runAccessView.writer_policy_scope){if($('run-access-confirm').checked!==true)throw Error('请明确确认此Run、执行者和期限');extra={...extra,confirm_request:true};}
  const reason=(action==='REQUEST'?$('run-access-reason').value:$('run-access-decision-reason').value).trim();if(!reason)throw Error('请填写本次操作说明');
- const body={action,expected_revision:c.revision,expected_run_revision:c.runRevision,expected_authority_sha256:c.authoritySha,reason,...extra};const path='/api/runs/'+encodeURIComponent(c.runId)+'/access/commands',signature=path+JSON.stringify(body);if(!runAccessRetries.has(signature))runAccessRetries.set(signature,crypto.randomUUID());runAccessPending={context:c,path,body:Object.freeze({...body}),key:runAccessRetries.get(signature),stage:'SUBMITTING',native:isNativeRunAccess(runAccessStatusView)};renderRunAccess(runAccessStatusView,runAccessView,c);
+ const body={action,expected_revision:c.revision,expected_run_revision:c.runRevision,expected_authority_sha256:c.authoritySha,reason,...extra};const path='/api/runs/'+encodeURIComponent(c.runId)+'/access/commands',signature=path+JSON.stringify(body);if(!runAccessRetries.has(signature))runAccessRetries.set(signature,crypto.randomUUID());runAccessPending={context:c,path,body:Object.freeze({...body}),key:runAccessRetries.get(signature),stage:'SUBMITTING',native:isNativeRunAccess(runAccessStatusView),writer:!!runAccessView.writer_policy_scope};renderRunAccess(runAccessStatusView,runAccessView,c);
  let commandCommitted=false;try{await runAccessCall(path,'POST',body,runAccessPending.key,c);requireRunAccess(c);commandCommitted=true;runAccessPending=null;await loadRunAccess(c.runId);}
  catch(e){if(!runAccessCurrent(c))throw e;if(commandCommitted){$('run-access-error').textContent='服务端已确认本次操作；当前状态回读未完成，请刷新核对，勿重新建立新申请。';throw e;}if(e.status===409&&e.decisionCommitted&&e.projectionPending){runAccessPending.stage='UNKNOWN';renderRunAccess(runAccessStatusView,runAccessView,c);$('run-access-retry').hidden=false;$('run-access-error').textContent='申请决定已写入候选审计，但实际访问投影仍未完成。保留原正文和请求编号，使用原请求重试；不要创建新申请。';}else if(e.status===403||e.status===409||e.status===422){runAccessPending=null;renderRunAccess(runAccessStatusView,runAccessView,c);if(e.status===403){clearRunAccess(false);$('run-access-panel').hidden=false;}else if(e.status===409){$('run-access-error').textContent=e.message;await loadRunAccess(c.runId);}}else{runAccessPending.stage='UNKNOWN';$('run-access-retry').hidden=false;$('run-access-error').textContent='操作结果未知。保留原请求正文与编号；普通协议仅GET核对原编号，勿改参数重发。';renderRunAccess(runAccessStatusView,runAccessView,c);$('run-access-retry').hidden=false;}throw e;}
 }

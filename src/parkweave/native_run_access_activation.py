@@ -328,7 +328,7 @@ def activate(bridge,token,run_id,key,data):
             projection_state='ACTIVE_SYNTHETIC_FIXTURE',production_policy_adopted=False)
         if bridge.writer is not None:
             from .native_run_access_writer import sign
-            receipt=sign(bridge,receipt)
+            receipt=sign(bridge,receipt,data)
         ledger['events'].append(receipt);ledger.update(revision=receipt['revision'],activation_id=receipt['activation_id'])
         c.execute('UPDATE runs SET native_run_access_activation=%s WHERE id=%s',(Jsonb(ledger),run_id))
         c.execute("""INSERT INTO run_assignments(principal_id,run_id,park_id,org_id,active,native_access)

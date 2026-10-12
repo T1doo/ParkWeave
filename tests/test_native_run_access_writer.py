@@ -13,7 +13,7 @@ from parkweave import native_run_access as native,native_run_access_writer as wr
 from parkweave.api import create_app
 from parkweave.store import Store,Denied,Conflict
 from test_executor_receipts import receipt_fixture
-from test_native_run_access import body as old_body,act as old_act,snapshot,APPROVER
+from test_native_run_access import body as old_body,act as old_act,snapshot,APPROVER,native_fixture
 from test_native_run_access_activation import activate,activation_body,business,wait_parent,path
 from test_preparation import headers,preparation_fixture,command as material
 from test_service_dispatches import offer,command as dispatch_command,read as dispatch_read
@@ -476,4 +476,56 @@ def test_external_policy_expiry_closes_new_commands_and_preserves_get_history(re
     finally:h.close()
 
 
+def unsigned_request(h,target='executor-a'):
+    data=body(h.a,'REQUEST')
+    with h.f[0].connect() as c:
+        run=c.execute('SELECT * FROM runs WHERE id=%s',(h.parent['run_id'],)).fetchone()
+        request=dict(request_id=str(uuid4()),requester_id='fixture-a',target_id=target,target_role='service_executor',
+            capability='READ',source=h.bridge._source(c,run,h.bridge._parent(c,run)),
+            authority=h.bridge._authority_snapshot(c,run,target),requested_validity=data.requested_validity.model_dump(mode='json'))
+        receipt=dict(namespace=native.NAMESPACE,run_id=h.parent['run_id'],actor_id='fixture-a',request_key='unsigned-owner-key',
+            fingerprint=native._hash(dict(run_id=h.parent['run_id'],command=data.model_dump(mode='json'))),
+            action='REQUEST',reason=data.reason,revision=1,state='REQUESTED',request=request,lease_id=None,
+            recorded_at=datetime.now(timezone.utc).isoformat(),actual_run_access=False,
+            actual_assignment_written=False,projection_state='NON_EFFECTIVE')
+        c.execute('UPDATE runs SET native_run_access_protocol=%s WHERE id=%s',
+            (Jsonb(dict(namespace=native.NAMESPACE,revision=1,state='REQUESTED',events=[receipt],
+                        request=request,lease_id=None,leases=[])),h.parent['run_id']))
+    return receipt
 
+
+@pytest.mark.parametrize('cold',[False,True])
+def test_unsigned_json_cannot_add_metadata_participant(writer_fixture,cold):
+    h=writer_fixture;unsigned_request(h,target='unassigned')
+    if cold:
+        with TestClient(create_app(Store(h.f[0].dsn))) as client:
+            assert client.get(path(h.a),headers=headers(h.f[2],'unassigned')).status_code==403
+            assert client.get(path(h.a)+'/commands/unsigned-owner-key',headers=headers(h.f[2],'unassigned')).status_code==403
+    else:
+        assert h.f[3].get(path(h.a),headers=headers(h.f[2],'unassigned')).status_code==403
+        assert h.f[3].get(path(h.a)+'/commands/unsigned-owner-key',headers=headers(h.f[2],'unassigned')).status_code==403
+
+
+def test_unsigned_original_get_is_explicitly_unverified_and_never_repairs(writer_fixture):
+    h=writer_fixture;receipt=unsigned_request(h);before=business(h.a)
+    result=h.f[3].get(path(h.a)+'/commands/unsigned-owner-key',headers=headers(h.f[2])).json()
+    assert result['found'] and result['receipt']==receipt and result['writer_receipt_verified'] is False
+    assert not result['actual_run_access'] and business(h.a)==before
+
+
+def test_verified_recovery_becomes_unverified_when_writer_offline_without_changing_history(writer_fixture):
+    h=writer_fixture;request,_=approve(h);assert activate(h.a).status_code==200
+    assert request['writer_command']['confirm_request'] is True and request['writer_command']['target_id']=='executor-a'
+    recovered=h.bridge.recover(h.f[2]['fixture-a'],UUID(h.parent['run_id']),'writer-request')
+    assert recovered['receipt']==request and recovered['writer_receipt_verified'] is True
+    h.stop(h.writer_process);before=business(h.a)
+    recovered=h.bridge.recover(h.f[2]['fixture-a'],UUID(h.parent['run_id']),'writer-request')
+    assert recovered['receipt']==request and recovered['writer_receipt_verified'] is False
+    assert business(h.a)==before
+
+
+def test_pre_writer_default_null_confirmation_preserves_original_command_fingerprint(native_fixture):
+    a=native_fixture;data=old_body(a,'REQUEST');legacy=data.model_dump(mode='json');legacy.pop('confirm_request')
+    first=old_act(a,'REQUEST',key='legacy-exact-key',data=data)
+    assert first['fingerprint']==native._hash(dict(run_id=a[1]['run_id'],command=legacy))
+    assert old_act(a,'REQUEST',key='legacy-exact-key',data=data)==first

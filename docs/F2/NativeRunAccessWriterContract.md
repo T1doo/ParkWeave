@@ -34,7 +34,7 @@ reference controller 必须已有原 fresh owned fixture 创建证明，明确�
 
 API 新进程只能通过 host 明确重新绑定同一受信 writer 与原外部 policy；不由数据库记录自发行。新 writer 进程亦须同一受信 host policy/原独立签发 key，旧 endpoint pin 失效，host 明确 rebind 后才能恢复。数据库 restart 仅允许核对同一 physical cluster/system identifier、数据库 OID/name、来源与权限；bootstrap 与收据保持原期限，不续授。换库/换集群/dump-restore/不同 owner、来源变化、权限删建/撤授均拒绝。xmin 是该 physical fixture 的当前代际指纹，不被宣称跨逻辑恢复的永久权限版本。
 
-无通道/无 policy 时普通冷 Store 只保持既有有权历史 metadata GET，native business READ 拒绝；GET 不修复或重新签发。丢响应只 GET 原键核对 immutable receipt/current access，不自动重发 POST。跨进程证据必须由真实子进程及真实 owned PG stop/start取得，不能把同进程新 Store 算完整恢复。
+无通道/无 policy 时普通冷 Store 只保持既有有权历史 metadata GET，native business READ 拒绝；GET 不修复或重新签发。 writer 元数据参与者由外部可信 scope 决定，未签 JSON 不新增读取身份。原键 GET 的 raw history 与 writer_receipt_verified 分开；通道不可用或证明无效时保留原收据但明确未认证，页面继续 UNKNOWN，只 GET 原键，不以未认证历史清除未知结果。 新签发收据包含经校验的 writer_command，签发证明覆盖其全部字段；页面还逐字段核对原正文（含版本、目标、确认和期限），异正文即保持 UNKNOWN。旧未启用 Native 的默认 null 确认字段不进入旧命令指纹；新增明确确认仍绑定新 writer 指纹。丢响应只 GET 原键核对 immutable receipt/current access，不自动重发 POST。跨进程证据必须由真实子进程及真实 owned PG stop/start取得，不能把同进程新 Store 算完整恢复。
 
 ## 实际验证门与交付
 

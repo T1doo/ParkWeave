@@ -227,13 +227,24 @@ class NativeRunAccess:
         request = ledger.get('request') or {}
         if p['role'] == 'enterprise_operator' and p['id'] == run['principal_id']:
             return
-        if p['role'] == 'service_executor' and p['id'] == request.get('target_id'):
-            return
         if self.writer is not None:
             from .native_run_access_writer import _writer
             policy=_writer(self).policy
-            if (str(run['id'])==policy.source.run_id and p['role']=='park_specialist' and
-                    p['id']==policy.approver_id):
+            if str(run['id'])!=policy.source.run_id:
+                return NativeRunAccess(self.store)._authorize_read(c,p,run)
+            if ((p['role'],p['id']) in (('park_specialist',policy.approver_id),
+                                       ('service_executor',policy.beneficiary_id))):
+                return
+            raise Denied('explicit writer metadata participant required')
+        if p['role']=='service_executor' and p['id']==request.get('target_id'):
+            if type(self.test_permit) is DecisionTestPermit and _issued_test_permits.get(id(self.test_permit)) is self.test_permit:
+                return
+            # A cold provider cannot infer a participant from app-writable JSON.
+            # Only the original protected assignment can establish this history.
+            assignment=c.execute('SELECT * FROM run_assignments WHERE principal_id=%s AND run_id=%s AND park_id=%s AND org_id=%s',
+                (p['id'],run['id'],p['park_id'],p['org_id'])).fetchone()
+            if assignment and (isinstance(assignment.get('native_access'),dict) or
+                               self.store.assignment_allowed(c,p,run['id'],assignment=assignment,track=False)):
                 return
         if self.test_permit is not None:
             self._permit(c)
@@ -386,9 +397,12 @@ class NativeRunAccess:
                     (run.get('native_run_access_activation') or {}).get('events',[]))
             receipt=next((e for e in events if e['actor_id']==p['id'] and e['request_key']==key),None)
             current=self._view(c,p,run)
-            return dict(found=receipt is not None,receipt=deepcopy(receipt),
+            result=dict(found=receipt is not None,receipt=deepcopy(receipt),
                         namespace=NAMESPACE,actual_run_access=current['actual_run_access'],
                         actual_assignment_written=current['actual_assignment_written'])
+            if self.writer is not None or (receipt and receipt.get('writer_proof') is not None):
+                result['writer_receipt_verified']=bool(receipt and current.get('writer_history_verified') is True)
+            return result
 
     @staticmethod
     def _key(key):
@@ -423,7 +437,10 @@ class NativeRunAccess:
             from .native_run_access_writer import WriterClient,invoke
             if type(self.writer) is WriterClient:
                 return invoke(self,'COMMAND',token,run_id,key,data)
-        fp=_hash(dict(run_id=str(run_id),command=data.model_dump(mode='json')))
+        payload=data.model_dump(mode='json')
+        if self.writer is None and data.confirm_request is None:
+            payload.pop('confirm_request')  # Preserve pre-writer ordinary request fingerprints.
+        fp=_hash(dict(run_id=str(run_id),command=payload))
         with self.store.connect() as c:
             c.execute("SET LOCAL lock_timeout='5s'")
             p=self.store.auth(c,token,lock=True)
@@ -523,7 +540,7 @@ class NativeRunAccess:
                          actual_assignment_written=False,projection_state='NON_EFFECTIVE')
             if self.writer is not None:
                 from .native_run_access_writer import sign
-                receipt=sign(self,receipt)
+                receipt=sign(self,receipt,data)
             ledger['events'].append(receipt)
             c.execute('UPDATE runs SET native_run_access_protocol=%s WHERE id=%s',(Jsonb(ledger),run_id))
             # No external decision store: event, request, decision and lease roll

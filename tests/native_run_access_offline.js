@@ -25,6 +25,7 @@ const view={...status,scope:{run_id:runId,park_id:'park-a',org_id:'org-a'},revis
  authority_sha256:'a'.repeat(64),state:'NOT_REQUESTED',can_request:true,can_approve:false,can_revoke:false,
  executors:[{id:'existing-executor',role:'service_executor',capability:'READ'}],history:[],actual_run_access:false};
 sandbox.status=status;sandbox.view=view;
+if(mode.startsWith('writer_')&&mode.endsWith('_recovery')){view.writer_policy_scope='OWNED_SYNTHETIC_REFERENCE';$('run-access-confirm').checked=true;}
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 async function read(){const p=run('loadRunAccess()');calls.at(-1).ok(status);await tick();calls.at(-1).ok(view);await p;}
 (async()=>{
@@ -58,11 +59,15 @@ async function read(){const p=run('loadRunAccess()');calls.at(-1).ok(status);awa
   if(mode==='authority_expiry'){run("expireRunAccessAuthority(runAccessStatusGeneration,$('token').value)");check(run('runAccessPending.stage')==='UNKNOWN');check(!$('run-access-retry').hidden);check($('run-access-request').hidden);}
   const recovery=$('run-access-retry').onclick();await tick();check(calls.at(-1).method==='GET');
   check(calls.at(-1).path.endsWith('/access/commands/original-key'));
-  if(mode==='not_observed'||mode==='authority_expiry'){calls.at(-1).ok({namespace:status.namespace,found:false,receipt:null});await recovery;check(run('runAccessPending.stage')==='UNKNOWN');}
+  if(mode==='writer_unverified_recovery'||mode==='writer_wrong_body_recovery'){
+   const original=run('runAccessPending.body');
+   calls.at(-1).ok({namespace:status.namespace,found:true,receipt:{writer_command:{...original,target_id:'wrong-target'}},writer_receipt_verified:mode==='writer_wrong_body_recovery'});await recovery;
+   check(run('runAccessPending.stage')==='UNKNOWN');check($('run-access-error').textContent.includes('可信签发证明'));
+  }else if(mode==='not_observed'||mode==='authority_expiry'){calls.at(-1).ok({namespace:status.namespace,found:false,receipt:null});await recovery;check(run('runAccessPending.stage')==='UNKNOWN');}
   else if(mode==='revoked'){calls.at(-1).ok({detail:'current READ revoked'},403);await recovery;check(run('runAccessView')===null&&run('runAccessPending')===null);}
   else if(mode==='late_recovery'){run('clearRunAccess()');$('token').value='other';calls.at(-1).ok({found:true,receipt:{}});await recovery;check(run('runAccessView')===null);}
   else{
-   calls.at(-1).ok({namespace:status.namespace,found:true,receipt:{namespace:status.namespace,run_id:runId,
+   calls.at(-1).ok({namespace:status.namespace,found:true,writer_receipt_verified:true,receipt:{writer_command:run('runAccessPending.body'),namespace:status.namespace,run_id:runId,
     request_key:'original-key',action:'REQUEST',reason:'explicit reason',actual_run_access:false,actual_assignment_written:false}});
    await tick();calls.at(-1).ok(status);await tick();view.state='REQUESTED';view.revision=1;view.can_request=false;calls.at(-1).ok(view);await recovery;
    check(run('runAccessPending')===null);check(run('runAccessView.state')==='REQUESTED');

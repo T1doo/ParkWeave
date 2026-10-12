@@ -447,11 +447,13 @@ def before_action(bridge, c, actor, action, run_id, data):
     c._writer_checks = [*(getattr(c, '_writer_checks', [])), (bridge, actor['id'], action)]
 
 
-def sign(bridge, receipt):
+def sign(bridge, receipt, data):
     value = _writer(bridge)
     if type(value) is not WriterContext:
         raise Denied('receipt signing belongs to writer process')
-    return WriterContext.sign(value, receipt)
+    bound=deepcopy(receipt)
+    bound['writer_command']=data.model_dump(mode='json')
+    return WriterContext.sign(value, bound)
 
 
 def recheck(bridge, c, actor_id, action):
