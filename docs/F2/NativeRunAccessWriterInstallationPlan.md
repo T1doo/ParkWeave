@@ -55,7 +55,7 @@ native storage 两个 SQL 文件目前仅由原允许 UUID 合成 fixture contro
 
 ## Linux 受限 DML 合成试运行准备
 
-本轮选择 Linux 临时隔离目标与直接受限 DML；不使用用户 Windows。[公共计划入口](../../src/parkweave/native_run_access_trial_plan.py)可运行 `python -m parkweave.native_run_access_trial_plan --spec public-spec.json --snapshot catalog-snapshot.json --host-plan public-host.json`，复用上面的目录比较及精确权限矩阵，不重复 reference 整链。host-plan 仅声明 linux、`/tmp/parkweave-trial-<32位小写hex>`、已存在的不同身份及待固定源码完整 SHA。角色合同只供离线比较；没有生产/临时数据库连接或已签发创建证明。有效输入也只返回 APPROVAL_REQUIRED/5，列出精确单 Run/Case/资料/主体/UTC、目标路径、UID声明及权限需求；无自动 GRANT，LOCK_UPDATE不被当成SQL授权动词。不能通过布尔值、计划文件、环境或方向选择授权执行。
+本轮选择 Linux 临时隔离目标与直接受限 DML；不使用用户 Windows。[公共计划入口](../../src/parkweave/native_run_access_trial_plan.py)可运行 `python -m parkweave.native_run_access_trial_plan --spec public-spec.json --snapshot catalog-snapshot.json --host-plan public-host.json`，复用上面的目录比较及精确权限矩阵，不重复 reference 整链。host-plan 仅声明 linux、`/tmp/parkweave-trial-<32位小写hex>`、已存在的不同身份及待固定源码完整 SHA。角色合同只供离线比较；没有生产/临时数据库连接或已签发创建证明。有效输入也只返回 APPROVAL_REQUIRED/5，列出精确单 Run/Case/资料版本/UTC、主体与完整来源摘要、目标路径、UID声明及权限需求；自由文本身份和资料状态不回显，摘要仍绑定其原值；无自动 GRANT，LOCK_UPDATE不被当成SQL授权动词。不能通过布尔值、计划文件、环境或方向选择授权执行。
 
 当前可开发并验证的是计划生成、输入拒绝、权限差异和无副作用控制。现 reference 保持原 owner/OWNED_SYNTHETIC_REFERENCE 边界，不能将其 argv 改名充当受限启动器；实际受限 private runtime/host adapter 尚未实现，计划明确 `writer_argv=null`、`writer_runtime=NOT_IMPLEMENTED`、`actual_run=NOT_RUN` 和全部授权为false。源码/解释器、独立UID、秘密交付、目录保护、当前权限与任意SET ROLE链、实际host pin均未验证；真实启动不在本轮执行。
 

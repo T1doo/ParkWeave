@@ -26,7 +26,9 @@ def test_complete_plan_stays_unapproved_with_no_repurposed_reference_command():
     assert not any(p['action'] == 'LOCK_UPDATE' for p in result['writer_permission_requirements'])
     assert not any(p['object'] == 'authorization_audit' for p in result['writer_permission_requirements'])
     assert result['lock_requirement']['technical_update_column'] == 'revision'
-    assert result['declared_case_scope']['source'] == spec['policy']['source']
+    scope = result['declared_case_scope']
+    assert scope['source_sha256'] == trial._digest(spec['policy']['source'])
+    assert scope['public_source']['case_id'] == spec['policy']['source']['case_id']
 
 
 def test_preflight_missing_unknown_and_conflicts_are_retained():
@@ -60,6 +62,41 @@ def test_only_exact_new_local_uuid_target_declaration(change):
     spec, catalog, host = inputs();spec['policy'].update(change)
     catalog['database'].update({k.removeprefix('database_'): v for k, v in change.items()})
     assert trial.prepare(spec, catalog, host)['status'] == 'REFUSED'
+
+
+@pytest.mark.parametrize('suffix', ['/../outside', '/sockets/../../outside', '/./postgres',
+                                  '//postgres', '/postgres/', '/postgres\x00', 'extra/postgres'])
+def test_database_socket_declaration_requires_canonical_contained_path(suffix):
+    spec, catalog, host = inputs()
+    value = host['trial_root']+suffix
+    spec['policy']['database_host'] = catalog['database']['host'] = value
+    assert trial.prepare(spec, catalog, host)['status'] == 'REFUSED'
+
+
+def test_canonical_contained_database_socket_is_only_an_unverified_declaration():
+    spec, catalog, host = inputs()
+    value = host['trial_root']+'/postgres'
+    spec['policy']['database_host'] = catalog['database']['host'] = value
+    result = trial.prepare(spec, catalog, host)
+    assert result['status'] == 'APPROVAL_REQUIRED'
+    assert result['actual_run'] == 'NOT_RUN' and not result['launch_authorized']
+
+
+@pytest.mark.parametrize('field', ['owner_id', 'approver_id', 'beneficiary_id',
+                                  'park_id', 'org_id', 'preparation_state'])
+def test_free_text_scope_is_bound_by_digest_without_public_echo(field):
+    spec, catalog, host = inputs()
+    before = trial.prepare(spec, catalog, host)
+    sentinel = 'Bearer SYNTHETIC_PRIVATE_SENTINEL_NOT_A_REAL_CREDENTIAL'
+    if field in ('owner_id', 'approver_id', 'beneficiary_id'):
+        spec['policy'][field] = sentinel
+    if field not in ('approver_id', 'beneficiary_id'):
+        spec['policy']['source'][field] = sentinel
+    result = trial.prepare(spec, catalog, host)
+    assert result['status'] == 'APPROVAL_REQUIRED'
+    assert sentinel not in json.dumps(result)
+    assert result['plan_digest'] != before['plan_digest']
+    assert result['declared_case_scope'] != before['declared_case_scope']
 
 
 def test_expired_interval_cannot_be_renewed_by_planner():

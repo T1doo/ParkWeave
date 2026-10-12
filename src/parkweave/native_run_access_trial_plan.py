@@ -29,6 +29,15 @@ def _digest(value):
                                     allow_nan=False).encode()).hexdigest()
 
 
+def _local_database_host(value, trial_root):
+    if value in ('127.0.0.1', 'localhost'):
+        return True
+    # Lexical declarations only: never resolve or inspect operator paths.
+    return (value.startswith(trial_root+'/') and
+            all(part and part not in ('.', '..') for part in value.split('/')[1:]) and
+            '\\' not in value and not any(ord(char) < 32 for char in value))
+
+
 def prepare(spec=None, snapshot=None, host_plan=None):
     report = dict(schema='parkweave-linux-restricted-trial-plan/1', route='LINUX_DIRECT_RESTRICTED_DML',
         status='MISSING_CONFIG', launch_authorized=False, installation_authorized=False,
@@ -52,8 +61,7 @@ def prepare(spec=None, snapshot=None, host_plan=None):
                 config.api_uid in (None, 0) or config.writer_uid in (None, 0) or
                 config.api_uid == config.writer_uid or
                 not re.fullmatch(r'fixture_[a-f0-9]{32}', policy.database_name) or
-                policy.database_host not in ('127.0.0.1', 'localhost') and
-                not policy.database_host.startswith(host.trial_root+'/')):
+                not _local_database_host(policy.database_host, host.trial_root)):
             raise ValueError('isolated local target required')
         start, end = datetime.fromisoformat(policy.valid_from), datetime.fromisoformat(policy.valid_until)
         if not start <= datetime.now(timezone.utc) < end:
@@ -81,8 +89,13 @@ def prepare(spec=None, snapshot=None, host_plan=None):
     ])
     report.update(status='APPROVAL_REQUIRED', plan_digest=digest, declared_source_sha=host.source_sha,
         declared_paths=paths, intended_uids=dict(api=config.api_uid, writer=config.writer_uid),
-        declared_case_scope=dict(source=policy.source.model_dump(), approver_id=policy.approver_id,
-            beneficiary_id=policy.beneficiary_id, valid_from=policy.valid_from, valid_until=policy.valid_until),
+        declared_case_scope=dict(source_sha256=_digest(policy.source.model_dump()),
+            actors_sha256=_digest(dict(owner_id=policy.owner_id, approver_id=policy.approver_id,
+                                      beneficiary_id=policy.beneficiary_id)),
+            public_source={name: getattr(policy.source, name) for name in (
+                'run_id', 'run_revision', 'input_fingerprint', 'preparation_id',
+                'preparation_revision', 'review_sha256', 'material_sha256', 'case_id')},
+            valid_from=start.isoformat(), valid_until=end.isoformat()),
         writer_permission_requirements=permissions,
         permission_delta=comparison['changes'],
         lock_requirement=dict(table='preparations', technical_update_column=config.parent_lock_column),
