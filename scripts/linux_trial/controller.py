@@ -52,7 +52,7 @@ class Controller:
         self.processes=[];self.starts={};self.linux_host=None;self.writer_process=None
         self.value=dict(source_sha=context['source_sha'],phase='PROTECTED_RUNTIME',error='NONE',
                         cases={c:'NOT_RUN' for c in CASES},cleanup=False)
-        self.current='PROTECTED_RUNTIME';self.deadline=time.monotonic()+1100
+        self.current='PROTECTED_RUNTIME';self.deadline=time.monotonic()+900
 
     def mark(self,name,condition):
         self.current=name
@@ -318,6 +318,8 @@ class Controller:
         return ok
 
     def run(self):
+        def terminate(signum,frame):raise TimeoutError('OWNED_CONTROLLER_TERMINATION')
+        signal.signal(signal.SIGTERM,terminate)
         try:
             if os.geteuid()!=0 or self.c['approval']!='USER_CONFIRMED_ONE_FREE_GITHUB_VM_2026-10-12T12:49:49Z':raise PermissionError('APPROVED_ROOT_CONTROLLER_REQUIRED')
             self.identities();self.pg_start();self.host_start();self.acceptance()
