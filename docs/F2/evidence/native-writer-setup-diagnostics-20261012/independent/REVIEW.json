@@ -1,0 +1,137 @@
+{
+  "actual_operations": {
+    "OS_or_SQL_permissions_changed": 0,
+    "PG_connections": 0,
+    "browser_starts": 0,
+    "new_CI_triggers": 0,
+    "sealed_FD_issued": 0,
+    "service_starts": 0
+  },
+  "controls_verified": [
+    "closed substage/check ID mapping; status exact int, whitelist and zero-only outside HTTP",
+    "failure envelope has no result/private payload; success result remains private and RESULT only",
+    "process returncode exact0/1 agrees with PASS/FAIL; signal returncode refuses",
+    "bounded strict UTF-8 single JSON with duplicate keys rejected at every nesting level",
+    "root public projection independently validates diagnostic; safe bootstrap fallback stays untouched until validation",
+    "check recorded before actions; MIGRATION/SEED failures tested through real setup function with synthetic connections",
+    "nested private-result/diagnostic duplicate keys refuse without echo",
+    "SQL ACL checks cannot claim HTTP status"
+  ],
+  "existing_single_trigger_remains_consumed": true,
+  "independent_window": {
+    "counts": {
+      "ERROR": 0,
+      "FAIL": 0,
+      "PASS": 208,
+      "SKIP": 0
+    },
+    "elapsed_seconds": 1.6891489490008098,
+    "ended_utc": "2026-10-12T14:04:11.351039+00:00",
+    "evidence": {
+      "probe-inputs-after.json": "c444e99a1e835adb0405c9c4193fd7891ac3f24cf6029aaabd8441e402b0cb46",
+      "probe-inputs-before.json": "c444e99a1e835adb0405c9c4193fd7891ac3f24cf6029aaabd8441e402b0cb46",
+      "results.xml": "7b268684dc29543a1b45e37ade129530dfc7c99d0e353d45a0e702c08d295239",
+      "run.json": "bdc024b7b8e8d5e4d21bc4a74f71635312e2e7bb7ede8125db10ccee5b72df7b",
+      "source-after.json": "96a51acd45b53153fe1df186a8e9663def15aa62e89703d9b3cd582c64d8001e",
+      "source-before.json": "96a51acd45b53153fe1df186a8e9663def15aa62e89703d9b3cd582c64d8001e",
+      "stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout.log": "86ad9eb5310b0cf55687cae20fe04eb3c91a0accf7d67402630f933ebba9ead8"
+    },
+    "exit_code": 0,
+    "probe_changed": [],
+    "source_changed": [],
+    "started_utc": "2026-10-12T14:04:09.608760+00:00",
+    "unique_test_ids": 208
+  },
+  "new_branch_does_not_match_either_existing_workflow": true,
+  "no_new_physical_entry_or_authorization_created": true,
+  "not_run": [
+    "new physical GitHub VM/trial",
+    "PG/OS/source ownership/FD/peer/session/ACL diagnosis",
+    "old failed setup reproduction or private diagnostic recovery",
+    "production/Windows/browser/LIVE/paid model/formal AT35"
+  ],
+  "old_actual_failure": {
+    "counts": {
+      "FAIL": 1,
+      "NOT_RUN": 13,
+      "PASS": 3
+    },
+    "not_diagnosed_or_repaired_by_this_pure_patch": true,
+    "original_evidence_unchanged": true,
+    "overall": "FAIL",
+    "phase": "PG_SETUP",
+    "run_id": 38256730195,
+    "source_head": "86bd07ef65135d749d6f0f9e9ae43039c4bd8fc8",
+    "specific_cause": "UNKNOWN"
+  },
+  "physical_acceptance_still_blocked_by_old_failure_and_NOT_RUN": true,
+  "qualification": "Diagnostic code plus pure synthetic DI only; no new actual trial or old-failure causal diagnosis",
+  "remaining_development_blockers": [],
+  "result": "LIMITED_PASS",
+  "root_window": {
+    "counts": {
+      "ERROR": 0,
+      "FAIL": 0,
+      "PASS": 200,
+      "SKIP": 0
+    },
+    "counts_not_added": true,
+    "evidence": {
+      "pytest.log": "835196a70381b551f13f5d8651e20902fcea3df288760ff66d9b2fad047abbd8",
+      "results.xml": "13185b96addf6ae16b9d7b977f9cd228f22f0b97ccd7011c079c3b4c91455268",
+      "run.json": "7dda680e58e552bb8999bfd6b051fad308a23802499510648354f7a12efc80da",
+      "source-after.json": "bddca0b8b2772b04113c4fdb9fe2908413f263a2c28d7f11dc437995ea4676dc",
+      "source-before.json": "bddca0b8b2772b04113c4fdb9fe2908413f263a2c28d7f11dc437995ea4676dc"
+    },
+    "exact_overlap": 200,
+    "own_extra": 8,
+    "root_only": 0,
+    "unique_test_ids": 200
+  },
+  "source_binding": "SOURCE_BINDING.json",
+  "source_head": "3617bd0cb67b2d667cfcbb4ba53d37c101d8df07",
+  "source_manifest_sha256": "96a51acd45b53153fe1df186a8e9663def15aa62e89703d9b3cd582c64d8001e",
+  "workflow_and_permissions": {
+    "SQL_execute_AST_list_sha256": "b575a62eeefd462098cf49b70de48f4c41ca514d4086ef255ef4d77fb9249688",
+    "SQL_execute_count": 16,
+    "SQL_execute_entire_call_AST_identical": true,
+    "additional_contracts": [
+      "docs/F2/NativeRunAccessWriterContract.md",
+      "docs/F2/NativeRunAccessWriterInstallationPlan.md"
+    ],
+    "approved_context_AST_identical": true,
+    "base": "4f90af58ea1ab4faa5b503e7762665be40e949b3",
+    "branch": "dev/f2-restricted-linux-setup-diagnostics-20261012",
+    "changed_files": [
+      "scripts/linux_trial/bootstrap.py",
+      "scripts/linux_trial/controller.py",
+      "scripts/linux_trial/worker.py",
+      "scripts/windows_ci/diagnostic-test-ids.json",
+      "tests/test_restricted_linux_trial_contract.py"
+    ],
+    "current_git_blob_and_worktree_mismatch": [],
+    "current_git_status": "",
+    "independent_files": 432,
+    "independent_manifest_sha256": "96a51acd45b53153fe1df186a8e9663def15aa62e89703d9b3cd582c64d8001e",
+    "product_src_and_old_committed_evidence_diff": [],
+    "root_manifest_sha256": "bddca0b8b2772b04113c4fdb9fe2908413f263a2c28d7f11dc437995ea4676dc",
+    "root_source_file_map_subset_equal": true,
+    "source_before_after_equal": true,
+    "source_files": 430,
+    "source_head": "3617bd0cb67b2d667cfcbb4ba53d37c101d8df07",
+    "verified_utc": "2026-10-12T14:09:41.021154+00:00",
+    "workflow_exact_bytes_equal": true,
+    "workflow_sha256": "326b32d478279c496db887282213b6a1e768655426d476e6eb21fb023448ad10"
+  },
+  "workflow_refresh": {
+    "classification": "Orchestration JSON.parse(undefined) SyntaxError; underlying tool response NOT_PRESERVED and unknown. Cannot assert read succeeded, access denied or CI execution.",
+    "exact_error": "Script error:\nSyntaxError: \"undefined\" is not valid JSON\n    at JSON.parse (<anonymous>)\n    at exec_main.mjs:1:163",
+    "old_actual_result_unchanged": true,
+    "path": ".runtime/native-writer-setup-diagnostics-root-20261012/workflow-list-observation-error.json",
+    "retried": false,
+    "sha256": "7a683e1e41dc3591a6c47669acf4e47fff42b4dbf2181860572671ddf9b3f45c",
+    "status": "NOT_VERIFIED",
+    "stopped": true
+  }
+}

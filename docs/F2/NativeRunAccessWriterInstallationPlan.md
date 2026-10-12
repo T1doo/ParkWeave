@@ -89,3 +89,5 @@ fresh source/generation/beneficiary条件仍由原REQUEST/APPROVE/ACTIVATE事务
 ## 已批准的单次新 VM 验收结果
 
 用户随后明确批准一次免费的 GitHub 标准 `ubuntu-24.04` 新 VM 隔离验收，冻结源码 `86bd07ef65135d749d6f0f9e9ae43039c4bd8fc8` 已在独立分支正常推送并只运行一次。实际结果 **FAIL：3 PASS / 1 FAIL / 13 NOT_RUN**，`PG_SETUP` / `CHECK_FAILED`，自有进程清理成功；失败标签 `ACTUAL_ROLE_ACL` 不等于已确认 ACL 缺陷，内部根因未知。其余受限物理合同未获得验收，未修代码或重跑。原始公开摘要、纯测试失败与独审签收见[单次实际验收记录](RestrictedLinuxTrialOnceAcceptance-20261012.md)。本段更新实际进展，保留前述各冻结阶段的历史资格范围；再次修订运行或试跑需用户下一明确决定。
+
+父级随后明确授权准备最小无密 SETUP 诊断候选，禁止第二次 CI。冻结源码 `3617bd0cb67b2d667cfcbb4ba53d37c101d8df07` 主测 200 PASS、独审 208 PASS（精确重叠 200，不相加），均 0 FAIL/ERROR/SKIP、源码零漂移，结论仅代码/纯 DI LIMITED_PASS。补丁只公开固定 substage/check_id 和白名单整数 HTTP 状态，原 SQL、adapter、workflow 和双层首次运行门不变；旧失败根因仍 UNKNOWN。普通新分支不匹配任一 workflow，未真实再试。具体代码与下一批准范围见[诊断候选记录](NativeRunAccessSetupDiagnosticCandidate-20261012.md)。
