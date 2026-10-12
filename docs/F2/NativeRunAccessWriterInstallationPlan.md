@@ -57,9 +57,21 @@ native storage 两个 SQL 文件目前仅由原允许 UUID 合成 fixture contro
 
 本轮选择 Linux 临时隔离目标与直接受限 DML；不使用用户 Windows。[公共计划入口](../../src/parkweave/native_run_access_trial_plan.py)可运行 `python -m parkweave.native_run_access_trial_plan --spec public-spec.json --snapshot catalog-snapshot.json --host-plan public-host.json`，复用上面的目录比较及精确权限矩阵，不重复 reference 整链。host-plan 仅声明 linux、`/tmp/parkweave-trial-<32位小写hex>`、已存在的不同身份及待固定源码完整 SHA。角色合同只供离线比较；没有生产/临时数据库连接或已签发创建证明。有效输入也只返回 APPROVAL_REQUIRED/5，列出精确单 Run/Case/资料版本/UTC、主体与完整来源摘要、目标路径、UID声明及权限需求；自由文本身份和资料状态不回显，摘要仍绑定其原值；无自动 GRANT，LOCK_UPDATE不被当成SQL授权动词。不能通过布尔值、计划文件、环境或方向选择授权执行。
 
-当前可开发并验证的是计划生成、输入拒绝、权限差异和无副作用控制。现 reference 保持原 owner/OWNED_SYNTHETIC_REFERENCE 边界，不能将其 argv 改名充当受限启动器；实际受限 private runtime/host adapter 尚未实现，计划明确 `writer_argv=null`、`writer_runtime=NOT_IMPLEMENTED`、`actual_run=NOT_RUN` 和全部授权为false。源码/解释器、独立UID、秘密交付、目录保护、当前权限与任意SET ROLE链、实际host pin均未验证；真实启动不在本轮执行。
+5db离线计划交付阶段验证的是计划生成、输入拒绝、权限差异和无副作用控制。现 reference 保持原 owner/OWNED_SYNTHETIC_REFERENCE 边界，不能将其 argv 改名充当受限启动器；该阶段受限 private runtime/host adapter 尚未实现，历史计划明确 `writer_argv=null`、`writer_runtime=NOT_IMPLEMENTED`、`actual_run=NOT_RUN` 和全部授权为false。源码/解释器、独立UID、秘密交付、目录保护、当前权限与任意SET ROLE链、实际host pin均未验证；真实启动不在本轮执行。
 
 当次最小批准须绑定审核后的计划digest与实际对象：只在其全新临时目录/原创建证明的UUID数据库内准备存储和缺失的精确writer权限，保留原app权限；明确既有API/writer UID和私有policy/key/凭据交付及必要目录/源码保护变更；由可信host使用另经审查的受限adapter启动/观察/绑定两通道，执行该唯一普通成功SYNTHETIC Run/Case的有限用例；最后停止原子进程并凭原证明删除本次新增临时资源，保留失败证据。新UID、新凭据或mode/owner变更需明确另列；不默认包含，不安装系统服务、不部署、不触生产、不调用付费模型、不扩业务Grant/registry、不续授。现阶段仅公开声明，不存在可立即批准并运行的已验证真实身份/目录/密钥；平台若无法提供隔离应停止，不降级为同UID证明。
 
 
 本次冻结源码 `8ee3877fd3ebf4acd71ed8d49c4915cbf52f38ae` 根测试实际93 PASS（新计划34、CI诊断59），独审原探针复验99 PASS/2 FAIL，另按新摘要与CLI合同补测2 PASS；均0 ERROR/SKIP、源码首尾无漂移。两个FAIL是保留的旧状态/输出键断言，不能称原探针整窗PASS；初始1fed的路径越界与回显3 FAIL、原字节及修复复验见[本次实际窗口](evidence/native-writer-linux-trial-plan-20261012/validation.json)。既有5118证据与旧preflight/writer/SQL/roles/migrations保持不变；本次不重跑reference、PG或浏览器，不将离线成绩转签安装/实际受限进程验收。
+
+## 默认关闭的受限 host/runtime 实现
+
+新增 [Linux host](../../src/parkweave/native_run_access_restricted_host.py) 与 [restricted runtime](../../src/parkweave/native_run_access_restricted_runtime.py)，独立于 owner reference。`LinuxHost.start()` 默认在秘密读取、连接和Popen之前拒绝；真实启动须先验证固定位置的root私有32字节host审批key、当次完整spec/layout/UTC/动作的HMAC审批，以及原新建目标的受保护签名创建凭证。代码不发行审批、创建身份/凭据/角色或安装存储。合成签名比较不产生live capability；未由该host真实核验发行的token、未知host子类、未从root-owned sealed memfd发行的runtime authorization、DI store factory均不能进入真实监听/启动。
+
+host核源码完整py/SQL bundle、真实常规解释器与完整依赖目录的root owner/不可被API或writer改写/无symlink父链，核writer私有bootstrap原内容SHA。当次start-claim仅为全新目录内的host防重复动作标记，绝不写业务Grant/registry。实际Popen固定argv、shell=false、隔离Python入口、不同既有非rootwriter UID、明确IPC GID、空supplementary groups、close_fds与唯一sealed fd，DSN/key不进入argv/env/日志。两Unix socket由明确0117 umask创建为0660；host实际观察PID/start/UID/GID与双inode/device/owner/mode再以新文件O_EXCL发布root-owned0640 public binding。仅该新增binding FD会在当次批准内fchown/fchmod；不改旧文件、不覆盖旧pin、不重启或自动删除失败资源，stop仅接受本host真实拥有的child。
+
+runtime两通道在frame读取前校验SO_PEERCRED的API UID/GID，复用原canonical WriterContext/NativeRunAccess command、activation和原键路径。真实连接的首个非SET SQL、permit以及提交前重核当前session/current_user、非owner角色、物理数据库、完整安装目录及有效ACL；拒自定义或系统角色成员链、DDL/TEMP/额外DML与ACL能力、grant option、可执行SECURITY DEFINER/untrusted例程、临时namespace与未知检查结果。原API不得有assignment/身份写或control-system权。连接固定pg_catalog/public/pg_temp并拒临时namespace；目录采集仅提取旧collector的原SQL，原issued-owner证明门保持。新增技术需求仅增加writer SELECT(schema_version)，必须另批实际ACL。
+
+fresh source/generation/beneficiary条件仍由原REQUEST/APPROVE/ACTIVATE事务检查；全局guard不把它们施加给REVOKE。VERIFY保持纯MAC不连接/取业务锁，历史核对与新权限分开。显式`bind_api`只接受root保护的public binding及预期SHA；configured_app仍无新环境变量/隐式加载或私有Context。public计划现标记IMPLEMENTED_DEFAULT_CLOSED_UNVERIFIED，仍全部authority=false、writer_argv=null、actual_run=NOT_RUN。
+
+真正待执行事项仍需独立审批和真实验收：绑定实际完整源码/解释器/依赖环境、原创建证明与UUID库对象/ACL；确认既有API/writer UID、API有效GID、既有IPC GID及API组成员；准备root host审批key/签名审批/创建凭证和writer私有DSN/key bootstrap；仅新目标内的目录保护、必要ACL（含新增schema_version SELECT、去除额外角色/TEMP/CREATE/grant option）及新claim/socket/public binding权限；批准当次sealed-fd交付、单次启动/观察/显式API绑定、真实owned PG锁/事务与丢响应验收；最后仅停止拥有的child并凭原证明处理本次新资源。新UID、新凭据、任何安全mode/owner/ACL改变及实际连接/启动本轮均未执行，不因代码实现或DI PASS自动获得授权。

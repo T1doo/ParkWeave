@@ -355,115 +355,124 @@ def collect_owned_catalog(connection, proof, spec):
         if (identity['database_oid'] != proof.database_oid or identity['owner_name'] != proof.cluster.owner or
                 identity['session_name'] != proof.cluster.owner):
             raise Denied('actual owned fixture identity differs from issued receipt')
-        tables = {r.pop('name'): r for r in c.execute("""SELECT r.relname name,r.oid,pg_catalog.pg_get_userbyid(r.relowner) owner,
-            r.relkind::text kind,r.relrowsecurity rls,r.relforcerowsecurity force_rls,
-            coalesce(pg_catalog.array_to_json(r.relacl),'[]'::json)::jsonb acl
-            FROM pg_catalog.pg_class r JOIN pg_catalog.pg_namespace n ON n.oid=r.relnamespace
-            WHERE n.nspname='public' AND r.relname=ANY(%s)""", (list(TABLES),)).fetchall()}
-        columns = {r.pop('name'): r for r in c.execute("""SELECT r.relname||'.'||a.attname name,
-            pg_catalog.format_type(a.atttypid,a.atttypmod) type,NOT a.attnotnull nullable,
-            pg_catalog.pg_get_expr(d.adbin,d.adrelid) "default",a.attidentity::text identity,a.attgenerated::text generated
-            FROM pg_catalog.pg_attribute a JOIN pg_catalog.pg_class r ON r.oid=a.attrelid
-            JOIN pg_catalog.pg_namespace n ON n.oid=r.relnamespace LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum
-            WHERE n.nspname='public' AND NOT a.attisdropped AND (r.relname||'.'||a.attname)=ANY(%s)""", (list(COLUMNS),)).fetchall()}
-        functions = {}
-        for row in c.execute("""SELECT p.proname name,p.oid,pg_catalog.pg_get_userbyid(p.proowner) owner,
-            pg_catalog.pg_get_function_identity_arguments(p.oid) arguments,pg_catalog.pg_get_function_result(p.oid) returns,
-            l.lanname language,p.prosrc body,p.prosecdef security_definer,p.proisstrict strict,p.proleakproof leakproof,
-            p.provolatile::text volatility,p.proconfig config,coalesce(pg_catalog.array_to_json(p.proacl),'[]'::json)::jsonb acl
-            FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
-            JOIN pg_catalog.pg_language l ON l.oid=p.prolang WHERE n.nspname='public' AND p.proname=ANY(%s)""", (list(FUNCTIONS),)).fetchall():
-            name = row.pop('name');row['body_sha256'] = _body_sha(row.pop('body'))
-            functions.setdefault(name, []).append(row)
-        triggers = {}
-        for row in c.execute("""SELECT t.tgname name,t.tgrelid relation_oid,t.tgfoid function_oid,t.tgtype type,
-            t.tgenabled::text enabled,t.tgisinternal internal,t.tgconstraint constraint_oid,t.tgattr::text columns,
-            pg_catalog.pg_get_expr(t.tgqual,t.tgrelid) condition,t.tgnargs arguments_count,pg_catalog.encode(t.tgargs,'hex') arguments_hex,
-            t.tgdeferrable deferrable,t.tginitdeferred initially_deferred,t.tgoldtable old_table,t.tgnewtable new_table
-            FROM pg_catalog.pg_trigger t JOIN pg_catalog.pg_class r ON r.oid=t.tgrelid
-            JOIN pg_catalog.pg_namespace n ON n.oid=r.relnamespace WHERE n.nspname='public' AND t.tgname=ANY(%s)""", (list(TRIGGERS),)).fetchall():
-            triggers.setdefault(row.pop('name'), []).append(row)
-        policy = spec.policy
-        role_names = [spec.installer_role] + ([policy.application_role, policy.writer_role] if policy else [])
-        roles = {}
-        owners = sorted({r['owner'] for r in tables.values()} | {identity['owner_name']} | {r['owner'] for rows in functions.values() for r in rows})
-        for name in filter(None, role_names):
-            row = c.execute("""SELECT r.rolsuper superuser,r.rolcreatedb createdb,r.rolcreaterole createrole,
-                r.rolreplication replication,r.rolbypassrls bypass_rls,
-                EXISTS(SELECT 1 FROM pg_catalog.pg_roles x WHERE
-                    (x.rolsuper OR x.rolcreatedb OR x.rolcreaterole OR x.rolreplication OR x.rolbypassrls OR
-                     pg_catalog.left(x.rolname,3)='pg_') AND
-                    pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER')) dangerous_membership,
-                EXISTS(SELECT 1 FROM pg_catalog.pg_roles x WHERE x.rolname=ANY(%s) AND
-                    pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER')) owner_membership,
-                EXISTS(SELECT 1 FROM pg_catalog.pg_roles x WHERE x.rolname=%s AND x.oid<>r.oid AND
-                    pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER')) writer_membership
-                FROM pg_catalog.pg_roles r WHERE r.rolname=%s""", (owners, policy.writer_role if policy else None, name)).fetchone()
-            if row:roles[name] = row
-        privileges = {}
-        labels = {'app': policy.application_role, 'writer': policy.writer_role} if policy else {}
-        def privilege(label, action, table, column=None):
-            role = labels.get(label)
-            if role not in roles:return None
-            if action == 'EXECUTE':
-                return c.execute("SELECT pg_catalog.has_function_privilege(%s,'pg_catalog.pg_control_system()','EXECUTE') ok", (role,)).fetchone()['ok']
-            if table not in tables:return None
-            oid = tables[table]['oid']
-            if action == 'LOCK_UPDATE':
-                return c.execute("SELECT pg_catalog.has_any_column_privilege(%s,%s,'UPDATE') ok", (role, oid)).fetchone()['ok']
-            if column:
-                # Missing additive columns are reported separately, not queried as identifiers.
-                exists = c.execute('SELECT 1 FROM pg_catalog.pg_attribute WHERE attrelid=%s AND attname=%s AND NOT attisdropped', (oid, column)).fetchone()
-                if not exists:return None
-                return c.execute('SELECT pg_catalog.has_column_privilege(%s,%s,%s,%s) ok', (role, oid, column, action)).fetchone()['ok']
-            return c.execute('SELECT pg_catalog.has_table_privilege(%s,%s,%s) ok', (role, oid, action)).fetchone()['ok']
-        for label, action, table, column in required_privileges(spec.parent_lock_column):
-            value = privilege(label, action, table, column)
-            if value is not None:privileges[_privilege_key(label, action, table, column)] = value
-        def any_write(label, names):
-            if labels.get(label) not in roles:return None
-            return any(privilege(label, action, table) or c.execute('SELECT pg_catalog.has_any_column_privilege(%s,%s,%s) ok',
-                       (labels[label], tables[table]['oid'], action)).fetchone()['ok']
-                       for table in names if table in tables for action in ('INSERT', 'UPDATE')) or any(
-                       privilege(label, 'DELETE', table) for table in names if table in tables)
-        for key, value in (('app:assignment_write', any_write('app', ['run_assignments'])),
-                           ('app:identity_write', any_write('app', ['principals', 'capability_grants', 'preparation_grants', 'action_grants', 'field_grants'])),
-                           ('app:control_system_execute', privilege('app', 'EXECUTE', 'pg_control_system()'))):
-            if value is not None:privileges[key] = value
-        excess = []
-        if policy and policy.writer_role in roles:
-            allowed = {'runs': {'native_run_access_protocol', 'native_run_access_activation'},
-                       'run_assignments': {'active', 'native_access'}, 'preparations': {spec.parent_lock_column}}
-            for row in c.execute("""SELECT r.relname name,a.attname column,
-                    pg_catalog.has_column_privilege(%s,r.oid,a.attnum,'INSERT') insert_ok,
-                    pg_catalog.has_column_privilege(%s,r.oid,a.attnum,'UPDATE') update_ok,
-                    pg_catalog.has_table_privilege(%s,r.oid,'DELETE') delete_ok
-                    FROM pg_catalog.pg_class r JOIN pg_catalog.pg_namespace n ON n.oid=r.relnamespace
-                    JOIN pg_catalog.pg_attribute a ON a.attrelid=r.oid
-                    WHERE n.nspname='public' AND r.relkind IN ('r','p') AND a.attnum>0 AND NOT a.attisdropped""",
-                    (policy.writer_role, policy.writer_role, policy.writer_role)).fetchall():
-                table, column = row['name'], row['column']
-                if row['update_ok'] and column not in allowed.get(table, set()):excess.append('UPDATE:'+table+'.'+column)
-                if row['insert_ok'] and not (table == 'run_assignments' and column in
-                        {'principal_id', 'run_id', 'park_id', 'org_id', 'active', 'native_access'}):excess.append('INSERT:'+table+'.'+column)
-                if row['delete_ok']:excess.append('DELETE:'+table)
-            excess = sorted(set(excess))
-            privileges['writer:unneeded_write'] = bool(excess)
-        for label, role in labels.items():
-            if role in roles:
-                privileges[label+':schema_create'] = c.execute("SELECT pg_catalog.has_schema_privilege(%s,'public','CREATE') ok", (role,)).fetchone()['ok']
-        if spec.installer_role in roles:
-            privileges['installer:schema_create'] = c.execute("SELECT pg_catalog.has_schema_privilege(%s,'public','CREATE') ok", (spec.installer_role,)).fetchone()['ok']
-            targets = [tables[t]['owner'] for t in ('runs', 'run_assignments') if t in tables]
-            privileges['installer:alter_targets'] = len(targets) == 2 and (roles[spec.installer_role]['superuser'] or all(
-                c.execute('SELECT pg_catalog.pg_has_role(%s,%s,\'USAGE\') ok', (spec.installer_role, owner)).fetchone()['ok'] for owner in targets))
-        version = c.execute('SELECT max(version) value FROM public.schema_version').fetchone()['value'] if 'schema_version' in tables else None
-        snapshot = CatalogSnapshot(database=dict(name=identity['database_name'],oid=identity['database_oid'],
-            system_identifier=identity['system_identifier'],host=connection.info.host,port=connection.info.port,
-            session_user=identity['session_name'],current_user=identity['current_name']),
-            schema_version=version,tables=tables,columns=columns,functions=functions,triggers=triggers,
-            roles=roles,privileges=privileges,unneeded_writer_permissions=excess)
-        return snapshot.model_dump()
+        return _read_catalog(connection, spec, identity)
+
+def _read_catalog(connection, spec, identity):
+    """Catalog reads in the caller transaction; neither provenance nor authorization.
+
+    The owned collector validates its issued owner proof first. Restricted runtime
+    separately validates the actual nonowner session and live effective ACL.
+    """
+    c = connection.cursor(row_factory=psycopg.rows.dict_row)
+    tables = {r.pop('name'): r for r in c.execute("""SELECT r.relname name,r.oid,pg_catalog.pg_get_userbyid(r.relowner) owner,
+        r.relkind::text kind,r.relrowsecurity rls,r.relforcerowsecurity force_rls,
+        coalesce(pg_catalog.array_to_json(r.relacl),'[]'::json)::jsonb acl
+        FROM pg_catalog.pg_class r JOIN pg_catalog.pg_namespace n ON n.oid=r.relnamespace
+        WHERE n.nspname='public' AND r.relname=ANY(%s)""", (list(TABLES),)).fetchall()}
+    columns = {r.pop('name'): r for r in c.execute("""SELECT r.relname||'.'||a.attname name,
+        pg_catalog.format_type(a.atttypid,a.atttypmod) type,NOT a.attnotnull nullable,
+        pg_catalog.pg_get_expr(d.adbin,d.adrelid) "default",a.attidentity::text identity,a.attgenerated::text generated
+        FROM pg_catalog.pg_attribute a JOIN pg_catalog.pg_class r ON r.oid=a.attrelid
+        JOIN pg_catalog.pg_namespace n ON n.oid=r.relnamespace LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid=a.attrelid AND d.adnum=a.attnum
+        WHERE n.nspname='public' AND NOT a.attisdropped AND (r.relname||'.'||a.attname)=ANY(%s)""", (list(COLUMNS),)).fetchall()}
+    functions = {}
+    for row in c.execute("""SELECT p.proname name,p.oid,pg_catalog.pg_get_userbyid(p.proowner) owner,
+        pg_catalog.pg_get_function_identity_arguments(p.oid) arguments,pg_catalog.pg_get_function_result(p.oid) returns,
+        l.lanname language,p.prosrc body,p.prosecdef security_definer,p.proisstrict strict,p.proleakproof leakproof,
+        p.provolatile::text volatility,p.proconfig config,coalesce(pg_catalog.array_to_json(p.proacl),'[]'::json)::jsonb acl
+        FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+        JOIN pg_catalog.pg_language l ON l.oid=p.prolang WHERE n.nspname='public' AND p.proname=ANY(%s)""", (list(FUNCTIONS),)).fetchall():
+        name = row.pop('name');row['body_sha256'] = _body_sha(row.pop('body'))
+        functions.setdefault(name, []).append(row)
+    triggers = {}
+    for row in c.execute("""SELECT t.tgname name,t.tgrelid relation_oid,t.tgfoid function_oid,t.tgtype type,
+        t.tgenabled::text enabled,t.tgisinternal internal,t.tgconstraint constraint_oid,t.tgattr::text columns,
+        pg_catalog.pg_get_expr(t.tgqual,t.tgrelid) condition,t.tgnargs arguments_count,pg_catalog.encode(t.tgargs,'hex') arguments_hex,
+        t.tgdeferrable deferrable,t.tginitdeferred initially_deferred,t.tgoldtable old_table,t.tgnewtable new_table
+        FROM pg_catalog.pg_trigger t JOIN pg_catalog.pg_class r ON r.oid=t.tgrelid
+        JOIN pg_catalog.pg_namespace n ON n.oid=r.relnamespace WHERE n.nspname='public' AND t.tgname=ANY(%s)""", (list(TRIGGERS),)).fetchall():
+        triggers.setdefault(row.pop('name'), []).append(row)
+    policy = spec.policy
+    role_names = [spec.installer_role] + ([policy.application_role, policy.writer_role] if policy else [])
+    roles = {}
+    owners = sorted({r['owner'] for r in tables.values()} | {identity['owner_name']} | {r['owner'] for rows in functions.values() for r in rows})
+    for name in filter(None, role_names):
+        row = c.execute("""SELECT r.rolsuper superuser,r.rolcreatedb createdb,r.rolcreaterole createrole,
+            r.rolreplication replication,r.rolbypassrls bypass_rls,
+            EXISTS(SELECT 1 FROM pg_catalog.pg_roles x WHERE
+                (x.rolsuper OR x.rolcreatedb OR x.rolcreaterole OR x.rolreplication OR x.rolbypassrls OR
+                 pg_catalog.left(x.rolname,3)='pg_') AND
+                pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER')) dangerous_membership,
+            EXISTS(SELECT 1 FROM pg_catalog.pg_roles x WHERE x.rolname=ANY(%s) AND
+                pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER')) owner_membership,
+            EXISTS(SELECT 1 FROM pg_catalog.pg_roles x WHERE x.rolname=%s AND x.oid<>r.oid AND
+                pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER')) writer_membership
+            FROM pg_catalog.pg_roles r WHERE r.rolname=%s""", (owners, policy.writer_role if policy else None, name)).fetchone()
+        if row:roles[name] = row
+    privileges = {}
+    labels = {'app': policy.application_role, 'writer': policy.writer_role} if policy else {}
+    def privilege(label, action, table, column=None):
+        role = labels.get(label)
+        if role not in roles:return None
+        if action == 'EXECUTE':
+            return c.execute("SELECT pg_catalog.has_function_privilege(%s,'pg_catalog.pg_control_system()','EXECUTE') ok", (role,)).fetchone()['ok']
+        if table not in tables:return None
+        oid = tables[table]['oid']
+        if action == 'LOCK_UPDATE':
+            return c.execute("SELECT pg_catalog.has_any_column_privilege(%s,%s,'UPDATE') ok", (role, oid)).fetchone()['ok']
+        if column:
+            # Missing additive columns are reported separately, not queried as identifiers.
+            exists = c.execute('SELECT 1 FROM pg_catalog.pg_attribute WHERE attrelid=%s AND attname=%s AND NOT attisdropped', (oid, column)).fetchone()
+            if not exists:return None
+            return c.execute('SELECT pg_catalog.has_column_privilege(%s,%s,%s,%s) ok', (role, oid, column, action)).fetchone()['ok']
+        return c.execute('SELECT pg_catalog.has_table_privilege(%s,%s,%s) ok', (role, oid, action)).fetchone()['ok']
+    for label, action, table, column in required_privileges(spec.parent_lock_column):
+        value = privilege(label, action, table, column)
+        if value is not None:privileges[_privilege_key(label, action, table, column)] = value
+    def any_write(label, names):
+        if labels.get(label) not in roles:return None
+        return any(privilege(label, action, table) or c.execute('SELECT pg_catalog.has_any_column_privilege(%s,%s,%s) ok',
+                   (labels[label], tables[table]['oid'], action)).fetchone()['ok']
+                   for table in names if table in tables for action in ('INSERT', 'UPDATE')) or any(
+                   privilege(label, 'DELETE', table) for table in names if table in tables)
+    for key, value in (('app:assignment_write', any_write('app', ['run_assignments'])),
+                       ('app:identity_write', any_write('app', ['principals', 'capability_grants', 'preparation_grants', 'action_grants', 'field_grants'])),
+                       ('app:control_system_execute', privilege('app', 'EXECUTE', 'pg_control_system()'))):
+        if value is not None:privileges[key] = value
+    excess = []
+    if policy and policy.writer_role in roles:
+        allowed = {'runs': {'native_run_access_protocol', 'native_run_access_activation'},
+                   'run_assignments': {'active', 'native_access'}, 'preparations': {spec.parent_lock_column}}
+        for row in c.execute("""SELECT r.relname name,a.attname column,
+                pg_catalog.has_column_privilege(%s,r.oid,a.attnum,'INSERT') insert_ok,
+                pg_catalog.has_column_privilege(%s,r.oid,a.attnum,'UPDATE') update_ok,
+                pg_catalog.has_table_privilege(%s,r.oid,'DELETE') delete_ok
+                FROM pg_catalog.pg_class r JOIN pg_catalog.pg_namespace n ON n.oid=r.relnamespace
+                JOIN pg_catalog.pg_attribute a ON a.attrelid=r.oid
+                WHERE n.nspname='public' AND r.relkind IN ('r','p') AND a.attnum>0 AND NOT a.attisdropped""",
+                (policy.writer_role, policy.writer_role, policy.writer_role)).fetchall():
+            table, column = row['name'], row['column']
+            if row['update_ok'] and column not in allowed.get(table, set()):excess.append('UPDATE:'+table+'.'+column)
+            if row['insert_ok'] and not (table == 'run_assignments' and column in
+                    {'principal_id', 'run_id', 'park_id', 'org_id', 'active', 'native_access'}):excess.append('INSERT:'+table+'.'+column)
+            if row['delete_ok']:excess.append('DELETE:'+table)
+        excess = sorted(set(excess))
+        privileges['writer:unneeded_write'] = bool(excess)
+    for label, role in labels.items():
+        if role in roles:
+            privileges[label+':schema_create'] = c.execute("SELECT pg_catalog.has_schema_privilege(%s,'public','CREATE') ok", (role,)).fetchone()['ok']
+    if spec.installer_role in roles:
+        privileges['installer:schema_create'] = c.execute("SELECT pg_catalog.has_schema_privilege(%s,'public','CREATE') ok", (spec.installer_role,)).fetchone()['ok']
+        targets = [tables[t]['owner'] for t in ('runs', 'run_assignments') if t in tables]
+        privileges['installer:alter_targets'] = len(targets) == 2 and (roles[spec.installer_role]['superuser'] or all(
+            c.execute('SELECT pg_catalog.pg_has_role(%s,%s,\'USAGE\') ok', (spec.installer_role, owner)).fetchone()['ok'] for owner in targets))
+    version = c.execute('SELECT max(version) value FROM public.schema_version').fetchone()['value'] if 'schema_version' in tables else None
+    snapshot = CatalogSnapshot(database=dict(name=identity['database_name'],oid=identity['database_oid'],
+        system_identifier=identity['system_identifier'],host=connection.info.host,port=connection.info.port,
+        session_user=identity['session_name'],current_user=identity['current_name']),
+        schema_version=version,tables=tables,columns=columns,functions=functions,triggers=triggers,
+        roles=roles,privileges=privileges,unneeded_writer_permissions=excess)
+    return snapshot.model_dump()
 
 
 def main(argv=None):

@@ -280,6 +280,12 @@ class WriterContext:
 
     def validate(self, c):
         p = self.policy
+        runtime = getattr(self.store, '_restricted_runtime', None)
+        if runtime is not None:
+            from .native_run_access_restricted_runtime import RuntimeGuard
+            if type(runtime) is not RuntimeGuard or runtime.policy_json != self._policy_json:
+                raise Denied('exact restricted runtime contract required')
+            RuntimeGuard.check(runtime, c)
         value = _public_database(c)
         if ((value['database_name'], value['database_oid'], value['database_host'], value['database_port'], value['database_role']) !=
                 (p.database_name, p.database_oid, p.database_host, p.database_port, p.writer_role)):

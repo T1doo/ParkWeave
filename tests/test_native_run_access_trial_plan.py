@@ -19,7 +19,7 @@ def inputs():
 def test_complete_plan_stays_unapproved_with_no_repurposed_reference_command():
     spec, catalog, host = inputs();result = trial.prepare(spec, catalog, host)
     assert result['status'] == 'APPROVAL_REQUIRED'
-    assert result['writer_argv'] is None and result['writer_runtime'] == 'NOT_IMPLEMENTED'
+    assert result['writer_argv'] is None and result['writer_runtime'] == 'IMPLEMENTED_DEFAULT_CLOSED_UNVERIFIED'
     assert result['actual_run'] == 'NOT_RUN'
     assert all(result[key] is False for key in ('launch_authorized', 'installation_authorized', 'activation_enabled', 'production_connected'))
     assert len(result['pending_actions']) == 5

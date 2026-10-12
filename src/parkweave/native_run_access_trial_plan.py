@@ -42,7 +42,7 @@ def prepare(spec=None, snapshot=None, host_plan=None):
     report = dict(schema='parkweave-linux-restricted-trial-plan/1', route='LINUX_DIRECT_RESTRICTED_DML',
         status='MISSING_CONFIG', launch_authorized=False, installation_authorized=False,
         activation_enabled=False, production_connected=False, actual_run='NOT_RUN',
-        writer_argv=None, writer_runtime='NOT_IMPLEMENTED',
+        writer_argv=None, writer_runtime='IMPLEMENTED_DEFAULT_CLOSED_UNVERIFIED',
         qualification='OFFLINE_PUBLIC_PLAN_ONLY; no identity/secret/path/permission/source proof',
         pending_actions=[])
     comparison = preflight.analyze(spec, snapshot)
@@ -78,7 +78,8 @@ def prepare(spec=None, snapshot=None, host_plan=None):
         report.update(status='REFUSED', reason='INVALID_OR_UNSUPPORTED_PUBLIC_TRIAL_INPUT; values not echoed')
         return report
     permissions = []
-    for label, action, table, column in preflight.required_privileges(config.parent_lock_column):
+    from .native_run_access_restricted_runtime import required_privileges
+    for label, action, table, column in required_privileges(config.parent_lock_column):
         if action == 'LOCK_UPDATE':
             continue  # A technical prerequisite, not a PostgreSQL GRANT verb.
         permissions.append(dict(role=policy.writer_role, action=action, schema='pg_catalog' if action == 'EXECUTE' else 'public',
@@ -99,7 +100,7 @@ def prepare(spec=None, snapshot=None, host_plan=None):
         writer_permission_requirements=permissions,
         permission_delta=comparison['changes'],
         lock_requirement=dict(table='preparations', technical_update_column=config.parent_lock_column),
-        runtime_blocker='Existing owner reference rejects the restricted contract. A separately reviewed private host/runtime adapter is required; no reference argv substitution.',
+        runtime_blocker='Restricted host/runtime code is implemented and default closed. Real protected approval/creation receipt/UID-GID/source/interpreter/private inputs and live OS/PG acceptance remain unverified; this public plan cannot launch it.',
         pending_actions=[
             dict(action='PROVISION_ISOLATED_TARGET', scope=dict(trial_root=host.trial_root,
                 database=policy.database_name), required='Fresh owned UUID database creation proof; identity/OID/system identifier and original source rechecked. No existing or production target.'),
