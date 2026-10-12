@@ -1,0 +1,87 @@
+...F.................................................................... [ 92%]
+......                                                                   [100%]
+=================================== FAILURES ===================================
+________ test_current_owner_wrong_tenant_and_nonowner_cannot_use_writer ________
+
+writer_fixture = <writer_reference_support.Harness object at 0x7f267056fcb0>
+
+    def test_current_owner_wrong_tenant_and_nonowner_cannot_use_writer(writer_fixture):
+        h=writer_fixture;data=body(h.a,'REQUEST')
+        for actor in ('fixture-b','executor-a','unassigned'):
+>           with pytest.raises(Denied):act(h.a,'REQUEST',user=actor,data=data)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_native_run_access_writer.py:35: in act
+    return old_act(a,action,user,key,data or body(a,action,user))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_native_run_access.py:66: in act
+    return bridge.command(f[2][user],UUID(parent['run_id']),key or uuid4().hex,data or body(a,action,user))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/native_run_access.py:52: in call
+    return fn(*args,**kwargs)
+           ^^^^^^^^^^^^^^^^^^
+src/parkweave/native_run_access.py:439: in command
+    return invoke(self,'COMMAND',token,run_id,key,data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/native_run_access_writer.py:435: in invoke
+    return WriterClient.invoke(value, operation, token, run_id, key, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/native_run_access_writer.py:259: in invoke
+    return WriterClient.rpc(self, operation, token=token, request_key=key,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <parkweave.native_run_access_writer.WriterClient object at 0x7f267056faa0>
+operation = 'COMMAND'
+data = {'token': "[REDACTED opaque fixture value]", 'request_key': '87ccfb87825c4111bb22cceb14da2a50', 'command':...un_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...}}
+
+    def rpc(self, operation, **data):
+        pin = self.pin
+        verify = operation in ('VALIDATE', 'VERIFY')
+        path = pin.verify_path if verify else pin.command_path
+        expected = (pin.verify_device, pin.verify_inode) if verify else (pin.command_device, pin.command_inode)
+        try:
+            before = _socket_stat(path)
+            if (before.st_dev, before.st_ino, before.st_uid) != (*expected, pin.uid) or _pid_started(pin.pid) != pin.process_started:
+                raise Denied('writer process/socket instance changed')
+            nonce = secrets.token_hex(16)
+            value = dict(operation=operation, nonce=nonce, run_id=self.policy.source.run_id, **data)
+            payload = (_canonical(value) + '\n').encode()
+            if len(payload) > MAX_FRAME:
+                raise Denied('bounded writer request required')
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as channel:
+                channel.settimeout(7 if not verify else 2)
+                channel.connect(path)
+                pid, uid, _ = struct.unpack('3i', channel.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))
+                after = _socket_stat(path)
+                if ((pid, uid) != (pin.pid, pin.uid) or (after.st_dev, after.st_ino) != expected or
+                        _pid_started(pid) != pin.process_started):
+                    raise Denied('writer peer identity changed')
+                channel.sendall(payload)
+                with channel.makefile('rb') as stream:
+                    raw = stream.readline(MAX_FRAME + 1)
+            if len(raw) > MAX_FRAME or not raw.endswith(b'\n'):
+                raise Denied('writer response unknown; GET original key')
+            reply = json.loads(raw)
+            if (not isinstance(reply, dict) or reply.get('nonce') != nonce or reply.get('boot_id') != pin.boot_id or
+                    reply.get('policy_sha256') != pin.policy_sha256):
+                raise Denied('writer response binding unavailable')
+            if reply.get('error') == 'CONFLICT':
+>               raise Conflict(reply['message'])
+E               parkweave.store.Conflict: request, Run or current source version changed
+
+src/parkweave/native_run_access_writer.py:224: Conflict
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_native_run_access_writer.py::test_actual_separate_writer_activation_and_no_api_owner_or_key
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_native_run_access_writer.py::test_current_owner_wrong_tenant_and_nonowner_cannot_use_writer
+1 failed, 77 passed, 2 warnings in 85.57s (0:01:25)

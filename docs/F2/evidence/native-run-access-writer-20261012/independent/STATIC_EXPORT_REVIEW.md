@@ -1,0 +1,9 @@
+# Exact static export review
+
+**APPROVED_FOR_EXACT_STATIC_EXPORT** for the31 explicit paths/hashes in `STATIC_EXPORT_REVIEW.json` and the matching root whitelist. Every file was read; all31 hashes matched. They contain17 distinct payloads;15 distinct Python payloads parse as source. Exact product/baseline snapshots were independently compared with the named77e or9ea tracked Git bytes.
+
+The copied runners/probes contain synthetic labels, source hashes and dynamic references to fixture authority. No literal runtime signing key, session token, owner DSN, bootstrap configuration or private API configuration was present. Environment pass-through in a test runner is code, not a saved environment-value dump. The root and independent runner variants retain original failure behavior and the subsequent separate evidence-directory correction. The old SQL loader file is byte-identical to its explicitly approved `.sql.txt` copy.
+
+This approves **only byte-exact static copying** of the enumerated31 paths/hash pairs; it neither approves suffix-based future candidates nor authorizes execution, privilege installation or production operation. Unknown/new/modified code requires another exact review. The root whitelist SHA is `f50f2c0f88af8e27d56af74b4dcf1868e2d4d5e5e22b8237c72f05e20689854b`.
+
+The authored archive builder `146b62f752ff1ebe267492687e01dee123d2ca630c76c232f6bdff075bf7f355` was statically read: current design refuses runtime credential-bearing JSON fields including bootstrap key/DSNs, keeps immutable failed results/JUnit identity/time, checks unique testcase IDs, uses exact static hashes and a separately frozen explicit input set. Its actual export/complete raw closure still needs independent later audit. Root's final25-module regression remains RUNNING at this static signoff; no full-archive or broad regression PASS is asserted.

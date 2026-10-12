@@ -1,0 +1,131 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="41" time="75.968" timestamp="2026-10-12T05:51:13.083172+00:00" hostname="synthetic-fixture-host"><testcase classname="tests.test_native_run_access_writer" name="test_actual_separate_writer_activation_and_no_api_owner_or_key" time="1.623" /><testcase classname="tests.test_native_run_access_writer" name="test_default_cold_store_and_untrusted_endpoints_never_activate" time="0.994" /><testcase classname="tests.test_native_run_access_writer" name="test_one_policy_cannot_renew_by_new_request_after_revoke" time="1.050" /><testcase classname="tests.test_native_run_access_writer" name="test_current_owner_wrong_tenant_and_nonowner_cannot_use_writer" time="0.797" /><testcase classname="tests.test_native_run_access_writer" name="test_verify_channel_has_no_sign_sql_or_actor_setter" time="0.674" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change0]" time="0.641" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change1]" time="0.641" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change2]" time="0.626" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change3]" time="0.810" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change4]" time="0.670" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change5]" time="0.645" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change6]" time="0.664" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change7]" time="0.614" /><testcase classname="tests.test_native_run_access_writer" name="test_terminal_decision_cannot_renew_single_policy[REJECT]" time="0.774" /><testcase classname="tests.test_native_run_access_writer" name="test_terminal_decision_cannot_renew_single_policy[CANCEL]" time="0.904" /><testcase classname="tests.test_native_run_access_writer" name="test_approval_only_shrinks_interval_and_owner_cannot_approve" time="0.835" /><testcase classname="tests.test_native_run_access_writer" name="test_actual_writer_concurrent_keys_and_original_recovery[True]" time="0.998" /><testcase classname="tests.test_native_run_access_writer" name="test_actual_writer_concurrent_keys_and_original_recovery[False]" time="0.992" /><testcase classname="tests.test_native_run_access_writer" name="test_private_writer_failure_rolls_back_event_and_assignment[event]" time="1.014" /><testcase classname="tests.test_native_run_access_writer" name="test_private_writer_failure_rolls_back_event_and_assignment[assignment]" time="0.900" /><testcase classname="tests.test_native_run_access_writer" name="test_existing_app_json_update_cannot_forge_signed_authority" time="0.860"><failure message="psycopg.errors.RaiseException: invalid native protocol transition or receipt&#10;CONTEXT:  PL/pgSQL function guard_native_run_access_protocol() line 60 at RAISE">writer_fixture = &lt;writer_reference_support.Harness object at 0x7f1f79ef2c30&gt;
+
+    def test_existing_app_json_update_cannot_forge_signed_authority(writer_fixture):
+        h=writer_fixture;approve(h);assert activate(h.a).status_code==200
+        with h.f[0].connect() as c:
+            stored=c.execute('SELECT native_run_access_protocol value FROM runs WHERE id=%s',(h.parent['run_id'],)).fetchone()['value']
+            fake=deepcopy(stored['events'][-1]);fake.update(revision=3,request_key='app-forged',reason='forged copied signature')
+            stored['events'].append(fake);stored['revision']=3
+&gt;           c.execute('UPDATE runs SET native_run_access_protocol=%s WHERE id=%s',(Jsonb(stored),h.parent['run_id']))
+
+tests/test_native_run_access_writer.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.store._AccessConnection [BAD] at 0x7f1f7b5f7bc0&gt;
+query = 'UPDATE runs SET native_run_access_protocol=%s WHERE id=%s'
+params = (Jsonb({'state': 'APPROVED', 'events': [{' ... (14084 chars)), '15cafd1e-1ada-49e7-a608-cb89b98449a3')
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.RaiseException: invalid native protocol transition or receipt
+E           CONTEXT:  PL/pgSQL function guard_native_run_access_protocol() line 60 at RAISE
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: RaiseException</failure></testcase><testcase classname="tests.test_native_run_access_writer" name="test_owner_revoke_survives_stale_target_source_and_lease[beneficiary_read]" time="1.031" /><testcase classname="tests.test_native_run_access_writer" name="test_owner_revoke_survives_stale_target_source_and_lease[materials]" time="0.974" /><testcase classname="tests.test_native_run_access_writer" name="test_owner_revoke_survives_stale_target_source_and_lease[expired]" time="4.326" /><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[fixture-a-principals-None]" time="0.976" /><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[executor-a-principals-None]" time="1.005" /><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[fixture-a-preparation_grants-PREPARE]" time="0.963" /><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[executor-a-capability_grants-READ]" time="0.998" /><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[prep-specialist-fixture-a-capability_grants-READ]" time="1.208" /><testcase classname="tests.test_native_run_access_writer" name="test_writer_never_overwrites_legacy_assignment[True]" time="0.922" /><testcase classname="tests.test_native_run_access_writer" name="test_writer_never_overwrites_legacy_assignment[False]" time="0.869" /><testcase classname="tests.test_native_run_access_writer" name="test_queued_commands_cannot_starve_verify_and_business_commit" time="1.192" /><testcase classname="tests.test_native_run_access_writer" name="test_accept_and_writer_revoke_actual_parent_lock_order[accept]" time="1.099" /><testcase classname="tests.test_native_run_access_writer" name="test_accept_and_writer_revoke_actual_parent_lock_order[revoke]" time="1.250" /><testcase classname="tests.test_native_run_access_writer" name="test_activation_checks_changes_after_actual_parent_wait[materials]" time="0.816" /><testcase classname="tests.test_native_run_access_writer" name="test_activation_checks_changes_after_actual_parent_wait[expiry]" time="3.962" /><testcase classname="tests.test_native_run_access_writer" name="test_expiry_at_receipt_commit_rolls_back_real_api_writes" time="5.408" /><testcase classname="tests.test_native_run_access_writer" name="test_real_api_writer_restart_needs_explicit_rebind" time="11.569"><failure message="AssertionError: owned API did not become ready">writer_fixture = &lt;writer_reference_support.Harness object at 0x7f1f789fecc0&gt;
+
+    def test_real_api_writer_restart_needs_explicit_rebind(writer_fixture):
+        h=writer_fixture;approve(h);original=activate(h.a,key='lost-response').json();before=business(h.a)
+        old_pid=h.writer_process.pid;old_pin=h.pin;h.stop(h.writer_process)
+        assert h.f[3].get('/api/runs/'+h.parent['run_id'],headers=headers(h.f[2],'executor-a')).status_code==403
+        assert h.f[3].get(path(h.a)+'/commands/lost-response',headers=headers(h.f[2])).json()['receipt']==original
+        h.start_writer();assert h.writer_process.pid!=old_pid and h.pin.boot_id!=old_pin.boot_id
+        # The stale API host pin must reject the newly created writer process.
+        assert h.f[3].get('/api/runs/'+h.parent['run_id'],headers=headers(h.f[2],'executor-a')).status_code==403
+        h.bind()
+        for enabled in (False,True):
+&gt;           process,client=start_api(h,free_port(),enabled=enabled)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+harness = &lt;writer_reference_support.Harness object at 0x7f1f789fecc0&gt;
+port = 44723, enabled = False
+
+    def start_api(harness,port,*,enabled=True):
+        root=harness.directory/('api-'+str(len(harness.processes)));root.mkdir(mode=0o700)
+        config=dict(app_dsn=harness.f[0].dsn,port=port)
+        if enabled:config.update(policy=harness.bootstrap['policy'],pin=harness.pin.model_dump())
+        assert 'writer_dsn' not in config and 'key' not in config
+        path=root/'public-scope-and-app.json';write_private(path,config)
+        out=(root/'stdout.log').open('w');err=(root/'stderr.log').open('w')
+        process=subprocess.Popen([str(Path('.venv/bin/python').absolute()),str(Path('tests/writer_reference_api.py').resolve()),str(path)],
+            env=child_environment(),stdout=out,stderr=err)
+        out.close();err.close();harness.processes.append(process)
+        import httpx
+        deadline=monotonic()+10
+        while monotonic()&lt;deadline:
+            if process.poll() is not None:raise AssertionError('API exited: '+(root/'stderr.log').read_text())
+            try:
+                r=httpx.get('http://127.0.0.1:'+str(port)+'/api/health',timeout=.3)
+                if r.status_code==200 and r.json()['process_id']==process.pid:break
+            except httpx.HTTPError:pass
+            sleep(.03)
+&gt;       else:raise AssertionError('owned API did not become ready')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: owned API did not become ready
+
+tests/writer_reference_support.py:144: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_writer" name="test_actual_physical_pg_restart_retains_original_lease_without_self_issue" time="12.560"><failure message="AssertionError: owned API did not become ready">restart_writer_fixture = (&lt;writer_reference_support.Harness object at 0x7f1f78c2c290&gt;, &lt;function restart_writer_fixture.&lt;locals&gt;.restart at 0x7f1f7a2356c0&gt;)
+
+    def test_actual_physical_pg_restart_retains_original_lease_without_self_issue(restart_writer_fixture):
+        h,restart=restart_writer_fixture;approve(h);original=activate(h.a,key='pg-original').json();before=business(h.a)
+        h.stop(h.writer_process);restart()
+        with TestClient(create_app(Store(h.f[0].dsn))) as cold:
+            assert cold.get('/api/runs/'+h.parent['run_id'],headers=headers(h.f[2],'executor-a')).status_code==403
+            assert cold.get(path(h.a)+'/commands/pg-original',headers=headers(h.f[2])).json()['receipt']==original
+&gt;       h.start_writer();h.bind();process,client=start_api(h,free_port())
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:315: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+harness = &lt;writer_reference_support.Harness object at 0x7f1f78c2c290&gt;
+port = 46785, enabled = True
+
+    def start_api(harness,port,*,enabled=True):
+        root=harness.directory/('api-'+str(len(harness.processes)));root.mkdir(mode=0o700)
+        config=dict(app_dsn=harness.f[0].dsn,port=port)
+        if enabled:config.update(policy=harness.bootstrap['policy'],pin=harness.pin.model_dump())
+        assert 'writer_dsn' not in config and 'key' not in config
+        path=root/'public-scope-and-app.json';write_private(path,config)
+        out=(root/'stdout.log').open('w');err=(root/'stderr.log').open('w')
+        process=subprocess.Popen([str(Path('.venv/bin/python').absolute()),str(Path('tests/writer_reference_api.py').resolve()),str(path)],
+            env=child_environment(),stdout=out,stderr=err)
+        out.close();err.close();harness.processes.append(process)
+        import httpx
+        deadline=monotonic()+10
+        while monotonic()&lt;deadline:
+            if process.poll() is not None:raise AssertionError('API exited: '+(root/'stderr.log').read_text())
+            try:
+                r=httpx.get('http://127.0.0.1:'+str(port)+'/api/health',timeout=.3)
+                if r.status_code==200 and r.json()['process_id']==process.pid:break
+            except httpx.HTTPError:pass
+            sleep(.03)
+&gt;       else:raise AssertionError('owned API did not become ready')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: owned API did not become ready
+
+tests/writer_reference_support.py:144: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_writer" name="test_cancelled_case_keeps_capacity_and_independent_release" time="1.148" /><testcase classname="tests.test_native_run_access_writer" name="test_reference_writer_full_chain_with_explicit_plan_revision" time="5.685" /></testsuite></testsuites>

@@ -1,0 +1,1582 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="46" failures="12" skipped="0" tests="137" time="99.783" timestamp="2026-10-12T05:54:12.951459+00:00" hostname="synthetic-fixture-host"><testcase classname="tests.test_native_run_access_writer" name="test_actual_separate_writer_activation_and_no_api_owner_or_key" time="1.425" /><testcase classname="tests.test_native_run_access_writer" name="test_default_cold_store_and_untrusted_endpoints_never_activate" time="0.937" /><testcase classname="tests.test_native_run_access_writer" name="test_one_policy_cannot_renew_by_new_request_after_revoke" time="1.036" /><testcase classname="tests.test_native_run_access_writer" name="test_current_owner_wrong_tenant_and_nonowner_cannot_use_writer" time="0.714" /><testcase classname="tests.test_native_run_access_writer" name="test_verify_channel_has_no_sign_sql_or_actor_setter" time="0.577" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change0]" time="0.571" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change1]" time="0.569" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change2]" time="0.553" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change3]" time="0.708" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change4]" time="0.642" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change5]" time="0.578" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change6]" time="0.576" /><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change7]" time="0.555" /><testcase classname="tests.test_native_run_access_writer" name="test_terminal_decision_cannot_renew_single_policy[REJECT]" time="0.808" /><testcase classname="tests.test_native_run_access_writer" name="test_terminal_decision_cannot_renew_single_policy[CANCEL]" time="0.783" /><testcase classname="tests.test_native_run_access_writer" name="test_approval_only_shrinks_interval_and_owner_cannot_approve" time="0.771" /><testcase classname="tests.test_native_run_access_writer" name="test_actual_writer_concurrent_keys_and_original_recovery[True]" time="0.900" /><testcase classname="tests.test_native_run_access_writer" name="test_actual_writer_concurrent_keys_and_original_recovery[False]" time="0.945" /><testcase classname="tests.test_native_run_access_writer" name="test_private_writer_failure_rolls_back_event_and_assignment[event]" time="0.914" /><testcase classname="tests.test_native_run_access_writer" name="test_private_writer_failure_rolls_back_event_and_assignment[assignment]" time="0.779" /><testcase classname="tests.test_native_run_access_writer" name="test_existing_app_json_update_cannot_forge_signed_authority" time="0.696"><failure message="AssertionError: assert 422 == 403&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&#10; +    where &lt;Response [422 Unprocessable Entity]&gt; = activate(((&lt;parkweave.store.Store object at 0x7feb54240080&gt;, &lt;parkweave.store.Store object at 0x7feb5418b170&gt;, {'fixture-a': &quot;[REDACTED synthetic auth value]&quot;row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...}))&#10; +      where ((&lt;parkweave.store.Store object at 0x7feb54240080&gt;, &lt;parkweave.store.Store object at 0x7feb5418b170&gt;, {'fixture-a': &quot;[REDACTED synthetic auth value]&quot;row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...}) = &lt;writer_reference_support.Harness object at 0x7feb548b3b30&gt;.a">writer_fixture = &lt;writer_reference_support.Harness object at 0x7feb548b3b30&gt;
+
+    def test_existing_app_json_update_cannot_forge_signed_authority(writer_fixture):
+        h=writer_fixture;act(h.a,'REQUEST')
+        with h.f[0].connect() as c:
+            stored=c.execute('SELECT native_run_access_protocol value FROM runs WHERE id=%s',(h.parent['run_id'],)).fetchone()['value']
+            request=stored['request'];lease_id=str(uuid4())
+            run=c.execute('SELECT * FROM runs WHERE id=%s',(h.parent['run_id'],)).fetchone()
+            request.update(approver_id=APPROVER,approved_validity=request['requested_validity'],
+                           approver_authority=h.bridge._authority_snapshot(c,run,APPROVER))
+            fake=deepcopy(stored['events'][-1]);fake.update(revision=2,request_key='app-forged',reason='forged copied signature',
+                actor_id=APPROVER,action='APPROVE',state='APPROVED',lease_id=lease_id,request=deepcopy(request))
+            stored['events'].append(fake);stored.update(revision=2,state='APPROVED',lease_id=lease_id)
+            stored['leases']=[dict(id=lease_id,state='NON_EFFECTIVE',request_id=request['request_id'],source=request['source'],validity=request['approved_validity'])]
+            c.execute('UPDATE runs SET native_run_access_protocol=%s WHERE id=%s',(Jsonb(stored),h.parent['run_id']))
+        assert h.f[3].get('/api/runs/'+h.parent['run_id'],headers=headers(h.f[2],'executor-a')).status_code==403
+        meta=h.f[3].get(path(h.a),headers=headers(h.f[2]));assert meta.status_code==200
+        assert not meta.json()['writer_history_verified'] and not meta.json()['actual_run_access']
+        assert not meta.json()['can_activate'] and not meta.json()['can_revoke']
+&gt;       assert activate(h.a).status_code==403
+E       AssertionError: assert 422 == 403
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+E        +    where &lt;Response [422 Unprocessable Entity]&gt; = activate(((&lt;parkweave.store.Store object at 0x7feb54240080&gt;, &lt;parkweave.store.Store object at 0x7feb5418b170&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...}))
+E        +      where ((&lt;parkweave.store.Store object at 0x7feb54240080&gt;, &lt;parkweave.store.Store object at 0x7feb5418b170&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...}) = &lt;writer_reference_support.Harness object at 0x7feb548b3b30&gt;.a
+
+tests/test_native_run_access_writer.py:180: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_writer" name="test_owner_revoke_survives_stale_target_source_and_lease[beneficiary_read]" time="0.848" /><testcase classname="tests.test_native_run_access_writer" name="test_owner_revoke_survives_stale_target_source_and_lease[materials]" time="0.821" /><testcase classname="tests.test_native_run_access_writer" name="test_owner_revoke_survives_stale_target_source_and_lease[expired]" time="4.145" /><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[fixture-a-principals-None]" time="0.879" /><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[executor-a-principals-None]" time="0.866" /><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[fixture-a-preparation_grants-PREPARE]" time="0.848" /><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[executor-a-capability_grants-READ]" time="0.809" /><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[prep-specialist-fixture-a-capability_grants-READ]" time="1.015" /><testcase classname="tests.test_native_run_access_writer" name="test_writer_never_overwrites_legacy_assignment[True]" time="0.796" /><testcase classname="tests.test_native_run_access_writer" name="test_writer_never_overwrites_legacy_assignment[False]" time="0.769" /><testcase classname="tests.test_native_run_access_writer" name="test_queued_commands_cannot_starve_verify_and_business_commit" time="1.097" /><testcase classname="tests.test_native_run_access_writer" name="test_accept_and_writer_revoke_actual_parent_lock_order[accept]" time="4.936"><failure message="AssertionError: actual owned PG parent lock waiter not observed">writer_fixture = &lt;writer_reference_support.Harness object at 0x7feb54597860&gt;
+first = 'accept'
+
+    @pytest.mark.parametrize('first',['accept','revoke'])
+    def test_accept_and_writer_revoke_actual_parent_lock_order(writer_fixture,first):
+        h=writer_fixture;approve(h);assert activate(h.a).status_code==200
+        offered=offer(h.f,h.parent)[0];assert offered.status_code==201;dispatch=offered.json();revoke=body(h.a,'REVOKE')
+        def revoke_call():return h.f[3].post(path(h.a)+'/commands',headers=headers(h.f[2],key='queued-revoke'),json=revoke.model_dump(mode='json'))
+        calls={'accept':lambda:dispatch_command(h.f,dispatch,'ACCEPT'),'revoke':revoke_call}
+        with h.f[1].connect() as lock:
+            lock.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(h.parent['preparation_id'],))
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                earlier=pool.submit(calls[first]);wait_parent(h.f[1],h.parent['run_id'])
+&gt;               later=pool.submit(calls['revoke' if first=='accept' else 'accept']);wait_parent(h.f[1],h.parent['run_id'],2)
+                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:245: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+owner = &lt;parkweave.store.Store object at 0x7feb5479c3b0&gt;
+run_id = 'e239cd7a-a380-41f5-a21e-3cbcd8de40c2', expected = 2
+
+    def wait_parent(owner,run_id,expected=1):
+        deadline=monotonic()+4
+        while monotonic()&lt;deadline:
+            with owner.connect() as c:
+                rows=c.execute("""SELECT pid,query,wait_event_type FROM pg_stat_activity
+                    WHERE datname=current_database() AND wait_event_type='Lock'
+                    AND query LIKE %s""",('%FROM preparations WHERE%',)).fetchall()
+            if len(rows)&gt;=expected:
+                out=os.environ.get("[REDACTED opaque fixture value]")
+                if out:
+                    p=Path(out);p.mkdir(parents=True,exist_ok=True)
+                    (p/('lock-wait-'+uuid4().hex+'.json')).write_text(json.dumps(dict(
+                        run_id=str(run_id),database=owner._case_fact_fixture_receipt.database_name,
+                        observed_at_utc=datetime.now(timezone.utc).isoformat(),required_waiters=expected,
+                        actual_pg_waiters=rows),indent=2,default=str)+'\n')
+                return rows
+            sleep(.02)
+&gt;       raise AssertionError('actual owned PG parent lock waiter not observed')
+E       AssertionError: actual owned PG parent lock waiter not observed
+
+tests/test_native_run_access_activation.py:132: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_writer" name="test_accept_and_writer_revoke_actual_parent_lock_order[revoke]" time="4.988"><failure message="AssertionError: actual owned PG parent lock waiter not observed">writer_fixture = &lt;writer_reference_support.Harness object at 0x7feb58deaab0&gt;
+first = 'revoke'
+
+    @pytest.mark.parametrize('first',['accept','revoke'])
+    def test_accept_and_writer_revoke_actual_parent_lock_order(writer_fixture,first):
+        h=writer_fixture;approve(h);assert activate(h.a).status_code==200
+        offered=offer(h.f,h.parent)[0];assert offered.status_code==201;dispatch=offered.json();revoke=body(h.a,'REVOKE')
+        def revoke_call():return h.f[3].post(path(h.a)+'/commands',headers=headers(h.f[2],key='queued-revoke'),json=revoke.model_dump(mode='json'))
+        calls={'accept':lambda:dispatch_command(h.f,dispatch,'ACCEPT'),'revoke':revoke_call}
+        with h.f[1].connect() as lock:
+            lock.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(h.parent['preparation_id'],))
+            with ThreadPoolExecutor(max_workers=2) as pool:
+&gt;               earlier=pool.submit(calls[first]);wait_parent(h.f[1],h.parent['run_id'])
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:244: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+owner = &lt;parkweave.store.Store object at 0x7feb58dc61b0&gt;
+run_id = 'a85045db-6eb8-432e-a129-0d783f2d41fa', expected = 1
+
+    def wait_parent(owner,run_id,expected=1):
+        deadline=monotonic()+4
+        while monotonic()&lt;deadline:
+            with owner.connect() as c:
+                rows=c.execute("""SELECT pid,query,wait_event_type FROM pg_stat_activity
+                    WHERE datname=current_database() AND wait_event_type='Lock'
+                    AND query LIKE %s""",('%FROM preparations WHERE%',)).fetchall()
+            if len(rows)&gt;=expected:
+                out=os.environ.get("[REDACTED opaque fixture value]")
+                if out:
+                    p=Path(out);p.mkdir(parents=True,exist_ok=True)
+                    (p/('lock-wait-'+uuid4().hex+'.json')).write_text(json.dumps(dict(
+                        run_id=str(run_id),database=owner._case_fact_fixture_receipt.database_name,
+                        observed_at_utc=datetime.now(timezone.utc).isoformat(),required_waiters=expected,
+                        actual_pg_waiters=rows),indent=2,default=str)+'\n')
+                return rows
+            sleep(.02)
+&gt;       raise AssertionError('actual owned PG parent lock waiter not observed')
+E       AssertionError: actual owned PG parent lock waiter not observed
+
+tests/test_native_run_access_activation.py:132: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_writer" name="test_activation_checks_changes_after_actual_parent_wait[materials]" time="0.756" /><testcase classname="tests.test_native_run_access_writer" name="test_activation_checks_changes_after_actual_parent_wait[expiry]" time="3.852" /><testcase classname="tests.test_native_run_access_writer" name="test_expiry_at_receipt_commit_rolls_back_real_api_writes" time="5.149" /><testcase classname="tests.test_native_run_access_writer" name="test_real_api_writer_restart_needs_explicit_rebind" time="2.903" /><testcase classname="tests.test_native_run_access_writer" name="test_actual_physical_pg_restart_retains_original_lease_without_self_issue" time="3.046" /><testcase classname="tests.test_native_run_access_writer" name="test_cancelled_case_keeps_capacity_and_independent_release" time="1.104" /><testcase classname="tests.test_native_run_access_writer" name="test_writer_request_requires_strict_explicit_owner_confirmation[None]" time="0.735" /><testcase classname="tests.test_native_run_access_writer" name="test_writer_request_requires_strict_explicit_owner_confirmation[False]" time="0.582"><failure message="assert 422 == 403&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">writer_fixture = &lt;writer_reference_support.Harness object at 0x7feb547327e0&gt;
+value = False
+
+    @pytest.mark.parametrize('value',[None,False,1,'true'])
+    def test_writer_request_requires_strict_explicit_owner_confirmation(writer_fixture,value):
+        h=writer_fixture;data=body(h.a,'REQUEST').model_dump(mode='json')
+        if value is None:data.pop('confirm_request')
+        else:data['confirm_request']=value
+        r=h.f[3].post(path(h.a)+'/commands',headers=headers(h.f[2],key='strict-confirm'),json=data)
+&gt;       assert r.status_code==(403 if value is None or value is False else 422)
+E       assert 422 == 403
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_writer.py:368: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_writer" name="test_writer_request_requires_strict_explicit_owner_confirmation[1]" time="0.774" /><testcase classname="tests.test_native_run_access_writer" name="test_writer_request_requires_strict_explicit_owner_confirmation[true]" time="0.610" /><testcase classname="tests.test_native_run_access_writer" name="test_api_refuses_private_context_and_late_private_binding" time="0.629" /><testcase classname="tests.test_native_run_access_writer" name="test_reference_writer_full_chain_with_explicit_plan_revision" time="5.999" /><testcase classname="tests.test_native_run_access" name="test_native_atomic_approve_revoke_never_writes_assignment_or_permissions" time="0.368" /><testcase classname="tests.test_native_run_access" name="test_original_receipt_recovery_after_later_events_and_cold_store" time="0.661"><failure message="AssertionError: assert 422 == 403&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&#10; +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/f32099ef-c564-455a-a1bc-d324edbc2e1d/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'closed'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...})&#10; +      where post = &lt;starlette.testclient.TestClient object at 0x7feb4f7880e0&gt;.post&#10; +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'closed'} = headers({'fixture-a': &quot;[REDACTED synthetic auth value]&quot;, 'fixture-b': &quot;[REDACTED synthetic auth value]&quot;, 'prep-specialist-fixture-a': &quot;[REDACTED synthetic auth value]&quot;, ...}, key='closed')&#10; +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...} = model_dump(mode='json')&#10; +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='e522a77c61576f32...0:19.159160+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb55c9bd40&gt;, &lt;parkweave.store.Store object at 0x7feb55c9b7a0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+
+    def test_original_receipt_recovery_after_later_events_and_cold_store(native_fixture):
+        a=native_fixture;f,parent,bridge,before=a
+        command=body(a,'REQUEST');first=act(a,'REQUEST',key='lost-response',data=command)
+        act(a,'APPROVE');act(a,'REVOKE')
+        assert act(a,'REQUEST',key='lost-response',data=command)==first
+        cold=Store(f[0].dsn)
+        with TestClient(create_app(cold)) as client:
+            path='/api/runs/'+parent['run_id']+'/access'
+            assert client.get('/api/run-access/status',headers=headers(f[2])).json()['enabled'] is False
+            assert client.get(path,headers=headers(f[2])).json()['state']=='REVOKED'
+            recovered=client.get(path+'/commands/lost-response',headers=headers(f[2])).json()
+            assert recovered['found'] and recovered['receipt']==first
+            assert client.get(path+'/commands/absent',headers=headers(f[2])).json()['found'] is False
+&gt;           assert client.post(path+'/commands',headers=headers(f[2],key='closed'),json=command.model_dump(mode='json')).status_code==403
+E           AssertionError: assert 422 == 403
+E            +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+E            +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/f32099ef-c564-455a-a1bc-d324edbc2e1d/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'closed'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...})
+E            +      where post = &lt;starlette.testclient.TestClient object at 0x7feb4f7880e0&gt;.post
+E            +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'closed'} = headers({'fixture-a': "[REDACTED synthetic auth value]", 'fixture-b': "[REDACTED synthetic auth value]", 'prep-specialist-fixture-a': "[REDACTED synthetic auth value]", ...}, key='closed')
+E            +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...} = model_dump(mode='json')
+E            +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='e522a77c61576f32...0:19.159160+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump
+
+tests/test_native_run_access.py:104: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access" name="test_nonparticipants_cannot_read_command_or_recover[fixture-b]" time="0.350"><failure message="AssertionError: assert 422 == 403&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&#10; +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/2c6cb896-ba15-4ee8-93f7-beb992d7ad20/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...})&#10; +      where post = &lt;starlette.testclient.TestClient object at 0x7feb541eaea0&gt;.post&#10; +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': &quot;[REDACTED synthetic auth value]&quot;, 'fixture-b': &quot;[REDACTED synthetic auth value]&quot;, 'prep-specialist-fixture-a': &quot;[REDACTED synthetic auth value]&quot;, ...}, 'fixture-b', 'private')&#10; +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...} = model_dump(mode='json')&#10; +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='d4310b071b3ad1eb...0:19.669769+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb545ae1b0&gt;, &lt;parkweave.store.Store object at 0x7feb4f7881d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+user = 'fixture-b'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-b','unassigned','executor-b','executor-c'])
+    def test_nonparticipants_cannot_read_command_or_recover(native_fixture,user):
+        a=native_fixture;f,parent,_,_=a
+        command=body(a,'REQUEST');act(a,'REQUEST',key='private')
+        path='/api/runs/'+parent['run_id']+'/access'
+        assert f[3].get(path,headers=headers(f[2],user)).status_code==403
+        assert f[3].get(path+'/commands/private',headers=headers(f[2],user)).status_code==403
+&gt;       assert f[3].post(path+'/commands',headers=headers(f[2],user,'private'),json=command.model_dump(mode='json')).status_code==403
+E       AssertionError: assert 422 == 403
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+E        +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/2c6cb896-ba15-4ee8-93f7-beb992d7ad20/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...})
+E        +      where post = &lt;starlette.testclient.TestClient object at 0x7feb541eaea0&gt;.post
+E        +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': "[REDACTED synthetic auth value]", 'fixture-b': "[REDACTED synthetic auth value]", 'prep-specialist-fixture-a': "[REDACTED synthetic auth value]", ...}, 'fixture-b', 'private')
+E        +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...} = model_dump(mode='json')
+E        +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='d4310b071b3ad1eb...0:19.669769+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump
+
+tests/test_native_run_access.py:115: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access" name="test_nonparticipants_cannot_read_command_or_recover[fixture-c]" time="0.345"><failure message="AssertionError: assert 422 == 403&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&#10; +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/007236dc-a8d7-4e1b-96e2-e7ed97017d8b/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...})&#10; +      where post = &lt;starlette.testclient.TestClient object at 0x7feb4e9d40b0&gt;.post&#10; +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': &quot;[REDACTED synthetic auth value]&quot;, 'fixture-b': &quot;[REDACTED synthetic auth value]&quot;, 'prep-specialist-fixture-a': &quot;[REDACTED synthetic auth value]&quot;, ...}, 'fixture-c', 'private')&#10; +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...} = model_dump(mode='json')&#10; +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='e6a9c2210e089332...0:20.017477+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb55b43980&gt;, &lt;parkweave.store.Store object at 0x7feb4e9efbf0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+user = 'fixture-c'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-b','unassigned','executor-b','executor-c'])
+    def test_nonparticipants_cannot_read_command_or_recover(native_fixture,user):
+        a=native_fixture;f,parent,_,_=a
+        command=body(a,'REQUEST');act(a,'REQUEST',key='private')
+        path='/api/runs/'+parent['run_id']+'/access'
+        assert f[3].get(path,headers=headers(f[2],user)).status_code==403
+        assert f[3].get(path+'/commands/private',headers=headers(f[2],user)).status_code==403
+&gt;       assert f[3].post(path+'/commands',headers=headers(f[2],user,'private'),json=command.model_dump(mode='json')).status_code==403
+E       AssertionError: assert 422 == 403
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+E        +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/007236dc-a8d7-4e1b-96e2-e7ed97017d8b/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...})
+E        +      where post = &lt;starlette.testclient.TestClient object at 0x7feb4e9d40b0&gt;.post
+E        +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': "[REDACTED synthetic auth value]", 'fixture-b': "[REDACTED synthetic auth value]", 'prep-specialist-fixture-a': "[REDACTED synthetic auth value]", ...}, 'fixture-c', 'private')
+E        +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...} = model_dump(mode='json')
+E        +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='e6a9c2210e089332...0:20.017477+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump
+
+tests/test_native_run_access.py:115: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access" name="test_nonparticipants_cannot_read_command_or_recover[prep-specialist-fixture-b]" time="0.330"><failure message="AssertionError: assert 422 == 403&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&#10; +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/0f54c397-921d-4348-a048-e4c870c5dda6/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...})&#10; +      where post = &lt;starlette.testclient.TestClient object at 0x7feb4ec22030&gt;.post&#10; +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': &quot;[REDACTED synthetic auth value]&quot;, 'fixture-b': &quot;[REDACTED synthetic auth value]&quot;, 'prep-specialist-fixture-a': &quot;[REDACTED synthetic auth value]&quot;, ...}, 'prep-specialist-fixture-b', 'private')&#10; +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...} = model_dump(mode='json')&#10; +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='c56ba67a6712a92f...0:20.364342+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4e7cbdd0&gt;, &lt;parkweave.store.Store object at 0x7feb4e77b680&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+user = 'prep-specialist-fixture-b'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-b','unassigned','executor-b','executor-c'])
+    def test_nonparticipants_cannot_read_command_or_recover(native_fixture,user):
+        a=native_fixture;f,parent,_,_=a
+        command=body(a,'REQUEST');act(a,'REQUEST',key='private')
+        path='/api/runs/'+parent['run_id']+'/access'
+        assert f[3].get(path,headers=headers(f[2],user)).status_code==403
+        assert f[3].get(path+'/commands/private',headers=headers(f[2],user)).status_code==403
+&gt;       assert f[3].post(path+'/commands',headers=headers(f[2],user,'private'),json=command.model_dump(mode='json')).status_code==403
+E       AssertionError: assert 422 == 403
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+E        +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/0f54c397-921d-4348-a048-e4c870c5dda6/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...})
+E        +      where post = &lt;starlette.testclient.TestClient object at 0x7feb4ec22030&gt;.post
+E        +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': "[REDACTED synthetic auth value]", 'fixture-b': "[REDACTED synthetic auth value]", 'prep-specialist-fixture-a': "[REDACTED synthetic auth value]", ...}, 'prep-specialist-fixture-b', 'private')
+E        +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...} = model_dump(mode='json')
+E        +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='c56ba67a6712a92f...0:20.364342+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump
+
+tests/test_native_run_access.py:115: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access" name="test_nonparticipants_cannot_read_command_or_recover[unassigned]" time="0.335"><failure message="AssertionError: assert 422 == 403&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&#10; +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/a5ca82e0-3ab4-409e-a0af-65df4b73dd7f/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...})&#10; +      where post = &lt;starlette.testclient.TestClient object at 0x7feb5445a8d0&gt;.post&#10; +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': &quot;[REDACTED synthetic auth value]&quot;, 'fixture-b': &quot;[REDACTED synthetic auth value]&quot;, 'prep-specialist-fixture-a': &quot;[REDACTED synthetic auth value]&quot;, ...}, 'unassigned', 'private')&#10; +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...} = model_dump(mode='json')&#10; +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='fb2aad47e958f4d3...0:20.700449+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4efe1d30&gt;, &lt;parkweave.store.Store object at 0x7feb542b4c20&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+user = 'unassigned'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-b','unassigned','executor-b','executor-c'])
+    def test_nonparticipants_cannot_read_command_or_recover(native_fixture,user):
+        a=native_fixture;f,parent,_,_=a
+        command=body(a,'REQUEST');act(a,'REQUEST',key='private')
+        path='/api/runs/'+parent['run_id']+'/access'
+        assert f[3].get(path,headers=headers(f[2],user)).status_code==403
+        assert f[3].get(path+'/commands/private',headers=headers(f[2],user)).status_code==403
+&gt;       assert f[3].post(path+'/commands',headers=headers(f[2],user,'private'),json=command.model_dump(mode='json')).status_code==403
+E       AssertionError: assert 422 == 403
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+E        +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/a5ca82e0-3ab4-409e-a0af-65df4b73dd7f/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...})
+E        +      where post = &lt;starlette.testclient.TestClient object at 0x7feb5445a8d0&gt;.post
+E        +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': "[REDACTED synthetic auth value]", 'fixture-b': "[REDACTED synthetic auth value]", 'prep-specialist-fixture-a': "[REDACTED synthetic auth value]", ...}, 'unassigned', 'private')
+E        +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...} = model_dump(mode='json')
+E        +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='fb2aad47e958f4d3...0:20.700449+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump
+
+tests/test_native_run_access.py:115: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access" name="test_nonparticipants_cannot_read_command_or_recover[executor-b]" time="0.540"><failure message="AssertionError: assert 422 == 403&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&#10; +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/bfe2eae1-7ba2-4ba7-958a-f0491799ba6c/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...})&#10; +      where post = &lt;starlette.testclient.TestClient object at 0x7feb4f765280&gt;.post&#10; +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': &quot;[REDACTED synthetic auth value]&quot;, 'fixture-b': &quot;[REDACTED synthetic auth value]&quot;, 'prep-specialist-fixture-a': &quot;[REDACTED synthetic auth value]&quot;, ...}, 'executor-b', 'private')&#10; +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...} = model_dump(mode='json')&#10; +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='b4c143754e2d9526...0:21.250219+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4edbad50&gt;, &lt;parkweave.store.Store object at 0x7feb4ef6fe30&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+user = 'executor-b'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-b','unassigned','executor-b','executor-c'])
+    def test_nonparticipants_cannot_read_command_or_recover(native_fixture,user):
+        a=native_fixture;f,parent,_,_=a
+        command=body(a,'REQUEST');act(a,'REQUEST',key='private')
+        path='/api/runs/'+parent['run_id']+'/access'
+        assert f[3].get(path,headers=headers(f[2],user)).status_code==403
+        assert f[3].get(path+'/commands/private',headers=headers(f[2],user)).status_code==403
+&gt;       assert f[3].post(path+'/commands',headers=headers(f[2],user,'private'),json=command.model_dump(mode='json')).status_code==403
+E       AssertionError: assert 422 == 403
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+E        +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/bfe2eae1-7ba2-4ba7-958a-f0491799ba6c/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...})
+E        +      where post = &lt;starlette.testclient.TestClient object at 0x7feb4f765280&gt;.post
+E        +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': "[REDACTED synthetic auth value]", 'fixture-b': "[REDACTED synthetic auth value]", 'prep-specialist-fixture-a': "[REDACTED synthetic auth value]", ...}, 'executor-b', 'private')
+E        +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...} = model_dump(mode='json')
+E        +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='b4c143754e2d9526...0:21.250219+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump
+
+tests/test_native_run_access.py:115: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access" name="test_nonparticipants_cannot_read_command_or_recover[executor-c]" time="0.345"><failure message="AssertionError: assert 422 == 403&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&#10; +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/4ebb7e6a-1d80-41ca-8254-3d88c5ccac11/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...})&#10; +      where post = &lt;starlette.testclient.TestClient object at 0x7feb541cbfb0&gt;.post&#10; +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': &quot;[REDACTED synthetic auth value]&quot;, 'fixture-b': &quot;[REDACTED synthetic auth value]&quot;, 'prep-specialist-fixture-a': &quot;[REDACTED synthetic auth value]&quot;, ...}, 'executor-c', 'private')&#10; +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': &quot;[REDACTED opaque fixture value]&quot;, ...} = model_dump(mode='json')&#10; +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='1b86efe4a9e91671...0:21.614852+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb54403d70&gt;, &lt;parkweave.store.Store object at 0x7feb54402180&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+user = 'executor-c'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-b','unassigned','executor-b','executor-c'])
+    def test_nonparticipants_cannot_read_command_or_recover(native_fixture,user):
+        a=native_fixture;f,parent,_,_=a
+        command=body(a,'REQUEST');act(a,'REQUEST',key='private')
+        path='/api/runs/'+parent['run_id']+'/access'
+        assert f[3].get(path,headers=headers(f[2],user)).status_code==403
+        assert f[3].get(path+'/commands/private',headers=headers(f[2],user)).status_code==403
+&gt;       assert f[3].post(path+'/commands',headers=headers(f[2],user,'private'),json=command.model_dump(mode='json')).status_code==403
+E       AssertionError: assert 422 == 403
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+E        +    where &lt;Response [422 Unprocessable Entity]&gt; = post(('/api/runs/4ebb7e6a-1d80-41ca-8254-3d88c5ccac11/access' + '/commands'), headers={'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'}, json={'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...})
+E        +      where post = &lt;starlette.testclient.TestClient object at 0x7feb541cbfb0&gt;.post
+E        +      and   {'Authorization': 'Bearer [REDACTED]', 'Idempotency-Key': 'private'} = headers({'fixture-a': "[REDACTED synthetic auth value]", 'fixture-b': "[REDACTED synthetic auth value]", 'prep-specialist-fixture-a': "[REDACTED synthetic auth value]", ...}, 'executor-c', 'private')
+E        +      and   {'action': 'REQUEST', 'expected_revision': 0, 'expected_run_revision': 2, 'expected_authority_sha256': "[REDACTED opaque fixture value]", ...} = model_dump(mode='json')
+E        +        where model_dump = RunCommand(action='REQUEST', expected_revision=0, expected_run_revision=2, expected_authority_sha256='1b86efe4a9e91671...0:21.614852+00:00', timezone='UTC'), approved_validity=None, reason='SYNTHETIC explicit REQUEST', confirm_request=None).model_dump
+
+tests/test_native_run_access.py:115: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access" name="test_current_read_revocation_blocks_original_key_recovery" time="0.312" /><testcase classname="tests.test_native_run_access" name="test_owner_cannot_approve_and_beneficiary_metadata_is_not_run_access" time="0.352" /><testcase classname="tests.test_native_run_access" name="test_same_key_concurrent_commands_serialized_in_pg[True]" time="0.328" /><testcase classname="tests.test_native_run_access" name="test_same_key_concurrent_commands_serialized_in_pg[False]" time="0.350" /><testcase classname="tests.test_native_run_access" name="test_same_key_different_run_conflicts" time="0.558" /><testcase classname="tests.test_native_run_access" name="test_event_failure_rolls_back_request_decision_and_lease" time="0.358" /><testcase classname="tests.test_native_run_access" name="test_pg_immutable_history_and_state_guard[prefix]" time="0.322" /><testcase classname="tests.test_native_run_access" name="test_pg_immutable_history_and_state_guard[clear]" time="0.324" /><testcase classname="tests.test_native_run_access" name="test_pg_immutable_history_and_state_guard[rewrite]" time="0.311" /><testcase classname="tests.test_native_run_access" name="test_pg_immutable_history_and_state_guard[missing_revision]" time="0.299" /><testcase classname="tests.test_native_run_access" name="test_approval_interval_must_shrink_and_history_stays_atomic" time="0.500" /><testcase classname="tests.test_native_run_access" name="test_expiry_rechecked_after_actual_pg_parent_lock_wait" time="1.913" /><testcase classname="tests.test_native_run_access" name="test_malformed_source_is_explicit_conflict_not_internal_error[input]" time="0.376" /><testcase classname="tests.test_native_run_access" name="test_malformed_source_is_explicit_conflict_not_internal_error[receipt]" time="0.315" /><testcase classname="tests.test_native_run_access" name="test_malformed_source_is_explicit_conflict_not_internal_error[empty_input]" time="0.302" /><testcase classname="tests.test_native_run_access" name="test_malformed_source_is_explicit_conflict_not_internal_error[changed_goal]" time="0.303" /><testcase classname="tests.test_native_run_access" name="test_malformed_source_is_explicit_conflict_not_internal_error[operation_action]" time="0.326" /><testcase classname="tests.test_native_run_access" name="test_approval_rechecks_material_source_after_actual_parent_lock_wait" time="0.633" /><testcase classname="tests.test_native_run_access" name="test_permission_revoked_before_approval_is_not_cached" time="0.369" /><testcase classname="tests.test_native_run_access" name="test_case_cancel_blocks_approve_preserves_history_recovery_and_request_cancel" time="0.430" /><testcase classname="tests.test_native_run_access" name="test_native_marker_is_never_legacy_even_with_cold_store" time="0.313" /><testcase classname="tests.test_native_run_access" name="test_unissued_test_permit_and_default_constructor_are_closed" time="0.316" /><testcase classname="tests.test_native_run_access" name="test_native_strict_dto[fields0]" time="0.416" /><testcase classname="tests.test_native_run_access" name="test_native_strict_dto[fields1]" time="0.601" /><testcase classname="tests.test_native_run_access" name="test_native_strict_dto[fields2]" time="0.379" /><testcase classname="tests.test_native_run_access" name="test_native_strict_dto[fields3]" time="0.306" /><testcase classname="tests.test_native_run_access" name="test_native_strict_dto[fields4]" time="0.327" /><testcase classname="tests.test_native_run_access_activation" name="test_foreign_business_store_cannot_borrow_issued_owner_writer" time="0.371"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb5445ac60&gt;, &lt;parkweave.store.Store object at 0x7feb5445b4d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_foreign_business_store_cannot_borrow_issued_owner_writer&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb5445ac60&gt;, &lt;parkweave.store.Store object at 0x7feb5445b4d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_default_closed_forged_permit_and_cold_store_do_not_activate" time="0.333"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4e9d54c0&gt;, &lt;parkweave.store.Store object at 0x7feb542f4710&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_default_closed_forged_permit_and_cold_store_do_not_activate&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4e9d54c0&gt;, &lt;parkweave.store.Store object at 0x7feb542f4710&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_effective_assignment_actual_run_dispatch_accept_receipt_notices_and_dependencies" time="0.503"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb58d32c30&gt;, &lt;parkweave.store.Store object at 0x7feb58d30c20&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_effective_assignment_actual_run_dispatch_accept_receipt_notices_and_dependencies&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb58d32c30&gt;, &lt;parkweave.store.Store object at 0x7feb58d30c20&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_revoke_invalidates_every_live_consumer_and_preserves_original_receipt" time="0.319"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb55d67f20&gt;, &lt;parkweave.store.Store object at 0x7feb55d656d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_revoke_invalidates_every_live_consumer_and_preserves_original_receipt&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb55d67f20&gt;, &lt;parkweave.store.Store object at 0x7feb55d656d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_pending_old_outbox_rechecks_revoked_lease_without_fabricating_withdraw" time="0.322"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb542d8380&gt;, &lt;parkweave.store.Store object at 0x7feb548d4890&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_pending_old_outbox_rechecks_revoked_lease_without_fabricating_withdraw&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb542d8380&gt;, &lt;parkweave.store.Store object at 0x7feb548d4890&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_activation_requires_current_exact_enterprise_owner[executor-a]" time="0.346"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4ed88a40&gt;, &lt;parkweave.store.Store object at 0x7feb547661e0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_activation_requires_current_exact_enterprise_owner[executor-a]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4ed88a40&gt;, &lt;parkweave.store.Store object at 0x7feb547661e0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_activation_requires_current_exact_enterprise_owner[unassigned]" time="0.357"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb551dc5c0&gt;, &lt;parkweave.store.Store object at 0x7feb548d6630&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_activation_requires_current_exact_enterprise_owner[unassigned]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb551dc5c0&gt;, &lt;parkweave.store.Store object at 0x7feb548d6630&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_activation_requires_current_exact_enterprise_owner[fixture-b]" time="0.340"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4e7ab8f0&gt;, &lt;parkweave.store.Store object at 0x7feb4e7a9be0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_activation_requires_current_exact_enterprise_owner[fixture-b]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4e7ab8f0&gt;, &lt;parkweave.store.Store object at 0x7feb4e7a9be0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_activation_requires_current_exact_enterprise_owner[fixture-c]" time="0.497"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4f6031d0&gt;, &lt;parkweave.store.Store object at 0x7feb545accb0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_activation_requires_current_exact_enterprise_owner[fixture-c]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4f6031d0&gt;, &lt;parkweave.store.Store object at 0x7feb545accb0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_activation_requires_current_exact_enterprise_owner[prep-specialist-fixture-a]" time="0.383"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4ef3b0e0&gt;, &lt;parkweave.store.Store object at 0x7feb4ef3b1a0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_activation_requires_current_exact_enterprise_owner[prep-specialist-fixture-a]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4ef3b0e0&gt;, &lt;parkweave.store.Store object at 0x7feb4ef3b1a0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_activation_requires_current_exact_enterprise_owner[prep-specialist-fixture-b]" time="0.326"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4f629790&gt;, &lt;parkweave.store.Store object at 0x7feb4f355580&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_activation_requires_current_exact_enterprise_owner[prep-specialist-fixture-b]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4f629790&gt;, &lt;parkweave.store.Store object at 0x7feb4f355580&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_strict_confirmation_and_stale_activation_bindings[changes0]" time="0.322"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb5477b0e0&gt;, &lt;parkweave.store.Store object at 0x7feb54778230&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_strict_confirmation_and_stale_activation_bindings[changes0]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb5477b0e0&gt;, &lt;parkweave.store.Store object at 0x7feb54778230&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_strict_confirmation_and_stale_activation_bindings[changes1]" time="0.321"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb543e9d30&gt;, &lt;parkweave.store.Store object at 0x7feb54548bf0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_strict_confirmation_and_stale_activation_bindings[changes1]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb543e9d30&gt;, &lt;parkweave.store.Store object at 0x7feb54548bf0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_strict_confirmation_and_stale_activation_bindings[changes2]" time="0.351"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4ecd7f50&gt;, &lt;parkweave.store.Store object at 0x7feb5477a420&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_strict_confirmation_and_stale_activation_bindings[changes2]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4ecd7f50&gt;, &lt;parkweave.store.Store object at 0x7feb5477a420&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_strict_confirmation_and_stale_activation_bindings[changes3]" time="0.509"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb54778fb0&gt;, &lt;parkweave.store.Store object at 0x7feb4e86d4c0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_strict_confirmation_and_stale_activation_bindings[changes3]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb54778fb0&gt;, &lt;parkweave.store.Store object at 0x7feb4e86d4c0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_strict_confirmation_and_stale_activation_bindings[changes4]" time="0.337"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4f3cd520&gt;, &lt;parkweave.store.Store object at 0x7feb4ea00380&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_strict_confirmation_and_stale_activation_bindings[changes4]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4f3cd520&gt;, &lt;parkweave.store.Store object at 0x7feb4ea00380&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_strict_confirmation_and_stale_activation_bindings[changes5]" time="0.334"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4e7ab980&gt;, &lt;parkweave.store.Store object at 0x7feb55b95f70&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_strict_confirmation_and_stale_activation_bindings[changes5]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4e7ab980&gt;, &lt;parkweave.store.Store object at 0x7feb55b95f70&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_strict_confirmation_and_stale_activation_bindings[changes6]" time="0.341"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4f5e3f50&gt;, &lt;parkweave.store.Store object at 0x7feb55c2f1d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_strict_confirmation_and_stale_activation_bindings[changes6]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4f5e3f50&gt;, &lt;parkweave.store.Store object at 0x7feb55c2f1d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_concurrent_original_key_or_activation_cas[True]" time="0.338"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb543f51c0&gt;, &lt;parkweave.store.Store object at 0x7feb541a3c20&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_concurrent_original_key_or_activation_cas[True]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb543f51c0&gt;, &lt;parkweave.store.Store object at 0x7feb541a3c20&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_concurrent_original_key_or_activation_cas[False]" time="0.323"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb542c88c0&gt;, &lt;parkweave.store.Store object at 0x7feb5468b980&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_concurrent_original_key_or_activation_cas[False]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb542c88c0&gt;, &lt;parkweave.store.Store object at 0x7feb5468b980&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_atomic_activation_failure_rolls_back_event_and_assignment[event]" time="0.614"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4ed15790&gt;, &lt;parkweave.store.Store object at 0x7feb55b41010&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_atomic_activation_failure_rolls_back_event_and_assignment[event]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4ed15790&gt;, &lt;parkweave.store.Store object at 0x7feb55b41010&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_atomic_activation_failure_rolls_back_event_and_assignment[assignment]" time="0.334"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4f621370&gt;, &lt;parkweave.store.Store object at 0x7feb54369310&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_atomic_activation_failure_rolls_back_event_and_assignment[assignment]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4f621370&gt;, &lt;parkweave.store.Store object at 0x7feb54369310&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_cold_rebound_live_provider_and_no_implicit_read_activation" time="0.315"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb541e8ad0&gt;, &lt;parkweave.store.Store object at 0x7feb5463fa10&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_cold_rebound_live_provider_and_no_implicit_read_activation&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb541e8ad0&gt;, &lt;parkweave.store.Store object at 0x7feb5463fa10&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_revoke_regrant_generation_cannot_revive_original_lease[principals-fixture-a-None]" time="0.335"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb543582c0&gt;, &lt;parkweave.store.Store object at 0x7feb54359550&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_revoke_regrant_generation_cannot_revive_original_lease[principals-fixture-a-None]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb543582c0&gt;, &lt;parkweave.store.Store object at 0x7feb54359550&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_revoke_regrant_generation_cannot_revive_original_lease[principals-executor-a-None]" time="0.327"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb548b2d50&gt;, &lt;parkweave.store.Store object at 0x7feb5418a3f0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_revoke_regrant_generation_cannot_revive_original_lease[principals-executor-a-None]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb548b2d50&gt;, &lt;parkweave.store.Store object at 0x7feb5418a3f0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_revoke_regrant_generation_cannot_revive_original_lease[preparation_grants-fixture-a-PREPARE]" time="0.316"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb5422d010&gt;, &lt;parkweave.store.Store object at 0x7feb544ff4a0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_revoke_regrant_generation_cannot_revive_original_lease[preparation_grants-fixture-a-PREPARE]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb5422d010&gt;, &lt;parkweave.store.Store object at 0x7feb544ff4a0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_revoke_regrant_generation_cannot_revive_original_lease[capability_grants-executor-a-READ]" time="0.512"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4eda6810&gt;, &lt;parkweave.store.Store object at 0x7feb55b401d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_revoke_regrant_generation_cannot_revive_original_lease[capability_grants-executor-a-READ]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4eda6810&gt;, &lt;parkweave.store.Store object at 0x7feb55b401d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_revoke_regrant_generation_cannot_revive_original_lease[capability_grants-prep-specialist-fixture-a-READ]" time="0.321"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb58d8f1d0&gt;, &lt;parkweave.store.Store object at 0x7feb548387d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_revoke_regrant_generation_cannot_revive_original_lease[capability_grants-prep-specialist-fixture-a-READ]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb58d8f1d0&gt;, &lt;parkweave.store.Store object at 0x7feb548387d0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_unguarded_autocommit_and_temporary_schema_cannot_use_lease" time="0.320"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4ec628d0&gt;, &lt;parkweave.store.Store object at 0x7feb5464f440&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_unguarded_autocommit_and_temporary_schema_cannot_use_lease&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4ec628d0&gt;, &lt;parkweave.store.Store object at 0x7feb5464f440&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_native_provenance_and_event_history_cannot_be_downgraded[null]" time="0.320"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb5464cce0&gt;, &lt;parkweave.store.Store object at 0x7feb5464c980&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_native_provenance_and_event_history_cannot_be_downgraded[null]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb5464cce0&gt;, &lt;parkweave.store.Store object at 0x7feb5464c980&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_native_provenance_and_event_history_cannot_be_downgraded[json_null]" time="0.320"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb546e5640&gt;, &lt;parkweave.store.Store object at 0x7feb5418ac00&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_native_provenance_and_event_history_cannot_be_downgraded[json_null]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb546e5640&gt;, &lt;parkweave.store.Store object at 0x7feb5418ac00&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_native_provenance_and_event_history_cannot_be_downgraded[delete]" time="0.341"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb548131d0&gt;, &lt;parkweave.store.Store object at 0x7feb5410d790&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_native_provenance_and_event_history_cannot_be_downgraded[delete]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb548131d0&gt;, &lt;parkweave.store.Store object at 0x7feb5410d790&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_native_provenance_and_event_history_cannot_be_downgraded[rewrite_history]" time="0.328"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4f508dd0&gt;, &lt;parkweave.store.Store object at 0x7feb4f50be60&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_native_provenance_and_event_history_cannot_be_downgraded[rewrite_history]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4f508dd0&gt;, &lt;parkweave.store.Store object at 0x7feb4f50be60&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_existing_legacy_assignment_is_never_overwritten[True]" time="0.327"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4f5084d0&gt;, &lt;parkweave.store.Store object at 0x7feb55b194f0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_existing_legacy_assignment_is_never_overwritten[True]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4f5084d0&gt;, &lt;parkweave.store.Store object at 0x7feb55b194f0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_existing_legacy_assignment_is_never_overwritten[False]" time="0.338"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb5420b410&gt;, &lt;parkweave.store.Store object at 0x7feb545fdaf0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_existing_legacy_assignment_is_never_overwritten[False]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb5420b410&gt;, &lt;parkweave.store.Store object at 0x7feb545fdaf0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_original_key_collision_with_decision_and_changed_activation_body" time="0.336"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb5422fc50&gt;, &lt;parkweave.store.Store object at 0x7feb4f78b590&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_original_key_collision_with_decision_and_changed_activation_body&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb5422fc50&gt;, &lt;parkweave.store.Store object at 0x7feb4f78b590&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_material_change_after_real_parent_lock_wait_refuses_activation" time="0.326"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb5471ce00&gt;, &lt;parkweave.store.Store object at 0x7feb5471daf0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_material_change_after_real_parent_lock_wait_refuses_activation&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb5471ce00&gt;, &lt;parkweave.store.Store object at 0x7feb5471daf0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_expiry_after_real_parent_lock_wait_refuses_activation[2]" time="0.496"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4f78bad0&gt;, &lt;parkweave.store.Store object at 0x7feb4e761b20&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_expiry_after_real_parent_lock_wait_refuses_activation[2]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4f78bad0&gt;, &lt;parkweave.store.Store object at 0x7feb4e761b20&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 2
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_real_expiry_during_receipt_endpoint_rolls_back_all_business_writes[3]" time="0.329"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4e7ebd10&gt;, &lt;parkweave.store.Store object at 0x7feb4f6015e0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_real_expiry_during_receipt_endpoint_rolls_back_all_business_writes[3]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4e7ebd10&gt;, &lt;parkweave.store.Store object at 0x7feb4f6015e0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 3
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_active_legacy_receipt_create_and_submit_use_native_scope" time="0.334"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb58de9190&gt;, &lt;parkweave.store.Store object at 0x7feb58de9640&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_active_legacy_receipt_create_and_submit_use_native_scope&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb58de9190&gt;, &lt;parkweave.store.Store object at 0x7feb58de9640&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_cancelled_case_preserves_lease_history_but_stops_business_writes" time="0.323"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb5479ff80&gt;, &lt;parkweave.store.Store object at 0x7feb5522ed50&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_cancelled_case_preserves_lease_history_but_stops_business_writes&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb5479ff80&gt;, &lt;parkweave.store.Store object at 0x7feb5522ed50&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_recreated_read_permission_and_cross_run_enablement_are_denied" time="0.321"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4e7eb350&gt;, &lt;parkweave.store.Store object at 0x7feb55c72bd0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_recreated_read_permission_and_cross_run_enablement_are_denied&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4e7eb350&gt;, &lt;parkweave.store.Store object at 0x7feb55c72bd0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_supplied_missing_marker_cannot_escape_native_provenance" time="0.327"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb55c71760&gt;, &lt;parkweave.store.Store object at 0x7feb55c73710&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_supplied_missing_marker_cannot_escape_native_provenance&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb55c71760&gt;, &lt;parkweave.store.Store object at 0x7feb55c73710&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_mixed_provider_and_inserted_activation_history_are_rejected" time="0.509"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb561d7e00&gt;, &lt;parkweave.store.Store object at 0x7feb561d5370&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_mixed_provider_and_inserted_activation_history_are_rejected&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb561d7e00&gt;, &lt;parkweave.store.Store object at 0x7feb561d5370&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_accept_and_revoke_real_parent_queue_have_one_ordered_winner[accept]" time="0.337"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb4f33baa0&gt;, &lt;parkweave.store.Store object at 0x7feb4f339550&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_accept_and_revoke_real_parent_queue_have_one_ordered_winner[accept]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4f33baa0&gt;, &lt;parkweave.store.Store object at 0x7feb4f339550&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_accept_and_revoke_real_parent_queue_have_one_ordered_winner[revoke]" time="0.329"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">native_fixture = ((&lt;parkweave.store.Store object at 0x7feb54854f50&gt;, &lt;parkweave.store.Store object at 0x7feb5417d280&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+request = &lt;SubRequest 'activation_fixture' for &lt;Function test_accept_and_revoke_real_parent_queue_have_one_ordered_winner[revoke]&gt;&gt;
+
+    @pytest.fixture
+    def activation_fixture(native_fixture,request):
+        a=native_fixture
+        activation.install_owned_test_activation_storage(a[0][1],a[0][1]._case_fact_fixture_receipt)
+&gt;       decisions(a,request.param if hasattr(request,'param') else 300)
+
+tests/test_native_run_access_activation.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb54854f50&gt;, &lt;parkweave.store.Store object at 0x7feb5417d280&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_activation" name="test_whole_ordinary_chain_uses_activation_then_explicit_plan_revision" time="1.236"><failure message="AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;confirm_request&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:null}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">link_fixture = (&lt;parkweave.store.Store object at 0x7feb4eccdc40&gt;, &lt;parkweave.store.Store object at 0x7feb55b508f0&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7feb54838a10&gt;)
+
+    def test_whole_ordinary_chain_uses_activation_then_explicit_plan_revision(link_fixture):
+        f=link_fixture
+        native.install_owned_test_storage(f[1],f[1]._case_fact_fixture_receipt)
+        activation.install_owned_test_activation_storage(f[1],f[1]._case_fact_fixture_receipt)
+        permit=native.issue_decision_test_permit(f[1],f[1]._case_fact_fixture_receipt,approver_ids={APPROVER})
+        bridge=native.NativeRunAccess(f[0],test_permit=permit);f[0]._native_run_access=bridge
+        u=Chain(f,f[3],'native-effective-whole-chain');p=u.prepared('native-effective',assigned=False)
+        a=(f,p,bridge,snapshot(f[1]));before=u.authority()
+        u.adopt(p);u.verify(p,'P1');combo,data=u.resources(p);u.verify(p,'P2')
+&gt;       decisions(a);assert activate(a,key='whole-chain-activate').status_code==200
+        ^^^^^^^^^^^^
+
+tests/test_native_run_access_activation.py:435: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+a = ((&lt;parkweave.store.Store object at 0x7feb4eccdc40&gt;, &lt;parkweave.store.Store object at 0x7feb55b508f0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+seconds = 300
+
+    def decisions(a,seconds=300):
+        f,parent,bridge,_=a
+        if bridge.read(f[2]['fixture-a'],UUID(parent['run_id']))['state']=='APPROVED':
+            d=body(a,'REVOKE')
+            r=f[3].post(path(a)+'/commands',headers=headers(f[2],key=uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+        now=datetime.now(timezone.utc)
+        d=body(a,'REQUEST',requested_validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(seconds=seconds)).isoformat(),timezone='UTC'))
+&gt;       r=f[3].post(path(a)+'/commands',headers=headers(f[2],key='request-'+uuid4().hex),json=d.model_dump(mode='json'));assert r.status_code==200,r.text
+                                                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","confirm_request"],"msg":"Extra inputs are not permitted","input":null}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_native_run_access_activation.py:39: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[disabled_pending]" time="0.132" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[lost_response]" time="0.034" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[not_observed]" time="0.037" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[revoked]" time="0.034" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[late_read]" time="0.036" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[late_recovery]" time="0.034" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[authority_expiry]" time="0.034" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[effective_fixture]" time="0.036" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[writer_confirmation]" time="0.036" /></testsuite></testsuites>

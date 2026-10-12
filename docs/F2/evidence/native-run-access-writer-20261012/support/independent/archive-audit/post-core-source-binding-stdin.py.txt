@@ -1,0 +1,16 @@
+from pathlib import Path
+import json,hashlib
+from datetime import datetime,timezone
+root=Path.cwd();base=root/'.runtime/native-run-access-writer-20261012/frozen-final-actor-guard';before=json.loads((base/'source-before.json').read_text());after=json.loads((base/'source-after.json').read_text());run=json.loads((base/'run.json').read_text())
+assert before==after
+mismatches=[p for p,h in before.items() if hashlib.sha256((root/p).read_bytes()).hexdigest()!=h]
+assert not mismatches,mismatches
+assert hashlib.sha256(json.dumps(before,sort_keys=True).encode()).hexdigest()==run['source_manifest_sha256']
+original=json.loads((root/'.runtime/native-run-access-writer-review-20261012/delivery-frozen-complete/source-before.json').read_text())['files']
+assert all(original[p]==h for p,h in before.items())
+p=root/'.runtime/native-run-access-writer-review-20261012/archive-audit/root-source-record-check.json'
+p.write_text(json.dumps(dict(checked_utc=datetime.now(timezone.utc).isoformat(),source_sha=run['source_head'],root_source_file_count=len(before),exact_before_after_equal=True,current_root_source_hash_mismatches=mismatches,root_manifest_hash=run['source_manifest_sha256'],root_subset_of_independent420_commit_binding=True,public_core_unchanged=True,policy='Signed b1 core only; future QA catalog maintenance requires a separate new-source tail mapping.'),indent=2)+'\n')
+a=p.parent;items=[dict(original_local_path=str(f.relative_to(root)),sha256=hashlib.sha256(f.read_bytes()).hexdigest(),kind='STATIC_APPROVED_EXACT' if f.name in ['check_archive.py','check_archive_corrected.py'] else 'REPORT' if f.suffix=='.md' else 'JSON_METADATA' if f.suffix=='.json' else 'STDOUT') for f in sorted(a.iterdir()) if f.is_file() and f.name!='support-inventory.json']
+inventory=json.loads((a/'support-inventory.json').read_text());inventory['closed_inputs']=items
+(a/'support-inventory.json').write_text(json.dumps(inventory,indent=2,sort_keys=True)+'\n')
+print(json.dumps({'root_source_files':len(before),'mismatches':mismatches,'closed_support':len(items),'support_inventory_sha256':hashlib.sha256((a/'support-inventory.json').read_bytes()).hexdigest()}))

@@ -1,0 +1,155 @@
+....................F................FF..                                [100%]
+=================================== FAILURES ===================================
+_________ test_existing_app_json_update_cannot_forge_signed_authority __________
+
+writer_fixture = <writer_reference_support.Harness object at 0x7f1f79ef2c30>
+
+    def test_existing_app_json_update_cannot_forge_signed_authority(writer_fixture):
+        h=writer_fixture;approve(h);assert activate(h.a).status_code==200
+        with h.f[0].connect() as c:
+            stored=c.execute('SELECT native_run_access_protocol value FROM runs WHERE id=%s',(h.parent['run_id'],)).fetchone()['value']
+            fake=deepcopy(stored['events'][-1]);fake.update(revision=3,request_key='app-forged',reason='forged copied signature')
+            stored['events'].append(fake);stored['revision']=3
+>           c.execute('UPDATE runs SET native_run_access_protocol=%s WHERE id=%s',(Jsonb(stored),h.parent['run_id']))
+
+tests/test_native_run_access_writer.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <parkweave.store._AccessConnection [BAD] at 0x7f1f7b5f7bc0>
+query = 'UPDATE runs SET native_run_access_protocol=%s WHERE id=%s'
+params = (Jsonb({'state': 'APPROVED', 'events': [{' ... (14084 chars)), '15cafd1e-1ada-49e7-a608-cb89b98449a3')
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.RaiseException: invalid native protocol transition or receipt
+E           CONTEXT:  PL/pgSQL function guard_native_run_access_protocol() line 60 at RAISE
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: RaiseException
+______________ test_real_api_writer_restart_needs_explicit_rebind ______________
+
+writer_fixture = <writer_reference_support.Harness object at 0x7f1f789fecc0>
+
+    def test_real_api_writer_restart_needs_explicit_rebind(writer_fixture):
+        h=writer_fixture;approve(h);original=activate(h.a,key='lost-response').json();before=business(h.a)
+        old_pid=h.writer_process.pid;old_pin=h.pin;h.stop(h.writer_process)
+        assert h.f[3].get('/api/runs/'+h.parent['run_id'],headers=headers(h.f[2],'executor-a')).status_code==403
+        assert h.f[3].get(path(h.a)+'/commands/lost-response',headers=headers(h.f[2])).json()['receipt']==original
+        h.start_writer();assert h.writer_process.pid!=old_pid and h.pin.boot_id!=old_pin.boot_id
+        # The stale API host pin must reject the newly created writer process.
+        assert h.f[3].get('/api/runs/'+h.parent['run_id'],headers=headers(h.f[2],'executor-a')).status_code==403
+        h.bind()
+        for enabled in (False,True):
+>           process,client=start_api(h,free_port(),enabled=enabled)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:278: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+harness = <writer_reference_support.Harness object at 0x7f1f789fecc0>
+port = 44723, enabled = False
+
+    def start_api(harness,port,*,enabled=True):
+        root=harness.directory/('api-'+str(len(harness.processes)));root.mkdir(mode=0o700)
+        config=dict(app_dsn=harness.f[0].dsn,port=port)
+        if enabled:config.update(policy=harness.bootstrap['policy'],pin=harness.pin.model_dump())
+        assert 'writer_dsn' not in config and 'key' not in config
+        path=root/'public-scope-and-app.json';write_private(path,config)
+        out=(root/'stdout.log').open('w');err=(root/'stderr.log').open('w')
+        process=subprocess.Popen([str(Path('.venv/bin/python').absolute()),str(Path('tests/writer_reference_api.py').resolve()),str(path)],
+            env=child_environment(),stdout=out,stderr=err)
+        out.close();err.close();harness.processes.append(process)
+        import httpx
+        deadline=monotonic()+10
+        while monotonic()<deadline:
+            if process.poll() is not None:raise AssertionError('API exited: '+(root/'stderr.log').read_text())
+            try:
+                r=httpx.get('http://127.0.0.1:'+str(port)+'/api/health',timeout=.3)
+                if r.status_code==200 and r.json()['process_id']==process.pid:break
+            except httpx.HTTPError:pass
+            sleep(.03)
+>       else:raise AssertionError('owned API did not become ready')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: owned API did not become ready
+
+tests/writer_reference_support.py:144: AssertionError
+__ test_actual_physical_pg_restart_retains_original_lease_without_self_issue ___
+
+restart_writer_fixture = (<writer_reference_support.Harness object at 0x7f1f78c2c290>, <function restart_writer_fixture.<locals>.restart at 0x7f1f7a2356c0>)
+
+    def test_actual_physical_pg_restart_retains_original_lease_without_self_issue(restart_writer_fixture):
+        h,restart=restart_writer_fixture;approve(h);original=activate(h.a,key='pg-original').json();before=business(h.a)
+        h.stop(h.writer_process);restart()
+        with TestClient(create_app(Store(h.f[0].dsn))) as cold:
+            assert cold.get('/api/runs/'+h.parent['run_id'],headers=headers(h.f[2],'executor-a')).status_code==403
+            assert cold.get(path(h.a)+'/commands/pg-original',headers=headers(h.f[2])).json()['receipt']==original
+>       h.start_writer();h.bind();process,client=start_api(h,free_port())
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:315: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+harness = <writer_reference_support.Harness object at 0x7f1f78c2c290>
+port = 46785, enabled = True
+
+    def start_api(harness,port,*,enabled=True):
+        root=harness.directory/('api-'+str(len(harness.processes)));root.mkdir(mode=0o700)
+        config=dict(app_dsn=harness.f[0].dsn,port=port)
+        if enabled:config.update(policy=harness.bootstrap['policy'],pin=harness.pin.model_dump())
+        assert 'writer_dsn' not in config and 'key' not in config
+        path=root/'public-scope-and-app.json';write_private(path,config)
+        out=(root/'stdout.log').open('w');err=(root/'stderr.log').open('w')
+        process=subprocess.Popen([str(Path('.venv/bin/python').absolute()),str(Path('tests/writer_reference_api.py').resolve()),str(path)],
+            env=child_environment(),stdout=out,stderr=err)
+        out.close();err.close();harness.processes.append(process)
+        import httpx
+        deadline=monotonic()+10
+        while monotonic()<deadline:
+            if process.poll() is not None:raise AssertionError('API exited: '+(root/'stderr.log').read_text())
+            try:
+                r=httpx.get('http://127.0.0.1:'+str(port)+'/api/health',timeout=.3)
+                if r.status_code==200 and r.json()['process_id']==process.pid:break
+            except httpx.HTTPError:pass
+            sleep(.03)
+>       else:raise AssertionError('owned API did not become ready')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: owned API did not become ready
+
+tests/writer_reference_support.py:144: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_native_run_access_writer.py::test_actual_separate_writer_activation_and_no_api_owner_or_key
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_native_run_access_writer.py::test_existing_app_json_update_cannot_forge_signed_authority
+FAILED tests/test_native_run_access_writer.py::test_real_api_writer_restart_needs_explicit_rebind
+FAILED tests/test_native_run_access_writer.py::test_actual_physical_pg_restart_retains_original_lease_without_self_issue
+3 failed, 38 passed, 2 warnings in 75.97s (0:01:15)

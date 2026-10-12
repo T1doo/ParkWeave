@@ -1,0 +1,195 @@
+{
+  "baseline_results": "NOT_TRANSFERRED",
+  "browser_attempts": 0,
+  "conclusion": "BLOCKED",
+  "contract_review": "Production startup/install/identity/key/OS isolation pending explicitly documented. Policy expiry denies all new commands including revoke; lease earlier expiry while policy live permits revoke.",
+  "defects": [
+    {
+      "actual": "Current unassigned service_executor READ holder obtains native access metadata after app writes a valid-shaped unsigned request naming it. Response200; writer_history_verified=false; actual_run_access=false.",
+      "id": "W1",
+      "location": "src/parkweave/native_run_access.py:225",
+      "minimum_fix": "Use independently pinned writer policy for read participants; never create reader authority from unauthenticated request JSON.",
+      "severity": "HIGH",
+      "test": "test_independent_unsigned_target_cannot_grant_metadata_participation"
+    },
+    {
+      "actual": "Unsigned current-Run originalkey response200 found=true returns exact unissued receipt without a receipt verification marker. Offline recovery checks do not require authenticated writer proof before clearing UNKNOWN.",
+      "id": "W2",
+      "location": "src/parkweave/native_run_access.py:377",
+      "minimum_fix": "Keep authorized historical raw recovery when transport unavailable, explicitly identify authentication state; writer UI must retain UNKNOWN for unverified proof.",
+      "severity": "MEDIUM",
+      "test": "test_independent_original_key_requires_authenticated_receipt",
+      "ui_location": "src/parkweave/web.html:1084"
+    },
+    {
+      "actual": "Prior9ea byte-exact Native source and SQL creates original pre-writer REQUEST; same originalkey and original fields rejected by new DTO fingerprint due extra confirm_request:null.",
+      "baseline_adapter": "prior.writer=None only for current activation projection. Prior command/source byte-exact, no historical product source changed.",
+      "id": "W3",
+      "location": "src/parkweave/native_run_access.py:419",
+      "minimum_fix": "Preserve pre-writer canonical when writer absent and new field omitted/null; retain explicit strict writer confirmation fingerprint.",
+      "severity": "MEDIUM",
+      "test": "test_pre_writer_receipt_original_key_survives_new_optional_field"
+    }
+  ],
+  "formal_AT35": "NOT_RUN",
+  "notes": [
+    "All raw FAIL/ERROR/runner diagnostics preserved; no prior PASS transferred. Counts are distinct actual windows, never summed as one invocation.",
+    "Three legacy-probe setup/oracle FAILs are distinct from final actual W3 Conflict; preserve their original JUnit FAIL status.",
+    "No browser, SQL GRANT/role/registry expansion, production install, security permission change, or model invocation."
+  ],
+  "oracle_failures": [
+    {
+      "classification": "OVERSTRICT_WORKTREE_STATUS_PRECHECK",
+      "window": "frozen-complete"
+    },
+    {
+      "action_stopped": true,
+      "classification": "OWNED_PG_BASETEMP_CONTRACT_DENIED",
+      "guard_unchanged": true,
+      "new_owned_tmp_invocation_separate": true,
+      "window": "frozen-complete-corrected"
+    },
+    {
+      "classification": "CURRENT_DTO_REPARSE_PRECONDITION",
+      "window": "frozen-legacy-fingerprint-probe"
+    },
+    {
+      "classification": "BASELINE_RELATIVE_STORAGE_FILE_NOT_COPIED",
+      "window": "frozen-legacy-byte-exact-probe"
+    },
+    {
+      "classification": "BASELINE_CURRENT_PROJECTION_ADAPTER_MISSING",
+      "window": "frozen-legacy-byte-exact-sql-probe"
+    }
+  ],
+  "original_precheck": {
+    "classification": "OVERSTRICT_WRAPPER_ORACLE",
+    "exit_code": 1,
+    "path": ".runtime/native-run-access-writer-review-20261012/frozen-complete/precheck.json",
+    "pytest_started": false
+  },
+  "parent_mutation_policy": "Root sole source/tests/docs/Git writer. Child wrote only own runtime and independently owned original /tmp fixtures.",
+  "production_installation": "NOT_RUN",
+  "production_restricted_role": "NOT_VERIFIED",
+  "real_permissions": "NOT_RUN",
+  "remaining_blockers": [
+    "W1",
+    "W2",
+    "W3"
+  ],
+  "root_results": "NOT_TRANSFERRED",
+  "scope": "Independent owned synthetic PostgreSQL, actual separate writer process, ASGI and offline NodeVM only",
+  "source_commit_bytes_match": true,
+  "source_drift": [],
+  "source_file_count": 420,
+  "source_manifest_sha256": "46e2d256356b3f79525464d883e5039ee43c8ec08a87b2448e7c355bd9ad82fb",
+  "source_sha": "77e8e98b98bd1ad6d6aebc5e684f450ce2b56b5a",
+  "windows": [
+    {
+      "counts": {
+        "ERROR": 51,
+        "FAIL": 0,
+        "PASS": 9,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 3.8174815799998214,
+      "exit_code": 1,
+      "manifest_sha256": "46e2d256356b3f79525464d883e5039ee43c8ec08a87b2448e7c355bd9ad82fb",
+      "path": ".runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/run.json",
+      "source_changed": [],
+      "source_sha": "77e8e98b98bd1ad6d6aebc5e684f450ce2b56b5a",
+      "testcase_count": 60
+    },
+    {
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 0,
+        "PASS": 60,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 72.915854201,
+      "exit_code": 0,
+      "manifest_sha256": "46e2d256356b3f79525464d883e5039ee43c8ec08a87b2448e7c355bd9ad82fb",
+      "path": ".runtime/native-run-access-writer-review-20261012/frozen-complete-owned-temp/run.json",
+      "source_changed": [],
+      "source_sha": "77e8e98b98bd1ad6d6aebc5e684f450ce2b56b5a",
+      "testcase_count": 60
+    },
+    {
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 2,
+        "PASS": 7,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 9.28377288700085,
+      "exit_code": 1,
+      "manifest_sha256": "46e2d256356b3f79525464d883e5039ee43c8ec08a87b2448e7c355bd9ad82fb",
+      "path": ".runtime/native-run-access-writer-review-20261012/frozen-independent-probes/run.json",
+      "source_changed": [],
+      "source_sha": "77e8e98b98bd1ad6d6aebc5e684f450ce2b56b5a",
+      "testcase_count": 9
+    },
+    {
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 1,
+        "PASS": 0,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 1.9196840619997602,
+      "exit_code": 1,
+      "manifest_sha256": "46e2d256356b3f79525464d883e5039ee43c8ec08a87b2448e7c355bd9ad82fb",
+      "path": ".runtime/native-run-access-writer-review-20261012/frozen-legacy-adapted-probe/run.json",
+      "source_changed": [],
+      "source_sha": "77e8e98b98bd1ad6d6aebc5e684f450ce2b56b5a",
+      "testcase_count": 1
+    },
+    {
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 1,
+        "PASS": 0,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 1.673753922999822,
+      "exit_code": 1,
+      "manifest_sha256": "46e2d256356b3f79525464d883e5039ee43c8ec08a87b2448e7c355bd9ad82fb",
+      "path": ".runtime/native-run-access-writer-review-20261012/frozen-legacy-byte-exact-probe/run.json",
+      "source_changed": [],
+      "source_sha": "77e8e98b98bd1ad6d6aebc5e684f450ce2b56b5a",
+      "testcase_count": 1
+    },
+    {
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 1,
+        "PASS": 0,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 1.9706300590005412,
+      "exit_code": 1,
+      "manifest_sha256": "46e2d256356b3f79525464d883e5039ee43c8ec08a87b2448e7c355bd9ad82fb",
+      "path": ".runtime/native-run-access-writer-review-20261012/frozen-legacy-byte-exact-sql-probe/run.json",
+      "source_changed": [],
+      "source_sha": "77e8e98b98bd1ad6d6aebc5e684f450ce2b56b5a",
+      "testcase_count": 1
+    },
+    {
+      "counts": {
+        "ERROR": 0,
+        "FAIL": 1,
+        "PASS": 0,
+        "SKIP": 0
+      },
+      "elapsed_seconds": 1.7710465730006035,
+      "exit_code": 1,
+      "manifest_sha256": "46e2d256356b3f79525464d883e5039ee43c8ec08a87b2448e7c355bd9ad82fb",
+      "path": ".runtime/native-run-access-writer-review-20261012/frozen-legacy-fingerprint-probe/run.json",
+      "source_changed": [],
+      "source_sha": "77e8e98b98bd1ad6d6aebc5e684f450ce2b56b5a",
+      "testcase_count": 1
+    }
+  ],
+  "windows_native": "NOT_RUN"
+}

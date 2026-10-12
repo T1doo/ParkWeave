@@ -1,0 +1,298 @@
+........................................................................ [  6%]
+........................................................................ [ 13%]
+........................................................................ [ 20%]
+........................................................................ [ 27%]
+........................................................................ [ 33%]
+........................................................................ [ 40%]
+........................................................................ [ 47%]
+........................................................................ [ 54%]
+........................................................................ [ 61%]
+........................................................................ [ 67%]
+........................................................................ [ 74%]
+........................................................................ [ 81%]
+........................................................................ [ 88%]
+........................................................................ [ 94%]
+............E.E.E.E.E.E.E.E.E.E.................................         [100%]
+==================================== ERRORS ====================================
+_ ERROR at teardown of test_fresh_ordinary_chain_exposes_missing_production_run_access_without_repair _
+
+link_fixture = (<parkweave.store.Store object at 0x7f1e4ff231d0>, <parkweave.store.Store object at 0x7f1e4ff20320>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f1e5d2e03b0>)
+request = <SubRequest 'chain' for <Function test_fresh_ordinary_chain_exposes_missing_production_run_access_without_repair>>
+
+    @pytest.fixture
+    def chain(link_fixture, request):
+        # Original fixture setup only: exact owned UUID DB, fixed synthetic identities,
+        # existing material/resource/table rights, no new bridge/Grant/registry.
+        f = link_fixture
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] == 0 for t in ['runs', 'cases', 'run_assignments'])
+        with actual_http(create_app(f[0])) as (client, _):
+            value = Chain(f, client, request.node.nodeid)
+            try: yield value
+            finally:
+                out = Path(os.environ.get('PARKWEAVE_T07_EVIDENCE_DIR', '.runtime/f2-t07-full-chain/exploratory'))
+                out.mkdir(parents=True, exist_ok=True)
+                target = out/(hashlib.sha256(request.node.nodeid.encode()).hexdigest()[:12]+'.json')
+>               assert not target.exists(), 'actual evidence window may not overwrite a previous run'
+E               AssertionError: actual evidence window may not overwrite a previous run
+E               assert not True
+E                +  where True = exists()
+E                +    where exists = PosixPath('.runtime/f2-t07-full-chain/exploratory/6c4a486527a9.json').exists
+
+tests/test_f2_t07_full_chain.py:431: AssertionError
+_ ERROR at teardown of test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history _
+
+link_fixture = (<parkweave.store.Store object at 0x7f1e4f8a71d0>, <parkweave.store.Store object at 0x7f1e4f8a47a0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f1e5e489400>)
+request = <SubRequest 'chain' for <Function test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history>>
+
+    @pytest.fixture
+    def chain(link_fixture, request):
+        # Original fixture setup only: exact owned UUID DB, fixed synthetic identities,
+        # existing material/resource/table rights, no new bridge/Grant/registry.
+        f = link_fixture
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] == 0 for t in ['runs', 'cases', 'run_assignments'])
+        with actual_http(create_app(f[0])) as (client, _):
+            value = Chain(f, client, request.node.nodeid)
+            try: yield value
+            finally:
+                out = Path(os.environ.get('PARKWEAVE_T07_EVIDENCE_DIR', '.runtime/f2-t07-full-chain/exploratory'))
+                out.mkdir(parents=True, exist_ok=True)
+                target = out/(hashlib.sha256(request.node.nodeid.encode()).hexdigest()[:12]+'.json')
+>               assert not target.exists(), 'actual evidence window may not overwrite a previous run'
+E               AssertionError: actual evidence window may not overwrite a previous run
+E               assert not True
+E                +  where True = exists()
+E                +    where exists = PosixPath('.runtime/f2-t07-full-chain/exploratory/fa10ea00b369.json').exists
+
+tests/test_f2_t07_full_chain.py:431: AssertionError
+_ ERROR at teardown of test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history _
+
+link_fixture = (<parkweave.store.Store object at 0x7f1e5e74ff50>, <parkweave.store.Store object at 0x7f1e5e5e4350>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f1e5e10ed50>)
+request = <SubRequest 'chain' for <Function test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history>>
+
+    @pytest.fixture
+    def chain(link_fixture, request):
+        # Original fixture setup only: exact owned UUID DB, fixed synthetic identities,
+        # existing material/resource/table rights, no new bridge/Grant/registry.
+        f = link_fixture
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] == 0 for t in ['runs', 'cases', 'run_assignments'])
+        with actual_http(create_app(f[0])) as (client, _):
+            value = Chain(f, client, request.node.nodeid)
+            try: yield value
+            finally:
+                out = Path(os.environ.get('PARKWEAVE_T07_EVIDENCE_DIR', '.runtime/f2-t07-full-chain/exploratory'))
+                out.mkdir(parents=True, exist_ok=True)
+                target = out/(hashlib.sha256(request.node.nodeid.encode()).hexdigest()[:12]+'.json')
+>               assert not target.exists(), 'actual evidence window may not overwrite a previous run'
+E               AssertionError: actual evidence window may not overwrite a previous run
+E               assert not True
+E                +  where True = exists()
+E                +    where exists = PosixPath('.runtime/f2-t07-full-chain/exploratory/94d43474da34.json').exists
+
+tests/test_f2_t07_full_chain.py:431: AssertionError
+_ ERROR at teardown of test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[fixture-b] _
+
+link_fixture = (<parkweave.store.Store object at 0x7f1e5c20d850>, <parkweave.store.Store object at 0x7f1e4fc8b500>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f1e5e44fe60>)
+request = <SubRequest 'chain' for <Function test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[fixture-b]>>
+
+    @pytest.fixture
+    def chain(link_fixture, request):
+        # Original fixture setup only: exact owned UUID DB, fixed synthetic identities,
+        # existing material/resource/table rights, no new bridge/Grant/registry.
+        f = link_fixture
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] == 0 for t in ['runs', 'cases', 'run_assignments'])
+        with actual_http(create_app(f[0])) as (client, _):
+            value = Chain(f, client, request.node.nodeid)
+            try: yield value
+            finally:
+                out = Path(os.environ.get('PARKWEAVE_T07_EVIDENCE_DIR', '.runtime/f2-t07-full-chain/exploratory'))
+                out.mkdir(parents=True, exist_ok=True)
+                target = out/(hashlib.sha256(request.node.nodeid.encode()).hexdigest()[:12]+'.json')
+>               assert not target.exists(), 'actual evidence window may not overwrite a previous run'
+E               AssertionError: actual evidence window may not overwrite a previous run
+E               assert not True
+E                +  where True = exists()
+E                +    where exists = PosixPath('.runtime/f2-t07-full-chain/exploratory/97419eea4005.json').exists
+
+tests/test_f2_t07_full_chain.py:431: AssertionError
+_ ERROR at teardown of test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[fixture-c] _
+
+link_fixture = (<parkweave.store.Store object at 0x7f1e4faaa300>, <parkweave.store.Store object at 0x7f1e4fc3d580>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f1e5e0b7050>)
+request = <SubRequest 'chain' for <Function test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[fixture-c]>>
+
+    @pytest.fixture
+    def chain(link_fixture, request):
+        # Original fixture setup only: exact owned UUID DB, fixed synthetic identities,
+        # existing material/resource/table rights, no new bridge/Grant/registry.
+        f = link_fixture
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] == 0 for t in ['runs', 'cases', 'run_assignments'])
+        with actual_http(create_app(f[0])) as (client, _):
+            value = Chain(f, client, request.node.nodeid)
+            try: yield value
+            finally:
+                out = Path(os.environ.get('PARKWEAVE_T07_EVIDENCE_DIR', '.runtime/f2-t07-full-chain/exploratory'))
+                out.mkdir(parents=True, exist_ok=True)
+                target = out/(hashlib.sha256(request.node.nodeid.encode()).hexdigest()[:12]+'.json')
+>               assert not target.exists(), 'actual evidence window may not overwrite a previous run'
+E               AssertionError: actual evidence window may not overwrite a previous run
+E               assert not True
+E                +  where True = exists()
+E                +    where exists = PosixPath('.runtime/f2-t07-full-chain/exploratory/570283052e40.json').exists
+
+tests/test_f2_t07_full_chain.py:431: AssertionError
+_ ERROR at teardown of test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[executor-b] _
+
+link_fixture = (<parkweave.store.Store object at 0x7f1e5e74c650>, <parkweave.store.Store object at 0x7f1e5e74f5c0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f1e5e378110>)
+request = <SubRequest 'chain' for <Function test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[executor-b]>>
+
+    @pytest.fixture
+    def chain(link_fixture, request):
+        # Original fixture setup only: exact owned UUID DB, fixed synthetic identities,
+        # existing material/resource/table rights, no new bridge/Grant/registry.
+        f = link_fixture
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] == 0 for t in ['runs', 'cases', 'run_assignments'])
+        with actual_http(create_app(f[0])) as (client, _):
+            value = Chain(f, client, request.node.nodeid)
+            try: yield value
+            finally:
+                out = Path(os.environ.get('PARKWEAVE_T07_EVIDENCE_DIR', '.runtime/f2-t07-full-chain/exploratory'))
+                out.mkdir(parents=True, exist_ok=True)
+                target = out/(hashlib.sha256(request.node.nodeid.encode()).hexdigest()[:12]+'.json')
+>               assert not target.exists(), 'actual evidence window may not overwrite a previous run'
+E               AssertionError: actual evidence window may not overwrite a previous run
+E               assert not True
+E                +  where True = exists()
+E                +    where exists = PosixPath('.runtime/f2-t07-full-chain/exploratory/1c24412fc4e9.json').exists
+
+tests/test_f2_t07_full_chain.py:431: AssertionError
+_ ERROR at teardown of test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[unassigned] _
+
+link_fixture = (<parkweave.store.Store object at 0x7f1e5c0e4530>, <parkweave.store.Store object at 0x7f1e4fff4a70>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f1e5e03be00>)
+request = <SubRequest 'chain' for <Function test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[unassigned]>>
+
+    @pytest.fixture
+    def chain(link_fixture, request):
+        # Original fixture setup only: exact owned UUID DB, fixed synthetic identities,
+        # existing material/resource/table rights, no new bridge/Grant/registry.
+        f = link_fixture
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] == 0 for t in ['runs', 'cases', 'run_assignments'])
+        with actual_http(create_app(f[0])) as (client, _):
+            value = Chain(f, client, request.node.nodeid)
+            try: yield value
+            finally:
+                out = Path(os.environ.get('PARKWEAVE_T07_EVIDENCE_DIR', '.runtime/f2-t07-full-chain/exploratory'))
+                out.mkdir(parents=True, exist_ok=True)
+                target = out/(hashlib.sha256(request.node.nodeid.encode()).hexdigest()[:12]+'.json')
+>               assert not target.exists(), 'actual evidence window may not overwrite a previous run'
+E               AssertionError: actual evidence window may not overwrite a previous run
+E               assert not True
+E                +  where True = exists()
+E                +    where exists = PosixPath('.runtime/f2-t07-full-chain/exploratory/69261b6be9bf.json').exists
+
+tests/test_f2_t07_full_chain.py:431: AssertionError
+_ ERROR at teardown of test_current_owner_revocation_blocks_cold_original_material_key_and_delivery_read _
+
+link_fixture = (<parkweave.store.Store object at 0x7f1e5d4044d0>, <parkweave.store.Store object at 0x7f1e4f8014c0>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f1e5e489100>)
+request = <SubRequest 'chain' for <Function test_current_owner_revocation_blocks_cold_original_material_key_and_delivery_read>>
+
+    @pytest.fixture
+    def chain(link_fixture, request):
+        # Original fixture setup only: exact owned UUID DB, fixed synthetic identities,
+        # existing material/resource/table rights, no new bridge/Grant/registry.
+        f = link_fixture
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] == 0 for t in ['runs', 'cases', 'run_assignments'])
+        with actual_http(create_app(f[0])) as (client, _):
+            value = Chain(f, client, request.node.nodeid)
+            try: yield value
+            finally:
+                out = Path(os.environ.get('PARKWEAVE_T07_EVIDENCE_DIR', '.runtime/f2-t07-full-chain/exploratory'))
+                out.mkdir(parents=True, exist_ok=True)
+                target = out/(hashlib.sha256(request.node.nodeid.encode()).hexdigest()[:12]+'.json')
+>               assert not target.exists(), 'actual evidence window may not overwrite a previous run'
+E               AssertionError: actual evidence window may not overwrite a previous run
+E               assert not True
+E                +  where True = exists()
+E                +    where exists = PosixPath('.runtime/f2-t07-full-chain/exploratory/02ed7b79d5d9.json').exists
+
+tests/test_f2_t07_full_chain.py:431: AssertionError
+_ ERROR at teardown of test_offer_cancel_retains_capacity_and_history_until_independent_release _
+
+link_fixture = (<parkweave.store.Store object at 0x7f1e4fcb4cb0>, <parkweave.store.Store object at 0x7f1e4fcb7350>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f1e4ffd11f0>)
+request = <SubRequest 'chain' for <Function test_offer_cancel_retains_capacity_and_history_until_independent_release>>
+
+    @pytest.fixture
+    def chain(link_fixture, request):
+        # Original fixture setup only: exact owned UUID DB, fixed synthetic identities,
+        # existing material/resource/table rights, no new bridge/Grant/registry.
+        f = link_fixture
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] == 0 for t in ['runs', 'cases', 'run_assignments'])
+        with actual_http(create_app(f[0])) as (client, _):
+            value = Chain(f, client, request.node.nodeid)
+            try: yield value
+            finally:
+                out = Path(os.environ.get('PARKWEAVE_T07_EVIDENCE_DIR', '.runtime/f2-t07-full-chain/exploratory'))
+                out.mkdir(parents=True, exist_ok=True)
+                target = out/(hashlib.sha256(request.node.nodeid.encode()).hexdigest()[:12]+'.json')
+>               assert not target.exists(), 'actual evidence window may not overwrite a previous run'
+E               AssertionError: actual evidence window may not overwrite a previous run
+E               assert not True
+E                +  where True = exists()
+E                +    where exists = PosixPath('.runtime/f2-t07-full-chain/exploratory/81b3e90398ab.json').exists
+
+tests/test_f2_t07_full_chain.py:431: AssertionError
+_ ERROR at teardown of test_unsupported_new_goal_and_invalid_inputs_do_not_erase_prior_chain _
+
+link_fixture = (<parkweave.store.Store object at 0x7f1e5deeeae0>, <parkweave.store.Store object at 0x7f1e5deed790>, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, <starlette.testclient.TestClient object at 0x7f1e4fa59340>)
+request = <SubRequest 'chain' for <Function test_unsupported_new_goal_and_invalid_inputs_do_not_erase_prior_chain>>
+
+    @pytest.fixture
+    def chain(link_fixture, request):
+        # Original fixture setup only: exact owned UUID DB, fixed synthetic identities,
+        # existing material/resource/table rights, no new bridge/Grant/registry.
+        f = link_fixture
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n'] == 0 for t in ['runs', 'cases', 'run_assignments'])
+        with actual_http(create_app(f[0])) as (client, _):
+            value = Chain(f, client, request.node.nodeid)
+            try: yield value
+            finally:
+                out = Path(os.environ.get('PARKWEAVE_T07_EVIDENCE_DIR', '.runtime/f2-t07-full-chain/exploratory'))
+                out.mkdir(parents=True, exist_ok=True)
+                target = out/(hashlib.sha256(request.node.nodeid.encode()).hexdigest()[:12]+'.json')
+>               assert not target.exists(), 'actual evidence window may not overwrite a previous run'
+E               AssertionError: actual evidence window may not overwrite a previous run
+E               assert not True
+E                +  where True = exists()
+E                +    where exists = PosixPath('.runtime/f2-t07-full-chain/exploratory/8daf2ec728a4.json').exists
+
+tests/test_f2_t07_full_chain.py:431: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_native_run_access_writer.py::test_actual_separate_writer_activation_and_no_api_owner_or_key
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_f2_t07_full_chain.py::test_fresh_ordinary_chain_exposes_missing_production_run_access_without_repair
+ERROR tests/test_f2_t07_full_chain.py::test_whole_local_chain_cold_read_and_two_new_inputs_keep_first_history
+ERROR tests/test_f2_t07_full_chain.py::test_failure_correction_delivery_feedback_and_explicit_local_reopen_preserve_history
+ERROR tests/test_f2_t07_full_chain.py::test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[fixture-b]
+ERROR tests/test_f2_t07_full_chain.py::test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[fixture-c]
+ERROR tests/test_f2_t07_full_chain.py::test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[executor-b]
+ERROR tests/test_f2_t07_full_chain.py::test_cross_tenant_chain_outputs_materials_receipts_and_late_confirmation_are_denied[unassigned]
+ERROR tests/test_f2_t07_full_chain.py::test_current_owner_revocation_blocks_cold_original_material_key_and_delivery_read
+ERROR tests/test_f2_t07_full_chain.py::test_offer_cancel_retains_capacity_and_history_until_independent_release
+ERROR tests/test_f2_t07_full_chain.py::test_unsupported_new_goal_and_invalid_inputs_do_not_erase_prior_chain
+1062 passed, 2 warnings, 10 errors in 624.89s (0:10:24)

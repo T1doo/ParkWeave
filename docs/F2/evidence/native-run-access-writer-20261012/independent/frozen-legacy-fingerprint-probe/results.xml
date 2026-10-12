@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.962" timestamp="2026-10-12T06:11:47.793407+00:00" hostname="synthetic-fixture-host"><testcase classname=".runtime.native-run-access-writer-review-20261012.probes.test_legacy_key_compatibility" name="test_pre_writer_native_original_key_compatible_with_optional_confirmation" time="0.922"><failure message="AssertionError: assert 'b9f6de9972d0...0c7ab60f9f07e' == '4add9a11520e...8a462ee0fbdc0'&#10;  &#10;  - 4add9a11520e6caffba35e24a88ca9f7bb4265c719ac23ab1098a462ee0fbdc0&#10;  + b9f6de9972d057ecf8f2dc90d92f7d7e8e316add8f859d0a7c90c7ab60f9f07e">native_fixture = ((&lt;parkweave.store.Store object at 0x7f286ad62330&gt;, &lt;parkweave.store.Store object at 0x7f286ad622a0&gt;, {'fixture-a': "[REDACTED synthetic auth value]"row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+
+    def test_pre_writer_native_original_key_compatible_with_optional_confirmation(native_fixture):
+        f,parent,bridge,_=native_fixture
+        current=body(native_fixture,'REQUEST')
+        historical=PreWriterCommand.model_validate(current.model_dump(mode='json',exclude={'confirm_request'}))
+        original=bridge.command(f[2]['fixture-a'],UUID(parent['run_id']),'pre-writer-original',historical)
+&gt;       assert original['fingerprint']==native._hash(dict(run_id=parent['run_id'],command=historical.model_dump(mode='json')))
+E       AssertionError: assert 'b9f6de9972d0...0c7ab60f9f07e' == '4add9a11520e...8a462ee0fbdc0'
+E         
+E         - 4add9a11520e6caffba35e24a88ca9f7bb4265c719ac23ab1098a462ee0fbdc0
+E         + b9f6de9972d057ecf8f2dc90d92f7d7e8e316add8f859d0a7c90c7ab60f9f07e
+
+.runtime/native-run-access-writer-review-20261012/probes/test_legacy_key_compatibility.py:15: AssertionError</failure></testcase></testsuite></testsuites>

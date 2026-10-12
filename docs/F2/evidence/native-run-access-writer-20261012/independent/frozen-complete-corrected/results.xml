@@ -1,0 +1,2397 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="51" failures="0" skipped="0" tests="60" time="2.858" timestamp="2026-10-12T06:06:25.348755+00:00" hostname="synthetic-fixture-host"><testcase classname="tests.test_native_run_access_writer" name="test_actual_separate_writer_activation_and_no_api_owner_or_key" time="0.827"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_default_cold_store_and_untrusted_endpoints_never_activate" time="0.001"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_one_policy_cannot_renew_by_new_request_after_revoke" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_current_owner_wrong_tenant_and_nonowner_cannot_use_writer" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_verify_channel_has_no_sign_sql_or_actor_setter" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change0]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change1]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change2]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change3]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change4]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change5]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change6]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_rejects_broad_implicit_or_ambiguous_scope[change7]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_terminal_decision_cannot_renew_single_policy[REJECT]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_terminal_decision_cannot_renew_single_policy[CANCEL]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_approval_only_shrinks_interval_and_owner_cannot_approve" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_actual_writer_concurrent_keys_and_original_recovery[True]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_actual_writer_concurrent_keys_and_original_recovery[False]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_private_writer_failure_rolls_back_event_and_assignment[event]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_private_writer_failure_rolls_back_event_and_assignment[assignment]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_existing_app_json_update_cannot_forge_signed_authority" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_owner_revoke_survives_stale_target_source_and_lease[beneficiary_read]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_owner_revoke_survives_stale_target_source_and_lease[materials]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_owner_revoke_survives_stale_target_source_and_lease[expired]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[fixture-a-principals-None]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[executor-a-principals-None]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[fixture-a-preparation_grants-PREPARE]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[executor-a-capability_grants-READ]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_regrant_cannot_restore_previous_writer_lease[prep-specialist-fixture-a-capability_grants-READ]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_writer_never_overwrites_legacy_assignment[True]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_writer_never_overwrites_legacy_assignment[False]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_queued_commands_cannot_starve_verify_and_business_commit" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_accept_and_writer_revoke_actual_parent_lock_order[accept]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_accept_and_writer_revoke_actual_parent_lock_order[revoke]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_activation_checks_changes_after_actual_parent_wait[materials]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_activation_checks_changes_after_actual_parent_wait[expiry]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_expiry_at_receipt_commit_rolls_back_real_api_writes" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_real_api_writer_restart_needs_explicit_rebind" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_actual_physical_pg_restart_retains_original_lease_without_self_issue" time="0.848"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+request = &lt;SubRequest 'restart_writer_fixture' for &lt;Function test_actual_physical_pg_restart_retains_original_lease_without_self_issue&gt;&gt;
+
+    @pytest.fixture
+    def restart_writer_fixture(tmp_path_factory,request):
+        import conftest,pgserver
+&gt;       pg_gen=conftest.pg.__wrapped__(tmp_path_factory);server=next(pg_gen)
+                                                                ^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:307: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:23: in pg
+    server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg1/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_cancelled_case_keeps_capacity_and_independent_release" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_writer_request_requires_strict_explicit_owner_confirmation[None]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_writer_request_requires_strict_explicit_owner_confirmation[False]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_writer_request_requires_strict_explicit_owner_confirmation[1]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_writer_request_requires_strict_explicit_owner_confirmation[true]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_api_refuses_private_context_and_late_private_binding" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_reference_writer_full_chain_with_explicit_plan_revision" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_foreign_unsigned_key_collision_cannot_return_a_fake_receipt[COMMAND]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_foreign_unsigned_key_collision_cannot_return_a_fake_receipt[ACTIVATE]" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_actual_app_database_binding_rejects_borrowed_foreign_writer" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_partial_command_frames_are_bounded_and_cannot_starve_verify" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_expiry_closes_new_commands_and_preserves_get_history" time="0.000"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/froz...-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:23: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = '[REDACTED local synthetic PG URI]'
+owned_data_directory = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/frozen-complete-corrected/pytest-tmp/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[disabled_pending]" time="0.040" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[lost_response]" time="0.032" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[not_observed]" time="0.033" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[revoked]" time="0.038" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[late_read]" time="0.045" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[late_recovery]" time="0.039" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[authority_expiry]" time="0.037" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[effective_fixture]" time="0.033" /><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[writer_confirmation]" time="0.043" /></testsuite></testsuites>

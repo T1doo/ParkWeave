@@ -1,0 +1,202 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="5" failures="0" skipped="0" tests="5" time="2.896" timestamp="2026-10-12T05:35:42.926124+00:00" hostname="synthetic-fixture-host"><testcase classname="tests.test_native_run_access_writer" name="test_actual_separate_writer_activation_and_no_api_owner_or_key" time="1.122"><error message="failed on setup with &quot;AssertionError: writer exited: Traceback (most recent call last):&#10;  File &quot;&lt;frozen runpy&gt;&quot;, line 198, in _run_module_as_main&#10;  File &quot;&lt;frozen runpy&gt;&quot;, line 88, in _run_code&#10;  File &quot;@repo/src/parkweave/native_run_access_writer.py&quot;, line 26, in &lt;module&gt;&#10;    from . import preparation as prep&#10;  File &quot;@repo/src/parkweave/preparation.py&quot;, line 6, in &lt;module&gt;&#10;    from psycopg.types.json import Jsonb&#10;ModuleNotFoundError: No module named 'psycopg'&quot;">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f587a7ca570&gt;, &lt;parkweave.store.Store object at 0x7f587a7ca7b0&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7f587a56a8a0&gt;)
+request = &lt;SubRequest 'writer_fixture' for &lt;Function test_actual_separate_writer_activation_and_no_api_owner_or_key&gt;&gt;
+
+    @pytest.fixture
+    def writer_fixture(receipt_fixture,request):
+&gt;       value=Harness(receipt_fixture,request)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/writer_reference_support.py:46: in __init__
+    self.start_writer()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;writer_reference_support.Harness object at 0x7f587a50bdd0&gt;
+
+    def start_writer(self):
+        root=self.directory/('writer-'+str(len(self.processes)));root.mkdir(mode=0o700)
+        bootstrap={**self.bootstrap,'boot_id':str(uuid4())}
+        path=root/'private.json';write_private(path,bootstrap)
+        command,verify=str(root/'c.sock'),str(root/'v.sock')
+        output=root/'stdout.log';error=root/'stderr.log'
+        out=output.open('w');err=error.open('w')
+        process=subprocess.Popen([str(Path('.venv/bin/python').resolve()),'-m','parkweave.native_run_access_writer',
+            '--reference-bootstrap',str(path),'--command-socket',command,'--verify-socket',verify],
+            env=child_environment(),stdout=out,stderr=err)
+        out.close();err.close();self.processes.append(process)
+        deadline=monotonic()+10
+        while monotonic()&lt;deadline:
+&gt;           if process.poll() is not None:raise AssertionError('writer exited: '+error.read_text())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: writer exited: Traceback (most recent call last):
+E             File "&lt;frozen runpy&gt;", line 198, in _run_module_as_main
+E             File "&lt;frozen runpy&gt;", line 88, in _run_code
+E             File "@repo/src/parkweave/native_run_access_writer.py", line 26, in &lt;module&gt;
+E               from . import preparation as prep
+E             File "@repo/src/parkweave/preparation.py", line 6, in &lt;module&gt;
+E               from psycopg.types.json import Jsonb
+E           ModuleNotFoundError: No module named 'psycopg'
+
+tests/writer_reference_support.py:69: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_default_cold_store_and_untrusted_endpoints_never_activate" time="0.384"><error message="failed on setup with &quot;AssertionError: writer exited: Traceback (most recent call last):&#10;  File &quot;&lt;frozen runpy&gt;&quot;, line 198, in _run_module_as_main&#10;  File &quot;&lt;frozen runpy&gt;&quot;, line 88, in _run_code&#10;  File &quot;@repo/src/parkweave/native_run_access_writer.py&quot;, line 26, in &lt;module&gt;&#10;    from . import preparation as prep&#10;  File &quot;@repo/src/parkweave/preparation.py&quot;, line 6, in &lt;module&gt;&#10;    from psycopg.types.json import Jsonb&#10;ModuleNotFoundError: No module named 'psycopg'&quot;">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f587a7cac60&gt;, &lt;parkweave.store.Store object at 0x7f587a7c8110&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7f587a46e420&gt;)
+request = &lt;SubRequest 'writer_fixture' for &lt;Function test_default_cold_store_and_untrusted_endpoints_never_activate&gt;&gt;
+
+    @pytest.fixture
+    def writer_fixture(receipt_fixture,request):
+&gt;       value=Harness(receipt_fixture,request)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/writer_reference_support.py:46: in __init__
+    self.start_writer()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;writer_reference_support.Harness object at 0x7f587a38f440&gt;
+
+    def start_writer(self):
+        root=self.directory/('writer-'+str(len(self.processes)));root.mkdir(mode=0o700)
+        bootstrap={**self.bootstrap,'boot_id':str(uuid4())}
+        path=root/'private.json';write_private(path,bootstrap)
+        command,verify=str(root/'c.sock'),str(root/'v.sock')
+        output=root/'stdout.log';error=root/'stderr.log'
+        out=output.open('w');err=error.open('w')
+        process=subprocess.Popen([str(Path('.venv/bin/python').resolve()),'-m','parkweave.native_run_access_writer',
+            '--reference-bootstrap',str(path),'--command-socket',command,'--verify-socket',verify],
+            env=child_environment(),stdout=out,stderr=err)
+        out.close();err.close();self.processes.append(process)
+        deadline=monotonic()+10
+        while monotonic()&lt;deadline:
+&gt;           if process.poll() is not None:raise AssertionError('writer exited: '+error.read_text())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: writer exited: Traceback (most recent call last):
+E             File "&lt;frozen runpy&gt;", line 198, in _run_module_as_main
+E             File "&lt;frozen runpy&gt;", line 88, in _run_code
+E             File "@repo/src/parkweave/native_run_access_writer.py", line 26, in &lt;module&gt;
+E               from . import preparation as prep
+E             File "@repo/src/parkweave/preparation.py", line 6, in &lt;module&gt;
+E               from psycopg.types.json import Jsonb
+E           ModuleNotFoundError: No module named 'psycopg'
+
+tests/writer_reference_support.py:69: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_one_policy_cannot_renew_by_new_request_after_revoke" time="0.397"><error message="failed on setup with &quot;AssertionError: writer exited: Traceback (most recent call last):&#10;  File &quot;&lt;frozen runpy&gt;&quot;, line 198, in _run_module_as_main&#10;  File &quot;&lt;frozen runpy&gt;&quot;, line 88, in _run_code&#10;  File &quot;@repo/src/parkweave/native_run_access_writer.py&quot;, line 26, in &lt;module&gt;&#10;    from . import preparation as prep&#10;  File &quot;@repo/src/parkweave/preparation.py&quot;, line 6, in &lt;module&gt;&#10;    from psycopg.types.json import Jsonb&#10;ModuleNotFoundError: No module named 'psycopg'&quot;">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f5879316300&gt;, &lt;parkweave.store.Store object at 0x7f5879211430&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7f587a5bc770&gt;)
+request = &lt;SubRequest 'writer_fixture' for &lt;Function test_one_policy_cannot_renew_by_new_request_after_revoke&gt;&gt;
+
+    @pytest.fixture
+    def writer_fixture(receipt_fixture,request):
+&gt;       value=Harness(receipt_fixture,request)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/writer_reference_support.py:46: in __init__
+    self.start_writer()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;writer_reference_support.Harness object at 0x7f5879213aa0&gt;
+
+    def start_writer(self):
+        root=self.directory/('writer-'+str(len(self.processes)));root.mkdir(mode=0o700)
+        bootstrap={**self.bootstrap,'boot_id':str(uuid4())}
+        path=root/'private.json';write_private(path,bootstrap)
+        command,verify=str(root/'c.sock'),str(root/'v.sock')
+        output=root/'stdout.log';error=root/'stderr.log'
+        out=output.open('w');err=error.open('w')
+        process=subprocess.Popen([str(Path('.venv/bin/python').resolve()),'-m','parkweave.native_run_access_writer',
+            '--reference-bootstrap',str(path),'--command-socket',command,'--verify-socket',verify],
+            env=child_environment(),stdout=out,stderr=err)
+        out.close();err.close();self.processes.append(process)
+        deadline=monotonic()+10
+        while monotonic()&lt;deadline:
+&gt;           if process.poll() is not None:raise AssertionError('writer exited: '+error.read_text())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: writer exited: Traceback (most recent call last):
+E             File "&lt;frozen runpy&gt;", line 198, in _run_module_as_main
+E             File "&lt;frozen runpy&gt;", line 88, in _run_code
+E             File "@repo/src/parkweave/native_run_access_writer.py", line 26, in &lt;module&gt;
+E               from . import preparation as prep
+E             File "@repo/src/parkweave/preparation.py", line 6, in &lt;module&gt;
+E               from psycopg.types.json import Jsonb
+E           ModuleNotFoundError: No module named 'psycopg'
+
+tests/writer_reference_support.py:69: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_current_owner_wrong_tenant_and_nonowner_cannot_use_writer" time="0.417"><error message="failed on setup with &quot;AssertionError: writer exited: Traceback (most recent call last):&#10;  File &quot;&lt;frozen runpy&gt;&quot;, line 198, in _run_module_as_main&#10;  File &quot;&lt;frozen runpy&gt;&quot;, line 88, in _run_code&#10;  File &quot;@repo/src/parkweave/native_run_access_writer.py&quot;, line 26, in &lt;module&gt;&#10;    from . import preparation as prep&#10;  File &quot;@repo/src/parkweave/preparation.py&quot;, line 6, in &lt;module&gt;&#10;    from psycopg.types.json import Jsonb&#10;ModuleNotFoundError: No module named 'psycopg'&quot;">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f58792b3200&gt;, &lt;parkweave.store.Store object at 0x7f5879032540&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7f5878dc0dd0&gt;)
+request = &lt;SubRequest 'writer_fixture' for &lt;Function test_current_owner_wrong_tenant_and_nonowner_cannot_use_writer&gt;&gt;
+
+    @pytest.fixture
+    def writer_fixture(receipt_fixture,request):
+&gt;       value=Harness(receipt_fixture,request)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/writer_reference_support.py:46: in __init__
+    self.start_writer()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;writer_reference_support.Harness object at 0x7f5879030b90&gt;
+
+    def start_writer(self):
+        root=self.directory/('writer-'+str(len(self.processes)));root.mkdir(mode=0o700)
+        bootstrap={**self.bootstrap,'boot_id':str(uuid4())}
+        path=root/'private.json';write_private(path,bootstrap)
+        command,verify=str(root/'c.sock'),str(root/'v.sock')
+        output=root/'stdout.log';error=root/'stderr.log'
+        out=output.open('w');err=error.open('w')
+        process=subprocess.Popen([str(Path('.venv/bin/python').resolve()),'-m','parkweave.native_run_access_writer',
+            '--reference-bootstrap',str(path),'--command-socket',command,'--verify-socket',verify],
+            env=child_environment(),stdout=out,stderr=err)
+        out.close();err.close();self.processes.append(process)
+        deadline=monotonic()+10
+        while monotonic()&lt;deadline:
+&gt;           if process.poll() is not None:raise AssertionError('writer exited: '+error.read_text())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: writer exited: Traceback (most recent call last):
+E             File "&lt;frozen runpy&gt;", line 198, in _run_module_as_main
+E             File "&lt;frozen runpy&gt;", line 88, in _run_code
+E             File "@repo/src/parkweave/native_run_access_writer.py", line 26, in &lt;module&gt;
+E               from . import preparation as prep
+E             File "@repo/src/parkweave/preparation.py", line 6, in &lt;module&gt;
+E               from psycopg.types.json import Jsonb
+E           ModuleNotFoundError: No module named 'psycopg'
+
+tests/writer_reference_support.py:69: AssertionError</error></testcase><testcase classname="tests.test_native_run_access_writer" name="test_verify_channel_has_no_sign_sql_or_actor_setter" time="0.391"><error message="failed on setup with &quot;AssertionError: writer exited: Traceback (most recent call last):&#10;  File &quot;&lt;frozen runpy&gt;&quot;, line 198, in _run_module_as_main&#10;  File &quot;&lt;frozen runpy&gt;&quot;, line 88, in _run_code&#10;  File &quot;@repo/src/parkweave/native_run_access_writer.py&quot;, line 26, in &lt;module&gt;&#10;    from . import preparation as prep&#10;  File &quot;@repo/src/parkweave/preparation.py&quot;, line 6, in &lt;module&gt;&#10;    from psycopg.types.json import Jsonb&#10;ModuleNotFoundError: No module named 'psycopg'&quot;">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f5878f475c0&gt;, &lt;parkweave.store.Store object at 0x7f5878e1eab0&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7f5878ca25d0&gt;)
+request = &lt;SubRequest 'writer_fixture' for &lt;Function test_verify_channel_has_no_sign_sql_or_actor_setter&gt;&gt;
+
+    @pytest.fixture
+    def writer_fixture(receipt_fixture,request):
+&gt;       value=Harness(receipt_fixture,request)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/writer_reference_support.py:46: in __init__
+    self.start_writer()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;writer_reference_support.Harness object at 0x7f5878e1d910&gt;
+
+    def start_writer(self):
+        root=self.directory/('writer-'+str(len(self.processes)));root.mkdir(mode=0o700)
+        bootstrap={**self.bootstrap,'boot_id':str(uuid4())}
+        path=root/'private.json';write_private(path,bootstrap)
+        command,verify=str(root/'c.sock'),str(root/'v.sock')
+        output=root/'stdout.log';error=root/'stderr.log'
+        out=output.open('w');err=error.open('w')
+        process=subprocess.Popen([str(Path('.venv/bin/python').resolve()),'-m','parkweave.native_run_access_writer',
+            '--reference-bootstrap',str(path),'--command-socket',command,'--verify-socket',verify],
+            env=child_environment(),stdout=out,stderr=err)
+        out.close();err.close();self.processes.append(process)
+        deadline=monotonic()+10
+        while monotonic()&lt;deadline:
+&gt;           if process.poll() is not None:raise AssertionError('writer exited: '+error.read_text())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: writer exited: Traceback (most recent call last):
+E             File "&lt;frozen runpy&gt;", line 198, in _run_module_as_main
+E             File "&lt;frozen runpy&gt;", line 88, in _run_code
+E             File "@repo/src/parkweave/native_run_access_writer.py", line 26, in &lt;module&gt;
+E               from . import preparation as prep
+E             File "@repo/src/parkweave/preparation.py", line 6, in &lt;module&gt;
+E               from psycopg.types.json import Jsonb
+E           ModuleNotFoundError: No module named 'psycopg'
+
+tests/writer_reference_support.py:69: AssertionError</error></testcase></testsuite></testsuites>

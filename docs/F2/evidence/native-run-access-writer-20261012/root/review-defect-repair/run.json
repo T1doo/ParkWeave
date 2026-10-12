@@ -1,0 +1,77 @@
+{
+  "argv": [
+    "@repo/.venv/bin/python",
+    "-m",
+    "pytest",
+    "tests/test_native_run_access_writer.py",
+    "-k",
+    "foreign_unsigned_key or app_database or partial_command or external_policy_expiry or queued_commands or actual_writer_concurrent",
+    "--junitxml=@repo/.runtime/native-run-access-writer-20261012/review-defect-repair/results.xml",
+    "-q"
+  ],
+  "artifacts_sha256": {
+    "results.xml": "914bb662afcf7e407e86b5ca79be6f314878e252e7e352c233c1f223cd9cc659",
+    "stdout.log": "686a146c33fb036b82a5e0daf01f86b5dc912d8b6937c4fdde8e43c72571e5c1"
+  },
+  "browser_attempts": 0,
+  "counts": {
+    "FAIL": 1,
+    "PASS": 7
+  },
+  "elapsed_seconds": 15.470368180999685,
+  "end_utc": "2026-10-12T06:01:17.225783+00:00",
+  "exit_code": 1,
+  "formal_AT35": false,
+  "junit_ids": 8,
+  "outcomes": [
+    {
+      "classname": "tests.test_native_run_access_writer",
+      "name": "test_actual_writer_concurrent_keys_and_original_recovery[True]",
+      "status": "PASS"
+    },
+    {
+      "classname": "tests.test_native_run_access_writer",
+      "name": "test_actual_writer_concurrent_keys_and_original_recovery[False]",
+      "status": "PASS"
+    },
+    {
+      "classname": "tests.test_native_run_access_writer",
+      "name": "test_queued_commands_cannot_starve_verify_and_business_commit",
+      "status": "PASS"
+    },
+    {
+      "classname": "tests.test_native_run_access_writer",
+      "name": "test_foreign_unsigned_key_collision_cannot_return_a_fake_receipt[COMMAND]",
+      "status": "PASS"
+    },
+    {
+      "classname": "tests.test_native_run_access_writer",
+      "name": "test_foreign_unsigned_key_collision_cannot_return_a_fake_receipt[ACTIVATE]",
+      "status": "PASS"
+    },
+    {
+      "classname": "tests.test_native_run_access_writer",
+      "name": "test_actual_app_database_binding_rejects_borrowed_foreign_writer",
+      "status": "PASS"
+    },
+    {
+      "classname": "tests.test_native_run_access_writer",
+      "name": "test_partial_command_frames_are_bounded_and_cannot_starve_verify",
+      "status": "FAIL"
+    },
+    {
+      "classname": "tests.test_native_run_access_writer",
+      "name": "test_external_policy_expiry_closes_new_commands_and_preserves_get_history",
+      "status": "PASS"
+    }
+  ],
+  "pid": 21486,
+  "production_installation": false,
+  "production_privilege_changes": false,
+  "scope": "OWNED_SYNTHETIC_REFERENCE_WRITER_PG_ASGI_SUBPROCESSES",
+  "source_drift": [],
+  "source_files": 416,
+  "source_head": "9ea666620bdf9b88bca395e7ccf471ec7901a038",
+  "source_manifest_sha256": "cc204922708f8ae4dc809b13c5505ffd9a6ffa637f521d85c6776cc86dae83cd",
+  "start_utc": "2026-10-12T06:01:01.755412+00:00"
+}

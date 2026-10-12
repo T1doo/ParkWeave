@@ -1,0 +1,56 @@
+....FF...                                                                [100%]
+=================================== FAILURES ===================================
+_____ test_independent_unsigned_target_cannot_grant_metadata_participation _____
+
+writer_fixture = <writer_reference_support.Harness object at 0x7f376990e8d0>
+
+    def test_independent_unsigned_target_cannot_grant_metadata_participation(writer_fixture):
+        h=writer_fixture
+        assert h.f[3].get(path(h.a),headers=headers(h.f[2],'unassigned')).status_code==403
+        unsigned_request(h,target='unassigned')
+        response=h.f[3].get(path(h.a),headers=headers(h.f[2],'unassigned'))
+        h.observe('INDEPENDENT_UNSIGNED_TARGET_METADATA',status=response.status_code,
+            writer_history_verified=response.json().get('writer_history_verified'),
+            actual_run_access=response.json().get('actual_run_access'))
+>       assert response.status_code==403, 'Unsigned app JSON changed who can read the private native ledger'
+E       AssertionError: Unsigned app JSON changed who can read the private native ledger
+E       assert 200 == 403
+E        +  where 200 = <Response [200 OK]>.status_code
+
+.runtime/native-run-access-writer-review-20261012/probes/test_writer_independent.py:82: AssertionError
+_________ test_independent_original_key_requires_authenticated_receipt _________
+
+writer_fixture = <writer_reference_support.Harness object at 0x7f37695aec90>
+
+    def test_independent_original_key_requires_authenticated_receipt(writer_fixture):
+        h=writer_fixture;fake=unsigned_request(h)
+        response=h.f[3].get(path(h.a)+'/commands/'+fake['request_key'],headers=headers(h.f[2]))
+        value=response.json()
+        h.observe('INDEPENDENT_UNSIGNED_KEY_RECOVERY',status=response.status_code,found=value.get('found'),
+            exact_unsigned_receipt_returned=value.get('receipt')==fake,
+            receipt_verification_flag=value.get('writer_receipt_verified'),actual_run_access=value.get('actual_run_access'))
+>       assert response.status_code in (403,409) or value.get('found') is False or value.get('writer_receipt_verified') is False, \
+            'Recovery called an unissued receipt found without an authentication failure marker'
+E       AssertionError: Recovery called an unissued receipt found without an authentication failure marker
+E       assert (200 in (403, 409) or True is False or None is False)
+E        +  where 200 = <Response [200 OK]>.status_code
+E        +  and   True = <built-in method get of dict object at 0x7f376991ff40>('found')
+E        +    where <built-in method get of dict object at 0x7f376991ff40> = {'found': True, 'receipt': {'state': 'REQUESTED', 'action': 'REQUEST', 'reason': 'SYNTHETIC explicit REQUEST', 'run_id...32b5-42d5-83f6-5924865bbf15', ...}, 'namespace': 'ORDINARY_PG_RUN_ACCESS_DECISION_V1', 'actual_run_access': False, ...}.get
+E        +  and   None = <built-in method get of dict object at 0x7f376991ff40>('writer_receipt_verified')
+E        +    where <built-in method get of dict object at 0x7f376991ff40> = {'found': True, 'receipt': {'state': 'REQUESTED', 'action': 'REQUEST', 'reason': 'SYNTHETIC explicit REQUEST', 'run_id...32b5-42d5-83f6-5924865bbf15', ...}, 'namespace': 'ORDINARY_PG_RUN_ACCESS_DECISION_V1', 'actual_run_access': False, ...}.get
+
+.runtime/native-run-access-writer-review-20261012/probes/test_writer_independent.py:92: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  @repo/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/native-run-access-writer-review-20261012/probes/test_writer_independent.py::test_independent_foreign_run_key_never_returns_unsigned_receipt[COMMAND]
+  @repo/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to @tmp/[REDACTED]/
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/native-run-access-writer-review-20261012/probes/test_writer_independent.py::test_independent_unsigned_target_cannot_grant_metadata_participation
+FAILED .runtime/native-run-access-writer-review-20261012/probes/test_writer_independent.py::test_independent_original_key_requires_authenticated_receipt
+2 failed, 7 passed, 2 warnings in 8.13s

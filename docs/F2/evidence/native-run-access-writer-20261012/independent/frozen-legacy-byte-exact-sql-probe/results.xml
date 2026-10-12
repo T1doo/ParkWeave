@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.030" timestamp="2026-10-12T06:13:31.752957+00:00" hostname="synthetic-fixture-host"><testcase classname=".runtime.native-run-access-writer-review-20261012.probes.test_legacy_key_baseline" name="test_pre_writer_receipt_original_key_survives_new_optional_field" time="0.960"><failure message="AttributeError: 'NativeRunAccess' object has no attribute 'writer'">receipt_fixture = (&lt;parkweave.store.Store object at 0x7fa412e617f0&gt;, &lt;parkweave.store.Store object at 0x7fa412e63e30&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7fa4127d8230&gt;)
+
+    def test_pre_writer_receipt_original_key_survives_new_optional_field(receipt_fixture):
+        source=Path(__file__).with_name('pre-writer-native.py.txt')
+        module=types.ModuleType('parkweave._independent_pre_writer_native')
+        module.__package__='parkweave';module.__file__=str(source)
+        sys.modules[module.__name__]=module
+        exec(compile(source.read_bytes(),str(source),'exec'),module.__dict__)
+        f=receipt_fixture;parent=filled(f)
+        parent=material(f,parent,'REVIEW',APPROVER,reason='SYNTHETIC original review').json()
+        parent=material(f,parent,'CONFIRM',reason='SYNTHETIC original owner confirmation').json()
+        module.install_owned_test_storage(f[1],f[1]._case_fact_fixture_receipt)
+        prior_permit=module.issue_decision_test_permit(f[1],f[1]._case_fact_fixture_receipt,approver_ids={APPROVER})
+        prior=module.NativeRunAccess(f[0],test_permit=prior_permit)
+        from datetime import datetime,timedelta,timezone
+&gt;       view=prior.read(f[2]['fixture-a'],UUID(parent['run_id']));now=datetime.now(timezone.utc)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/native-run-access-writer-review-20261012/probes/test_legacy_key_baseline.py:25: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.runtime/native-run-access-writer-review-20261012/probes/pre-writer-native.py.txt:51: in call
+    return fn(*args,**kwargs)
+           ^^^^^^^^^^^^^^^^^^
+.runtime/native-run-access-writer-review-20261012/probes/pre-writer-native.py.txt:323: in read
+    return self._view(c,p,run)
+           ^^^^^^^^^^^^^^^^^^^
+.runtime/native-run-access-writer-review-20261012/probes/pre-writer-native.py.txt:313: in _view
+    return augment_view(self,c,p,run,result)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/native_run_access_activation.py:238: in augment_view
+    permit,binding=_permit(bridge,c,run['id'])
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+bridge = &lt;parkweave._independent_pre_writer_native.NativeRunAccess object at 0x7fa412852f00&gt;
+c = &lt;psycopg.Connection [BAD] at 0x7fa412851f40&gt;
+run_id = UUID('310541a6-e3b6-4e56-b158-d0d2c2395436')
+
+    def _permit(bridge,c,run_id):
+&gt;       if bridge.writer is not None:
+           ^^^^^^^^^^^^^
+E       AttributeError: 'NativeRunAccess' object has no attribute 'writer'
+
+src/parkweave/native_run_access_activation.py:135: AttributeError</failure></testcase></testsuite></testsuites>

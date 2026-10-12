@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="8" time="14.446" timestamp="2026-10-12T06:01:02.279261+00:00" hostname="synthetic-fixture-host"><testcase classname="tests.test_native_run_access_writer" name="test_actual_writer_concurrent_keys_and_original_recovery[True]" time="1.576" /><testcase classname="tests.test_native_run_access_writer" name="test_actual_writer_concurrent_keys_and_original_recovery[False]" time="0.998" /><testcase classname="tests.test_native_run_access_writer" name="test_queued_commands_cannot_starve_verify_and_business_commit" time="1.176" /><testcase classname="tests.test_native_run_access_writer" name="test_foreign_unsigned_key_collision_cannot_return_a_fake_receipt[COMMAND]" time="0.933" /><testcase classname="tests.test_native_run_access_writer" name="test_foreign_unsigned_key_collision_cannot_return_a_fake_receipt[ACTIVATE]" time="0.860" /><testcase classname="tests.test_native_run_access_writer" name="test_actual_app_database_binding_rejects_borrowed_foreign_writer" time="1.033" /><testcase classname="tests.test_native_run_access_writer" name="test_partial_command_frames_are_bounded_and_cannot_starve_verify" time="0.592"><failure message="BlockingIOError: [Errno 11] Resource temporarily unavailable">writer_fixture = &lt;writer_reference_support.Harness object at 0x7f7841f03350&gt;
+
+    def test_partial_command_frames_are_bounded_and_cannot_starve_verify(writer_fixture):
+        from pathlib import Path
+        from time import sleep
+        h=writer_fixture;channels=[]
+        try:
+            for _ in range(20):
+                channel=socket.socket(socket.AF_UNIX,socket.SOCK_STREAM);channel.settimeout(1)
+&gt;               channel.connect(h.pin.command_path);channels.append(channel)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               BlockingIOError: [Errno 11] Resource temporarily unavailable
+
+tests/test_native_run_access_writer.py:450: BlockingIOError</failure></testcase><testcase classname="tests.test_native_run_access_writer" name="test_external_policy_expiry_closes_new_commands_and_preserves_get_history" time="7.070" /></testsuite></testsuites>

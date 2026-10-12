@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.859" timestamp="2026-10-12T06:12:55.934624+00:00" hostname="synthetic-fixture-host"><testcase classname=".runtime.native-run-access-writer-review-20261012.probes.test_legacy_key_baseline" name="test_pre_writer_receipt_original_key_survives_new_optional_field" time="0.791"><failure message="FileNotFoundError: [Errno 2] No such file or directory: '@repo/.runtime/native-run-access-writer-review-20261012/probes/native-run-access-storage.sql'">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f55cb2722a0&gt;, &lt;parkweave.store.Store object at 0x7f55cb272360&gt;, {'fixture-a': "[REDACTED synthetic auth value]": "[REDACTED opaque fixture value]", ...}, &lt;starlette.testclient.TestClient object at 0x7f55cb0fcc20&gt;)
+
+    def test_pre_writer_receipt_original_key_survives_new_optional_field(receipt_fixture):
+        source=Path(__file__).with_name('pre-writer-native.py.txt')
+        module=types.ModuleType('parkweave._independent_pre_writer_native')
+        module.__package__='parkweave';module.__file__=str(source)
+        sys.modules[module.__name__]=module
+        exec(compile(source.read_bytes(),str(source),'exec'),module.__dict__)
+        f=receipt_fixture;parent=filled(f)
+        parent=material(f,parent,'REVIEW',APPROVER,reason='SYNTHETIC original review').json()
+        parent=material(f,parent,'CONFIRM',reason='SYNTHETIC original owner confirmation').json()
+&gt;       module.install_owned_test_storage(f[1],f[1]._case_fact_fixture_receipt)
+
+.runtime/native-run-access-writer-review-20261012/probes/test_legacy_key_baseline.py:21: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.runtime/native-run-access-writer-review-20261012/probes/pre-writer-native.py.txt:95: in install_owned_test_storage
+    c.execute(STORAGE.read_text())
+              ^^^^^^^^^^^^^^^^^^^
+@python/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('@repo/.runtime/native-run-access-writer-review-20261012/probes/native-run-access-storage.sql')
+mode = 'r', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '@repo/.runtime/native-run-access-writer-review-20261012/probes/native-run-access-storage.sql'
+
+@python/lib/python3.12/pathlib.py:1013: FileNotFoundError</failure></testcase></testsuite></testsuites>
