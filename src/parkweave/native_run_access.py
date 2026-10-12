@@ -460,13 +460,13 @@ class NativeRunAccess:
             old=self._key_receipt(c,p['id'],key)
             if old:
                 return self._original_receipt(c,old,run_id,fp)
+            if self.writer is not None:
+                from .native_run_access_writer import before_action
+                before_action(self,c,p,data.action,run_id,data)
             view=self._view(c,p,run)
             if ((data.expected_revision,data.expected_run_revision,data.expected_authority_sha256)!=
                     (view['revision'],view['run_revision'],view['authority_sha256'])):
                 raise Conflict('request, Run or current source version changed')
-            if self.writer is not None:
-                from .native_run_access_writer import before_action
-                before_action(self,c,p,data.action,run_id,data)
             if view['revision']>=64 or (data.action=='REQUEST' and view['revision']>=62) or (data.action=='APPROVE' and view['revision']>=63):
                 raise Conflict('bounded history; reserve revocation capacity')
             source=self._source(c,run,parent)
