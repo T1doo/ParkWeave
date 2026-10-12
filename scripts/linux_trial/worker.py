@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import stat
 import sys
+import traceback
 from uuid import UUID,uuid4
 
 import psycopg
@@ -24,6 +25,7 @@ from parkweave import native_run_access_restricted_runtime as runtime
 from parkweave.case_fact_clarifications import capture_fixture_cluster
 from parkweave.api import create_app
 from parkweave.store import Store,digest
+from scripts.linux_trial.bootstrap import SetupObservation,setup_diagnostic
 
 
 def sealed_input(fd):
@@ -41,92 +43,107 @@ def h(tokens,actor='fixture-a',key=None):
     return result
 
 
-def setup(config):
+def setup(config,observation=None):
+    observation=observation if observation is not None else SetupObservation()
     # This real PG OS owner satisfies the original receipt's data-directory UID check.
-    if os.geteuid()!=config['pg_uid']:raise PermissionError('ACTUAL_PG_OWNER_REQUIRED')
-    data=Path(config['data']);maintenance=config['owner_maintenance_dsn'];db=config['database']
-    if not re.fullmatch('fixture_[a-f0-9]{32}',db):raise ValueError('NEW_UUID_DATABASE_REQUIRED')
-    proof=capture_fixture_cluster(maintenance,data)
-    with psycopg.connect(maintenance,autocommit=True) as c:
+    with observation.check('PG_OWNER'):
+        if os.geteuid()!=config['pg_uid']:raise PermissionError('ACTUAL_PG_OWNER_REQUIRED')
+    with observation.check('DATABASE_NAME'):
+        data=Path(config['data']);maintenance=config['owner_maintenance_dsn'];db=config['database']
+        if not re.fullmatch('fixture_[a-f0-9]{32}',db):raise ValueError('NEW_UUID_DATABASE_REQUIRED')
+    with observation.check('CLUSTER_PROOF'):proof=capture_fixture_cluster(maintenance,data)
+    with observation.check('DATABASE_CREATE'),psycopg.connect(maintenance,autocommit=True) as c:
         c.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(db)))
-    owner=Store(make_conninfo(maintenance,dbname=db))
-    with owner.connect() as c:owner._case_fact_fixture_receipt=proof.record_created_database(c)
-    owner.migrate()
+    with observation.check('DATABASE_RECEIPT'):
+        owner=Store(make_conninfo(maintenance,dbname=db))
+        with owner.connect() as c:owner._case_fact_fixture_receipt=proof.record_created_database(c)
+    with observation.check('MIGRATION'):owner.migrate()
     tokens=config['tokens']
     # Only a fixed synthetic initial state inside this newly proven empty database.
-    owner.seed({k:tokens[k] for k in ('fixture-a','fixture-b','fixture-c')})
-    prep.seed_synthetic(owner,tokens)
-    with owner.connect() as c:
+    with observation.check('SEED'):
+        owner.seed({k:tokens[k] for k in ('fixture-a','fixture-b','fixture-c')})
+        prep.seed_synthetic(owner,tokens)
+    with observation.check('ACTORS'),owner.connect() as c:
         for actor in ('executor-a','unassigned'):
             c.execute('INSERT INTO principals VALUES(%s,%s,%s,%s,%s,true)',
                       (actor,digest(tokens[actor]),'park-a','org-a','service_executor'))
             c.execute('INSERT INTO capability_grants(principal_id,capability,park_id,org_id) VALUES(%s,%s,%s,%s)',
                       (actor,'READ','park-a','org-a'))
-    with TestClient(create_app(owner)) as client:
-        def checked(response,status):
-            if response.status_code!=status:raise AssertionError('SYNTHETIC_SETUP_STATUS')
-            return response.json()
-        run=checked(client.post('/api/runs',headers=h(tokens,key='ci-setup-run'),json={'goal':'SYNTHETIC资料准备'}),202)['run_id']
-        owner.finish(owner.claim('ci-synthetic-only'))
-        row=checked(client.post('/api/preparations',headers=h(tokens,key='ci-setup-preparation'),json=dict(
-            run_id=run,service_id=prep.SERVICE,service_version=1,reviewer_id='prep-specialist-fixture-a')),201)
+    with observation.check('RUN_CREATE'),TestClient(create_app(owner)) as client:
+        run=observation.response(client.post('/api/runs',headers=h(tokens,key='ci-setup-run'),json={'goal':'SYNTHETIC资料准备'}),202)['run_id']
+        with observation.check('RUN_FINISH'):owner.finish(owner.claim('ci-synthetic-only'))
+        with observation.check('PREPARATION_CREATE'):
+            row=observation.response(client.post('/api/preparations',headers=h(tokens,key='ci-setup-preparation'),json=dict(
+                run_id=run,service_id=prep.SERVICE,service_version=1,reviewer_id='prep-specialist-fixture-a')),201)
         for slot in ('need_summary','material_outline'):
-            row=checked(client.post('/api/preparations/'+row['preparation_id']+'/commands',headers=h(tokens,key='ci-setup-'+slot),
-                json=dict(action='ADD_EVIDENCE',expected_revision=row['revision'],slot=slot,text='SYNTHETIC '+slot,
-                    source_kind='DOCUMENT_EXCERPT',source_label='SYNTHETIC trial v1')),200)
+            with observation.check('EVIDENCE_NEED_SUMMARY' if slot=='need_summary' else 'EVIDENCE_MATERIAL_OUTLINE'):
+                row=observation.response(client.post('/api/preparations/'+row['preparation_id']+'/commands',headers=h(tokens,key='ci-setup-'+slot),
+                    json=dict(action='ADD_EVIDENCE',expected_revision=row['revision'],slot=slot,text='SYNTHETIC '+slot,
+                        source_kind='DOCUMENT_EXCERPT',source_label='SYNTHETIC trial v1')),200)
         for action,actor in [('REVIEW','prep-specialist-fixture-a'),('CONFIRM','fixture-a')]:
-            row=checked(client.post('/api/preparations/'+row['preparation_id']+'/commands',headers=h(tokens,actor,'ci-setup-'+action),
-                json=dict(action=action,expected_revision=row['revision'],reason='SYNTHETIC explicit '+action)),200)
-    native.install_owned_test_storage(owner,owner._case_fact_fixture_receipt)
-    activation.install_owned_test_activation_storage(owner,owner._case_fact_fixture_receipt)
-    bridge=native.NativeRunAccess(owner)
-    with owner.connect() as c:
+            with observation.check(action):
+                row=observation.response(client.post('/api/preparations/'+row['preparation_id']+'/commands',headers=h(tokens,actor,'ci-setup-'+action),
+                    json=dict(action=action,expected_revision=row['revision'],reason='SYNTHETIC explicit '+action)),200)
+    with observation.check('NATIVE_STORAGE'):native.install_owned_test_storage(owner,owner._case_fact_fixture_receipt)
+    with observation.check('ACTIVATION_STORAGE'):activation.install_owned_test_activation_storage(owner,owner._case_fact_fixture_receipt)
+    with observation.check('SOURCE_SNAPSHOT'),owner.connect() as c:
+        bridge=native.NativeRunAccess(owner)
         r=c.execute('SELECT * FROM runs WHERE id=%s',(run,)).fetchone()
         source=bridge._source(c,r,bridge._parent(c,r))
         identity=writer._public_database(c)
         system=c.execute('SELECT system_identifier::text value FROM pg_control_system()').fetchone()['value']
         generations=activation._generations(c,'fixture-a','executor-a','prep-specialist-fixture-a')
-    now=datetime.now(timezone.utc)
-    policy=writer.WriterPolicy(environment='PRODUCTION',policy_id=str(uuid4()),revision=1,
-        owner_id='fixture-a',approver_id='prep-specialist-fixture-a',beneficiary_id='executor-a',
-        approver_actions=['APPROVE','REJECT','REVOKE'],valid_from=now.isoformat(),valid_until=(now+timedelta(minutes=15)).isoformat(),
-        source=writer.Source.model_validate(writer._source(source)),generations=generations,
-        database_name=db,database_oid=identity['database_oid'],system_identifier=system,
-        database_host=identity['database_host'],database_port=identity['database_port'],
-        application_role='pwci_app',writer_role='pwci_writer')
-    with owner.connect() as c:
-        for role in ('pwci_app','pwci_writer'):
-            # SQL password text stays in a private local connection, never argv or logs.
-            c.execute(sql.SQL('CREATE ROLE {} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD {}').format(
-                sql.Identifier(role),sql.Literal(config['passwords'][role])))
-        c.execute(sql.SQL('REVOKE ALL ON DATABASE {} FROM PUBLIC').format(sql.Identifier(db)))
-        for name in ('postgres','template0','template1'):
-            c.execute(sql.SQL('REVOKE CONNECT,TEMPORARY ON DATABASE {} FROM PUBLIC').format(sql.Identifier(name)))
-        c.execute(sql.SQL('GRANT CONNECT ON DATABASE {} TO pwci_app,pwci_writer').format(sql.Identifier(db)))
-        c.execute('REVOKE CREATE ON SCHEMA public FROM PUBLIC')
-        c.execute('GRANT USAGE ON SCHEMA public TO pwci_app,pwci_writer')
-        c.execute('GRANT SELECT ON ALL TABLES IN SCHEMA public TO pwci_app')
-        c.execute('GRANT INSERT ON authorization_audit TO pwci_app')
-        for label,action,table,column in runtime.required_privileges('revision'):
-            if action=='LOCK_UPDATE':continue
-            if action=='EXECUTE':c.execute('GRANT EXECUTE ON FUNCTION pg_catalog.pg_control_system() TO pwci_writer');continue
-            c.execute(sql.SQL('GRANT '+action+(' ({})' if column else '')+' ON {} TO pwci_writer').format(
-                *([sql.Identifier(column)] if column else []),sql.Identifier(table)))
-    spec=preflight.InstallationSpec(policy=policy,installer_role='pwci_owner',
-        object_owners={t:'pwci_owner' for t in preflight.TABLES},permission_strategy='DIRECT_DML',parent_lock_column='revision',
-        protected_location=config['root'],api_uid=config['api_uid'],writer_uid=config['writer_uid'],transport='LINUX_UNIX',
-        policy_source_ref='ROOT_APPROVED_THIS_ONE_JOB',key_source_ref='THIS_JOB_WRITER_PRIVATE_FILE_AND_SEALED_FD',
-        host_pin_source_ref='THIS_ROOT_HOST_OBSERVATION')
+    with observation.check('POLICY'):
+        now=datetime.now(timezone.utc)
+        policy=writer.WriterPolicy(environment='PRODUCTION',policy_id=str(uuid4()),revision=1,
+            owner_id='fixture-a',approver_id='prep-specialist-fixture-a',beneficiary_id='executor-a',
+            approver_actions=['APPROVE','REJECT','REVOKE'],valid_from=now.isoformat(),valid_until=(now+timedelta(minutes=15)).isoformat(),
+            source=writer.Source.model_validate(writer._source(source)),generations=generations,
+            database_name=db,database_oid=identity['database_oid'],system_identifier=system,
+            database_host=identity['database_host'],database_port=identity['database_port'],
+            application_role='pwci_app',writer_role='pwci_writer')
+    with observation.check('ROLE_CREATE'),owner.connect() as c:
+        with observation.check('ROLE_CREATE'):
+            for role in ('pwci_app','pwci_writer'):
+                # SQL password text stays in a private local connection, never argv or logs.
+                c.execute(sql.SQL('CREATE ROLE {} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD {}').format(
+                    sql.Identifier(role),sql.Literal(config['passwords'][role])))
+        with observation.check('DATABASE_ACL'):
+            c.execute(sql.SQL('REVOKE ALL ON DATABASE {} FROM PUBLIC').format(sql.Identifier(db)))
+            for name in ('postgres','template0','template1'):
+                c.execute(sql.SQL('REVOKE CONNECT,TEMPORARY ON DATABASE {} FROM PUBLIC').format(sql.Identifier(name)))
+            c.execute(sql.SQL('GRANT CONNECT ON DATABASE {} TO pwci_app,pwci_writer').format(sql.Identifier(db)))
+        with observation.check('SCHEMA_ACL'):
+            c.execute('REVOKE CREATE ON SCHEMA public FROM PUBLIC')
+            c.execute('GRANT USAGE ON SCHEMA public TO pwci_app,pwci_writer')
+        with observation.check('APP_ACL'):
+            c.execute('GRANT SELECT ON ALL TABLES IN SCHEMA public TO pwci_app')
+            c.execute('GRANT INSERT ON authorization_audit TO pwci_app')
+        with observation.check('WRITER_ACL'):
+            for label,action,table,column in runtime.required_privileges('revision'):
+                if action=='LOCK_UPDATE':continue
+                if action=='EXECUTE':c.execute('GRANT EXECUTE ON FUNCTION pg_catalog.pg_control_system() TO pwci_writer');continue
+                c.execute(sql.SQL('GRANT '+action+(' ({})' if column else '')+' ON {} TO pwci_writer').format(
+                    *([sql.Identifier(column)] if column else []),sql.Identifier(table)))
+    with observation.check('SPEC'):
+        spec=preflight.InstallationSpec(policy=policy,installer_role='pwci_owner',
+            object_owners={t:'pwci_owner' for t in preflight.TABLES},permission_strategy='DIRECT_DML',parent_lock_column='revision',
+            protected_location=config['root'],api_uid=config['api_uid'],writer_uid=config['writer_uid'],transport='LINUX_UNIX',
+            policy_source_ref='ROOT_APPROVED_THIS_ONE_JOB',key_source_ref='THIS_JOB_WRITER_PRIVATE_FILE_AND_SEALED_FD',
+            host_pin_source_ref='THIS_ROOT_HOST_OBSERVATION')
     # Original issued owner collector is still checked inside this owner process.
-    with owner.connect() as c:catalog=preflight.collect_owned_catalog(c,owner._case_fact_fixture_receipt,spec)
-    report=preflight.analyze(spec.model_dump(),catalog)
-    if report['status']!='PASS' or report['changes']:raise AssertionError('ACTUAL_INSTALLED_CATALOG_NOT_PASS')
-    app_dsn=make_conninfo(host=policy.database_host,port=policy.database_port,dbname=db,user='pwci_app',password=config['passwords']['pwci_app'])
-    writer_dsn=make_conninfo(host=policy.database_host,port=policy.database_port,dbname=db,user='pwci_writer',password=config['passwords']['pwci_writer'])
-    return dict(spec=spec.model_dump(),parent=row,app_dsn=app_dsn,writer_dsn=writer_dsn,
-                creation=dict(action='ORIGINAL_NEW_OWNED_DATABASE',database_name=db,database_oid=policy.database_oid,
-                    system_identifier=system,owner='pwci_owner',trial_root=config['root'],
-                    absent_from_initial_databases=True,initial_databases=['postgres','template0','template1']))
+    with observation.check('CATALOG_COLLECT'),owner.connect() as c:
+        catalog=preflight.collect_owned_catalog(c,owner._case_fact_fixture_receipt,spec)
+    with observation.check('CATALOG_COMPARE'):
+        report=preflight.analyze(spec.model_dump(),catalog)
+        if report['status']!='PASS' or report['changes']:raise AssertionError('ACTUAL_INSTALLED_CATALOG_NOT_PASS')
+    with observation.check('RESULT'):
+        app_dsn=make_conninfo(host=policy.database_host,port=policy.database_port,dbname=db,user='pwci_app',password=config['passwords']['pwci_app'])
+        writer_dsn=make_conninfo(host=policy.database_host,port=policy.database_port,dbname=db,user='pwci_writer',password=config['passwords']['pwci_writer'])
+        return dict(spec=spec.model_dump(),parent=row,app_dsn=app_dsn,writer_dsn=writer_dsn,
+                    creation=dict(action='ORIGINAL_NEW_OWNED_DATABASE',database_name=db,database_oid=policy.database_oid,
+                        system_identifier=system,owner='pwci_owner',trial_root=config['root'],
+                        absent_from_initial_databases=True,initial_databases=['postgres','template0','template1']))
 
 
 def api(config):
@@ -173,9 +190,19 @@ def api(config):
 
 def main():
     if len(sys.argv)!=3 or sys.argv[1] not in ('SETUP','API'):raise ValueError('EXPLICIT_HELPER_MODE_REQUIRED')
-    config=sealed_input(int(sys.argv[2]))
-    if sys.argv[1]=='SETUP':sys.stdout.write(writer._canonical(setup(config)));sys.stdout.flush()
-    else:api(config)
+    if sys.argv[1]=='SETUP':
+        observation=SetupObservation()
+        try:
+            with observation.check('SEALED_INPUT'):config=sealed_input(int(sys.argv[2]))
+            result=setup(config,observation)
+            raw=writer._canonical(dict(outcome='PASS',diagnostic=setup_diagnostic(observation.value),result=result))
+        except BaseException:
+            # Same private helper stderr as before; no exception text enters its frame.
+            traceback.print_exc()
+            raw=writer._canonical(dict(outcome='FAIL',diagnostic=setup_diagnostic(observation.value)))
+            sys.stdout.write(raw);sys.stdout.flush();return 1
+        sys.stdout.write(raw);sys.stdout.flush();return 0
+    api(sealed_input(int(sys.argv[2])));return 0
 
 
-if __name__=='__main__':main()
+if __name__=='__main__':raise SystemExit(main())

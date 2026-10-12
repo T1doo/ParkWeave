@@ -9,6 +9,7 @@ import stat
 import subprocess
 import sys
 import traceback
+from contextlib import contextmanager
 from uuid import uuid4
 
 BRANCH = 'refs/heads/dev/f2-restricted-linux-trial-20261012'
@@ -19,18 +20,80 @@ CASES = ('PROTECTED_RUNTIME','FRESH_CLUSTER','REAL_IDENTITIES','HOST_CHANNELS',
 PHASES = ('PREFLIGHT','PROTECTED_RUNTIME','IDENTITIES','PG_START','PG_SETUP','HOST_START',
           'ACCEPTANCE','CLEANUP','COMPLETE')
 ERRORS = ('NONE','CHECK_FAILED','OS_REFUSED','TIMEOUT','ADAPTER_DENIED','INTERNAL_ERROR')
+SETUP_CHECKS = dict(HELPER_ENTRY='INPUT',HELPER_FRAME='TRANSPORT',SEALED_INPUT='INPUT',
+    PG_OWNER='INPUT',DATABASE_NAME='INPUT',CLUSTER_PROOF='OWNERSHIP',DATABASE_CREATE='OWNERSHIP',
+    DATABASE_RECEIPT='OWNERSHIP',MIGRATION='MIGRATION',SEED='SYNTHETIC',ACTORS='SYNTHETIC',
+    RUN_CREATE='SYNTHETIC',RUN_FINISH='SYNTHETIC',PREPARATION_CREATE='SYNTHETIC',
+    EVIDENCE_NEED_SUMMARY='SYNTHETIC',EVIDENCE_MATERIAL_OUTLINE='SYNTHETIC',REVIEW='SYNTHETIC',
+    CONFIRM='SYNTHETIC',NATIVE_STORAGE='STORAGE',ACTIVATION_STORAGE='STORAGE',SOURCE_SNAPSHOT='POLICY',
+    POLICY='POLICY',ROLE_CREATE='ACL',DATABASE_ACL='ACL',SCHEMA_ACL='ACL',APP_ACL='ACL',
+    WRITER_ACL='ACL',SPEC='POLICY',CATALOG_COLLECT='CATALOG',CATALOG_COMPARE='CATALOG',RESULT='OUTPUT')
+# 0 means no allowlisted HTTP observation. Never publish an arbitrary status.
+SETUP_HTTP_CODES = (0,200,201,202,400,401,403,404,409,422,500,502,503)
+
+
+def setup_diagnostic(value):
+    if (type(value) is not dict or set(value)!={'substage','check_id','status_code'} or
+            type(value['check_id']) is not str or value['check_id'] not in SETUP_CHECKS or
+            type(value['substage']) is not str or value['substage']!=SETUP_CHECKS[value['check_id']] or
+            type(value['status_code']) is not int or value['status_code'] not in SETUP_HTTP_CODES or
+            value['status_code'] and value['check_id'] not in ('RUN_CREATE','PREPARATION_CREATE',
+                'EVIDENCE_NEED_SUMMARY','EVIDENCE_MATERIAL_OUTLINE','REVIEW','CONFIRM')):
+        raise ValueError('SETUP_DIAGNOSTIC_CONTRACT')
+    return {k:value[k] for k in ('substage','check_id','status_code')}
+
+
+class SetupObservation:
+    """A fixed check ID is recorded before the operation; exceptions stay private."""
+    def __init__(self):self.value=dict(substage='INPUT',check_id='HELPER_ENTRY',status_code=0)
+
+    @contextmanager
+    def check(self,check_id):
+        self.value=setup_diagnostic(dict(substage=SETUP_CHECKS[check_id],check_id=check_id,status_code=0))
+        yield
+
+    def response(self,response,expected):
+        status=response.status_code
+        self.value['status_code']=status if type(status) is int and status in SETUP_HTTP_CODES else 0
+        if type(status) is not int or status!=expected:raise AssertionError('SYNTHETIC_SETUP_STATUS')
+        return response.json()
+
+
+def setup_frame(raw,returncode):
+    """Private success payload never enters the public projection; failure has none."""
+    if type(raw) is not bytes or len(raw)>524288 or type(returncode) is not int:
+        raise ValueError('SETUP_FRAME_CONTRACT')
+    def unique(pairs):
+        if len(pairs)!=len({k for k,v in pairs}):raise ValueError('SETUP_FRAME_CONTRACT')
+        return dict(pairs)
+    try:frame=json.loads(raw.decode('utf-8'),object_pairs_hook=unique)
+    except (ValueError,TypeError):raise ValueError('SETUP_FRAME_CONTRACT') from None
+    if type(frame) is not dict or frame.get('outcome') not in ('PASS','FAIL'):
+        raise ValueError('SETUP_FRAME_CONTRACT')
+    success=frame['outcome']=='PASS'
+    if (set(frame)!=({'outcome','diagnostic','result'} if success else {'outcome','diagnostic'}) or
+            returncode!=(0 if success else 1)):
+        raise ValueError('SETUP_FRAME_CONTRACT')
+    diagnostic=setup_diagnostic(frame['diagnostic'])
+    if success and (diagnostic['check_id']!='RESULT' or type(frame['result']) is not dict):
+        raise ValueError('SETUP_FRAME_CONTRACT')
+    return frame['outcome'],diagnostic,frame.get('result')
 
 
 def public_summary(value):
     """Closed projection, never arbitrary error text, paths, credentials or repr."""
-    if not isinstance(value,dict) or set(value)!={'source_sha','phase','error','cases','cleanup'}:
+    required={'source_sha','phase','error','cases','cleanup'}
+    if type(value) is not dict or set(value) not in (required,required|{'setup_diagnostic'}):
         raise ValueError('SUMMARY_CONTRACT')
     if (not isinstance(value['source_sha'],str) or not re.fullmatch('[0-9a-f]{40}',value['source_sha']) or
             value['phase'] not in PHASES or value['error'] not in ERRORS or
-            type(value['cleanup']) is not bool or set(value['cases'])!=set(CASES) or
+            type(value['cleanup']) is not bool or type(value['cases']) is not dict or set(value['cases'])!=set(CASES) or
             any(v not in ('PASS','FAIL','NOT_RUN') for v in value['cases'].values())):
         raise ValueError('SUMMARY_CONTRACT')
-    return dict(suite='ACTUAL_ISOLATED_RESTRICTED_LINUX_TRIAL',**value,
+    result=dict(value)
+    if 'setup_diagnostic' in result and result['setup_diagnostic'] is not None:
+        result['setup_diagnostic']=setup_diagnostic(result['setup_diagnostic'])
+    return dict(suite='ACTUAL_ISOLATED_RESTRICTED_LINUX_TRIAL',**result,
                 paid_services=0,artifact_uploads=0,cache_uploads=0,production_deployment=False)
 
 
@@ -53,7 +116,7 @@ def protected_copy(source,target):
 
 
 def bootstrap(sha):
-    value=dict(source_sha=sha,phase='PREFLIGHT',error='NONE',cases={c:'NOT_RUN' for c in CASES},cleanup=True)
+    value=dict(source_sha=sha,phase='PREFLIGHT',error='NONE',cases={c:'NOT_RUN' for c in CASES},cleanup=True,setup_diagnostic=None)
     private=None
     try:
         if not approved_context(os.environ,os.geteuid(),sha):raise PermissionError('APPROVED_NEW_VM_CONTEXT_REQUIRED')
@@ -109,8 +172,9 @@ def bootstrap(sha):
         (private/'controller-stderr.log').write_bytes(stderr)
         candidate=json.loads(stdout)
         if set(candidate)!=set(value) or candidate['source_sha']!=sha:raise ValueError('EXACT_PUBLIC_SUMMARY_REQUIRED')
-        value={k:candidate[k] for k in ('source_sha','phase','error','cases','cleanup')}
-        output=public_summary(value)
+        # Keep the safe fallback intact until every child field is validated.
+        output=public_summary(candidate)
+        value={k:candidate[k] for k in value}
         print(json.dumps(output,sort_keys=True))
         return 0 if process.returncode==0 and all(v=='PASS' for v in value['cases'].values()) else 1
     except BaseException as exc:

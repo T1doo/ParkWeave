@@ -24,7 +24,7 @@ from psycopg.rows import dict_row
 
 from parkweave import native_run_access_restricted_host as host
 from parkweave import native_run_access_writer as writer
-from scripts.linux_trial.bootstrap import CASES,public_summary
+from scripts.linux_trial.bootstrap import CASES,public_summary,setup_diagnostic,setup_frame
 
 
 def private_file(path,raw,uid=0,gid=0,mode=0o600):
@@ -51,7 +51,7 @@ class Controller:
         self.c=context;self.root=Path(context['root']);self.private=self.root/'private'
         self.processes=[];self.starts={};self.linux_host=None;self.writer_process=None
         self.value=dict(source_sha=context['source_sha'],phase='PROTECTED_RUNTIME',error='NONE',
-                        cases={c:'NOT_RUN' for c in CASES},cleanup=False)
+                        cases={c:'NOT_RUN' for c in CASES},cleanup=False,setup_diagnostic=None)
         self.current='PROTECTED_RUNTIME';self.deadline=time.monotonic()+900
 
     def mark(self,name,condition):
@@ -78,7 +78,7 @@ class Controller:
 
     def helper(self,mode,config,uid,gid,groups):
         fd=sealed(config)
-        entry='import sys;sys.path[:]='+repr(self.c['imports'])+';from scripts.linux_trial.worker import main;main()'
+        entry='import sys;sys.path[:]='+repr(self.c['imports'])+';from scripts.linux_trial.worker import main;raise SystemExit(main())'
         err=(self.private/('helper-'+mode+'-'+uuid4().hex+'.log')).open('wb')
         try:
             return self.own(subprocess.Popen([self.c['environment']+'/bin/python3.12','-I','-S','-B','-c',entry,mode,str(fd)],
@@ -172,10 +172,14 @@ class Controller:
         self.tokens={name:secrets.token_urlsafe(32) for name in actors}
         setup=dict(pg_uid=self.pg.pw_uid,data=str(data),root=str(self.root),owner_maintenance_dsn=maintenance,database=db,
                    tokens=self.tokens,passwords=self.passwords,api_uid=self.api.pw_uid,writer_uid=self.worker.pw_uid)
+        self.value['setup_diagnostic']=setup_diagnostic(dict(substage='INPUT',check_id='HELPER_ENTRY',status_code=0))
         p=self.helper('SETUP',setup,self.pg.pw_uid,self.pg.pw_gid,[])
+        self.value['setup_diagnostic']=setup_diagnostic(dict(substage='TRANSPORT',check_id='HELPER_FRAME',status_code=0))
         output,_=p.communicate(timeout=120)
-        if p.returncode!=0:raise AssertionError('ORIGINAL_ISSUED_SETUP_FAILED')
-        self.setup=json.loads(output);self.spec=self.setup['spec'];self.parent=self.setup['parent']
+        outcome,diagnostic,result=setup_frame(output,p.returncode)
+        self.value['setup_diagnostic']=diagnostic
+        if outcome!='PASS':raise AssertionError('ORIGINAL_ISSUED_SETUP_FAILED')
+        self.setup=result;self.spec=self.setup['spec'];self.parent=self.setup['parent']
         self.owner_dsn=make_conninfo(maintenance,dbname=db)
 
     def host_start(self):

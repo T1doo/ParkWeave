@@ -14,10 +14,10 @@ def module():
 
 
 def clean(m):
-    return dict(source_sha='a'*40,phase='PREFLIGHT',error='NONE',cases={c:'NOT_RUN' for c in m.CASES},cleanup=True)
+    return dict(source_sha='a'*40,phase='PREFLIGHT',error='NONE',cases={c:'NOT_RUN' for c in m.CASES},cleanup=True,setup_diagnostic=None)
 
 
-@pytest.mark.parametrize('field',['source_sha','phase','error','cases','extra'])
+@pytest.mark.parametrize('field',['source_sha','phase','error','cases','extra','setup_diagnostic'])
 def test_ci_public_output_never_serializes_private_poison(field):
     m=module();value=clean(m);poison='SYNTHETIC_PRIVATE_PASSWORD_KEY_PATH_TOKEN'
     if field=='cases':value[field][m.CASES[0]]=poison
@@ -48,6 +48,8 @@ def test_ci_workflow_uses_single_free_standard_job_without_upload_or_dispatch():
     assert 'runs-on: ubuntu-24.04' in text and 'timeout-minutes: 25' in text
     assert 'github.run_attempt == 1 && github.run_number == 1' in text
     assert 'github.event.repository.private == false' in text and 'persist-credentials: false' in text
+    assert 'branches: [dev/f2-restricted-linux-trial-20261012]' in text
+    assert 'dev/f2-restricted-linux-setup-diagnostics-20261012' not in text
     for denied in ('workflow_dispatch:','pull_request:','upload-artifact','actions/cache','actions/setup-python','self-hosted','matrix:','secrets.'):
         assert denied not in text
 
@@ -58,3 +60,104 @@ def test_ci_private_trial_inputs_do_not_use_credentials_in_command_or_environmen
     assert 'pwfile=' in controller and 'passwords[\'pwci_owner\']' not in controller.split('subprocess.Popen([str(binaries')[1].split('finally:out.close()')[0]
     assert 'host.bind_api' in worker and 'ROOT_SEALED_INPUT_REQUIRED' in worker
     assert "if set(config)!={'api_uid','api_gid','ipc_gid','app_dsn','tokens','binding_path','binding_sha256','writer_private_path'}" in worker
+
+
+@pytest.mark.parametrize('change',[{'substage':'SYNTHETIC_PRIVATE_SQL_DSN'},
+    {'check_id':'SYNTHETIC_PRIVATE_SQL_DSN'},{'status_code':'SYNTHETIC_PRIVATE_SQL_DSN'},
+    {'status_code':True},{'status_code':403.0},{'status_code':599},{'extra':'SYNTHETIC_PRIVATE_SQL_DSN'},
+    {'substage':'ACL'},{'check_id':'POLICY','substage':'POLICY','status_code':403}])
+def test_ci_setup_diagnostic_rejects_poison_types_and_wrong_combinations(change):
+    m=module();value=dict(substage='SYNTHETIC',check_id='PREPARATION_CREATE',status_code=403);value.update(change)
+    with pytest.raises(ValueError) as error:m.setup_diagnostic(value)
+    assert str(error.value)=='SETUP_DIAGNOSTIC_CONTRACT'
+    public=clean(m);public['setup_diagnostic']=value
+    with pytest.raises(ValueError):m.public_summary(public)
+
+
+@pytest.mark.parametrize('status,observed',[(201,201),(403,403),(599,0),(True,0),('PRIVATE',0)])
+def test_ci_setup_http_status_is_allowlisted_without_response_body(status,observed):
+    m=module();observation=m.SetupObservation()
+    class Response:
+        status_code=status
+        def json(self):
+            assert status==201
+            return {'synthetic':'private success payload'}
+    with observation.check('PREPARATION_CREATE'):
+        if type(status) is int and status==201:assert observation.response(Response(),201)['synthetic']
+        else:
+            with pytest.raises(AssertionError) as error:observation.response(Response(),201)
+            assert str(error.value)=='SYNTHETIC_SETUP_STATUS'
+    assert m.setup_diagnostic(observation.value)==dict(substage='SYNTHETIC',check_id='PREPARATION_CREATE',status_code=observed)
+
+
+def test_ci_setup_check_precedes_failure_and_resets_http_observation():
+    m=module();observation=m.SetupObservation()
+    with pytest.raises(RuntimeError):
+        with observation.check('MIGRATION'):
+            assert observation.value==dict(substage='MIGRATION',check_id='MIGRATION',status_code=0)
+            raise RuntimeError('SYNTHETIC_PRIVATE_SQL_DSN')
+    assert 'PRIVATE' not in json.dumps(observation.value)
+    with observation.check('RUN_CREATE'):observation.value['status_code']=202
+    with observation.check('CATALOG_COMPARE'):assert observation.value['status_code']==0
+
+
+@pytest.mark.parametrize('outcome,code,has_payload,check_id',[
+    ('PASS',1,True,'RESULT'),('FAIL',0,False,'MIGRATION'),('FAIL',1,True,'MIGRATION'),
+    ('PASS',0,False,'RESULT'),('PASS',0,True,'MIGRATION'),('PASS',False,True,'RESULT')])
+def test_ci_setup_frame_refuses_exit_outcome_or_private_payload_conflicts(outcome,code,has_payload,check_id):
+    m=module();frame=dict(outcome=outcome,diagnostic=dict(substage=m.SETUP_CHECKS[check_id],check_id=check_id,status_code=0))
+    if has_payload:frame['result']={'password':'SYNTHETIC_PRIVATE_SQL_DSN'}
+    with pytest.raises(ValueError) as error:m.setup_frame(json.dumps(frame).encode(),code)
+    assert str(error.value)=='SETUP_FRAME_CONTRACT'
+
+
+@pytest.mark.parametrize('raw',[b'',b'PRIVATE',b'{}\n{}',b'{"outcome":"FAIL","outcome":"PASS"}',b'x'*524289,b'\xff','{}'.encode('utf-16')])
+def test_ci_setup_frame_requires_single_bounded_unambiguous_json(raw):
+    m=module()
+    with pytest.raises(ValueError) as error:m.setup_frame(raw,1)
+    assert str(error.value)=='SETUP_FRAME_CONTRACT'
+
+
+def test_ci_setup_success_payload_stays_private_and_legacy_summary_still_reads():
+    m=module();poison='SYNTHETIC_PRIVATE_SQL_DSN'
+    frame=dict(outcome='PASS',diagnostic=dict(substage='OUTPUT',check_id='RESULT',status_code=0),result={'writer_dsn':poison})
+    outcome,diagnostic,result=m.setup_frame(json.dumps(frame).encode(),0)
+    assert outcome=='PASS' and result['writer_dsn']==poison
+    public=clean(m);public['setup_diagnostic']=diagnostic
+    assert poison not in json.dumps(m.public_summary(public))
+    del public['setup_diagnostic'];assert 'setup_diagnostic' not in m.public_summary(public)
+
+
+@pytest.mark.parametrize('boundary,expected',[('sealed','SEALED_INPUT'),('uid','PG_OWNER'),('proof','CLUSTER_PROOF')])
+def test_ci_setup_worker_failure_reports_check_without_private_exception(monkeypatch,capsys,boundary,expected):
+    import importlib
+    # Pure synthetic observations; no real FD/PG call or identity modification.
+    monkeypatch.syspath_prepend(str(ROOT));worker=importlib.import_module('scripts.linux_trial.worker');m=module()
+    poison='SYNTHETIC_PRIVATE_SQL_DSN'
+    config=dict(pg_uid=7001,data='/synthetic',owner_maintenance_dsn=poison,database='fixture_'+'a'*32)
+    def refused(*args):raise RuntimeError(poison)
+    monkeypatch.setattr(sys,'argv',['helper','SETUP','42'])
+    monkeypatch.setattr(worker,'sealed_input',refused if boundary=='sealed' else lambda fd:config)
+    monkeypatch.setattr(worker.os,'geteuid',lambda:7002 if boundary=='uid' else 7001)
+    monkeypatch.setattr(worker,'capture_fixture_cluster',refused)
+    assert worker.main()==1
+    captured=capsys.readouterr();outcome,diagnostic,result=m.setup_frame(captured.out.encode(),1)
+    assert outcome=='FAIL' and diagnostic['check_id']==expected and result is None
+    assert poison not in captured.out
+    if boundary!='uid':assert poison in captured.err
+    public=clean(m);public['setup_diagnostic']=diagnostic
+    assert poison not in json.dumps(m.public_summary(public))
+
+
+def test_ci_setup_worker_success_and_child_entry_preserve_exit_status(monkeypatch,capsys):
+    import importlib
+    monkeypatch.syspath_prepend(str(ROOT));worker=importlib.import_module('scripts.linux_trial.worker');m=module()
+    monkeypatch.setattr(sys,'argv',['helper','SETUP','42']);monkeypatch.setattr(worker,'sealed_input',lambda fd:{})
+    def success(config,observation):
+        with observation.check('RESULT'):return {'writer_dsn':'SYNTHETIC_PRIVATE_SQL_DSN'}
+    monkeypatch.setattr(worker,'setup',success)
+    assert worker.main()==0
+    captured=capsys.readouterr();assert captured.err==''
+    assert m.setup_frame(captured.out.encode(),0)[0]=='PASS'
+    text=(ROOT/'scripts/linux_trial/controller.py').read_text()
+    assert 'from scripts.linux_trial.worker import main;raise SystemExit(main())' in text
