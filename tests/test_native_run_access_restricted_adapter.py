@@ -27,7 +27,7 @@ def adapter_inputs():
     layout = dict(trial_root='/tmp/parkweave-trial-'+'b'*32,source_sha='c'*40,
         source_root='/opt/parkweave/src',source_files={'/opt/parkweave/src/parkweave/store.py':'d'*64},
         interpreter='/opt/parkweave/env/bin/python',interpreter_sha256='e'*64,
-        dependency_roots=['/opt/parkweave/env'],
+        dependency_roots=['/opt/parkweave/env'],import_paths=['/opt/parkweave/env/lib/python'],
         api_uid=10001,api_gid=10004,writer_uid=10002,ipc_gid=10003,boot_id=str(uuid4()),
         private_bootstrap_sha256='f'*64,creation_receipt_sha256='a'*64)
     p=spec['policy']
@@ -120,7 +120,8 @@ def test_launch_arguments_have_explicit_identity_fixed_entry_and_no_private_valu
     assert layout==before and args['user']==layout['writer_uid'] and args['group']==layout['ipc_gid']
     assert args['extra_groups']==[] and args['close_fds'] and args['pass_fds']==(9,)
     assert args['shell'] is False and args['cwd']=='/' and args['umask']==0o117
-    assert args['env']=={'LANG':'C.UTF-8'} and args['args'][1]=='-I'
+    assert args['env']=={'LANG':'C.UTF-8'} and args['args'][1:3]==['-I','-S']
+    assert 'sys.path[:]=' in args['args'][4] and repr([layout['source_root'],*layout['import_paths']]) in args['args'][4]
     assert all(value not in json.dumps(args) for value in private.values())
     assert '--reference-bootstrap' not in args['args']
 
@@ -449,3 +450,45 @@ def test_unissued_default_backend_and_connection_are_closed_before_dependencies(
     with pytest.raises(Denied):store._guarded_connect()
     with pytest.raises(Denied):guard.require_live_host()
     assert calls==[]
+
+
+@pytest.mark.parametrize('change',['none','path','file','origin','namespace','isolated','site'])
+def test_import_environment_positive_control_and_unapproved_observations(change):
+    _,_,data,_=adapter_inputs();layout=host.RuntimeLayout.model_validate(data)
+    paths=[layout.source_root,*layout.import_paths];isolated=no_site=True
+    modules={'app':SimpleNamespace(__file__=layout.source_root+'/parkweave/store.py'),
+        'dependency':SimpleNamespace(__file__=layout.import_paths[0]+'/dependency.py'),
+        'frozen':SimpleNamespace(__spec__=SimpleNamespace(origin='frozen'))}
+    outside='/synthetic/unapproved'
+    if change=='path':paths.append(outside)
+    elif change=='file':modules['app'].__file__=outside+'/module.py'
+    elif change=='origin':modules['app'].__spec__=SimpleNamespace(origin=outside+'/module.py')
+    elif change=='namespace':modules['app'].__path__=[outside]
+    elif change=='isolated':isolated=False
+    elif change=='site':no_site=False
+    args=dict(paths=paths,modules=modules,isolated=isolated,no_site=no_site)
+    if change=='none':host._imports_check(layout,**args)
+    else:
+        with pytest.raises(Denied):host._imports_check(layout,**args)
+
+
+@pytest.mark.parametrize('paths',[[],['/unprotected'],['/opt/parkweave/env/lib/python']*2])
+def test_declared_import_paths_cannot_escape_protected_dependency_roots(paths):
+    _,_,data,_=adapter_inputs();data['import_paths']=paths
+    with pytest.raises(ValueError):host.RuntimeLayout.model_validate(data)
+
+
+def test_acl_query_covers_all_schema_create_and_nonpublic_writes_and_dangerous_routines():
+    query=[]
+    class Reader:
+        def execute(self,sql,params):query.append((' '.join(sql.split()),params));return self
+        def fetchone(self):return {name:False for name in runtime.EXTRA_CHECKS}
+    runtime._additional_acl(Reader(),['synthetic_app','synthetic_writer']);sql,params=query[0]
+    owner=sql.split(' database_extra,')[1].split(' ownership,')[0]
+    assert 'n.nspname' not in owner and 'has_schema_privilege' in owner
+    assert "n.nspname<>'public'" in sql and ' other_schema_write,' in sql
+    assert 'has_any_column_privilege' in sql and "'DELETE,TRUNCATE,TRIGGER,REFERENCES'" in sql
+    routines=sql.split(' other_schema_write,')[1].split(' routine_extra,')[0]
+    assert "n.nspname='public'" not in routines
+    assert "NOT IN ('pg_catalog','information_schema')" in routines and 'p.prosecdef OR NOT l.lanpltrusted' in routines
+    assert sql.count('%s')==len(params)

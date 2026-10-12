@@ -15,6 +15,7 @@ from pathlib import Path
 import signal
 import stat
 import subprocess
+import sys
 import time
 from uuid import UUID
 
@@ -46,6 +47,7 @@ class RuntimeLayout(BaseModel):
     interpreter: str
     interpreter_sha256: str = Field(pattern=SHA)
     dependency_roots: list[str]
+    import_paths: list[str]
     api_uid: int = Field(gt=0)
     api_gid: int = Field(gt=0)
     writer_uid: int = Field(gt=0)
@@ -57,8 +59,11 @@ class RuntimeLayout(BaseModel):
     @model_validator(mode='after')
     def exact(self):
         if (self.api_uid == self.writer_uid or str(UUID(self.boot_id)) != self.boot_id or
-                not all(canonical_path(p) for p in [self.source_root,self.interpreter,*self.source_files,*self.dependency_roots]) or
+                not all(canonical_path(p) for p in [self.source_root,self.interpreter,*self.source_files,*self.dependency_roots,*self.import_paths]) or
                 not self.dependency_roots or len(self.dependency_roots)>8 or
+                not self.import_paths or len(self.import_paths)>16 or len(set(self.import_paths))!=len(self.import_paths) or
+                self.source_root in self.import_paths or
+                any(not any(p==r or p.startswith(r+'/') for r in self.dependency_roots) for p in self.import_paths) or
                 not any(self.interpreter.startswith(p+'/') for p in self.dependency_roots) or
                 not self.source_files or len(self.source_files)>512 or
                 any(not p.startswith(self.source_root+'/parkweave/') or len(v)!=64 or
@@ -169,12 +174,38 @@ def _dependencies_check(layout):
     # and dependencies. No writable app/writer import tree or symlink fallback.
     for root in layout.dependency_roots:
         _path_chain(root,{0})
+        if not stat.S_ISDIR(Path(root).lstat().st_mode):raise Denied('protected dependency directory required')
         count=0
         for p in chain((Path(root),),Path(root).rglob('*')):
             count+=1;s=p.lstat()
             if (count>100000 or s.st_uid!=0 or s.st_mode&0o022 or
                     not (stat.S_ISREG(s.st_mode) or stat.S_ISDIR(s.st_mode))):
                 raise Denied('protected complete interpreter environment unavailable')
+    for path in layout.import_paths:
+        _path_chain(path,{0})
+        s=Path(path).lstat()
+        if not stat.S_ISDIR(s.st_mode) or s.st_uid!=0 or s.st_mode&0o022:
+            raise Denied('explicit protected import directory required')
+
+
+def _imports_check(layout, *, paths=None, modules=None, isolated=None, no_site=None):
+    """Pure DI arguments are observations, not launch authority; real entry reads sys."""
+    paths=sys.path if paths is None else paths
+    modules=sys.modules if modules is None else modules
+    isolated=sys.flags.isolated if isolated is None else isolated
+    no_site=sys.flags.no_site if no_site is None else no_site
+    if not isolated or not no_site or list(paths)!=[layout.source_root,*layout.import_paths]:
+        raise Denied('isolated no-site interpreter and exact approved import paths required')
+    roots=[layout.source_root,*layout.dependency_roots]
+    def covered(path):
+        return canonical_path(path) and any(path==r or path.startswith(r+'/') for r in roots)
+    for module in tuple(modules.values()):
+        origin=getattr(getattr(module,'__spec__',None),'origin',None)
+        # Frozen/built-in implementation belongs to the pinned interpreter.
+        if origin in ('built-in','frozen'):continue
+        values=[getattr(module,'__file__',None),origin,*getattr(module,'__path__',())]
+        if any(v is not None and not covered(v) for v in values):
+            raise Denied('preloaded/imported module outside protected approved roots')
 
 
 def _identities_check(layout):
@@ -229,8 +260,8 @@ def observed_pin(policy,layout,process,command,verify):
 
 def launch_arguments(layout,fd):
     layout = RuntimeLayout.model_validate(layout)
-    entry = 'import sys;sys.path.insert(0,'+repr(layout.source_root)+');from parkweave.native_run_access_restricted_runtime import main;raise SystemExit(main())'
-    return dict(args=[layout.interpreter,'-I','-c',entry,'--host-fd',str(fd)],
+    entry = 'import sys;sys.path[:]='+repr([layout.source_root,*layout.import_paths])+';from parkweave.native_run_access_restricted_runtime import main;raise SystemExit(main())'
+    return dict(args=[layout.interpreter,'-I','-S','-c',entry,'--host-fd',str(fd)],
         shell=False,cwd='/',env={'LANG':'C.UTF-8'},user=layout.writer_uid,group=layout.ipc_gid,
         extra_groups=[],umask=0o117,close_fds=True,pass_fds=(fd,),
         stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
@@ -388,6 +419,7 @@ class _RuntimeAuthorization:
                 getattr(guard.host_check,'__func__',None) is _RuntimeAuthorization.check)
     def check(self):
         p = self.payload;layout = self.layout
+        _imports_check(layout)
         _identities_check(layout)
         if os.geteuid()!=layout.writer_uid or os.getegid()!=layout.ipc_gid or os.getgroups():
             raise Denied('actual distinct nonroot writer identity required')

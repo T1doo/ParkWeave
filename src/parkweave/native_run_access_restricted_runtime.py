@@ -19,7 +19,7 @@ from . import native_run_access_writer as writer
 from .store import Store, _AccessConnection, Denied
 
 EXTRA_CHECKS = frozenset({'role_flags','membership','database_extra','ownership',
-    'table_extra','column_extra','routine_extra','routine_grant','temporary_namespace',
+    'table_extra','column_extra','other_schema_write','routine_extra','routine_grant','temporary_namespace',
     'app_control','app_protected_write'})
 
 
@@ -65,28 +65,35 @@ def _additional_acl(c, roles):
             AND (pg_catalog.has_database_privilege(r.oid,pg_catalog.current_database(),'CREATE')
               OR pg_catalog.has_database_privilege(r.oid,pg_catalog.current_database(),'TEMP'))) database_extra,
         EXISTS(SELECT 1 FROM pg_catalog.pg_roles r,pg_catalog.pg_namespace n
-            WHERE r.rolname=ANY(%s) AND n.nspname NOT IN ('pg_catalog','information_schema')
-            AND pg_catalog.left(n.nspname,3)<>'pg_'
+            WHERE r.rolname=ANY(%s)
             AND (n.nspowner=r.oid OR pg_catalog.has_schema_privilege(r.oid,n.oid,'CREATE') OR
                 EXISTS(SELECT 1 FROM pg_catalog.pg_class t WHERE t.relnamespace=n.oid AND t.relowner=r.oid) OR
                 EXISTS(SELECT 1 FROM pg_catalog.pg_proc p WHERE p.pronamespace=n.oid AND p.proowner=r.oid))) ownership,
         EXISTS(SELECT 1 FROM pg_catalog.pg_class t
             JOIN pg_catalog.pg_namespace n ON n.oid=t.relnamespace
             CROSS JOIN LATERAL pg_catalog.aclexplode(t.relacl) a
-            WHERE n.nspname='public' AND (a.privilege_type NOT IN ('SELECT','INSERT','UPDATE') OR a.is_grantable)
+            WHERE (a.privilege_type NOT IN ('SELECT','INSERT','UPDATE') OR a.is_grantable OR
+                   n.nspname<>'public' AND a.privilege_type IN ('INSERT','UPDATE'))
             AND (a.grantee=0 OR a.grantee IN
               (SELECT oid FROM pg_catalog.pg_roles WHERE rolname=ANY(%s)))) table_extra,
         EXISTS(SELECT 1 FROM pg_catalog.pg_attribute col
             JOIN pg_catalog.pg_class t ON t.oid=col.attrelid
             JOIN pg_catalog.pg_namespace n ON n.oid=t.relnamespace
             CROSS JOIN LATERAL pg_catalog.aclexplode(col.attacl) a
-            WHERE n.nspname='public' AND (a.privilege_type NOT IN ('SELECT','INSERT','UPDATE') OR a.is_grantable)
+            WHERE (a.privilege_type NOT IN ('SELECT','INSERT','UPDATE') OR a.is_grantable OR
+                   n.nspname<>'public' AND a.privilege_type IN ('INSERT','UPDATE'))
             AND (a.grantee=0 OR a.grantee IN
               (SELECT oid FROM pg_catalog.pg_roles WHERE rolname=ANY(%s)))) column_extra,
+        EXISTS(SELECT 1 FROM pg_catalog.pg_class t
+            JOIN pg_catalog.pg_namespace n ON n.oid=t.relnamespace,
+            pg_catalog.pg_roles r WHERE n.nspname<>'public' AND r.rolname=ANY(%s)
+            AND t.relkind IN ('r','p','v','m','f')
+            AND (pg_catalog.has_any_column_privilege(r.oid,t.oid,'INSERT,UPDATE') OR
+                 pg_catalog.has_table_privilege(r.oid,t.oid,'DELETE,TRUNCATE,TRIGGER,REFERENCES'))) other_schema_write,
         EXISTS(SELECT 1 FROM pg_catalog.pg_proc p
             JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
             JOIN pg_catalog.pg_language l ON l.oid=p.prolang,
-            pg_catalog.pg_roles r WHERE n.nspname='public' AND r.rolname=ANY(%s)
+            pg_catalog.pg_roles r WHERE n.nspname NOT IN ('pg_catalog','information_schema') AND r.rolname=ANY(%s)
             AND (p.prosecdef OR NOT l.lanpltrusted)
             AND pg_catalog.has_function_privilege(r.oid,p.oid,'EXECUTE')) routine_extra,
         EXISTS(SELECT 1 FROM pg_catalog.pg_proc p CROSS JOIN LATERAL pg_catalog.aclexplode(p.proacl) a
@@ -99,7 +106,7 @@ def _additional_acl(c, roles):
                 ('run_assignments','principals','capability_grants','preparation_grants','action_grants','field_grants')
             AND (pg_catalog.has_any_column_privilege(%s,t.oid,'INSERT,UPDATE') OR
                  pg_catalog.has_table_privilege(%s,t.oid,'DELETE'))) app_protected_write""",
-        (roles, roles, roles, roles, roles, roles, roles, roles, roles[0],roles[0],roles[0])).fetchone()
+        (roles, roles, roles, roles, roles, roles, roles, roles, roles, roles[0],roles[0],roles[0])).fetchone()
 
 
 class RuntimeGuard:
