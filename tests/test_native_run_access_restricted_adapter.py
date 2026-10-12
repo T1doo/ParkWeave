@@ -492,3 +492,18 @@ def test_acl_query_covers_all_schema_create_and_nonpublic_writes_and_dangerous_r
     assert "n.nspname='public'" not in routines
     assert "NOT IN ('pg_catalog','information_schema')" in routines and 'p.prosecdef OR NOT l.lanpltrusted' in routines
     assert sql.count('%s')==len(params)
+
+
+@pytest.mark.parametrize('provider',['ducktyped','overridden_method'])
+def test_default_store_cannot_accept_fake_live_guard_or_instance_override(monkeypatch,provider):
+    spec,_,_,private=adapter_inputs()
+    monkeypatch.setattr(runtime._RestrictedConnection,'connect',lambda *a,**k:pytest.fail('real default connector reached'))
+    if provider=='ducktyped':
+        guard=SimpleNamespace(spec=runtime.preflight.InstallationSpec.model_validate(spec),
+            require_live_host=lambda:None,host_check=lambda:None)
+        with pytest.raises(Denied):runtime.RestrictedStore(private['writer_dsn'],guard)
+    else:
+        guard=runtime.RuntimeGuard(spec,lambda:pytest.fail('unissued host callback reached'))
+        guard.require_live_host=lambda:pytest.fail('instance override used as host authority')
+        store=runtime.RestrictedStore(private['writer_dsn'],guard)
+        with pytest.raises(Denied):store._guarded_connect()

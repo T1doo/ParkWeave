@@ -205,6 +205,8 @@ class _RestrictedConnection(_AccessConnection):
 
 class RestrictedStore(Store):
     def __init__(self, private_dsn, guard, *, connector=None):
+        if type(guard) is not RuntimeGuard:
+            raise Denied('exact canonical restricted runtime guard required')
         super().__init__(private_connection_dsn(private_dsn, guard.spec.policy))
         self._restricted_runtime = guard
         self._injected_connector = connector is not None
@@ -213,7 +215,9 @@ class RestrictedStore(Store):
     def _guarded_connect(self, dsn=None):
         if dsn is not None:
             raise Denied('restricted runtime cannot borrow or override a connection')
-        if not self._injected_connector:self._restricted_runtime.require_live_host()
+        if type(self._restricted_runtime) is not RuntimeGuard:
+            raise Denied('exact canonical restricted runtime guard required')
+        if not self._injected_connector:RuntimeGuard.require_live_host(self._restricted_runtime)
         self._restricted_runtime.host_check()
         c = self._connector(self.dsn, row_factory=dict_row, connect_timeout=2)
         c._access_store = c._approval_store = self
