@@ -53,3 +53,11 @@ native storage 两个 SQL 文件目前仅由原允许 UUID 合成 fixture contro
 
 后续若要求生产启用，应先提交真实对象、受限身份及上述安装/权限/密钥方案的具体差异，独审后再获得该动作授权。本片仍保持生产默认关闭；未触生产部署、迁移、SQL 权限、业务 Grant 或真实 assignment。
 
+## Linux 受限 DML 合成试运行准备
+
+本轮选择 Linux 临时隔离目标与直接受限 DML；不使用用户 Windows。[公共计划入口](../../src/parkweave/native_run_access_trial_plan.py)可运行 `python -m parkweave.native_run_access_trial_plan --spec public-spec.json --snapshot catalog-snapshot.json --host-plan public-host.json`，复用上面的目录比较及精确权限矩阵，不重复 reference 整链。host-plan 仅声明 linux、`/tmp/parkweave-trial-<32位小写hex>`、已存在的不同身份及待固定源码完整 SHA。角色合同只供离线比较；没有生产/临时数据库连接或已签发创建证明。有效输入也只返回 APPROVAL_REQUIRED/5，列出精确单 Run/Case/资料/主体/UTC、目标路径、UID声明及权限需求；无自动 GRANT，LOCK_UPDATE不被当成SQL授权动词。不能通过布尔值、计划文件、环境或方向选择授权执行。
+
+当前可开发并验证的是计划生成、输入拒绝、权限差异和无副作用控制。现 reference 保持原 owner/OWNED_SYNTHETIC_REFERENCE 边界，不能将其 argv 改名充当受限启动器；实际受限 private runtime/host adapter 尚未实现，计划明确 `writer_argv=null`、`writer_runtime=NOT_IMPLEMENTED`、`actual_run=NOT_RUN` 和全部授权为false。源码/解释器、独立UID、秘密交付、目录保护、当前权限与任意SET ROLE链、实际host pin均未验证；真实启动不在本轮执行。
+
+当次最小批准须绑定审核后的计划digest与实际对象：只在其全新临时目录/原创建证明的UUID数据库内准备存储和缺失的精确writer权限，保留原app权限；明确既有API/writer UID和私有policy/key/凭据交付及必要目录/源码保护变更；由可信host使用另经审查的受限adapter启动/观察/绑定两通道，执行该唯一普通成功SYNTHETIC Run/Case的有限用例；最后停止原子进程并凭原证明删除本次新增临时资源，保留失败证据。新UID、新凭据或mode/owner变更需明确另列；不默认包含，不安装系统服务、不部署、不触生产、不调用付费模型、不扩业务Grant/registry、不续授。现阶段仅公开声明，不存在可立即批准并运行的已验证真实身份/目录/密钥；平台若无法提供隔离应停止，不降级为同UID证明。
+
