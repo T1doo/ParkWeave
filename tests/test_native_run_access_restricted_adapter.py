@@ -365,3 +365,87 @@ def test_validate_channel_sets_readonly_before_live_guard_and_never_business_dis
     assert c.queries[0][0]=='SET TRANSACTION READ ONLY'
     assert result['system_identifier']==spec['policy']['system_identifier']
     assert calls==['engine-host','host']
+
+
+@pytest.mark.parametrize('method',['execute','executemany','stream','copy'])
+def test_cursor_query_entrypoints_deny_before_backend_and_allow_checked_readonly(monkeypatch,method):
+    events=[]
+    class Cursor:
+        def execute(self,query,*a,**k):events.append(query);return self
+        executemany=stream=copy=execute
+        def __enter__(self):return self
+        def __exit__(self,*a):events.append('exit')
+        def __iter__(self):return iter([{'value':1}])
+    monkeypatch.setattr(_AccessConnection,'cursor',lambda *a,**k:Cursor())
+    c=object.__new__(runtime._RestrictedConnection);c._runtime_checked=c._runtime_checking=False
+    def check(connection):
+        events.append('guard')
+        # Metadata recursion uses the same guarded cursor without reentering.
+        connection.cursor().execute('SELECT metadata')
+    c._restricted_runtime=SimpleNamespace(check=check)
+    with c.cursor(row_factory=dict) as cursor:
+        assert cursor.execute('SET TRANSACTION READ ONLY') is cursor
+        getattr(cursor,method)('SELECT business')
+        assert list(cursor)==[{'value':1}]
+    assert events==['SET TRANSACTION READ ONLY','guard','SELECT metadata','SELECT business','exit']
+    c._runtime_checked=False;events.clear()
+    def deny(connection):events.append('guard');raise Denied('SYNTHETIC stale runtime')
+    c._restricted_runtime.check=deny
+    with pytest.raises(Denied):getattr(c.cursor(),method)('UPDATE public.run_assignments SET active=true')
+    assert events==['guard']
+
+
+@pytest.mark.parametrize('node',['__pycache__','cache.pyc','extension.so','unknown.dat','writable.py','symlink.py','owner.py'])
+def test_complete_source_tree_baseline_and_unsafe_import_inputs(monkeypatch,node):
+    _,_,data,_=adapter_inputs();layout=host.RuntimeLayout.model_validate(data)
+    root=host.Path(data['source_root']+'/parkweave');source=host.Path(next(iter(data['source_files'])))
+    nodes=[source];reads=[]
+    def metadata(path):
+        bad=path.name==node and path!=source
+        mode=stat.S_IFDIR|0o755 if path==root or path in root.parents or node=='__pycache__' and bad else stat.S_IFREG|0o444
+        if bad and node=='writable.py':mode|=0o020
+        if bad and node=='symlink.py':mode=stat.S_IFLNK|0o777
+        return SimpleNamespace(st_mode=mode,st_uid=data['api_uid'] if bad and node=='owner.py' else 0)
+    monkeypatch.setattr(host.Path,'rglob',lambda *a:iter(nodes))
+    monkeypatch.setattr(host.Path,'lstat',metadata)
+    monkeypatch.setattr(host,'_protected_bytes',lambda path,*a,**k:reads.append(path))
+    host._code_check(layout)
+    assert reads==[layout.interpreter,str(source)]
+    nodes.append(root/node)
+    with pytest.raises(Denied):host._code_check(layout)
+
+
+@pytest.mark.parametrize('missing',['none','api','writer','api_group','ipc_group','api_membership','writer_membership'])
+def test_existing_identity_records_and_memberships_required_without_creation(monkeypatch,missing):
+    import pwd,grp
+    _,_,data,_=adapter_inputs();layout=host.RuntimeLayout.model_validate(data)
+    accounts={layout.api_uid:SimpleNamespace(pw_uid=layout.api_uid,pw_gid=layout.api_gid,pw_name='SYNTHETIC_API'),
+        layout.writer_uid:SimpleNamespace(pw_uid=layout.writer_uid,pw_gid=layout.ipc_gid,pw_name='SYNTHETIC_WRITER')}
+    groups={layout.api_gid:SimpleNamespace(gr_gid=layout.api_gid,gr_mem=[]),
+        layout.ipc_gid:SimpleNamespace(gr_gid=layout.ipc_gid,gr_mem=['SYNTHETIC_API'])}
+    if missing=='api':del accounts[layout.api_uid]
+    elif missing=='writer':del accounts[layout.writer_uid]
+    elif missing=='api_group':del groups[layout.api_gid]
+    elif missing=='ipc_group':del groups[layout.ipc_gid]
+    elif missing=='api_membership':groups[layout.ipc_gid].gr_mem=[]
+    elif missing=='writer_membership':accounts[layout.writer_uid].pw_gid=99999
+    monkeypatch.setattr(pwd,'getpwuid',lambda uid:accounts[uid])
+    monkeypatch.setattr(grp,'getgrgid',lambda gid:groups[gid])
+    if missing=='none':host._identities_check(layout)
+    else:
+        with pytest.raises(Denied):host._identities_check(layout)
+
+
+def test_unissued_default_backend_and_connection_are_closed_before_dependencies(monkeypatch):
+    spec,_,layout,private=adapter_inputs();calls=[]
+    engine=runtime.RestrictedEngine(spec,private,layout['boot_id'],lambda:calls.append('host'))
+    guard=runtime.RuntimeGuard(spec,lambda:calls.append('host'))
+    store=runtime.RestrictedStore(private['writer_dsn'],guard)
+    monkeypatch.setattr(runtime,'RestrictedStore',lambda *a,**k:pytest.fail('real default backend reached'))
+    request=dict(operation='VALIDATE',nonce='a'*32,run_id=spec['policy']['source']['run_id'])
+    with pytest.raises(Denied):engine.execute(request,True)
+    assert calls==[]
+    # The actual Store entry independently refuses a public guard/lambda.
+    with pytest.raises(Denied):store._guarded_connect()
+    with pytest.raises(Denied):guard.require_live_host()
+    assert calls==[]

@@ -115,6 +115,12 @@ class RuntimeGuard:
     def spec(self):
         return preflight.InstallationSpec.model_validate_json(self._spec_json)
 
+    def require_live_host(self):
+        from .native_run_access_restricted_host import _RuntimeAuthorization
+        authority=getattr(self.host_check,'__self__',None)
+        if type(authority) is not _RuntimeAuthorization or not authority.matches_guard(self):
+            raise Denied('sealed live host issuance required before real restricted connection')
+
     def check(self, c):
         self.host_check()  # Actual host/UID/source observation in real entry.
         p = self.spec.policy
@@ -135,8 +141,34 @@ class RuntimeGuard:
         # transaction applies those to REQUEST/APPROVE/ACTIVATE, preserving REVOKE.
 
 
-class _RestrictedConnection(_AccessConnection):
+class _GuardedCursor:
+    """Keep psycopg cursor interfaces, checking before every SQL entry method."""
+    def __init__(self,connection,cursor):
+        object.__setattr__(self,'_connection',connection)
+        object.__setattr__(self,'_cursor',cursor)
+    def __getattr__(self,name):return getattr(self._cursor,name)
+    def __setattr__(self,name,value):setattr(self._cursor,name,value)
+    def __enter__(self):self._cursor.__enter__();return self
+    def __exit__(self,*args):return self._cursor.__exit__(*args)
+    def __iter__(self):return iter(self._cursor)
+    def __next__(self):return next(self._cursor)
     def execute(self,query,*args,**kwargs):
+        self._connection._check_before_sql(query)
+        self._cursor.execute(query,*args,**kwargs)
+        return self
+    def executemany(self,query,*args,**kwargs):
+        self._connection._check_before_sql(query)
+        return self._cursor.executemany(query,*args,**kwargs)
+    def stream(self,query,*args,**kwargs):
+        self._connection._check_before_sql(query)
+        return self._cursor.stream(query,*args,**kwargs)
+    def copy(self,query,*args,**kwargs):
+        self._connection._check_before_sql(query)
+        return self._cursor.copy(query,*args,**kwargs)
+
+
+class _RestrictedConnection(_AccessConnection):
+    def _check_before_sql(self,query):
         header = isinstance(query,str) and query in (
             'SET TRANSACTION READ ONLY','SET LOCAL search_path=pg_catalog,public,pg_temp',
             "SET LOCAL lock_timeout='5s'")
@@ -146,6 +178,12 @@ class _RestrictedConnection(_AccessConnection):
                 self._restricted_runtime.check(self)
                 self._runtime_checked = True
             finally:self._runtime_checking = False
+
+    def cursor(self,*args,**kwargs):
+        return _GuardedCursor(self,super().cursor(*args,**kwargs))
+
+    def execute(self,query,*args,**kwargs):
+        self._check_before_sql(query)
         return super().execute(query,*args,**kwargs)
 
     def commit(self):
@@ -162,11 +200,13 @@ class RestrictedStore(Store):
     def __init__(self, private_dsn, guard, *, connector=None):
         super().__init__(private_connection_dsn(private_dsn, guard.spec.policy))
         self._restricted_runtime = guard
+        self._injected_connector = connector is not None
         self._connector = connector or _RestrictedConnection.connect
 
     def _guarded_connect(self, dsn=None):
         if dsn is not None:
             raise Denied('restricted runtime cannot borrow or override a connection')
+        if not self._injected_connector:self._restricted_runtime.require_live_host()
         self._restricted_runtime.host_check()
         c = self._connector(self.dsn, row_factory=dict_row, connect_timeout=2)
         c._access_store = c._approval_store = self
@@ -230,6 +270,11 @@ class RestrictedEngine:
         if op == 'VERIFY':
             # No Store, PG, host permission state or business locks for history MAC.
             return writer.WriterContext.verify(writer.WriterContext(None,self.policy,self._key),request['receipts'])
+        if not self._injected_store:
+            from .native_run_access_restricted_host import _RuntimeAuthorization
+            authority=getattr(self._guard.host_check,'__self__',None)
+            if type(authority) is not _RuntimeAuthorization or not authority.matches(self):
+                raise Denied('sealed live host issuance required before real restricted backend')
         self._guard.host_check()
         store = self._store_factory()
         context = writer.WriterContext(store,self.policy,self._key)

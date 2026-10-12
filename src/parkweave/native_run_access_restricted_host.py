@@ -8,6 +8,7 @@ import fcntl
 import hashlib
 import hmac
 import json
+from itertools import chain
 import os
 import re
 from pathlib import Path
@@ -147,7 +148,18 @@ def _protected_bytes(path, owner, *, private=False, expected=None, limit=MAX_PRI
 
 def _code_check(layout):
     _protected_bytes(layout.interpreter,0,expected=layout.interpreter_sha256,limit=64*1024*1024)
-    expected = {str(p) for p in Path(layout.source_root+'/parkweave').rglob('*') if p.suffix in ('.py','.sql')}
+    root = Path(layout.source_root+'/parkweave')
+    _path_chain(str(root),{0})
+    expected = set()
+    # Python can load existing bytecode even with -B/-I. Refuse caches and
+    # extensions in this reviewed source-only bundle, and protect every node.
+    for count,p in enumerate(chain((root,),root.rglob('*')),1):
+        s=p.lstat()
+        if (count>1024 or s.st_uid!=0 or s.st_mode&0o022 or
+                not (stat.S_ISREG(s.st_mode) or stat.S_ISDIR(s.st_mode)) or
+                p.name=='__pycache__' or p.suffix in ('.pyc','.pyo','.so','.pyd')):
+            raise Denied('complete protected source tree required; no executable cache/extension')
+        if stat.S_ISREG(s.st_mode):expected.add(str(p))
     if expected!=set(layout.source_files):raise Denied('complete protected source bundle required')
     for path,digest in layout.source_files.items():_protected_bytes(path,0,expected=digest)
 
@@ -158,11 +170,30 @@ def _dependencies_check(layout):
     for root in layout.dependency_roots:
         _path_chain(root,{0})
         count=0
-        for p in (Path(root),*Path(root).rglob('*')):
+        for p in chain((Path(root),),Path(root).rglob('*')):
             count+=1;s=p.lstat()
             if (count>100000 or s.st_uid!=0 or s.st_mode&0o022 or
                     not (stat.S_ISREG(s.st_mode) or stat.S_ISDIR(s.st_mode))):
                 raise Denied('protected complete interpreter environment unavailable')
+
+
+def _identities_check(layout):
+    # Read existing OS accounts only. Numeric subprocess IDs do not prove that
+    # the designated accounts or the approved IPC membership actually exist.
+    try:
+        import pwd
+        import grp
+        api,worker=pwd.getpwuid(layout.api_uid),pwd.getpwuid(layout.writer_uid)
+        api_group,ipc=grp.getgrgid(layout.api_gid),grp.getgrgid(layout.ipc_gid)
+        groups={api_group.gr_gid:api_group,ipc.gr_gid:ipc}
+        if ((api.pw_uid,worker.pw_uid,api_group.gr_gid,ipc.gr_gid)!=
+                (layout.api_uid,layout.writer_uid,layout.api_gid,layout.ipc_gid) or
+                not api.pw_name or not worker.pw_name or api.pw_name==worker.pw_name or
+                any(user.pw_gid!=group.gr_gid and user.pw_name not in group.gr_mem
+                    for user,group in ((api,groups[layout.api_gid]),(api,ipc),(worker,ipc)))):
+            raise Denied('existing designated identities and group memberships required')
+    except (KeyError,AttributeError,TypeError,ImportError):
+        raise Denied('existing designated UID/GID records unavailable; no identity fallback') from None
 
 
 def _process(pid):
@@ -242,6 +273,7 @@ class LinuxHost:
             owner=self.spec.installer_role,trial_root=self.layout.trial_root,
             absent_from_initial_databases=True,initial_databases=['postgres','template0','template1'])
         verified_record(json.loads(proof_raw),key,creation)
+        _identities_check(self.layout)
         _code_check(self.layout)
         _dependencies_check(self.layout)
         self._live_approval = _LiveApproval(self,_ISSUER,request)
@@ -346,10 +378,17 @@ class _RuntimeAuthorization:
                 writer._sha(engine.policy.model_dump())==writer._sha(self.payload['spec']['policy']) and
                 engine.boot_id==self.layout.boot_id and
                 getattr(engine._guard.host_check,'__self__',None) is self and
+                getattr(engine._guard.host_check,'__func__',None) is _RuntimeAuthorization.check and
                 engine._dsn==self.payload['private']['writer_dsn'] and
                 hmac.compare_digest(engine._key,bytes.fromhex(self.payload['private']['key'])))
+    def matches_guard(self,guard):
+        return (self._fd_issued is _FD_ISSUER and
+                guard._spec_json==writer._canonical(self.payload['spec']) and
+                getattr(guard.host_check,'__self__',None) is self and
+                getattr(guard.host_check,'__func__',None) is _RuntimeAuthorization.check)
     def check(self):
         p = self.payload;layout = self.layout
+        _identities_check(layout)
         if os.geteuid()!=layout.writer_uid or os.getegid()!=layout.ipc_gid or os.getgroups():
             raise Denied('actual distinct nonroot writer identity required')
         parent = _process(os.getppid())
