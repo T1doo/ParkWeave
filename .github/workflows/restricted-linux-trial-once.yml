@@ -1,0 +1,50 @@
+name: ParkWeave restricted Linux trial once
+
+on:
+  push:
+    branches: [dev/f2-restricted-linux-trial-20261012]
+    paths:
+      - '.github/workflows/restricted-linux-trial-once.yml'
+      - 'scripts/linux_trial/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-restricted-linux-trial-once
+  cancel-in-progress: false
+
+jobs:
+  restricted-trial:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/f2-restricted-linux-trial-20261012' &&
+      github.event.repository.private == false &&
+      github.run_attempt == 1 && github.run_number == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Checkout public frozen source without persisted credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: One approved isolated trial with allowlisted public results only
+        shell: bash
+        timeout-minutes: 23
+        env:
+          TRIAL_SOURCE_SHA: ${{ github.sha }}
+          TRIAL_REPOSITORY: ${{ github.repository }}
+          TRIAL_REF: ${{ github.ref }}
+          TRIAL_EVENT: ${{ github.event_name }}
+          TRIAL_ATTEMPT: ${{ github.run_attempt }}
+          TRIAL_NUMBER: ${{ github.run_number }}
+        run: |
+          set -eu
+          sudo -n env -i LANG=C.UTF-8 \
+            TRIAL_REPOSITORY="$TRIAL_REPOSITORY" TRIAL_REF="$TRIAL_REF" \
+            TRIAL_EVENT="$TRIAL_EVENT" TRIAL_ATTEMPT="$TRIAL_ATTEMPT" \
+            TRIAL_NUMBER="$TRIAL_NUMBER" RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" \
+            RUNNER_OS="$RUNNER_OS" \
+            /usr/bin/python3.12 -I -S -B scripts/linux_trial/bootstrap.py "$TRIAL_SOURCE_SHA"
