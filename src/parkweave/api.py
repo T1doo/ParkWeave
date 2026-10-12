@@ -9,9 +9,17 @@ from psycopg.errors import LockNotAvailable
 from .domain import Intake, FactInput, ClarificationInput, V1ServiceSpec, V1ServicePlan, FieldName
 from .store import Store, Denied, Conflict
 from .run_access_candidate import RunCommand
+from .native_run_access import RunCommand as NativeRunCommand
 
 
 def create_app(store: Store, *, summary_reader=None) -> FastAPI:
+    # A private writer context may only run in its separate transaction process.
+    bridge = getattr(store, '_native_run_access', None)
+    if bridge is not None and getattr(bridge, 'writer', None) is not None:
+        from .native_run_access_writer import WriterClient
+        if type(bridge.writer) is not WriterClient:
+            raise Denied('API cannot hold private writer credentials or signing context')
+    store._native_api_boundary = True
     app = FastAPI(title="ParkWeave synthetic foundation", version="0.1.0")
     from . import case_resource_delivery as delivery, resource_bundles as bundles
 
@@ -189,7 +197,7 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
         return access_bridge().recover(token(authorization), run_id, request_key)
 
     @app.post('/api/runs/{run_id}/access/commands')
-    def run_access_command(run_id: UUID, data: RunCommand,
+    def run_access_command(run_id: UUID, data: RunCommand | NativeRunCommand,
                            authorization: str | None = Header(default=None),
                            idempotency_key: str = Header()):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', idempotency_key):
@@ -201,6 +209,8 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
                 data=NativeCommand.model_validate(data.model_dump())
             except ValidationError:
                 raise HTTPException(422, 'invalid native UTC command')
+        elif type(data) is NativeRunCommand:
+            raise HTTPException(422, 'ordinary writer fields are unavailable for isolated commands')
         return access_bridge().command(token(authorization), run_id, idempotency_key, data)
 
     from .native_run_access_activation import Activate

@@ -132,6 +132,9 @@ def issue_activation_test_permit(owner,proof,decision_permit,*,run_id,lease_id,
 
 
 def _permit(bridge,c,run_id):
+    if bridge.writer is not None:
+        from .native_run_access_writer import binding
+        return binding(bridge,c,run_id)
     value=bridge.activation_permit
     if (type(bridge) is not NativeRunAccess or type(value) is not ActivationTestPermit or
             _issued_activation_permits.get(id(value)) is not value or
@@ -258,8 +261,12 @@ def augment_view(bridge,c,p,run,result):
 def activate(bridge,token,run_id,key,data):
     bridge._key(key)
     data=Activate.model_validate(data.model_dump())
+    if bridge.writer is not None:
+        from .native_run_access_writer import WriterClient,invoke
+        if type(bridge.writer) is WriterClient:
+            return invoke(bridge,'ACTIVATE',token,run_id,key,data)
     permit=bridge.activation_permit
-    if type(permit) is not ActivationTestPermit or _issued_activation_permits.get(id(permit)) is not permit:
+    if bridge.writer is None and (type(permit) is not ActivationTestPermit or _issued_activation_permits.get(id(permit)) is not permit):
         raise Denied('trusted production activation authority unavailable')
     # The restricted owner channel cannot lend its writer to a foreign business
     # Store. Verify the Store's actual endpoint/database before opening that
@@ -270,10 +277,11 @@ def activate(bridge,token,run_id,key,data):
     fp=_hash(dict(run_id=str(run_id),command=data.model_dump(mode='json')))
     # This existing owned fixture connection is a narrowly issued test writer.
     # Authentication and all current checks occur in this SAME transaction.
-    with bridge.store._guarded_connect(permit.owner.dsn) as c:
+    with bridge.store._guarded_connect(permit.owner.dsn if bridge.writer is None else None) as c:
         c.execute("SET LOCAL lock_timeout='5s'")
-        _owner_connection(c,permit.decision_permit.proof)
-        _,binding=_permit(bridge,c,run_id)
+        if bridge.writer is None:
+            _owner_connection(c,permit.decision_permit.proof)
+        permit,binding=_permit(bridge,c,run_id)
         p=bridge.store.auth(c,token,lock=True)
         bridge.store.check_capability(c,p,'READ')
         run=bridge._run(c,p,run_id)
@@ -288,8 +296,10 @@ def activate(bridge,token,run_id,key,data):
         run=c.execute('SELECT * FROM runs WHERE id=%s FOR UPDATE',(run_id,)).fetchone()
         old=bridge._key_receipt(c,p['id'],key)
         if old:
-            if old['e']['fingerprint']!=fp:raise Conflict('original request key fingerprint mismatch')
-            return old['e']
+            return bridge._original_receipt(c,old,run_id,fp)
+        if bridge.writer is not None:
+            from .native_run_access_writer import before_action
+            before_action(bridge,c,p,'ACTIVATE',run_id,data)
         _permit(bridge,c,run_id)
         view=bridge._view(c,p,run)
         if (data.expected_revision,data.expected_run_revision,data.expected_authority_sha256,
@@ -316,6 +326,9 @@ def activate(bridge,token,run_id,key,data):
             policy_sha256=permit.policy_sha256,binding=deepcopy(binding),recorded_at=_now(c).isoformat(),
             actual_run_access=True,actual_assignment_written=True,
             projection_state='ACTIVE_SYNTHETIC_FIXTURE',production_policy_adopted=False)
+        if bridge.writer is not None:
+            from .native_run_access_writer import sign
+            receipt=sign(bridge,receipt)
         ledger['events'].append(receipt);ledger.update(revision=receipt['revision'],activation_id=receipt['activation_id'])
         c.execute('UPDATE runs SET native_run_access_activation=%s WHERE id=%s',(Jsonb(ledger),run_id))
         c.execute("""INSERT INTO run_assignments(principal_id,run_id,park_id,org_id,active,native_access)

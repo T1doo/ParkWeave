@@ -28,7 +28,15 @@ sandbox.status=status;sandbox.view=view;
 const tick=()=>new Promise(resolve=>setImmediate(resolve));
 async function read(){const p=run('loadRunAccess()');calls.at(-1).ok(status);await tick();calls.at(-1).ok(view);await p;}
 (async()=>{
- if(mode==='effective_fixture'){
+ if(mode==='writer_confirmation'){
+  view.writer_policy_scope='OWNED_SYNTHETIC_REFERENCE';await read();
+  check(!$('run-access-confirm-label').hidden);$('run-access-reason').value='explicit reason';
+  let refused=false;try{await run("sendRunAccess('REQUEST',{})");}catch(e){refused=e.message.includes('明确确认');}
+  check(refused&&calls.every(c=>c.method==='GET'));$('run-access-confirm').checked=true;
+  const p=run("sendRunAccess('REQUEST',{})");await tick();
+  check(JSON.parse(calls.at(-1).options.body).confirm_request===true);calls.at(-1).fail();try{await p;}catch(_){}
+  check(run('runAccessPending.body.confirm_request')===true);
+ }else if(mode==='effective_fixture'){
   view.actual_run_access=true;view.projection_state='ACTIVE_SYNTHETIC_FIXTURE';
   view.request={requester_id:'owner',target_id:'existing-executor',requested_validity:{},approved_validity:{valid_until:new Date(Date.now()+60000).toISOString()}};
   await read();check($('run-access-summary').textContent.includes('READ范围生效'));

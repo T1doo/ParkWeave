@@ -10,7 +10,7 @@ import re
 import json
 from pathlib import Path
 from uuid import uuid4
-from pydantic import model_validator
+from pydantic import model_validator, StrictBool
 from functools import wraps
 from psycopg.errors import LockNotAvailable
 
@@ -27,6 +27,7 @@ _issued_test_permits = {}
 
 
 class RunCommand(CandidateCommand):
+    confirm_request: StrictBool | None = None
     @model_validator(mode='after')
     def utc(self):
         for value in (self.requested_validity,self.approved_validity):
@@ -115,11 +116,15 @@ def issue_decision_test_permit(owner, proof, *, approver_ids, seconds=600):
 
 
 class NativeRunAccess:
-    def __init__(self, store, *, test_permit=None, activation_permit=None):
+    def __init__(self, store, *, test_permit=None, activation_permit=None, writer=None):
         if getattr(store, '_isolated_run_access', None) is not None:
             raise Denied('ordinary and isolated access providers cannot be combined')
         self.store, self.test_permit = store, test_permit
         self.activation_permit=activation_permit
+        self.writer=writer
+        if writer is not None:
+            from .native_run_access_writer import _writer
+            _writer(self)
 
     def assignment_allowed(self,c,p,run_id,assignment):
         from .native_run_access_activation import effective
@@ -136,12 +141,26 @@ class NativeRunAccess:
               ||coalesce(to_jsonb(r)->'native_run_access_activation'->'events','[]'::jsonb)) e
             WHERE e->>'actor_id'=%s AND e->>'request_key'=%s LIMIT 1""",(actor,key)).fetchone()
 
+    def _original_receipt(self,c,old,run_id,fingerprint):
+        receipt=old['e']
+        if receipt.get('run_id')!=str(run_id) or receipt.get('fingerprint')!=fingerprint:
+            raise Conflict('original request key Run or fingerprint mismatch')
+        if self.writer is not None:
+            from .native_run_access_writer import _writer,_records
+            value=_writer(self)
+            if receipt not in _records(c,run_id) or not type(value).verify(value,[receipt]):
+                raise Denied('original receipt must belong to authenticated writer history')
+        return receipt
+
     @staticmethod
     def _access_lock(c,run_id,exclusive=False):
         fn='pg_advisory_xact_lock' if exclusive else 'pg_advisory_xact_lock_shared'
         c.execute('SELECT '+fn+'(hashtextextended(%s,0))',('native-effective-access:'+str(run_id),))
 
     def _permit(self, c):
+        if self.writer is not None:
+            from .native_run_access_writer import permit
+            return permit(self,c)
         permit = self.test_permit
         if type(permit) is not DecisionTestPermit or _issued_test_permits.get(id(permit)) is not permit:
             raise Denied('production access decision writes disabled')
@@ -174,16 +193,17 @@ class NativeRunAccess:
             c.execute("SET LOCAL lock_timeout='5s'")
             p = self.store.auth(c, token, lock=True)
             self.store.check_capability(c, p, 'READ')
-            enabled = self._live_permit(c) is not None
+            permit = self._live_permit(c)
+            enabled = permit is not None
             return dict(namespace=NAMESPACE, enabled=enabled, read_available=True,
                         storage_available=self._storage(c), role=p['role'],
-                        can_approve=enabled and p['id'] in self.test_permit.approver_ids,
+                        can_approve=enabled and p['id'] in permit.approver_ids,
                         can_revoke=enabled and (p['role']=='enterprise_operator' or
-                                              p['id'] in self.test_permit.approver_ids),
+                                              p['id'] in permit.approver_ids),
                         decision_only=True, activation_pending=True,
                         production_policy_adopted=False, deployment_enabled=False,
-                        max_validity_hours=(self.test_permit.max_access_seconds / 3600 if enabled else None),
-                        authority_valid_until=(self.test_permit.valid_until.isoformat() if enabled else None))
+                        max_validity_hours=(permit.max_access_seconds / 3600 if enabled else None),
+                        authority_valid_until=(permit.valid_until.isoformat() if enabled else None))
 
     def _principal(self, c, actor, run, role=None):
         self.store.lock_principal(c, actor)
@@ -209,6 +229,12 @@ class NativeRunAccess:
             return
         if p['role'] == 'service_executor' and p['id'] == request.get('target_id'):
             return
+        if self.writer is not None:
+            from .native_run_access_writer import _writer
+            policy=_writer(self).policy
+            if (str(run['id'])==policy.source.run_id and p['role']=='park_specialist' and
+                    p['id']==policy.approver_id):
+                return
         if self.test_permit is not None:
             self._permit(c)
             if p['role']=='park_specialist' and p['id'] in self.test_permit.approver_ids:
@@ -261,6 +287,18 @@ class NativeRunAccess:
         return dict(principals=principals,grants=grants,preparation=preparation)
 
     def _view(self, c, p, run):
+        writer_history_verified=None
+        if self.writer is not None:
+            from .native_run_access_writer import history,_writer
+            if str(run['id'])!=_writer(self).policy.source.run_id:
+                return NativeRunAccess(self.store)._view(c,p,run)
+            try:
+                history(self,c,run['id'])
+                writer_history_verified=True
+            except Denied:
+                # Authorized historical metadata remains readable. A missing
+                # writer cannot turn persisted approvals into effective access.
+                writer_history_verified=False
         ledger = run.get('native_run_access_protocol') or {}
         parent = self._parent(c, run)
         source = self._source(c, run, parent)
@@ -281,6 +319,13 @@ class NativeRunAccess:
         except Denied:
             can_request=False
         can_request=can_request and parent['state']=='LOCAL_CONFIRMED' and parent['review_sha256']==source['material_sha256']
+        if self.writer is not None:
+            from .native_run_access_writer import _writer
+            policy=_writer(self).policy
+            from .native_run_access_activation import _generations
+            can_request=(can_request and str(run['id'])==policy.source.run_id and not ledger.get('events') and
+                         {k:v for k,v in source.items() if k!='case_state'}==policy.source.model_dump() and
+                         _generations(c,policy.owner_id,policy.beneficiary_id,policy.approver_id)==policy.generations)
         current_request=bool(request and request['source']==source and request.get('authority')==self._authority_snapshot(c,run,request['target_id']) and
                              datetime.fromisoformat(request['requested_validity']['valid_until'])>_now(c))
         targets=[]
@@ -290,6 +335,8 @@ class NativeRunAccess:
                 WHERE p.park_id=%s AND p.org_id=%s AND p.active AND p.role='service_executor'
                 AND g.active AND g.capability='READ' ORDER BY p.id LIMIT 100""",
                 (run['park_id'],run['org_id'])).fetchall()
+            if self.writer is not None:
+                targets=[t for t in targets if t['id']==policy.beneficiary_id]
         result=dict(namespace=NAMESPACE,scope={k:source[k] for k in ('park_id','org_id','run_id')},
                     revision=revision,run_revision=run['revision'],authority_sha256=_hash(authority),
                     state=state,request=deepcopy(request),history=deepcopy(ledger.get('events',[])),
@@ -309,6 +356,10 @@ class NativeRunAccess:
                     candidate_access_available=False,actual_run_access=False,
                     actual_assignment_written=False,deployment_enabled=False,
                     qualification_truth='UNKNOWN')
+        if writer_history_verified is not None:
+            result.update(writer_history_verified=writer_history_verified,
+                          writer_policy_scope='OWNED_SYNTHETIC_REFERENCE' if self.writer.policy.environment=='OWNED_SYNTHETIC_REFERENCE' else 'PRODUCTION_CONTRACT',
+                          production_installation_verified=False)
         from .native_run_access_activation import augment_view
         return augment_view(self,c,p,run,result)
 
@@ -360,12 +411,18 @@ class NativeRunAccess:
         if (end<=now or start<now-timedelta(seconds=60) or end>permit.valid_until or
                 (end-start).total_seconds()>permit.max_access_seconds):
             raise Conflict('bounded current UTC decision interval required')
+        if self.writer is not None and start<datetime.fromisoformat(self.writer.policy.valid_from):
+            raise Conflict('lease cannot begin before explicitly selected policy')
         return value
 
     @_bounded
     def command(self, token, run_id, key, data):
         self._key(key)
         data=RunCommand.model_validate(data.model_dump())
+        if self.writer is not None:
+            from .native_run_access_writer import WriterClient,invoke
+            if type(self.writer) is WriterClient:
+                return invoke(self,'COMMAND',token,run_id,key,data)
         fp=_hash(dict(run_id=str(run_id),command=data.model_dump(mode='json')))
         with self.store.connect() as c:
             c.execute("SET LOCAL lock_timeout='5s'")
@@ -385,13 +442,14 @@ class NativeRunAccess:
             permit=self._permit(c)
             old=self._key_receipt(c,p['id'],key)
             if old:
-                if old['e']['fingerprint']!=fp:
-                    raise Conflict('original request key fingerprint mismatch')
-                return old['e']
+                return self._original_receipt(c,old,run_id,fp)
             view=self._view(c,p,run)
             if ((data.expected_revision,data.expected_run_revision,data.expected_authority_sha256)!=
                     (view['revision'],view['run_revision'],view['authority_sha256'])):
                 raise Conflict('request, Run or current source version changed')
+            if self.writer is not None:
+                from .native_run_access_writer import before_action
+                before_action(self,c,p,data.action,run_id,data)
             if view['revision']>=64 or (data.action=='REQUEST' and view['revision']>=62) or (data.action=='APPROVE' and view['revision']>=63):
                 raise Conflict('bounded history; reserve revocation capacity')
             source=self._source(c,run,parent)
@@ -463,6 +521,9 @@ class NativeRunAccess:
                          request=deepcopy(ledger['request']),lease_id=ledger.get('lease_id'),
                          recorded_at=_now(c).isoformat(),actual_run_access=False,
                          actual_assignment_written=False,projection_state='NON_EFFECTIVE')
+            if self.writer is not None:
+                from .native_run_access_writer import sign
+                receipt=sign(self,receipt)
             ledger['events'].append(receipt)
             c.execute('UPDATE runs SET native_run_access_protocol=%s WHERE id=%s',(Jsonb(ledger),run_id))
             # No external decision store: event, request, decision and lease roll

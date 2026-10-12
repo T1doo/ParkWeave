@@ -22,6 +22,9 @@ class _AccessConnection(psycopg.Connection):
     """Recheck managed leases before a Store transaction commits or returns."""
     def commit(self):
         try:
+            for bridge,actor_id,action in getattr(self,'_writer_checks',()):
+                from .native_run_access_writer import recheck
+                recheck(bridge,self,actor_id,action)
             for check in getattr(self, '_plan_approval_checks', ()):
                 self._approval_store._isolated_plan_approval.recheck(self._approval_store, self, check)
             for principal_id, run_id in getattr(self, '_managed_checks', ()):
@@ -40,6 +43,7 @@ class _AccessConnection(psycopg.Connection):
         finally:
             self._managed_checks = set()
             self._plan_approval_checks = []
+            self._writer_checks = []
 
     def rollback(self):
         try:
@@ -47,6 +51,7 @@ class _AccessConnection(psycopg.Connection):
         finally:
             self._managed_checks = set()
             self._plan_approval_checks = []
+            self._writer_checks = []
 
 
 def digest(value: str) -> str:
