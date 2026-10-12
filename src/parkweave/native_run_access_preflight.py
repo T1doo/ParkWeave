@@ -120,7 +120,7 @@ class Role(Strict):
     bypass_rls: bool
     dangerous_membership: bool
     owner_membership: bool
-    writer_membership: bool = False
+    writer_membership: bool
 
 
 class Database(Strict):
@@ -142,7 +142,7 @@ class CatalogSnapshot(Strict):
     triggers: dict[str, list[Trigger]]
     roles: dict[str, Role]
     privileges: dict[str, bool]
-    unneeded_writer_permissions: list[Annotated[str, Field(pattern=r'^(INSERT|UPDATE|DELETE):[A-Za-z_][A-Za-z0-9_$]*(\.[A-Za-z_][A-Za-z0-9_$]*)?$')]] = Field(default_factory=list)
+    unneeded_writer_permissions: list[Annotated[str, Field(pattern=r'^(INSERT|UPDATE|DELETE):[A-Za-z_][A-Za-z0-9_$]*(\.[A-Za-z_][A-Za-z0-9_$]*)?$')]]
 
 
 def expected_storage():
@@ -216,6 +216,8 @@ def analyze(spec=None, snapshot=None):
         check('production_policy_type', 'PASS' if policy.environment == 'PRODUCTION' else 'REFUSED')
         if not all(re.fullmatch(ROLE_NAME, r) for r in (policy.application_role, policy.writer_role)):
             check('database_roles', 'REFUSED', reason='EXACT_ROLE_NAMES_REQUIRED')
+        if any(r.startswith('pg_') for r in (policy.application_role, policy.writer_role)):
+            check('database_roles', 'REFUSED', reason='SYSTEM_PREDEFINED_ROLE_IS_NOT_A_RESTRICTED_SERVICE_IDENTITY')
     check('independent_os_identity', 'REFUSED' if spec.api_uid is not None and spec.api_uid == spec.writer_uid else
           ('MISSING_CONFIG' if spec.api_uid is None or spec.writer_uid is None else 'PASS'),
           qualification='DECLARED_ONLY; actual OS isolation/key/pin not verified')
@@ -244,7 +246,7 @@ def analyze(spec=None, snapshot=None):
                 check('table.' + name, 'REFUSED', reason='BASE_RELATION_MISSING; do not apply additive SQL')
                 continue
             wanted = spec.object_owners.get(name)
-            check('table.' + name, 'MISSING_CONFIG' if not wanted else
+            check('table.' + name, 'REFUSED' if table.kind != 'r' else 'MISSING_CONFIG' if not wanted else
                   ('PASS' if table.kind == 'r' and table.owner == wanted else 'REFUSED'),
                   owner_sha256=_sha(table.owner), acl_sha256=_sha(table.acl))
             if table.rls or table.force_rls:
@@ -255,8 +257,9 @@ def analyze(spec=None, snapshot=None):
                 check('column.' + name, 'APPROVAL_REQUIRED', reason='MISSING_ADDITIVE_COLUMN')
                 change('ADD_COLUMN', 'public.' + name, type=kind, nullable=True, default=None)
             else:
-                check('column.' + name, 'PASS' if column.type == kind and column.nullable and
-                      column.default is None and not column.identity and not column.generated else 'REFUSED',
+                expected_column = dict(type=kind, nullable=True, default=None, identity='', generated='')
+                fields = [field for field, value in expected_column.items() if getattr(column, field) != value]
+                check('column.' + name, 'REFUSED' if fields else 'PASS', mismatch_fields=fields,
                       reason='EXACT_NULLABLE_JSONB_WITHOUT_DEFAULT_IDENTITY_OR_GENERATION')
         for name in FUNCTIONS:
             found = catalog.functions.get(name, [])
@@ -265,13 +268,15 @@ def analyze(spec=None, snapshot=None):
                 change('CREATE_FUNCTION', 'public.' + name + '()', expected_body_sha256=bodies[name])
             else:
                 function = found[0]
-                same = (len(found) == 1 and function.arguments == '' and function.returns == 'trigger' and
-                        function.language == 'plpgsql' and function.body_sha256 == bodies[name] and
-                        not function.security_definer and not function.strict and not function.leakproof and
-                        function.volatility == 'v' and function.config is None)
-                check('function.' + name, 'MISSING_CONFIG' if not spec.installer_role else
+                expected_function = dict(arguments='', returns='trigger', language='plpgsql', body_sha256=bodies[name],
+                    security_definer=False, strict=False, leakproof=False, volatility='v', config=None)
+                fields = [field for field, value in expected_function.items() if getattr(function, field) != value]
+                if len(found) != 1:fields.append('overload_count')
+                same = not fields
+                if spec.installer_role and function.owner != spec.installer_role:fields.append('owner')
+                check('function.' + name, 'REFUSED' if not same else 'MISSING_CONFIG' if not spec.installer_role else
                       ('PASS' if same and function.owner == spec.installer_role else 'REFUSED'),
-                      body_sha256=function.body_sha256, acl_sha256=_sha(function.acl),
+                      mismatch_fields=fields, expected_body_sha256=bodies[name], body_sha256=function.body_sha256, acl_sha256=_sha(function.acl),
                       reason='EXACT_SIGNATURE_BODY_SECURITY_CONFIG_OWNER; conflict must not be overwritten')
         for name, (table, function, kind) in TRIGGERS.items():
             found = catalog.triggers.get(name, [])
@@ -282,13 +287,14 @@ def analyze(spec=None, snapshot=None):
                 trigger = found[0]
                 relation = catalog.tables.get(table)
                 routines = catalog.functions.get(function, [])
-                same = (len(found) == 1 and relation and len(routines) == 1 and
-                        trigger.relation_oid == relation.oid and trigger.function_oid == routines[0].oid and
-                        trigger.type == kind and trigger.enabled == 'O' and not trigger.internal and
-                        trigger.constraint_oid == 0 and trigger.columns == '' and trigger.condition is None and
-                        trigger.arguments_count == 0 and trigger.arguments_hex == '' and not trigger.deferrable and
-                        not trigger.initially_deferred and trigger.old_table is None and trigger.new_table is None)
-                check('trigger.' + name, 'PASS' if same else 'REFUSED', reason='EXACT_RELATION_FUNCTION_OID_AND_TRIGGER_SEMANTICS')
+                expected_trigger = dict(relation_oid=relation.oid if relation else None,
+                    function_oid=routines[0].oid if len(routines) == 1 else None, type=kind, enabled='O', internal=False,
+                    constraint_oid=0, columns='', condition=None, arguments_count=0, arguments_hex='',
+                    deferrable=False, initially_deferred=False, old_table=None, new_table=None)
+                fields = [field for field, value in expected_trigger.items() if getattr(trigger, field) != value]
+                if len(found) != 1:fields.append('duplicate_count')
+                check('trigger.' + name, 'REFUSED' if fields else 'PASS', mismatch_fields=fields,
+                      reason='EXACT_RELATION_FUNCTION_OID_AND_TRIGGER_SEMANTICS')
         if policy:
             if spec.installer_role:
                 check('installer_role_present', 'PASS' if spec.installer_role in catalog.roles else 'NOT_CONNECTED',
@@ -311,6 +317,8 @@ def analyze(spec=None, snapshot=None):
             for key in ('app:assignment_write', 'app:identity_write', 'app:control_system_execute',
                         'app:schema_create', 'writer:schema_create', 'writer:unneeded_write'):
                 value = catalog.privileges.get(key)
+                if key == 'writer:unneeded_write' and catalog.unneeded_writer_permissions:
+                    value = True  # Detailed effective excess cannot be overridden by a summary flag.
                 check('forbidden.' + key, 'NOT_CONNECTED' if value is None else ('REFUSED' if value else 'PASS'))
             report['unneeded_writer_permissions'] = catalog.unneeded_writer_permissions
     statuses = {row['status'] for row in report['checks']}
@@ -382,8 +390,9 @@ def collect_owned_catalog(connection, proof, spec):
         for name in filter(None, role_names):
             row = c.execute("""SELECT r.rolsuper superuser,r.rolcreatedb createdb,r.rolcreaterole createrole,
                 r.rolreplication replication,r.rolbypassrls bypass_rls,
-                EXISTS(SELECT 1 FROM pg_catalog.pg_roles x WHERE x.rolname<>r.rolname AND
-                    (x.rolsuper OR x.rolcreatedb OR x.rolcreaterole OR x.rolreplication OR x.rolbypassrls) AND
+                EXISTS(SELECT 1 FROM pg_catalog.pg_roles x WHERE
+                    (x.rolsuper OR x.rolcreatedb OR x.rolcreaterole OR x.rolreplication OR x.rolbypassrls OR
+                     pg_catalog.left(x.rolname,3)='pg_') AND
                     pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER')) dangerous_membership,
                 EXISTS(SELECT 1 FROM pg_catalog.pg_roles x WHERE x.rolname=ANY(%s) AND
                     pg_catalog.pg_has_role(r.oid,x.oid,'MEMBER')) owner_membership,

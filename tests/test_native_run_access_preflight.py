@@ -82,6 +82,8 @@ def test_missing_config_and_not_connected_are_distinct_without_environment_disco
     assert check(report, 'database_catalog')['status'] == 'NOT_CONNECTED'
     assert preflight.analyze(synthetic_spec())['status'] == 'NOT_CONNECTED'
     assert 'SYNTHETIC_PRIVATE_DSN_MUST_NOT_BE_READ' not in json.dumps(report)
+    catalog = synthetic_catalog();catalog['functions']['guard_native_assignment'][0]['security_definer'] = True
+    assert check(preflight.analyze({}, catalog), 'function.guard_native_assignment')['status'] == 'REFUSED'
 
 
 def test_precise_missing_storage_diff_has_no_executable_sql_or_implicit_rollback():
@@ -99,6 +101,7 @@ def test_same_column_name_does_not_hide_incompatible_storage(mutation):
     catalog = synthetic_catalog();catalog['columns']['runs.native_run_access_protocol'].update(mutation)
     report = preflight.analyze(synthetic_spec(catalog), catalog)
     assert check(report, 'column.runs.native_run_access_protocol')['status'] == 'REFUSED'
+    assert check(report, 'column.runs.native_run_access_protocol')['mismatch_fields'] == list(mutation)
     assert not any(row['object'] == 'public.runs.native_run_access_protocol' for row in report['changes'])
 
 
@@ -109,6 +112,7 @@ def test_function_body_signature_security_search_path_and_owner_conflicts_are_re
     catalog = synthetic_catalog();catalog['functions']['guard_native_run_access_protocol'][0].update(mutation)
     report = preflight.analyze(synthetic_spec(catalog), catalog)
     assert check(report, 'function.guard_native_run_access_protocol')['status'] == 'REFUSED'
+    assert check(report, 'function.guard_native_run_access_protocol')['mismatch_fields'] == list(mutation)
     assert not report['changes']
 
 
@@ -118,6 +122,7 @@ def test_function_overload_and_duplicate_trigger_are_not_name_only_matches():
     report = preflight.analyze(synthetic_spec(catalog), catalog)
     assert check(report, 'function.guard_native_assignment')['status'] == 'REFUSED'
     assert check(report, 'trigger.native_assignment_bound')['status'] == 'REFUSED'
+    assert 'duplicate_count' in check(report, 'trigger.native_assignment_bound')['mismatch_fields']
 
 
 @pytest.mark.parametrize('mutation', [dict(relation_oid=900), dict(function_oid=900), dict(type=19), dict(enabled='D'),
@@ -128,6 +133,7 @@ def test_exact_trigger_semantics_and_bound_object_oids(mutation):
     catalog = synthetic_catalog();catalog['triggers']['native_assignment_bound'][0].update(mutation)
     report = preflight.analyze(synthetic_spec(catalog), catalog)
     assert check(report, 'trigger.native_assignment_bound')['status'] == 'REFUSED'
+    assert check(report, 'trigger.native_assignment_bound')['mismatch_fields'] == list(mutation)
 
 
 @pytest.mark.parametrize('flag', ['superuser', 'createdb', 'createrole', 'replication', 'bypass_rls',
@@ -217,6 +223,22 @@ def test_declared_installer_role_does_not_substitute_for_actual_operator_evidenc
     assert not report['installation_authorized']
 
 
+def test_unknown_role_membership_or_excess_details_never_default_to_safe():
+    catalog = synthetic_catalog();del catalog['roles']['synthetic_app']['writer_membership']
+    assert preflight.analyze(synthetic_spec(catalog), catalog)['status'] == 'REFUSED'
+    catalog = synthetic_catalog();del catalog['unneeded_writer_permissions']
+    assert preflight.analyze(synthetic_spec(catalog), catalog)['status'] == 'REFUSED'
+
+
+def test_effective_extra_dml_details_cannot_be_hidden_by_summary_false():
+    catalog = synthetic_catalog();catalog['unneeded_writer_permissions'] = ['UPDATE:principals.active']
+    catalog['privileges']['writer:unneeded_write'] = False
+    report = preflight.analyze(synthetic_spec(catalog), catalog)
+    assert report['status'] == 'REFUSED'
+    assert check(report, 'forbidden.writer:unneeded_write')['status'] == 'REFUSED'
+    assert report['unneeded_writer_permissions'] == ['UPDATE:principals.active']
+
+
 class Trace:
     def __init__(self, connection):
         self.connection = connection;self.queries = []
@@ -301,3 +323,13 @@ def test_forged_receipt_and_wrong_existing_connection_refused_before_queries(fix
         traced = Trace(c)
         with pytest.raises(Denied):preflight.collect_owned_catalog(traced, owner._case_fact_fixture_receipt, spec)
         assert not traced.queries
+
+
+def test_actual_existing_system_role_is_unsafe_without_new_grants_or_role_changes(fixture):
+    _, owner, _, _ = fixture;spec = owned_spec(fixture)
+    spec['policy']['writer_role'] = 'pg_execute_server_program'
+    with owner.connect() as c:snapshot = preflight.collect_owned_catalog(c, owner._case_fact_fixture_receipt, spec)
+    role = snapshot['roles']['pg_execute_server_program']
+    assert not any(role[flag] for flag in ('superuser', 'createdb', 'createrole', 'replication', 'bypass_rls'))
+    assert role['dangerous_membership']
+    assert check(preflight.analyze(spec, snapshot), 'role.writer')['status'] == 'REFUSED'
