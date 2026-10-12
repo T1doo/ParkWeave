@@ -81,9 +81,11 @@ root 完整模块（实际 argv）：
 
 ## 推送前诊断清单维护（另一个源码/执行窗口）
 
-业务代码与两个合同仍逐字节等同上面的 b1 源码。随后 `9ed74263e74ee534930076f5e74b59f65f5c7ede` 只更新 `scripts/windows_ci/diagnostic-test-ids.json`：1886→1918，新增32个本片已有 AST 测试函数名，无移除，不接受参数数据，不是 API 权限或业务 Grant/registry。完整 CI diagnostics 纯 unit 模块先实际58 PASS/1 FAIL复现名单缺项，维护后59 PASS/0 FAIL/ERROR/SKIP，source416零漂移；不启动PG。原通用runner scope标签须按此实际范围理解。[补充来源映射](evidence/native-run-access-writer-20261012/support/diagnostic-source-mapping.json)。独立同模块另实际59 PASS，全部59 ID与根诊断窗重叠；[QA尾片独审](evidence/native-run-access-writer-20261012/support/independent/qa-tail/QA_TAIL_REVIEW.md)。此59与b1广窗1070/独审78分开，不声称同一次执行；原失败及原b1签署不改。
+业务代码与两个合同仍逐字节等同上面的 b1 源码。随后 `9ed74263e74ee534930076f5e74b59f65f5c7ede` 只更新 `scripts/windows_ci/diagnostic-test-ids.json`：1886→1918，新增32个本片已有 AST 测试函数名，无移除，不接受参数数据，不是 API 权限或业务 Grant/registry。完整 CI diagnostics 纯 unit 模块先实际58 PASS/1 FAIL复现名单缺项，维护后59 PASS/0 FAIL/ERROR/SKIP，source416零漂移；不启动PG。原通用runner scope标签须按此实际范围理解。[补充来源映射](evidence/native-run-access-writer-20261012/support/root/diagnostic-source-mapping.json)。独立同模块另实际59 PASS，全部59 ID与根诊断窗重叠；[QA尾片独审](evidence/native-run-access-writer-20261012/support/independent/qa-tail/QA_TAIL_REVIEW.md)。此59与b1广窗1070/独审78分开，不声称同一次执行；原失败及原b1签署不改。
 
-[独立归档审计](evidence/native-run-access-writer-20261012/support/independent/archive-audit/ARCHIVE_AUDIT.md)实际核1989 core，24 JUnit与31 static，旧3022全集/Gitbytes零变化。core SHA256 `f1422bc5247062b640ebcaf538b22a9a053d305a64c8c87c78c39fdd6a8ed6fe`保持。支持出口另有52件闭集，不递归增加core；[支持哈希清单](evidence/native-run-access-writer-20261012/support/support-manifest.json)。首审计oracle遗漏旧根文件的exit1、QA维护后严格b1/current源断言的预期exit1均原样保留并分类；这些不是业务测试成绩。CI尾片JSON身份name/classname等按实际JUnit字面保留，未用路径脱敏改名。
+[独立归档审计](evidence/native-run-access-writer-20261012/support/independent/archive-audit/ARCHIVE_AUDIT.md)实际核1989 core，24 JUnit与31 static，旧3022全集/Gitbytes零变化。core SHA256 `f1422bc5247062b640ebcaf538b22a9a053d305a64c8c87c78c39fdd6a8ed6fe`保持。[支持哈希清单](evidence/native-run-access-writer-20261012/support/support-manifest.json)为另一个显式闭集，不递归增加core。首审计oracle遗漏旧根文件的exit1、QA维护后严格b1/current源断言的预期exit1均原样保留并分类；这些不是业务测试成绩。
+
+初次正常推送 `cac57c2fc92a0154ae2d00b3c1351c4426956583` 后，独审发现52件支持出口中 `QA_TAIL_REVIEW.json` 两个 `root_windows.*.rows[5][1]` 实测 JUnit 名称被元数据脱敏截断；原签署 JSON、原运行记录、JUnit 和所有成绩未变。后续仅恢复这两处已测合成身份原字面，校正该出口哈希；错误出口、修前清单与[实际修复记录](evidence/native-run-access-writer-20261012/support/export-repair/repair-result.json)另存，支持闭集共55件。修后报告 SHA256 与原签署相同：`c324bd96a31b9012c0b2ea0ece0a6a266072b1e676328d007283ba4fba01d13f`。core1989、业务源码、测试和诊断名单无改动，无新业务测试；不能将此归档核验列为新增测试成绩。
 
 ## 未运行与下一步
 
