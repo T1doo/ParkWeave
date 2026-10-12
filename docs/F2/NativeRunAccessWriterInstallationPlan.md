@@ -14,13 +14,13 @@ app 必须仍为原非 owner、非 superuser、无 CREATEDB/CREATEROLE 的低权
 
 | 对象/动作 | 用途 | 当前状态 |
 |---|---|---|
-| principals、capability_grants、preparation_grants SELECT | 真实会话、当前 READ/PREPARE/EXECUTE、角色/租户/权限代际 | reference 既有 owner 可读；生产未给出身份 |
+| principals、capability_grants、preparation_grants、action_grants SELECT | 真实会话、当前 READ/PREPARE/EXECUTE、case.create、角色/租户/权限代际 | reference 既有 owner 可读；生产未给出身份 |
 | runs、operations、cases、preparations、preparation_evidence SELECT | 精确普通 SYNTHETIC 成功建单及当前资料证明 | 生产 scope/RLS/窄接口待决 |
 | case_local_lifecycles SELECT | 新激活前本地关闭守卫 | 同上 |
 | runs UPDATE(native_run_access_protocol,native_run_access_activation) | 追加事件/当前 head；列 UPDATE 同时满足 Run 行锁要求 | 未授予生产 writer |
 | preparations 行 FOR UPDATE | parent → Run 顺序，串行材料/ACCEPT/取消/关联 | PostgreSQL 行锁仍需相应 UPDATE 技术权限；仅 SELECT 不足。直接授权某列或窄锁函数须单独审查 |
 | run_assignments SELECT、INSERT、UPDATE(active,native_access) | 原子 assignment 与 marker、禁止覆盖 legacy/isolated | 原 app 无写权；生产 writer 未授权 |
-| authorization_audit INSERT | 原权限检查的拒绝审计 | 不触 principals/Grant/材料/Case/资源/通知业务写 |
+| 原 API 的 authorization_audit INSERT | API 回滚后 Store.audit_denial 拒绝审计 | 当前 private writer 路径不执行此 INSERT；不得据此向 writer 自动授予多余写权 |
 | 读取数据库 OID/name/current_user/host/port/start | 两端实际连接身份相符 | app 沿原可读范围 |
 | 私有 writer 读取 pg_control_system().system_identifier | 固定 physical cluster，拒绝换库/集群 | 生产须明确只读函数授权方案，不给 app |
 | 原 advisory lock 函数 | principal、原键与 native Run 串行化 | 不新建 registry，不改变锁序 |
@@ -30,6 +30,16 @@ app 必须仍为原非 owner、非 superuser、无 CREATEDB/CREATEROLE 的低权
 ## 存储安装与发行
 
 native storage 两个 SQL 文件目前仅由原允许 UUID 合成 fixture controller 显式安装，不在 Store.migrate() 自动执行。真实安装需先只读核现有版本、列/trigger/function 是否缺失或冲突、对象 owner 与 ACL，并产出逐项变更及回退方案；不复用一次性 SQL 对未知生产库执行，不修改迁移 32 或旧 roles.sql。
+
+## 已实现的安装前只读预检
+
+[预检入口](../../src/parkweave/native_run_access_preflight.py)只比较公开安装清单与已取得的目录快照。`python -m parkweave.native_run_access_preflight --spec public-spec.json --snapshot catalog-snapshot.json` 不接收 DSN、密钥或连接选项，不发现环境凭据，不连接生产或启动服务。无输入也可运行，以明确列出缺配置与未连接项。JSON `status` 和进程退出码分别为 PASS/0、MISSING_CONFIG/2、NOT_CONNECTED/3、REFUSED/4、APPROVAL_REQUIRED/5；逐检查保留各自状态。缺失的附加对象和必要权限列入逐项待审批差异，同名错误对象、错误来源/版本与额外权限明确拒绝；不输出可执行安装 SQL，不覆盖冲突对象，不隐式回退历史列。
+
+公开 `InstallationSpec` 复用完整 `WriterPolicy`（真实对象和精确资料/权限版本），另要求安装操作者、基线对象 owner 映射、DIRECT_DML 或 NARROW_FUNCTIONS 选择、明确的 parent 行锁技术 UPDATE 列、受保护位置、不同 API/writer UID、传输及 policy/key/host-pin 的来源引用。只填来源引用，不填凭据；引用和 UID 仅是声明，不能证明实际保护或 OS 隔离。Windows 原生传输及窄函数策略继续待实现/审批。生产实际 API/writer session_user/current_user、当前业务来源与授权、密钥/pin 保护及启用授权仍需独立可信核验。
+
+原 issued UUID fixture 的 `collect_owned_catalog(connection, proof, spec)` 是独立只读采集器：仅接受原已签发创建证据及已连接的 idle owner 会话；不创建连接、migration ticket、数据库、角色或权限。独立 REPEATABLE READ READ ONLY 事务、固定 pg_catalog search_path 和超时，仅读目录及 schema_version，无业务/ledger读取、FOR UPDATE 或 advisory 锁。它实际检查 3 列、3 个零参数 trigger 函数的签名/原 SQL body SHA/语言/security/config/owner、3 个触发器的 relation/function OID 与完整语义、版本32、owner/ACL指纹和有效 table/column 权限（含继承、PUBLIC、owner）。还检查可 SET ROLE 的危险成员关系、额外 writer 写权、app assignment/身份写权、schema CREATE 与 pg_control_system 权限。采集错误原样向调用方传播，不重连、不补 GRANT。临时库 owner 明确被拒作生产 writer。
+
+所有离线输入及 owned 快照均保持 `installation_authorized=false`、`activation_enabled=false`、`production_connected=false` 和 `installation_status=APPROVAL_REQUIRED`。PASS 仅表示本次快照比较无已检测差异；不能转为真实生产安装、Windows 或正式 AT35 验收。真正安装仍缺可信真实目录/会话/来源证明、受限身份与精确对象/ACL方案（含回退）、受保护 launcher/policy/key/pin，以及针对实际安装与启用的独立动作授权。
 
 收据需维持 policy SHA 和 issuer/key_id。本片 HMAC 由私有 writer 验证，API 不持 key；生产尚未决定安全密钥存储/发行、旧 key 只读验证、轮换及灾难恢复。更换 key/policy 不得自动重新签历史或延长租约；当前换 key 的 reference 明确拒绝旧证明。旧 policy 一次 REQUEST 用尽后不能从本片自动新建或续授。
 
