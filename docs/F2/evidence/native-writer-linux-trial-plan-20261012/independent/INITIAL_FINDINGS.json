@@ -1,0 +1,71 @@
+{
+  "conclusion": "BLOCKED",
+  "counts": {
+    "ERROR": 0,
+    "FAIL": 3,
+    "PASS": 84,
+    "SKIP": 0
+  },
+  "evidence": {
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/probe-inputs-after.json": "639bf55337742b2e39fa6e2103dcda36745b10acf8186f63c000a3300a21afae",
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/probe-inputs-before.json": "639bf55337742b2e39fa6e2103dcda36745b10acf8186f63c000a3300a21afae",
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/results.xml": "d69551a1099682beb35eb5984de5eb8cf824d94190682b16e0465ae8c4a78ab8",
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/run.json": "4ff5c8f5ce145a96fc5fefb23e02344b28813aab53ac916c7b6d9f224944de21",
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/runner-at-window.py": "c35137ac2b4e9067240dcb49dc82372aeb35074aba5b6d5fcc06ce5bfd8b1348",
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/running.json": "ba447661d1c727d5958bfa743769aa2c70ff9ca4f4b585e838cf27077aa1e635",
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/source-after.json": "463042172cdd9e7a7ebd55a76bd730a08f163237d4df9c11b74cb9c4c00f2cd6",
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/source-before.json": "463042172cdd9e7a7ebd55a76bd730a08f163237d4df9c11b74cb9c4c00f2cd6",
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/stdout.log": "3e3a485a2a32333d32a9b7df18441c985a283fb72c8e4512d96f10cf88354f1b",
+    ".runtime/native-writer-linux-launcher-review-20261012/initial-frozen/trial-plan-at-window.py.txt": "7838fd00ba6b505eabc9f43e345ea713c545828851a6e3002a246727e12dc6be"
+  },
+  "exit_code": 1,
+  "findings": [
+    {
+      "issue": "Lexical prefix membership accepts dot-segment paths outside declared trial root. No actual file/connection is accessed, but the controlled-target plan claim is incorrect.",
+      "location": "src/parkweave/native_run_access_trial_plan.py:56",
+      "severity": "MEDIUM",
+      "testcases": [
+        {
+          "classname": ".runtime.native-writer-linux-launcher-review-20261012.probes.test_trial_independent",
+          "name": "test_declared_database_socket_cannot_escape_trial_root[/../outside]",
+          "outcome": "FAIL",
+          "time": "0.002"
+        },
+        {
+          "classname": ".runtime.native-writer-linux-launcher-review-20261012.probes.test_trial_independent",
+          "name": "test_declared_database_socket_cannot_escape_trial_root[/sockets/../../outside]",
+          "outcome": "FAIL",
+          "time": "0.002"
+        }
+      ]
+    },
+    {
+      "issue": "New public declared scope echoes recognizable credential-like owner strings admitted by shared free-string policy IDs. Synthetic sentinel proves echo only; no real credential was used.",
+      "location": "src/parkweave/native_run_access_trial_plan.py:84",
+      "severity": "MEDIUM",
+      "testcases": [
+        {
+          "classname": ".runtime.native-writer-linux-launcher-review-20261012.probes.test_trial_independent",
+          "name": "test_credential_like_actor_cannot_be_echoed_as_public_scope",
+          "outcome": "FAIL",
+          "time": "0.019"
+        }
+      ]
+    }
+  ],
+  "not_run": [
+    "PG fixtures/reference chain",
+    "PG startup",
+    "real service or writer process",
+    "production connection/installation/activation",
+    "role or Grant creation",
+    "chmod/chown/umask",
+    "Windows/browser/formal AT35"
+  ],
+  "probe_sha256": "4deb490b33ce5c06093f802f3fea41aeefccc243059a8cf727b9ab278e5c067a",
+  "scope": "Pure supplied synthetic inputs; complete new20+CI59 plus eight independent cases. No original PG fixture requested, no PG/service/real connection/browser/permission action.",
+  "source_changed": [],
+  "source_head": "1fed20e3603071866bafd6eea6e48abce1b25112",
+  "unique_test_ids": 87
+}

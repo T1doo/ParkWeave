@@ -61,3 +61,5 @@ native storage 两个 SQL 文件目前仅由原允许 UUID 合成 fixture contro
 
 当次最小批准须绑定审核后的计划digest与实际对象：只在其全新临时目录/原创建证明的UUID数据库内准备存储和缺失的精确writer权限，保留原app权限；明确既有API/writer UID和私有policy/key/凭据交付及必要目录/源码保护变更；由可信host使用另经审查的受限adapter启动/观察/绑定两通道，执行该唯一普通成功SYNTHETIC Run/Case的有限用例；最后停止原子进程并凭原证明删除本次新增临时资源，保留失败证据。新UID、新凭据或mode/owner变更需明确另列；不默认包含，不安装系统服务、不部署、不触生产、不调用付费模型、不扩业务Grant/registry、不续授。现阶段仅公开声明，不存在可立即批准并运行的已验证真实身份/目录/密钥；平台若无法提供隔离应停止，不降级为同UID证明。
 
+
+本次冻结源码 `8ee3877fd3ebf4acd71ed8d49c4915cbf52f38ae` 根测试实际93 PASS（新计划34、CI诊断59），独审原探针复验99 PASS/2 FAIL，另按新摘要与CLI合同补测2 PASS；均0 ERROR/SKIP、源码首尾无漂移。两个FAIL是保留的旧状态/输出键断言，不能称原探针整窗PASS；初始1fed的路径越界与回显3 FAIL、原字节及修复复验见[本次实际窗口](evidence/native-writer-linux-trial-plan-20261012/validation.json)。既有5118证据与旧preflight/writer/SQL/roles/migrations保持不变；本次不重跑reference、PG或浏览器，不将离线成绩转签安装/实际受限进程验收。

@@ -1,0 +1,79 @@
+{
+  "schema": "parkweave-linux-restricted-trial-plan/1",
+  "route": "LINUX_DIRECT_RESTRICTED_DML",
+  "status": "MISSING_CONFIG",
+  "launch_authorized": false,
+  "installation_authorized": false,
+  "activation_enabled": false,
+  "production_connected": false,
+  "actual_run": "NOT_RUN",
+  "writer_argv": null,
+  "writer_runtime": "NOT_IMPLEMENTED",
+  "qualification": "OFFLINE_PUBLIC_PLAN_ONLY; no identity/secret/path/permission/source proof",
+  "pending_actions": [],
+  "comparison": {
+    "schema": "parkweave-native-writer-preflight/1",
+    "mode": "OFFLINE_UNVERIFIED_SNAPSHOT",
+    "installation_authorized": false,
+    "activation_enabled": false,
+    "production_connected": false,
+    "windows_native": "NOT_RUN",
+    "formal_at35": "NOT_RUN",
+    "checks": [
+      {
+        "check": "installation_configuration",
+        "status": "MISSING_CONFIG",
+        "missing": [
+          "policy",
+          "installer_role",
+          "permission_strategy",
+          "protected_location",
+          "api_uid",
+          "writer_uid",
+          "transport",
+          "policy_source_ref",
+          "key_source_ref",
+          "host_pin_source_ref",
+          "parent_lock_column",
+          "object_owners.schema_version",
+          "object_owners.principals",
+          "object_owners.capability_grants",
+          "object_owners.preparation_grants",
+          "object_owners.action_grants",
+          "object_owners.field_grants",
+          "object_owners.runs",
+          "object_owners.operations",
+          "object_owners.cases",
+          "object_owners.preparations",
+          "object_owners.preparation_evidence",
+          "object_owners.case_local_lifecycles",
+          "object_owners.run_assignments",
+          "object_owners.authorization_audit"
+        ]
+      },
+      {
+        "check": "independent_os_identity",
+        "status": "MISSING_CONFIG",
+        "qualification": "DECLARED_ONLY; actual OS isolation/key/pin not verified"
+      },
+      {
+        "check": "database_catalog",
+        "status": "NOT_CONNECTED",
+        "reason": "NO_SNAPSHOT; tool never discovers or opens a database"
+      }
+    ],
+    "changes": [],
+    "installation_status": "APPROVAL_REQUIRED",
+    "storage_source_sha256": {
+      "native-run-access-storage.sql": "1906fb5689a490962ffe078042a769c2f82716513620f659b1d6ceb6c6d34184",
+      "native-run-access-activation-storage.sql": "3977356116b78b747a4c914e37bd7ed92ecf4619d63409a87013a87639f9bfb4"
+    },
+    "status": "MISSING_CONFIG",
+    "minimum_installation_authorization": [
+      "Trusted actual database/catalog/source and existing restricted identities; offline/owned snapshots are not production proof",
+      "Explicit reviewed additive objects and exact effective ACL delta or separately implemented narrow interface, with manual rollback",
+      "Protected production launcher/UID separation/policy/key/pin and restart/key lifecycle; no credentials supplied to this tool",
+      "Separate authorization for production installation and enablement; Windows native/AT35 remain NOT_RUN"
+    ]
+  }
+}

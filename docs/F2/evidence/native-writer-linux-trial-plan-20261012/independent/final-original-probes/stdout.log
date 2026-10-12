@@ -1,0 +1,44 @@
+........................................................................ [ 71%]
+.......................F...F.                                            [100%]
+=================================== FAILURES ===================================
+_________ test_credential_like_actor_cannot_be_echoed_as_public_scope __________
+
+    def test_credential_like_actor_cannot_be_echoed_as_public_scope():
+        spec, catalog, host = inputs()
+        value = 'Bearer SYNTHETIC_PRIVATE_SENTINEL_NOT_A_REAL_CREDENTIAL'
+        spec['policy']['owner_id'] = value
+        spec['policy']['source']['owner_id'] = value
+        result = trial.prepare(spec, catalog, host)
+        assert value not in json.dumps(result), result
+>       assert result['status'] == 'REFUSED'
+E       AssertionError: assert 'APPROVAL_REQUIRED' == 'REFUSED'
+E         
+E         - REFUSED
+E         + APPROVAL_REQUIRED
+
+.runtime/native-writer-linux-launcher-review-20261012/probes/test_trial_independent.py:28: AssertionError
+_____ test_scope_digest_is_declared_and_changes_without_granting_authority _____
+
+    def test_scope_digest_is_declared_and_changes_without_granting_authority():
+        spec, catalog, host = inputs()
+        before = deepcopy((spec, catalog, host))
+        first = trial.prepare(spec, catalog, host)
+        assert (spec, catalog, host) == before
+        spec['policy']['source']['run_id'] = str(uuid4())
+        second = trial.prepare(spec, catalog, host)
+        assert first['plan_digest'] != second['plan_digest']
+>       assert second['declared_case_scope']['source']['run_id'] == spec['policy']['source']['run_id']
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'source'
+
+.runtime/native-writer-linux-launcher-review-20261012/probes/test_trial_independent.py:56: KeyError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/native-writer-linux-launcher-review-20261012/probes/test_trial_independent.py::test_credential_like_actor_cannot_be_echoed_as_public_scope
+FAILED .runtime/native-writer-linux-launcher-review-20261012/probes/test_trial_independent.py::test_scope_digest_is_declared_and_changes_without_granting_authority
+2 failed, 99 passed, 1 warning in 0.83s
