@@ -1,0 +1,40 @@
+{
+  "counts": {
+    "ERROR": 0,
+    "FAIL": 1,
+    "PASS": 0,
+    "SKIP": 0
+  },
+  "evidence": {
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-default-authority/probe-inputs-after.json": "cb6ca3916e8c9d0c8a4ed2cb5483c6deff0e39ad522730af493bf19567a33295",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-default-authority/probe-inputs-before.json": "cb6ca3916e8c9d0c8a4ed2cb5483c6deff0e39ad522730af493bf19567a33295",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-default-authority/results.xml": "1dfdf11b038669276241f35d318ff5e472551da3b00913afeb77e0beed58664d",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-default-authority/run.json": "37a2e5707ab127a4c6934212b668f374fc708ae230bf5a1c7b01aadd3fa298ed",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-default-authority/runner-at-window.py": "5537e76c82a7a77c82559d4fed8a264b2efefe819ce6ee652447efea1b0c3a9f",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-default-authority/running.json": "a4d02df3957fe0c00622e1f6a5e3bbe0ef1ff3a458769f9a448c77e0cfabfdb2",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-default-authority/source-after.json": "85f7d3682082fa795a39a696309e4490d541cf829c4faeeae88d4f51bf8c0b3d",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-default-authority/source-before.json": "85f7d3682082fa795a39a696309e4490d541cf829c4faeeae88d4f51bf8c0b3d",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-default-authority/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-default-authority/stdout.log": "f58476ee7ecc7832e5ad1b0a3721c0a373520f5df40abfef91ee8ec0c43ed77e"
+  },
+  "exit_code": 1,
+  "finding": {
+    "location": "src/parkweave/native_run_access_restricted_runtime.py:RestrictedEngine.execute",
+    "reason": "Unissued host_check lambda reaches the default RestrictedStore constructor. serve authorization alone does not protect direct default execute path. A fake constructor immediately denies; no real Store/PG or OS primitive ran.",
+    "severity": "HIGH",
+    "testcases": [
+      {
+        "classname": ".runtime.native-writer-restricted-runtime-review-20261012.probes.test_default_engine_authority",
+        "name": "test_default_real_backend_is_unreachable_with_unissued_host_callable",
+        "outcome": "FAIL",
+        "time": "0.003"
+      }
+    ]
+  },
+  "probe_changed": [],
+  "probe_sha256": "bea8893bfa245496ecf372f7dc5b11d1c3161bdca35abf3104c74ba57a28222e",
+  "real_actions_executed": [],
+  "result": "BLOCKED",
+  "source_changed": [],
+  "source_head": "dfd2579556ff7d4da5757458d55eb6e4581eaeb8"
+}

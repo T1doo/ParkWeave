@@ -75,3 +75,13 @@ runtime先核实际isolated/no_site flags、精确sys.path与所有已加载modu
 fresh source/generation/beneficiary条件仍由原REQUEST/APPROVE/ACTIVATE事务检查；全局guard不把它们施加给REVOKE。VERIFY保持纯MAC不连接/取业务锁，历史核对与新权限分开。显式`bind_api`只接受root保护的public binding及预期SHA；configured_app仍无新环境变量/隐式加载或私有Context。public计划现标记IMPLEMENTED_DEFAULT_CLOSED_UNVERIFIED，仍全部authority=false、writer_argv=null、actual_run=NOT_RUN。
 
 真正待执行事项仍需独立审批和真实验收：绑定实际完整源码/解释器/依赖环境、原创建证明与UUID库对象/ACL；确认既有API/writer UID、API有效GID、既有IPC GID及API组成员；准备root host审批key/签名审批/创建凭证和writer私有DSN/key bootstrap；仅新目标内的目录保护、必要ACL（含新增schema_version SELECT、去除额外角色/TEMP/CREATE/grant option）及新claim/socket/public binding权限；批准当次sealed-fd交付、单次启动/观察/显式API绑定、真实owned PG锁/事务与丢响应验收；最后仅停止拥有的child并凭原证明处理本次新资源。新UID、新凭据、任何安全mode/owner/ACL改变及实际连接/启动本轮均未执行，不因代码实现或DI PASS自动获得授权。
+
+## 受限 adapter 代码的实际验证与交付
+
+冻结源码 `72f6b33ff3166f34dc12ae993cfcf50beefc811b` 已完成默认关闭的host/runtime实现及独审修复。主测实际245 PASS/0 FAIL/ERROR/SKIP；独审实际262 PASS/1旧SQL Oracle FAIL/0 ERROR/SKIP、exit1，结论LIMITED_PASS。两窗427源码与合同文件完全一致、首尾零漂移。精确重叠244项：主测另有原离线CLI1项，独审另有19项（18 PASS/1 Oracle FAIL），不能相加。真实窗口与逐项结果见[验证记录](evidence/native-writer-restricted-adapter-20261012/validation.json)和[独审报告](evidence/native-writer-restricted-adapter-20261012/independent/FINAL_REVIEW.md)。
+
+独审原4 FAIL、追加default Engine 1 FAIL、import/ACL覆盖5 FAIL、default Store 1 FAIL均原样保留。11个原失败ID中10个最终同ID通过；剩余system_schema_create粗Oracle在整份SQL寻找系统schema排除项，误中了危险routine检查保留的系统内建例外。正确的ownership/table/routine逐子句控制通过；四项import正反控制均先接受合法观察，再拒绝坏path/file/namespace/origin。三项SQL Reader反例仅检验谓词覆盖，不冒充真实PG权限复现。另保留原SQL提取字面AST比对FAIL的精确报错转录及只规范多行SQL缩进后的实际PASS；它们不是pytest计数。
+
+源码检查覆盖全部节点，拒未批准资源、缓存/扩展与可写/非root/symlink来源；连接首SQL覆盖Connection与游标四种入口。真实Engine与默认Store入口须接受实际sealed FD发行的精确bound check，Store另拒临时替代guard及实例方法覆盖；DI不能监听或自授物理权限。READ/REVOKE历史例外、原canonical业务路径和原请求键保持。
+
+本轮未连接PG、启动writer/host服务、改UID/GID/凭据/ACL/安全owner/mode或部署。原7项实际owned PG用例及全部新受限物理验收均NOT_RUN；独审另因全局Popen禁止而未跑原CLI，主测已跑该离线CLI。浏览器0次，历史Chromium data: ERR_BLOCKED_BY_ADMINISTRATOR拒绝保留且未重试。先前5173份证据字节不变；本次仅按明确清单导出合成测试原件，普通开发分支为`dev/f2-native-writer-install-preflight-20261012`。真实隔离trial仍须上述独立动作授权与已有可信OS/PG/秘密环境，代码和纯DI结果不能替代该验收。

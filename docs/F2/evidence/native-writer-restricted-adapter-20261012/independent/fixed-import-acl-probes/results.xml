@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="5" time="0.245" timestamp="2026-10-12T12:01:45.578134+00:00" hostname="a2731db5a031"><testcase classname=".runtime.native-writer-restricted-runtime-review-20261012.probes.test_import_and_acl_boundary" name="test_launch_blocks_automatic_site_code_before_private_fd_consumption" time="0.002"><failure message="AssertionError: isolated -I still permits automatic global site/.pth code before private ticket verification&#10;assert '-S' in ['/opt/parkweave/env/bin/python', '-I', '-c', &quot;import sys;sys.path.insert(0,'/opt/parkweave/src');from parkweave.native_run_access_restricted_runtime import main;raise SystemExit(main())&quot;, '--host-fd', '999']">def test_launch_blocks_automatic_site_code_before_private_fd_consumption():
+        _,_,layout,_=adapter_inputs()
+        args=host.launch_arguments(layout,999)['args']
+&gt;       assert '-S' in args, 'isolated -I still permits automatic global site/.pth code before private ticket verification'
+E       AssertionError: isolated -I still permits automatic global site/.pth code before private ticket verification
+E       assert '-S' in ['/opt/parkweave/env/bin/python', '-I', '-c', "import sys;sys.path.insert(0,'/opt/parkweave/src');from parkweave.native_run_access_restricted_runtime import main;raise SystemExit(main())", '--host-fd', '999']
+
+.runtime/native-writer-restricted-runtime-review-20261012/probes/test_import_and_acl_boundary.py:15: AssertionError</failure></testcase><testcase classname=".runtime.native-writer-restricted-runtime-review-20261012.probes.test_import_and_acl_boundary" name="test_runtime_refuses_unapproved_import_path_and_preloaded_source" time="0.001"><failure message="Failed: DID NOT RAISE Denied">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4b1600cda0&gt;
+
+    def test_runtime_refuses_unapproved_import_path_and_preloaded_source(monkeypatch):
+        spec,_,data,private=adapter_inputs();layout=host.RuntimeLayout.model_validate(data)
+        authorization=host._RuntimeAuthorization(host._ISSUER,dict(spec=spec,layout=data,private=private,host_pid=999,host_started='SYNTHETIC_START'))
+        monkeypatch.setattr(host,'_identities_check',lambda *a:None)
+        monkeypatch.setattr(host,'_code_check',lambda *a:None)
+        monkeypatch.setattr(host,'_process',lambda pid:dict(pid=999,uid=0,started='SYNTHETIC_START'))
+        monkeypatch.setattr(os,'geteuid',lambda:layout.writer_uid)
+        monkeypatch.setattr(os,'getegid',lambda:layout.ipc_gid)
+        monkeypatch.setattr(os,'getgroups',lambda:[])
+        monkeypatch.setattr(os,'getppid',lambda:999)
+        outside='/synthetic/unprotected-import-root'
+        monkeypatch.setattr(sys,'path',[layout.source_root,*layout.dependency_roots,outside])
+        monkeypatch.setitem(sys.modules,'SYNTHETIC_UNAPPROVED_MODULE',SimpleNamespace(__file__=outside+'/module.py'))
+&gt;       with pytest.raises(Denied):authorization.check()
+             ^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Denied
+
+.runtime/native-writer-restricted-runtime-review-20261012/probes/test_import_and_acl_boundary.py:31: Failed</failure></testcase><testcase classname=".runtime.native-writer-restricted-runtime-review-20261012.probes.test_import_and_acl_boundary" name="test_catalog_query_does_not_filter_unsafe_authority_out_of_observation[system_schema_create]" time="0.001"><failure message="AssertionError: {'boundary': 'system_schema_create', 'projection': 'unsafe namespace authority is filtered out', 'scope': 'metadata query text only; no PG'}&#10;assert False&#10; +  where False = any(dict_values([False, False, False, False, False, False, False, False, False, False, False]))&#10; +    where dict_values([False, False, False, False, False, False, False, False, False, False, False]) = &lt;built-in method values of dict object at 0x7f4b15ba83c0&gt;()&#10; +      where &lt;built-in method values of dict object at 0x7f4b15ba83c0&gt; = {'column_extra': False, 'table_extra': False, 'app_protected_write': False, 'routine_extra': False, ...}.values">boundary = 'system_schema_create'
+
+    @pytest.mark.parametrize('boundary',['system_schema_create','nonpublic_write','nonpublic_dangerous_routine'])
+    def test_catalog_query_does_not_filter_unsafe_authority_out_of_observation(boundary):
+        # This is query-predicate coverage, NOT actual PostgreSQL privilege execution.
+        class Projection:
+            def execute(self,sql,params):self.sql=' '.join(sql.split());return self
+            def fetchone(self):
+                result={name:False for name in runtime.EXTRA_CHECKS}
+                if boundary=='system_schema_create':
+                    hidden="n.nspname NOT IN ('pg_catalog','information_schema')" in self.sql
+                    result['ownership']=not hidden
+                elif boundary=='nonpublic_write':
+                    section=self.sql.split(' ownership,',1)[1].split(' table_extra,',1)[0]
+                    result['table_extra']="n.nspname='public'" not in section
+                else:
+                    section=self.sql.split(' column_extra,',1)[1].split(' routine_extra,',1)[0]
+                    result['routine_extra']="n.nspname='public'" not in section
+                return result
+        reader=Projection()
+        observation=runtime._additional_acl(reader,['synthetic_app','synthetic_writer'])
+&gt;       assert any(observation.values()), {'boundary':boundary,'projection':'unsafe namespace authority is filtered out','scope':'metadata query text only; no PG'}
+E       AssertionError: {'boundary': 'system_schema_create', 'projection': 'unsafe namespace authority is filtered out', 'scope': 'metadata query text only; no PG'}
+E       assert False
+E        +  where False = any(dict_values([False, False, False, False, False, False, False, False, False, False, False]))
+E        +    where dict_values([False, False, False, False, False, False, False, False, False, False, False]) = &lt;built-in method values of dict object at 0x7f4b15ba83c0&gt;()
+E        +      where &lt;built-in method values of dict object at 0x7f4b15ba83c0&gt; = {'column_extra': False, 'table_extra': False, 'app_protected_write': False, 'routine_extra': False, ...}.values
+
+.runtime/native-writer-restricted-runtime-review-20261012/probes/test_import_and_acl_boundary.py:53: AssertionError</failure></testcase><testcase classname=".runtime.native-writer-restricted-runtime-review-20261012.probes.test_import_and_acl_boundary" name="test_catalog_query_does_not_filter_unsafe_authority_out_of_observation[nonpublic_write]" time="0.000"><failure message="AssertionError: {'boundary': 'nonpublic_write', 'projection': 'unsafe namespace authority is filtered out', 'scope': 'metadata query text only; no PG'}&#10;assert False&#10; +  where False = any(dict_values([False, False, False, False, False, False, False, False, False, False, False]))&#10; +    where dict_values([False, False, False, False, False, False, False, False, False, False, False]) = &lt;built-in method values of dict object at 0x7f4b15babc00&gt;()&#10; +      where &lt;built-in method values of dict object at 0x7f4b15babc00&gt; = {'column_extra': False, 'table_extra': False, 'app_protected_write': False, 'routine_extra': False, ...}.values">boundary = 'nonpublic_write'
+
+    @pytest.mark.parametrize('boundary',['system_schema_create','nonpublic_write','nonpublic_dangerous_routine'])
+    def test_catalog_query_does_not_filter_unsafe_authority_out_of_observation(boundary):
+        # This is query-predicate coverage, NOT actual PostgreSQL privilege execution.
+        class Projection:
+            def execute(self,sql,params):self.sql=' '.join(sql.split());return self
+            def fetchone(self):
+                result={name:False for name in runtime.EXTRA_CHECKS}
+                if boundary=='system_schema_create':
+                    hidden="n.nspname NOT IN ('pg_catalog','information_schema')" in self.sql
+                    result['ownership']=not hidden
+                elif boundary=='nonpublic_write':
+                    section=self.sql.split(' ownership,',1)[1].split(' table_extra,',1)[0]
+                    result['table_extra']="n.nspname='public'" not in section
+                else:
+                    section=self.sql.split(' column_extra,',1)[1].split(' routine_extra,',1)[0]
+                    result['routine_extra']="n.nspname='public'" not in section
+                return result
+        reader=Projection()
+        observation=runtime._additional_acl(reader,['synthetic_app','synthetic_writer'])
+&gt;       assert any(observation.values()), {'boundary':boundary,'projection':'unsafe namespace authority is filtered out','scope':'metadata query text only; no PG'}
+E       AssertionError: {'boundary': 'nonpublic_write', 'projection': 'unsafe namespace authority is filtered out', 'scope': 'metadata query text only; no PG'}
+E       assert False
+E        +  where False = any(dict_values([False, False, False, False, False, False, False, False, False, False, False]))
+E        +    where dict_values([False, False, False, False, False, False, False, False, False, False, False]) = &lt;built-in method values of dict object at 0x7f4b15babc00&gt;()
+E        +      where &lt;built-in method values of dict object at 0x7f4b15babc00&gt; = {'column_extra': False, 'table_extra': False, 'app_protected_write': False, 'routine_extra': False, ...}.values
+
+.runtime/native-writer-restricted-runtime-review-20261012/probes/test_import_and_acl_boundary.py:53: AssertionError</failure></testcase><testcase classname=".runtime.native-writer-restricted-runtime-review-20261012.probes.test_import_and_acl_boundary" name="test_catalog_query_does_not_filter_unsafe_authority_out_of_observation[nonpublic_dangerous_routine]" time="0.001"><failure message="AssertionError: {'boundary': 'nonpublic_dangerous_routine', 'projection': 'unsafe namespace authority is filtered out', 'scope': 'metadata query text only; no PG'}&#10;assert False&#10; +  where False = any(dict_values([False, False, False, False, False, False, False, False, False, False, False]))&#10; +    where dict_values([False, False, False, False, False, False, False, False, False, False, False]) = &lt;built-in method values of dict object at 0x7f4b160182c0&gt;()&#10; +      where &lt;built-in method values of dict object at 0x7f4b160182c0&gt; = {'column_extra': False, 'table_extra': False, 'app_protected_write': False, 'routine_extra': False, ...}.values">boundary = 'nonpublic_dangerous_routine'
+
+    @pytest.mark.parametrize('boundary',['system_schema_create','nonpublic_write','nonpublic_dangerous_routine'])
+    def test_catalog_query_does_not_filter_unsafe_authority_out_of_observation(boundary):
+        # This is query-predicate coverage, NOT actual PostgreSQL privilege execution.
+        class Projection:
+            def execute(self,sql,params):self.sql=' '.join(sql.split());return self
+            def fetchone(self):
+                result={name:False for name in runtime.EXTRA_CHECKS}
+                if boundary=='system_schema_create':
+                    hidden="n.nspname NOT IN ('pg_catalog','information_schema')" in self.sql
+                    result['ownership']=not hidden
+                elif boundary=='nonpublic_write':
+                    section=self.sql.split(' ownership,',1)[1].split(' table_extra,',1)[0]
+                    result['table_extra']="n.nspname='public'" not in section
+                else:
+                    section=self.sql.split(' column_extra,',1)[1].split(' routine_extra,',1)[0]
+                    result['routine_extra']="n.nspname='public'" not in section
+                return result
+        reader=Projection()
+        observation=runtime._additional_acl(reader,['synthetic_app','synthetic_writer'])
+&gt;       assert any(observation.values()), {'boundary':boundary,'projection':'unsafe namespace authority is filtered out','scope':'metadata query text only; no PG'}
+E       AssertionError: {'boundary': 'nonpublic_dangerous_routine', 'projection': 'unsafe namespace authority is filtered out', 'scope': 'metadata query text only; no PG'}
+E       assert False
+E        +  where False = any(dict_values([False, False, False, False, False, False, False, False, False, False, False]))
+E        +    where dict_values([False, False, False, False, False, False, False, False, False, False, False]) = &lt;built-in method values of dict object at 0x7f4b160182c0&gt;()
+E        +      where &lt;built-in method values of dict object at 0x7f4b160182c0&gt; = {'column_extra': False, 'table_extra': False, 'app_protected_write': False, 'routine_extra': False, ...}.values
+
+.runtime/native-writer-restricted-runtime-review-20261012/probes/test_import_and_acl_boundary.py:53: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,66 @@
+{
+  "artifacts": {
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/native_run_access_restricted_host.py.txt": "a47b180e5f8ddb8fa359cc95bc843d2f3db521a3f32cfe95623e7452c80924ab",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/native_run_access_restricted_runtime.py.txt": "a81287d6cb9f774dfbe114db0f94c2d8e330861ed137da30094629c7bafe8b38",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/probe-inputs-after.json": "103b6ed8b2e7ca237c7fd8ac8ee186ad4156d41da324217cbba4b39d323974c3",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/probe-inputs-before.json": "103b6ed8b2e7ca237c7fd8ac8ee186ad4156d41da324217cbba4b39d323974c3",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/results.xml": "3744afac2a15ffdae1795df452aaff2a0be61c79c3e4b0ddf63ae3152691ecfc",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/run.json": "53a8ede8758973cd158b459bc560c4404a3beef07a7a180ca0dfb185d72454f9",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/runner-at-window.py": "5537e76c82a7a77c82559d4fed8a264b2efefe819ce6ee652447efea1b0c3a9f",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/running.json": "5f350f8dcfe54bc881947717dfdd59bb8294923c840190c6da59c05516ab585e",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/source-after.json": "85f7d3682082fa795a39a696309e4490d541cf829c4faeeae88d4f51bf8c0b3d",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/source-before.json": "85f7d3682082fa795a39a696309e4490d541cf829c4faeeae88d4f51bf8c0b3d",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".runtime/native-writer-restricted-runtime-review-20261012/initial-frozen/stdout.log": "e5dfbc7671d57b87123b7a0052601f28fdcc09d170930119db7a0602cd3f1bdb"
+  },
+  "classifications": {
+    "test_cursor_first_sql_cannot_bypass_live_guard": "MEDIUM: cursor.execute bypasses first-query guard; guarded commit does not satisfy pre-query invariant.",
+    "test_protected_source_rejects_unverified_executable_nodes": "HIGH: ignores API-writable existing .pyc or extension nodes; source hash does not bind all executable import inputs.",
+    "test_unknown_host_identity_is_not_treated_as_existing": "MEDIUM: signed declarations/fake root issuance do not check supplied unknown existing UID/GID records. Actual pwd/grp adapter absent."
+  },
+  "counts": {
+    "ERROR": 0,
+    "FAIL": 4,
+    "PASS": 212,
+    "SKIP": 0
+  },
+  "exit_code": 1,
+  "failed_testcases": [
+    {
+      "classname": ".runtime.native-writer-restricted-runtime-review-20261012.probes.test_restricted_independent",
+      "name": "test_protected_source_rejects_unverified_executable_nodes[__pycache__/store.cpython-312.pyc]",
+      "outcome": "FAIL",
+      "time": "0.001"
+    },
+    {
+      "classname": ".runtime.native-writer-restricted-runtime-review-20261012.probes.test_restricted_independent",
+      "name": "test_protected_source_rejects_unverified_executable_nodes[native_run_access_writer.cpython-312-x86_64-linux-gnu.so]",
+      "outcome": "FAIL",
+      "time": "0.001"
+    },
+    {
+      "classname": ".runtime.native-writer-restricted-runtime-review-20261012.probes.test_restricted_independent",
+      "name": "test_cursor_first_sql_cannot_bypass_live_guard",
+      "outcome": "FAIL",
+      "time": "0.000"
+    },
+    {
+      "classname": ".runtime.native-writer-restricted-runtime-review-20261012.probes.test_restricted_independent",
+      "name": "test_unknown_host_identity_is_not_treated_as_existing",
+      "outcome": "FAIL",
+      "time": "0.002"
+    }
+  ],
+  "not_run_cases": [
+    "preflight seven actual PG fixture cases",
+    "preflight one CLI subprocess case while real Popen prohibited"
+  ],
+  "probe_changed": [],
+  "probe_sha256": "401e79dc7687f266e8a1380052665609720aef8b0a27bfa06a054206fb4ccc0f",
+  "real_actions_executed": [],
+  "result": "BLOCKED",
+  "scope": "Pure DI. Original root module cases and own default-boundary probe PASS; four negative probes fail. No raw credential used: fixed synthetic sentinels only.",
+  "source_changed": [],
+  "source_head": "dfd2579556ff7d4da5757458d55eb6e4581eaeb8",
+  "unique_test_ids": 216
+}

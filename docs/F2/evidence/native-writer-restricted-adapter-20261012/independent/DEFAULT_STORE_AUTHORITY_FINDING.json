@@ -1,0 +1,50 @@
+{
+  "actual_PG_connections": 0,
+  "actual_permissions_changed": false,
+  "actual_runtime_start": 0,
+  "counts": {
+    "ERROR": 0,
+    "FAIL": 1,
+    "PASS": 0,
+    "SKIP": 0
+  },
+  "evidence": {
+    ".runtime/native-writer-restricted-runtime-review-20261012/final-default-store-authority/probe-inputs-after.json": "30b111b396ffa4d2f4c6e9845179ea8f73336bd556cf0ba17d98c955273cf87c",
+    ".runtime/native-writer-restricted-runtime-review-20261012/final-default-store-authority/probe-inputs-before.json": "30b111b396ffa4d2f4c6e9845179ea8f73336bd556cf0ba17d98c955273cf87c",
+    ".runtime/native-writer-restricted-runtime-review-20261012/final-default-store-authority/results.xml": "f626691f5373dc9012699c9a6577700e71c366670a6816ef557ba84e220ebf88",
+    ".runtime/native-writer-restricted-runtime-review-20261012/final-default-store-authority/run.json": "7f71099e20dbf9d7d34fa482e0fbeb5b31f066f3c7e472854ee80cdf3a3415e0",
+    ".runtime/native-writer-restricted-runtime-review-20261012/final-default-store-authority/runner-at-window.py": "9e90b91cb05a711959f6b137c753fa7c9fa5f42077afb10f067a33fa49179abe",
+    ".runtime/native-writer-restricted-runtime-review-20261012/final-default-store-authority/running.json": "731f66acb65b9e764214ecd2eeea80b02fc49387254a31195bfa8169da783e31",
+    ".runtime/native-writer-restricted-runtime-review-20261012/final-default-store-authority/source-after.json": "75c0fff078087af17ef0222f8e04bcc66dfe5c1161ae405d0886e5b725c61756",
+    ".runtime/native-writer-restricted-runtime-review-20261012/final-default-store-authority/source-before.json": "75c0fff078087af17ef0222f8e04bcc66dfe5c1161ae405d0886e5b725c61756",
+    ".runtime/native-writer-restricted-runtime-review-20261012/final-default-store-authority/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".runtime/native-writer-restricted-runtime-review-20261012/final-default-store-authority/stdout.log": "28ae14fa0d6ac0f28c28aa0da85f043ddfb5ba2b6b930a9735a94b4a4b9f30d8"
+  },
+  "exit_code": 1,
+  "location": "src/parkweave/native_run_access_restricted_runtime.py:RestrictedStore.__init__ and _guarded_connect",
+  "probe": {
+    "copy_approval": "exact path/SHA only",
+    "no_runtime_credentials": true,
+    "path": ".runtime/native-writer-restricted-runtime-review-20261012/probes/test_default_store_authority.py",
+    "sha256": "68a66a749ca23900a70d56f4451df56aefd32fcdca384be761e400c4037c0f35",
+    "static_content_reviewed": true
+  },
+  "probe_changed": [],
+  "reason": "Ordinary constructor accepts a ducktyped guard whose require_live_host and host_check methods do nothing; .connect reaches the default connector route. A synthetic connector sentinel immediately raises Denied; no real connection occurs.",
+  "remaining_development_blockers": [
+    "default RestrictedStore constructor authorization bypass"
+  ],
+  "repair_suggestion": "Require exact RuntimeGuard at the constructor and use the class method for default live issuance validation. Preserve explicit injected connector DI behavior and non-serving boundary.",
+  "result": "BLOCKED",
+  "severity": "HIGH",
+  "source_changed": [],
+  "source_head": "cae80fe81285b5eb658efb61f2441e6f691f38d6",
+  "source_manifest_sha256": "75c0fff078087af17ef0222f8e04bcc66dfe5c1161ae405d0886e5b725c61756",
+  "supersedes_final_release_conclusion_of": "REVIEW.json only; original signed bytes unchanged",
+  "testcase": {
+    "classname": ".runtime.native-writer-restricted-runtime-review-20261012.probes.test_default_store_authority",
+    "name": "test_default_store_rejects_ducktyped_guard_before_default_connector",
+    "outcome": "FAIL",
+    "time": "0.002"
+  }
+}

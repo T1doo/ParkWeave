@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_default_store_rejects_ducktyped_guard_before_default_connector ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f88e36101a0>
+
+    def test_default_store_rejects_ducktyped_guard_before_default_connector(monkeypatch):
+        spec,_,_,private=adapter_inputs();calls=[]
+        def sentinel(*args,**kwargs):
+            calls.append('default-connector-route')
+            raise Denied('SYNTHETIC connector sentinel; no PG connection occurred')
+        monkeypatch.setattr(runtime._RestrictedConnection,'connect',sentinel)
+        guard=SimpleNamespace(spec=preflight.InstallationSpec.model_validate(spec),
+            require_live_host=lambda:None,host_check=lambda:None)
+        with pytest.raises(Denied):
+            runtime.RestrictedStore(private['writer_dsn'],guard).connect()
+>       assert calls==[], 'unissued ducktyped guard reached default connector'
+E       AssertionError: unissued ducktyped guard reached default connector
+E       assert ['default-connector-route'] == []
+E         
+E         Left contains one more item: 'default-connector-route'
+E         Use -v to get more diff
+
+.runtime/native-writer-restricted-runtime-review-20261012/probes/test_default_store_authority.py:20: AssertionError
+=========================== short test summary info ============================
+FAILED .runtime/native-writer-restricted-runtime-review-20261012/probes/test_default_store_authority.py::test_default_store_rejects_ducktyped_guard_before_default_connector
+1 failed in 0.24s

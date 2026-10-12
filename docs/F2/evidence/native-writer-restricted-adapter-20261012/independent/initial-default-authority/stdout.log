@@ -1,0 +1,26 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_default_real_backend_is_unreachable_with_unissued_host_callable _____
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1b09622810>
+
+    def test_default_real_backend_is_unreachable_with_unissued_host_callable(monkeypatch):
+        spec,_,layout,private=adapter_inputs();calls=[]
+        def backend(*args,**kwargs):
+            calls.append('default-real-backend-route')
+            raise Denied('SYNTHETIC backend sentinel; no connection occurred')
+        monkeypatch.setattr(runtime,'RestrictedStore',backend)
+        with pytest.raises(Denied):
+            engine=runtime.RestrictedEngine(spec,private,layout['boot_id'],lambda:None)
+            engine.execute({'operation':'VALIDATE','nonce':'a'*32,'run_id':spec['policy']['source']['run_id']},True)
+>       assert calls==[], 'unissued host callback reached default real backend constructor'
+E       AssertionError: unissued host callback reached default real backend constructor
+E       assert ['default-real-backend-route'] == []
+E         
+E         Left contains one more item: 'default-real-backend-route'
+E         Use -v to get more diff
+
+.runtime/native-writer-restricted-runtime-review-20261012/probes/test_default_engine_authority.py:17: AssertionError
+=========================== short test summary info ============================
+FAILED .runtime/native-writer-restricted-runtime-review-20261012/probes/test_default_engine_authority.py::test_default_real_backend_is_unreachable_with_unissued_host_callable
+1 failed in 0.19s

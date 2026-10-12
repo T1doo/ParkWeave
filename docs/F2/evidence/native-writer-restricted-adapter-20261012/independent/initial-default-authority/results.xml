@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.183" timestamp="2026-10-12T11:47:31.693801+00:00" hostname="a2731db5a031"><testcase classname=".runtime.native-writer-restricted-runtime-review-20261012.probes.test_default_engine_authority" name="test_default_real_backend_is_unreachable_with_unissued_host_callable" time="0.003"><failure message="AssertionError: unissued host callback reached default real backend constructor&#10;assert ['default-real-backend-route'] == []&#10;  &#10;  Left contains one more item: 'default-real-backend-route'&#10;  Use -v to get more diff">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f1b09622810&gt;
+
+    def test_default_real_backend_is_unreachable_with_unissued_host_callable(monkeypatch):
+        spec,_,layout,private=adapter_inputs();calls=[]
+        def backend(*args,**kwargs):
+            calls.append('default-real-backend-route')
+            raise Denied('SYNTHETIC backend sentinel; no connection occurred')
+        monkeypatch.setattr(runtime,'RestrictedStore',backend)
+        with pytest.raises(Denied):
+            engine=runtime.RestrictedEngine(spec,private,layout['boot_id'],lambda:None)
+            engine.execute({'operation':'VALIDATE','nonce':'a'*32,'run_id':spec['policy']['source']['run_id']},True)
+&gt;       assert calls==[], 'unissued host callback reached default real backend constructor'
+E       AssertionError: unissued host callback reached default real backend constructor
+E       assert ['default-real-backend-route'] == []
+E         
+E         Left contains one more item: 'default-real-backend-route'
+E         Use -v to get more diff
+
+.runtime/native-writer-restricted-runtime-review-20261012/probes/test_default_engine_authority.py:17: AssertionError</failure></testcase></testsuite></testsuites>
