@@ -1,0 +1,21 @@
+{
+  "qualification": "Exact tool stderr/output transcribed; full commands/stdout remain in tool transcript, not subprocess raw files. Search misses are not permission denials or test failures.",
+  "attempts": [
+    {
+      "exit_code": 2,
+      "stderr": "rg: scripts/restricted*: No such file or directory (os error 2)\nrg: scripts/windows_ci/linux*: No such file or directory (os error 2)\n",
+      "cause": "Initial guessed script globs absent; corrected from rg --files inventory"
+    },
+    {
+      "exit_code": 2,
+      "stderr": "sed: can't read docs/F2/NativeRunAccessRestrictedTrialContract.md: No such file or directory\n",
+      "cause": "Guessed contract filename absent; real installation plan read instead"
+    },
+    {
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "",
+      "cause": "No docs filename matched restricted/trial contract regex; && prevented following read"
+    }
+  ]
+}

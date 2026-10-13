@@ -1,0 +1,77 @@
+{
+  "verdict": "PASS_LIMITED_METADATA_INSPECTION_CHANGE",
+  "reviewer_model": "gpt-6.1-sol",
+  "reasoning_effort": "medium",
+  "frozen_sha": "59f503b1bc98ea4bdbfef4bb216a23e0a15d14b5",
+  "review_scope": "read-only code review plus own pure counterexamples; no source/docs edits",
+  "independent_probes": {
+    "PASS": 11,
+    "FAIL": 0,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "root_existing_window": {
+    "PASS": 114,
+    "FAIL": 0,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "counts_must_not_be_added": true,
+  "prior27_repeated": false,
+  "actual_host_IPC": "NOT_RUN",
+  "actual_pg_business_acl": "NOT_CHECKED",
+  "private_approval_bootstrap_key": "NOT_CHECKED",
+  "findings": [],
+  "checks": {
+    "frozen_sha": "59f503b1bc98ea4bdbfef4bb216a23e0a15d14b5",
+    "changed_files": [
+      "scripts/windows_ci/diagnostic-test-ids.json",
+      "src/parkweave/native_run_access_restricted_host.py",
+      "tests/test_native_run_access_restricted_adapter.py"
+    ],
+    "root_source_zero_drift": true,
+    "protected_functions_ast_unchanged": [
+      "_protected_bytes",
+      "_dependencies_check",
+      "_identities_check",
+      "LinuxHost._approve",
+      "LinuxHost._authorized_action",
+      "LinuxHost._claim",
+      "LinuxHost._spawn",
+      "LinuxHost.start",
+      "LinuxHost._publish",
+      "_RuntimeAuthorization",
+      "load_host_ticket",
+      "bind_api"
+    ],
+    "source_metadata_body_exact_old_scan": true,
+    "current_euid": 1000,
+    "current_egid": 1000,
+    "code_file_uid": 1000,
+    "python_executable": "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/bin/python",
+    "python_realpath_uid": 65534
+  },
+  "actual_environment_evidence": ".runtime/host-prerequisites-20261013/actual-environment.json",
+  "actual_environment_inspection_result": "BLOCKED",
+  "no_new_live_actions": true,
+  "new_parametrized_cases": 20,
+  "new_registered_function_ids": 5,
+  "all_metadata_pass_status": "APPROVAL_REQUIRED",
+  "can_start": false,
+  "can_existing_environment_satisfy_old_host_without_permission_extension": false,
+  "remaining_prerequisites": [
+    "Protected privileged launcher; current saved process euid1000 fails original root requirement.",
+    "Existing distinct designated API/writer accounts and approved IPC group membership; nobody/gid declarations are diagnostic candidates only.",
+    "Root-owned protected source/interpreter/full dependency trees and original hashes; existing sourceowner1000/interpreterowner65534 fail.",
+    "Exact protected signed approval/creation receipt/key/private bootstrap and sealed live issuance.",
+    "Original owned database proof, current SQL role/ACL checks, and SQL application rights sufficient for original Case cancellation flow."
+  ],
+  "runner_qualification": "Passwordless sudo, as supplied by parent official runner research, is a potential provisioning mechanism requiring approved privilege use; it does not make existing sandbox metadata PASS or substitute for protected inputs, group membership, SQL ACL, or a real host run.",
+  "limitations": [
+    "No simulated observation grants launch capability.",
+    "No PG/IPC/external process/network/permission action performed by review probes.",
+    "No original 27 or root 114 test rerun.",
+    "Inspect-prerequisite guards forbid content reads; root observer prepared layout with public source/interpreter hashes before guarding inspect, so do not describe whole observer script as reading no source content.",
+    "No independent new official-runner network verification in this offline task."
+  ]
+}
