@@ -1,6 +1,6 @@
 """One root-sealed controller; fixed new resources, original host and Case API."""
 from datetime import datetime,timezone
-import hashlib,json,os,pwd,grp,re,select,shutil,signal,stat,subprocess,sys,time,traceback
+import hashlib,json,os,pwd,grp,re,select,shutil,signal,stat,subprocess,sys,time,traceback,types
 from pathlib import Path
 from uuid import uuid4
 
@@ -9,7 +9,7 @@ from parkweave import native_run_access_restricted_host as host,native_run_acces
 from parkweave.case_cancellation_business_binding import BusinessBinding
 from scripts.linux_trial import controller as reference
 from scripts.linux_trial.worker import sealed_input
-from scripts.host_case_once.bootstrap import APPROVAL_REF,initial,public_summary
+from scripts.host_case_once.bootstrap import APPROVAL_REF,initial,public_summary,Diagnostic,register_source
 
 _BOOT_ISSUER=object()
 USERS=('pwci_api','pwci_writer')
@@ -35,7 +35,7 @@ def context_valid(c):
 class Controller(reference.Controller):
     def __init__(self,context,issuer=None):
         super().__init__(context)
-        self.value=initial(context['source_sha']);self.issuer=issuer
+        self.value=initial(context['source_sha']);self.issuer=issuer;self.diag=Diagnostic(self.value['diagnostics'])
         self.created_users={};self.created_groups={};self.creation_attempts=0
         self.business=None;self.setup_process=None;self.pg_process=None;self.root_instance=None
         self.deadline=time.monotonic()+750
@@ -247,43 +247,54 @@ class Controller(reference.Controller):
         # Original proof remains alive in the setup helper until the bounded DROP.
         for p in (self.business,getattr(self,'client',None)):
             if p is None:continue
-            try:self._close_owned(p)
+            try:
+                self.diag.checkpoint('C_CLOSE');self._close_owned(p)
             except CleanupTimeout:raise
             except BaseException:
-                ok=False
-                try:self._stop_owned(p,{0,-signal.SIGTERM})
+                self.diag.capture();ok=False
+                try:
+                    self.diag.checkpoint('C_FALLBACK_STOP');self._stop_owned(p,{0,-signal.SIGTERM})
                 except CleanupTimeout:raise
-                except BaseException:pass
+                except BaseException:self.diag.capture()
         if self.writer_process is not None:
             try:
+                self.diag.checkpoint('C_WRITER_STOP')
                 p=self.writer_process;self.linux_host.stop(p)
                 if p.returncode not in (0,-signal.SIGTERM):raise RuntimeError('owned writer exit required')
             except CleanupTimeout:raise
-            except BaseException:ok=False
+            except BaseException:self.diag.capture();ok=False
         dropped=self.setup_process is None
         if self.setup_process is not None:
-            try:dropped=self.call(self.setup_process,dict(operation='DROP'))==dict(dropped=True)
+            try:
+                self.diag.checkpoint('C_DROP')
+                dropped=self.call(self.setup_process,dict(operation='DROP'))==dict(dropped=True)
+                if not dropped:self.diag.capture()
             except CleanupTimeout:raise
-            except BaseException:dropped=False
-            try:self._close_owned(self.setup_process)
+            except BaseException:self.diag.capture();dropped=False
+            try:
+                self.diag.checkpoint('C_SETUP_CLOSE');self._close_owned(self.setup_process)
             except CleanupTimeout:raise
             except BaseException:
-                ok=False
-                try:self._stop_owned(self.setup_process,{0,-signal.SIGTERM})
+                self.diag.capture();ok=False
+                try:
+                    self.diag.checkpoint('C_FALLBACK_STOP');self._stop_owned(self.setup_process,{0,-signal.SIGTERM})
                 except CleanupTimeout:raise
-                except BaseException:pass
+                except BaseException:self.diag.capture()
         self.value['cases']['DATABASE_REMOVED']='PASS' if dropped else 'FAIL'
         if self.pg_process is not None:
-            try:self._stop_owned(self.pg_process,{0})
+            try:
+                self.diag.checkpoint('C_PG_STOP');self._stop_owned(self.pg_process,{0})
             except CleanupTimeout:raise
-            except BaseException:ok=False
+            except BaseException:self.diag.capture();ok=False
+        self.diag.checkpoint('C_CHILDREN')
         for p in self.processes:
-            if p.poll() is None:ok=False
+            if p.poll() is None:self.diag.capture();ok=False
         self.value['cases']['OWNED_STOP']='PASS' if ok else 'FAIL'
         # On failure keep both protected files and their exact live identity owners.
         # Never orphan a writer-owned secret by deleting/recycling its UID first.
         identity_ok=ok and dropped and self.value['error']=='NONE'
         try:
+            self.diag.checkpoint('C_IDENTITY_CHECK')
             if not identity_ok:raise RuntimeError('cleanup prerequisites failed')
             if self.creation_attempts!=len(self.created_groups)+len(self.created_users):raise RuntimeError('unconfirmed identity creation')
             self._no_unknown_identity_users()
@@ -291,6 +302,7 @@ class Controller(reference.Controller):
             if not stat.S_ISDIR(s.st_mode) or s.st_uid!=0 or (s.st_dev,s.st_ino)!=self.root_instance:
                 raise PermissionError('new owned root instance required')
             # Retain no non-root-owned credential if later file removal fails.
+            self.diag.checkpoint('C_SECRET_RECLAIM')
             for path,uid in ((self.root/'writer/bootstrap.json',self.worker.pw_uid),
                     (self.root/'pg/init-password',self.pg.pw_uid)):
                 fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW)
@@ -300,60 +312,81 @@ class Controller(reference.Controller):
                         raise PermissionError('owned private credential instance required')
                     os.fchown(fd,0,0);os.fchmod(fd,0o600)
                 finally:os.close(fd)
+            self.diag.checkpoint('C_USER_DELETE')
             for name,(uid,gid) in self.created_users.items():
                 p=pwd.getpwnam(name)
                 if (p.pw_uid,p.pw_gid)!=(uid,gid):raise PermissionError('created identity instance changed')
                 self.tool(['/usr/sbin/userdel',name])
+            self.diag.checkpoint('C_GROUP_DELETE')
             for name,gid in self.created_groups.items():
                 try:g=grp.getgrnam(name)
                 except KeyError:continue # Own userdel may remove its empty private group.
                 if g.gr_gid!=gid:raise PermissionError('created group instance changed')
                 self.tool(['/usr/sbin/groupdel',name])
         except CleanupTimeout:raise
-        except BaseException:identity_ok=False
+        except BaseException:self.diag.capture();identity_ok=False
         self.value['cases']['IDENTITIES_REMOVED']='PASS' if identity_ok else 'FAIL'
         removed=False
         if identity_ok and self.value['error']=='NONE':
             try:
+                self.diag.checkpoint('C_FILES_REMOVE')
                 s=self.root.lstat()
                 if not stat.S_ISDIR(s.st_mode) or s.st_uid!=0 or (s.st_dev,s.st_ino)!=self.root_instance:raise PermissionError('new owned root instance required')
                 shutil.rmtree(self.root);removed=True
             except CleanupTimeout:raise
-            except BaseException:pass
+            except BaseException:self.diag.capture()
         self.value['cases']['FILES_REMOVED']='PASS' if removed else 'FAIL'
         self.value['cleanup']=ok and dropped and identity_ok and removed
         return self.value['cleanup']
 
     def run(self):
+        self.diag.checkpoint('C_CONTEXT')
         if self.issuer is not _BOOT_ISSUER or os.geteuid()!=0 or not context_valid(self.c):
-            self.value['cases']['GATE']='FAIL';self.value['error']='REFUSED';return public_summary(self.value)
-        parent=host._process(os.getppid())
-        if (parent['pid'],parent['uid'],parent['started'])!=(self.c['bootstrap_pid'],0,self.c['bootstrap_started']):
-            self.value['cases']['GATE']='FAIL';self.value['error']='REFUSED';return public_summary(self.value)
-        s=self.root.lstat()
-        if not stat.S_ISDIR(s.st_mode) or s.st_uid!=0 or stat.S_IMODE(s.st_mode)!=0o711:raise PermissionError('new root context required')
-        self.root_instance=(s.st_dev,s.st_ino);self.value['cases']['GATE']='PASS'
+            self.value['cases']['GATE']='FAIL';self.value['error']='REFUSED';self.diag.capture();return public_summary(self.value)
+        try:
+            self.diag.checkpoint('C_PARENT')
+            parent=host._process(os.getppid())
+            if (parent['pid'],parent['uid'],parent['started'])!=(self.c['bootstrap_pid'],0,self.c['bootstrap_started']):
+                self.value['cases']['GATE']='FAIL';self.value['error']='REFUSED';self.diag.capture();return public_summary(self.value)
+            self.diag.checkpoint('C_ROOT')
+            s=self.root.lstat()
+            if not stat.S_ISDIR(s.st_mode) or s.st_uid!=0 or stat.S_IMODE(s.st_mode)!=0o711:raise PermissionError('new root context required')
+            self.root_instance=(s.st_dev,s.st_ino);self.value['cases']['GATE']='PASS'
+        except BaseException:
+            self.diag.capture();self.value['cases']['GATE']='FAIL';self.value['error']='FAILURE'
+            self.value['failure_logs']='UNAVAILABLE';return public_summary(self.value)
         def deadline(*a):
             if self.value['phase']=='CLEANUP':raise CleanupTimeout('bounded cleanup deadline')
             raise TimeoutError('one trial deadline')
         signal.signal(signal.SIGTERM,deadline);signal.signal(signal.SIGALRM,deadline);signal.setitimer(signal.ITIMER_REAL,750)
-        try:self.identities();self.pg_start();self.host_start();self.acceptance()
+        try:
+            self.current='REAL_IDENTITIES';self.diag.checkpoint('C_IDENTITIES');self.identities()
+            self.current='FRESH_CLUSTER';self.diag.checkpoint('C_PG');self.pg_start()
+            self.current='PROTECTED_RUNTIME';self.diag.checkpoint('C_HOST');self.host_start()
+            self.current='REQUEST_APPROVE';self.diag.checkpoint('C_ACCEPTANCE');self.acceptance()
         except BaseException:
             self.value['error']='FAILURE';self.value['cases'][self.current]='FAIL'
-            raw=traceback.format_exc();self.value['diagnostics'].append(dict(case=self.current,line=0,trace_sha256=hashlib.sha256(raw.encode()).hexdigest()))
-            try:(self.private/'failure.log').write_text(raw);self.value['failure_logs']='SAVED'
-            except BaseException:self.value['failure_logs']='UNAVAILABLE'
+            self.diag.capture(case=self.current);raw=traceback.format_exc()
+            try:
+                self.diag.checkpoint('C_PRIVATE_LOG',case=self.current)
+                (self.private/'failure.log').write_text(raw);self.value['failure_logs']='SAVED'
+            except BaseException:
+                self.diag.capture();self.value['failure_logs']='UNAVAILABLE'
         finally:
             signal.signal(signal.SIGTERM,signal.SIG_IGN)
             signal.setitimer(signal.ITIMER_REAL,120)
-            try:self.cleanup()
+            try:
+                self.diag.checkpoint('C_CLEANUP');self.cleanup()
             except BaseException:
                 self.value['cleanup']=False;self.value['error']='FAILURE'
                 self.value['failure_logs']='SAVED'
                 raw=traceback.format_exc()
-                self.value['diagnostics'].append(dict(case='OWNED_STOP',line=0,trace_sha256=hashlib.sha256(raw.encode()).hexdigest()))
-                try:(self.private/'cleanup-failure.log').write_text(raw)
-                except BaseException:self.value['failure_logs']='UNAVAILABLE'
+                failed=self.diag.capture();self.value['cases'][failed['case']]='FAIL'
+                try:
+                    self.diag.checkpoint('C_PRIVATE_LOG',case=failed['case'])
+                    (self.private/'cleanup-failure.log').write_text(raw)
+                except BaseException:
+                    self.diag.capture();self.value['failure_logs']='UNAVAILABLE'
                 for k in ('OWNED_STOP','DATABASE_REMOVED','FILES_REMOVED','IDENTITIES_REMOVED'):
                     if self.value['cases'][k]=='NOT_RUN':self.value['cases'][k]='UNKNOWN'
             finally:signal.setitimer(signal.ITIMER_REAL,0)
@@ -369,5 +402,7 @@ def main():
     print(json.dumps(result,sort_keys=True),flush=True)
     return 0 if result['cleanup'] and all(v=='PASS' for v in result['cases'].values()) else 1
 
+
+register_source('CONTROLLER',[v.__code__ for v in Controller.__dict__.values() if isinstance(v,types.FunctionType)])
 
 if __name__=='__main__':raise SystemExit(main())
