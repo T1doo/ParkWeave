@@ -1,0 +1,29 @@
+{
+  "status": "LIMITED_PASS_CORE_SEMANTIC_READBACK_AND_DESTRUCTIVE_READ_GUARD",
+  "blocking_in_tested_scope": [],
+  "source_sha256": "aab54bc2d5a7c43b19c4bb6769bcf9c12e44f91a090c4b6fcde203c59ce45500",
+  "tests": {
+    "PASS_modes": 6,
+    "PASS_assertions": 38,
+    "FAIL": 0,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "original_red_source": "83717e3e0342c0f4a083a75d50c2186209e49813",
+  "original_red_FAIL_modes": 4,
+  "coverage": [
+    "Link POST-known +two200 GET incompatible preparation revisions keeps lease/draft/key, blocks queue, original consistent GET releases",
+    "ACK known event2 +current readstep1 preserves lease; actual refreshstep2 releases",
+    "Intent incorrect preparation binding preserves lease; original same-ID request-intent revision2 GET releases",
+    "Readiness incorrect preparation revision preserves lease despite internally caught error; original valid record GET releases",
+    "Actual executor receipt-submit form pending/unknown cannot run destructive receipt-list GET or lose receiptId/draft/key; original receipt-refresh allowed; unknown POST remains locked and only one POST"
+  ],
+  "qualifications": [
+    "Full original page script and real handlers/readers/renderers; only DOM/HTTP/storage/timers are synthetic doubles",
+    "No manually set pending flags for receipt-form cases",
+    "Ordinary409/422 closed rejection whitelist still pending implementation/review, NOT_RUN here",
+    "Current code not frozen; this is core review window, not final delivery SHA attestation",
+    "Prior20/117 +dynamic1/6 and older23/115+catch1/8/PG4 are not rerun or summed",
+    "No browser/securityprobe/paidmodel/production/permissions/credentialconfiguration action"
+  ]
+}

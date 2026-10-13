@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="3" time="0.281" timestamp="2026-10-13T15:22:41.386169+00:00" hostname="754d39e95154"><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[receipt_form_pending]" time="0.083" /><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[receipt_form_unknown]" time="0.072"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:39:80&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'receipt_form_unknown'],...ts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:39:80\n').returncode">mode = 'receipt_form_unknown'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','receipt_form_pending','receipt_form_unknown','resource_write_semantic','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:39:80
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'receipt_form_unknown'],...ts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:39:80\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[resource_write_semantic]" time="0.069"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:47:360&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'resource_write_semantic...s/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:47:360\n').returncode">mode = 'resource_write_semantic'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','receipt_form_pending','receipt_form_unknown','resource_write_semantic','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:47:360
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'resource_write_semantic...s/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:47:360\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase></testsuite></testsuites>

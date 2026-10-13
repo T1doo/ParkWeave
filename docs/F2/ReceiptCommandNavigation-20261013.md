@@ -17,3 +17,5 @@
 根有效红例12FAIL及独立新增反例原件保留。更早8/4窗口是Node等待未决导航后空退出的脚手架失败，明确区别于tick后即时断言的有效红例；部分旧单元窗口缺新entryFetch抽取double alias，原FAIL也保留。含随机合成fixture会话repr的失败日志/XML仅公开标记SANITIZED_EXPORT的导出，原件私有runtime不改。源码diff检查PASS；归档暂存diff检查实际FAIL/rc2，17份原失败日志/XML共785处pytest尾空白，原检查输出也归档，不裁剪原件。连接曾报告完整 `CreateProcess Rejected("Failed to create unified exec process: exec-server transport disconnected")`；同原exec恢复后继续，没有另开实例、换安全工具或绕过拒绝。
 
 两安全approval仍false/null/null，不运行安全探针、不新建安全执行分支；浏览器继续NOT RUN，历史Chromium data导航ERR_BLOCKED_BY_ADMINISTRATOR不重试。原安全1PASS/1FAIL/19NOT_RUN和未知根因不变。main/F1/原F2及上一原工作队列交付分支不改；不部署、生产迁移、模型/付费调用、凭据/网络配置或扩权限。完整AT08/35冷全链及真实履约仍待后续复核，不因本片通过而签收。
+
+后续状态：父级复核发现成功POST后语义读回失败可提前释放、普通409/422长期锁定及回执form未等待Promise三处缺口，83717交付未整体签收。已由 [SemanticReadback-20261013.md](SemanticReadback-20261013.md) 接续修复；本报告原窗口、失败证据与计数保持原样，不作为后续冻结源码的最终验证。
