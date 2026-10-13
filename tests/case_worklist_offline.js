@@ -24,6 +24,8 @@ const context=vm.createContext({$,JSON,Set,Error,encodeURIComponent,console,
  apiCall:path=>navigate('run',path),pageError:e=>errors.push('run:'+e.message),
  prepError:e=>errors.push('materials:'+e.message),dispatchError:e=>errors.push('dispatch:'+e.message),
  receiptError:e=>errors.push('receipt:'+e.message),localCaseError:e=>errors.push('localcase:'+e.message)});
+context.entryFetch=context.fetch;
+context.entryWriteRequests=new Map();context.activeEntryWriteFlow=null;
 context.clearDeniedPrivateViews=()=>{context.clearGeneric();context.clearPreparation(false,false,true);context.clearReceipts();context.clearResources();$('page-feedback').textContent='权限已失效';};
 vm.runInContext(actual,context);$('token').value='SYNTHETIC_TOKEN_A';$('run').oninput=()=>vm.runInContext('clearCaseWorklist()',context);
 function response(target='materials'){
