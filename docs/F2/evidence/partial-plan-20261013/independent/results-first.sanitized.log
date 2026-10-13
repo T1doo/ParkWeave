@@ -1,0 +1,33 @@
+.................................F                                       [100%]
+=================================== FAILURES ===================================
+_ test_independent_constraint_blocked_receipt_create_and_lifecycle_cannot_bypass _
+
+link_fixture = [generated fixture representation withheld; private original retained]
+
+    def test_independent_constraint_blocked_receipt_create_and_lifecycle_cannot_bypass(link_fixture):
+        f=link_fixture;p=setup_partial(f,'LOCAL_CASE_RECORD_RECHECK',{'excluded_roles':['service_executor']})
+        assert adopt(f,p,adopt_body(f,p,partial_adoption=True)).status_code==201
+        assert command(f,p,'P1').status_code==200
+        before=business(f)
+        payload=dict(preparation_id=p['preparation_id'],executor_id='executor-a',expected_preparation_revision=p['revision'])
+        r=f[3].post('/api/executor-receipts',headers=headers(f[2],key=uuid4().hex),json=payload)
+        assert r.status_code==409,r.text
+        from test_case_lifecycle import act
+>       r=act(f,p,'REVALIDATE');assert r.status_code==409,r.text
+          ^^^^^^^^^^^^^^^^^^^^^
+E       TypeError: act() missing 1 required positional argument: 'action'
+
+.runtime/partial-plan-20261013/independent/test_supplement.py:61: TypeError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/partial-plan-20261013/independent/test_partial_service_plan.py::test_partial_preview_keeps_every_required_goal_and_offers_only_independent_nodes
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/partial-plan-20261013/independent/test_supplement.py::test_independent_constraint_blocked_receipt_create_and_lifecycle_cannot_bypass
+1 failed, 33 passed, 2 warnings in 22.13s

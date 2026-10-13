@@ -1,0 +1,42 @@
+.......................F.                                                [100%]
+=================================== FAILURES ===================================
+_ test_partial_adoption_waits_for_actual_pg_parent_mutation_and_refuses_stale_preview _
+
+link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; private original preserved]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f41a0629e50>
+
+    def test_partial_adoption_waits_for_actual_pg_parent_mutation_and_refuses_stale_preview(link_fixture,monkeypatch):
+        from concurrent.futures import ThreadPoolExecutor
+        from threading import Event
+        import time,json
+        from pathlib import Path
+        from parkweave import preparation as prep
+        f=link_fixture;p=setup_partial(f);body=adopt_body(f,p,partial_adoption=True)
+        entered=Event();release=Event();original=prep.event
+        def held_event(c,actor,row,key,fp,action,*args,**kwargs):
+            result=original(c,actor,row,key,fp,action,*args,**kwargs)
+            if action=='REQUEST_CHANGES':
+                entered.set();assert release.wait(5),'owned writer release deadline exceeded'
+            return result
+        monkeypatch.setattr(prep,'event',held_event);waiting=False
+        with ThreadPoolExecutor(max_workers=2) as pool:
+            writer=pool.submit(prep_command,f,p,'REQUEST_CHANGES',REVIEWER,reason='SYNTHETIC actual source correction during partial adoption')
+>           assert entered.wait(3)
+E           assert False
+E            +  where False = wait(3)
+E            +    where wait = <threading.Event at 0x7f41a03d5ee0: unset>.wait
+
+tests/test_partial_service_plan.py:229: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_partial_service_plan.py::test_partial_preview_keeps_every_required_goal_and_offers_only_independent_nodes
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_partial_service_plan.py::test_partial_adoption_waits_for_actual_pg_parent_mutation_and_refuses_stale_preview
+1 failed, 24 passed, 2 warnings in 17.44s

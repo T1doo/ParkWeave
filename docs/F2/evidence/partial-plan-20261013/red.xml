@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="1.608" timestamp="2026-10-13T22:48:23.166295+00:00" hostname="754d39e95154"><testcase classname="tests.test_partial_service_plan" name="test_partial_preview_keeps_every_required_goal_and_offers_only_independent_nodes" time="0.818"><failure message="KeyError: 'partial_offer'">link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; private original preserved]
+
+    def test_partial_preview_keeps_every_required_goal_and_offers_only_independent_nodes(link_fixture):
+        f=link_fixture;p=setup_partial(f)
+        preview=read(f,p).json()['current_preview']
+        assert preview['state']=='PARTIAL'
+        assert preview['required_goals']==['LOCAL_MATERIAL_PREPARATION',UNKNOWN]
+&gt;       assert preview['partial_offer']['can_adopt'] is True
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'partial_offer'
+
+tests/test_partial_service_plan.py:29: KeyError</failure></testcase><testcase classname="tests.test_partial_service_plan" name="test_explicit_partial_adoption_retains_unknown_goal_and_verifies_real_independent_output" time="0.377"><failure message="AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;partial_adoption&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:true}]}&#10;assert 422 == 201&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; private original preserved]
+
+    def test_explicit_partial_adoption_retains_unknown_goal_and_verifies_real_independent_output(link_fixture):
+        f=link_fixture;p=setup_partial(f);before=business(f)
+        body=adopt_body(f,p,partial_adoption=True)
+&gt;       r=adopt(f,p,body);assert r.status_code==201,r.text
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","partial_adoption"],"msg":"Extra inputs are not permitted","input":true}]}
+E       assert 422 == 201
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_partial_service_plan.py:37: AssertionError</failure></testcase><testcase classname="tests.test_partial_service_plan" name="test_original_goal_results_and_worklist_keep_partial_manual_items" time="0.317"><failure message="AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;extra_forbidden&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;partial_adoption&quot;],&quot;msg&quot;:&quot;Extra inputs are not permitted&quot;,&quot;input&quot;:true}]}&#10;assert 422 == 201&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; private original preserved]
+
+    def test_original_goal_results_and_worklist_keep_partial_manual_items(link_fixture):
+        f=link_fixture;p=setup_partial(f)
+&gt;       r=adopt(f,p,adopt_body(f,p,partial_adoption=True));assert r.status_code==201,r.text
+                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"extra_forbidden","loc":["body","partial_adoption"],"msg":"Extra inputs are not permitted","input":true}]}
+E       assert 422 == 201
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_partial_service_plan.py:48: AssertionError</failure></testcase></testsuite></testsuites>

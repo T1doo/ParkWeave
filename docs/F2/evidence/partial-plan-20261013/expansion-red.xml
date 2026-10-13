@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.286" timestamp="2026-10-13T23:04:46.918495+00:00" hostname="754d39e95154"><testcase classname="tests.test_partial_service_plan_expansion" name="test_actual_original_plan_page_lists_new_required_goal_before_partial_replacement" time="1.191"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/partial_service_plan_expansion.js:4:26)&#10;      at /workspace/ParkWeave/tests/partial_service_plan_expansion.js:36:2&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0&#10; +  where 1 = wait(timeout=15)&#10; +    where wait = &lt;Popen: returncode: 1 args: ['node', 'tests/partial_service_plan_expansion.j...&gt;.wait">link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; private original preserved]
+
+    def test_actual_original_plan_page_lists_new_required_goal_before_partial_replacement(link_fixture):
+        f=link_fixture;p=setup_partial(f)
+        r=adopt(f,p,adopt_body(f,p,partial_adoption=True));assert r.status_code==201,r.text
+        before=business(f)
+        proc=subprocess.Popen(['node','tests/partial_service_plan_expansion.js','partial_expansion',p['preparation_id']],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ);requests=[];summary=None
+        out=Path('.runtime/partial-plan-20261013');out.mkdir(parents=True,exist_ok=True)
+        try:
+            while True:
+                assert selector.select(timeout=15),'Original expansion UI bridge stalled'
+                line=proc.stdout.readline()
+                if not line:break
+                message=json.loads(line)
+                if 'request' not in message:summary=message;break
+                req=message['request'];options=req['options'];method=options.get('method','GET');body=json.loads(options['body']) if options.get('body') else None
+                actor=options['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')
+                response=f[3].request(method,req['path'],headers=headers(f[2],actor,key=options['headers'].get('Idempotency-Key')),json=body)
+                requests.append(dict(method=method,path=req['path'],status=response.status_code,required_goals=body.get('required_goals') if body else None))
+                assert response.status_code&lt;400,(requests[-1],response.text)
+                proc.stdin.write((json.dumps(dict(status=response.status_code,body=response.json(),lost=False))+'\n').encode());proc.stdin.flush()
+&gt;           assert proc.wait(timeout=15)==0,proc.stderr.read().decode()
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/partial_service_plan_expansion.js:4:26)
+E                 at /workspace/ParkWeave/tests/partial_service_plan_expansion.js:36:2
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = &lt;Popen: returncode: 1 args: ['node', 'tests/partial_service_plan_expansion.j...&gt;.wait
+
+tests/test_partial_service_plan_expansion.py:30: AssertionError</failure></testcase></testsuite></testsuites>
