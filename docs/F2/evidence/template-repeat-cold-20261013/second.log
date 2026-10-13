@@ -1,0 +1,87 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_template_new_input_full_original_local_chain_and_changed_source_rejections[repeat_cold] _
+
+link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-116/test_template_new_input_full_o0')
+mode = 'repeat_cold'
+
+    @pytest.mark.parametrize("mode",["full_chain","withdraw","source_head","repeat_cold"])
+    def test_template_new_input_full_original_local_chain_and_changed_source_rejections(link_fixture,tmp_path,mode):
+        f=link_fixture;permissions=permission_snapshot(f[1]);cfg=template_config().model_dump()
+        for permit in cfg['permits']:permit['scope']['park_id']='park-a'
+        engine=TemplateEngine(TemplateConfig.model_validate(cfg),TemplateRepository(tmp_path/'continuity.template.candidate.sqlite3'))
+        consumer=TemplateConsumer(f[0],engine,ConsumerConfig(enabled_for_isolated_tests=True,
+            allowed_database_names=[conninfo_to_dict(f[0].dsn)['dbname']],allowed_orgs=[{'park_id':'park-a','org_id':'org-a'}]),
+            ConsumerRepository(tmp_path/'continuity.consumer.candidate.sqlite3'))
+        bridge=IsolatedRunAccessBridge(f[1],f[1]._case_fact_fixture_receipt,tmp_path/'template-full.run-access.candidate.sqlite3',approver_ids={'prep-specialist-fixture-a'},enabled_for_isolated_tests=True);bridge.attach_store(f[0]);assert permission_snapshot(f[1])==permissions
+        with TestClient(create_isolated_template_app(f[0],engine,consumer)) as client:
+            # Existing approved synthetic release, prepared through original commands.
+            path='/api/template-candidate/park-a/new-enterprise-material-template'
+            for action,actor in [('SAVE_DRAFT','template-author'),('SUBMIT','template-author'),('REVIEW','template-reviewer'),('CANDIDATE_PUBLISH','template-publisher')]:
+                h={'X-Isolated-Template-Actor':actor,'Idempotency-Key':uuid4().hex};view=client.get(path,headers=h).json()
+                body={'action':action,'expected_revision':view['revision'],'expected_definition_sha256':view['definition_sha256'],'reason':'SYNTHETIC existing reviewed release '+action}
+                if action=='SAVE_DRAFT':body['draft']=definition(goals=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_SYNTHETIC_COORDINATION_RECORDS','LOCAL_CASE_RECORD_RECHECK']).model_dump(mode='json');body['draft']['source']['id']='isolated-template-materials-source'
+                if action=='CANDIDATE_PUBLISH':body['validity']=VALID
+                r=client.post(path+'/commands',headers=h,json=body);assert r.status_code==200,r.text
+            proc=subprocess.Popen(['node',str(Path(__file__).with_name('template_full_chain.js' if mode in ('full_chain','repeat_cold') else 'template_source_rejections.js')),mode],
+                cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+            selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ);requests=[];summary=None;invalid_seen=False;denials=0;product_before=None;first_before=None;first_item=None;created=0
+            try:
+                while True:
+                    assert selector.select(timeout=15),'Template continuity bridge made no progress within15 seconds'
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if message.get('checkpoint')=='FIRST_COMPLETE':
+                        first_item=message['first']['instance']
+                        with f[1].connect() as c:first_before=repeat_history(c,first_item)
+                        continue
+                    if 'request' not in message:summary=message;break
+                    r=message['request'];o=r['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                    actor=o.get('headers',{}).get('Authorization','Bearer SYNTHETIC_fixture-a').removeprefix('Bearer SYNTHETIC_')
+                    response=client.request(method,r['path'],headers={**headers(f[2],actor,key=o.get('headers',{}).get('Idempotency-Key')),**({'X-Isolated-Template-Actor':o['headers']['X-Isolated-Template-Actor']} if 'X-Isolated-Template-Actor' in o.get('headers',{}) else {})},json=body)
+                    requests.append({'method':method,'path':r['path'],'status':response.status_code,'actor':o.get('headers',{}).get('X-Isolated-Template-Actor',actor),'action':body.get('action') if body else None})
+                    if response.status_code==422:
+                        assert r['path']=='/api/template-consumer/instances' and body['materials'][0]['text']=='';invalid_seen=True
+                        with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==created
+                    elif response.status_code==403 and mode=='repeat_cold':
+                        assert actor=='executor-a' and method=='GET' and r['path'].startswith('/api/runs/');denials+=1
+                    elif response.status_code==403 and mode!='full_chain':
+                        assert method=='POST' and r['path'].startswith('/api/template-consumer/instances');denials+=1
+                        with f[1].connect() as c:assert {t:c.execute('SELECT * FROM '+t+' ORDER BY 1').fetchall() for t in product_before}==product_before
+                    else:assert response.status_code<400,(method,r['path'],response.status_code,response.json())
+                    if method=='POST' and r['path']=='/api/template-consumer/instances' and response.status_code==201:
+                        created+=1;f[0].finish(f[0].claim('template-full-original-worker'))
+                        if mode not in ('full_chain','repeat_cold'):
+                            with f[1].connect() as c:product_before={t:c.execute('SELECT * FROM '+t+' ORDER BY 1').fetchall() for t in ['runs','cases','preparations','preparation_events','preparation_evidence','service_receipt_steps','case_local_events','case_resource_links']}
+                    proc.stdin.write((json.dumps({'status':response.status_code,'body':response.json()})+'\n').encode());proc.stdin.flush()
+>               assert proc.wait(timeout=15)==0,proc.stderr.read().decode()
+E               AssertionError: {"plan":"BLOCKED","error":"请填写此次明确采用、协调或核验说明","feedback":"此次原事件已持久保存；上方显示当前步骤，仍不代表真实履约。","step":{"id":"15687732-c038-4ee0-a201-0f889e9dec03","adapter_id":"P1","adapter":"preparation","depends_on":[],"state":"PENDING","actual_business_state":"LOCAL_CONFIRMED","allowed_actions":["BEGIN","REPORT_FAILURE","VERIFY"],"source_sha256":"43161bf91962817b4f787285791487f8b7aadf727058dd6b573c6fe0a8449eb2","issues":[],"verified_sources":null,"verified_sha256":null,"manually_locked":false}}
+E                 AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E                 
+E                   assert(v)
+E                 
+E                     at check (/workspace/ParkWeave/tests/template_full_chain.js:4:26)
+E                     at fullCase (/workspace/ParkWeave/tests/template_full_chain.js:38:1403)
+E                     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E                     at async /workspace/ParkWeave/tests/template_full_chain.js:70:145
+E                 
+E               assert 1 == 0
+E                +  where 1 = wait(timeout=15)
+E                +    where wait = <Popen: returncode: 1 args: ['node', '/workspace/ParkWeave/tests/template_fu...>.wait
+
+tests/test_template_full_chain.py:78: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_template_full_chain.py::test_template_new_input_full_original_local_chain_and_changed_source_rejections[repeat_cold]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_template_full_chain.py::test_template_new_input_full_original_local_chain_and_changed_source_rejections[repeat_cold]
+1 failed, 2 warnings in 8.38s
