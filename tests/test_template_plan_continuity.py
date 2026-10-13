@@ -70,3 +70,10 @@ def test_original_template_handoff_rejects_unverified_or_late_navigation(mode):
     result=subprocess.run(["node",str(Path(__file__).with_name("template_entry_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
     assert result.returncode==0,result.stderr
     assert json.loads(result.stdout)["checks"]>=3
+
+
+@pytest.mark.parametrize("mode",["unknown_create_then_old_read","current_error","crossowner403","late_identity"])
+def test_original_consumer_link_never_leaves_unverified_creation(mode):
+    result=subprocess.run(["node",str(Path(__file__).with_name("template_consumer_link_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+    assert result.returncode==0,result.stderr
+    assert json.loads(result.stdout)["checks"]>=3
