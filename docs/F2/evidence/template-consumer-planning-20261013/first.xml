@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="12" skipped="0" tests="46" time="27.764" timestamp="2026-10-13T19:31:57.761552+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_consumer_planning" name="test_resume_and_get_never_adopt_compatible_constraint_requires_exact_explicit_confirmation" time="1.330"><failure message="AssertionError: {&quot;detail&quot;:&quot;registered dependency journal proof invalid&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+
+    def test_resume_and_get_never_adopt_compatible_constraint_requires_exact_explicit_confirmation(template_consumption):
+        f=template_consumption;authority=grant_snapshot(f['owner']);data=body(f);data['planning_constraints']={'excluded_roles':['service_executor']};row=ready(f,data)
+        before=products(f['owner'],include_audit=True);v=preview(f,row).json();assert v['current']['state']=='COVERED_PREVIEW_ONLY' and len(v['current']['steps'])==1
+        assert v['current']['constraint_evaluation']['state']=='COMPATIBLE' and not v['automatic_adoption'] and not v['model_inference']
+        assert resume(f,row,key='second-resume').json()['plan_id'] is None
+        assert products(f['owner'],include_audit=True)==before
+&gt;       reply=post(f,row,'adopt',adoption(v),'explicit-adopt');assert reply.status_code==200,reply.text
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"registered dependency journal proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_template_consumer_planning.py:41: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning" name="test_invalid_declarations_rejected_before_any_run[invalid0]" time="0.344" /><testcase classname="tests.test_template_consumer_planning" name="test_invalid_declarations_rejected_before_any_run[invalid1]" time="0.441" /><testcase classname="tests.test_template_consumer_planning" name="test_invalid_declarations_rejected_before_any_run[invalid2]" time="0.367" /><testcase classname="tests.test_template_consumer_planning" name="test_invalid_declarations_rejected_before_any_run[invalid3]" time="0.453" /><testcase classname="tests.test_template_consumer_planning" name="test_template_and_saved_goals_retained_conflict_and_unsupported_cannot_adopt[conflict]" time="0.782" /><testcase classname="tests.test_template_consumer_planning" name="test_template_and_saved_goals_retained_conflict_and_unsupported_cannot_adopt[unsupported]" time="0.759" /><testcase classname="tests.test_template_consumer_planning" name="test_return_edit_changes_source_old_confirmation_rejected_new_explicit_confirmation_succeeds" time="0.962"><failure message="AssertionError: {&quot;detail&quot;:&quot;registered dependency journal proof invalid&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+
+    def test_return_edit_changes_source_old_confirmation_rejected_new_explicit_confirmation_succeeds(template_consumption):
+        f=template_consumption;row=ready(f);old=preview(f,row).json();request=edit(old,planning_constraints={'excluded_roles':['service_executor']});request['request_text']='Current edited explicit need';r=post(f,row,'planning',request,'edit-source');assert r.status_code==200,r.text
+        v=preview(f,row).json();assert v['current']['source_sha256']!=old['current']['source_sha256'];assert v['request_intent']['current_request']==request['request_text'];assert post(f,row,'adopt',adoption(old),'stale-confirm').status_code==409
+&gt;       good=post(f,row,'adopt',adoption(v),'current-confirm');assert good.status_code==200,good.text
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"registered dependency journal proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_template_consumer_planning.py:67: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning" name="test_original_material_source_advance_rejects_confirm_without_plan_write" time="0.724" /><testcase classname="tests.test_template_consumer_planning" name="test_current_permission_denial_precedes_confirmation_replay_and_get[READ]" time="0.809"><failure message="AssertionError: assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&#10; +    where &lt;Response [409 Conflict]&gt; = post({'store': &lt;parkweave.store.Store object at 0x7f56635e1340&gt;, 'owner': &lt;parkweave.store.Store object at 0x7f5668c86330&gt;,...xoRUra9zKpxitVDKoKt67Gj4MC8MA'}, 'engine': &lt;parkweave.template_candidate.TemplateEngine object at 0x7f566346eae0&gt;, ...}, {'instance_id': '00b6b111-d531-4d83-8b68-7fb54187c515', 'state': 'PLAN_CONFIRMATION_REQUIRED', 'run_id': 'cdb0b73a-25c4-4216-ac3b-1612ac01c9f2', 'case_id': 'c0103ec1-2541-41b6-82eb-688a2d1b8ce7', ...}, 'adopt', {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': '4a180a829fc22379889f9135b193b2480d03dd7965ac999462d719bb7c0a5d49', 'expected_plan_revision': 0, ...}, 'before-revoke')&#10; +      where {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': '4a180a829fc22379889f9135b193b2480d03dd7965ac999462d719bb7c0a5d49', 'expected_plan_revision': 0, ...} = adoption({'instance_id': '00b6b111-d531-4d83-8b68-7fb54187c515', 'run_id': 'cdb0b73a-25c4-4216-ac3b-1612ac01c9f2', 'case_id': 'c0103ec1-2541-41b6-82eb-688a2d1b8ce7', 'preparation_id': 'b92f57b8-1738-4e89-85b2-f4cea10b8a74', ...})">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+capability = 'READ'
+
+    @pytest.mark.parametrize('capability',['READ','PREPARE','EXECUTE'])
+    def test_current_permission_denial_precedes_confirmation_replay_and_get(template_consumption,capability):
+&gt;       f=template_consumption;row=ready(f);v=preview(f,row).json();assert post(f,row,'adopt',adoption(v),'before-revoke').status_code==200
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+E [SANITIZED_EXPORT: generated fixture session repr embedded in assertion call withheld; original runtime preserved]
+E        +      where {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': '4a180a829fc22379889f9135b193b2480d03dd7965ac999462d719bb7c0a5d49', 'expected_plan_revision': 0, ...} = adoption({'instance_id': '00b6b111-d531-4d83-8b68-7fb54187c515', 'run_id': 'cdb0b73a-25c4-4216-ac3b-1612ac01c9f2', 'case_id': 'c0103ec1-2541-41b6-82eb-688a2d1b8ce7', 'preparation_id': 'b92f57b8-1738-4e89-85b2-f4cea10b8a74', ...})
+
+tests/test_template_consumer_planning.py:80: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning" name="test_current_permission_denial_precedes_confirmation_replay_and_get[PREPARE]" time="0.641"><failure message="AssertionError: assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&#10; +    where &lt;Response [409 Conflict]&gt; = post({'store': &lt;parkweave.store.Store object at 0x7f56633344d0&gt;, 'owner': &lt;parkweave.store.Store object at 0x7f5668ace9f0&gt;,...7UqSscu0ZvX0nNVePZkiPER7EyMUI'}, 'engine': &lt;parkweave.template_candidate.TemplateEngine object at 0x7f5663774c50&gt;, ...}, {'instance_id': 'e91861b1-2aa9-4d2a-930a-8ad5cd2fee61', 'state': 'PLAN_CONFIRMATION_REQUIRED', 'run_id': '626c800e-e3ae-46a5-95b7-7b016b77cb85', 'case_id': 'beb56f1f-978f-4af2-98d8-40a7e24e5459', ...}, 'adopt', {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': 'ba85c7eedc640ec47be9b6f15e94bf7d0fbc142501e3b9c185806261cd2befb5', 'expected_plan_revision': 0, ...}, 'before-revoke')&#10; +      where {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': 'ba85c7eedc640ec47be9b6f15e94bf7d0fbc142501e3b9c185806261cd2befb5', 'expected_plan_revision': 0, ...} = adoption({'instance_id': 'e91861b1-2aa9-4d2a-930a-8ad5cd2fee61', 'run_id': '626c800e-e3ae-46a5-95b7-7b016b77cb85', 'case_id': 'beb56f1f-978f-4af2-98d8-40a7e24e5459', 'preparation_id': '9e9f3c50-51ed-4e12-afbd-0230bd08db3f', ...})">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+capability = 'PREPARE'
+
+    @pytest.mark.parametrize('capability',['READ','PREPARE','EXECUTE'])
+    def test_current_permission_denial_precedes_confirmation_replay_and_get(template_consumption,capability):
+&gt;       f=template_consumption;row=ready(f);v=preview(f,row).json();assert post(f,row,'adopt',adoption(v),'before-revoke').status_code==200
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+E [SANITIZED_EXPORT: generated fixture session repr embedded in assertion call withheld; original runtime preserved]
+E        +      where {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': 'ba85c7eedc640ec47be9b6f15e94bf7d0fbc142501e3b9c185806261cd2befb5', 'expected_plan_revision': 0, ...} = adoption({'instance_id': 'e91861b1-2aa9-4d2a-930a-8ad5cd2fee61', 'run_id': '626c800e-e3ae-46a5-95b7-7b016b77cb85', 'case_id': 'beb56f1f-978f-4af2-98d8-40a7e24e5459', 'preparation_id': '9e9f3c50-51ed-4e12-afbd-0230bd08db3f', ...})
+
+tests/test_template_consumer_planning.py:80: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning" name="test_current_permission_denial_precedes_confirmation_replay_and_get[EXECUTE]" time="0.654"><failure message="AssertionError: assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&#10; +    where &lt;Response [409 Conflict]&gt; = post({'store': &lt;parkweave.store.Store object at 0x7f56636b68d0&gt;, 'owner': &lt;parkweave.store.Store object at 0x7f56636b5d00&gt;,...bbTDTx-saXNxEoii0bZLJ9joG303E'}, 'engine': &lt;parkweave.template_candidate.TemplateEngine object at 0x7f5662d572c0&gt;, ...}, {'instance_id': '3fba2e7b-039a-4ef8-ac4c-b06a0f3e2db4', 'state': 'PLAN_CONFIRMATION_REQUIRED', 'run_id': 'cc77ce39-4256-498e-a249-bafdc2a22316', 'case_id': '6a48fe80-4410-4237-aa7b-e87121b3f3ff', ...}, 'adopt', {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': '91b35544b957f4cf917ddb8a28e0a478f21ee41ee0e8b53bd72d7f2a53d52ac4', 'expected_plan_revision': 0, ...}, 'before-revoke')&#10; +      where {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': '91b35544b957f4cf917ddb8a28e0a478f21ee41ee0e8b53bd72d7f2a53d52ac4', 'expected_plan_revision': 0, ...} = adoption({'instance_id': '3fba2e7b-039a-4ef8-ac4c-b06a0f3e2db4', 'run_id': 'cc77ce39-4256-498e-a249-bafdc2a22316', 'case_id': '6a48fe80-4410-4237-aa7b-e87121b3f3ff', 'preparation_id': '797d78dc-076a-4f6f-9713-8eaa9a5c9a8d', ...})">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+capability = 'EXECUTE'
+
+    @pytest.mark.parametrize('capability',['READ','PREPARE','EXECUTE'])
+    def test_current_permission_denial_precedes_confirmation_replay_and_get(template_consumption,capability):
+&gt;       f=template_consumption;row=ready(f);v=preview(f,row).json();assert post(f,row,'adopt',adoption(v),'before-revoke').status_code==200
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+E [SANITIZED_EXPORT: generated fixture session repr embedded in assertion call withheld; original runtime preserved]
+E        +      where {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': '91b35544b957f4cf917ddb8a28e0a478f21ee41ee0e8b53bd72d7f2a53d52ac4', 'expected_plan_revision': 0, ...} = adoption({'instance_id': '3fba2e7b-039a-4ef8-ac4c-b06a0f3e2db4', 'run_id': 'cc77ce39-4256-498e-a249-bafdc2a22316', 'case_id': '6a48fe80-4410-4237-aa7b-e87121b3f3ff', 'preparation_id': '797d78dc-076a-4f6f-9713-8eaa9a5c9a8d', ...})
+
+tests/test_template_consumer_planning.py:80: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning" name="test_cross_owner_and_release_advance_deny_new_confirmation_keep_history" time="0.835"><failure message="AssertionError: assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&#10; +    where &lt;Response [409 Conflict]&gt; = post({'store': &lt;parkweave.store.Store object at 0x7f5662f34290&gt;, 'owner': &lt;parkweave.store.Store object at 0x7f5662f34860&gt;,...NaLiaSajfHTkMANMRZw_XamMlQCw0'}, 'engine': &lt;parkweave.template_candidate.TemplateEngine object at 0x7f5662bd3920&gt;, ...}, {'instance_id': '77af5aa5-88dd-4e66-9814-90f0b88f20fd', 'state': 'PLAN_CONFIRMATION_REQUIRED', 'run_id': '64d26b22-17cc-4ba0-87fc-4f3d4be94033', 'case_id': 'bb495da1-e3bc-4e81-a813-02726220fbbe', ...}, 'adopt', {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': '187aa51b5f1d4241a7cd3dfd59cc23f2eabcad1094aedb58aa2db8157669a52b', 'expected_plan_revision': 0, ...}, 'historical-confirm')&#10; +      where {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': '187aa51b5f1d4241a7cd3dfd59cc23f2eabcad1094aedb58aa2db8157669a52b', 'expected_plan_revision': 0, ...} = adoption({'instance_id': '77af5aa5-88dd-4e66-9814-90f0b88f20fd', 'run_id': '64d26b22-17cc-4ba0-87fc-4f3d4be94033', 'case_id': 'bb495da1-e3bc-4e81-a813-02726220fbbe', 'preparation_id': '931b146e-e990-42d5-8719-4e0f3cfb5f89', ...})">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+
+    def test_cross_owner_and_release_advance_deny_new_confirmation_keep_history(template_consumption):
+        f=template_consumption;row=ready(f);v=preview(f,row).json();before=products(f['owner']);assert preview(f,row,1).status_code==403;assert post(f,row,'adopt',adoption(v),'wrong-owner',1).status_code==403;assert products(f['owner'])==before
+&gt;       assert post(f,row,'adopt',adoption(v),'historical-confirm').status_code==200;advance_source_head(f['engine']);before=products(f['owner']);assert post(f,row,'adopt',adoption(v),'historical-confirm').status_code==403
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+E [SANITIZED_EXPORT: generated fixture session repr embedded in assertion call withheld; original runtime preserved]
+E        +      where {'expected_preparation_revision': 4, 'expected_request_revision': 2, 'expected_source_sha256': '187aa51b5f1d4241a7cd3dfd59cc23f2eabcad1094aedb58aa2db8157669a52b', 'expected_plan_revision': 0, ...} = adoption({'instance_id': '77af5aa5-88dd-4e66-9814-90f0b88f20fd', 'run_id': '64d26b22-17cc-4ba0-87fc-4f3d4be94033', 'case_id': 'bb495da1-e3bc-4e81-a813-02726220fbbe', 'preparation_id': '931b146e-e990-42d5-8719-4e0f3cfb5f89', ...})
+
+tests/test_template_consumer_planning.py:88: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning" name="test_unknown_edit_blocks_other_keys_and_recovers_only_immutable_original_body" time="0.893" /><testcase classname="tests.test_template_consumer_planning" name="test_concurrent_confirmations_create_one_plan_and_keep_full_target_set[True]" time="0.934"><failure message="assert [409, 409] == [200, 200]&#10;  &#10;  At index 0 diff: 409 != 200&#10;  Use -v to get more diff">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+same_key = True
+
+    @pytest.mark.parametrize('same_key',[True,False])
+    def test_concurrent_confirmations_create_one_plan_and_keep_full_target_set(template_consumption,same_key):
+        f=template_consumption;row=ready(f);v=preview(f,row).json();data=adoption(v)
+        with ThreadPoolExecutor(max_workers=2) as pool:replies=list(pool.map(lambda i:post(f,row,'adopt',data,'parallel' if same_key else 'parallel-'+str(i)),range(2)))
+&gt;       assert sorted(r.status_code for r in replies)==([200,200] if same_key else [200,409])
+E       assert [409, 409] == [200, 200]
+E         
+E         At index 0 diff: 409 != 200
+E         Use -v to get more diff
+
+tests/test_template_consumer_planning.py:107: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning" name="test_concurrent_confirmations_create_one_plan_and_keep_full_target_set[False]" time="0.688"><failure message="assert [409, 409] == [200, 409]&#10;  &#10;  At index 0 diff: 409 != 200&#10;  Use -v to get more diff">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+same_key = False
+
+    @pytest.mark.parametrize('same_key',[True,False])
+    def test_concurrent_confirmations_create_one_plan_and_keep_full_target_set(template_consumption,same_key):
+        f=template_consumption;row=ready(f);v=preview(f,row).json();data=adoption(v)
+        with ThreadPoolExecutor(max_workers=2) as pool:replies=list(pool.map(lambda i:post(f,row,'adopt',data,'parallel' if same_key else 'parallel-'+str(i)),range(2)))
+&gt;       assert sorted(r.status_code for r in replies)==([200,200] if same_key else [200,409])
+E       assert [409, 409] == [200, 409]
+E         
+E         At index 0 diff: 409 != 200
+E         Use -v to get more diff
+
+tests/test_template_consumer_planning.py:107: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer" name="test_two_new_enterprises_get_distinct_case_materials_without_identity_or_grant_writes" time="0.689"><failure message="AssertionError: {&quot;detail&quot;:&quot;registered dependency journal proof invalid&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+
+    def test_two_new_enterprises_get_distinct_case_materials_without_identity_or_grant_writes(template_consumption):
+        f = template_consumption
+        before = grant_snapshot(f['owner'])
+        initial = products(f['owner'])
+        assert not initial['runs'] and not initial['cases'] and not initial['preparations']
+        results = []
+        for index in (0, 1):
+            response = consume(f, index, key=f'new-enterprise-{index}')
+            assert response.status_code == 201, response.text
+            row = response.json()
+            assert row['state'] == 'PENDING_RUN' and not row['case_id']
+            finish(f)
+            result = resume(f, row, index, f'resume-{index}')
+            assert result.status_code == 200, result.text
+            assert result.json()['state']=='PLAN_CONFIRMATION_REQUIRED' and result.json()['plan_id'] is None
+            result = confirm(f,result.json(),index,key=f'explicit-{index}')
+&gt;           assert result.status_code==200,result.text
+E           AssertionError: {"detail":"registered dependency journal proof invalid"}
+E           assert 409 == 200
+E            +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_template_consumer.py:100: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer" name="test_unknown_committed_run_reply_recovers_original_key_without_second_run" time="0.971"><failure message="AssertionError: {&quot;detail&quot;:&quot;registered dependency journal proof invalid&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f56637b9d60&gt;
+
+    def test_unknown_committed_run_reply_recovers_original_key_without_second_run(template_consumption, monkeypatch):
+        f = template_consumption
+        before = grant_snapshot(f['owner'])
+        original = f['store'].submit
+        lost = []
+        def submit_then_lose(*args, **kwargs):
+            result = original(*args, **kwargs)
+            lost.append(result)
+            raise RuntimeError('Injected lost committed original Run reply')
+        monkeypatch.setattr(f['store'], 'submit', submit_then_lose)
+        unknown_reply = consume(f, key='lost-run-reply')
+        assert unknown_reply.status_code == 503
+        assert unknown_reply.json()['state'] == 'UNKNOWN' and unknown_reply.json()['retry_original_request']
+        saved = products(f['owner'])
+        assert len(saved['runs']) == 1
+        with f['repository'].connect() as c:
+            stage = dict(c.execute("SELECT * FROM consumer_stages WHERE name='CREATE_RUN'").fetchone())
+            assert stage['state'] == 'UNKNOWN'
+        monkeypatch.setattr(f['store'], 'submit', original)
+        response = consume(f, key='lost-run-reply')
+        assert response.status_code == 201, response.text
+        assert response.json()['run_id'] == str(lost[0])
+        assert products(f['owner']) == saved
+        finish(f)
+        completed = resume(f, response.json(), key='resume-after-unknown')
+        assert completed.status_code == 200, completed.text
+        assert completed.json()['state']=='PLAN_CONFIRMATION_REQUIRED'
+        completed=confirm(f,completed.json())
+&gt;       assert completed.status_code==200,completed.text
+E       AssertionError: {"detail":"registered dependency journal proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_template_consumer.py:148: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer" name="test_unknown_committed_material_reply_recovers_without_duplicate_case_or_evidence" time="0.950"><failure message="AssertionError: {&quot;detail&quot;:&quot;registered dependency journal proof invalid&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f56630d27e0&gt;
+
+    def test_unknown_committed_material_reply_recovers_without_duplicate_case_or_evidence(template_consumption, monkeypatch):
+        from parkweave import preparation
+        f = template_consumption
+        authority = grant_snapshot(f['owner'])
+        pending = consume(f, key='lost-material-consume').json()
+        finish(f)
+        original = preparation.command
+        def add_then_lose(*args, **kwargs):
+            result = original(*args, **kwargs)
+            raise RuntimeError('Injected lost committed original material reply')
+        monkeypatch.setattr(preparation, 'command', add_then_lose)
+        unknown_reply = resume(f, pending, key='lost-material-resume')
+        assert unknown_reply.status_code == 503
+        assert unknown_reply.json()['state'] == 'UNKNOWN' and unknown_reply.json()['retry_original_request']
+        saved = products(f['owner'])
+        assert len(saved['runs']) == len(saved['cases']) == len(saved['preparations']) == 1
+        assert len(saved['preparation_evidence']) == 1
+        current = f['client'].get(f"/api/template-consumer/instances/{pending['instance_id']}", headers=headers(f)).json()
+        assert current['state'] == 'UNKNOWN'
+        unknown = next(s for s in current['stages'] if s['state'] == 'UNKNOWN')
+        assert unknown['name'].startswith('ADD_')
+        monkeypatch.setattr(preparation, 'command', original)
+        completed = resume(f, pending, key='lost-material-resume')
+        assert completed.status_code == 200, completed.text
+        assert completed.json()['state']=='PLAN_CONFIRMATION_REQUIRED'
+        completed=confirm(f,completed.json())
+&gt;       assert completed.status_code==200,completed.text
+E       AssertionError: {"detail":"registered dependency journal proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_template_consumer.py:182: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer" name="test_unapproved_original_enterprise_and_revoked_reviewer_are_denied" time="0.388" /><testcase classname="tests.test_template_consumer" name="test_same_key_changed_input_is_conflict_no_additional_product_write" time="0.828" /><testcase classname="tests.test_template_consumer" name="test_cross_organization_denied_without_product_write[read]" time="0.490" /><testcase classname="tests.test_template_consumer" name="test_cross_organization_denied_without_product_write[resume]" time="0.543" /><testcase classname="tests.test_template_consumer" name="test_cross_organization_denied_without_product_write[reviewer]" time="0.590" /><testcase classname="tests.test_template_consumer" name="test_current_permissions_checked_before_same_key_replay[READ]" time="0.466" /><testcase classname="tests.test_template_consumer" name="test_current_permissions_checked_before_same_key_replay[EXECUTE]" time="0.547" /><testcase classname="tests.test_template_consumer" name="test_current_permissions_checked_before_same_key_replay[PREPARE]" time="0.607" /><testcase classname="tests.test_template_consumer" name="test_unavailable_or_changed_release_blocks_new_and_resumed_product_work[withdraw]" time="0.491" /><testcase classname="tests.test_template_consumer" name="test_unavailable_or_changed_release_blocks_new_and_resumed_product_work[contract]" time="0.431" /><testcase classname="tests.test_template_consumer" name="test_unavailable_or_changed_release_blocks_new_and_resumed_product_work[expiry]" time="0.653" /><testcase classname="tests.test_template_consumer" name="test_unavailable_or_changed_release_blocks_new_and_resumed_product_work[hash]" time="0.420" /><testcase classname="tests.test_template_consumer" name="test_unavailable_or_changed_release_blocks_new_and_resumed_product_work[source_head]" time="0.437" /><testcase classname="tests.test_template_consumer" name="test_request_cannot_select_scope_or_reuse_old_record[org_id-template-new-org-b]" time="0.354" /><testcase classname="tests.test_template_consumer" name="test_request_cannot_select_scope_or_reuse_old_record[run_id-old-run]" time="0.582" /><testcase classname="tests.test_template_consumer" name="test_request_cannot_select_scope_or_reuse_old_record[case_id-old-case]" time="0.342" /><testcase classname="tests.test_template_consumer" name="test_request_cannot_select_scope_or_reuse_old_record[grants-value3]" time="0.348" /><testcase classname="tests.test_template_consumer" name="test_request_cannot_select_scope_or_reuse_old_record[execution_enabled-True]" time="0.621" /><testcase classname="tests.test_template_consumer" name="test_gets_have_no_product_or_authority_effect_and_disabled_consumer_denied" time="0.442" /><testcase classname="tests.test_template_consumer" name="test_fixture_seed_cannot_target_non_fixture_database" time="0.000" /><testcase classname="tests.test_template_consumer" name="test_combined_factory_requires_exact_enabled_consumer[mismatched_engine]" time="0.370" /><testcase classname="tests.test_template_consumer" name="test_combined_factory_requires_exact_enabled_consumer[disabled_consumer]" time="0.589" /><testcase classname="tests.test_template_consumer" name="test_instances_listing_is_exact_owner_scope_and_read_only" time="0.472" /><testcase classname="tests.test_template_consumer" name="test_completed_instance_keeps_immutable_release_binding_after_new_source_head" time="0.670"><failure message="AssertionError: {&quot;detail&quot;:&quot;registered dependency journal proof invalid&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">template_consumption = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+
+    def test_completed_instance_keeps_immutable_release_binding_after_new_source_head(template_consumption):
+        f = template_consumption
+        pending = consume(f, key='completed-history').json()
+        finish(f)
+        completed = resume(f, pending, key='complete-before-source-change')
+        assert completed.status_code == 200
+        completed=confirm(f,completed.json())
+&gt;       assert completed.status_code==200,completed.text
+E       AssertionError: {"detail":"registered dependency journal proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_template_consumer.py:339: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer" name="test_original_product_conflict_is_definite_refusal_not_unknown" time="0.700" /><testcase classname="tests.test_template_consumer" name="test_product_commit_then_journal_confirmation_failure_is_unknown_and_recovers" time="0.409" /><testcase classname="tests.test_template_consumer" name="test_old_live_consumer_cannot_use_release_after_separate_engine_advances_contract_head" time="0.445" /></testsuite></testsuites>

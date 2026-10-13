@@ -1,0 +1,38 @@
+{
+  "scope": "UNFROZEN_THIRD_STATIC_REVIEW",
+  "base_sha": "48f41228e99ab598c3d7badde3ae77a6dd37871b",
+  "hashes": {
+    "src/parkweave/template_consumer.py": "58212c92ead7d7eaa676f565d64384a43683083356eb28888109bf0f6431d965",
+    "src/parkweave/template_candidate_web.html": "4d8c8c14a1dc268f6ff1fac1a879fe878670d6998b63ce2d1a05746d15f4f5dc",
+    "tests/test_template_consumer_planning.py": "e70749a6abc377eb667ca0ffd8af191d691fbec21567b81d483490e081e94196"
+  },
+  "resolved_static": [
+    "C1 preRun contract validation",
+    "C2 admission check plus request and stage insert now samejournalwrite transaction",
+    "U1 eachplanningGET increments pg; oldread current checks",
+    "U2 nestedcurrent/SC/currentpreview binding, hash/revisions/goals fullproposal exact verification",
+    "Pending goalcheckbox snapshot restore"
+  ],
+  "remaining_findings": [
+    {
+      "id": "C3",
+      "severity": "BLOCKING",
+      "finding": "Admitted STARTED exists before _perform pretry auth/reviewer/release. Definite refusal leavesSTARTED, future newkey blocked andUI403clear losesouterkey. Need distinguish ADMITTEDnotattempted from STARTED/UNKNOWN attempted; only definite preauth refusal of ADMITTED may terminalREFUSED. Never erase previouslyattempted unknown or confirmed even if currentauth revoked."
+    },
+    {
+      "id": "C4",
+      "severity": "BLOCKING_IF_ADOPTED_INSTANCE_HISTORY_ONLY_CONTRACT",
+      "finding": "Admission uses row.plan_id read before journaltransaction. EditB readsNone, AdoptA commitsCONFIRMED, B admission sees nopending yet staleNone, permits edit after adoption. Recheck confirmedADOPT_PLAN/CONFIRM_PLAN stages within journaltransaction before newkey; exact samekey replay retained."
+    }
+  ],
+  "future_tests": [
+    "Pause admitted before currentauth then revoke/withdraw: definite nonsend refusal no immortalpending",
+    "Alreadyunknown attempt then currentauth revoke: retainunknown originalbody/key, never assert uncommitted",
+    "B lockfree read before A successful adoption then B admission: historical edit refuses"
+  ],
+  "NOT_RUN": [
+    "NewbusinessAPI tests independently pendingfreeze",
+    "Browser/model/securityprepare"
+  ],
+  "writes": "runtime only"
+}

@@ -1,0 +1,35 @@
+{
+  "scope": "UNFROZEN_BACKEND_READ_ONLY_STATIC_REVIEW",
+  "base_sha": "48f41228e99ab598c3d7badde3ae77a6dd37871b",
+  "file": "src/parkweave/template_consumer.py",
+  "sha256": "823fc76901f6dc044a7080bed9ff60d4d165b608d78b6f8742231cb4bf96d90b",
+  "findings": [
+    {
+      "id": "C1",
+      "severity": "BLOCKING_PENDING_ACTUAL_TEST",
+      "finding": "New Consume goals list lacks peritem min1/max160 and merged additional requirements max8 initial check. Consume creates Run before resume validation; invalid declaration can cause product rows before rejection. Validate exact Save declaration contract prior to CREATE_RUN, preserving legacy fingerprint."
+    },
+    {
+      "id": "C2",
+      "severity": "BLOCKING_PENDING_ACTUAL_TEST",
+      "finding": "New planning command key checks adopted plan only, not outstanding STARTED/UNKNOWN edit/adopt stages. Different key can perform writes while prior result uncertain. Newkey must retain original stage responsibility; exact original samekey recovery allowed."
+    }
+  ],
+  "verified_static": [
+    "Auth owner scope/Casecreationgrant, published immutable release and reviewer authority checked per_perform plus planning methods",
+    "Optionalfields omitted fingerprint original modelkeys retained via exclude_none; explicit null rejected",
+    "Resume no longer calls autoADOPT; confirmed historicalADOPT remains in read projection",
+    "Explicit planning POST wraps original Save/Adopt using perkey immutable body+stage requestkey; changed samekeyargs rejected",
+    "Templatefloor checked plus original Save savedgoalfloor and original ADOPT precise source/revision goals guard"
+  ],
+  "followup_UI": [
+    "Verify every returned top/nested CaseRunpreparation source binding; planning GET can read different revisions across awaited stages",
+    "Keep unknown stage opaque key/body/draft until originalkey recovery; no automatic resend",
+    "Legacy unfinished ADOPT_PLAN must not silently restart from resume or hide as no pending"
+  ],
+  "NOT_RUN": [
+    "Actual tests pending implementationfreeze",
+    "Browser/model/securityprepare/Grant"
+  ],
+  "writes": "this runtime evidence only; root sole product/Git writer"
+}
