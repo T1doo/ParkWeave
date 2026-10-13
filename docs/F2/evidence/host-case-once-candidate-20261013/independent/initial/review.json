@@ -1,0 +1,65 @@
+{
+  "verdict": "BLOCKED_UNCOMMITTED_HELPER_CANDIDATE",
+  "reviewer_model": "gpt-6.1-sol",
+  "reasoning_effort": "medium",
+  "mode": "STATIC_READ_ONLY_NO_HELPER_EXECUTION",
+  "snapshot_manifest": "reviewed-source-manifest.json",
+  "findings": [
+    {
+      "id": "HC-01",
+      "severity": "BLOCKER",
+      "path": "scripts/host_case_once/controller.py",
+      "line": 235,
+      "title": "Accounts removed before failure-retained secret tree",
+      "evidence": "cleanup deletes created users/groups, then removes T only when error==NONE. On any acceptance error the writer-owned bootstrap.json and PG-owned init-password/data stay while owning identities may be deleted. Secret-bearing orphan UID/GID paths remain.",
+      "required_fix": "Preserve safe failure diagnostics under root-private ownership, then remove or root-protect all secret-bearing UID-owned new paths before deleting identities. Do not sign identities/files cleanup complete when that ordering is unresolved."
+    },
+    {
+      "id": "HC-02",
+      "severity": "BLOCKER",
+      "path": "scripts/host_case_once/bootstrap.py",
+      "line": 149,
+      "title": "Bootstrap controller timeout lacks retained-resource cleanup fallback",
+      "evidence": "Timeout path terminates/kills only the controller; exception path logs failure and returns. Controller disables its alarm before cleanup, and inherited call uses select then blocking readline. A stalled cleanup/partial frame can exceed the grace and leave owned PG/API/writer children and newly created accounts/groups. Prepare/start failures also retain T without a defined safe fallback.",
+      "required_fix": "Add bounded complete-frame I/O and an explicit retained-instance bootstrap/controller cleanup protocol with deadlines and fail/unknown reporting. Preserve diagnostics, refuse unknown deletion; never imply controller termination cleans descendants/accounts."
+    },
+    {
+      "id": "HC-03",
+      "severity": "BLOCKER",
+      "path": "scripts/host_case_once/bootstrap.py",
+      "line": 120,
+      "title": "Protected copy dereferences source symlinks before checking copied objects",
+      "evidence": "shutil.copytree(...,symlinks=False) and copyfile read source/link targets first, while lstat protection only checks resulting target nodes. It cannot enforce approved refusal of source symlinks or original owner/mode/source provenance.",
+      "required_fix": "Validate each original source and ancestor with lstat/root ownership/nonwritable/regular directory or file requirements; reject symlinks before copy and retain bounded complete protected-source checks."
+    },
+    {
+      "id": "HC-04",
+      "severity": "BLOCKER_APPROVAL_SCOPE",
+      "path": "scripts/host_case_once/bootstrap.py",
+      "line": 24,
+      "title": "Fixed persistent claim outside approved new T",
+      "evidence": "CLAIM is /tmp/parkweave-host-case-security-once-20261013.claim, written before creating T and never removed; current action checklist limits mutations to new T. O_EXCL/no-follow600 improve safety but do not extend user authorization.",
+      "required_fix": "Move claim under approved new T or explicitly list this exact extra object and lifetime in the pending approval before execution."
+    }
+  ],
+  "resolved_during_read_only_review": [
+    {
+      "id": "HC-00",
+      "description": "Initial setup never saved owned store, breaking SNAPSHOT/DROP; root subsequently added owned[store]=owner. The saved snapshot contains the fix; no helper run verified it."
+    }
+  ],
+  "positive_checks": [
+    "approval.json remains false/null; workflow only exact public repository/branch/push, number/attempt1,25m job23m step.",
+    "Gate exact source parent, approval-only commit, clean checkout and pending parent approval; no credential persistence/config mutation.",
+    "API/business helper config excludes owner/writer DSNs and MAC/approval keys; private frames/tracebacks are pipes/root-private logs, public summary bounded and closed.",
+    "Fixed created identities/groups checked for collisions, no existing postgres account group modification; retained Popen/start identity checks and owned database receipt recheck.",
+    "Four SQL roles separate; single new UUID DB, PUBLIC control revoke scoped to it, original native Store and business Store distinct; exact business table/column rights inspected.",
+    "Original one cancellation POST response is deliberately discarded then original-key GET recovery; no same-body POST resend. Changed-argument same-key POST is a separate explicit conflict negative case."
+  ],
+  "limitations": [
+    "No test executed, no helper imported, no credentials generated, no permissions/SQL/PG/IPC/network actions.",
+    "Read-only code review does not grant runner or identity/ACL authority; final frozen helper source and exact pending user approval still required.",
+    "Business CANCEL_DROP models deliberately discarded response after TestClient returns. Controller RPC timeout currently aborts instead of attempting original-key GET, so this does not establish timeout/worker-death recovery.",
+    "Snapshot was taken after root added owned store and hardened fixed claim open; conclusions bind to manifest hashes, not later moving code."
+  ]
+}

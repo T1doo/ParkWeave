@@ -1,0 +1,31 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_cleanup_deadline_is_not_swallowed_before_another_helper_close ______
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fef552941a0>
+
+    def test_cleanup_deadline_is_not_swallowed_before_another_helper_close(monkeypatch):
+     context=dict(root='/tmp/parkweave-trial-'+'1'*32,source_sha='2'*40)
+     controller=c.Controller(context);first=SimpleNamespace(poll=lambda:0);second=SimpleNamespace(poll=lambda:0)
+     controller.business=first;controller.client=second;controller.processes=[first,second];seen=[]
+     timeout=getattr(c,'CleanupDeadline',TimeoutError)
+     def close(p):
+      seen.append(('close',id(p)))
+      if p is first:raise timeout('synthetic cleanup deadline')
+     monkeypatch.setattr(controller,'_close_owned',close)
+     monkeypatch.setattr(controller,'_stop_owned',lambda *a:seen.append(('stop',id(a[0]))))
+     monkeypatch.setattr(controller,'tool',lambda *a,**kw:pytest.fail('no identity action allowed in probe'))
+>    with pytest.raises(timeout,match='synthetic cleanup deadline'):controller.cleanup()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    Failed: DID NOT RAISE TimeoutError
+
+.runtime/host-case-once-candidate-20261013/independent/followup/test_cleanup_deadline_probe.py:17: Failed
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/host-case-once-candidate-20261013/independent/followup/test_cleanup_deadline_probe.py::test_cleanup_deadline_is_not_swallowed_before_another_helper_close
+1 failed, 1 warning in 0.43s

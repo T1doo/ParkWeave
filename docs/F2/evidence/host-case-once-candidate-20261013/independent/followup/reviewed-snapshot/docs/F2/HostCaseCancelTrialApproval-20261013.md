@@ -1,0 +1,23 @@
+# 单次临时 host→Case→取消验收：行动时审批清单
+
+**待批准、未执行。** 只申请一个原公开仓库标准免费 `ubuntu-24.04` 新 VM/job，job ≤25 分钟、step ≤23 分钟、controller业务 ≤750秒，独立清理 ≤120秒；零付费服务/模型、零部署、零缓存/私有 artifact 上传。新独立首次 push 入口绑定经独审的完整源码/执行 helper SHA、审批父提交及唯一 approval 差异；run_number/attempt=1，不复用旧入口、不 rerun。当前源码与绑定接口已交付，不表示 runner helper 或实际安全设置已获得执行授权；实施前还须冻结包含 helper 的具体提交。
+
+仅操作新生成的 `/tmp/parkweave-trial-<32hex>`（下称 T），以及唯一新排他标记 `/tmp/parkweave-host-case-security-once-20261013.claim`。标记在审批 Git gate 完成后以 root 0600、O_EXCL/O_NOFOLLOW 创建，只含公开源码SHA，冲突停止；不删除、不复用，避免同VM重复执行。本条是待批准范围的精确新增对象，当前未创建。启动前确认 T、拟建账号/组/SQL角色不存在，原集群为空，仅 postgres/template0/template1；任何冲突立即停止，不采纳既有对象。保留原 owned cluster/database 创建证明，唯一新库 `fixture_<32hex>`；不访问其他既有服务/库或用户文件。`postgres` OS 账号必须已存在，只读取其 UID，不改该账号/组/sudoers/密码/家目录。
+
+| 待批准动作 | 精确最小范围 |
+| --- | --- |
+| 新临时 OS 身份/组 | `pwci_api`、`pwci_writer` 两个无 home、nologin、无 sudo 的 system 用户；三个组由显式 `groupadd --system` 创建；各自私有 primary group 同名；新 `pwci_ipc` 共享组，两者为成员。不得修改任何已有账号的组关系。root 为可信 launcher；writer 子进程用 writer UID、IPC GID、空 supplementary groups；API 子进程用 API UID/private GID 和唯一 IPC supplementary group。已有 postgres 子进程以其 UID、IPC GID、空 supplementary groups运行，不改账户记录。 |
+| 新 T 的保护 | T root:root 0711；T/private root:root 0700；T/source 和完整 T/environment 的目录 root:root 0755、普通文件0644、解释器/必需 executable0755。只复制经审查的 source-only bundle及固定依赖，不改原 repo/系统解释器/包，拒 symlink、pyc/cache、未知资源，pin 全部源码与解释器/依赖。依赖安装仅新目录，pip isolated/no-input/keyring-disabled/no-cache/no-compile，显式新空NETRC和PIP_CONFIG_FILE=/dev/null，不发现用户凭据/配置。 |
+| 新 PG/IPC 路径 | T/pg root:root 0711；T/pg/data postgres:IPC 0700；T/pg/socket postgres:IPC 0750，PG仅此Unix socket、mode0770、禁TCP、SCRAM认证。T/writer writer:IPC 0710，bootstrap.json writer:writer 0600，双socket writer:IPC 0660、umask0117；T/host root:IPC0750，approval.key/start-approval/creation-receipt/claim root:root0600；新api-binding root:IPC0640，O_EXCL、不覆盖旧 pin。全部 chown/chmod/fchown/fchmod仅本轮新对象。 |
+| 新临时 SQL 身份 | initdb 的 `pwci_owner` 只做本轮 setup/owned-proof/核验/清理；新 login `pwci_app`、`pwci_writer`、`pwci_case` 均 NOSUPERUSER/NOCREATEDB/NOCREATEROLE/NOREPLICATION/NOBYPASSRLS、无角色 membership/owner/grant option。账号仅存在新临时集群。撤去该新集群初始库的 PUBLIC CONNECT/TEMP；业务三角色仅 CONNECT 本轮fixture，public USAGE，无CREATE/TEMP。 |
+| 新库技术 ACL | pwci_app 保持原 SELECT 和 audit INSERT、无 assignment/identity 写权及 control-system EXECUTE。pwci_writer 仅原 `restricted_runtime.required_privileges('revision')`（含schema_version SELECT、协议/activation列、原assignment窄列、parent revision锁列及control-system EXECUTE）。仅本轮fixture提交单函数 PUBLIC REVOKE，writer保留明确EXECUTE；app/case均验证42501+rollback/SELECT1。pwci_case仅[逐表最小22行](CaseCancellationBusinessConnection-20261013.md)和本库CONNECT/USAGE，不给资源释放或其他API写权。既有表/触发器/storage仅按原 issued-owner installer在新库安装，不更改旧对象或业务Grant/registry。 |
+| 合成业务前提 | 原固定合成fixture初始身份/权限，只在新库seed；新Run/普通Case、双槽资料、REVIEW/CONFIRM经原API产生，原operation VERIFIED、Run SUCCEEDED，未有实际ACCEPT/receipt/关闭。8个原fixture actor token（包含原 `unassigned` 合成反例身份）仅本轮随机生成；无真实用户/密钥/授权。 |
+| 私有随机值交付 | owner/app/writer/case各独立32随机字节密码（SCRAM）；writer receipt MAC key及root approval key各32随机字节；合成actor token独立随机。owner init密码只在新postgres-owned0600文件，其他值只在root私有内存/密封FD与上述私有文件；API仅持app/case DSN和合成token，绝不持owner/writer DSN或MAC/approval key。固定Unix端点、空环境，不用用户HOME/.pgpass/service/SSL/GSS配置；不读取或配置用户真实密钥，不把私有值放argv/env/日志/公开binding。 |
+
+真实最小验收只针对一个普通 Run/Case：观察 root/两个 UID/GID、源码保护、双socket inode/device/PID实例、peer身份与MAC私有边界；显式绑定原native app→writer，原REQUEST/APPROVE/ACTIVATE只给READ；确认没有分派ACCEPT。另一个业务Store使用`pwci_case`，检查实际session/current_user、目标socket/库/OID/原cluster proof和精确有效ACL，利用新BusinessBinding匹配同spec/source；原GET→owner明确POST取消→TestClient已返回后主动丢弃响应→只GET原key恢复。这是限定响应丢弃证据，不签transport断线/worker死亡恢复。核同事务事件/Case CANCELLED、原Run SUCCEEDED与资料/assignment历史保留；旧native原key有权历史读取仍可用、迟到新写被拒。仅这一新组合链及必要角色/回滚反例，不重跑原27/114/35。若取消与native写竞争，仍沿原parent锁重核，不能绕过既有guard。资源保持/独立释放采用已验范围，不为本片扩业务SQL权。
+
+失败立即停对应动作，保留原始安全公开摘要/固定阶段、HTTP观察及异常位置/hash；完整私有PG/helper/JUnit日志仅留本VM的T/private，禁止上传秘密，不能宣称其在VM回收后仍持久存在。未知失败不自动重发/重跑，不用模拟结果签真实PASS。
+
+清理次序：正常CLOSE业务/API helper，停止原host拥有的writer；在setup helper仍持原创建证明时删除唯一fixture库，再正常CLOSE setup；仅自有Popen/PID实例、正常PG exit0。全部pipe读写有界，controller业务750秒后进入独立最多120秒清理，拒强杀成功签收。成功路径删除身份前把新writer/bootstrap.json与PG init-password以NOFOLLOW单链接/UID/mode核对后收回root:root0600，避免后续T删除失败留下可复用孤儿UID的秘密文件。确认无存活/未知使用者、UID/GID仍是本轮创建的实例后，删除仅本轮两用户及三个新组，不使用userdel -r、不触home/已有账号。强杀、身份冲突、库证明不符或未知使用者均记清理FAIL并停止相应删除，不杀未知进程。SQL角色随本轮cluster删除消失；私有随机值不持久复用、不延期/重授。业务失败时保留T及其身份所有者、记录清理FAIL；清理异常/期限届满未完成项UNKNOWN/FAIL，不自动删除未知资源。bootstrap安装失败保留仅已创建的新T；若解释器不可恢复挂死/外部SIGKILL/runner强制终止，不能证明全清理，必须记FAIL/UNKNOWN，不能宣称VM回收已擦除。文件删除/进程退出不冒充内存安全擦除或平台VM销毁证明。
+
+审批应明确覆盖上表新身份、组、仅新目录保护、仅新库ACL及私有随机值交付与清理，并绑定最终经独审的候选SHA、一次免费≤25分钟范围；默认关闭入口已实现于 `scripts/host_case_once/`；候选分支不匹配执行workflow，approval仍false/null/null。本清单和候选源码不会改变当前权限。最终完整候选SHA见交付报告/父任务收到的最终响应，须未来明确批准后才允许唯一approval三字段差异。
