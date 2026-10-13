@@ -13,6 +13,9 @@ from contextlib import contextmanager
 from uuid import uuid4
 
 BRANCH = 'refs/heads/dev/f2-restricted-linux-trial-20261012'
+SECOND_BRANCH = 'refs/heads/dev/f2-restricted-linux-second-trial-20261013'
+SECOND_ENTRY = 'SECOND_ONCE_20261013'
+SECOND_APPROVAL = 'USER_CONFIRMED_SECOND_FREE_GITHUB_VM_2026-10-13T01:14:56Z'
 CASES = ('PROTECTED_RUNTIME','FRESH_CLUSTER','REAL_IDENTITIES','HOST_CHANNELS',
          'API_PRIVATE_BOUNDARY','EXPLICIT_BIND','ACTUAL_ROLE_ACL','EVENT_ROLLBACK',
          'REAL_PARENT_LOCK','REQUEST_APPROVE','ACTIVATION_ROLLBACK','LOST_RESPONSE_GET',
@@ -104,6 +107,22 @@ def approved_context(env,uid,sha):
             RUNNER_ENVIRONMENT='github-hosted',RUNNER_OS='Linux').items()))
 
 
+def approved_second_context(env,uid,sha):
+    """Separate first-run entry bound to the second explicit approval."""
+    return (type(uid) is int and uid==0 and type(sha) is str and
+        re.fullmatch('[a-f0-9]{40}',sha) is not None and
+        all(env.get(k)==v for k,v in dict(TRIAL_REPOSITORY='T1doo/ParkWeave',TRIAL_REF=SECOND_BRANCH,
+            TRIAL_ENTRY=SECOND_ENTRY,TRIAL_EVENT='push',TRIAL_ATTEMPT='1',TRIAL_NUMBER='1',
+            RUNNER_ENVIRONMENT='github-hosted',RUNNER_OS='Linux').items()))
+
+
+def controller_approved(context,uid):
+    if type(context) is not dict or type(uid) is not int or uid!=0:return False
+    if 'entry' not in context:
+        return context.get('approval')=='USER_CONFIRMED_ONE_FREE_GITHUB_VM_2026-10-12T12:49:49Z'
+    return context['entry']==SECOND_ENTRY and context.get('approval')==SECOND_APPROVAL
+
+
 def protected_copy(source,target):
     """New copies only; dereference trusted input links, reject links in output."""
     if target.exists():raise ValueError('NEW_OUTPUT_REQUIRED')
@@ -115,11 +134,13 @@ def protected_copy(source,target):
         os.chown(p,0,0);os.chmod(p,0o755 if stat.S_ISDIR(s.st_mode) or p==target and not target.is_dir() else 0o644)
 
 
-def bootstrap(sha):
+def bootstrap(sha,*,entry=None):
     value=dict(source_sha=sha,phase='PREFLIGHT',error='NONE',cases={c:'NOT_RUN' for c in CASES},cleanup=True,setup_diagnostic=None)
     private=None
     try:
-        if not approved_context(os.environ,os.geteuid(),sha):raise PermissionError('APPROVED_NEW_VM_CONTEXT_REQUIRED')
+        allowed=(approved_context(os.environ,os.geteuid(),sha) if entry is None else
+            entry==SECOND_ENTRY and approved_second_context(os.environ,os.geteuid(),sha))
+        if not allowed:raise PermissionError('APPROVED_NEW_VM_CONTEXT_REQUIRED')
         checkout=Path.cwd()
         actual=subprocess.check_output(['/usr/bin/git','rev-parse','HEAD'],cwd=checkout,text=True).strip()
         if actual!=sha:raise ValueError('EXACT_CHECKOUT_REQUIRED')
@@ -156,6 +177,7 @@ def bootstrap(sha):
         imports=[str(source),str(env/'lib/python3.12'),str(env/'lib/python3.12/lib-dynload'),str(site)]
         context=dict(root=str(root),source_sha=sha,source=str(source),environment=str(env),imports=imports,
                      approval='USER_CONFIRMED_ONE_FREE_GITHUB_VM_2026-10-12T12:49:49Z')
+        if entry==SECOND_ENTRY:context.update(entry=SECOND_ENTRY,approval=SECOND_APPROVAL)
         (private/'context.json').write_text(json.dumps(context));os.chmod(private/'context.json',0o600)
         entry='import sys;sys.path[:]='+repr(imports)+';from scripts.linux_trial.controller import main;raise SystemExit(main())'
         # Popen controller is root; SDK directly owns writer child under this root process.
@@ -187,5 +209,12 @@ def bootstrap(sha):
         print(json.dumps(public_summary(value),sort_keys=True));return 1
 
 
+def main(argv=None):
+    args=sys.argv[1:] if argv is None else argv
+    if len(args)==1:return bootstrap(args[0])
+    if len(args)==2 and args[1]=='--second-once-20261013':return bootstrap(args[0],entry=SECOND_ENTRY)
+    return bootstrap('')
+
+
 if __name__=='__main__':
-    raise SystemExit(bootstrap(sys.argv[1] if len(sys.argv)==2 else ''))
+    raise SystemExit(main())

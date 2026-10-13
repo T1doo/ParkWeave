@@ -161,3 +161,88 @@ def test_ci_setup_worker_success_and_child_entry_preserve_exit_status(monkeypatc
     assert m.setup_frame(captured.out.encode(),0)[0]=='PASS'
     text=(ROOT/'scripts/linux_trial/controller.py').read_text()
     assert 'from scripts.linux_trial.worker import main;raise SystemExit(main())' in text
+
+
+def second_env(m):
+    return dict(TRIAL_REPOSITORY='T1doo/ParkWeave',TRIAL_REF=m.SECOND_BRANCH,TRIAL_ENTRY=m.SECOND_ENTRY,
+        TRIAL_EVENT='push',TRIAL_ATTEMPT='1',TRIAL_NUMBER='1',RUNNER_ENVIRONMENT='github-hosted',RUNNER_OS='Linux')
+
+
+@pytest.mark.parametrize('key,value',[
+    ('TRIAL_REPOSITORY','other/repo'),('TRIAL_REF','refs/heads/main'),
+    ('TRIAL_REF','refs/heads/dev/f2-restricted-linux-trial-20261012'),
+    ('TRIAL_ENTRY','FIRST_ONCE'),('TRIAL_EVENT','workflow_dispatch'),
+    ('TRIAL_ATTEMPT','2'),('TRIAL_NUMBER','2'),('TRIAL_NUMBER',1),
+    ('RUNNER_ENVIRONMENT','self-hosted'),('RUNNER_OS','Windows')])
+def test_ci_second_entry_rejects_each_wrong_or_missing_scope(key,value):
+    m=module();env=second_env(m)
+    assert m.approved_second_context(env,0,'a'*40)
+    assert not m.approved_context(env,0,'a'*40)
+    env[key]=value;assert not m.approved_second_context(env,0,'a'*40)
+    del env[key];assert not m.approved_second_context(env,0,'a'*40)
+
+
+@pytest.mark.parametrize('uid,sha',[(1000,'a'*40),(False,'a'*40),(0.0,'a'*40),(0,''),(0,'A'*40),(0,'a'*39),(0,None)])
+def test_ci_second_entry_requires_root_and_exact_source_type(uid,sha):
+    m=module();assert not m.approved_second_context(second_env(m),uid,sha)
+
+
+@pytest.mark.parametrize('entry,approval,allowed',[
+    ('ABSENT','OLD',True),('SECOND','NEW',True),('ABSENT','NEW',False),
+    ('SECOND','OLD',False),('UNKNOWN','NEW',False),(None,'OLD',False),('SECOND',None,False)])
+def test_ci_controller_rejects_cross_approval_pairs(entry,approval,allowed):
+    m=module();value=dict(approval=m.SECOND_APPROVAL if approval=='NEW' else
+        'USER_CONFIRMED_ONE_FREE_GITHUB_VM_2026-10-12T12:49:49Z' if approval=='OLD' else approval)
+    if entry!='ABSENT':value['entry']=m.SECOND_ENTRY if entry=='SECOND' else entry
+    assert m.controller_approved(value,0) is allowed
+    for uid in (1000,False,0.0):assert not m.controller_approved(value,uid)
+
+
+@pytest.mark.parametrize('args,expected_sha,second',[
+    (['a'*40],'a'*40,False),(['a'*40,'--second-once-20261013'],'a'*40,True),
+    ([], '',False),(['a'*40,'--second-once'],'',False),
+    (['a'*40,'--second-once-20261013','extra'],'',False),
+    (['--second-once-20261013','a'*40],'',False)])
+def test_ci_command_routes_only_the_explicit_second_entry(monkeypatch,args,expected_sha,second):
+    m=module();calls=[]
+    def capture(sha,**kw):calls.append((sha,kw));return 19
+    monkeypatch.setattr(m,'bootstrap',capture)
+    assert m.main(args)==19
+    assert calls==[(expected_sha,{'entry':m.SECOND_ENTRY} if second else {})]
+
+
+@pytest.mark.parametrize('change,entry',[
+    ({'TRIAL_ATTEMPT':'2'},'SECOND'),({'TRIAL_NUMBER':'2'},'SECOND'),
+    ({'TRIAL_REF':'refs/heads/dev/f2-restricted-linux-trial-20261012'},'SECOND'),
+    ({},None),({},'UNKNOWN')])
+def test_ci_denied_entry_stops_before_any_filesystem_or_child(monkeypatch,capsys,change,entry):
+    m=module();env=second_env(m);env.update(change)
+    monkeypatch.setattr(m.os,'environ',env);monkeypatch.setattr(m.os,'geteuid',lambda:0)
+    def forbidden(*a,**kw):pytest.fail('denied entry reached physical operation')
+    monkeypatch.setattr(m.Path,'cwd',forbidden)
+    monkeypatch.setattr(m.subprocess,'check_output',forbidden)
+    monkeypatch.setattr(m.subprocess,'Popen',forbidden)
+    assert m.bootstrap('a'*40,entry=m.SECOND_ENTRY if entry=='SECOND' else entry)==1
+    output=json.loads(capsys.readouterr().out)
+    assert output['phase']=='PREFLIGHT' and output['error']=='OS_REFUSED' and output['cleanup'] is True
+    assert output['cases']['PROTECTED_RUNTIME']=='FAIL'
+    assert all(v=='NOT_RUN' for k,v in output['cases'].items() if k!='PROTECTED_RUNTIME')
+
+
+def test_ci_second_workflow_has_its_own_exact_once_free_context():
+    text=(ROOT/'.github/workflows/restricted-linux-second-trial-once.yml').read_text()
+    assert text.count('runs-on:')==1 and 'runs-on: ubuntu-24.04' in text
+    assert 'timeout-minutes: 25' in text and 'timeout-minutes: 23' in text
+    assert 'branches: [dev/f2-restricted-linux-second-trial-20261013]' in text
+    assert "github.ref == 'refs/heads/dev/f2-restricted-linux-second-trial-20261013'" in text
+    assert "github.repository == 'T1doo/ParkWeave'" in text and "github.event_name == 'push'" in text
+    assert 'github.event.repository.private == false' in text
+    assert 'github.run_attempt == 1 && github.run_number == 1' in text
+    assert 'group: parkweave-restricted-linux-second-trial-once' in text
+    assert 'TRIAL_ENTRY: SECOND_ONCE_20261013' in text and 'TRIAL_ENTRY="$TRIAL_ENTRY"' in text
+    assert 'bootstrap.py "$TRIAL_SOURCE_SHA" --second-once-20261013' in text
+    assert 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' in text
+    assert 'persist-credentials: false' in text and 'sudo -n env -i LANG=C.UTF-8' in text
+    for denied in ('workflow_dispatch:','pull_request:','upload-artifact','actions/cache','actions/setup-python',
+                   'self-hosted','matrix:','secrets.','dev/f2-restricted-linux-trial-20261012'):
+        assert denied not in text

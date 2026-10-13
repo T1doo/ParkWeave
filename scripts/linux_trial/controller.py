@@ -24,7 +24,7 @@ from psycopg.rows import dict_row
 
 from parkweave import native_run_access_restricted_host as host
 from parkweave import native_run_access_writer as writer
-from scripts.linux_trial.bootstrap import CASES,public_summary,setup_diagnostic,setup_frame
+from scripts.linux_trial.bootstrap import CASES,public_summary,setup_diagnostic,setup_frame,controller_approved
 
 
 def private_file(path,raw,uid=0,gid=0,mode=0o600):
@@ -325,7 +325,7 @@ class Controller:
         def terminate(signum,frame):raise TimeoutError('OWNED_CONTROLLER_TERMINATION')
         signal.signal(signal.SIGTERM,terminate)
         try:
-            if os.geteuid()!=0 or self.c['approval']!='USER_CONFIRMED_ONE_FREE_GITHUB_VM_2026-10-12T12:49:49Z':raise PermissionError('APPROVED_ROOT_CONTROLLER_REQUIRED')
+            if not controller_approved(self.c,os.geteuid()):raise PermissionError('APPROVED_ROOT_CONTROLLER_REQUIRED')
             self.identities();self.pg_start();self.host_start();self.acceptance()
         except BaseException as exc:
             self.value['cases'][self.current]='FAIL'
