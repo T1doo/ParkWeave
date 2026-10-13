@@ -124,8 +124,8 @@ def git(checkout,*args):
         user=s.st_uid,group=s.st_gid,extra_groups=[],stderr=subprocess.PIPE,timeout=5).decode().strip()
 
 
-def gate(checkout,sha,env):
-    path=checkout/APPROVAL_FILE
+def gate(checkout,sha,env,*,approval_file=APPROVAL_FILE,branch=BRANCH,approval_ref=APPROVAL_REF):
+    path=checkout/approval_file
     if not stat.S_ISREG(path.lstat().st_mode):raise PermissionError('REGULAR_APPROVAL_REQUIRED')
     def unique(pairs):
         if len(pairs)!=len({k for k,_ in pairs}):raise ValueError('DUPLICATE_APPROVAL_KEY')
@@ -133,17 +133,17 @@ def gate(checkout,sha,env):
     a=json.loads(path.read_text(),object_pairs_hook=unique)
     if (os.geteuid()!=0 or type(sha) is not str or not re.fullmatch('[a-f0-9]{40}',sha) or
             type(a) is not dict or set(a)!={'approved','source_sha','approval_ref'} or
-            a['approved'] is not True or a['approval_ref']!=APPROVAL_REF or
+            a['approved'] is not True or a['approval_ref']!=approval_ref or
             type(a['source_sha']) is not str or not re.fullmatch('[a-f0-9]{40}',a['source_sha']) or
-            any(env.get(k)!=v for k,v in dict(HOST_CASE_REPOSITORY='T1doo/ParkWeave',HOST_CASE_REF=BRANCH,
+            any(env.get(k)!=v for k,v in dict(HOST_CASE_REPOSITORY='T1doo/ParkWeave',HOST_CASE_REF=branch,
                 HOST_CASE_EVENT='push',HOST_CASE_NUMBER='1',HOST_CASE_ATTEMPT='1',HOST_CASE_PUBLIC='true',
                 RUNNER_ENVIRONMENT='github-hosted',RUNNER_OS='Linux').items())):
         raise PermissionError('NEW_EXPLICIT_SECURITY_APPROVAL_REQUIRED')
     if (git(checkout,'rev-parse','HEAD')!=sha or
             git(checkout,'rev-list','--parents','-n','1','HEAD').split()!=[sha,a['source_sha']] or
-            git(checkout,'diff','--name-only',a['source_sha'],sha)!=APPROVAL_FILE or
+            git(checkout,'diff','--name-only',a['source_sha'],sha)!=approval_file or
             git(checkout,'status','--porcelain') or
-            json.loads(git(checkout,'show',a['source_sha']+':'+APPROVAL_FILE))!=dict(approved=False,source_sha=None,approval_ref=None)):
+            json.loads(git(checkout,'show',a['source_sha']+':'+approval_file))!=dict(approved=False,source_sha=None,approval_ref=None)):
         raise PermissionError('REVIEWED_PARENT_APPROVAL_ONLY_REQUIRED')
     return a['source_sha']
 
@@ -161,7 +161,7 @@ def prepare(checkout,source_sha,root,diag=None):
         target=source/(name.removeprefix('src/') if name.startswith('src/') else name)
         target.parent.mkdir(parents=True,exist_ok=True)
         target.write_bytes(subprocess.check_output(['/usr/bin/git','show',source_sha+':'+name],cwd=checkout,
-            env={'LANG':'C.UTF-8'},user=checkout.stat().st_uid,group=checkout.stat().st_gid,extra_groups=[],timeout=5))
+            env={'LANG':'C.UTF-8'},user=checkout.stat().st_uid,group=checkout.stat().st_gid,extra_groups=[],stderr=subprocess.PIPE,timeout=5))
         os.chmod(target,0o644)
     diag.checkpoint('B_SOURCE_PROTECT')
     for p in [source,*source.rglob('*')]:
