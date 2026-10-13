@@ -1,0 +1,22 @@
+EXACT TOOL-OUTPUT TRANSCRIPTION — NOT A RAW STDOUT FILE
+
+Provenance: copied from the actual exec_command tool response in this conversation. No original redirected stdout file was created for that invocation. The output field is transcribed in full below; metadata is preserved separately here. This is not a rerun or reconstructed current-state output.
+Tool response metadata: chunk_id=ae79fa; wall_time_seconds=0.000043769; exit_code=1; original_token_count=1376.
+Failure: the read-only checker searched for 不证明报告已生成, while the corrected document actually contained 不能证明报告已生成. The subsequent corrected read-only check passed. This checker typo required no document or source change.
+
+BEGIN EXACT TOOL RESPONSE OUTPUT FIELD
+docs/F2/NativeRunAccessWriterInstallationPlan.md:36:[预检入口](../../src/parkweave/native_run_access_preflight.py)只比较公开安装清单与已取得的目录快照。`python -m parkweave.native_run_access_preflight --spec public-spec.json --snapshot catalog-snapshot.json` 不接收 DSN、密钥或连接选项，不发现环境凭据，不连接生产或启动服务。无输入也可运行，以明确列出缺配置与未连接项。JSON `status` 和进程退出码分别为 PASS/0、MISSING_CONFIG/2、NOT_CONNECTED/3、REFUSED/4、APPROVAL_REQUIRED/5；逐检查保留各自状态。缺失的附加对象和必要权限列入逐项待审批差异，同名错误对象、错误来源/版本与额外权限明确拒绝；不输出可执行安装 SQL，不覆盖冲突对象，不隐式回退历史列。
+docs/F2/NativeRunAccessWriterInstallationPlan.md:42:所有离线输入及 owned 快照均保持 `installation_authorized=false`、`activation_enabled=false`、`production_connected=false` 和 `installation_status=APPROVAL_REQUIRED`。PASS 仅表示本次快照比较无已检测差异；不能转为真实生产安装、Windows 或正式 AT35 验收。真正安装仍缺可信真实目录/会话/来源证明、受限身份与精确对象/ACL方案（含回退）、受保护 launcher/policy/key/pin，以及针对实际安装与启用的独立动作授权。
+docs/F2/NativeRunAccessWriterInstallationPlan.md:54:后续若要求生产启用，应先提交真实对象、受限身份及上述安装/权限/密钥方案的具体差异，独审后再获得该动作授权。本片仍保持生产默认关闭；未触生产部署、迁移、SQL 权限、业务 Grant 或真实 assignment。
+docs/F2/NativeRunAccessWriterInstallationPlan.md:60:5db离线计划交付阶段验证的是计划生成、输入拒绝、权限差异和无副作用控制。现 reference 保持原 owner/OWNED_SYNTHETIC_REFERENCE 边界，不能将其 argv 改名充当受限启动器；该阶段受限 private runtime/host adapter 尚未实现，历史计划明确 `writer_argv=null`、`writer_runtime=NOT_IMPLEMENTED`、`actual_run=NOT_RUN` 和全部授权为false。源码/解释器、独立UID、秘密交付、目录保护、当前权限与任意SET ROLE链、实际host pin均未验证；真实启动不在本轮执行。
+docs/F2/NativeRunAccessWriterInstallationPlan.md:93:父级随后明确授权准备最小无密 SETUP 诊断候选，禁止第二次 CI。冻结源码 `3617bd0cb67b2d667cfcbb4ba53d37c101d8df07` 主测 200 PASS、独审 208 PASS（精确重叠 200，不相加），均 0 FAIL/ERROR/SKIP、源码零漂移，结论仅代码/纯 DI LIMITED_PASS。补丁只公开固定 substage/check_id 和白名单整数 HTTP 状态，原 SQL、adapter、workflow 和双层首次运行门不变；旧失败根因仍 UNKNOWN。普通新分支不匹配任一 workflow，未真实再试。具体代码与下一批准范围见[诊断候选记录](NativeRunAccessSetupDiagnosticCandidate-20261012.md)。
+docs/F2/NativeRunAccessWriterInstallationPlan.md:95:## 第二次新批准的一轮实际验收（2026-10-13）
+docs/F2/NativeRunAccessWriterInstallationPlan.md:97:新批准后另建精确单次入口，冻结源码 `4649970278e29b999a2a4f332ba7380f20795a3f`；主测 236 PASS、独审 251 PASS（重叠 236 项，不相加），再正常推送独立分支执行一次。实际 run `38332150145` **FAIL：3 PASS / 1 FAIL / 13 NOT_RUN**，自有进程清理成功。固定诊断定位到 `CATALOG_COMPARE`，具体失败原因仍未知；未改原 worker SQL、adapter 守卫或生产 src，没有重跑或第三次执行。详见[第二次验收及完整证据](RestrictedLinuxSecondTrialAcceptance-20261013.md)。后续真实试验需新的明确决定，纯测试与定位信息不能升级为尚未执行的物理合同 PASS。
+docs/F2/RestrictedLinuxSecondTrialAcceptance-20261013.md:3:本次新批准的一轮标准 Ubuntu 隔离验收已实际运行一次，结果 **3 PASS / 1 FAIL / 13 NOT_RUN**。新诊断将受阻检查定位为 `CATALOG_COMPARE`，具体失败原因及是否存在目录差异仍未知，不能认定某一 SQL 权限存在缺陷。没有修补后重跑，也没有 rerun、dispatch 或第三次试验。
+docs/F2/RestrictedLinuxSecondTrialAcceptance-20261013.md:20:{"substage":"CATALOG","check_id":"CATALOG_COMPARE","status_code":0}
+docs/F2/RestrictedLinuxSecondTrialAcceptance-20261013.md:23:worker 的固定编号是在操作前设置的；本次已进入 `CATALOG_COMPARE` 阶段，包含 `preflight.analyze(...)` 调用以及后续 `report.status == PASS`、`report.changes` 为空的条件检查。公开投影没有携带原始异常或报告内容，因此不能证明报告已生成，也不能区分分析调用异常与报告不满足条件；具体失败原因及是否存在目录差异仍未知。状态码 0 表示该检查没有可公开的 HTTP 状态观察。此检查未完成，因此不得把前面的准备动作或宽失败标签改签为实际 ACL 验收 PASS，也不能反推第一次试验的未知根因。
+docs/F2/RestrictedLinuxSecondTrialAcceptance-20261013.md:33:下一步应先离线分析原目录收集/比较合同，提出只公开固定差异编号的有限诊断或有证据支持的修复；本轮没有导出目录报告、扩大权限或新增试验。任何再一次真实 VM 验收须另有明确决定，不能复用本次已执行的一轮授权。
+Traceback (most recent call last):
+  File "<stdin>", line 6, in <module>
+AssertionError
+END EXACT TOOL RESPONSE OUTPUT FIELD
