@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="17" time="2.978" timestamp="2026-10-13T17:42:08.096775+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_plan_continuity" name="test_new_request_template_link_plan_material_work_and_invalid_input" time="2.098" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[pending_preserved]" time="0.062" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[late_catalog]" time="0.066" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[late_error_new_plan]" time="0.057" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[late403_new_plan]" time="0.055" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[identity_aba]" time="0.062" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[terminal_wrong_plan]" time="0.053" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[denied403]" time="0.053" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[wrong_binding]" time="0.061" /><testcase classname="tests.test_template_plan_continuity" name="test_original_consumer_link_never_leaves_unverified_creation[unknown_create_then_old_read]" time="0.038" /><testcase classname="tests.test_template_plan_continuity" name="test_original_consumer_link_never_leaves_unverified_creation[current_error]" time="0.030" /><testcase classname="tests.test_template_plan_continuity" name="test_original_consumer_link_never_leaves_unverified_creation[crossowner403]" time="0.041" /><testcase classname="tests.test_template_plan_continuity" name="test_original_consumer_link_never_leaves_unverified_creation[late_identity]" time="0.035" /><testcase classname="tests.test_template_plan_continuity" name="test_original_consumer_link_never_leaves_unverified_creation[empty403]" time="0.031"><failure message="json.decoder.JSONDecodeError: Extra data: line 2 column 1 (char 93)">mode = 'empty403'
+
+    @pytest.mark.parametrize("mode",["unknown_create_then_old_read","current_error","crossowner403","late_identity","empty403","nonjson403","late_empty403","late_nonjson403"])
+    def test_original_consumer_link_never_leaves_unverified_creation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_consumer_link_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+        assert result.returncode==0,result.stderr
+&gt;       assert json.loads(result.stdout)["checks"]&gt;=3
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_plan_continuity.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.decoder.JSONDecoder object at 0x7ff3eeb3f560&gt;
+s = '{"mode":"empty403","parses":0,"instancePresent":false,"resultNodes":0,"draftRetained":false}\n{"mode":"empty403","checks":14,"result":"PASS","scope":"FULL_ORIGINAL_TEMPLATE_HTML_403_BEFORE_BODY_WITH_CURRENT_GENERATION_CLEARING"}\n'
+_w = &lt;built-in method match of re.Pattern object at 0x7ff3ee582b50&gt;
+
+    def decode(self, s, _w=WHITESPACE.match):
+        """Return the Python representation of ``s`` (a ``str`` instance
+        containing a JSON document).
+    
+        """
+        obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+        end = _w(s, end).end()
+        if end != len(s):
+&gt;           raise JSONDecodeError("Extra data", s, end)
+E           json.decoder.JSONDecodeError: Extra data: line 2 column 1 (char 93)
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py:341: JSONDecodeError</failure></testcase><testcase classname="tests.test_template_plan_continuity" name="test_original_consumer_link_never_leaves_unverified_creation[nonjson403]" time="0.035"><failure message="json.decoder.JSONDecodeError: Extra data: line 2 column 1 (char 95)">mode = 'nonjson403'
+
+    @pytest.mark.parametrize("mode",["unknown_create_then_old_read","current_error","crossowner403","late_identity","empty403","nonjson403","late_empty403","late_nonjson403"])
+    def test_original_consumer_link_never_leaves_unverified_creation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_consumer_link_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+        assert result.returncode==0,result.stderr
+&gt;       assert json.loads(result.stdout)["checks"]&gt;=3
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_plan_continuity.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.decoder.JSONDecoder object at 0x7ff3eeb3f560&gt;
+s = '{"mode":"nonjson403","parses":0,"instancePresent":false,"resultNodes":0,"draftRetained":false}\n{"mode":"nonjson403","checks":14,"result":"PASS","scope":"FULL_ORIGINAL_TEMPLATE_HTML_403_BEFORE_BODY_WITH_CURRENT_GENERATION_CLEARING"}\n'
+_w = &lt;built-in method match of re.Pattern object at 0x7ff3ee582b50&gt;
+
+    def decode(self, s, _w=WHITESPACE.match):
+        """Return the Python representation of ``s`` (a ``str`` instance
+        containing a JSON document).
+    
+        """
+        obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+        end = _w(s, end).end()
+        if end != len(s):
+&gt;           raise JSONDecodeError("Extra data", s, end)
+E           json.decoder.JSONDecodeError: Extra data: line 2 column 1 (char 95)
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py:341: JSONDecodeError</failure></testcase><testcase classname="tests.test_template_plan_continuity" name="test_original_consumer_link_never_leaves_unverified_creation[late_empty403]" time="0.032"><failure message="json.decoder.JSONDecodeError: Extra data: line 2 column 1 (char 97)">mode = 'late_empty403'
+
+    @pytest.mark.parametrize("mode",["unknown_create_then_old_read","current_error","crossowner403","late_identity","empty403","nonjson403","late_empty403","late_nonjson403"])
+    def test_original_consumer_link_never_leaves_unverified_creation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_consumer_link_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+        assert result.returncode==0,result.stderr
+&gt;       assert json.loads(result.stdout)["checks"]&gt;=3
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_plan_continuity.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.decoder.JSONDecoder object at 0x7ff3eeb3f560&gt;
+s = '{"mode":"late_empty403","parses":0,"instancePresent":true,"resultNodes":5,"draftRetained":false}\n{"mode":"late_empty403","checks":8,"result":"PASS","scope":"FULL_ORIGINAL_TEMPLATE_HTML_403_BEFORE_BODY_WITH_CURRENT_GENERATION_CLEARING"}\n'
+_w = &lt;built-in method match of re.Pattern object at 0x7ff3ee582b50&gt;
+
+    def decode(self, s, _w=WHITESPACE.match):
+        """Return the Python representation of ``s`` (a ``str`` instance
+        containing a JSON document).
+    
+        """
+        obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+        end = _w(s, end).end()
+        if end != len(s):
+&gt;           raise JSONDecodeError("Extra data", s, end)
+E           json.decoder.JSONDecodeError: Extra data: line 2 column 1 (char 97)
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py:341: JSONDecodeError</failure></testcase><testcase classname="tests.test_template_plan_continuity" name="test_original_consumer_link_never_leaves_unverified_creation[late_nonjson403]" time="0.033"><failure message="json.decoder.JSONDecodeError: Extra data: line 2 column 1 (char 99)">mode = 'late_nonjson403'
+
+    @pytest.mark.parametrize("mode",["unknown_create_then_old_read","current_error","crossowner403","late_identity","empty403","nonjson403","late_empty403","late_nonjson403"])
+    def test_original_consumer_link_never_leaves_unverified_creation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_consumer_link_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+        assert result.returncode==0,result.stderr
+&gt;       assert json.loads(result.stdout)["checks"]&gt;=3
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_plan_continuity.py:79: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.decoder.JSONDecoder object at 0x7ff3eeb3f560&gt;
+s = '{"mode":"late_nonjson403","parses":0,"instancePresent":true,"resultNodes":5,"draftRetained":false}\n{"mode":"late_non...","checks":8,"result":"PASS","scope":"FULL_ORIGINAL_TEMPLATE_HTML_403_BEFORE_BODY_WITH_CURRENT_GENERATION_CLEARING"}\n'
+_w = &lt;built-in method match of re.Pattern object at 0x7ff3ee582b50&gt;
+
+    def decode(self, s, _w=WHITESPACE.match):
+        """Return the Python representation of ``s`` (a ``str`` instance
+        containing a JSON document).
+    
+        """
+        obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+        end = _w(s, end).end()
+        if end != len(s):
+&gt;           raise JSONDecodeError("Extra data", s, end)
+E           json.decoder.JSONDecodeError: Extra data: line 2 column 1 (char 99)
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py:341: JSONDecodeError</failure></testcase></testsuite></testsuites>
