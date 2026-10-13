@@ -16,7 +16,7 @@
 | 源码副本 | 从冻结Git对象复制 `src/parkweave`、`scripts/linux_trial`、`scripts/host_case_once` 到T/source，最多512路径；目录0755/文件0644。Git以原checkout非root owner读取，stdout捕获，全部Git stderr=PIPE；不改git config/safe.directory/凭据 |
 | 官方运行时副本 | 仅读 `/usr/bin/python3.12`、`/usr/lib/python3.12` root-owned/nonwrite正规目录/文件。复制到T/environment；只对**新副本**chown(0,0)、目录0755/文件0644、bin/python3.12 0755。保留两个已审固定链接例外：省略sitecustomize外部hook，不读取/etc；同根固定sysconfig alias物化正规文件。其余链接/链/权限不符拒绝，O_NOFOLLOW，无任意resolve |
 | 19wheel依赖 | 原完整哈希锁不变。官方系统python/pip `--isolated` 向 `https://pypi.org/simple` 下载原锁定19个wheel到T/private/wheels；hash/bytes/metadata exact验证后 `--no-index --no-deps --no-compile` 安装到T/environment/lib/python3.12/site-packages。无额外pip安装、apt、system依赖修改；每次下载/安装最多90s，原pip public输出转T/private/dependencies.log |
-| 纯导入子进程 | 仅T/environment/bin/python3.12 `-I -S -B`、空白最小LANG环境、cwd=/、固定受保护sys.path。导入sysconfig及fastapi/uvicorn/psycopg/pydantic/httpx五顶层包并验证__file__在T/environment，get_config_vars非空且sitecustomize未加载；不导入ParkWeave业务入口、不连接数据库/网络/模型。stdout只接受固定`PREPARE_IMPORTS_PASS\n`，stderr只写T/private/import-stderr.log，最多30s |
+| 纯导入子进程 | 仅T/environment/bin/python3.12 `-I -S -B`、空白最小LANG环境、cwd=/、固定受保护sys.path。导入sysconfig及fastapi/uvicorn/psycopg/pydantic/httpx五顶层包并验证__file__在T/environment，get_config_vars非空且sitecustomize未加载；不导入ParkWeave业务入口、不连接数据库/网络/模型。stdout只接受固定`PREPARE_IMPORTS_PASS`加一个LF换行字节，stderr只写T/private/import-stderr.log，最多30s |
 | 无其他资源 | 不创建用户、组、PG cluster/角色/数据库、业务资料、Case、socket监听、memfd/密封fd、模型请求或随机凭据；不扩大安全权限、不配置网络/凭据，不运行原完整业务验收 |
 
 gate在任何claim、新目录、timer、准备/导入子进程或网络动作前要求root、`-I -S -B`、准确新approval、准确新branch、公开T1doo/ParkWeave repo、push、官方GitHub Linux runner、run_number=1、run_attempt=1。Git证明执行commit仅一个父提交（精确冻结候选），差异仅新prepare_approval.json的三字段激活，父提交该文件必须仍pending，checkout干净；gate自身允许以原checkout owner执行只读Git子进程核验。不手工workflow_dispatch、不改旧approval或旧执行branch，不自动重试/补跑；任何明确拒绝停止该动作并保留失败。
@@ -25,7 +25,7 @@ gate在任何claim、新目录、timer、准备/导入子进程或网络动作�
 
 总job最多12min，运行step最多10min；通过gate后进程SIGALRM主窗口480s，成功清理或失败保存日志窗口最多60s。Git读取每项5s；两pip阶段各90s；纯导入30s，subprocess.run timeout/异常杀掉并等待其自有直接子进程；不存在业务daemon。runner超时/硬中止不能宣称清理成功。
 
-成功只在root的dev/inode、root owner、nonwrite目录、/tmp父目录和固定前缀仍匹配且fd-safe shutil.rmtree可用时删除整个新T；核T确实不存在后FILES_REMOVED=PASS、cleanup=true。成功日志随T一同删除。claim仍保留到VM销毁。失败停止后保留新T/private和原始诊断文件在当前临时VM，不上传私有日志、异常文字、路径、argv或stderr；cleanup=false，FILES_REMOVED保留NOT_RUN或实际失败，不伪造删除签收。若失败发生在T之前公开failure_logs=UNAVAILABLE；失败部分目录也不越权补清理，仅随新VM销毁。
+成功只在root的dev/inode、root owner、nonwrite目录、/tmp父目录和固定前缀仍匹配且fd-safe shutil.rmtree可用时删除整个新T；核T确实不存在后FILES_REMOVED=PASS、cleanup=true。成功日志随T一同删除。claim仍保留到VM销毁。准备、导入或确认T删除之前失败，停止后保留尚存在的新T/private和原始诊断文件在当前临时VM，不上传私有日志、异常文字、路径、argv或stderr；cleanup=false，FILES_REMOVED保留NOT_RUN或实际失败，不伪造删除签收。若失败发生在T之前公开failure_logs=UNAVAILABLE；失败部分目录也不越权补清理，仅随新VM销毁。若最后timer复位失败发生在已确认删除T之后，整体仍FAIL/PROTECTED_RUNTIME失败，但保留真实FILES_REMOVED=PASS和cleanup=true；此时T已经不存在、failure_logs=UNAVAILABLE，不能声称仍保留私有日志。
 
 公开stdout仅现有封闭JSON schema：source SHA、phase/error固定枚举、21case状态、cleanup、failure_logs和至多32个`case/substage/check_id/source/line`。该探针成功只证明GATE、PROTECTED_RUNTIME、FILES_REMOVED三项PASS，其他18项NOT_RUN；不是完整host/Case验收。诊断行来自已审代码对象身份和编译行集合，外来代码为0，0..10000。异常/stderr只在已允许的新T/private；不能据此回填旧失败准确原因。
 
