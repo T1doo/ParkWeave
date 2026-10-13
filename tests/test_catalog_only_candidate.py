@@ -335,3 +335,21 @@ def test_catalog_native_and_python_output_are_private_and_streams_restore(tmp_pa
     assert captured.out=='RESTORED\n' and captured.err==''
     private=path.read_text()
     assert POISON in private and 'SYNTHETIC_NATIVE_STDOUT' in private and 'SYNTHETIC_NATIVE_STDERR' in private
+
+
+def test_catalog_dependency_installer_disables_existing_auth_and_configuration(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(boot,'gate',lambda *_:BASE)
+    monkeypatch.setattr(boot,'open',lambda *a,**kw:io.StringIO(),raising=False)
+    monkeypatch.setattr(boot.tempfile,'mkdtemp',lambda **kw:str(tmp_path))
+    seen=[]
+    def install(args, **kw):
+        seen.append((args,kw));raise RuntimeError('SYNTHETIC_STOP_BEFORE_PROBE')
+    monkeypatch.setattr(subprocess,'run',install)
+    assert boot.bootstrap(SHA)==1
+    capsys.readouterr();assert len(seen)==1
+    args,options=seen[0];env=options['env']
+    assert '--no-input' in args and '--keyring-provider=disabled' in args
+    assert env['PIP_CONFIG_FILE']==os.devnull
+    assert env['NETRC']==str(tmp_path/'empty.netrc') and Path(env['NETRC']).read_bytes()==b''
+    assert stat.S_IMODE(Path(env['NETRC']).stat().st_mode)==0o600
+    assert set(env)=={'LANG','PATH','NETRC','PIP_CONFIG_FILE'}

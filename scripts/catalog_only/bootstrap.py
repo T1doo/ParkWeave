@@ -116,10 +116,15 @@ def bootstrap(sha):
         stage = 'DEPENDENCIES'; site = root / 'dependencies'
         packages = ['fastapi==0.142.2', 'uvicorn==0.54.0', 'psycopg[binary]==3.3.6',
                     'pydantic==2.13.5', 'httpx==0.28.1']
+        netrc = root / 'empty.netrc'
+        fd = os.open(netrc, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        os.close(fd)
         with (root / 'dependencies.log').open('wb') as log:
             subprocess.run(['/usr/bin/python3.12', '-I', '-m', 'pip', '--isolated', 'install',
+                '--no-input', '--keyring-provider=disabled',
                 '--disable-pip-version-check', '--no-cache-dir', '--no-compile', '--only-binary=:all:',
-                '--target', str(site), *packages], env={'LANG': 'C.UTF-8', 'PATH': '/usr/bin:/bin'},
+                '--target', str(site), *packages], env={'LANG': 'C.UTF-8', 'PATH': '/usr/bin:/bin',
+                    'NETRC': str(netrc), 'PIP_CONFIG_FILE': os.devnull},
                 stdout=log, stderr=log, timeout=180, check=True)
         value['cases']['DEPENDENCIES'] = 'PASS'
         stage = 'PG16_START'
