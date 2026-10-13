@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.168" timestamp="2026-10-13T13:09:55.721855+00:00" hostname="754d39e95154"><testcase classname=".runtime.owner-case-worklist-20261013.independent.test_auth_wait" name="test_revoked_during_authorization_lock_wait" time="0.799"><failure message="Failed: DID NOT RAISE Denied">[SANITIZED EXPORT: fixture credential repr removed; original retained privately]
+
+    def test_revoked_during_authorization_lock_wait(preparation_fixture):
+        f=preparation_fixture;create(f)
+        entered=threading.Event();original=f[0].lock_principal
+        def observed(c,id,*a,**kw):
+            entered.set();return original(c,id,*a,**kw)
+        f[0].lock_principal=observed
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            with f[1].connect() as c:
+                f[1].lock_principal(c,'fixture-a',exclusive=True)
+                future=pool.submit(case_worklist.read,f[0],f[2]['fixture-a'])
+                assert entered.wait(10)
+                c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            try:
+&gt;               with pytest.raises(Denied):future.result(timeout=10)
+                     ^^^^^^^^^^^^^^^^^^^^^
+E               Failed: DID NOT RAISE Denied
+
+.runtime/owner-case-worklist-20261013/independent/test_auth_wait.py:22: Failed</failure></testcase></testsuite></testsuites>

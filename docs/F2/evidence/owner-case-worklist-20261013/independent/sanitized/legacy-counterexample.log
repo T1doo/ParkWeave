@@ -1,0 +1,62 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+________________ test_legacy_receipt_broken_binding_is_unknown _________________
+
+[SANITIZED EXPORT: fixture credential repr removed; original retained privately]
+
+    def test_legacy_receipt_broken_binding_is_unknown(receipt_fixture):
+        f=receipt_fixture;r,p,_=create_receipt(f);assert r.status_code==201
+        row=case_worklist.read(f[0],f[2]['fixture-a'])['items'][0]
+        assert row['attention']=='WAITING_RECEIPT'
+        with f[1].connect() as c:
+>           c.execute('UPDATE service_receipt_steps SET service_version=%s WHERE id=%s',('CORRUPT_NEGATIVE_CONTROL',r.json()['step']['id']))
+
+.runtime/owner-case-worklist-20261013/independent/test_auth_wait.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7fc678ad1d00>
+query = 'UPDATE service_receipt_steps SET service_version=%s WHERE id=%s'
+params = ('CORRUPT_NEGATIVE_CONTROL', '087b2b2f-2366-4330-81c6-51cbcba9e954')
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.InvalidTextRepresentation: invalid input syntax for type integer: "CORRUPT_NEGATIVE_CONTROL"
+E           CONTEXT:  unnamed portal parameter $1 = '...'
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InvalidTextRepresentation
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/owner-case-worklist-20261013/independent/test_auth_wait.py::test_revoked_during_authorization_lock_wait
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/owner-case-worklist-20261013/independent/test_auth_wait.py::test_legacy_receipt_broken_binding_is_unknown
+1 failed, 1 passed, 2 warnings in 1.63s

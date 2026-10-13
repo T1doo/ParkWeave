@@ -1,0 +1,117 @@
+{
+  "verdict": "LIMITED_PASS_OWNER_CASE_WORKLIST_AFTER_FIXES",
+  "blocking_findings_remaining": [],
+  "resolved_findings": [
+    "RR authorization snapshot retained grant revoked during lock wait: confirmed real PG failure then fixed READ COMMITTED auth plus one-statement business snapshot",
+    "403 cleanup could throw on pending preparation: forced discard private view while retaining recovery handles",
+    "late navigation error used generic pageError lacking domain context: generation/token guard and existing domain error handlers",
+    "legacy invalid receipt binding must remain UNKNOWN instead of NEEDS_DISPATCH: existing receipt flag and conservative fallback"
+  ],
+  "actual_verification": {
+    "auth_wait_before_fix": "1 FAIL (product counterexample)",
+    "auth_wait_fixed": "1 PASS",
+    "auth_and_legacy_binding_final": "2 PASS (auth overlaps previous fixed window)",
+    "offline_nodevm": "9 checks PASS; exact worklist block with mocked original navigation functions"
+  },
+  "harness_failures_preserved": [
+    "auth-wait-original: ImportError Denied imported from wrong module",
+    "legacy-counterexample: invalid SQL injected integer service_version with text; 1 PASS/1 FAIL due independent test injection",
+    "worklist-harness-original: extracted comment lost // causing harness SyntaxError"
+  ],
+  "limits": [
+    "No browser launched; historical admin refusal retained",
+    "No native Windows/security probe/host permission modifications",
+    "No real model/deploy or new Grants",
+    "PG existing isolated owner fixture only",
+    "Read-only projection does not prove material freshness/qualification/external acceptance/offline fulfillment; original endpoint rechecks versions and permissions"
+  ],
+  "source_hashes": [
+    {
+      "path": "src/parkweave/case_worklist.py",
+      "sha256": "78ac2f09095a27e88eacd25eb38440460640d745bd3703a6892c92f20e167e96",
+      "bytes": 7512
+    },
+    {
+      "path": "src/parkweave/api.py",
+      "sha256": "ea0e01cf9b5ee12fdeec3069b6090b2283e4a6c2bd5bd3b8b338f31068ef867d",
+      "bytes": 53057
+    },
+    {
+      "path": "src/parkweave/web.html",
+      "sha256": "5e5f8ee4609e59cabf75094e38087df3810c514212449f22057958d436c202ad",
+      "bytes": 498877
+    }
+  ],
+  "evidence": [
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/auth-wait-counterexample.log",
+      "sha256": "7df6bad89f7088d24b3c1a67cd270781a257832d574e14b4b77711f86a0f57e9",
+      "bytes": 2474
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/auth-wait-counterexample.xml",
+      "sha256": "c983528ee220a516bc4223d35cbc5ead4c212a4156bc32a46db7a426b61834a3",
+      "bytes": 1693
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/auth-wait-fixed.log",
+      "sha256": "7ddc3f3ca1b5c8e0756a1a3fcddda51a5a3cd26935c2a411788db2aacd00a564",
+      "bytes": 905
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/auth-wait-fixed.xml",
+      "sha256": "3aaa50a1df937b1369befca4bdf012fadebc4979316e7ec016b33b8e4f1dca45",
+      "bytes": 401
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/auth-wait-original.log",
+      "sha256": "21212d2337c37742147a27035480eaba24c5683734d955536fb3811739af79c9",
+      "bytes": 1611
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/auth-wait-original.xml",
+      "sha256": "289eba2d12f4a724d8de3875779b99e18975c229a8f9aa223f3be609060bb9c2",
+      "bytes": 1114
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/legacy-binding-counterexample.log",
+      "sha256": "bccaa157081f4f5e40a020df55b8827239f7122ec6f485f02cbf8a0f0f34e2cf",
+      "bytes": 905
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/legacy-binding-counterexample.xml",
+      "sha256": "71554b206806b206eb43edff3eab22ecb7ac622bb7116c5273477b1d9c18d17f",
+      "bytes": 556
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/legacy-counterexample.log",
+      "sha256": "9040bde75fd110720441b8f89b542ceec3f0c30219e163f5c5c5177ed28e954b",
+      "bytes": 3470
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/legacy-counterexample.xml",
+      "sha256": "3d0e19e3db3586ab1739865e3f504b3adb2456a1fa59892147bf4856c86241d5",
+      "bytes": 2983
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/test_auth_wait.py",
+      "sha256": "58f207fd4d0378a65b000922402583e5faf934d550c52ced98008ea1c8977ee3",
+      "bytes": 1644
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/worklist-harness-original.log",
+      "sha256": "87c6834ca5422af72679c24e89671bea816afa941a7b4913a26740bf5c9e6551",
+      "bytes": 860
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/worklist-negative.js",
+      "sha256": "f2e45016b29d5b1ca24616a93fa357fb7dae137ca8f114a8254043561c57ade4",
+      "bytes": 3718
+    },
+    {
+      "path": ".runtime/owner-case-worklist-20261013/independent/worklist-negative.log",
+      "sha256": "504aaec93a56826b487ed44a60149873ca286d65832aaeee5be8e955ab77d63b",
+      "bytes": 131
+    }
+  ]
+}

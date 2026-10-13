@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="1.618" timestamp="2026-10-13T13:11:44.022551+00:00" hostname="754d39e95154"><testcase classname=".runtime.owner-case-worklist-20261013.independent.test_auth_wait" name="test_revoked_during_authorization_lock_wait" time="0.831" /><testcase classname=".runtime.owner-case-worklist-20261013.independent.test_auth_wait" name="test_legacy_receipt_broken_binding_is_unknown" time="0.337"><failure message="psycopg.errors.InvalidTextRepresentation: invalid input syntax for type integer: &quot;CORRUPT_NEGATIVE_CONTROL&quot;&#10;CONTEXT:  unnamed portal parameter $1 = '...'">[SANITIZED EXPORT: fixture credential repr removed; original retained privately]
+
+    def test_legacy_receipt_broken_binding_is_unknown(receipt_fixture):
+        f=receipt_fixture;r,p,_=create_receipt(f);assert r.status_code==201
+        row=case_worklist.read(f[0],f[2]['fixture-a'])['items'][0]
+        assert row['attention']=='WAITING_RECEIPT'
+        with f[1].connect() as c:
+&gt;           c.execute('UPDATE service_receipt_steps SET service_version=%s WHERE id=%s',('CORRUPT_NEGATIVE_CONTROL',r.json()['step']['id']))
+
+.runtime/owner-case-worklist-20261013/independent/test_auth_wait.py:32: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7fc678ad1d00&gt;
+query = 'UPDATE service_receipt_steps SET service_version=%s WHERE id=%s'
+params = ('CORRUPT_NEGATIVE_CONTROL', '087b2b2f-2366-4330-81c6-51cbcba9e954')
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InvalidTextRepresentation: invalid input syntax for type integer: "CORRUPT_NEGATIVE_CONTROL"
+E           CONTEXT:  unnamed portal parameter $1 = '...'
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InvalidTextRepresentation</failure></testcase></testsuite></testsuites>
