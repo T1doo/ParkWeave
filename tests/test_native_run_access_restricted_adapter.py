@@ -101,6 +101,70 @@ def test_public_and_synthetic_approval_cannot_reach_live_operations(monkeypatch,
     assert error.value.code==4 and 'SYNTHETIC_PRIVATE_VALUE' not in capsys.readouterr().err
 
 
+def test_prerequisites_do_not_read_secrets_connect_or_issue_launch_authority(monkeypatch):
+    spec,_,layout,_=adapter_inputs();controller=host.LinuxHost(spec,layout)
+    monkeypatch.setattr(host.os,'geteuid',lambda:0)
+    for name in ('_identities_check','_source_metadata_check','_interpreter_metadata_check','_dependencies_check'):
+        monkeypatch.setattr(host,name,lambda *a:None)
+    monkeypatch.setattr(host,'_protected_bytes',lambda *a,**k:pytest.fail('metadata inspection read private/content bytes'))
+    result=controller.inspect_prerequisites()
+    assert result['status']=='APPROVAL_REQUIRED' and result['actual_run']=='NOT_RUN'
+    assert not any(result[k] for k in ('can_start','installation_authorized','activation_enabled','production_connected'))
+    assert result['checks']['protected_approval_and_private_inputs']=='NOT_CHECKED'
+    assert result['checks']['database_and_business_acl']=='NOT_CHECKED'
+    with pytest.raises(Denied):controller.start()
+    with pytest.raises(Denied):controller._spawn(result,9)
+
+
+@pytest.mark.parametrize('helper', ['_identities_check','_source_metadata_check','_interpreter_metadata_check','_dependencies_check'])
+@pytest.mark.parametrize('error',[Denied,OSError,RuntimeError])
+def test_prerequisite_failures_remain_closed_and_never_echo_inputs(monkeypatch,helper,error):
+    spec,_,layout,_=adapter_inputs();controller=host.LinuxHost(spec,layout)
+    monkeypatch.setattr(host.os,'geteuid',lambda:0)
+    for name in ('_identities_check','_source_metadata_check','_interpreter_metadata_check','_dependencies_check'):
+        monkeypatch.setattr(host,name,lambda *a:None)
+    def fail(*a):raise error('SYNTHETIC_PRIVATE_PREREQUISITE_VALUE')
+    monkeypatch.setattr(host,helper,fail)
+    result=controller.inspect_prerequisites()
+    assert result['status']==('UNKNOWN' if error is RuntimeError else 'BLOCKED')
+    assert 'SYNTHETIC_PRIVATE_PREREQUISITE_VALUE' not in json.dumps(result)
+    assert set(result['checks'])=={'linux_runtime','privileged_launcher','existing_identities',
+        'protected_source_metadata','protected_dependencies_metadata',
+        'protected_approval_and_private_inputs','database_and_business_acl'}
+    assert result['actual_run']=='NOT_RUN' and not result['can_start']
+
+
+def test_nonroot_launcher_cannot_become_ready_from_other_pass_observations(monkeypatch):
+    spec,_,layout,_=adapter_inputs();controller=host.LinuxHost(spec,layout)
+    monkeypatch.setattr(host.os,'geteuid',lambda:1000)
+    for name in ('_identities_check','_source_metadata_check','_interpreter_metadata_check','_dependencies_check'):
+        monkeypatch.setattr(host,name,lambda *a:None)
+    result=controller.inspect_prerequisites()
+    assert result['status']=='BLOCKED' and result['checks']['privileged_launcher']=='BLOCKED'
+    assert not result['can_start']
+
+
+def test_metadata_observation_does_not_replace_real_code_hash_verification(monkeypatch):
+    _,_,data,_=adapter_inputs();layout=host.RuntimeLayout.model_validate(data);reads=[]
+    monkeypatch.setattr(host,'_source_metadata_check',lambda *a:None)
+    def content(path,owner,**kw):
+        reads.append((path,kw['expected']))
+        if path!=layout.interpreter:raise Denied('changed source hash')
+    monkeypatch.setattr(host,'_protected_bytes',content)
+    with pytest.raises(Denied):host._code_check(layout)
+    assert reads==[(layout.interpreter,layout.interpreter_sha256),next(iter(layout.source_files.items()))]
+
+
+@pytest.mark.parametrize('mode,uid,size',[(stat.S_IFLNK|0o777,0,1),(stat.S_IFDIR|0o755,0,1),
+    (stat.S_IFREG|0o755,1000,1),(stat.S_IFREG|0o777,0,1),(stat.S_IFREG|0o755,0,64*1024*1024+1)])
+def test_interpreter_metadata_rejects_unprotected_input_without_read(monkeypatch,mode,uid,size):
+    _,_,layout,_=adapter_inputs();layout=host.RuntimeLayout.model_validate(layout)
+    monkeypatch.setattr(host,'_path_chain',lambda *a:None)
+    monkeypatch.setattr(host.Path,'lstat',lambda p:SimpleNamespace(st_mode=mode,st_uid=uid,st_size=size))
+    monkeypatch.setattr(host,'_protected_bytes',lambda *a,**k:pytest.fail('unexpected content read'))
+    with pytest.raises(Denied):host._interpreter_metadata_check(layout)
+
+
 @pytest.mark.parametrize('mutation', ['spec','layout','signature','action'])
 def test_host_approval_signature_binds_entire_action_and_never_issues_capability(mutation):
     spec,_,layout,_=adapter_inputs();request=host.launch_request(spec,layout);key=b'SYNTHETIC_ONLY_APPROVAL_KEY_32___'

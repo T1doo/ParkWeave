@@ -13,6 +13,7 @@ import os
 import re
 from pathlib import Path
 import signal
+import socket
 import stat
 import subprocess
 import sys
@@ -151,8 +152,8 @@ def _protected_bytes(path, owner, *, private=False, expected=None, limit=MAX_PRI
     finally:os.close(fd)
 
 
-def _code_check(layout):
-    _protected_bytes(layout.interpreter,0,expected=layout.interpreter_sha256,limit=64*1024*1024)
+def _source_metadata_check(layout):
+    """Inspect only names/ownership/modes; no source or private input reads."""
     root = Path(layout.source_root+'/parkweave')
     _path_chain(str(root),{0})
     expected = set()
@@ -166,6 +167,19 @@ def _code_check(layout):
             raise Denied('complete protected source tree required; no executable cache/extension')
         if stat.S_ISREG(s.st_mode):expected.add(str(p))
     if expected!=set(layout.source_files):raise Denied('complete protected source bundle required')
+
+
+def _interpreter_metadata_check(layout):
+    _path_chain(layout.interpreter,{0})
+    s=Path(layout.interpreter).lstat()
+    if (not stat.S_ISREG(s.st_mode) or s.st_uid!=0 or s.st_mode&0o022 or
+            s.st_size>64*1024*1024):
+        raise Denied('protected regular interpreter required')
+
+
+def _code_check(layout):
+    _protected_bytes(layout.interpreter,0,expected=layout.interpreter_sha256,limit=64*1024*1024)
+    _source_metadata_check(layout)
     for path,digest in layout.source_files.items():_protected_bytes(path,0,expected=digest)
 
 
@@ -285,6 +299,30 @@ class LinuxHost:
     def spec(self):return preflight.InstallationSpec.model_validate_json(self._spec_json)
     @property
     def layout(self):return RuntimeLayout.model_validate_json(self._layout_json)
+
+    def inspect_prerequisites(self):
+        """Real metadata observations only; never reads keys or grants launch authority.
+
+        Even all PASS observations still require the original signed approval,
+        source hashes, private inputs and database/ACL checks in start/runtime.
+        """
+        layout=self.layout
+        checks=dict(linux_runtime='PASS' if os.name=='posix' and
+                    hasattr(os,'memfd_create') and hasattr(socket,'SO_PEERCRED') else 'BLOCKED',
+                    privileged_launcher='PASS' if os.geteuid()==0 else 'BLOCKED')
+        for name,check in (('existing_identities',lambda:_identities_check(layout)),
+                           ('protected_source_metadata',lambda:_source_metadata_check(layout)),
+                           ('protected_dependencies_metadata',lambda:(
+                               _interpreter_metadata_check(layout),_dependencies_check(layout)))):
+            try:check()
+            except (Denied,OSError):checks[name]='BLOCKED'
+            except Exception:checks[name]='UNKNOWN'
+            else:checks[name]='PASS'
+        checks.update(protected_approval_and_private_inputs='NOT_CHECKED',database_and_business_acl='NOT_CHECKED')
+        status='BLOCKED' if 'BLOCKED' in checks.values() else 'UNKNOWN' if 'UNKNOWN' in checks.values() else 'APPROVAL_REQUIRED'
+        return dict(schema='parkweave-restricted-host-prerequisites/1',status=status,checks=checks,
+                    can_start=False,installation_authorized=False,activation_enabled=False,
+                    production_connected=False,actual_run='NOT_RUN')
 
     def _approve(self,authorization):
         if type(self) is not LinuxHost or authorization is None or type(authorization) is not str or authorization!=self.layout.approval_path:
