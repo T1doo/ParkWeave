@@ -15,3 +15,5 @@ receipt-submit及同类原表单返回其原Promise，保护覆盖实际POST挂�
 原失败证据保留。根最初红窗口为2有效FAIL、1脚手架时序假PASS；补上macrotask tick后，对精确83717 Git blob的实际receipt-form-pending反例FAIL。独审另4实际语义反例对精确83717 FAIL。中间修复窗口66、71、71 PASS均不与最终415累加。执行连接曾报 `exec_command failed: CreateProcess { message: "Rejected(\"Failed to create unified exec process: exec-server transport disconnected\")" }`；该次动作NOT_EXECUTED，原工具恢复后才重新执行，没有换环境或绕过。归档逐文件保留hash/字节，本片已识别fixture会话repr导出数为0，原件不修改；归档hash检查属于证据完整性检查。源码diff检查PASS；归档暂存diff检查实际FAIL/rc2，根原红日志/XML共12处pytest尾空白原样保留，检查输出也归档，不裁剪原件。
 
 两安全approval保持false/null/null；main/F1/原F2及既有交付/安全分支不修改，不创建新安全执行分支。浏览器、安全探针、Windows、新冷AT08/35、真实模型/付费、生产迁移及部署均NOT RUN。历史浏览器拒绝不重试，原安全1PASS/1FAIL/19NOT_RUN和未知根因不变。本片修复范围可复核交付，下一步由父级复核；完整Case生命周期和冷全链未因本片通过而签收。
+
+后续父级核验：fa15交付三类修复方向成立，但冷intake创建Run后缺少允许的原GET恢复；另发现prep-create原Run GET核验遗漏。由 [RunRefreshRecovery-20261013.md](RunRefreshRecovery-20261013.md) 接续修复及有界真实PG/ASGI冷链验证，本文原统计与证据保持原样。

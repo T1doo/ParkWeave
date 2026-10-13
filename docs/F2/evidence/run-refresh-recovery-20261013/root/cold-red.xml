@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.045" timestamp="2026-10-13T16:04:10.877008+00:00" hostname="754d39e95154"><testcase classname="tests.test_worklist_real_entries_offline" name="test_cold_original_entries_use_owned_asgi_run_preparation_and_evidence" time="0.993"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:46:94&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0&#10; +  where 1 = wait(timeout=15)&#10; +    where wait = &lt;Popen: returncode: 1 args: ['node', '/workspace/ParkWeave/tests/worklist_re...&gt;.wait">preparation_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+
+    def test_cold_original_entries_use_owned_asgi_run_preparation_and_evidence(preparation_fixture):
+        f=preparation_fixture
+        proc=subprocess.Popen(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),'intake_cold_asgi'],
+            cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        requests=[]
+        try:
+            for line in proc.stdout:
+                message=json.loads(line)
+                if 'request' not in message:
+                    assert message['mode']=='intake_cold_asgi' and message['checks']&gt;=12
+                    break
+                request=message['request'];options=request['options'];method=options.get('method','GET')
+                requests.append((method,request['path']))
+                h=headers(f[2],key=options.get('headers',{}).get('Idempotency-Key'))
+                response=f[3].request(method,request['path'],headers=h,json=json.loads(options['body']) if options.get('body') else None)
+                assert response.status_code&lt;400,(method,request['path'],response.status_code)
+                if method=='POST' and request['path']=='/api/runs':f[0].finish(f[0].claim('synthetic-cold-entry'))
+                proc.stdin.write(json.dumps({'status':response.status_code,'body':response.json()})+'\n');proc.stdin.flush()
+&gt;           assert proc.wait(timeout=15)==0,proc.stderr.read()
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E                 at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:46:94
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = &lt;Popen: returncode: 1 args: ['node', '/workspace/ParkWeave/tests/worklist_re...&gt;.wait
+
+tests/test_worklist_real_entries_offline.py:34: AssertionError</failure></testcase></testsuite></testsuites>
