@@ -205,3 +205,23 @@ def test_exclusive_revocation_blocks_new_call_with_bounded_conflict_then_denies(
             response=pool.submit(act,f,row,'SUBMIT').result(timeout=8)
         assert response.status_code==409
     assert act(f,row,'SUBMIT').status_code==403 and counts(f)==before
+
+
+@pytest.mark.parametrize('rejection',['stale_revision','empty_reason'])
+def test_explicit_command_rejection_has_no_receipt_event_and_corrected_new_key_succeeds(receipt_fixture,rejection):
+    f=receipt_fixture;created,_,_=create(f);row=act(f,created.json(),'SUBMIT').json();before=counts(f);key=uuid4().hex
+    body={'action':'ACKNOWLEDGE','expected_revision':row['step']['revision'],'receipt_sha256':row['current_receipt']['source_sha256'],'reason':'SYNTHETIC explicit decision'}
+    if rejection=='stale_revision':body['expected_revision']-=1
+    else:body['reason']=''
+    path='/api/executor-receipts/'+row['step']['id']+'/commands'
+    rejected=f[3].post(path,headers=headers(f[2],key=key),json=body)
+    assert rejected.status_code==(409 if rejection=='stale_revision' else 422)
+    if rejection=='stale_revision':assert rejected.json()['detail']=='stale receipt step revision; refresh required'
+    else:assert any(e['loc']==['body','reason'] for e in rejected.json()['detail'])
+    with f[1].connect() as c:
+        assert c.execute('SELECT count(*) n FROM service_receipt_events WHERE actor_id=%s AND request_key=%s',('fixture-a',key)).fetchone()['n']==0
+    assert counts(f)==before
+    fresh=read(f,row).json();assert fresh['step']==row['step']
+    corrected=act(f,fresh,'ACKNOWLEDGE',key=uuid4().hex,reason='SYNTHETIC corrected explicit decision')
+    assert corrected.status_code==200 and corrected.json()['step']['state']=='LOCAL_ACKNOWLEDGED'
+    assert counts(f)==[before[0],before[1],before[2]+1]
