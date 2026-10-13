@@ -50,7 +50,8 @@ def virtual_bootstrap(monkeypatch):
     monkeypatch.setattr(b.os,'close',lambda *a:None)
     monkeypatch.setattr(b.os,'write',lambda fd,raw:len(raw))
     monkeypatch.setattr(b.os,'read',lambda fd,size:b'')
-    def opened(path,flags,*args):
+    def opened(path,flags,*args,**kwargs):
+        if 'dir_fd' in kwargs:path=VirtualPath.fdpaths[kwargs['dir_fd']]/str(path)
         p=VirtualPath(str(path));fd=100+len(VirtualPath.fdpaths);VirtualPath.fdpaths[fd]=p
         if flags&b.os.O_CREAT:p.write_bytes(b'')
         else:VirtualPath.reads.append(str(path))

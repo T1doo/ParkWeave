@@ -11,8 +11,8 @@
 | 资源/操作 | 精确范围 |
 | --- | --- |
 | 一次claim | `/tmp/parkweave-prepare-only-once-20261013.claim`，root 0600，O_EXCL/O_NOFOLLOW创建一次，内容仅冻结source SHA。成功/失败均不删除以拒绝同VM重试；VM销毁时消失 |
-| 一个新T | `/tmp/parkweave-prepare-<uuid4hex>`，root 0711；仅系统UUID标识，无随机业务凭据；记录创建时dev/inode用于清理验证 |
-| 私有目录 | T/private，root 0700；空empty.netrc 0600、wheels目录、dependencies.log、import-stderr.log、失败时prepare-failure.log。不读取用户netrc/keyring或任何现有凭据 |
+| 一个新T | `/tmp/parkweave-prepare-<uuid4hex>`，root 请求0711（umask可收紧，owner700须保留且禁止新增权限位）；仅系统UUID标识，无随机业务凭据；记录创建时dev/inode用于清理验证 |
+| 私有目录 | T/private，root 0700；root/private必须分别由本次独占mkdir成功，核root owner、目录类型、权限和记录的dev/inode后才允许失败日志。T冲突目录、symlink或private创建冲突均不采纳、不写旧路径；空empty.netrc 0600、wheels目录、dependencies.log、import-stderr.log、失败时prepare-failure.log。不读取用户netrc/keyring或任何现有凭据 |
 | 源码副本 | 从冻结Git对象复制 `src/parkweave`、`scripts/linux_trial`、`scripts/host_case_once` 到T/source，最多512路径；目录0755/文件0644。Git以原checkout非root owner读取，stdout捕获，全部Git stderr=PIPE；不改git config/safe.directory/凭据 |
 | 官方运行时副本 | 仅读 `/usr/bin/python3.12`、`/usr/lib/python3.12` root-owned/nonwrite正规目录/文件。复制到T/environment；只对**新副本**chown(0,0)、目录0755/文件0644、bin/python3.12 0755。保留两个已审固定链接例外：省略sitecustomize外部hook，不读取/etc；同根固定sysconfig alias物化正规文件。其余链接/链/权限不符拒绝，O_NOFOLLOW，无任意resolve |
 | 19wheel依赖 | 原完整哈希锁不变。官方系统python/pip `--isolated` 向 `https://pypi.org/simple` 下载原锁定19个wheel到T/private/wheels；hash/bytes/metadata exact验证后 `--no-index --no-deps --no-compile` 安装到T/environment/lib/python3.12/site-packages。无额外pip安装、apt、system依赖修改；每次下载/安装最多90s，原pip public输出转T/private/dependencies.log |
@@ -25,7 +25,7 @@ gate在任何claim、新目录、timer、准备/导入子进程或网络动作�
 
 总job最多12min，运行step最多10min；通过gate后进程SIGALRM主窗口480s，成功清理或失败保存日志窗口最多60s。Git读取每项5s；两pip阶段各90s；纯导入30s，subprocess.run timeout/异常杀掉并等待其自有直接子进程；不存在业务daemon。runner超时/硬中止不能宣称清理成功。
 
-成功只在root的dev/inode、root owner、nonwrite目录、/tmp父目录和固定前缀仍匹配且fd-safe shutil.rmtree可用时删除整个新T；核T确实不存在后FILES_REMOVED=PASS、cleanup=true。成功日志随T一同删除。claim仍保留到VM销毁。准备、导入或确认T删除之前失败，停止后保留尚存在的新T/private和原始诊断文件在当前临时VM，不上传私有日志、异常文字、路径、argv或stderr；cleanup=false，FILES_REMOVED保留NOT_RUN或实际失败，不伪造删除签收。若失败发生在T之前公开failure_logs=UNAVAILABLE；失败部分目录也不越权补清理，仅随新VM销毁。若最后timer复位失败发生在已确认删除T之后，整体仍FAIL/PROTECTED_RUNTIME失败，但保留真实FILES_REMOVED=PASS和cleanup=true；此时T已经不存在、failure_logs=UNAVAILABLE，不能声称仍保留私有日志。
+成功只在root的dev/inode、root owner、nonwrite目录、/tmp父目录和固定前缀仍匹配且fd-safe shutil.rmtree可用时删除整个新T；核T确实不存在后FILES_REMOVED=PASS、cleanup=true。成功日志随T一同删除。claim仍保留到VM销毁。准备、导入或确认T删除之前失败，停止后保留尚存在的新T/private和原始诊断文件在当前临时VM，不上传私有日志、异常文字、路径、argv或stderr；cleanup=false，FILES_REMOVED保留NOT_RUN或实际失败，不伪造删除签收。若失败发生在root/private独占创建和目录实例核验完成之前，公开failure_logs=UNAVAILABLE，不尝试打开或写冲突路径；日志保存还须以O_DIRECTORY/O_NOFOLLOW打开root及其相对private，fstat重核记录的dev/inode/owner/mode，再以dir_fd相对O_EXCL/O_NOFOLLOW创建0600新日志，已存在日志不覆盖，所有自有FD关闭。失败部分目录也不越权补清理，仅随新VM销毁。若最后timer复位失败发生在已确认删除T之后，整体仍FAIL/PROTECTED_RUNTIME失败，但保留真实FILES_REMOVED=PASS和cleanup=true；此时T已经不存在、failure_logs=UNAVAILABLE，不能声称仍保留私有日志。
 
 公开stdout仅现有封闭JSON schema：source SHA、phase/error固定枚举、21case状态、cleanup、failure_logs和至多32个`case/substage/check_id/source/line`。该探针成功只证明GATE、PROTECTED_RUNTIME、FILES_REMOVED三项PASS，其他18项NOT_RUN；不是完整host/Case验收。诊断行来自已审代码对象身份和编译行集合，外来代码为0，0..10000。异常/stderr只在已允许的新T/private；不能据此回填旧失败准确原因。
 

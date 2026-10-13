@@ -60,9 +60,39 @@ def remove_owned(root,identity):
     if root.exists() or root.is_symlink():raise OSError('OWNED_REMOVAL_REQUIRED')
 
 
+def owned_directory(s,identity,mode):
+    permissions=stat.S_IMODE(s.st_mode)
+    if (not stat.S_ISDIR(s.st_mode) or s.st_uid!=0 or permissions&~mode or permissions&0o700!=0o700 or
+            (s.st_dev,s.st_ino)!=identity):
+        raise PermissionError('OWNED_PRIVATE_DIRECTORY_REQUIRED')
+
+
+def failure_log(root,identity,private_identity,raw):
+    # Open verified directory instances, never follow a conflicting/replaced path.
+    rootfd=os.open(root,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW|os.O_CLOEXEC)
+    privatefd=None;logfd=None
+    try:
+        owned_directory(os.fstat(rootfd),identity,0o711)
+        privatefd=os.open('private',os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW|os.O_CLOEXEC,dir_fd=rootfd)
+        owned_directory(os.fstat(privatefd),private_identity,0o700)
+        logfd=os.open('prepare-failure.log',os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW|os.O_CLOEXEC,
+            0o600,dir_fd=privatefd)
+        while raw:
+            count=os.write(logfd,raw)
+            if count<=0:raise OSError('PRIVATE_LOG_WRITE_REQUIRED')
+            raw=raw[count:]
+    finally:
+        try:
+            if logfd is not None:os.close(logfd)
+        finally:
+            try:
+                if privatefd is not None:os.close(privatefd)
+            finally:os.close(rootfd)
+
+
 def run(sha):
     value=b.initial(sha);diag=b.Diagnostic(value['diagnostics']);root=None
-    old_handler=None;timer_started=False
+    old_handler=None;timer_started=False;log_ready=False
     try:
         diag.checkpoint('B_PREP_FLAGS')
         if not sys.flags.isolated or not sys.flags.no_site or not sys.dont_write_bytecode:
@@ -81,7 +111,12 @@ def run(sha):
         diag.checkpoint('B_ROOT')
         root=Path('/tmp/parkweave-prepare-'+b.uuid4().hex);root.mkdir(mode=0o711)
         s=root.lstat();identity=(s.st_dev,s.st_ino)
+        owned_directory(s,identity,0o711)
         diag.checkpoint('B_PRIVATE_DIR');(root/'private').mkdir(mode=0o700)
+        s=(root/'private').lstat();private_identity=(s.st_dev,s.st_ino)
+        owned_directory(s,private_identity,0o700)
+        owned_directory(root.lstat(),identity,0o711)
+        log_ready=True # Only after both exclusive creations and instance checks.
         value['phase']='PROTECTED_RUNTIME'
         context=b.prepare(checkout,source_sha,root,diag)
         diag.checkpoint('B_PREP_PROBE');stdout=probe(context,root)
@@ -98,8 +133,8 @@ def run(sha):
         if timer_started:signal.alarm(60)
         try:
             diag.checkpoint('B_PRIVATE_LOG',case='GATE' if failed['case']=='GATE' else 'PROTECTED_RUNTIME')
-            if root is None:raise OSError('NO_PRIVATE_ROOT')
-            (root/'private/prepare-failure.log').write_text(traceback.format_exc())
+            if not log_ready:raise OSError('NO_OWNED_PRIVATE_ROOT')
+            failure_log(root,identity,private_identity,traceback.format_exc().encode())
             value['failure_logs']='SAVED'
         except BaseException:
             diag.capture();value['failure_logs']='UNAVAILABLE'
