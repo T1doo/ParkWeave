@@ -40,7 +40,7 @@ def test_original_page_differentiates_declared_constraints_and_confirms_exact_so
             assert c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(summary['first'],)).fetchone()['service_case_plan']['id']==summary['adopted']
             assert c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(summary['second'],)).fetchone()['service_case_plan'] is None
         out=Path('.runtime/differentiated-planning-20261013');out.mkdir(parents=True,exist_ok=True)
-        (out/'actual-chain.json').write_text(json.dumps({'summary':summary,'requests':requests,'lost_responses':1,'permission_snapshot_unchanged':True},indent=2)+'\n')
+        (out/'actual-chain.json').write_text(json.dumps({'summary':summary,'requests':requests,'lost_responses':int(lost),'permission_snapshot_unchanged':True},indent=2)+'\n')
     finally:
         out=Path('.runtime/differentiated-planning-20261013');out.mkdir(parents=True,exist_ok=True)
         (out/'latest-partial-chain.json').write_text(json.dumps({'requests':requests,'summary':summary,'lost_responses':int(lost)},indent=2)+'\n')
