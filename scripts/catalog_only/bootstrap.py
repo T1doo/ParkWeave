@@ -25,6 +25,7 @@ COMPARISON = dict(call=('NOT_RUN', 'RETURNED', 'RAISED', 'UNKNOWN'),
 
 def initial(sha):
     return dict(source_sha=sha if type(sha) is str and re.fullmatch('[a-f0-9]{40}', sha) else '0'*40,
+        failure_logs='NOT_NEEDED',
         cases={name: 'NOT_RUN' for name in CASES},
         rights={name: 'NOT_RUN' for name in ('before_app', 'before_writer', 'after_app', 'after_writer')},
         comparisons={name: {key: 'NOT_RUN' for key in COMPARISON} for name in ('before', 'after')})
@@ -35,6 +36,8 @@ def public_summary(value):
     if type(value) is not dict or set(value) != set(initial('')):
         raise ValueError('CLOSED_SUMMARY_REQUIRED')
     if type(value['source_sha']) is not str or not re.fullmatch('[a-f0-9]{40}', value['source_sha']):
+        raise ValueError('CLOSED_SUMMARY_REQUIRED')
+    if type(value['failure_logs']) is not str or value['failure_logs'] not in ('NOT_NEEDED', 'SAVED', 'UNAVAILABLE'):
         raise ValueError('CLOSED_SUMMARY_REQUIRED')
     for field, keys, states in [('cases', CASES, STATES),
             ('rights', initial('')['rights'], ('NOT_RUN', 'UNKNOWN', 'ALLOW', 'DENY'))]:
@@ -114,7 +117,13 @@ def bootstrap(sha):
             raise ValueError('BOUND_PROBE_RESULT_REQUIRED')
         value = candidate
     except BaseException:
-        if root is not None:(root / 'bootstrap-failure.log').write_text(traceback.format_exc())
+        try:
+            if root is None:raise OSError('NO_PRIVATE_LOG_TARGET')
+            (root / 'bootstrap-failure.log').write_text(traceback.format_exc())
+            value['failure_logs'] = 'SAVED'
+        except BaseException:
+            # A secondary logging failure must never escape to public stderr.
+            value['failure_logs'] = 'UNAVAILABLE'
         value['cases'][stage] = 'FAIL'
         if stage == 'PG16_START':
             # No valid child cleanup observation: never guess that cleanup passed.

@@ -1,6 +1,7 @@
 """Pure candidate tests. All PG/process/signal/privilege actions are intercepted."""
 from copy import deepcopy
 import json
+import io
 from pathlib import Path
 import shutil
 import signal
@@ -84,16 +85,30 @@ def test_catalog_git_gate_binds_single_parent_and_only_approval_diff(tmp_path, m
         with pytest.raises((PermissionError, ValueError)):boot.gate(tmp_path, SHA, environment())
 
 
-@pytest.mark.parametrize('field', ['extra', 'case', 'right', 'comparison', 'sha'])
+@pytest.mark.parametrize('field', ['extra', 'case', 'right', 'comparison', 'sha', 'failure_logs'])
 def test_catalog_projection_never_emits_arbitrary_data(field):
     value = boot.initial(SHA)
     if field == 'extra':value[POISON] = POISON
     elif field == 'case':value['cases']['GATE'] = POISON
     elif field == 'right':value['rights']['before_app'] = POISON
     elif field == 'comparison':value['comparisons']['after']['status'] = POISON
+    elif field == 'failure_logs':value['failure_logs'] = POISON
     else:value['source_sha'] = POISON
     with pytest.raises(ValueError) as error:boot.public_summary(value)
     assert POISON not in str(error.value)
+
+
+def test_catalog_secondary_log_failure_keeps_public_stderr_empty(tmp_path, monkeypatch, capsys):
+    monkeypatch.setattr(boot, 'gate', lambda *_:BASE)
+    monkeypatch.setattr(boot, 'open', lambda *a, **kw:io.StringIO(), raising=False)
+    monkeypatch.setattr(boot.tempfile, 'mkdtemp', lambda **kw:str(tmp_path))
+    def fail(*a, **kw):raise OSError(POISON)
+    monkeypatch.setattr(subprocess, 'run', fail)
+    monkeypatch.setattr(Path, 'write_text', fail)
+    assert boot.bootstrap(SHA)==1
+    captured=capsys.readouterr(); assert captured.err=='' and POISON not in captured.out
+    output=json.loads(captured.out)
+    assert output['failure_logs']=='UNAVAILABLE' and output['cases']['DEPENDENCIES']=='FAIL'
 
 
 @pytest.mark.parametrize('phase', ['before', 'after'])
@@ -183,7 +198,7 @@ def test_catalog_role_call_requires_separate_identity_and_precise_denial(monkeyp
     if passes and not allowed:assert session.queries[-1] == 'SELECT 1 value'
 
 
-@pytest.mark.parametrize('failure', ['none', 'initdb', 'before_collect', 'fix', 'after_collect', 'stop'])
+@pytest.mark.parametrize('failure', ['none', 'initdb', 'before_collect', 'fix', 'after_collect', 'stop', 'log', 'cleanup_log'])
 def test_catalog_pipeline_commit_order_stop_and_cleanup_are_not_guessed(monkeypatch, failure):
     root = Path(tempfile.mkdtemp(prefix='parkweave-catalog-')); remove = shutil.rmtree
     events = []; state = {'fixed':False}; spec, baseline = trial_inputs()
@@ -201,6 +216,13 @@ def test_catalog_pipeline_commit_order_stop_and_cleanup_are_not_guessed(monkeypa
         if str(path).startswith('/usr/lib/postgresql/16/bin/') else original_lstat(path))
     monkeypatch.setattr(signal, 'signal', lambda *a:None)
     monkeypatch.setattr(signal, 'setitimer', lambda *a:None)
+    original_write = Path.write_text
+    def write(path, *a, **kw):
+        if (failure=='log' and path.name=='probe-failure.log' or
+                failure=='cleanup_log' and path.name=='cleanup-failure.log'):
+            raise OSError(POISON)
+        return original_write(path,*a,**kw)
+    monkeypatch.setattr(Path,'write_text',write)
     def tool(args, **kw):
         events.append('initdb')
         if failure == 'initdb':raise subprocess.TimeoutExpired(args,60)
@@ -215,7 +237,7 @@ def test_catalog_pipeline_commit_order_stop_and_cleanup_are_not_guessed(monkeypa
         def poll(self):return 0 if self.done else None
         def terminate(self):events.append('terminate')
         def wait(self, timeout):
-            if failure=='stop' and not self.done:raise subprocess.TimeoutExpired('SYNTHETIC',timeout)
+            if failure in ('stop','cleanup_log') and not self.done:raise subprocess.TimeoutExpired('SYNTHETIC',timeout)
             self.done=True; return 0
         def kill(self):events.append('kill'); self.done=True
     monkeypatch.setattr(subprocess, 'Popen', Process)
@@ -241,7 +263,7 @@ def test_catalog_pipeline_commit_order_stop_and_cleanup_are_not_guessed(monkeypa
     monkeypatch.setattr(probe, 'role_call', lambda _, role, _spec, allowed:events.append((role,allowed)))
     def collect(*_):
         phase='after' if state['fixed'] else 'before'; events.append('collect_'+phase)
-        if failure==phase+'_collect':raise TypeError(POISON)
+        if failure==phase+'_collect' or failure=='log':raise TypeError(POISON)
         snapshot=deepcopy(baseline); snapshot['privileges']['app:control_system_execute']=not state['fixed']; return snapshot
     monkeypatch.setattr(probe.preflight, 'collect_owned_catalog', collect)
     try:
@@ -253,13 +275,14 @@ def test_catalog_pipeline_commit_order_stop_and_cleanup_are_not_guessed(monkeypa
         elif failure=='initdb':
             assert output['cases']['CLEANUP']=='UNKNOWN' and 'migrate' not in events
             assert output['cases']['BEFORE_RIGHTS']=='NOT_RUN'
-        elif failure=='stop':assert output['cases']['CLEANUP']=='FAIL' and 'kill' in events
+        elif failure in ('stop','cleanup_log'):assert output['cases']['CLEANUP']=='FAIL' and 'kill' in events
         else:
-            failing={'before_collect':'BEFORE_RIGHTS','fix':'APPLY_FIX','after_collect':'AFTER_RIGHTS'}[failure]
+            failing={'before_collect':'BEFORE_RIGHTS','log':'BEFORE_RIGHTS','fix':'APPLY_FIX','after_collect':'AFTER_RIGHTS'}[failure]
             assert output['cases'][failing]=='FAIL' and output['cases']['CLEANUP']=='PASS'
             if failure!='after_collect':assert 'collect_after' not in events
             if failure=='fix':assert 'rollback' in events
-        if failure not in ('initdb','stop'):assert not (root/'cluster').exists()
+        if failure in ('log','cleanup_log'):assert output['failure_logs']=='UNAVAILABLE'
+        if failure not in ('initdb','stop','cleanup_log'):assert not (root/'cluster').exists()
         else:assert (root/'cluster').exists()
     finally:remove(root)
 

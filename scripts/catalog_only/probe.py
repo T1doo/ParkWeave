@@ -209,7 +209,10 @@ def run(root, source_sha):
         output['cases'][stage] = 'PASS'
     except BaseException:
         output['cases'][stage] = 'FAIL'
-        (root/'probe-failure.log').write_text(traceback.format_exc())
+        try:
+            (root/'probe-failure.log').write_text(traceback.format_exc())
+            output['failure_logs'] = 'SAVED'
+        except BaseException:output['failure_logs'] = 'UNAVAILABLE'
     finally:
         signal.setitimer(signal.ITIMER_REAL, 0)
         try:
@@ -219,7 +222,8 @@ def run(root, source_sha):
                 except subprocess.TimeoutExpired:
                     pg.kill(); pg.wait(timeout=5)
                     raise RuntimeError('FORCED_STOP_CLUSTER_CLEANUP_UNCONFIRMED')
-            if pg is not None and pg.poll() is None:raise RuntimeError('OWNED_PG_STOP_UNKNOWN')
+            if pg is not None and (type(pg.poll()) is not int or pg.poll() != 0):
+                raise RuntimeError('NORMAL_OWNED_PG_STOP_UNCONFIRMED')
             if created:
                 if initdb_started and not initdb_complete:
                     output['cases']['CLEANUP'] = 'UNKNOWN'
@@ -230,7 +234,10 @@ def run(root, source_sha):
                 output['cases']['CLEANUP'] = 'PASS'
         except BaseException:
             output['cases']['CLEANUP'] = 'FAIL'
-            (root/'cleanup-failure.log').write_text(traceback.format_exc())
+            try:
+                (root/'cleanup-failure.log').write_text(traceback.format_exc())
+                if output['failure_logs'] != 'UNAVAILABLE':output['failure_logs'] = 'SAVED'
+            except BaseException:output['failure_logs'] = 'UNAVAILABLE'
         finally:
             for s, handler in previous_handlers.items():signal.signal(s, handler)
     return public_summary(output)
