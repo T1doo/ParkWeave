@@ -1,0 +1,37 @@
+{
+  "scope": "READ_ONLY_COMPATIBILITY_DESIGN_PREFLIGHT",
+  "base_sha": "dfac5a477110f12c58b25deeceb892ac4410224e",
+  "hashes": {
+    "src/parkweave/template_consumer.py": "87e6f9d89d2be3101408f1bfb4500e1a0841d66dac349554b9afbe23e94d2bc0",
+    "src/parkweave/service_case_steps.py": "3cda5e4c056db8ab729e21e0dd8a1c31a8019b1113007136118f3bd3af5f1734"
+  },
+  "design_supported": [
+    "Original ADOPT internalunadopted_only keyword after replay under parentlock; no request fingerprint change, ordinaryAPI unchanged",
+    "Consumer read authoritative originalparentplan observeFalse, topplanID/currentplan/readmatching preserving stagehistory; journal confirmation not implied",
+    "Legacy ADOPT_PLAN reconciliation exactkey READ only, never sendADOPT throughresume/reconcile",
+    "HistoricalCOMMITTED exactstage proof confirms journal; unknownnotobserved generally stayspending"
+  ],
+  "mandatory_proof_requirements": [
+    {
+      "id": "K1",
+      "severity": "REQUIRED_BEFORE_IMPLEMENTATION_PASS",
+      "requirement": "COMMITTED actualexactactor/key ADOPT eventfingerprint mustequalhash(stagebody parsed asAdopt, original _adopt_request), not merely localjournalbodysha or recoverstatus. Recover response doesnot exposefingerprint; use originallocked _recovery_proofs(actualparent) or equivalent immutableproof."
+    },
+    {
+      "id": "K2",
+      "severity": "REQUIRED_BEFORE_IMPLEMENTATION_PASS",
+      "requirement": "NOT_OBSERVED and strict monotonic prep/requestversionadvance comparedto originalexpectedbody mustbe established under one originalparent+exactkey lockcontext. Separate recoverthenprep.read transactions allow delayedoldworkercommit inbetween and false terminalstale-refused."
+    }
+  ],
+  "concurrency_reason": "With exactkeylock+parent held, no earlier originalmatchingADOPT can hide; greater mandatoryrevision means futureoriginalbodycannotcommit exceptreplay, alreadyexcludedby originalfullproof. SourceSHA mismatch alone not monotonic and mayABA, insufficientterminal proof.",
+  "failure_rules": [
+    "Any currentauth/reviewer/release or proof validation failure retainsunknownstage",
+    "Invalid stagebody/fingerprint or ambiguous/mismatched actualevent retainsunknown/conflict; no fabricatedconfirmation",
+    "Authoritative currentplan visible doesnot prove a different legacyexactkey committed"
+  ],
+  "NOT_RUN": [
+    "Newcompatibilitybusiness tests pending rootred/fix/freeze",
+    "Browser/model/securityprepare/oldfull"
+  ],
+  "writes": "runtime only; root sole source/Gitwriter"
+}
