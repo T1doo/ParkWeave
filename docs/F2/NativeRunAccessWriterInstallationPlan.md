@@ -95,3 +95,7 @@ fresh source/generation/beneficiary条件仍由原REQUEST/APPROVE/ACTIVATE事务
 ## 第二次新批准的一轮实际验收（2026-10-13）
 
 新批准后另建精确单次入口，冻结源码 `4649970278e29b999a2a4f332ba7380f20795a3f`；主测 236 PASS，独审 251 PASS（重叠 236 项，不相加），再正常推送独立分支执行一次。实际 run `38332150145` **FAIL：3 PASS / 1 FAIL / 13 NOT_RUN**，自有进程清理成功。固定诊断定位到 `CATALOG_COMPARE`，具体失败原因仍未知；未改原 worker SQL、adapter 守卫或生产 src，没有重跑或第三次执行。详见[第二次验收及完整证据](RestrictedLinuxSecondTrialAcceptance-20261013.md)。后续真实试验需新的明确决定，纯测试与定位信息不能升级为尚未执行的物理合同 PASS。
+
+## CATALOG_COMPARE 离线定位修复（2026-10-13）
+
+冻结源码 `e7c3cdd050465a2cf66cfd3cde5ad303a3dc7b6f` 证明原 setup 的单独 writer GRANT 保留函数默认 PUBLIC EXECUTE，与原 app 拒绝合同矛盾；最小补丁仅在原 fresh UUID owner 事务内、原 writer GRANT 前增加单函数 PUBLIC REVOKE。生产 src、guard、workflow 不变。主测 305 PASS，独审 311 PASS（精确重叠 305，新增 6，不相加），原红测 2 FAIL/7 PASS 完整保留且两个原失败 ID 修复后通过；7 项真实 PG 测试明确 NOT_RUN。该结果只签代码与纯 DI LIMITED_PASS，不能确定旧 VM 唯一实测原因或真实事务效果；旧 run 仍 3 PASS/1 FAIL/13 NOT_RUN。没有第三次 CI、真实 PG、OS/ACL 修改或启用。离线新分支不匹配任一 workflow，详见[缺陷证据、独审与实际结果](CatalogCompareOfflineFix-20261013.md)。后续物理验收仍需新的明确决定。

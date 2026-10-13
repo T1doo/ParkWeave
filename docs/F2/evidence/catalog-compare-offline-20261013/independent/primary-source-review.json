@@ -1,0 +1,19 @@
+{
+  "failed_read": "Public pgcontroldata.c open returned Internal Error; stopped, no retry; not evidence for any function-body property.",
+  "local_evidence": "Parent catalog-source-evidence.json independently matched against bundled 16.2 pg_proc.h proacl NULL default and postgres.bki pg_control_system OID 3441. Not the original VM catalog.",
+  "qualification": "Public documentation and source reading only; no PostgreSQL server execution, no disposed-VM catalog observation.",
+  "sources": [
+    {
+      "finding": "Functions default to PUBLIC EXECUTE; NULL ACL uses object defaults. A writer grant does not remove PUBLIC rights.",
+      "url": "https://www.postgresql.org/docs/16/ddl-priv.html"
+    },
+    {
+      "finding": "has_function_privilege checks the named role and qualified function; acldefault defines assumed privileges for NULL ACL. The actual reader uses named pwci_app/pwci_writer, not its owner session.",
+      "url": "https://www.postgresql.org/docs/16/functions-info.html"
+    },
+    {
+      "finding": "setup_privileges leaves function defaults intact; no pg_control_system-specific override found. pg_catalog schema USAGE is granted to PUBLIC.",
+      "url": "https://raw.githubusercontent.com/postgres/postgres/REL_16_STABLE/src/bin/initdb/initdb.c"
+    }
+  ]
+}

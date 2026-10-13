@@ -1,0 +1,47 @@
+{
+  "baseline": "4649970278e29b999a2a4f332ba7380f20795a3f",
+  "fix_source": "e7c3cdd050465a2cf66cfd3cde5ad303a3dc7b6f",
+  "qualification": "OFFLINE_SYNTHETIC_ONLY; does not identify disposed VM report or its sole root cause",
+  "observations": [
+    {
+      "label": "ORIGINAL_SOURCE_DEFAULT_FUNCTION_ACL",
+      "analyzer": "RETURNED",
+      "status": "REFUSED",
+      "change_count": 0,
+      "nonpass_checks": [
+        {
+          "check": "forbidden.app:control_system_execute",
+          "status": "REFUSED"
+        }
+      ],
+      "app_execute": true,
+      "writer_execute": true,
+      "scope": "One-function ACL DI; all other catalog facts synthetic"
+    },
+    {
+      "label": "FIXED_SOURCE_DEFAULT_FUNCTION_ACL",
+      "analyzer": "RETURNED",
+      "status": "PASS",
+      "change_count": 0,
+      "nonpass_checks": [],
+      "app_execute": false,
+      "writer_execute": true,
+      "scope": "One-function ACL DI; all other catalog facts synthetic"
+    },
+    {
+      "label": "MISSING_COLUMN_CONTROL",
+      "analyzer": "RETURNED",
+      "status": "APPROVAL_REQUIRED",
+      "change_count": 1
+    },
+    {
+      "label": "NON_JSON_GENERATIONS_CONTROL",
+      "analyzer": "RAISED",
+      "exception_class": "TypeError",
+      "real_worker_relevance": "Worker uses text-valued generation rows; branch control, not proposed VM cause"
+    }
+  ],
+  "actual_PG_connections": 0,
+  "actual_privilege_changes": 0,
+  "ci_triggers": 0
+}

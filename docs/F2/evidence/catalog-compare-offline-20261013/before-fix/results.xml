@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="9" time="0.127" timestamp="2026-10-13T01:43:44.031299+00:00" hostname="754d39e95154"><testcase classname="tests.test_linux_trial_catalog" name="test_trial_acl_closes_public_execute_before_preserving_writer_grant" time="0.005"><failure message="AssertionError: assert not True&#10; +  where True = can_execute('pwci_app')&#10; +    where can_execute = &lt;test_linux_trial_catalog.BuiltinFunctionACL object at 0x7f44ab9a68a0&gt;.can_execute">tests/test_linux_trial_catalog.py:111: in test_trial_acl_closes_public_execute_before_preserving_writer_grant
+    assert not acl.can_execute('pwci_app')
+E   AssertionError: assert not True
+E    +  where True = can_execute('pwci_app')
+E    +    where can_execute = &lt;test_linux_trial_catalog.BuiltinFunctionACL object at 0x7f44ab9a68a0&gt;.can_execute</failure></testcase><testcase classname="tests.test_linux_trial_catalog" name="test_actual_trial_acl_produces_safe_typed_catalog_comparison" time="0.009"><failure message="AssertionError: ACTUAL_INSTALLED_CATALOG_NOT_PASS">tests/test_linux_trial_catalog.py:122: in test_actual_trial_acl_produces_safe_typed_catalog_comparison
+    report=compare(preflight.InstallationSpec.model_validate(spec.model_dump()),catalog)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_linux_trial_catalog.py:103: in compare
+    try:exec(setup_block('CATALOG_COMPARE'),namespace)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+actual_worker_setup_CATALOG_COMPARE:139: in &lt;module&gt;
+    ???
+E   AssertionError: ACTUAL_INSTALLED_CATALOG_NOT_PASS</failure></testcase><testcase classname="tests.test_linux_trial_catalog" name="test_pre_fix_public_default_is_refused_after_production_model_roundtrip" time="0.004" /><testcase classname="tests.test_linux_trial_catalog" name="test_worker_compare_distinguishes_analyzer_exception_from_nonpass_and_changes" time="0.013" /><testcase classname="tests.test_linux_trial_catalog" name="test_catalog_row_and_acl_order_do_not_change_comparison_outcome" time="0.006" /><testcase classname="tests.test_linux_trial_catalog" name="test_bad_column_types_fail_before_catalog_compare[identity-None]" time="0.001" /><testcase classname="tests.test_linux_trial_catalog" name="test_bad_column_types_fail_before_catalog_compare[identity-\x00]" time="0.001" /><testcase classname="tests.test_linux_trial_catalog" name="test_bad_column_types_fail_before_catalog_compare[generated-None]" time="0.001" /><testcase classname="tests.test_linux_trial_catalog" name="test_bad_column_types_fail_before_catalog_compare[nullable-0]" time="0.001" /></testsuite></testsuites>
