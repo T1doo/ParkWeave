@@ -73,6 +73,10 @@ function receiptCommandExplicitlyRejected(path,status,value){
  // transaction. Other endpoints and arbitrary 422/409 responses stay unknown.
  return status===422&&Array.isArray(value?.detail)&&value.detail.length>0&&value.detail.every(e=>Array.isArray(e.loc)&&e.loc[0]==='body'&&typeof e.type==='string'&&typeof e.msg==='string');
 }
+function runEntryReadProof(args,result){
+ const id=String(args[0]).match(/^\/api\/runs\/([a-f0-9-]{36})$/i)?.[1];
+ return id&&(result?.id===id||result?.run_id===id)?{domain:'run',ids:[id],verify:op=>op.response?.id===id||op.response?.run_id===id}:null;
+}
 function failCurrentEntryRead(error){if(activeEntryWriteFlow&&!error?.independentEntryRefusal)activeEntryWriteFlow.failed=true;}
 function originalWriteOwnerRetains(flow){
  const owns=(name,pending)=>flow.allowed.has(name)&&!!pending;
@@ -1738,7 +1742,7 @@ function entryReadAllowed(id){
  if(activeEntryWriteFlow)return false;
  if(!entryWriteRequests.size)return true;
  if(id==='receipt-history-read')return true;
- const recovery={ 'receipt-refresh':['receipt'],'dispatch-refresh':['dispatch'],'case-resource-load':['link'],'prep-refresh':['preparation','readiness'],'plan-refresh':['plan','intent'],'bounded-planning-read':['planning'],'resource-mine':['other'] };
+ const recovery={ 'refresh':['run'],'receipt-refresh':['receipt'],'dispatch-refresh':['dispatch'],'case-resource-load':['link'],'prep-refresh':['preparation','readiness'],'plan-refresh':['plan','intent'],'bounded-planning-read':['planning'],'resource-mine':['other'] };
  return !!recovery[id]&&[...entryWriteRequests.values()].every(op=>recovery[id].includes(entryWriteDomain(op.path)));
 }
 function blockIndependentEntryUI(e){
@@ -1802,7 +1806,8 @@ document.addEventListener('submit',blockIndependentEntryUI,true);
  loadPlan=validatedEntryRead(loadPlan,()=>planView&&[{domain:'plan',ids:[planView.preparation_id],revision:planView.revision},{domain:'intent',ids:[planView.preparation_id],revision:planView.request_intent?.revision}], ['plan','intent']);
  boundedPlanning=validatedEntryRead(boundedPlanning,()=>boundedView&&{domain:'planning',ids:[boundedView.current.preparation_id],verify:op=>Array.isArray(op.response?.history)&&op.response.history.length>0&&op.response.history.every(old=>boundedView.history.some(current=>current.id===old.id&&current.revision===old.revision&&JSON.stringify(current.document)===JSON.stringify(old.document)))},'planning');
  loadReadiness=validatedEntryRead(loadReadiness,()=>readinessView&&{domain:'readiness',ids:[readinessView.preparation_id],verify:op=>op.response?.request_key===op.key&&Array.isArray(readinessView.history)&&readinessView.history.some(record=>record.id===op.response.id&&receiptHistoryCanonical(record)===receiptHistoryCanonical(op.response))},'readiness');
- apiCall=validatedEntryRead(apiCall,(args,result)=>{const id=String(args[0]).match(/^\/api\/runs\/([a-f0-9-]{36})$/i)?.[1];return (args[1]===undefined||args[1]==='GET')&&id&&(result?.id===id||result?.run_id===id)?{domain:'run',ids:[id],verify:op=>op.response?.id===id||op.response?.run_id===id}:null;},'run',args=>args[1]===undefined||args[1]==='GET');
+ apiCall=validatedEntryRead(apiCall,runEntryReadProof,'run',args=>args[1]===undefined||args[1]==='GET');
+ prepCall=validatedEntryRead(prepCall,runEntryReadProof,'run',args=>args[1]===undefined||args[1]==='GET');
  $('token').addEventListener('input',clearEntryWriteRequests);
 })();
 </script></html>

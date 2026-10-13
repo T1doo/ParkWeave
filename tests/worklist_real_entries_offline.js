@@ -30,8 +30,37 @@ async function queue(target,prep,receipt){const p=$('case-worklist-read').onclic
 function material(){return {preparation:{id:id(3),case_id:id(1),run_id:id(2),owner_id:'fixture-a',state:'IN_PREPARATION',revision:1,goal:'PRIVATE_MATERIAL_A'},current_materials:[{id:id(6),slot:'need_summary',version:1,text:'PRIVATE_BODY_A',source_kind:'USER_STATEMENT',source_label:'SYNTHETIC'}],material_history:[],history:[]};}
 function receipt(){return {step:{id:id(4),preparation_id:id(5),case_id:id(7),run_id:id(8),state:'AWAITING_RECEIPT',revision:1,goal:'CURRENT_RECEIPT_B'},role:'enterprise_operator',dependency:'CURRENT',is_current_step:true,current_receipt:null,receipt_history:[],history:[],local_execution:{}};}
 async function flushOtherGets(){for(let i=0;i<12;i++){for(const c of calls){if(!c.finished){c.finished=true;finish(c,500,{});}}await tick();}}
+// Owned ASGI bridge: execute original page entries; Python supplies actual API
+// responses from its existing PG fixture, never replacement entry functions.
+if(mode==='intake_cold_asgi'){
+ const lines=require('readline').createInterface({input:process.stdin});const replies=[];
+ lines.on('line',line=>{const pending=replies.shift();if(pending)pending(JSON.parse(line));});
+ context.fetch=async(path,options={})=>{calls.push({path,options});const response=new Promise(resolve=>replies.push(resolve));console.log(JSON.stringify({request:{path,options}}));const x=await response;return {status:x.status,ok:x.status>=200&&x.status<300,json:async()=>x.body};};
+}
 (async()=>{
- if(mode.startsWith('receipt_reject_')){
+ if(mode==='intake_cold_asgi'){
+  $('goal').value='SYNTHETIC cold initial intake';await $('intake').onsubmit({preventDefault(){}});check(run('entryWriteRequests.size')===1);const firstRun=$('run').value;check(!!firstRun);
+  await $('refresh').onclick();check(run('entryWriteRequests.size')===0);
+  await $('case-worklist-read').onclick();const button=$('case-worklist-items').children[0].children.find(e=>e.tagName==='button');check(!!button);await button.onclick();check($('run').value===firstRun);
+  await $('prep-catalog').onclick();$('prep-reviewer').value=run('prepCatalog.reviewers[0].id');$('prep-goal').value='SYNTHETIC cold preparation creation';
+  await $('prep-create').onsubmit({preventDefault(){}});check(run('preparationView!==null'));check(run('entryWriteRequests.size')===0);
+  $('prep-slot').value='need_summary';$('prep-text').value='SYNTHETIC cold source';$('prep-source-kind').value='DOCUMENT_EXCERPT';$('prep-source-label').value='SYNTHETIC cold document';
+  await $('prep-evidence').onsubmit({preventDefault(){}});check(run('prepCommandPending===null'));check(run('preparationView.current_materials.length')===1);check(run('entryWriteRequests.size')===0);
+  const prepId=run('preparationId');await $('case-worklist-read').onclick();const card=$('case-worklist-items').children.find(e=>e.children.some(c=>c.textContent.includes('SYNTHETIC cold preparation creation')));const materialButton=card?.children.find(e=>e.tagName==='button');check(!!materialButton);await materialButton.onclick();check(run('preparationId')===prepId);check(run('preparationView.current_materials.length')===1);
+  check(calls.filter(c=>c.options.method==='POST').length===4);
+ }else if(mode.startsWith('intake_')){
+  $('goal').value='SYNTHETIC_COLD_INTAKE';$('candidate-region').value='SYNTHETIC_REGION';
+  const form=mode==='intake_candidate'?'candidate-intake':'intake';const submit=$(form).onsubmit({preventDefault(){}}),post=calls.at(-1);
+  check(post.path==='/api/runs'&&post.options.method==='POST');
+  if(mode==='intake_unknown'){post.reject(Error('SYNTHETIC_LOST_RESPONSE'));await submit;$('run').value=id(2);}
+  else{finish(post,201,{run_id:id(2)});await submit;check($('run').value===id(2));}
+  check(run('entryWriteRequests.size')===1);
+  const count=calls.length,refresh=$('refresh').onclick();await tick();check(calls.length===count+1);check(calls.at(-1).path==='/api/runs/'+id(2));
+  finish(calls.at(-1),200,{id:mode==='intake_wrong_run'?id(9):id(2),state:'SUCCEEDED'});await refresh;
+  if(['intake_unknown','intake_wrong_run'].includes(mode)){check(run('entryWriteRequests.size')===1);}
+  else{check(run('entryWriteRequests.size')===0);const button=await queue('run');const open=button.onclick();check(calls.at(-1).path==='/api/runs/'+id(2));finish(calls.at(-1),200,{id:id(2),state:'SUCCEEDED'});await open;check($('run').scrolled);}
+  check(calls.filter(c=>c.options.method==='POST').length===1);
+ }else if(mode.startsWith('receipt_reject_')){
   const r=receipt();r.step.state='RECEIPT_RECORDED';r.current_receipt={source_sha256:'a'.repeat(64),version:1,text:'SYNTHETIC_RECEIPT',source_kind:'SYNTHETIC',source_label:'SYNTHETIC',actor_id:'fixture-executor',created_at:'SYNTHETIC'};
   const load=run("loadReceipt('"+id(4)+"')");finish(calls.at(-1),200,r);await load;$('receipt-reason').value=mode.endsWith('422')?'':'PRIVATE_FIRST_REASON';const before=run('receiptDraft()');
   const command=$('receipt-ack').onclick(),post=calls.at(-1),key=post.options.headers['Idempotency-Key'];check(post.options.method==='POST');
@@ -94,6 +123,6 @@ async function flushOtherGets(){for(let i=0;i<12;i++){for(const c of calls){if(!
   check(!$('prep-summary').textContent.includes('PRIVATE_MATERIAL_A'));check(!$('prep-materials').children.some(e=>JSON.stringify(e).includes('PRIVATE_BODY_A')));
   check(run('preparationView===null'));if(mode==='material_to_receipt')check($('receipt-summary').textContent.includes('CURRENT_RECEIPT_B'));else check($('local-case-summary').textContent.includes('CURRENT_LOCALCASE_B'));
  }
- if(!mode.startsWith('manual_receipt_')&&!mode.startsWith('resource_write_')&&!mode.startsWith('receipt_form_')&&!mode.startsWith('receipt_reject_'))check(calls.every(c=>!c.options.method||c.options.method==='GET'));
- console.log(JSON.stringify({mode,checks,scope:'FULL_ORIGINAL_PAGE_NODE_VM_ONLY_NO_ENTRY_MOCKS'}));
-})().catch(e=>{console.error(e.stack);process.exitCode=1;});
+ if(!mode.startsWith('intake_')&&!mode.startsWith('manual_receipt_')&&!mode.startsWith('resource_write_')&&!mode.startsWith('receipt_form_')&&!mode.startsWith('receipt_reject_'))check(calls.every(c=>!c.options.method||c.options.method==='GET'));
+ console.log(JSON.stringify({mode,checks,scope:'FULL_ORIGINAL_PAGE_NODE_VM_ONLY_NO_ENTRY_MOCKS'}));if(mode==='intake_cold_asgi')process.exit(0);
+})().catch(e=>{console.error(e.stack);if(mode==='intake_cold_asgi')process.exit(1);process.exitCode=1;});
