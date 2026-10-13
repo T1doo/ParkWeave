@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.202" timestamp="2026-10-13T16:33:28.590409+00:00" hostname="754d39e95154"><testcase classname=".runtime.full-owned-lifecycle-20261013.independent.test_independent_full_chain" name="test_two_new_inputs_same_case_full_original_page_chain_and_lost_response" time="0.852"><failure message="AssertionError: b&quot;node:internal/modules/cjs/loader:1520&#10;    throw err;&#10;    ^&#10;  &#10;  Error: Cannot find module '/workspace/ParkWeave/.runtime...t node:internal/main/run_main_module:33:47 {&#10;    code: 'MODULE_NOT_FOUND',&#10;    requireStack: []&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &quot;&#10;assert 1 == 0&#10; +  where 1 = wait(timeout=15)&#10; +    where wait = &lt;Popen: returncode: 1 args: ['node', 'tests/full_owned_lifecycle.js', 'full_...&gt;.wait">link_fixture = [SANITIZED_EXPORT: recognized generated fixture session repr withheld; private original retained]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-83/test_two_new_inputs_same_case_0')
+
+    def test_two_new_inputs_same_case_full_original_page_chain_and_lost_response(link_fixture,tmp_path):
+        f=link_fixture;permissions=permission_snapshot(f[1])
+        bridge=IsolatedRunAccessBridge(f[1],f[1]._case_fact_fixture_receipt,
+            tmp_path/'original-page.run-access.candidate.sqlite3',approver_ids={'prep-specialist-fixture-a'},enabled_for_isolated_tests=True)
+        bridge.attach_store(f[0]);assert permission_snapshot(f[1])==permissions
+        proc=subprocess.Popen(['node',str(Path('tests/full_owned_lifecycle.js')),'full_owned_lifecycle'],
+            cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ);requests=[];lost=False;summary=None
+        try:
+            while True:
+                assert selector.select(timeout=15),'Original chain bridge made no progress within15 seconds'
+                line=proc.stdout.readline()
+                if not line:break
+                message=json.loads(line)
+                if 'request' not in message:summary=message;break
+                r=message['request'];o=r['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')
+                response=f[3].request(method,r['path'],headers=headers(f[2],actor,key=o['headers'].get('Idempotency-Key')),json=body)
+                requests.append({'method':method,'path':r['path'],'status':response.status_code,'actor':actor,'action':body.get('action') if body else None})
+                assert response.status_code&lt;400,(method,r['path'],response.status_code,response.json())
+                if method=='POST' and r['path']=='/api/runs':f[0].finish(f[0].claim('original-page-full-chain'))
+                drop=not lost and method=='POST' and body and body.get('action')=='ADD_EVIDENCE'
+                if drop:lost=True
+                proc.stdin.write((json.dumps({'status':response.status_code,'body':response.json(),'lost':bool(drop)})+'\n').encode());proc.stdin.flush()
+&gt;           assert proc.wait(timeout=15)==0,proc.stderr.read()
+E           AssertionError: b"node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime...t node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             "
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = &lt;Popen: returncode: 1 args: ['node', 'tests/full_owned_lifecycle.js', 'full_...&gt;.wait
+
+.runtime/full-owned-lifecycle-20261013/independent/test_independent_full_chain.py:40: AssertionError</failure></testcase></testsuite></testsuites>

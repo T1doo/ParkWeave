@@ -17,3 +17,5 @@
 源码diff检查PASS；归档初次暂存diff检查实际FAIL/rc2，16处pytest原失败输出尾空白保留。归档该检查输出后，最终暂存检查仍FAIL/rc2，共32处（16原失败输出加16原检查回显）；最终检查记录仅留runtime，避免递归归档。6份含已识别fixture会话repr的失败日志/XML按显式SANITIZED_EXPORT导出，原件、字节与hash留私有runtime；失败结果及JUnit统计不改。
 
 同一冻结源码独审 **10模式/92断言 PASS，0 FAIL/ERROR/SKIP**：9原HTML+HTTP/DOM模式72断言，1独立原HTML/owned PG/ASGI有界冷链20断言（pytest1PASS/2WARN），34次HTTP请求中4次POST。独立冷链也走通原建单、原GET核验、资料建单、材料追加与总览回到同一事项，无入口函数mock或手工pending；不与根420及旧窗口加总。两fa15实际红例原件保留。归档助手一次读取错误字段KeyError已留证并按实际清单格式纠正，属于metadata操作失败，未改产品测试结果。
+
+父级有限接收996后已由 [FullOwnedLifecycle-20261013.md](FullOwnedLifecycle-20261013.md) 延伸两份新输入的同一Case最小业务链；本报告原420与独审10/92不作为后续源码验证、不加总。

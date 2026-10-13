@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="17.569" timestamp="2026-10-13T16:30:42.481912+00:00" hostname="754d39e95154"><testcase classname="tests.test_full_owned_lifecycle" name="test_two_new_inputs_same_case_full_original_page_chain_and_lost_response" time="17.490"><failure message="AssertionError: Original chain bridge made no progress within15 seconds&#10;assert []&#10; +  where [] = select(timeout=15)&#10; +    where select = &lt;selectors.EpollSelector object at 0x7ff20cc99400&gt;.select">link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-80/test_two_new_inputs_same_case_0')
+
+    def test_two_new_inputs_same_case_full_original_page_chain_and_lost_response(link_fixture,tmp_path):
+        f=link_fixture;permissions=permission_snapshot(f[1])
+        bridge=IsolatedRunAccessBridge(f[1],f[1]._case_fact_fixture_receipt,
+            tmp_path/'original-page.run-access.candidate.sqlite3',approver_ids={'prep-specialist-fixture-a'},enabled_for_isolated_tests=True)
+        bridge.attach_store(f[0]);assert permission_snapshot(f[1])==permissions
+        proc=subprocess.Popen(['node',str(Path(__file__).with_name('full_owned_lifecycle.js')),'full_owned_lifecycle'],
+            cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ);requests=[];lost=False;summary=None
+        try:
+            while True:
+&gt;               assert selector.select(timeout=15),'Original chain bridge made no progress within15 seconds'
+E               AssertionError: Original chain bridge made no progress within15 seconds
+E               assert []
+E                +  where [] = select(timeout=15)
+E                +    where select = &lt;selectors.EpollSelector object at 0x7ff20cc99400&gt;.select
+
+tests/test_full_owned_lifecycle.py:22: AssertionError</failure></testcase></testsuite></testsuites>

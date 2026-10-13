@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.299" timestamp="2026-10-13T16:32:41.796322+00:00" hostname="754d39e95154"><testcase classname="tests.test_full_owned_lifecycle" name="test_two_new_inputs_same_case_full_original_page_chain_and_lost_response" time="5.198"><failure message="psycopg.errors.UndefinedColumn: column &quot;case_id&quot; does not exist&#10;LINE 1: SELECT count(*) n FROM case_local_events WHERE case_id=$1&#10;                                                       ^">link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-82/test_two_new_inputs_same_case_0')
+
+    def test_two_new_inputs_same_case_full_original_page_chain_and_lost_response(link_fixture,tmp_path):
+        f=link_fixture;permissions=permission_snapshot(f[1])
+        bridge=IsolatedRunAccessBridge(f[1],f[1]._case_fact_fixture_receipt,
+            tmp_path/'original-page.run-access.candidate.sqlite3',approver_ids={'prep-specialist-fixture-a'},enabled_for_isolated_tests=True)
+        bridge.attach_store(f[0]);assert permission_snapshot(f[1])==permissions
+        proc=subprocess.Popen(['node',str(Path(__file__).with_name('full_owned_lifecycle.js')),'full_owned_lifecycle'],
+            cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ);requests=[];lost=False;summary=None
+        try:
+            while True:
+                assert selector.select(timeout=15),'Original chain bridge made no progress within15 seconds'
+                line=proc.stdout.readline()
+                if not line:break
+                message=json.loads(line)
+                if 'request' not in message:summary=message;break
+                r=message['request'];o=r['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')
+                response=f[3].request(method,r['path'],headers=headers(f[2],actor,key=o['headers'].get('Idempotency-Key')),json=body)
+                requests.append({'method':method,'path':r['path'],'status':response.status_code,'actor':actor,'action':body.get('action') if body else None})
+                assert response.status_code&lt;400,(method,r['path'],response.status_code,response.json())
+                if method=='POST' and r['path']=='/api/runs':f[0].finish(f[0].claim('original-page-full-chain'))
+                drop=not lost and method=='POST' and body and body.get('action')=='ADD_EVIDENCE'
+                if drop:lost=True
+                proc.stdin.write((json.dumps({'status':response.status_code,'body':response.json(),'lost':bool(drop)})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read()
+            assert summary and summary['checks']&gt;=60 and len(summary['milestones'])==2 and lost
+            assert len([r for r in requests if r['method']=='POST' and r['path']=='/api/runs'])==2
+            assert len([r for r in requests if r['action']=='ADD_EVIDENCE'])==4
+            assert len([r for r in requests if r['method']=='GET' and r['path'].endswith('/command-recovery')])==1
+            assert permission_snapshot(f[1])==permissions
+            with f[1].connect() as c:
+                for case in summary['milestones']:
+                    p=c.execute('SELECT case_id,run_id FROM preparations WHERE id=%s',(case['preparation'],)).fetchone()
+                    assert str(p['case_id'])==case['case'] and str(p['run_id'])==case['run']
+                    step=c.execute('SELECT case_id,run_id,preparation_id,state FROM service_receipt_steps WHERE id=%s',(case['receipt'],)).fetchone()
+                    assert str(step['case_id'])==case['case'] and str(step['run_id'])==case['run'] and str(step['preparation_id'])==case['preparation']
+                    assert step['state']=='LOCAL_ACKNOWLEDGED'
+                    assert c.execute('SELECT count(*) n FROM preparation_events WHERE preparation_id=%s AND action=%s',(case['preparation'],'ADD_EVIDENCE')).fetchone()['n']==2
+&gt;                   assert c.execute('SELECT count(*) n FROM case_local_events WHERE case_id=%s',(case['case'],)).fetchone()['n']==3
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_full_owned_lifecycle.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f53fe914a70&gt;
+query = 'SELECT count(*) n FROM case_local_events WHERE case_id=%s'
+params = ('67690a88-b8cb-481e-86ee-fb60862022c1',), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedColumn: column "case_id" does not exist
+E           LINE 1: SELECT count(*) n FROM case_local_events WHERE case_id=$1
+E                                                                  ^
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: UndefinedColumn</failure></testcase></testsuite></testsuites>

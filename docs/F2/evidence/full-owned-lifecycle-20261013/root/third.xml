@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.926" timestamp="2026-10-13T16:27:07.655571+00:00" hostname="754d39e95154"><testcase classname="tests.test_full_owned_lifecycle" name="test_two_new_inputs_same_case_full_original_page_chain_and_lost_response" time="0.817"><failure message="ValueError: dedicated Run candidate file required">link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-75/test_two_new_inputs_same_case_0')
+
+    def test_two_new_inputs_same_case_full_original_page_chain_and_lost_response(link_fixture,tmp_path):
+        f=link_fixture;permissions=permission_snapshot(f[1])
+&gt;       bridge=IsolatedRunAccessBridge(f[1],f[1]._case_fact_fixture_receipt,
+            tmp_path/'original-page.access.candidate.sqlite3',approver_ids={'prep-specialist-fixture-a'},enabled_for_isolated_tests=True)
+
+tests/test_full_owned_lifecycle.py:14: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/isolated_run_access.py:75: in __init__
+    self.repository = candidate.RunAccessRepository(path)
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.run_access_candidate.RunAccessRepository object at 0x7fc36a50bf20&gt;
+path = PosixPath('/tmp/pytest-of-agent/pytest-75/test_two_new_inputs_same_case_0/original-page.access.candidate.sqlite3')
+
+    def __init__(self,path):
+        self.path=Path(path)
+&gt;       if not self.path.name.endswith('.run-access.candidate.sqlite3') or self.path.is_symlink():raise ValueError('dedicated Run candidate file required')
+                                                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: dedicated Run candidate file required
+
+src/parkweave/run_access_candidate.py:102: ValueError</failure></testcase></testsuite></testsuites>
