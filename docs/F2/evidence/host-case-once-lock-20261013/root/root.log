@@ -1,0 +1,47 @@
+..F..................................................................... [ 54%]
+............................................................             [100%]
+=================================== FAILURES ===================================
+_________ test_offline_verification_accepts_exact_closed_synthetic_set _________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-21/test_offline_verification_acce0')
+
+    def test_offline_verification_accepts_exact_closed_synthetic_set(tmp_path):
+>       assert d.verify(tmp_path,synthetic_wheels(tmp_path))==19
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_host_case_once_dependencies.py:55: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pytest-of-agent/pytest-21/test_offline_verification_acce0')
+wheels = PosixPath('/tmp/pytest-of-agent/pytest-21/test_offline_verification_acce0/wheels')
+
+    def verify(directory,wheels):
+        rows=load(directory)
+        if {p.name for p in wheels.iterdir()}!={r['filename'] for r in rows}:raise ValueError('EXACT_WHEEL_SET_REQUIRED')
+        for r in rows:
+            p=wheels/r['filename'];s=p.lstat()
+            if not stat.S_ISREG(s.st_mode) or s.st_size!=r['bytes'] or hashlib.sha256(p.read_bytes()).hexdigest()!=r['sha256']:
+                raise ValueError('WHEEL_BYTES_HASH_REQUIRED')
+            with ZipFile(p) as z:
+                metadata=[n for n in z.namelist() if n.endswith('.dist-info/METADATA')]
+                if len(metadata)!=1:raise ValueError('ONE_WHEEL_METADATA_REQUIRED')
+                m=BytesParser().parsebytes(z.read(metadata[0]))
+            if (normalize(m['Name'])!=r['name'] or m['Version']!=r['version'] or
+>                   m.get_all('Requires-Dist',[])!=r['requires_dist']):raise ValueError('EXACT_WHEEL_METADATA_REQUIRED')
+                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   ValueError: EXACT_WHEEL_METADATA_REQUIRED
+
+scripts/host_case_once/dependencies.py:54: ValueError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+scripts/host_case_once/dependencies.py:20
+  /workspace/ParkWeave/scripts/host_case_once/dependencies.py:20: SyntaxWarning: invalid escape sequence '\.'
+    type(r['version']) is not str or not re.fullmatch('[0-9]+(?:\.[0-9]+)+',r['version']) or
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_host_case_once_dependencies.py::test_offline_verification_accepts_exact_closed_synthetic_set
+1 failed, 131 passed, 2 warnings in 1.00s
