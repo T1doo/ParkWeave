@@ -1,0 +1,17 @@
+{
+  "provenance": "Tool-output transcription from the actual failed invocation; not a raw stdout file or independently byte-verified copy. Complete original tool response remains in the conversation.",
+  "tool_response_chunk_id": "1f5aaf",
+  "exit_code": 1,
+  "original_token_count": 240,
+  "output": "fatal: ambiguous argument 'HEAD...refs/remotes/origin/dev/f2-restricted-linux-second-trial-20261013': unknown revision or path not in the working tree.\nUse '--' to separate paths from revisions, like this:\n'git <command> [<revision>...] -- [<file>...]'\nTraceback (most recent call last):\n  File \"<stdin>\", line 9, in <module>\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py\", line 466, in check_output\n    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py\", line 571, in run\n    raise CalledProcessError(retcode, process.args,\nsubprocess.CalledProcessError: Command '['git', 'rev-list', '--left-right', '--count', 'HEAD...refs/remotes/origin/dev/f2-restricted-linux-second-trial-20261013']' returned non-zero exit status 128.\n",
+  "classification": "Missing local remote-tracking ref; not a network or permission denial",
+  "remedy": "Compare HEAD with the actual complete SHA returned by the successful default git ls-remote; no fetch or configuration changes",
+  "corrected_check": {
+    "local_sha": "32bc379d6a22689c019faf11890d6cd3fe50a698",
+    "actual_remote_sha": "32bc379d6a22689c019faf11890d6cd3fe50a698",
+    "ahead": 0,
+    "behind": 0,
+    "result": "PASS",
+    "method": "git rev-list HEAD...<actual full remote SHA>"
+  }
+}
