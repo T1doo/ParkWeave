@@ -1,0 +1,97 @@
+{
+  "conclusion": "LIMITED_PASS_OFFLINE_EXCLUSIVE_OWNED_FAILURE_LOG",
+  "blockers": [],
+  "base_sha": "1938db5a50db11457230cfa75fbb1a75927981a9",
+  "source_hashes": [
+    {
+      "path": "scripts/host_case_once/prepare_once.py",
+      "bytes": 7771,
+      "sha256": "780264f65fa82aa747fc92af5886be4517d63e9ca5d9c591b798666fa984735c"
+    },
+    {
+      "path": "docs/F2/PrepareOnlyTrialApproval-20261013.md",
+      "bytes": 7798,
+      "sha256": "b3fcbe6cd4d60d23ce1145695a632133099da33f4920a7777fdaad0c569db943"
+    },
+    {
+      "path": "scripts/windows_ci/diagnostic-test-ids.json",
+      "bytes": 231841,
+      "sha256": "843d110c4e8fe0a0f1a21e080dddf4db461501ba216e0cf33822886732b7ca31"
+    },
+    {
+      "path": "tests/test_host_case_bootstrap_diagnostics.py",
+      "bytes": 16570,
+      "sha256": "7de9fbabb00e115b153a82527e46e7a89f249fcc0e3bbb2baacef8fa72552be4"
+    },
+    {
+      "path": "tests/test_prepare_owned_log_boundary.py",
+      "bytes": 5606,
+      "sha256": "b16e86cf3a9183b59acc9cccf129ba9ae0190a81de0a59e7132d402870a261f0"
+    }
+  ],
+  "windows": [
+    {
+      "file": "root-first.xml",
+      "PASS": 57,
+      "FAIL": 1,
+      "ERROR": 0,
+      "SKIP": 0,
+      "not_additive": true
+    },
+    {
+      "file": "root-reviewed.xml",
+      "PASS": 265,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0,
+      "not_additive": true
+    },
+    {
+      "file": "root-final.xml",
+      "PASS": 267,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0,
+      "not_additive": true
+    },
+    {
+      "file": "independent/first.xml",
+      "PASS": 9,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0,
+      "not_additive": true
+    },
+    {
+      "file": "independent/final.xml",
+      "PASS": 21,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0,
+      "not_additive": true
+    }
+  ],
+  "final_counts": {
+    "root_PASS": 267,
+    "independent_PASS": 21,
+    "overlap_root": 12,
+    "additional_independent": 9,
+    "not_additive": true
+  },
+  "observations": [
+    "log_ready starts false and becomes true only after successful exclusive root/private mkdir, initial type/root-owner/mode/devino checks and repeated same-root check. Root/private EEXIST or symlink collisions do not adopt/open/write conflict paths.",
+    "Failure saving opens root directory O_DIRECTORY/NOFOLLOW and checks owned devino/root uid/mode, opens relative private dir_fd and independently checks its recorded instance before creating any log.",
+    "Log is created relative to privatefd with O_EXCL/NOFOLLOW/CLOEXEC mode0600; existing log/symlink refused. Short writes handled; zero write fails.",
+    "Owned directories may only tighten requested mode through umask, must retain owner700 and no new permission bits; widened mode/wrong owner/type/changed inode denied.",
+    "Independent review found sequential close could skip remaining ownedFDs if one close fails. Fixed nested try/finally now attempts all retained FDs in reverse order. Primary and middle close-failure DI PASS.",
+    "Ordinary tmp directory/symlink/private collision tests use real mkdir EEXIST with all claim/identity/security operations mocked; sentinel original bytes unchanged and prepare/failure_log cannot adopt path.",
+    "Scope doc matches ownership/exclusive-instance logging boundary, retains prior timeout/cleanup exception and pending authority."
+  ],
+  "limits": [
+    "No actual entry/helper/CI/network/root identity/permission/SQL/credential action; tests only ordinary synthetic tmp collisions plus injected effects.",
+    "New actual preparation remains NOT_RUN, old actual failure not backfilled and old authorization spent.",
+    "Source not frozen yet; review binds listed exact bytes, freeze verification pending.",
+    "First root57PASS1FAIL (strict requested711 vs umask700 test classification) retained and corrected without permission expansion; previous265 window retained."
+  ],
+  "pending_both_approvals": true
+}

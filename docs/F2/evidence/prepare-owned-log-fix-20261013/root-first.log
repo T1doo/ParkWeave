@@ -1,0 +1,62 @@
+..F.......................................................               [100%]
+=================================== FAILURES ===================================
+_ test_real_mkdir_collision_does_not_adopt_or_write_existing_object[private_collision] _
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-31/test_real_mkdir_collision_does2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f0a89842960>
+capsys = <_pytest.capture.CaptureFixture object at 0x7f0a89840260>
+kind = 'private_collision'
+
+    @pytest.mark.parametrize('kind',['directory','symlink','private_collision'])
+    def test_real_mkdir_collision_does_not_adopt_or_write_existing_object(tmp_path,monkeypatch,capsys,kind):
+        root=tmp_path/'collision';old=tmp_path/'original'
+        old.mkdir();(old/'private').mkdir();sentinel=old/'private/prepare-failure.log';sentinel.write_bytes(b'UNCHANGED_SYNTHETIC_ORIGINAL')
+        if kind=='directory':
+            root.mkdir();(root/'private').mkdir();(root/'private/prepare-failure.log').write_bytes(b'UNCHANGED_SYNTHETIC_ORIGINAL')
+        elif kind=='symlink':root.symlink_to(old,target_is_directory=True)
+        original_mkdir=Path.mkdir
+        def mkdir(path,*a,**kw):
+            original_mkdir(path,*a,**kw) # real mkdir must supply the actual EEXIST.
+            if kind=='private_collision' and path==root:
+                (root/'private').symlink_to(old/'private',target_is_directory=True)
+        monkeypatch.setattr(Path,'mkdir',mkdir)
+        class MappedPath:
+            def __new__(cls,value):return root if str(value).startswith('/tmp/parkweave-prepare-') else Path(value)
+            @staticmethod
+            def cwd():return tmp_path
+        monkeypatch.setattr(p,'Path',MappedPath)
+        monkeypatch.setattr(p.b,'gate',lambda *a,**kw:PARENT)
+        monkeypatch.setattr(sys,'flags',SimpleNamespace(isolated=1,no_site=1));monkeypatch.setattr(sys,'dont_write_bytecode',True)
+        monkeypatch.setattr(p.signal,'signal',lambda *a:0);monkeypatch.setattr(p.signal,'alarm',lambda *a:0)
+        def opened(path,*a,**kw):
+            assert str(path)==p.CLAIM,'UNPROVEN_PATH_OPENED'
+            return -123
+        monkeypatch.setattr(p.os,'open',opened);monkeypatch.setattr(p.os,'write',lambda *a:1);monkeypatch.setattr(p.os,'close',lambda *a:None)
+        # Ordinary tmp dirs belong to the test user; model root ownership only in DI.
+        real_lstat=Path.lstat
+        def lstat(path,*a,**kw):
+            s=real_lstat(path,*a,**kw)
+            return SimpleNamespace(st_mode=s.st_mode,st_uid=0,st_dev=s.st_dev,st_ino=s.st_ino)
+        monkeypatch.setattr(Path,'lstat',lstat)
+        def refuse(*a):raise AssertionError('UNPROVEN_DIRECTORY_ADOPTED')
+        monkeypatch.setattr(p,'failure_log',refuse);monkeypatch.setattr(p.b,'prepare',refuse)
+        assert p.run(SHA)==1
+        capture=capsys.readouterr();assert not capture.err
+        result=json.loads(capture.out)
+        assert result['failure_logs']=='UNAVAILABLE' and not result['cleanup']
+>       assert result['diagnostics'][0]['check_id']==('B_PRIVATE_DIR' if kind=='private_collision' else 'B_ROOT')
+E       AssertionError: assert 'B_ROOT' == 'B_PRIVATE_DIR'
+E         
+E         - B_PRIVATE_DIR
+E         + B_ROOT
+
+tests/test_prepare_owned_log_boundary.py:49: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_prepare_owned_log_boundary.py::test_real_mkdir_collision_does_not_adopt_or_write_existing_object[private_collision]
+1 failed, 57 passed, 1 warning in 0.20s
