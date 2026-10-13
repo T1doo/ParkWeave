@@ -1,0 +1,91 @@
+{
+  "summary": {
+    "mode": "source_head",
+    "checks": 21,
+    "instance": {
+      "id": "80c4d596-7af4-49a6-bd89-b990a837f819",
+      "run": "56dc152d-912e-41d3-a98c-09a005be1a5e"
+    },
+    "scope": "ORIGINAL_TEMPLATE_PAGE_PUBLISHER_AND_CONSUMER_REAL_ASGI_WITHDRAW_OR_SOURCE_CHANGE_REJECT_NEW_AND_RESUME_NO_EXTRA_PRODUCT_WRITES"
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/template-candidate/status",
+      "status": 200,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-consumer/catalog",
+      "status": 200,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/template-consumer/instances",
+      "status": 201,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-candidate/status",
+      "status": 200,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-candidate/park-a/independent-source-head-template",
+      "status": 200,
+      "actor": "template-author",
+      "action": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/template-candidate/park-a/independent-source-head-template/commands",
+      "status": 200,
+      "actor": "template-author",
+      "action": "SAVE_DRAFT"
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-candidate/park-a/independent-source-head-template",
+      "status": 200,
+      "actor": "template-author",
+      "action": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/template-consumer/instances",
+      "status": 403,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-consumer/instances/80c4d596-7af4-49a6-bd89-b990a837f819",
+      "status": 200,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/template-consumer/instances/80c4d596-7af4-49a6-bd89-b990a837f819/resume",
+      "status": 403,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-consumer/catalog",
+      "status": 200,
+      "actor": "fixture-a",
+      "action": null
+    }
+  ],
+  "denials": 2
+}

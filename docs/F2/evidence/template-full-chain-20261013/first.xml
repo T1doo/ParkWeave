@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="3.616" timestamp="2026-10-13T17:51:20.898265+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_full_chain" name="test_template_new_input_full_original_local_chain_and_changed_source_rejections[full_chain]" time="2.307"><failure message="AssertionError: ('POST', '/api/preparations/9cc93c24-8d43-4f42-8348-90d302f49f2b/dispatch', 409, {'detail': 'adopted service plan prerequisites need explicit verification'})&#10;assert 409 &lt; 400&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-108/test_template_new_input_full_o0')
+mode = 'full_chain'
+
+    @pytest.mark.parametrize("mode",["full_chain","withdraw","source_head"])
+    def test_template_new_input_full_original_local_chain_and_changed_source_rejections(link_fixture,tmp_path,mode):
+        f=link_fixture;permissions=permission_snapshot(f[1]);cfg=template_config().model_dump()
+        for permit in cfg['permits']:permit['scope']['park_id']='park-a'
+        engine=TemplateEngine(TemplateConfig.model_validate(cfg),TemplateRepository(tmp_path/'continuity.template.candidate.sqlite3'))
+        consumer=TemplateConsumer(f[0],engine,ConsumerConfig(enabled_for_isolated_tests=True,
+            allowed_database_names=[conninfo_to_dict(f[0].dsn)['dbname']],allowed_orgs=[{'park_id':'park-a','org_id':'org-a'}]),
+            ConsumerRepository(tmp_path/'continuity.consumer.candidate.sqlite3'))
+        bridge=IsolatedRunAccessBridge(f[1],f[1]._case_fact_fixture_receipt,tmp_path/'template-full.run-access.candidate.sqlite3',approver_ids={'prep-specialist-fixture-a'},enabled_for_isolated_tests=True);bridge.attach_store(f[0]);assert permission_snapshot(f[1])==permissions
+        with TestClient(create_isolated_template_app(f[0],engine,consumer)) as client:
+            # Existing approved synthetic release, prepared through original commands.
+            path='/api/template-candidate/park-a/new-enterprise-material-template'
+            for action,actor in [('SAVE_DRAFT','template-author'),('SUBMIT','template-author'),('REVIEW','template-reviewer'),('CANDIDATE_PUBLISH','template-publisher')]:
+                h={'X-Isolated-Template-Actor':actor,'Idempotency-Key':uuid4().hex};view=client.get(path,headers=h).json()
+                body={'action':action,'expected_revision':view['revision'],'expected_definition_sha256':view['definition_sha256'],'reason':'SYNTHETIC existing reviewed release '+action}
+                if action=='SAVE_DRAFT':body['draft']=definition(goals=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_SYNTHETIC_COORDINATION_RECORDS','LOCAL_CASE_RECORD_RECHECK']).model_dump(mode='json');body['draft']['source']['id']='isolated-template-materials-source'
+                if action=='CANDIDATE_PUBLISH':body['validity']=VALID
+                r=client.post(path+'/commands',headers=h,json=body);assert r.status_code==200,r.text
+            proc=subprocess.Popen(['node',str(Path(__file__).with_name('template_full_chain.js' if mode=='full_chain' else 'template_source_rejections.js')),mode],
+                cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+            selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ);requests=[];summary=None;invalid_seen=False;denials=0;product_before=None
+            try:
+                while True:
+                    assert selector.select(timeout=15),'Template continuity bridge made no progress within15 seconds'
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if 'request' not in message:summary=message;break
+                    r=message['request'];o=r['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                    actor=o.get('headers',{}).get('Authorization','Bearer SYNTHETIC_fixture-a').removeprefix('Bearer SYNTHETIC_')
+                    response=client.request(method,r['path'],headers={**headers(f[2],actor,key=o.get('headers',{}).get('Idempotency-Key')),**({'X-Isolated-Template-Actor':o['headers']['X-Isolated-Template-Actor']} if 'X-Isolated-Template-Actor' in o.get('headers',{}) else {})},json=body)
+                    requests.append({'method':method,'path':r['path'],'status':response.status_code,'actor':o.get('headers',{}).get('X-Isolated-Template-Actor',actor),'action':body.get('action') if body else None})
+                    if response.status_code==422:
+                        assert r['path']=='/api/template-consumer/instances' and body['materials'][0]['text']=='';invalid_seen=True
+                        with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==0
+                    elif response.status_code==403 and mode!='full_chain':
+                        assert method=='POST' and r['path'].startswith('/api/template-consumer/instances');denials+=1
+                        with f[1].connect() as c:assert {t:c.execute('SELECT * FROM '+t+' ORDER BY 1').fetchall() for t in product_before}==product_before
+&gt;                   else:assert response.status_code&lt;400,(method,r['path'],response.status_code,response.json())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   AssertionError: ('POST', '/api/preparations/9cc93c24-8d43-4f42-8348-90d302f49f2b/dispatch', 409, {'detail': 'adopted service plan prerequisites need explicit verification'})
+E                   assert 409 &lt; 400
+E                    +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_template_full_chain.py:59: AssertionError</failure></testcase><testcase classname="tests.test_template_full_chain" name="test_template_new_input_full_original_local_chain_and_changed_source_rejections[withdraw]" time="0.515"><failure message="AssertionError: ('GET', '/api/template-candidate//new-enterprise-material-template', 404, {'detail': 'Not Found'})&#10;assert 404 &lt; 400&#10; +  where 404 = &lt;Response [404 Not Found]&gt;.status_code">link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-108/test_template_new_input_full_o1')
+mode = 'withdraw'
+
+    @pytest.mark.parametrize("mode",["full_chain","withdraw","source_head"])
+    def test_template_new_input_full_original_local_chain_and_changed_source_rejections(link_fixture,tmp_path,mode):
+        f=link_fixture;permissions=permission_snapshot(f[1]);cfg=template_config().model_dump()
+        for permit in cfg['permits']:permit['scope']['park_id']='park-a'
+        engine=TemplateEngine(TemplateConfig.model_validate(cfg),TemplateRepository(tmp_path/'continuity.template.candidate.sqlite3'))
+        consumer=TemplateConsumer(f[0],engine,ConsumerConfig(enabled_for_isolated_tests=True,
+            allowed_database_names=[conninfo_to_dict(f[0].dsn)['dbname']],allowed_orgs=[{'park_id':'park-a','org_id':'org-a'}]),
+            ConsumerRepository(tmp_path/'continuity.consumer.candidate.sqlite3'))
+        bridge=IsolatedRunAccessBridge(f[1],f[1]._case_fact_fixture_receipt,tmp_path/'template-full.run-access.candidate.sqlite3',approver_ids={'prep-specialist-fixture-a'},enabled_for_isolated_tests=True);bridge.attach_store(f[0]);assert permission_snapshot(f[1])==permissions
+        with TestClient(create_isolated_template_app(f[0],engine,consumer)) as client:
+            # Existing approved synthetic release, prepared through original commands.
+            path='/api/template-candidate/park-a/new-enterprise-material-template'
+            for action,actor in [('SAVE_DRAFT','template-author'),('SUBMIT','template-author'),('REVIEW','template-reviewer'),('CANDIDATE_PUBLISH','template-publisher')]:
+                h={'X-Isolated-Template-Actor':actor,'Idempotency-Key':uuid4().hex};view=client.get(path,headers=h).json()
+                body={'action':action,'expected_revision':view['revision'],'expected_definition_sha256':view['definition_sha256'],'reason':'SYNTHETIC existing reviewed release '+action}
+                if action=='SAVE_DRAFT':body['draft']=definition(goals=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_SYNTHETIC_COORDINATION_RECORDS','LOCAL_CASE_RECORD_RECHECK']).model_dump(mode='json');body['draft']['source']['id']='isolated-template-materials-source'
+                if action=='CANDIDATE_PUBLISH':body['validity']=VALID
+                r=client.post(path+'/commands',headers=h,json=body);assert r.status_code==200,r.text
+            proc=subprocess.Popen(['node',str(Path(__file__).with_name('template_full_chain.js' if mode=='full_chain' else 'template_source_rejections.js')),mode],
+                cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+            selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ);requests=[];summary=None;invalid_seen=False;denials=0;product_before=None
+            try:
+                while True:
+                    assert selector.select(timeout=15),'Template continuity bridge made no progress within15 seconds'
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if 'request' not in message:summary=message;break
+                    r=message['request'];o=r['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                    actor=o.get('headers',{}).get('Authorization','Bearer SYNTHETIC_fixture-a').removeprefix('Bearer SYNTHETIC_')
+                    response=client.request(method,r['path'],headers={**headers(f[2],actor,key=o.get('headers',{}).get('Idempotency-Key')),**({'X-Isolated-Template-Actor':o['headers']['X-Isolated-Template-Actor']} if 'X-Isolated-Template-Actor' in o.get('headers',{}) else {})},json=body)
+                    requests.append({'method':method,'path':r['path'],'status':response.status_code,'actor':o.get('headers',{}).get('X-Isolated-Template-Actor',actor),'action':body.get('action') if body else None})
+                    if response.status_code==422:
+                        assert r['path']=='/api/template-consumer/instances' and body['materials'][0]['text']=='';invalid_seen=True
+                        with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==0
+                    elif response.status_code==403 and mode!='full_chain':
+                        assert method=='POST' and r['path'].startswith('/api/template-consumer/instances');denials+=1
+                        with f[1].connect() as c:assert {t:c.execute('SELECT * FROM '+t+' ORDER BY 1').fetchall() for t in product_before}==product_before
+&gt;                   else:assert response.status_code&lt;400,(method,r['path'],response.status_code,response.json())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   AssertionError: ('GET', '/api/template-candidate//new-enterprise-material-template', 404, {'detail': 'Not Found'})
+E                   assert 404 &lt; 400
+E                    +  where 404 = &lt;Response [404 Not Found]&gt;.status_code
+
+tests/test_template_full_chain.py:59: AssertionError</failure></testcase><testcase classname="tests.test_template_full_chain" name="test_template_new_input_full_original_local_chain_and_changed_source_rejections[source_head]" time="0.672"><failure message="AssertionError: ('GET', '/api/template-candidate//independent-source-head-template', 404, {'detail': 'Not Found'})&#10;assert 404 &lt; 400&#10; +  where 404 = &lt;Response [404 Not Found]&gt;.status_code">link_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-108/test_template_new_input_full_o2')
+mode = 'source_head'
+
+    @pytest.mark.parametrize("mode",["full_chain","withdraw","source_head"])
+    def test_template_new_input_full_original_local_chain_and_changed_source_rejections(link_fixture,tmp_path,mode):
+        f=link_fixture;permissions=permission_snapshot(f[1]);cfg=template_config().model_dump()
+        for permit in cfg['permits']:permit['scope']['park_id']='park-a'
+        engine=TemplateEngine(TemplateConfig.model_validate(cfg),TemplateRepository(tmp_path/'continuity.template.candidate.sqlite3'))
+        consumer=TemplateConsumer(f[0],engine,ConsumerConfig(enabled_for_isolated_tests=True,
+            allowed_database_names=[conninfo_to_dict(f[0].dsn)['dbname']],allowed_orgs=[{'park_id':'park-a','org_id':'org-a'}]),
+            ConsumerRepository(tmp_path/'continuity.consumer.candidate.sqlite3'))
+        bridge=IsolatedRunAccessBridge(f[1],f[1]._case_fact_fixture_receipt,tmp_path/'template-full.run-access.candidate.sqlite3',approver_ids={'prep-specialist-fixture-a'},enabled_for_isolated_tests=True);bridge.attach_store(f[0]);assert permission_snapshot(f[1])==permissions
+        with TestClient(create_isolated_template_app(f[0],engine,consumer)) as client:
+            # Existing approved synthetic release, prepared through original commands.
+            path='/api/template-candidate/park-a/new-enterprise-material-template'
+            for action,actor in [('SAVE_DRAFT','template-author'),('SUBMIT','template-author'),('REVIEW','template-reviewer'),('CANDIDATE_PUBLISH','template-publisher')]:
+                h={'X-Isolated-Template-Actor':actor,'Idempotency-Key':uuid4().hex};view=client.get(path,headers=h).json()
+                body={'action':action,'expected_revision':view['revision'],'expected_definition_sha256':view['definition_sha256'],'reason':'SYNTHETIC existing reviewed release '+action}
+                if action=='SAVE_DRAFT':body['draft']=definition(goals=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_SYNTHETIC_COORDINATION_RECORDS','LOCAL_CASE_RECORD_RECHECK']).model_dump(mode='json');body['draft']['source']['id']='isolated-template-materials-source'
+                if action=='CANDIDATE_PUBLISH':body['validity']=VALID
+                r=client.post(path+'/commands',headers=h,json=body);assert r.status_code==200,r.text
+            proc=subprocess.Popen(['node',str(Path(__file__).with_name('template_full_chain.js' if mode=='full_chain' else 'template_source_rejections.js')),mode],
+                cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+            selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ);requests=[];summary=None;invalid_seen=False;denials=0;product_before=None
+            try:
+                while True:
+                    assert selector.select(timeout=15),'Template continuity bridge made no progress within15 seconds'
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if 'request' not in message:summary=message;break
+                    r=message['request'];o=r['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                    actor=o.get('headers',{}).get('Authorization','Bearer SYNTHETIC_fixture-a').removeprefix('Bearer SYNTHETIC_')
+                    response=client.request(method,r['path'],headers={**headers(f[2],actor,key=o.get('headers',{}).get('Idempotency-Key')),**({'X-Isolated-Template-Actor':o['headers']['X-Isolated-Template-Actor']} if 'X-Isolated-Template-Actor' in o.get('headers',{}) else {})},json=body)
+                    requests.append({'method':method,'path':r['path'],'status':response.status_code,'actor':o.get('headers',{}).get('X-Isolated-Template-Actor',actor),'action':body.get('action') if body else None})
+                    if response.status_code==422:
+                        assert r['path']=='/api/template-consumer/instances' and body['materials'][0]['text']=='';invalid_seen=True
+                        with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==0
+                    elif response.status_code==403 and mode!='full_chain':
+                        assert method=='POST' and r['path'].startswith('/api/template-consumer/instances');denials+=1
+                        with f[1].connect() as c:assert {t:c.execute('SELECT * FROM '+t+' ORDER BY 1').fetchall() for t in product_before}==product_before
+&gt;                   else:assert response.status_code&lt;400,(method,r['path'],response.status_code,response.json())
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   AssertionError: ('GET', '/api/template-candidate//independent-source-head-template', 404, {'detail': 'Not Found'})
+E                   assert 404 &lt; 400
+E                    +  where 404 = &lt;Response [404 Not Found]&gt;.status_code
+
+tests/test_template_full_chain.py:59: AssertionError</failure></testcase></testsuite></testsuites>

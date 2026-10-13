@@ -1,0 +1,91 @@
+{
+  "summary": {
+    "mode": "withdraw",
+    "checks": 20,
+    "instance": {
+      "id": "4ba4bf05-7b11-41e0-8e54-cc2853310cb7",
+      "run": "00059146-76cf-4771-afdf-7d93a24071b3"
+    },
+    "scope": "ORIGINAL_TEMPLATE_PAGE_PUBLISHER_AND_CONSUMER_REAL_ASGI_WITHDRAW_OR_SOURCE_CHANGE_REJECT_NEW_AND_RESUME_NO_EXTRA_PRODUCT_WRITES"
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/template-candidate/status",
+      "status": 200,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-consumer/catalog",
+      "status": 200,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/template-consumer/instances",
+      "status": 201,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-candidate/status",
+      "status": 200,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-candidate/park-a/new-enterprise-material-template",
+      "status": 200,
+      "actor": "template-publisher",
+      "action": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/template-candidate/park-a/new-enterprise-material-template/commands",
+      "status": 200,
+      "actor": "template-publisher",
+      "action": "WITHDRAW"
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-candidate/park-a/new-enterprise-material-template",
+      "status": 200,
+      "actor": "template-publisher",
+      "action": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/template-consumer/instances",
+      "status": 403,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-consumer/instances/4ba4bf05-7b11-41e0-8e54-cc2853310cb7",
+      "status": 200,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/template-consumer/instances/4ba4bf05-7b11-41e0-8e54-cc2853310cb7/resume",
+      "status": 403,
+      "actor": "fixture-a",
+      "action": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/template-consumer/catalog",
+      "status": 200,
+      "actor": "fixture-a",
+      "action": null
+    }
+  ],
+  "permission_snapshot_unchanged": true
+}
