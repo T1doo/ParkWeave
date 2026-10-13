@@ -388,17 +388,24 @@ class TemplateConsumer:
         run_id = results.get('CREATE_RUN', {}).get('run_id')
         run = self.store.read(token, UUID(run_id)) if run_id else None
         preparation_id = results.get('CREATE_PREPARATION', {}).get('preparation_id')
-        plan_id = results.get('ADOPT_PLAN', {}).get('plan_id') or next((s['result']['plan_id'] for s in reversed(stages) if s['name'].startswith('CONFIRM_PLAN_') and s['state']=='CONFIRMED'), None)
+        journal_plan_id = results.get('ADOPT_PLAN', {}).get('plan_id') or next((s['result']['plan_id'] for s in reversed(stages) if s['name'].startswith('CONFIRM_PLAN_') and s['state']=='CONFIRMED'), None)
+        service_plan=None
+        if preparation_id:
+            with self.store.connect() as c:
+                actor,parent=case_steps._context(self.store,c,token,UUID(preparation_id))
+                if str(parent['run_id'])!=run_id:raise Conflict('original consumer preparation Run binding changed')
+                service_plan=case_steps._view(self.store,c,actor,parent,deepcopy(parent.get('service_case_plan')),observe=False)
+        plan_id=service_plan['plan_id'] if service_plan else None
         state = 'PLAN_ADOPTED' if plan_id else 'BLOCKED' if any(s['state'] == 'REFUSED' for s in stages) else 'UNKNOWN' if any(s['state'] in ('ADMITTED', 'STARTED', 'UNKNOWN') for s in stages) else 'PENDING_RUN' if not run or run['state'] != 'SUCCEEDED' else 'PLAN_CONFIRMATION_REQUIRED' if preparation_id else 'PENDING_PREPARATION'
         if run and run['state'] in ('FAILED', 'CANCELLED'):
             state = 'RUN_BLOCKED'
         return dict(instance_id=instance['id'], state=state, run_id=run_id,
                     case_id=str(run['case']['id']) if run and run.get('case') else None,
-                    preparation_id=preparation_id, plan_id=plan_id, run_state=run['state'] if run else None,
+                    preparation_id=preparation_id, plan_id=plan_id, journal_plan_id=journal_plan_id, run_state=run['state'] if run else None,
                     binding=instance['binding'], release_available=available, stages=stages,
                     issues=[dict(stage=s['name'], code=s['error']) for s in stages if s['state'] == 'REFUSED'],
                     preparation=prep.read(self.store, token, UUID(preparation_id)) if preparation_id else None,
-                    service_case_plan=case_steps.read(self.store, token, UUID(preparation_id)) if plan_id else None,
+                    service_case_plan=service_plan if plan_id else None,
                     new_grants=False, automatic_execution=False, business_publication=False, case_goal_completed=False)
 
     def instances(self, token):
@@ -440,10 +447,47 @@ class TemplateConsumer:
             self._perform(token, instance, 'ADD_' + material['slot'],
                 lambda material=material: dict(action='ADD_EVIDENCE', expected_revision=current_revision(), **material),
                 lambda stage_key, body: prep.command(self.store, token, preparation_id, stage_key, prep.PreparationCommand.model_validate(body)))
+        self.reconcile_adoption(token, id, persist=True)
         # Preparing materials never authorizes adoption. Historical confirmed
         # ADOPT_PLAN stages remain readable, but new and incomplete instances
         # require a separately submitted exact preview confirmation.
         return self.read(token, id)
+
+    def reconcile_adoption(self, token, id, *, persist=False):
+        p,database=self._auth(token)
+        instance=self._instance(p,database,id)
+        self._available(p,instance)
+        self._reviewer(p,instance['input']['reviewer_id'])
+        with self.repository.connect() as c:
+            raw=c.execute("SELECT * FROM consumer_stages WHERE instance_id=? AND name='ADOPT_PLAN'",(instance['id'],)).fetchone()
+            created=c.execute("SELECT result FROM consumer_stages WHERE instance_id=? AND name='CREATE_PREPARATION' AND state='CONFIRMED'",(instance['id'],)).fetchone()
+            created_run=c.execute("SELECT result FROM consumer_stages WHERE instance_id=? AND name='CREATE_RUN' AND state='CONFIRMED'",(instance['id'],)).fetchone()
+        if raw is None:return dict(status='NO_REQUEST',automatically_replayed=False,product_read_only=True)
+        stage=dict(raw)
+        if not created or not created_run or digest(stage['body'])!=stage['body_sha256']:raise Conflict('original legacy adoption journal proof invalid')
+        preparation_id=UUID(json.loads(created['result'])['preparation_id'])
+        try:data=case_steps.Adopt.model_validate(json.loads(stage['body']))
+        except (ValueError,TypeError):raise Conflict('original legacy adoption request body invalid')
+        proof=case_steps.recover(self.store,token,preparation_id,stage['request_key'],expected_request=data)
+        if proof['run_id']!=json.loads(created_run['result'])['run_id'] or proof['preparation_id']!=str(preparation_id):raise Conflict('legacy original preparation Run receipt binding changed')
+        if not proof.get('saved_request_verified'):raise Conflict('original legacy adoption request proof unavailable')
+        state=None;result=None
+        if proof['status']=='COMMITTED':
+            status='COMMITTED';state='CONFIRMED';result=dict(plan_id=proof['event']['plan_id'],original_adoption_receipt=proof['event'])
+        elif proof.get('not_committed_final'):
+            status='NOT_COMMITTED_STALE';state='REFUSED';result=dict(original_request_not_committed=True,proof=proof)
+        elif stage['state']=='REFUSED':status='REFUSED'
+        else:status='NOT_OBSERVED'
+        if persist and state and stage['state'] in ('STARTED','UNKNOWN'):
+            # Recheck current authorities before changing only this journal.
+            current,current_database=self._auth(token)
+            self._instance(current,current_database,id);self._available(current,instance)
+            self._reviewer(current,instance['input']['reviewer_id'])
+            with self.repository.connect(write=True) as c:
+                c.execute("UPDATE consumer_stages SET state=?,result=?,error=? WHERE instance_id=? AND name='ADOPT_PLAN' AND request_key=? AND body_sha256=? AND state IN ('STARTED','UNKNOWN')",
+                          (state,canonical(result),None if state=='CONFIRMED' else 'LEGACY_NOT_COMMITTED_STALE',instance['id'],stage['request_key'],stage['body_sha256']))
+        return dict(status=status,original_request_key=stage['request_key'],receipt=proof,
+                    automatically_replayed=False,product_read_only=True)
 
     def planning(self, token, id):
         p, database = self._auth(token)
@@ -500,7 +544,7 @@ class TemplateConsumer:
         preparation_id = UUID(row['preparation_id'])
         try:
             self._perform(token, instance, stage_name, lambda: body,
-                          lambda stage_key, saved: case_steps.adopt(self.store, token, preparation_id, stage_key, case_steps.Adopt.model_validate(saved)) if adopt
+                          lambda stage_key, saved: case_steps.adopt(self.store, token, preparation_id, stage_key, case_steps.Adopt.model_validate(saved), unadopted_only=True) if adopt
                           else intents.save(self.store, token, preparation_id, stage_key, intents.Save.model_validate(saved), unadopted_only=True))
         except (Denied, Conflict):
             # A definite current-authority refusal can occur between admission
@@ -590,6 +634,15 @@ def install_routes(app, consumer):
     @app.post('/api/template-consumer/instances/{instance_id}/resume')
     def resume(instance_id: UUID, data: Resume, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
         return consumer.resume(bearer(authorization), instance_id, idempotency_key)
+
+    @app.get('/api/template-consumer/instances/{instance_id}/adoption-reconciliation')
+    def adoption_proof(instance_id: UUID, authorization: str | None = Header(default=None)):
+        return consumer.reconcile_adoption(bearer(authorization),instance_id)
+
+    @app.post('/api/template-consumer/instances/{instance_id}/adoption-reconciliation')
+    def reconcile_adoption(instance_id: UUID, data: Resume, authorization: str | None = Header(default=None)):
+        proof=consumer.reconcile_adoption(bearer(authorization),instance_id,persist=True)
+        return dict(**consumer.read(bearer(authorization),instance_id),adoption_reconciliation=proof)
 
     @app.get('/api/template-consumer/instances/{instance_id}/planning')
     def planning_read(instance_id: UUID, authorization: str | None = Header(default=None)):

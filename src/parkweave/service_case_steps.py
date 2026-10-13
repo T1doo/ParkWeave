@@ -418,7 +418,7 @@ def _recovery_proofs(parent):
 
 
 @er.bounded
-def recover(store,token,id,key=None):
+def recover(store,token,id,key=None,*,expected_request=None):
     """Current original actor reads an immutable key proof; never replay/observe-write."""
     with store.connect() as c:
         p,parent=_context(store,c,token,id,key is not None)
@@ -430,6 +430,22 @@ def recover(store,token,id,key=None):
         # Reuse the original global actor/key scope boundary without exposing another Case.
         rows=c.execute("SELECT id FROM preparations WHERE jsonb_path_exists(service_case_plan,'$.** ? (@.actor_id == $actor && @.request_key == $key)',%s)",(Jsonb(dict(actor=p['id'],key=key)),)).fetchall() if key is not None else []
         if any(row['id']!=id for row in rows):raise Conflict('original service plan recovery Case changed')
+        request_verified=False;not_committed_final=False
+        if expected_request is not None:
+            if key is None:raise Conflict('exact original request key required')
+            expected=Adopt.model_validate(expected_request)
+            expected_fp=cp._hash(dict(preparation_id=str(id),action='ADOPT',**_adopt_request(expected)))
+            if matches:
+                if matches[0][1]['action']!='ADOPT' or matches[0][1]['fingerprint']!=expected_fp:
+                    raise Conflict('original adoption receipt does not match saved request body')
+                request_verified=True
+            else:
+                # Absence alone is inconclusive. Strictly advanced monotonically
+                # persisted versions prove this immutable request cannot commit
+                # after the parent/key locks are released either.
+                not_committed_final=(parent['revision']>expected.expected_preparation_revision or
+                    (parent.get('request_intent') or {}).get('revision',0)>expected.expected_request_revision)
+                request_verified=True
         original=None
         if matches:
             plan,event,expected,previous=matches[0]
@@ -452,13 +468,13 @@ def recover(store,token,id,key=None):
         view.update(current_preview=None,binding=None,required_goals=None,goal_coverage=None,can_adopt=False,command_receipt=None,
                     events=[{k:e[k] for k in ('id','revision','action','step_id')} for e in view['events']],
                     history=[{k:h[k] for k in ('id','revision')} for h in view['history']],read_only=True)
-        return dict(scope=SCOPE,preparation_id=str(id),case_id=str(parent['case_id']),run_id=str(parent['run_id']),actor_ref=view['actor_ref'],
+        return dict(**({'saved_request_verified':request_verified,'not_committed_final':not_committed_final} if expected_request is not None else {}),scope=SCOPE,preparation_id=str(id),case_id=str(parent['case_id']),run_id=str(parent['run_id']),actor_ref=view['actor_ref'],
                     status='NO_REQUEST' if key is None else 'COMMITTED' if original else 'NOT_OBSERVED',event=original,current=view,
                     historical_only=True,automatically_replayed=False,read_only=True,case_goal_completed=False)
 
 
 @er.bounded
-def adopt(store,token,id,key,data):
+def adopt(store,token,id,key,data,*,unadopted_only=False):
     with store.connect() as c:
         p,parent=_context(store,c,token,id,True)
         if p['role']!='enterprise_operator':raise Denied('owner adopted plan required')
@@ -466,6 +482,7 @@ def adopt(store,token,id,key,data):
         fp=cp._hash(dict(preparation_id=str(id),action='ADOPT',**_adopt_request(data)))
         old=_replay(c,p,parent,key,fp);prior=deepcopy(parent.get('service_case_plan'))
         if old:return _view(store,c,p,parent,prior,old)
+        if unadopted_only and prior is not None:raise Conflict('template consumer cannot replace an already adopted original plan')
         intent=parent.get('request_intent')
         if not intent or not _supported(parent) or data.required_goals!=intent['required_goals'] or intent['revision']!=data.expected_request_revision:
             raise Conflict('explicit supported current request goals required')

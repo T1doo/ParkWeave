@@ -1,4 +1,5 @@
 """Actual PG / HTTP inspection, immutable decisions and preserved business history."""
+from parkweave import service_case_steps as case_steps
 from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -65,10 +66,25 @@ def instance(u, goals=None, legacy=False):
             with u['consumer'].repository.connect(write=True) as c:
                 c.execute('INSERT INTO consumer_stages VALUES(?,?,?,?,?,?,NULL,NULL)',(inst['id'],name,key,digest(canonical(body)),canonical(body),'STARTED'))
         return original(token,inst,name,build,send)
-    with patch.object(u['consumer'],'_perform',perform):
-        response=u['client'].post('/api/template-consumer/instances/'+row['instance_id']+'/resume',headers=headers(u['f'][2],key=uuid4().hex),json={})
+    response=u['client'].post('/api/template-consumer/instances/'+row['instance_id']+'/resume',headers=headers(u['f'][2],key=uuid4().hex),json={})
     assert response.status_code==200,response.text
-    return response.json(),r
+    row=response.json();assert row['state']=='PLAN_CONFIRMATION_REQUIRED' and row['plan_id'] is None
+    preview=u['client'].get('/api/template-consumer/instances/'+row['instance_id']+'/planning',headers=headers(u['f'][2])).json()
+    adoption=dict(expected_preparation_revision=preview['current']['preparation_revision'],expected_request_revision=preview['request_intent']['revision'],expected_source_sha256=preview['current']['source_sha256'],expected_plan_revision=0,required_goals=preview['request_intent']['required_goals'],reason='SYNTHETIC explicit current template preview adoption')
+    if legacy:
+        adoption['reason']=data['reason']
+        # Exercise a genuine old colon key/stage through the original adapter;
+        # normal new instances always use the new explicit HTTP confirmation.
+        token=u['f'][2]['fixture-a'];p,db=u['consumer']._auth(token);inst=u['consumer']._instance(p,db,row['instance_id'])
+        with patch.object(u['consumer'],'_perform',perform):
+            u['consumer']._perform(token,inst,'ADOPT_PLAN',lambda:adoption,lambda key,body:case_steps.adopt(u['f'][0],token,UUID(row['preparation_id']),key,case_steps.Adopt.model_validate(body)))
+        row=u['consumer'].read(token,row['instance_id'])
+    else:
+        response=u['client'].post('/api/template-consumer/instances/'+row['instance_id']+'/adopt',headers=headers(u['f'][2],key=uuid4().hex),json=adoption)
+        assert response.status_code==200,response.text
+        row=response.json()
+    assert row['state']=='PLAN_ADOPTED'
+    return row,r
 
 
 def check(u,row,target,user='fixture-a'):

@@ -114,6 +114,10 @@ def new_case(u,release,owner='fixture-a',number=0):
     work=u['f'][0].claim('new-enterprise-original-worker');assert work and str(work['id'])==row['run_id']
     u['f'][0].finish(work)
     row=call(u,'/api/template-consumer/instances/'+row['instance_id']+'/resume',actor=owner,data={})
+    assert row['state']=='PLAN_CONFIRMATION_REQUIRED' and row['plan_id'] is None
+    base='/api/template-consumer/instances/'+row['instance_id']
+    v=call(u,base+'/planning',actor=owner)
+    row=call(u,base+'/adopt',actor=owner,data=dict(expected_preparation_revision=v['current']['preparation_revision'],expected_request_revision=v['request_intent']['revision'],expected_source_sha256=v['current']['source_sha256'],expected_plan_revision=0,required_goals=v['request_intent']['required_goals'],reason='SYNTHETIC explicit current template preview confirmation'))
     assert row['state']=='PLAN_ADOPTED' and not row['new_grants'] and not row['automatic_execution']
     assert row['service_case_plan']['required_goals']==ALL_GOALS
     return row
@@ -284,13 +288,13 @@ def test_new_run_cannot_reuse_other_enterprise_approval_acceptance_or_result(fre
 
 
 def test_eng098_new_enterprise_material_path_stops_at_actual_original_permission_boundary(template_consumption):
-    from test_template_consumer import consume,finish,resume,headers as th
+    from test_template_consumer import consume,finish,resume,confirm,headers as th
     from template_candidate_support import ENTERPRISES,REVIEWERS,grant_snapshot
     f=dict(template_consumption);before=grant_snapshot(f['owner']);evidence=[]
     with actual_http(create_isolated_template_app(f['store'],f['engine'],f['consumer'])) as (client,requests):
         f['client']=client
         for index in (0,1):
-            row=ok(consume(f,index,key='actual-eng098-'+str(index)),201);finish(f);row=ok(resume(f,row,index,key='actual-resume-'+str(index)));path='/api/preparations/'+row['preparation_id']
+            row=ok(consume(f,index,key='actual-eng098-'+str(index)),201);finish(f);row=ok(resume(f,row,index,key='actual-resume-'+str(index)));assert row['state']=='PLAN_CONFIRMATION_REQUIRED';row=ok(confirm(f,row,index,key='actual-explicit-confirm-'+str(index)));path='/api/preparations/'+row['preparation_id']
             for action,actor in [('REVIEW',REVIEWERS[index]),('CONFIRM',ENTERPRISES[index])]:
                 p=ok(client.get(path,headers=th(f,index)))['preparation'];ok(client.post(path+'/commands',headers={'Authorization':'Bearer '+f['tokens'][actor],'Idempotency-Key':uuid4().hex},json=dict(action=action,expected_revision=p['revision'],reason='SYNTHETIC explicit original material '+action)))
             view=ok(client.get(path+'/service-case-plan',headers=th(f,index)));step=view['steps'][0]
