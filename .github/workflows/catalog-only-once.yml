@@ -1,0 +1,49 @@
+name: ParkWeave catalog-only once (approval required)
+
+on:
+  push:
+    branches: [dev/f2-catalog-only-once-20261013]
+    paths: ['scripts/catalog_only/approval.json']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: parkweave-catalog-only-once-20261013
+  cancel-in-progress: false
+
+jobs:
+  catalog-only:
+    if: >-
+      github.repository == 'T1doo/ParkWeave' &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/dev/f2-catalog-only-once-20261013' &&
+      github.event.repository.private == false &&
+      github.run_attempt == 1 && github.run_number == 1
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact approval commit without retained credentials
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+      - name: Catalog comparison only with closed public output
+        timeout-minutes: 13
+        shell: bash
+        env:
+          CATALOG_SHA: ${{ github.sha }}
+          CATALOG_REPOSITORY: ${{ github.repository }}
+          CATALOG_REF: ${{ github.ref }}
+          CATALOG_EVENT: ${{ github.event_name }}
+          CATALOG_ATTEMPT: ${{ github.run_attempt }}
+          CATALOG_NUMBER: ${{ github.run_number }}
+          CATALOG_PUBLIC: ${{ github.event.repository.private == false }}
+        run: |
+          set -eu
+          env -i LANG=C.UTF-8 \
+            CATALOG_REPOSITORY="$CATALOG_REPOSITORY" CATALOG_REF="$CATALOG_REF" \
+            CATALOG_EVENT="$CATALOG_EVENT" CATALOG_ATTEMPT="$CATALOG_ATTEMPT" \
+            CATALOG_NUMBER="$CATALOG_NUMBER" CATALOG_PUBLIC="$CATALOG_PUBLIC" \
+            RUNNER_ENVIRONMENT="$RUNNER_ENVIRONMENT" RUNNER_OS="$RUNNER_OS" \
+            /usr/bin/python3.12 -I -S -B scripts/catalog_only/bootstrap.py "$CATALOG_SHA"
