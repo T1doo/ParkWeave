@@ -1,0 +1,32 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+______ test_bootstrap_private_log_failure_still_has_closed_public_result _______
+.runtime/catalog-only-independent-20261013/test_independent_candidate.py:18: in fail_dependency
+    def fail_dependency(*a,**kw):raise RuntimeError('SYNTHETIC_PRIVATE_DEPENDENCY_FAILURE')
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: SYNTHETIC_PRIVATE_DEPENDENCY_FAILURE
+
+During handling of the above exception, another exception occurred:
+.runtime/catalog-only-independent-20261013/test_independent_candidate.py:25: in test_bootstrap_private_log_failure_still_has_closed_public_result
+    assert boot.bootstrap(SHA)==1
+           ^^^^^^^^^^^^^^^^^^^
+scripts/catalog_only/bootstrap.py:117: in bootstrap
+    if root is not None:(root / 'bootstrap-failure.log').write_text(traceback.format_exc())
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.runtime/catalog-only-independent-20261013/test_independent_candidate.py:22: in fail_log
+    if path.name=='bootstrap-failure.log':raise OSError('SYNTHETIC_PRIVATE_LOG_WRITE_FAILURE')
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   OSError: SYNTHETIC_PRIVATE_LOG_WRITE_FAILURE
+___ test_cleanup_abnormal_postmaster_exit_never_deletes_or_reports_pass[-9] ____
+.runtime/catalog-only-independent-20261013/test_independent_candidate.py:53: in test_cleanup_abnormal_postmaster_exit_never_deletes_or_reports_pass
+    assert result['cases']['CLEANUP'] in ('FAIL','UNKNOWN')
+E   AssertionError: assert 'PASS' in ('FAIL', 'UNKNOWN')
+____ test_cleanup_abnormal_postmaster_exit_never_deletes_or_reports_pass[1] ____
+.runtime/catalog-only-independent-20261013/test_independent_candidate.py:53: in test_cleanup_abnormal_postmaster_exit_never_deletes_or_reports_pass
+    assert result['cases']['CLEANUP'] in ('FAIL','UNKNOWN')
+E   AssertionError: assert 'PASS' in ('FAIL', 'UNKNOWN')
+=========================== short test summary info ============================
+FAILED .runtime/catalog-only-independent-20261013/test_independent_candidate.py::test_bootstrap_private_log_failure_still_has_closed_public_result
+FAILED .runtime/catalog-only-independent-20261013/test_independent_candidate.py::test_cleanup_abnormal_postmaster_exit_never_deletes_or_reports_pass[-9]
+FAILED .runtime/catalog-only-independent-20261013/test_independent_candidate.py::test_cleanup_abnormal_postmaster_exit_never_deletes_or_reports_pass[1]
+3 failed in 0.17s

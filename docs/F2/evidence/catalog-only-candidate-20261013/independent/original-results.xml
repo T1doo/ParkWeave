@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="0.166" timestamp="2026-10-13T02:17:03.935462+00:00" hostname="754d39e95154"><testcase classname=".runtime.catalog-only-independent-20261013.test_independent_candidate" name="test_bootstrap_private_log_failure_still_has_closed_public_result" time="0.002"><failure message="OSError: SYNTHETIC_PRIVATE_LOG_WRITE_FAILURE">.runtime/catalog-only-independent-20261013/test_independent_candidate.py:18: in fail_dependency
+    def fail_dependency(*a,**kw):raise RuntimeError('SYNTHETIC_PRIVATE_DEPENDENCY_FAILURE')
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   RuntimeError: SYNTHETIC_PRIVATE_DEPENDENCY_FAILURE
+
+During handling of the above exception, another exception occurred:
+.runtime/catalog-only-independent-20261013/test_independent_candidate.py:25: in test_bootstrap_private_log_failure_still_has_closed_public_result
+    assert boot.bootstrap(SHA)==1
+           ^^^^^^^^^^^^^^^^^^^
+scripts/catalog_only/bootstrap.py:117: in bootstrap
+    if root is not None:(root / 'bootstrap-failure.log').write_text(traceback.format_exc())
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.runtime/catalog-only-independent-20261013/test_independent_candidate.py:22: in fail_log
+    if path.name=='bootstrap-failure.log':raise OSError('SYNTHETIC_PRIVATE_LOG_WRITE_FAILURE')
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   OSError: SYNTHETIC_PRIVATE_LOG_WRITE_FAILURE</failure></testcase><testcase classname=".runtime.catalog-only-independent-20261013.test_independent_candidate" name="test_cleanup_abnormal_postmaster_exit_never_deletes_or_reports_pass[-9]" time="0.004"><failure message="AssertionError: assert 'PASS' in ('FAIL', 'UNKNOWN')">.runtime/catalog-only-independent-20261013/test_independent_candidate.py:53: in test_cleanup_abnormal_postmaster_exit_never_deletes_or_reports_pass
+    assert result['cases']['CLEANUP'] in ('FAIL','UNKNOWN')
+E   AssertionError: assert 'PASS' in ('FAIL', 'UNKNOWN')</failure></testcase><testcase classname=".runtime.catalog-only-independent-20261013.test_independent_candidate" name="test_cleanup_abnormal_postmaster_exit_never_deletes_or_reports_pass[1]" time="0.004"><failure message="AssertionError: assert 'PASS' in ('FAIL', 'UNKNOWN')">.runtime/catalog-only-independent-20261013/test_independent_candidate.py:53: in test_cleanup_abnormal_postmaster_exit_never_deletes_or_reports_pass
+    assert result['cases']['CLEANUP'] in ('FAIL','UNKNOWN')
+E   AssertionError: assert 'PASS' in ('FAIL', 'UNKNOWN')</failure></testcase></testsuite></testsuites>

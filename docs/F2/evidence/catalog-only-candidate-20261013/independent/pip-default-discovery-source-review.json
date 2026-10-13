@@ -1,0 +1,44 @@
+{
+  "boundary": "Explicit empty private NETRC + PIP_CONFIG_FILE=os.devnull + --no-input + --keyring-provider=disabled; do not change HOME; verify captured actual pip args/env by pure DI.",
+  "files": {
+    ".venv/lib/python3.12/site-packages/pip/_internal/cli/index_command.py": {
+      "bytes": 5677,
+      "sha256": "8bfb203653e65c2e621d4698f9d9a6ac728a4e07393b8856ce2b2be40975aebd"
+    },
+    ".venv/lib/python3.12/site-packages/pip/_internal/configuration.py": {
+      "bytes": 14005,
+      "sha256": "f8a3a893a8e1de11735cc3d014f275fc416306902c81ef914ab790b8b1cb9b3a"
+    },
+    ".venv/lib/python3.12/site-packages/pip/_internal/network/auth.py": {
+      "bytes": 20809,
+      "sha256": "0f88004a352baa80c5952b7a810efaeca0008efe8f532254d29b839615cd5511"
+    },
+    ".venv/lib/python3.12/site-packages/pip/_vendor/requests/utils.py": {
+      "bytes": 33631,
+      "sha256": "2fbf6f9c56f32774852cab49c29a167b8d53a338b746566ff78a58d53148ca8c"
+    }
+  },
+  "findings": [
+    {
+      "lines": "337-377",
+      "meaning": "MultiDomainBasicAuth._get_new_credentials defaults allow_netrc=True and calls get_netrc_auth before optional keyring.",
+      "path": ".venv/lib/python3.12/site-packages/pip/_internal/network/auth.py"
+    },
+    {
+      "lines": "204-234",
+      "meaning": "Explicit NETRC selects only that path; otherwise ~/.netrc and ~/_netrc are expanded. An empty explicit private file therefore prevents home netrc fallback.",
+      "path": ".venv/lib/python3.12/site-packages/pip/_vendor/requests/utils.py"
+    },
+    {
+      "lines": "122-126,245-252,338-357",
+      "meaning": "Config-file loading occurs even when isolated. PIP_CONFIG_FILE=os.devnull is read specially and skips all config files before reading them.",
+      "path": ".venv/lib/python3.12/site-packages/pip/_internal/configuration.py"
+    },
+    {
+      "lines": "128-130",
+      "meaning": "no_input controls auth.prompting and keyring_provider option configures the credential backend.",
+      "path": ".venv/lib/python3.12/site-packages/pip/_internal/cli/index_command.py"
+    }
+  ],
+  "qualification": "Read-only installed library source inspection. No existing credential file/keyring read, no network/request/auth execution. Hosted runner pip version not measured."
+}

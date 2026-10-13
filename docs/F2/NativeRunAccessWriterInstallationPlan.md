@@ -99,3 +99,8 @@ fresh source/generation/beneficiary条件仍由原REQUEST/APPROVE/ACTIVATE事务
 ## CATALOG_COMPARE 离线定位修复（2026-10-13）
 
 冻结源码 `e7c3cdd050465a2cf66cfd3cde5ad303a3dc7b6f` 证明原 setup 的单独 writer GRANT 保留函数默认 PUBLIC EXECUTE，与原 app 拒绝合同矛盾；最小补丁仅在原 fresh UUID owner 事务内、原 writer GRANT 前增加单函数 PUBLIC REVOKE。生产 src、guard、workflow 不变。主测 305 PASS，独审 311 PASS（精确重叠 305，新增 6，不相加），原红测 2 FAIL/7 PASS 完整保留且两个原失败 ID 修复后通过；7 项真实 PG 测试明确 NOT_RUN。该结果只签代码与纯 DI LIMITED_PASS，不能确定旧 VM 唯一实测原因或真实事务效果；旧 run 仍 3 PASS/1 FAIL/13 NOT_RUN。没有第三次 CI、真实 PG、OS/ACL 修改或启用。离线新分支不匹配任一 workflow，详见[缺陷证据、独审与实际结果](CatalogCompareOfflineFix-20261013.md)。后续物理验收仍需新的明确决定。
+
+
+## Catalog-only 最小候选与单次验证准备（2026-10-13）
+
+冻结源码 `17cf9cdbff28ae759e68b7f66878e1c396ec6f0d` 只新增独立默认关闭入口、探针与纯回归，生产 src/旧 trial/workflow 不变。主测 372 PASS，独审 378 PASS（重叠 364、另 14/8），0 FAIL/ERROR/SKIP、437 源码零漂移；六个原失败反例原样保留并同 ID 通过，7 项真实 PG 用例仍 NOT_RUN。入口仅允许全新自有 PG16/临时角色的有效权及实际函数调用前后对照、原 collect→analyze 与清理，不签 host/OS隔离/Case生命周期。候选归档阶段新获一次免费标准 Ubuntu、15 分钟内的明确验证授权；批准提交须仅改 approval.json 并精确绑定经审查的源码等价父 SHA。源码合同、门禁、恢复检查、证据和授权范围详见[候选记录](CatalogOnlyTrialCandidate-20261013.md)，实际运行结果尚待执行，旧两次试验 FAIL 保留。
