@@ -84,6 +84,7 @@ async function loadCaseWorklist(after=null){
      else if(row.open_target==='dispatch')await loadDispatch(row.preparation_id);
      else if(row.open_target==='receipt')await loadReceipt(row.receipt_step_id);
      else await loadLocalCase(row.preparation_id);
+     if(navigationGeneration===caseWorklistGeneration&&c.token===$('token').value){const target={run:'run',materials:'prep-detail',dispatch:'dispatch-detail',receipt:'receipt-detail',localcase:'local-case-detail'}[row.open_target];$(target).scrollIntoView({block:'start'});}
     }catch(e){
      if(navigationGeneration!==caseWorklistGeneration||c.token!==$('token').value)return;
      if(e.status===403){clearGeneric();clearPreparation(false,false,true);clearReceipts();clearResources();$('page-feedback').textContent='当前事项权限已失效，私有视图已清除。';return;}

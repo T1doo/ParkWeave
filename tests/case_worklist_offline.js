@@ -7,7 +7,7 @@ const check=v=>{checks++;assert(v);};
 class Element{
  constructor(tag='div'){this.tagName=tag;this.children=[];this.textContent='';this.value='';this.disabled=false;this.hidden=false;this.dataset={};}
  append(...x){this.children.push(...x);}replaceChildren(...x){this.children=x;this.textContent='';}
- set innerHTML(v){throw Error('UNSAFE_HTML');}
+ set innerHTML(v){throw Error('UNSAFE_HTML');}scrollIntoView(){this.scrolled=true;}
 }
 const elements=new Map(),$=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
 const content=e=>e.textContent+' '+e.children.map(content).join(' ');
@@ -67,6 +67,7 @@ const start=()=> $('case-worklist-read').onclick();
   }else if(mode.startsWith('open_')){
    await card.children.find(e=>e.tagName==='button').onclick();check(nav.length===1&&nav[0].kind===target);
    check(calls.length===1&&$('case-worklist-items').children.length===0);
+   const focus={run:'run',materials:'prep-detail',dispatch:'dispatch-detail',receipt:'receipt-detail',localcase:'local-case-detail'}[target];check($(focus).scrolled===true);
   }else check(errors.length===0);
  }
  check(calls.every(c=>!c.options.method||c.options.method==='GET'));
