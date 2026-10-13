@@ -49,7 +49,7 @@ def read(store,token,*,limit=20,after=None):
     if type(limit) is not int or not 1<=limit<=50:raise ValueError('bounded Case page required')
     if after is not None and type(after) is not UUID:raise ValueError('Case UUID cursor required')
     with store.connect() as c:
-        c.execute('SET TRANSACTION READ ONLY')
+        c.execute('SET TRANSACTION ISOLATION LEVEL READ COMMITTED, READ ONLY')
         p=store.auth(c,token,lock=True);prep.grant(store,c,p,'PREPARE')
         # Auth waits use READ COMMITTED, so a completed revocation is re-read.
         # All business metadata comes from one statement snapshot, with no locks
