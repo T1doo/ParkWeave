@@ -54,7 +54,7 @@ def test_persistence_idempotency_and_business_fields_unchanged(preparation_fixtu
 def test_changes_stale_saved_preview_and_refuse_old_capture_without_history_write(preparation_fixture,change,monkeypatch):
     f=preparation_fixture;p=setup(f,['LOCAL_MATERIAL_PREPARATION']);x=read(f,p).json()['current'];assert capture(f,p,x).status_code==200
     if change=='material':add(f,p)
-    elif change=='request':save(f,p,text='SYNTHETIC 改变目标',goals=['LOCAL_CASE_RECORD_RECHECK'])
+    elif change=='request':save(f,p,text='SYNTHETIC 改变目标',goals=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RECORD_RECHECK'])
     elif change=='catalog':
         with f[1].connect() as c:c.execute("UPDATE preparation_catalog SET source=source||'{\"revision\":\"2\"}'::jsonb")
     else:

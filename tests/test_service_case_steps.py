@@ -255,7 +255,7 @@ def test_stale_adoption_snapshot_rejected_without_plan_or_business_write(link_fi
     p = setup(f)
     body = adopt_body(f, p)
     if change == 'request':
-        assert save(f, p, goals=[GOALS[0]], text='SYNTHETIC changed request').status_code == 200
+        assert save(f, p, goals=[GOALS[3],GOALS[0]], text='SYNTHETIC changed request').status_code == 200
     elif change == 'catalog':
         with f[1].connect() as c:
             c.execute("UPDATE preparation_catalog SET source=jsonb_set(source,'{revision}','999'::jsonb)")
@@ -323,7 +323,7 @@ def test_stale_request_readoption_archives_immutable_old_ids_and_history(link_fi
     p = setup(f, GOALS[0])
     assert adopt(f, p).status_code == 201
     old = verified(f, p, 'P1')
-    r = save(f, p, goals=[GOALS[1]], text='SYNTHETIC replacement required goal')
+    r = save(f, p, goals=[GOALS[0],GOALS[1]], text='SYNTHETIC additional required goal')
     assert r.status_code == 200, r.text
     p = {**p, 'revision': r.json()['revision']}
     stale = read(f, p).json()
@@ -465,7 +465,7 @@ def test_archived_command_lost_reply_replays_old_event_with_current_plan_and_aut
     original = read(f, p).json()
     key = uuid4().hex
     done = command(f, p, 'P1', row=original, key=key).json()
-    r = save(f, p, goals=[GOALS[1]], text='SYNTHETIC replacement for replay test')
+    r = save(f, p, goals=[GOALS[0],GOALS[1]], text='SYNTHETIC additive request for replay test')
     p = {**p, 'revision': r.json()['revision']}
     stale = read(f, p).json()
     body = adopt_body(f, p)
@@ -542,7 +542,7 @@ def test_preparation_get_hides_populated_internal_plans_and_specialist_plan_reda
 
 @pytest.mark.parametrize('change,preview_state', [
     ('request_unsupported', 'PARTIAL'),
-    ('request_empty', 'UNKNOWN'),
+    ('request_empty', 'COVERED_PREVIEW_ONLY'),
     ('catalog_missing', 'UNKNOWN'),
 ])
 def test_stale_plan_with_uncovered_current_preview_cannot_readopt_or_archive(link_fixture, change, preview_state):
@@ -553,13 +553,13 @@ def test_stale_plan_with_uncovered_current_preview_cannot_readopt_or_archive(lin
     if change.startswith('request_'):
         goals = [GOALS[0], 'REAL_EXTERNAL_ACCEPTANCE'] if change == 'request_unsupported' else []
         r = save(f, p, goals=goals, text='SYNTHETIC explicit unsupported or empty required goals')
-        assert r.status_code == 200, r.text
-        p = {**p, 'revision': r.json()['revision']}
+        assert r.status_code == (409 if change=='request_empty' else 200), r.text
+        if change!='request_empty':p = {**p, 'revision': r.json()['revision']}
     else:
         with f[1].connect() as c:
             c.execute("UPDATE preparation_catalog SET source='{}'::jsonb")
     stale = read(f, p).json()
-    assert stale['binding_issues']
+    assert bool(stale['binding_issues'])==(change!='request_empty')
     assert stale['current_preview']['state'] == preview_state
     assert stale['can_adopt'] is False
     assert stale['plan_id'] == original['plan_id']
@@ -567,7 +567,7 @@ def test_stale_plan_with_uncovered_current_preview_cannot_readopt_or_archive(lin
     body = adopt_body(f, p)
     body['expected_plan_revision'] = stale['revision']
     if change == 'request_empty':
-        # A valid-shaped proposal still cannot override the current empty intent.
+        # Clearing saved required goals was rejected; a new key cannot replace the current plan.
         body['required_goals'] = [GOALS[0]]
     before = digest(f)
     r = adopt(f, p, body)

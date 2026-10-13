@@ -68,6 +68,12 @@ class Command(BaseModel):
 def _normal(x):return json.loads(json.dumps(x,default=str))
 def _hash(x):return digest(prep.canonical(x))
 def _row(c,id):return c.execute('SELECT * FROM controlled_plans WHERE preparation_id=%s FOR UPDATE',(id,)).fetchone()
+def _planning_constraint_conflict(parent):
+    from .planning_constraints import evaluate
+    from .bounded_planning import ACTIONS
+    result=evaluate(parent.get('request_intent'),TEMPLATE['steps'],ACTIONS)
+    return bool(result and result['state']!='COMPATIBLE')
+
 def _creation_blockers(c,parent):
     # Shared with CREATE under the same parent lock; historical records stay intact.
     dependencies=(('EXISTING_CASE_RESOURCE_LINK','case_resource_links','preparation_id'),
@@ -76,6 +82,7 @@ def _creation_blockers(c,parent):
     blockers=[reason for reason,table,column in dependencies
       if c.execute('SELECT 1 FROM '+table+' WHERE '+column+'=%s',(parent['id'],)).fetchone()]
     if intents.state(parent) not in ('NOT_RECORDED','SUPPORTED_LOCAL'):blockers.append('REQUEST_GOAL_COVERAGE_REQUIRED')
+    if _planning_constraint_conflict(parent):blockers.append('DECLARED_PLANNING_CONSTRAINT_CONFLICT')
     if prep.case_write_blocked(c,parent):blockers.append('CASE_CANCELLATION_RECONCILING' if prep.case_state(c,parent)=='RECONCILING' else 'CASE_CANCELLED')
     return blockers
 
@@ -166,6 +173,8 @@ def _inspect(store,c,parent,row,observe=True):
     if prep.case_write_blocked(c,parent):observe=False
     if row['template_sha256']!=TEMPLATE_SHA:raise Conflict('fixed template version/hash unavailable')
     issues,snapshots=_sources(store,c,parent);bad=None
+    if _planning_constraint_conflict(parent):
+        for reasons in issues.values():reasons.append('DECLARED_PLANNING_CONSTRAINT_CONFLICT')
     for i,s in enumerate(STEPS,1):
         if s in row['checked'] and (issues[s] or row['checked'][s]['sha256']!=_hash(snapshots[s])):
             bad=i;break

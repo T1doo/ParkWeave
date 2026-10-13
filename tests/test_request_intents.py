@@ -35,8 +35,9 @@ def test_changed_request_or_goals_invalidates_preview_and_material_confirmation(
     r=save(f,p).json();p={**p,'revision':r['revision']}
     assert adopt(f,p,expected_preview_sha256=x['preview_sha256']).status_code==409
     current=preview(f,p).json();assert current['request_intent']['current_request']=='SYNTHETIC 用户明确修订诉求'
-    r=save(f,p,text='SYNTHETIC 再次修订',goals=[]).json();p={**p,'revision':r['revision']}
-    x=preview(f,p,[]).json();assert x['state']=='UNKNOWN' and not x['can_adopt'] and x['required_goals']==[]
+    rejected=save(f,p,text='SYNTHETIC 再次修订',goals=[]);assert rejected.status_code==409
+    r=save(f,p,text='SYNTHETIC 再次修订',goals=[GOAL,'外部正式受理']).json();p={**p,'revision':r['revision']}
+    x=preview(f,p,[GOAL,'外部正式受理']).json();assert x['state']=='PARTIAL' and not x['can_adopt'] and x['required_goals']==[GOAL,'外部正式受理']
     assert adopt(f,p,expected_preview_sha256=current['preview_sha256']).status_code==409
     assert materials(f,p).json()['preparation']['state']=='IN_PREPARATION'
 

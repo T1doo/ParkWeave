@@ -1,15 +1,24 @@
 """Explicit owner assertions, never inferred coverage of a natural language goal."""
 from typing import Annotated
-from pydantic import BaseModel,ConfigDict,Field
+from pydantic import BaseModel,ConfigDict,Field,field_validator
 from psycopg.types.json import Jsonb
 from . import preparation as prep
 from .store import Denied,Conflict,digest
+
+from .planning_constraints import Constraints
 
 class Save(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True,str_strip_whitespace=True)
     expected_preparation_revision:int=Field(ge=1,le=63)
     request_text:str=Field(min_length=1,max_length=2000)
     required_goals:list[Annotated[str,Field(min_length=1,max_length=160)]]=Field(min_length=0,max_length=8)
+    planning_constraints:Constraints|None=None
+
+    @field_validator('planning_constraints',mode='before')
+    @classmethod
+    def explicit_null(cls,value):
+        if value is None:raise ValueError('omit to retain constraints; use an explicit empty object to clear')
+        return value
 
 def coverage(goals):
     from .controlled_plans import TEMPLATE,TEMPLATE_SHA
@@ -28,7 +37,7 @@ def view(parent):
       revision=value['revision'] if value else 0,
       required_goals=value['required_goals'] if value else [],
       coverage=projected,
-      source='USER_EXPLICIT_STATEMENT' if value else 'LEGACY_NOT_RECORDED')
+      source='USER_EXPLICIT_STATEMENT' if value else 'LEGACY_NOT_RECORDED',**({'planning_constraints':value['planning_constraints']} if value and value.get('planning_constraints') is not None else {}))
 
 def state(parent):
     from .controlled_plans import TEMPLATE_SHA
@@ -39,7 +48,7 @@ def state(parent):
 
 def save(store,token,id,key,data):
     from . import controlled_plans as cp
-    fp=digest(prep.canonical({'preparation_id':str(id),'action':'UPDATE_REQUEST',**data.model_dump()}))
+    fp=digest(prep.canonical({'preparation_id':str(id),'action':'UPDATE_REQUEST',**data.model_dump(exclude_none=True)}))
     with store.connect() as c:
         p=store.auth(c,token,lock=True)
         prep.grant(store,c,p,'PREPARE');store.check_capability(c,p,'EXECUTE')
@@ -49,9 +58,17 @@ def save(store,token,id,key,data):
         old=prep.replay(c,p,key,fp,id)
         if old:return old
         if parent['revision']!=data.expected_preparation_revision or parent['revision']>=64:raise Conflict('request revision changed or history limit reached')
-        goals=list(dict.fromkeys(data.required_goals))
+        previous=parent.get('request_intent') or {}
+        constraints=data.planning_constraints.model_dump() if data.planning_constraints is not None else previous.get('planning_constraints')
+        goals=list(dict.fromkeys(data.required_goals+(constraints or {}).get('additional_requirements',[])))
+        if len(goals)>8:raise Conflict('all declared required goals and conditions must fit the eight-goal contract; none can be dropped')
+        if not set(previous.get('required_goals',[]))<=set(goals):raise Conflict('saved required goals cannot be removed; start a separate request for a different goal set')
         value=dict(request_text=data.request_text,required_goals=goals,coverage=coverage(goals),
           revision=parent['revision']+1,source='USER_EXPLICIT_STATEMENT')
+        if data.planning_constraints is not None:
+            constraints['excluded_roles']=[r for r in ('enterprise_operator','park_specialist','service_executor') if r in constraints['excluded_roles']]
+            value['planning_constraints']=constraints
+        elif previous.get('planning_constraints') is not None:value['planning_constraints']=previous['planning_constraints']
         updated=c.execute("UPDATE preparations SET request_intent=%s,revision=revision+1,state='IN_PREPARATION',review_sha256=NULL WHERE id=%s RETURNING *",(Jsonb(value),id)).fetchone()
         cp.invalidate(c,id,1)
         return prep.event(c,p,updated,key,fp,'UPDATE_REQUEST',request_intent=view(updated))

@@ -88,8 +88,13 @@ def _proposal(store,c,p,parent):
         if s['id']=='P5':
             s['lifecycle_state']=local['state'] if local else 'NOT_STARTED';s['lifecycle_cycle']=local['cycle'] if local else None
             if local and local['state']=='LOCAL_RECORD_CLOSED':s['issues']=s['issues']+['LOCAL_RECORD_REOPEN_REQUIRED']
+    from .planning_constraints import evaluate
+    constraints=evaluate(intent,steps,ACTIONS)
+    if constraints:
+        for step,impact in zip(steps,constraints['steps']):step['constraint_impact']=impact
     state='UNKNOWN' if not goals or any(i['status']=='UNKNOWN' for i in items) else 'PARTIAL' if any(i['status']=='UNSUPPORTED' for i in items) else 'COVERED_PREVIEW_ONLY'
-    return dict(namespace='PLANNING_METADATA_PREVIEW',planner='DETERMINISTIC_REGISTERED_ADAPTER_SUBGRAPH',preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],source_sha256=sha,
+    if constraints and state=='COVERED_PREVIEW_ONLY' and constraints['state']!='COMPATIBLE':state='PARTIAL' if constraints['state']=='UNSUPPORTED' else 'CONSTRAINT_BLOCKED'
+    return dict(**({'constraint_evaluation':constraints} if constraints else {}),namespace='PLANNING_METADATA_PREVIEW',planner='DETERMINISTIC_REGISTERED_ADAPTER_SUBGRAPH',preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],source_sha256=sha,
       catalog_sha256=cp._hash(cp._normal(catalog)),registry_sha256=cp._hash({'steps':REGISTRY,'actions':ACTIONS}),required_goals=goals,goal_coverage=items,optional_suggestions=[],state=state,steps=steps,
       dependency_collections=collection_sources,
       source_unknowns=[] if known else ['CURRENT_SERVICE_CATALOG_SOURCE_REQUIRED'],executed=False,execution_enabled=False,new_grants=False,case_goal_completed=False,qualification_truth='UNKNOWN',business_publication=False)
