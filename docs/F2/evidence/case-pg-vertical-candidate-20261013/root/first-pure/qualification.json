@@ -1,0 +1,13 @@
+{
+  "actual_result": {
+    "PASS": 112,
+    "FAIL": 1,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "failed_id": "tests/test_catalog_only_candidate.py::test_catalog_pending_real_entry_stops_before_any_physical_action",
+  "cause": "Previous catalog candidate test assumes its receipt remains pending. Current base includes the consumed approved receipt from real run f771b5e. Test body and receipt unchanged; this older pending-phase oracle does not apply to new post-execution base.",
+  "handling": "Preserve original FAIL; do not reset spent approval or weaken old test. Exclude this exact temporal oracle from subsequent new-candidate pure window; exercise new pending gate separately.",
+  "all_new_candidate_tests_pass": 46,
+  "physical_PG_CI": "NOT_RUN"
+}

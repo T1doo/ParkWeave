@@ -1,0 +1,22 @@
+............................................................F........... [ 63%]
+.........................................                                [100%]
+=================================== FAILURES ===================================
+_______ test_catalog_pending_real_entry_stops_before_any_physical_action _______
+tests/test_catalog_only_candidate.py:63: in test_catalog_pending_real_entry_stops_before_any_physical_action
+    assert json.loads((ROOT/boot.APPROVAL_FILE).read_text()) == dict(approved=False, source_sha=None, approval_ref=None)
+E   AssertionError: assert {'approved': ...NCE_20261013'} == {'approved': ...al_ref': None}
+E     
+E     Differing items:
+E     {'source_sha': '30979849d960a83c9ac4e3e7058072910521d431'} != {'source_sha': None}
+E     {'approved': True} != {'approved': False}
+E     {'approval_ref': 'USER_CONFIRMED_CATALOG_ONLY_ONCE_20261013'} != {'approval_ref': None}
+E     Use -v to get more diff
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_catalog_only_candidate.py::test_catalog_pending_real_entry_stops_before_any_physical_action
+1 failed, 112 passed, 1 warning in 0.28s

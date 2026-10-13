@@ -1,0 +1,54 @@
+{
+  "checker_failure_evidence": "vertical-static-checker-first-failure.json",
+  "definite_blockers_identified": [],
+  "draft_sha256": {
+    ".github/workflows/case-pg-vertical-once.yml": "1bdbfe1e85c42698d60451ef533736296d88e5b810500d6a0617026456e9bfcc",
+    "scripts/case_pg_vertical/approval.json": "c5ad0c6c38daa921479972d864e9f2da5478bfeead0acec034f1758305f8a69a",
+    "scripts/case_pg_vertical/bootstrap.py": "de76c368ab637af481a4a58026ec341950ccaab12839281dbd85284f4e779ce4",
+    "scripts/case_pg_vertical/owned_pg.py": "74e8139c0bd19a6b428023ce9c08d4d4f654f79678cfc77986f74e2cf314c9e9",
+    "scripts/case_pg_vertical/probe.py": "277b69fea1b8a48e14272e6e4f3f723ecedf2859ca3c9e76157244f5889568a8",
+    "scripts/case_pg_vertical/selection.json": "9f6d0024daf319dcbf7833b9e46ec820b306302912bc50238d16e168d14b8a13",
+    "tests/test_case_pg_vertical_integration.py": "ac24f4178fc16d8e9df6bb533695e04ffbcb7e2248432ba5dc35e8abd760dc78"
+  },
+  "head_at_read": "7cf76e7c0b8375717e704ec992d6e5c401b43ed2",
+  "qualification": "Unfrozen initial draft static review only; no tests, PG, CI, network, permissions or tracked writes. Not final execution approval.",
+  "remaining_physical_NOT_RUN": [
+    "27case individual actual outcome/teardown",
+    "10actual PGlockwait dualorderings and timing",
+    "New real harness/plugin/dependency behavior",
+    "New VM connection/ACL/cancellation/cleanup effects"
+  ],
+  "required_pure_checks": [
+    "Real pytest hook dispatch with fake pg, sentinel originalpg that must not run, generatorfixture/finalizer and exact collection; direct hook calls alone insufficient",
+    "Supplierduplicate/wrongscope, collection mismatch, unknownreports, skipped/testerror/teardownfailure cannot become completePASS",
+    "Correct/wrong DSN connection through both module/class entrypoints; extra service/password/hostaddr/options role/db boundaries",
+    "Forged/wrongissuedreceipt rejected before REVOKE; actual appSQLSTATE and SELECT1 positivecontrol fault paths",
+    "Exit0/nonzero/signal/None/forcedkill/inituncertain cleanup, repeatedlogfailure and FDrestoration",
+    "Bridge actualsource API/specmodel compatibility with pure substitutes, without mocking nonexistent methods into existence"
+  ],
+  "scope_limits": [
+    "Final catalogPASS after cancellation means catalogstate, not activepolicy on cancelledCase; authorityflags remainfalse",
+    "No host/IPC/OSidentity isolation, passwordauth, deployment, externalHTTP/modelcalls or physicalfulfillment",
+    "PostgreSQL is multiprocess and TestClient uses threads; only applicationharness is one Pythonprocess",
+    "Synthetic businessprincipals share appSQLrole; cold Store is not processrestart",
+    "Scoped IO patch constrains reviewed paths, not hostile-code sandbox",
+    "tmp_path_factory dependency can initialize before sessionpg hook; privatebasetemp required"
+  ],
+  "selection": {
+    "all_function_names_exist": true,
+    "new_bridge": 1,
+    "old_CASE": 19,
+    "original_PG": 7,
+    "same_ids_original7": true,
+    "total": 27
+  },
+  "static_checks": {
+    "ACL": "19 oldCase nodes receive same-issued-UUIDDB REVOKE and app42501/rollback/SELECT1; bridge excluded to preserve before/after; original7 unaffected",
+    "actual_APIs": "NativeRunAccess constructor/_source/_parent, writer._source, FixtureDatabaseEvidence, issued weakregistries and identity APIs all exist with matching call shapes",
+    "cleanup": "Only normal integerexit0 permits clusterdelete; inituncertainUNKNOWN/forcedkillFAIL; remaining fixture database inventory checked; outcome waits for teardown",
+    "connection": "Fixed private socket/passfile/SSL-GSSdisable, exact3 temporaryroles, postgres/fixtureUUID database pattern, onlyknownkeys; reject service/password/hostaddr. Saved psycopg connect and patched module/class APIs preserve nonrecursive original path",
+    "gate": "Distinct branch/receipt marker, first run/attempt, public original repo, standardubuntu24.04, job25min/step23min, pendingdefault, singleparent approvalonly",
+    "output": "Reviewed Python/nativeFDprivate capture surrounds probeimport/testoperations; closedPG IDs/phase/line/hash diagnostics; loggingbest-effort",
+    "pytest": "Installed hook is firstresult; tryfirst supplier nonNone and cached_result can prevent defaultpg; result hookwrapper runs after original functionfixture yields, before dependent Casefixture"
+  }
+}
