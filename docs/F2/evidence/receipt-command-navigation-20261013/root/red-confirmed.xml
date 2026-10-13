@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="12" skipped="0" tests="12" time="0.756" timestamp="2026-10-13T14:26:04.726699+00:00" hostname="754d39e95154"><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[resource_write_pending]" time="0.054"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:75&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'resource_write_pending'...ts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:75\n').returncode">mode = 'resource_write_pending'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:75
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'resource_write_pending'...ts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:75\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[resource_write_unknown]" time="0.054"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:75&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'resource_write_unknown'...ts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:75\n').returncode">mode = 'resource_write_unknown'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:75
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'resource_write_unknown'...ts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:75\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[history_rendered]" time="0.057"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:46:112&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'history_rendered'], ret...s/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:46:112\n').returncode">mode = 'history_rendered'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:46:112
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'history_rendered'], ret...s/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:46:112\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[history_pending]" time="0.054"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:47:65&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'history_pending'], retu...ts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:47:65\n').returncode">mode = 'history_pending'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:47:65
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'history_pending'], retu...ts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:47:65\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[manual_receipt_SUBMIT_pending]" time="0.048"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_SUBMIT_p...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode">mode = 'manual_receipt_SUBMIT_pending'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_SUBMIT_p...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[manual_receipt_SUBMIT_unknown]" time="0.059"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_SUBMIT_u...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode">mode = 'manual_receipt_SUBMIT_unknown'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_SUBMIT_u...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[manual_receipt_ACKNOWLEDGE_pending]" time="0.060"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_ACKNOWLE...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode">mode = 'manual_receipt_ACKNOWLEDGE_pending'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_ACKNOWLE...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[manual_receipt_ACKNOWLEDGE_unknown]" time="0.073"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_ACKNOWLE...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode">mode = 'manual_receipt_ACKNOWLEDGE_unknown'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_ACKNOWLE...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[manual_receipt_REQUEST_CHANGES_pending]" time="0.063"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_REQUEST_...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode">mode = 'manual_receipt_REQUEST_CHANGES_pending'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_REQUEST_...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[manual_receipt_REQUEST_CHANGES_unknown]" time="0.056"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_REQUEST_...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode">mode = 'manual_receipt_REQUEST_CHANGES_unknown'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_REQUEST_...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[manual_receipt_REOPEN_pending]" time="0.055"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_REOPEN_p...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode">mode = 'manual_receipt_REOPEN_pending'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_REOPEN_p...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[manual_receipt_REOPEN_unknown]" time="0.054"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_REOPEN_u...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode">mode = 'manual_receipt_REOPEN_unknown'
+
+    @pytest.mark.parametrize('mode',['run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'manual_receipt_REOPEN_u...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:57:3\n').returncode
+
+tests/test_worklist_real_entries_offline.py:11: AssertionError</failure></testcase></testsuite></testsuites>

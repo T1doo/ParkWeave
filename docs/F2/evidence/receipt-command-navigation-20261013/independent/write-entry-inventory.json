@@ -1,0 +1,114 @@
+{
+  "status": "STATIC_BOUNDARY_INVENTORY_NOT_PRODUCT_ACCEPTANCE",
+  "at_head": "02fa63e3959647d28baec477c86b41c53f042bf6",
+  "entries": [
+    {
+      "function": "apiCall",
+      "scope": "Run intake/candidate/control/clarification",
+      "classification": "UNTRACKED",
+      "reason": "POST may be pending/unknown when clearGeneric invalidates key/body"
+    },
+    {
+      "function": "retryWrite",
+      "scope": "readiness assessment; prep-create; legacy receipt-create",
+      "classification": "UNTRACKED",
+      "reason": "prepRetries-only key and caller GET continuation"
+    },
+    {
+      "function": "resourceWrite",
+      "scope": "hold/release; original combination commands",
+      "classification": "UNTRACKED",
+      "reason": "resourceRetries-only key"
+    },
+    {
+      "function": "sendDispatchPending",
+      "scope": "OFFER/ACCEPT/DECLINE/WITHDRAW",
+      "classification": "VERIFY_GAP",
+      "reason": "dispatchPending cleared immediately after POST before loadDispatch"
+    },
+    {
+      "function": "receiptCommand",
+      "scope": "SUBMIT/ACKNOWLEDGE/REQUEST_CHANGES/REOPEN",
+      "classification": "UNTRACKED",
+      "reason": "receiptRetries-only key"
+    },
+    {
+      "function": "case-resource-form.onsubmit",
+      "scope": "explicit resource link",
+      "classification": "UNTRACKED",
+      "reason": "caseResourceRetries-only key"
+    },
+    {
+      "function": "planWrite",
+      "scope": "controlled plan adopt/CHECK_STEP",
+      "classification": "UNTRACKED",
+      "reason": "planRetries-only key"
+    },
+    {
+      "function": "request-intent-form.onsubmit",
+      "scope": "request and required goals update",
+      "classification": "UNTRACKED",
+      "reason": "planRetries-only key"
+    },
+    {
+      "function": "boundedPlanning(save=true)",
+      "scope": "saved planning metadata",
+      "classification": "UNTRACKED",
+      "reason": "boundedRetries-only key"
+    },
+    {
+      "function": "prepCall existing pending callers",
+      "scope": "evidence/summary/facts/material reuse/objections",
+      "classification": "EXISTING_PENDING_OR_HANDLE",
+      "reason": "specific caller pending checked; broad success/readback stage must be audited"
+    },
+    {
+      "function": "receiptLocalExecute",
+      "scope": "local adapter execution",
+      "classification": "EXISTING_PENDING",
+      "reason": "receiptLocalPending checked"
+    },
+    {
+      "function": "localCaseWrite",
+      "scope": "validate/close/reopen",
+      "classification": "EXISTING_BUSY_AND_HANDLE",
+      "reason": "localCaseRecoveryBusy plus localStorage handle"
+    },
+    {
+      "function": "servicePlanWrite",
+      "scope": "adopt/step coordination/verification",
+      "classification": "EXISTING_PENDING_AND_HANDLE",
+      "reason": "servicePlanPending plus original receipt proof and localStorage"
+    },
+    {
+      "function": "runAccess write/retry",
+      "scope": "access decision",
+      "classification": "EXISTING_PENDING",
+      "reason": "runAccessPending; success/readback gap should be audited"
+    },
+    {
+      "function": "5 execution previews",
+      "scope": "P1/P2/P3/P4/P5 isolated preview",
+      "classification": "EXISTING_SUBMITTING_AND_HANDLE",
+      "reason": "previews have explicit flags/handles"
+    },
+    {
+      "function": "opp/fb/delivery/bundle/planApproval",
+      "scope": "opportunity/fact/resource/approval commands",
+      "classification": "EXISTING_BUSY_AND_HANDLE",
+      "reason": "caller flags/handles"
+    },
+    {
+      "function": "noticeCommand",
+      "scope": "OPEN/READ marker",
+      "classification": "LOW_IMPACT_METADATA",
+      "reason": "notification marks, no Case business transition; classify explicitly"
+    },
+    {
+      "function": "POST /preview,/alternative-times,controlled-plan/preview,resource-delivery/preview",
+      "scope": "pure previews",
+      "classification": "READ_ONLY_CANDIDATES",
+      "reason": "confirm server implementation; do not blanket treat HTTP POST as business write"
+    }
+  ]
+}
