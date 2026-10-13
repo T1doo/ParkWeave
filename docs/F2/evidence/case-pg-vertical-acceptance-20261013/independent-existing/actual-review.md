@@ -1,0 +1,17 @@
+# Actual Case / PG vertical subset independent acceptance
+
+**PASS for the reviewed27-case subset**, plus7 separate orchestration stages, with zeroFAIL/ERROR/SKIP/UNKNOWN/NOT_RUN in this execution. Run38341687876, job115113871538, runnumber1/attempt1, one standard hostedUbuntu24.04 job in the original publicrepository. Saved first runlisting contains this sole run. Start-to-finalupdate metadata spans33seconds within the25-minute bound; this is not a billing audit.
+
+Execution SHA `b38bab37a072ee7db3d28bbd9aeb291d467e564f` reports source parent `a52ad8c7101bbea12fc6a95904d3d5e19f3f30e1`, equivalent to frozen `54b15947f89eb1ba7524edb1119133d37ebc5326` apart from approval. All444 other source hashes remain equal. Originalrun/log bytes match the saved toolbundle; readableprojection and sole originalsummaryline match originals.
+
+PG01-PG07 now provide actual evidence for the original seven regressions. Their PASS includes expected REFUSED outcomes for owner-as-writer, dangeroussystemrole and storageconflicts; it is not universal analyzerPASS. PG06's wrongdatabase is the freshcluster maintenance database, not production. Earlier NOT_RUN snapshots remain historical.
+
+PG08-PG14 cover persistedpreparation, localclose/reopen, coldread, two preacceptcancel lineages, tenantdenial and transactionrollback. The10 lockwait cases preserve exact source semantics:PG15-PG19 cancel200/competitor409;PG20 accept200/cancel409;PG21-PG22 material/offer200/201 then stale cancel409 (followed by the originaltest's fresh-sourcecancel);PG23-PG24 plan/link201 and cancel200. Assertions actually require observed pg_stat_activity lockwaits, rather than sleeps alone. PG25-PG26 cover retainedresourcecapacity/independentrelease and historicalnotice rechecks. PG27 ties catalogrepair and actualappdeny/writerallow to original persistedCase cancellation/recovery in one ownedDB; finalcatalogPASS does not imply activepolicy aftercancel.
+
+Interpretation is based on actual closed observations and exact reviewed test/reporter control flow, including setup/call/teardown, supplieronce,19appACLchecks and exactcollection. PrivateJUnit/SQLlogs were not retrieved, so no raw per-assertion transcript is claimed. FIXTURE_CLEANUP verifies the original UUIDdatabases are gone. PG_CLEANUP verifies normal ownedpostmasterexit0 and newclusterdeletion. Entiretemporaryroot, privatelogs and VM destruction are not independently proven.
+
+Only the application summary is a closed output. NormalActionsmetadata still contains checkoutpaths, maskedtoken, temporaryHOME and Secret source/Cache mode labels. No application secret/DSN/SQL/PGreturn/privateexception appears in the inspected publiclog. The11 listed local publicmetadata/log/push inputs and both review files are safe to archive verbatim. No privateVM artifact is included or should be fetched.
+
+Host/IPC/protectedlauncher/OSidentity and privatekey isolation remain NOT_RUN. This subset does not accept allCasebehavior, passwordauth, externalHTTPservice, browser, processrestart/crashrecovery, productionactivation or realfulfillment. Originalfailures remain;435/444 purecounts(overlap427), priorcatalog13cases and this27-case execution are distinct. The one-run authorization is consumed; no rerun/retry.
+
+During this already-started review, parent directed project migration to gpt-6.1-sol medium nonFast. This existing local read-only check is now complete at a safe handoff point; no additional test, review, network or physical action was initiated.
