@@ -1,0 +1,48 @@
+{
+  "scope": "READ_ONLY_UNFROZEN_SOURCE_REVIEW",
+  "base_sha": "2fd298adfbb38fc32b6715be8c4588d6739c00d2",
+  "hashes": {
+    "src/parkweave/planning_constraints.py": "1723e20256ff1688e8dd973f18adb1e483fb83c36895739a7d3506b591f523af",
+    "src/parkweave/request_intents.py": "99f4689efcd956444c78725ae61f9de1b1dba47e169ac5c8374dabd4a78de2ee",
+    "src/parkweave/bounded_planning.py": "42e2b62d3285a5d6b306eec9d5ec604df1ae7c90d9c4abf36a05f6522c3c4c37",
+    "src/parkweave/controlled_plans.py": "972eb3ab96c3bbddc62b537b867fa46cfc683839668f0f0c641e041ef0332937",
+    "src/parkweave/web.html": "b35c17f45f78e1620d2c1a345b04f8acde6c4318cf186f0e400075311e974707"
+  },
+  "product_tests": "NOT_RUN in this window; root counts not independently attested",
+  "findings": [
+    {
+      "id": "R1",
+      "severity": "BLOCKING",
+      "file": "src/parkweave/web.html",
+      "line": 1146,
+      "finding": "lockSubstitutionDraft omits four new constraint inputs. Actual input handler requestDraftChanged clears PlanPreview->ResourceBinding and clears original resourceBindingPending/key/reason while SUBMITTING or UNKNOWN. Include all new controls and verify original pending flow."
+    },
+    {
+      "id": "R2",
+      "severity": "BLOCKING",
+      "file": "src/parkweave/web.html",
+      "line": 1074,
+      "finding": "New bounded confirm catch bypasses servicePlanError. Current service-plan GET403 does not invoke existing complete denied-private-view cleanup. Non403 loader failure also retains partly loaded pane/history. Preserve stale generation checks, route current403 through original handler, clear only owned failed pane for other errors."
+    },
+    {
+      "id": "R3",
+      "severity": "REQUIREMENT_BYPASS_IF_GLOBAL_GOAL_FLOOR_CLAIMED",
+      "file": "src/parkweave/request_intents.py",
+      "line": 63,
+      "finding": "Conditional floor admits two updates: legacy no-constraint goals A+B -> omitted-constraint save A -> explicit constrained save A. Thus saved required goals can be removed before constraints. Apply floor to all saved intents after replay if global no-removal is promised; otherwise disclose narrower scope."
+    }
+  ],
+  "verified_static": [
+    "Omitted constraints retains prior value; explicit null rejected; explicit {} persists empty role/requirement arrays",
+    "exclude_none retains original old fingerprint keys for omitted field; replay precedes revision/floor",
+    "proposal full source includes intent and perstep impacts; whole goals/closed dependency graph remain",
+    "service-case ADOPT requires current COVERED state/source hash; legacy creation and existing checkpoint inspection share conflict evaluation"
+  ],
+  "limits": [
+    "Unfrozen source hashes only",
+    "No implementation or business-test PASS assertion",
+    "No source/Git modification",
+    "No browser/model/securityprepare/Grant"
+  ],
+  "writer": "root only"
+}

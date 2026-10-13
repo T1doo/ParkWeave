@@ -1,0 +1,60 @@
+F......FF.                                                               [100%]
+=================================== FAILURES ===================================
+_ test_compatible_material_contract_and_conflicting_full_contract_keep_all_goals _
+
+preparation_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+
+    def test_compatible_material_contract_and_conflicting_full_contract_keep_all_goals(preparation_fixture):
+        f=preparation_fixture;permissions=permission_snapshot(f[1]);c={'excluded_roles':['service_executor']}
+        for goal,n,state in [(P1,1,'COVERED_PREVIEW_ONLY'),(P5,5,'CONSTRAINT_BLOCKED')]:
+            p=prep(f);r=update(f,p,[goal],c);assert r.status_code==200;r=r.json();p['revision']=r['revision'];v=preview(f,p)
+            assert v['state']==state and v['required_goals']==[goal] and len(v['steps'])==n
+            assert all(s['responsibility'] and s['preconditions'] and s['output'] and s['executable'] is False for s in v['steps'])
+>           result=adopt(f,p,v,[goal]);assert result.status_code==(200 if goal==P1 else 409),result.text
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: {"detail":"Not Found"}
+E           assert 404 == 200
+E            +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/test_planning_constraints.py:24: AssertionError
+__________ test_unsupported_requirement_and_stale_source_cannot_adopt __________
+
+preparation_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+
+    def test_unsupported_requirement_and_stale_source_cannot_adopt(preparation_fixture):
+        f=preparation_fixture;p=prep(f);r=update(f,p,[P1],{'additional_requirements':['SYNTHETIC external formal receipt']});p['revision']=r.json()['revision'];v=preview(f,p)
+>       assert v['state']=='PARTIAL' and v['required_goals']==[P1] and v['constraint_evaluation']['unsupported_requirements']==['SYNTHETIC external formal receipt'];assert adopt(f,p,v,[P1]).status_code==409
+                                                                                                                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 404 == 409
+E        +  where 404 = <Response [404 Not Found]>.status_code
+E        +    where <Response [404 Not Found]> = adopt((<parkweave.store.Store object at 0x7ffae01a4650>, <parkweave.store.Store object at 0x7ffae00f4830>, {'fixture-a': '4r...re-a': 'KptKvbQBj1NhYVuGUOLFO2CfByyzoPkgvdevmKTWP-4', ...}, <starlette.testclient.TestClient object at 0x7ffae01c7080>), {'preparation_id': 'ba746de9-684f-4018-ae14-ca743a286ad4', 'case_id': '691761df-2a53-471c-a888-df5a546eb9b5', 'run_id': 'f4242d68-3e55-4b7a-99eb-d968766b432e', 'revision': 2, ...}, {'constraint_evaluation': {'source': 'USER_EXPLICIT_PLANNING_DECLARATION', 'constraints': {'excluded_roles': [], 'addi... 'planner': 'DETERMINISTIC_REGISTERED_ADAPTER_SUBGRAPH', 'preparation_id': 'ba746de9-684f-4018-ae14-ca743a286ad4', ...}, ['LOCAL_MATERIAL_PREPARATION'])
+
+tests/test_planning_constraints.py:42: AssertionError
+___________ test_legacy_fixed_plan_cannot_bypass_constraint_conflict ___________
+
+preparation_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+
+    def test_legacy_fixed_plan_cannot_bypass_constraint_conflict(preparation_fixture):
+        f=preparation_fixture;p=prep(f);goal='LOCAL_SYNTHETIC_COORDINATION_RECORDS';r=update(f,p,[goal],{'excluded_roles':['service_executor']});p['revision']=r.json()['revision']
+        path='/api/preparations/'+p['preparation_id']+'/controlled-plan';view=f[3].get(path,headers=headers(f[2])).json();assert 'DECLARED_PLANNING_CONSTRAINT_CONFLICT' in view['creation_blockers'] and not view['can_create']
+>       r=f[3].post(path,headers=headers(f[2],key=uuid4().hex),json={'expected_preparation_revision':p['revision'],'template_sha256':cp.TEMPLATE_SHA});assert r.status_code==409
+                                                                                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert 422 == 409
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+tests/test_planning_constraints.py:48: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_planning_constraints.py::test_compatible_material_contract_and_conflicting_full_contract_keep_all_goals
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_planning_constraints.py::test_compatible_material_contract_and_conflicting_full_contract_keep_all_goals
+FAILED tests/test_planning_constraints.py::test_unsupported_requirement_and_stale_source_cannot_adopt
+FAILED tests/test_planning_constraints.py::test_legacy_fixed_plan_cannot_bypass_constraint_conflict
+3 failed, 7 passed, 2 warnings in 3.75s

@@ -1,0 +1,110 @@
+.............FFFF.                                                       [100%]
+=================================== FAILURES ===================================
+______________ test_original_planning_constraint_guards[empty403] ______________
+
+mode = 'empty403'
+
+    @pytest.mark.parametrize('mode',['pending_fields','dirty_constraint','empty403','nonjson403','read500','late403'])
+    def test_original_planning_constraint_guards(mode):
+        import subprocess,json
+        from pathlib import Path
+        result=subprocess.run(['node',str(Path(__file__).with_name('planning_constraint_guards.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: evalmachine.<anonymous>:1403
+E         async function loadServiceCasePlan(id){if(!id)throw Error('请先选择此Case的资料、分派或回执');if((servicePlanPending?.stage==='SUBMITTING'||servicePlanRecoveryChecking)&&id===servicePlanId)throw Error('原步骤操作正在提交或核对，请等待结果');if(id!==servicePlanId)clearServiceCasePlan();clearPlan();servicePlanGeneration++;servicePlanId=id;servicePlanView=null;const c=servicePlanCtx();$('service-case-plan-detail').hidden=false;$('service-plan-summary').textContent='正在核对原身份与此Case步骤记录…';$('service-plan-steps').replaceChildren();$('service-plan-adopt').hidden=true;const initial=await servicePlanCall('/api/preparations/'+encodeURIComponent(id)+'/service-case-plan/command-recovery','GET',undefined,undefined,c);if(initial.status!=='NO_REQUEST'||initial.read_only!==true||initial.automatically_replayed!==false||initial.current?.preparation_id!==id||initial.current.actor_ref!==initial.actor_ref)throw Error('步骤身份响应无法核对');const handle=readServicePlanHandle(id,initial.actor_ref);if(handle){servicePlanRecoveryHandle=handle;renderServiceCasePlan(initial.current);await recoverServicePlan();return;}servicePlanRecoveryHandle=null;servicePlanPending=null;const x=await servicePlanCall('/api/preparations/'+encodeURIComponent(id)+'/service-case-plan','GET',undefined,undefined,c);if(x.actor_ref!==initial.actor_ref||x.case_id!==initial.case_id||x.run_id!==initial.run_id)throw Error('原身份或事项已变化，请重读');renderServiceCasePlan(x);}
+E                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ^
+E         
+E         Error: 步骤身份响应无法核对
+E             at loadServiceCasePlan (evalmachine.<anonymous>:1403:871)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/planning_constraint_guards.js', 'empty403'], returncode=1, ...          ^\n\nError: 步骤身份响应无法核对\n    at loadServiceCasePlan (evalmachine.<anonymous>:1403:871)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_planning_constraints.py:66: AssertionError
+_____________ test_original_planning_constraint_guards[nonjson403] _____________
+
+mode = 'nonjson403'
+
+    @pytest.mark.parametrize('mode',['pending_fields','dirty_constraint','empty403','nonjson403','read500','late403'])
+    def test_original_planning_constraint_guards(mode):
+        import subprocess,json
+        from pathlib import Path
+        result=subprocess.run(['node',str(Path(__file__).with_name('planning_constraint_guards.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: evalmachine.<anonymous>:1403
+E         async function loadServiceCasePlan(id){if(!id)throw Error('请先选择此Case的资料、分派或回执');if((servicePlanPending?.stage==='SUBMITTING'||servicePlanRecoveryChecking)&&id===servicePlanId)throw Error('原步骤操作正在提交或核对，请等待结果');if(id!==servicePlanId)clearServiceCasePlan();clearPlan();servicePlanGeneration++;servicePlanId=id;servicePlanView=null;const c=servicePlanCtx();$('service-case-plan-detail').hidden=false;$('service-plan-summary').textContent='正在核对原身份与此Case步骤记录…';$('service-plan-steps').replaceChildren();$('service-plan-adopt').hidden=true;const initial=await servicePlanCall('/api/preparations/'+encodeURIComponent(id)+'/service-case-plan/command-recovery','GET',undefined,undefined,c);if(initial.status!=='NO_REQUEST'||initial.read_only!==true||initial.automatically_replayed!==false||initial.current?.preparation_id!==id||initial.current.actor_ref!==initial.actor_ref)throw Error('步骤身份响应无法核对');const handle=readServicePlanHandle(id,initial.actor_ref);if(handle){servicePlanRecoveryHandle=handle;renderServiceCasePlan(initial.current);await recoverServicePlan();return;}servicePlanRecoveryHandle=null;servicePlanPending=null;const x=await servicePlanCall('/api/preparations/'+encodeURIComponent(id)+'/service-case-plan','GET',undefined,undefined,c);if(x.actor_ref!==initial.actor_ref||x.case_id!==initial.case_id||x.run_id!==initial.run_id)throw Error('原身份或事项已变化，请重读');renderServiceCasePlan(x);}
+E                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ^
+E         
+E         Error: 步骤身份响应无法核对
+E             at loadServiceCasePlan (evalmachine.<anonymous>:1403:871)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/planning_constraint_guards.js', 'nonjson403'], returncode=1...          ^\n\nError: 步骤身份响应无法核对\n    at loadServiceCasePlan (evalmachine.<anonymous>:1403:871)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_planning_constraints.py:66: AssertionError
+______________ test_original_planning_constraint_guards[read500] _______________
+
+mode = 'read500'
+
+    @pytest.mark.parametrize('mode',['pending_fields','dirty_constraint','empty403','nonjson403','read500','late403'])
+    def test_original_planning_constraint_guards(mode):
+        import subprocess,json
+        from pathlib import Path
+        result=subprocess.run(['node',str(Path(__file__).with_name('planning_constraint_guards.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: evalmachine.<anonymous>:1403
+E         async function loadServiceCasePlan(id){if(!id)throw Error('请先选择此Case的资料、分派或回执');if((servicePlanPending?.stage==='SUBMITTING'||servicePlanRecoveryChecking)&&id===servicePlanId)throw Error('原步骤操作正在提交或核对，请等待结果');if(id!==servicePlanId)clearServiceCasePlan();clearPlan();servicePlanGeneration++;servicePlanId=id;servicePlanView=null;const c=servicePlanCtx();$('service-case-plan-detail').hidden=false;$('service-plan-summary').textContent='正在核对原身份与此Case步骤记录…';$('service-plan-steps').replaceChildren();$('service-plan-adopt').hidden=true;const initial=await servicePlanCall('/api/preparations/'+encodeURIComponent(id)+'/service-case-plan/command-recovery','GET',undefined,undefined,c);if(initial.status!=='NO_REQUEST'||initial.read_only!==true||initial.automatically_replayed!==false||initial.current?.preparation_id!==id||initial.current.actor_ref!==initial.actor_ref)throw Error('步骤身份响应无法核对');const handle=readServicePlanHandle(id,initial.actor_ref);if(handle){servicePlanRecoveryHandle=handle;renderServiceCasePlan(initial.current);await recoverServicePlan();return;}servicePlanRecoveryHandle=null;servicePlanPending=null;const x=await servicePlanCall('/api/preparations/'+encodeURIComponent(id)+'/service-case-plan','GET',undefined,undefined,c);if(x.actor_ref!==initial.actor_ref||x.case_id!==initial.case_id||x.run_id!==initial.run_id)throw Error('原身份或事项已变化，请重读');renderServiceCasePlan(x);}
+E                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ^
+E         
+E         Error: 步骤身份响应无法核对
+E             at loadServiceCasePlan (evalmachine.<anonymous>:1403:871)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/planning_constraint_guards.js', 'read500'], returncode=1, s...          ^\n\nError: 步骤身份响应无法核对\n    at loadServiceCasePlan (evalmachine.<anonymous>:1403:871)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_planning_constraints.py:66: AssertionError
+______________ test_original_planning_constraint_guards[late403] _______________
+
+mode = 'late403'
+
+    @pytest.mark.parametrize('mode',['pending_fields','dirty_constraint','empty403','nonjson403','read500','late403'])
+    def test_original_planning_constraint_guards(mode):
+        import subprocess,json
+        from pathlib import Path
+        result=subprocess.run(['node',str(Path(__file__).with_name('planning_constraint_guards.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: evalmachine.<anonymous>:1403
+E         async function loadServiceCasePlan(id){if(!id)throw Error('请先选择此Case的资料、分派或回执');if((servicePlanPending?.stage==='SUBMITTING'||servicePlanRecoveryChecking)&&id===servicePlanId)throw Error('原步骤操作正在提交或核对，请等待结果');if(id!==servicePlanId)clearServiceCasePlan();clearPlan();servicePlanGeneration++;servicePlanId=id;servicePlanView=null;const c=servicePlanCtx();$('service-case-plan-detail').hidden=false;$('service-plan-summary').textContent='正在核对原身份与此Case步骤记录…';$('service-plan-steps').replaceChildren();$('service-plan-adopt').hidden=true;const initial=await servicePlanCall('/api/preparations/'+encodeURIComponent(id)+'/service-case-plan/command-recovery','GET',undefined,undefined,c);if(initial.status!=='NO_REQUEST'||initial.read_only!==true||initial.automatically_replayed!==false||initial.current?.preparation_id!==id||initial.current.actor_ref!==initial.actor_ref)throw Error('步骤身份响应无法核对');const handle=readServicePlanHandle(id,initial.actor_ref);if(handle){servicePlanRecoveryHandle=handle;renderServiceCasePlan(initial.current);await recoverServicePlan();return;}servicePlanRecoveryHandle=null;servicePlanPending=null;const x=await servicePlanCall('/api/preparations/'+encodeURIComponent(id)+'/service-case-plan','GET',undefined,undefined,c);if(x.actor_ref!==initial.actor_ref||x.case_id!==initial.case_id||x.run_id!==initial.run_id)throw Error('原身份或事项已变化，请重读');renderServiceCasePlan(x);}
+E                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               ^
+E         
+E         Error: 步骤身份响应无法核对
+E             at loadServiceCasePlan (evalmachine.<anonymous>:1403:871)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/planning_constraint_guards.js', 'late403'], returncode=1, s...          ^\n\nError: 步骤身份响应无法核对\n    at loadServiceCasePlan (evalmachine.<anonymous>:1403:871)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_planning_constraints.py:66: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_planning_constraints.py::test_compatible_material_contract_and_conflicting_full_contract_keep_all_goals
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_planning_constraints.py::test_original_planning_constraint_guards[empty403]
+FAILED tests/test_planning_constraints.py::test_original_planning_constraint_guards[nonjson403]
+FAILED tests/test_planning_constraints.py::test_original_planning_constraint_guards[read500]
+FAILED tests/test_planning_constraints.py::test_original_planning_constraint_guards[late403]
+4 failed, 14 passed, 2 warnings in 5.75s

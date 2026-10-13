@@ -1,0 +1,51 @@
+{
+  "result": "READ_ONLY_SHORT_PREFLIGHT_NOT_IMPLEMENTATION_OR_TEST_PASS",
+  "source_sha": "2fd298adfbb38fc32b6715be8c4588d6739c00d2",
+  "files": {
+    "src/parkweave/request_intents.py": "558c7d7ef75660e6cbee01a472903c54592f1f30067f3fa643ba31197cba5bef",
+    "src/parkweave/bounded_planning.py": "774c911010232a0cc0b443cdb105f662b191f6112ab768a1920f8843fdbd6089",
+    "src/parkweave/service_case_steps.py": "3cda5e4c056db8ab729e21e0dd8a1c31a8019b1113007136118f3bd3af5f1734",
+    "src/parkweave/controlled_plans.py": "8d0980ee9c1280b58fa2b7e748042710bc18a0fa4c5a704961ddfed5549f7c92",
+    "src/parkweave/web.html": "a6c429d56104905227634ef6e1c10332d86da1d3f3448c59d588cbeef6883a81"
+  },
+  "highest_value_minimum": "Explicit finite excluded_roles from originalACTIONS roleIDs, preserve all existingrequired_goals and graphdependencies, show perstep roleconflict/impact and completegoals. Compatibleclosedsubgraph remains COVERED_PREVIEW_ONLY; conflictBLOCKED noADOPT; no languageinference/model/newactor/permission.",
+  "concrete_cases": [
+    "LOCAL_MATERIAL_PREPARATION + exclude service_executor is compatibleP1",
+    "LOCAL_INTERNAL_ACCEPTANCE or receiptgoal + exclude service_executor conflictsrequiredP3/P4 and wholeclosure remains displayedBLOCKED",
+    "Exclude park_specialist conflictsmandatoryreviewP1 even whenP1-only; cannot inventalternate reviewer/role"
+  ],
+  "server_landing": [
+    "Save structuredconstraints into existingrequest_intentJSON with normalrevision/event transaction; no schemaDDL or registryextension necessary",
+    "request_intents.view projects missinglegacy field without GETwrite/backfill",
+    "planning._proposal derives roles fromACTIONS not Chinese text, attaches perstep constraintimpact; does not trimGOALS/steps",
+    "Source request_intent and serviceCasePlanbinding already cover entirepersistedintent; newconstraints change sourceproof andinvalidatecurrentpriorplan",
+    "serviceCasePlanADOPT rechecks exactrequest/prep/version/goals/source and COVEREDstate under existinglock; replayoriginalkey first",
+    "Legacy controlled_plans.preview/adopt needs same compatibilityguard, otherwise newBLOCKED can bypass through fixed4steppath"
+  ],
+  "compatibility_and_replay": [
+    "Omittedconstraints preservescurrent; explicitempty is deliberateclear; explicitnull should be rejected or have singleexplicitcontract",
+    "Oldfp hashes full Save.model_dump; addingdefaultconstraints wouldbreakoldkeyreplay. Omittedfield must retain originaloldhashshape exactly; replay before newcurrent constraint/goalguards",
+    "Explicitchangedconstraints with samekey conflicts; persistnormalizedfiniteenum, do not normalizeoldfingerprint/eventshape",
+    "Existingrequired_goals set subsetofnewgoalset under lock, includingunsupportedgoals; compare sets afterdedup so ordering cannot hide aremovedgoal, but no need forbidreordering itself. Keepmax8limit; no goalrelaxationprotocol in thisslice.",
+    "Treat invalid storedconstraints as unknown/blocked rather than silentlyempty; absenceonly is legacydefault",
+    "Historicalpreview/adoptionevents remain asrecorded; do not retrofitnewfields into oldpersistedproofs"
+  ],
+  "UI_landing": [
+    "Existing requestDraft/render/dirtychecks/preview comparison/clearcontrols/substitution draftlock/pendingbody+key all include structuredconstraints",
+    "Original preview/serviceplan shows responsibility, prereqs/output and conflict/support impact; blockedADOPT disabled and backend reject",
+    "No token/constraintfree-text semanticinference, newGrant or authorizationclaim; constraints are planningmetadata notpermissionrevocation"
+  ],
+  "minimal_future_validation": [
+    "Owned PG samekeylegacyreplay after newerconstrainedrequest remains exactoldresult; omittedupdatepreservesconstraints; explicitemptynewkey clears",
+    "Allgoalsretained; directHTTPdroppingoldgoal rejected before newevent",
+    "CompatibleP1 vs incompatiblefullgraph sameexplicitconstraint; BLOCKED/serviceplan+legacyADOPT rejected; zeroexecution/business side effects fromREADpreview",
+    "RealoriginalUI saveconstraints -> preview -> explicitADOPT exacthash; staleconstraint revision/source mismatch refused"
+  ],
+  "source_writer": "root only",
+  "reviewer_writes": "runtime independent only",
+  "NOT_RUN": [
+    "implementation",
+    "business tests",
+    "model/browser/securityprepare/newGrant"
+  ]
+}
