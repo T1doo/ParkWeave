@@ -120,6 +120,10 @@ def setup(config,observation=None):
             c.execute('GRANT SELECT ON ALL TABLES IN SCHEMA public TO pwci_app')
             c.execute('GRANT INSERT ON authorization_audit TO pwci_app')
         with observation.check('WRITER_ACL'):
+            # Function NULL ACL includes PUBLIC EXECUTE. A writer GRANT alone
+            # retains it, contradicting the existing app-control denial check.
+            # This transaction belongs only to the freshly proven UUID database.
+            c.execute('REVOKE EXECUTE ON FUNCTION pg_catalog.pg_control_system() FROM PUBLIC')
             for label,action,table,column in runtime.required_privileges('revision'):
                 if action=='LOCK_UPDATE':continue
                 if action=='EXECUTE':c.execute('GRANT EXECUTE ON FUNCTION pg_catalog.pg_control_system() TO pwci_writer');continue
