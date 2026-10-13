@@ -103,7 +103,7 @@ class Controller(reference.Controller):
             g=grp.getgrnam(name);self.created_groups[name]=g.gr_gid
         for name in USERS:
             self.creation_attempts+=1
-            self.tool(['/usr/sbin/useradd','--system','--no-create-home','--home-dir','/nonexistent',
+            self.tool(['/usr/sbin/useradd','--system','--no-log-init','--no-create-home','--home-dir','/nonexistent',
                 '--gid',name,'--groups','pwci_ipc','--shell','/usr/sbin/nologin',name])
             p=pwd.getpwnam(name);self.created_users[name]=(p.pw_uid,p.pw_gid)
         self.api=pwd.getpwnam('pwci_api');self.worker=pwd.getpwnam('pwci_writer');self.ipc=grp.getgrnam('pwci_ipc')

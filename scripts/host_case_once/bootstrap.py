@@ -99,12 +99,17 @@ def prepare(checkout,source_sha,root):
     protected_copy(Path('/usr/lib/python3.12'),environment/'lib/python3.12')
     site=environment/'lib/python3.12/site-packages';site.mkdir()
     netrc=root/'private/empty.netrc';fd=os.open(netrc,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600);os.close(fd)
+    # The reviewed source bundle, not checkout/environment discovery, owns the lock.
+    sys.path.insert(0,str(source))
+    from scripts.host_case_once.dependencies import supported_host,pip_commands,verify
+    supported_host()
+    locks=source/'scripts/host_case_once';wheels=root/'private/wheels';wheels.mkdir()
+    download,install=pip_commands(locks,wheels,site)
     with (root/'private/dependencies.log').open('wb') as log:
-        subprocess.run(['/usr/bin/python3.12','-I','-m','pip','--isolated','install','--no-input',
-            '--keyring-provider=disabled','--disable-pip-version-check','--no-cache-dir','--no-compile','--only-binary=:all:',
-            '--target',str(site),'fastapi==0.142.2','uvicorn==0.54.0','psycopg[binary]==3.3.6',
-            'pydantic==2.13.5','httpx==0.28.1'],env={'LANG':'C.UTF-8','PATH':'/usr/bin:/bin',
-            'NETRC':str(netrc),'PIP_CONFIG_FILE':os.devnull},stdout=log,stderr=log,timeout=180,check=True)
+        pip_env={'LANG':'C.UTF-8','PATH':'/usr/bin:/bin','NETRC':str(netrc),'PIP_CONFIG_FILE':os.devnull}
+        subprocess.run(download,env=pip_env,stdout=log,stderr=log,timeout=90,check=True)
+        verify(locks,wheels) # Offline exact set/bytes/hash/metadata; reject before install.
+        subprocess.run(install,env=pip_env,stdout=log,stderr=log,timeout=90,check=True)
     for p in [environment,*environment.rglob('*')]:
         s=p.lstat()
         if not (stat.S_ISREG(s.st_mode) or stat.S_ISDIR(s.st_mode)):raise PermissionError('PROTECTED_BUNDLE_NO_LINKS_REQUIRED')
