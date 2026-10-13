@@ -1,0 +1,72 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_new_request_template_link_plan_material_work_and_invalid_input ______
+
+preparation_fixture = [SANITIZED_EXPORT: generated fixture session repr withheld; original runtime preserved]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-90/test_new_request_template_link0')
+
+    def test_new_request_template_link_plan_material_work_and_invalid_input(preparation_fixture,tmp_path):
+        f=preparation_fixture;permissions=permission_snapshot(f[1]);cfg=template_config().model_dump()
+        for permit in cfg['permits']:permit['scope']['park_id']='park-a'
+        engine=TemplateEngine(TemplateConfig.model_validate(cfg),TemplateRepository(tmp_path/'continuity.template.candidate.sqlite3'))
+        consumer=TemplateConsumer(f[0],engine,ConsumerConfig(enabled_for_isolated_tests=True,
+            allowed_database_names=[conninfo_to_dict(f[0].dsn)['dbname']],allowed_orgs=[{'park_id':'park-a','org_id':'org-a'}]),
+            ConsumerRepository(tmp_path/'continuity.consumer.candidate.sqlite3'))
+        with TestClient(create_isolated_template_app(f[0],engine,consumer)) as client:
+            # Existing approved synthetic release, prepared through original commands.
+            path='/api/template-candidate/park-a/new-enterprise-material-template'
+            for action,actor in [('SAVE_DRAFT','template-author'),('SUBMIT','template-author'),('REVIEW','template-reviewer'),('CANDIDATE_PUBLISH','template-publisher')]:
+                h={'X-Isolated-Template-Actor':actor,'Idempotency-Key':uuid4().hex};view=client.get(path,headers=h).json()
+                body={'action':action,'expected_revision':view['revision'],'expected_definition_sha256':view['definition_sha256'],'reason':'SYNTHETIC existing reviewed release '+action}
+                if action=='SAVE_DRAFT':body['draft']=definition().model_dump(mode='json')
+                if action=='CANDIDATE_PUBLISH':body['validity']=VALID
+                r=client.post(path+'/commands',headers=h,json=body);assert r.status_code==200,r.text
+            proc=subprocess.Popen(['node',str(Path(__file__).with_name('template_plan_continuity.js')),'template_plan_continuity'],
+                cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+            selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ);requests=[];summary=None;invalid_seen=False
+            try:
+                while True:
+                    assert selector.select(timeout=15),'Template continuity bridge made no progress within15 seconds'
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if 'request' not in message:summary=message;break
+                    r=message['request'];o=r['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                    actor=o.get('headers',{}).get('Authorization','Bearer SYNTHETIC_fixture-a').removeprefix('Bearer SYNTHETIC_')
+                    response=client.request(method,r['path'],headers=headers(f[2],actor,key=o.get('headers',{}).get('Idempotency-Key')),json=body)
+                    requests.append({'method':method,'path':r['path'],'status':response.status_code,'actor':actor})
+                    if response.status_code==422:
+                        assert r['path']=='/api/template-consumer/instances' and body['materials'][0]['text']=='';invalid_seen=True
+                        with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==0
+                    else:assert response.status_code<400,(method,r['path'],response.status_code,response.json())
+                    if method=='POST' and r['path']=='/api/template-consumer/instances' and response.status_code==201:
+                        f[0].finish(f[0].claim('template-continuity-original-worker'))
+                    proc.stdin.write((json.dumps({'status':response.status_code,'body':response.json()})+'\n').encode());proc.stdin.flush()
+>               assert proc.wait(timeout=15)==0,proc.stderr.read().decode()
+E               AssertionError: {"plan":"ACTIVE","error":"浏览器无法保存有界恢复句柄；步骤操作尚未发送，请先核对存储或原提交。","feedback":"协调阻塞和恢复仅记录意向，不提交业务命令；原角色必须通过原入口办理、核验真实来源。","step":{"id":"15e6b1a9-8667-4510-847b-c2ea8d7122bf","adapter_id":"P1","adapter":"preparation","depends_on":[],"state":"PENDING","actual_business_state":"LOCAL_CONFIRMED","allowed_actions":["BEGIN","REPORT_FAILURE","VERIFY"],"source_sha256":"7ccc1ce80634b0b30a687b411f21d1fceb77aca029ef07ed4ca747cd3798b71f","issues":[],"verified_sources":null,"verified_sha256":null,"manually_locked":false}}
+E                 AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E                 
+E                   assert(v)
+E                 
+E                     at check (/workspace/ParkWeave/tests/template_plan_continuity.js:4:26)
+E                     at /workspace/ParkWeave/tests/template_plan_continuity.js:35:867
+E                     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E                 
+E               assert 1 == 0
+E                +  where 1 = wait(timeout=15)
+E                +    where wait = <Popen: returncode: 1 args: ['node', '/workspace/ParkWeave/tests/template_pl...>.wait
+
+tests/test_template_plan_continuity.py:54: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_template_plan_continuity.py::test_new_request_template_link_plan_material_work_and_invalid_input
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_template_plan_continuity.py::test_new_request_template_link_plan_material_work_and_invalid_input
+1 failed, 2 warnings in 2.12s

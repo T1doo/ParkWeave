@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="9" time="2.856" timestamp="2026-10-13T17:06:01.370451+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_plan_continuity" name="test_new_request_template_link_plan_material_work_and_invalid_input" time="2.238" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[pending_preserved]" time="0.068" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[late_catalog]" time="0.066" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[late_error_new_plan]" time="0.062" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[late403_new_plan]" time="0.065" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[identity_aba]" time="0.065" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[terminal_wrong_plan]" time="0.064" /><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[denied403]" time="0.060"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/template_entry_guards.js:5:26)&#10;      at /workspace/ParkWeave/tests/template_entry_guards.js:45:162&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/template_entry_guards.js', 'denied403'], returncode=1, stdo...e/ParkWeave/tests/template_entry_guards.js:5:26)\n    at /workspace/ParkWeave/tests/template_entry_guards.js:45:162\n').returncode">mode = 'denied403'
+
+    @pytest.mark.parametrize("mode",["pending_preserved","late_catalog","late_error_new_plan","late403_new_plan","identity_aba","terminal_wrong_plan","denied403","wrong_binding"])
+    def test_original_template_handoff_rejects_unverified_or_late_navigation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_entry_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/template_entry_guards.js:5:26)
+E             at /workspace/ParkWeave/tests/template_entry_guards.js:45:162
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/template_entry_guards.js', 'denied403'], returncode=1, stdo...e/ParkWeave/tests/template_entry_guards.js:5:26)\n    at /workspace/ParkWeave/tests/template_entry_guards.js:45:162\n').returncode
+
+tests/test_template_plan_continuity.py:71: AssertionError</failure></testcase><testcase classname="tests.test_template_plan_continuity" name="test_original_template_handoff_rejects_unverified_or_late_navigation[wrong_binding]" time="0.062" /></testsuite></testsuites>
