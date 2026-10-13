@@ -88,7 +88,8 @@ def plan_proof(parent,plan):
         for id in step_ids:UUID(id)
         event_ids=set();keys=set()
         if plan.get('dependency_manifest') is not None:
-            original=plan['adoption_preview']['steps']
+            from .service_case_steps import adopted_preview_steps
+            original=adopted_preview_steps(plan)
             if len(original)!=len(plan['steps']):raise ValueError()
             for step,source in zip(plan['steps'],original):
                 if (step['contract']!=source or

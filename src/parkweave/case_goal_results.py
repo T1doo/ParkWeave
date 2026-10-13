@@ -22,7 +22,10 @@ def structure(plan):
         UUID(plan['id'])
         if type(plan['revision']) is not int or not 1<=plan['revision']<=64 or len(plan['events'])!=plan['revision'] or len(plan.get('history',[]))>8:raise ValueError()
         coverage,expected=bp.compile(plan['required_goals'])
-        if not 1<=len(plan['required_goals'])<=8 or any(x['status']!='SUPPORTED_PREVIEW' for x in coverage) or len(expected)!=len(plan['steps']):raise ValueError()
+        if plan.get('partial_adoption') is True:
+            expected=steps.adopted_preview_steps(plan)
+        elif any(x['status']!='SUPPORTED_PREVIEW' for x in coverage):raise ValueError()
+        if not 1<=len(plan['required_goals'])<=8 or len(expected)!=len(plan['steps']):raise ValueError()
         ids=set()
         for saved,current in zip(plan['steps'],expected):
             UUID(saved['id'])
@@ -135,7 +138,7 @@ def read(store,token,id):
         by_adapter={s['adapter_id']:s for s in plan['steps']} if plan else {}
         for goal in goals:
             adapter=bp.GOALS.get(goal);step=by_adapter.get(adapter);proof=proofs.get(adapter)
-            state='UNSUPPORTED' if not adapter else 'NOT_ADOPTED' if not plan else 'NEEDS_NEW_PLAN' if binding_issues or not step else states[adapter]
+            state='UNSUPPORTED' if not adapter else 'NOT_ADOPTED' if not plan else 'NEEDS_NEW_PLAN' if binding_issues else 'WAITING_DEPENDENCY' if not step and plan.get('partial_adoption') is True else 'NEEDS_NEW_PLAN' if not step else states[adapter]
             rows.append(dict(goal=goal,title=TITLES.get(goal,goal),adapter_id=adapter,step_id=step['id'] if step else None,state=state,
                              issues=sorted(set(binding_issues+(step.get('_result_reasons',[]) if step else ['ADOPT_CURRENT_SUPPORTED_PLAN'] if adapter else ['NO_REGISTERED_LOCAL_CAPABILITY']))),
                              actual_output=out.get(adapter) if step and step['_output_readable'] else None,
@@ -143,6 +146,6 @@ def read(store,token,id):
                              next_action='READ_ORIGINAL_STEP_AND_UNLOCK' if step and step.get('manual_lock') and state!='LOCAL_OUTPUT_VERIFIED' else 'READ_ORIGINAL_STEP_AND_VERIFY' if state=='AWAITING_OWNER_VERIFICATION' else 'USE_ORIGINAL_ADAPTER_TO_RECHECK' if state not in ('LOCAL_OUTPUT_VERIFIED','UNSUPPORTED') else 'MANUAL_SERVICE_CONTRACT_REQUIRED' if state=='UNSUPPORTED' else None))
         return dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(id),case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],
                     request_revision=intent.get('revision',0),current_request=intent.get('request_text',parent['goal']),original_request=parent['goal'],plan_id=plan['id'] if plan else None,plan_revision=plan['revision'] if plan else 0,
-                    state='UNKNOWN' if not rows else 'LOCAL_OUTPUTS_VERIFIED' if all(r['state']=='LOCAL_OUTPUT_VERIFIED' for r in rows) else 'UNVERIFIED',
+                    state='PARTIAL' if plan and plan.get('partial_adoption') is True else 'UNKNOWN' if not rows else 'LOCAL_OUTPUTS_VERIFIED' if all(r['state']=='LOCAL_OUTPUT_VERIFIED' for r in rows) else 'UNVERIFIED',
                     results=rows,adopted_goals=list(plan['required_goals']) if plan else [],historical_plans=[dict(id=h['id'],revision=h['revision'],goals=h['required_goals']) for h in plan.get('history',[])] if plan else [],
                     binding_issues=sorted(set(binding_issues)),read_only=True,automatically_verified=False,case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')

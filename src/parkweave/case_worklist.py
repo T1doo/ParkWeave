@@ -56,7 +56,11 @@ def read(store,token,*,limit=20,after=None):
         # or read-time plan invalidation calls.
         rows=c.execute("""SELECT ca.id,ca.run_id,ca.state,ca.goal,r.state AS run_state,
             CASE WHEN pr.id IS NULL THEN NULL ELSE jsonb_build_object('id',pr.id,
-              'revision',pr.revision,'state',pr.state,'review_sha256',pr.review_sha256) END AS parent,
+              'revision',pr.revision,'state',pr.state,'review_sha256',pr.review_sha256,
+              'partial_plan',CASE WHEN pr.service_case_plan->>'partial_adoption'='true'
+                THEN jsonb_build_object('plan_id',pr.service_case_plan->>'id','overall_goal_state','PARTIAL',
+                  'manual_goal_count',jsonb_array_length(pr.service_case_plan->'adoption_preview'->'partial_offer'->'manual_goals'),
+                  'step_ids',pr.service_case_plan->'adoption_preview'->'partial_offer'->'step_ids') ELSE NULL END) END AS parent,
             CASE WHEN o.id IS NULL THEN NULL ELSE jsonb_build_object('state',o.state,
               'preparation_revision',o.preparation_revision,'preparation_sha256',o.preparation_sha256) END AS offer,
             CASE WHEN s.id IS NULL THEN NULL ELSE jsonb_build_object('id',s.id,'state',s.state,
@@ -95,12 +99,19 @@ def read(store,token,*,limit=20,after=None):
             if attention=='NEEDS_DISPATCH' and case['receipt_exists'] and step is None:attention='UNKNOWN'
             label,waiting_on,target=LABELS[attention]
             if parent is None:target='run'
+            partial=parent.get('partial_plan') if parent else None
+            if partial:
+                label+='；整体PARTIAL，不支持的必需目标保留待人工'
+                if attention=='NEEDS_DISPATCH' and 'P3' not in partial['step_ids']:
+                    target='materials';waiting_on='OWNER'
+                    label='已采用独立部分计划；其余必需目标待人工，请从原计划核对办理'
             items.append(dict(case_id=str(case['id']),run_id=str(case['run_id']),title=case['goal'],
                 preparation_id=str(parent['id']) if parent else None,
                 preparation_revision=parent['revision'] if parent else None,
                 case_state=case['state'],run_state=case['run_state'],attention=attention,label=label,waiting_on=waiting_on,
                 open_target=target,receipt_step_id=str(step['id']) if step and target=='receipt' else None,
                 evidence_verified=False,case_goal_completed=False,
+                partial_plan=partial,
                 resource_release_required_separately=case['state'] in ('CANCELLED','RECONCILING')))
         return dict(scope=SCOPE,read_only=True,automatically_replayed=False,recorded_states_only=True,
                     items=items,next_after=str(rows[limit-1]['id']) if len(rows)>limit else None)

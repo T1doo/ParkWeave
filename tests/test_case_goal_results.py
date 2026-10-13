@@ -125,7 +125,10 @@ def test_current_business_source_damage_keeps_history_and_blocks_result(link_fix
 
 def test_request_without_plan_or_explicit_goals_stays_unknown(link_fixture):
  f=link_fixture;p=setup(f,GOALS[0]);before=snapshot(f);x=get(f,p).json();assert x['results'][0]['state']=='NOT_ADOPTED' and not x['case_goal_completed'];assert snapshot(f)==before
- assert save(f,p,goals=[]).status_code==200;before=snapshot(f);x=get(f,p).json();assert x['state']=='UNKNOWN' and x['results']==[] and snapshot(f)==before
+ assert save(f,p,goals=[]).status_code==409  # Saved required goals cannot be removed.
+ from test_executor_receipts import ready
+ fresh=ready(f);assert save(f,fresh,goals=[]).status_code==200
+ before=snapshot(f);x=get(f,fresh).json();assert x['state']=='UNKNOWN' and x['results']==[] and snapshot(f)==before
 
 @pytest.mark.parametrize('damage',['actor','cycle','snapshot','payload'])
 def test_actual_local_revalidation_requires_original_current_event_proof(link_fixture,damage):
