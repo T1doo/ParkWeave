@@ -104,3 +104,8 @@ fresh source/generation/beneficiary条件仍由原REQUEST/APPROVE/ACTIVATE事务
 ## Catalog-only 最小候选与单次验证准备（2026-10-13）
 
 冻结源码 `17cf9cdbff28ae759e68b7f66878e1c396ec6f0d` 只新增独立默认关闭入口、探针与纯回归，生产 src/旧 trial/workflow 不变。主测 372 PASS，独审 378 PASS（重叠 364、另 14/8），0 FAIL/ERROR/SKIP、437 源码零漂移；六个原失败反例原样保留并同 ID 通过，7 项真实 PG 用例仍 NOT_RUN。入口仅允许全新自有 PG16/临时角色的有效权及实际函数调用前后对照、原 collect→analyze 与清理，不签 host/OS隔离/Case生命周期。候选归档阶段新获一次免费标准 Ubuntu、15 分钟内的明确验证授权；批准提交须仅改 approval.json 并精确绑定经审查的源码等价父 SHA。源码合同、门禁、恢复检查、证据和授权范围详见[候选记录](CatalogOnlyTrialCandidate-20261013.md)，实际运行结果尚待执行，旧两次试验 FAIL 保留。
+
+
+## Catalog-only 单次实际验收通过（2026-10-13）
+
+新的单次批准提交 `f771b5eb73bfbc48c928c5a94bbb0af137c4c51a` 精确绑定源码等价父 `30979849d960a83c9ac4e3e7058072910521d431`，只修改 approval.json。实际 [run 38338357467](https://github.com/T1doo/ParkWeave/actions/runs/38338357467) / job 115103499255 首次运行、首次尝试成功：**13 PASS / 0 FAIL/UNKNOWN/NOT_RUN**。全新自有 PG16 上 app 的真实调用在修复后以 42501 拒绝、writer 成功，原 collector/analyzer 返回 PASS 且 changes 空，正常停止及新 cluster 删除通过。实际结果已经独审；未重跑，也未扩到 host/lifecycle/原 Case。原 7 项 PG 回归仍 NOT_RUN、旧两次 FAIL 和纯测失败原件均保留。源码、授权、日志、资格及清理范围详见[实际验收记录](CatalogOnlyTrialAcceptance-20261013.md)。这次 catalog-only 许可已用尽，后续原产品纵向验收使用其自身范围与证据。
