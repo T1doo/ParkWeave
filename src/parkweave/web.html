@@ -1712,6 +1712,16 @@ $('receipt-history-read').onclick=async()=>{
  finally{if(current())$('receipt-history-read').disabled=false;}
 };
 
+// Capture also covers read buttons created after initial page setup. Internal
+// awaited readback calls are ordinary function calls and do not emit UI events.
+function blockIndependentEntryUI(e){
+ if(!activeEntryWriteFlow)return;
+ const target=e.target?.closest?.('button,a,[data-tab],form');
+ if(!target||['case-worklist-read','case-worklist-next','token'].includes(target.id))return;
+ e.preventDefault();e.stopImmediatePropagation();pageError(Error('请先在原入口核对正在提交的操作，再打开其他读取入口。'));
+}
+document.addEventListener('click',blockIndependentEntryUI,true);
+document.addEventListener('submit',blockIndependentEntryUI,true);
 // Existing mutation entry points and inline handlers use the same request lease.
 // Ordinary GET calls do not acquire leases; original functions remain the
 // authority for versions, grants and explicitly requested manual retries.
