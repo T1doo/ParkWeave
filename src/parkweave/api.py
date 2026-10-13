@@ -67,6 +67,11 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
         return delivery.recover(store,token(authorization),preparation_id,resource_key(request_key))
 
     from . import case_opportunities as opportunities
+    @app.get('/api/cases/worklist')
+    def owner_case_worklist(limit: int=Query(default=20,ge=1,le=50),after: UUID|None=Query(default=None),
+                            authorization: str|None=Header(default=None)):
+        from . import case_worklist
+        return case_worklist.read(store,token(authorization),limit=limit,after=after)
     @app.get('/api/preparations/{preparation_id}/opportunities')
     def opportunity_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return opportunities.read(store,token(authorization),preparation_id)
