@@ -46,7 +46,7 @@ def state(parent):
     if value['coverage']['template_sha256']!=TEMPLATE_SHA:return 'STALE'
     return value['coverage']['state']
 
-def save(store,token,id,key,data):
+def save(store,token,id,key,data,*,unadopted_only=False):
     from . import controlled_plans as cp
     fp=digest(prep.canonical({'preparation_id':str(id),'action':'UPDATE_REQUEST',**data.model_dump(exclude_none=True)}))
     with store.connect() as c:
@@ -57,6 +57,7 @@ def save(store,token,id,key,data):
         if parent['namespace']!='SYNTHETIC':raise Denied('synthetic request required')
         old=prep.replay(c,p,key,fp,id)
         if old:return old
+        if unadopted_only and parent.get('service_case_plan') is not None:raise Conflict('template consumer planning changes require an unadopted original preparation')
         if parent['revision']!=data.expected_preparation_revision or parent['revision']>=64:raise Conflict('request revision changed or history limit reached')
         previous=parent.get('request_intent') or {}
         constraints=data.planning_constraints.model_dump() if data.planning_constraints is not None else previous.get('planning_constraints')

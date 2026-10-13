@@ -69,6 +69,12 @@ def resume(f, row, index=0, key='resume-instance'):
                             headers=headers(f, index, key), json={})
 
 
+def confirm(f,row,index=0,key='explicit-consumer-confirm'):
+    path=f"/api/template-consumer/instances/{row['instance_id']}"
+    v=f['client'].get(path+'/planning',headers=headers(f,index)).json()
+    return f['client'].post(path+'/adopt',headers=headers(f,index,key),json=dict(expected_preparation_revision=v['current']['preparation_revision'],expected_request_revision=v['request_intent']['revision'],expected_source_sha256=v['current']['source_sha256'],expected_plan_revision=0,required_goals=v['request_intent']['required_goals'],reason='SYNTHETIC explicit current preview confirmation'))
+
+
 def finish(f):
     work = f['store'].claim('isolated-template-test-worker')
     assert work is not None
@@ -89,6 +95,9 @@ def test_two_new_enterprises_get_distinct_case_materials_without_identity_or_gra
         finish(f)
         result = resume(f, row, index, f'resume-{index}')
         assert result.status_code == 200, result.text
+        assert result.json()['state']=='PLAN_CONFIRMATION_REQUIRED' and result.json()['plan_id'] is None
+        result = confirm(f,result.json(),index,key=f'explicit-{index}')
+        assert result.status_code==200,result.text
         result = result.json()
         assert result['state'] == 'PLAN_ADOPTED'
         assert not result['case_goal_completed'] and not result['automatic_execution']
@@ -134,6 +143,9 @@ def test_unknown_committed_run_reply_recovers_original_key_without_second_run(te
     finish(f)
     completed = resume(f, response.json(), key='resume-after-unknown')
     assert completed.status_code == 200, completed.text
+    assert completed.json()['state']=='PLAN_CONFIRMATION_REQUIRED'
+    completed=confirm(f,completed.json())
+    assert completed.status_code==200,completed.text
     stable = products(f['owner'])
     replay = resume(f, completed.json(), key='resume-after-unknown')
     assert replay.status_code == 200 and replay.json()['plan_id'] == completed.json()['plan_id']
@@ -165,6 +177,9 @@ def test_unknown_committed_material_reply_recovers_without_duplicate_case_or_evi
     monkeypatch.setattr(preparation, 'command', original)
     completed = resume(f, pending, key='lost-material-resume')
     assert completed.status_code == 200, completed.text
+    assert completed.json()['state']=='PLAN_CONFIRMATION_REQUIRED'
+    completed=confirm(f,completed.json())
+    assert completed.status_code==200,completed.text
     assert completed.json()['state'] == 'PLAN_ADOPTED'
     after = products(f['owner'])
     assert len(after['runs']) == len(after['cases']) == len(after['preparations']) == 1
@@ -320,6 +335,8 @@ def test_completed_instance_keeps_immutable_release_binding_after_new_source_hea
     finish(f)
     completed = resume(f, pending, key='complete-before-source-change')
     assert completed.status_code == 200
+    completed=confirm(f,completed.json())
+    assert completed.status_code==200,completed.text
     saved_binding = deepcopy(completed.json()['binding'])
     before = products(f['owner'])
     authority = grant_snapshot(f['owner'])

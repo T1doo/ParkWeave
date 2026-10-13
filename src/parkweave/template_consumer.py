@@ -11,10 +11,11 @@ import os
 from pathlib import Path
 import re
 import sqlite3
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
+from .planning_constraints import Constraints
 from psycopg.conninfo import conninfo_to_dict
 
 from . import preparation as prep, request_intents as intents
@@ -82,10 +83,21 @@ class Consume(BaseModel):
     materials: list[Material] = Field(min_length=2, max_length=2)
     reason: str = Field(min_length=1, max_length=1000)
 
+    required_goals: list[Annotated[str, Field(min_length=1, max_length=160)]] | None = Field(default=None, min_length=1, max_length=8)
+    planning_constraints: Constraints | None = None
+
+    @field_validator('required_goals', 'planning_constraints', mode='before')
+    @classmethod
+    def explicit_null(cls, value):
+        if value is None: raise ValueError('omit optional planning declarations rather than null')
+        return value
+
     @model_validator(mode='after')
     def fresh(self):
         if {m.slot for m in self.materials} != set(prep.SLOTS):
             raise ValueError('each registered material slot requires explicit new source text')
+        if self.required_goals is not None and len(set(self.required_goals + (self.planning_constraints.additional_requirements if self.planning_constraints else []))) > 8:
+            raise ValueError('all mandatory goals and conditions must fit the eight-goal contract')
         return self
 
 
@@ -258,6 +270,13 @@ class TemplateConsumer:
             raise Conflict('immutable published release binding changed')
         return release
 
+    @staticmethod
+    def _stage_key(instance_id, name):
+        key = 'tc_' + UUID(instance_id).hex + '_' + name
+        # Existing dependency journals accept at most 100 ASCII characters.
+        # Retain all old stage keys; hash only the new long per-request names.
+        return key if len(key) <= 100 else 'tc_' + UUID(instance_id).hex + '_' + digest(name)
+
     def _perform(self, token, instance, name, build, send):
         # Recheck both live authorities before every original product operation,
         # including a retry after an unknown response.
@@ -269,12 +288,18 @@ class TemplateConsumer:
             stage = c.execute('SELECT * FROM consumer_stages WHERE instance_id=? AND name=?', (instance['id'], name)).fetchone()
             if stage is None:
                 body = normal(build())
-                key = 'tc_' + UUID(instance['id']).hex + '_' + name
+                key = self._stage_key(instance['id'], name)
                 c.execute('INSERT INTO consumer_stages VALUES(?,?,?,?,?,?,NULL,NULL)',
                           (instance['id'], name, key, digest(canonical(body)), canonical(body), 'STARTED'))
-                stage = dict(instance_id=instance['id'], name=name, request_key=key, body_sha256=digest(canonical(body)), body=canonical(body), state='STARTED', result=None)
+                stage = dict(instance_id=instance['id'], name=name, request_key=key, body_sha256=digest(canonical(body)), body=canonical(body), state='STARTED', result=None, fresh_attempt=True)
             else:
                 stage = dict(stage)
+                stage['fresh_attempt'] = stage['state'] == 'ADMITTED'
+                if stage['state'] == 'ADMITTED':
+                    c.execute("UPDATE consumer_stages SET state='STARTED' WHERE instance_id=? AND name=? AND state='ADMITTED'", (instance['id'], name))
+                    stage['state'] = 'STARTED'
+                elif stage['state'] == 'REFUSED' and name.startswith(('EDIT_REQUEST_', 'CONFIRM_PLAN_')):
+                    raise Conflict('planning admission was definitely refused; explicitly retry its original key')
             if digest(stage['body']) != stage['body_sha256']:
                 raise Conflict('immutable stage body fingerprint changed')
         if stage['state'] == 'CONFIRMED':
@@ -282,6 +307,9 @@ class TemplateConsumer:
         try:
             result = normal(send(stage['request_key'], json.loads(stage['body'])))
         except (Denied, Conflict) as error:
+            if name.startswith(('EDIT_REQUEST_', 'CONFIRM_PLAN_')) and not stage['fresh_attempt']:
+                self._unknown(instance, name)
+                raise  # Current refusal cannot disprove an earlier unknown commit.
             code = 'PRODUCT_AUTHORIZATION_REFUSED' if isinstance(error, Denied) else 'PRODUCT_CONFLICT'
             try:
                 with self.repository.connect(write=True) as c:
@@ -317,7 +345,12 @@ class TemplateConsumer:
         self._reviewer(p, data.reviewer_id)
         release = self._published(p, data.release_id, data.expected_release_sha256)
         snapshot = release['snapshot']
-        fp = digest(canonical(dict(action='CONSUME', **data.model_dump(mode='json'))))
+        if data.required_goals is not None and not set(snapshot['definition']['required_goals']) <= set(data.required_goals):
+            raise Conflict('template mandatory goals cannot be removed')
+        declared = data.required_goals if data.required_goals is not None else snapshot['definition']['required_goals']
+        if len(set(declared + (data.planning_constraints.additional_requirements if data.planning_constraints else []))) > 8:
+            raise Conflict('all template goals and declared conditions must fit the eight-goal contract')
+        fp = digest(canonical(dict(action='CONSUME', **data.model_dump(mode='json', exclude_none=True))))
         with self.repository.connect(write=True) as c:
             old = c.execute('SELECT * FROM consumer_requests WHERE actor=? AND key=?', (p['id'], key)).fetchone()
             if old:
@@ -329,7 +362,7 @@ class TemplateConsumer:
                 binding = dict(actor_id=p['id'], park_id=p['park_id'], org_id=p['org_id'], database_name=database,
                                release_id=str(data.release_id), release_sha256=data.expected_release_sha256,
                                definition_sha256=snapshot['definition_sha256'], release_snapshot=snapshot)
-                c.execute('INSERT INTO consumer_instances VALUES(?,?,?,?,?,?,?,?)', (id, p['id'], p['park_id'], p['org_id'], database, canonical(binding), canonical(data.model_dump(mode='json')), 'PENDING_RUN'))
+                c.execute('INSERT INTO consumer_instances VALUES(?,?,?,?,?,?,?,?)', (id, p['id'], p['park_id'], p['org_id'], database, canonical(binding), canonical(data.model_dump(mode='json', exclude_none=True)), 'PENDING_RUN'))
                 c.execute('INSERT INTO consumer_requests VALUES(?,?,?,?)', (p['id'], key, fp, id))
         instance = self._instance(p, database, id)
         self._perform(token, instance, 'CREATE_RUN', lambda: Intake(goal=data.goal).snapshot(),
@@ -355,8 +388,8 @@ class TemplateConsumer:
         run_id = results.get('CREATE_RUN', {}).get('run_id')
         run = self.store.read(token, UUID(run_id)) if run_id else None
         preparation_id = results.get('CREATE_PREPARATION', {}).get('preparation_id')
-        plan_id = results.get('ADOPT_PLAN', {}).get('plan_id')
-        state = 'BLOCKED' if any(s['state'] == 'REFUSED' for s in stages) else 'UNKNOWN' if any(s['state'] in ('STARTED', 'UNKNOWN') for s in stages) else 'PLAN_ADOPTED' if plan_id else 'PENDING_RUN' if not run or run['state'] != 'SUCCEEDED' else 'PENDING_PREPARATION'
+        plan_id = results.get('ADOPT_PLAN', {}).get('plan_id') or next((s['result']['plan_id'] for s in reversed(stages) if s['name'].startswith('CONFIRM_PLAN_') and s['state']=='CONFIRMED'), None)
+        state = 'PLAN_ADOPTED' if plan_id else 'BLOCKED' if any(s['state'] == 'REFUSED' for s in stages) else 'UNKNOWN' if any(s['state'] in ('ADMITTED', 'STARTED', 'UNKNOWN') for s in stages) else 'PENDING_RUN' if not run or run['state'] != 'SUCCEEDED' else 'PLAN_CONFIRMATION_REQUIRED' if preparation_id else 'PENDING_PREPARATION'
         if run and run['state'] in ('FAILED', 'CANCELLED'):
             state = 'RUN_BLOCKED'
         return dict(instance_id=instance['id'], state=state, run_id=run_id,
@@ -401,23 +434,121 @@ class TemplateConsumer:
         def current_revision():
             return prep.read(self.store, token, preparation_id)['preparation']['revision']
         self._perform(token, instance, 'SAVE_REQUEST',
-            lambda: dict(expected_preparation_revision=current_revision(), request_text=source['goal'], required_goals=definition['required_goals']),
+            lambda: dict(expected_preparation_revision=current_revision(), request_text=source['goal'], required_goals=source.get('required_goals', definition['required_goals']), **({'planning_constraints': source['planning_constraints']} if 'planning_constraints' in source else {})),
             lambda stage_key, body: intents.save(self.store, token, preparation_id, stage_key, intents.Save.model_validate(body)))
         for material in sorted(source['materials'], key=lambda m: prep.SLOTS.index(m['slot'])):
             self._perform(token, instance, 'ADD_' + material['slot'],
                 lambda material=material: dict(action='ADD_EVIDENCE', expected_revision=current_revision(), **material),
                 lambda stage_key, body: prep.command(self.store, token, preparation_id, stage_key, prep.PreparationCommand.model_validate(body)))
-        def adoption():
-            parent = prep.read(self.store, token, preparation_id)['preparation']
-            preview = planning.read(self.store, token, preparation_id)['current']
-            return dict(expected_preparation_revision=parent['revision'], expected_request_revision=parent['request_intent']['revision'],
-                        expected_source_sha256=preview['source_sha256'], expected_plan_revision=0,
-                        required_goals=definition['required_goals'], reason=source['reason'])
-        self._perform(token, instance, 'ADOPT_PLAN', adoption,
-            lambda stage_key, body: case_steps.adopt(self.store, token, preparation_id, stage_key, case_steps.Adopt.model_validate(body)))
-        with self.repository.connect(write=True) as c:
-            c.execute("UPDATE consumer_instances SET state='PLAN_ADOPTED' WHERE id=?", (instance['id'],))
+        # Preparing materials never authorizes adoption. Historical confirmed
+        # ADOPT_PLAN stages remain readable, but new and incomplete instances
+        # require a separately submitted exact preview confirmation.
         return self.read(token, id)
+
+    def planning(self, token, id):
+        p, database = self._auth(token)
+        instance = self._instance(p, database, id)
+        self._available(p, instance)
+        self._reviewer(p, instance['input']['reviewer_id'])
+        results = {s['name']: s['result'] for s in self._stages(instance['id']) if s['state']=='CONFIRMED'}
+        preparation_id = results.get('CREATE_PREPARATION', {}).get('preparation_id')
+        if not preparation_id or not {'SAVE_REQUEST','ADD_need_summary','ADD_material_outline'} <= set(results): raise Conflict('resume and verify all original materials before planning')
+        # One original parent/dispatch/Case locking context. Request, preview and
+        # confirmation sources come from the same read, without observing writes.
+        with self.store.connect() as c:
+            actor, parent = case_steps._context(self.store, c, token, UUID(preparation_id))
+            if str(parent['run_id']) != results.get('CREATE_RUN', {}).get('run_id'):
+                raise Conflict('original consumer preparation Run binding changed')
+            view = case_steps._view(self.store, c, actor, parent, deepcopy(parent.get('service_case_plan')), observe=False)
+            return dict(instance_id=instance['id'], run_id=str(parent['run_id']), case_id=str(parent['case_id']),
+                        preparation_id=str(parent['id']), plan_id=view['plan_id'],
+                        request_intent=intents.view(parent), current=view['current_preview'], service_case_plan=view,
+                        model_inference=False, automatic_adoption=False)
+
+    def _planning_command(self, token, id, key, data, adopt=False):
+        p, database = self._auth(token)
+        self._key(key)
+        instance = self._instance(p, database, id)
+        self._available(p, instance)
+        self._reviewer(p, instance['input']['reviewer_id'])
+        row = self.read(token, id)
+        if not row['preparation_id']: raise Conflict('original preparation required')
+        body = data.model_dump(exclude_none=True)
+        action = 'CONFIRM_PLAN' if adopt else 'EDIT_REQUEST'
+        stage_name = action + '_' + digest(key)
+        fp = digest(canonical(dict(action=action, instance_id=instance['id'], body=body)))
+        with self.repository.connect(write=True) as c:
+            old = c.execute('SELECT * FROM consumer_requests WHERE actor=? AND key=?', (p['id'], key)).fetchone()
+            if old and (old['fp'] != fp or old['instance_id'] != instance['id']):
+                raise Conflict('planning request key arguments changed')
+            completed = {r['name'] for r in c.execute("SELECT name FROM consumer_stages WHERE instance_id=? AND state='CONFIRMED'", (instance['id'],)).fetchall()}
+            if not {'SAVE_REQUEST','ADD_need_summary','ADD_material_outline'} <= completed:
+                raise Conflict('verify all original material stage outcomes before planning commands')
+            if c.execute("SELECT 1 FROM consumer_stages WHERE instance_id=? AND state IN ('ADMITTED','STARTED','UNKNOWN') AND name<>?", (instance['id'], stage_name)).fetchone():
+                raise Conflict('resolve the original pending stage key and body before another planning command')
+            if not old:
+                if row['plan_id'] or c.execute("SELECT 1 FROM consumer_stages WHERE instance_id=? AND state='CONFIRMED' AND (name='ADOPT_PLAN' OR name LIKE 'CONFIRM_PLAN_%')", (instance['id'],)).fetchone(): raise Conflict('adopted instance is historical; use original plan entry')
+                mandatory = instance['binding']['release_snapshot']['definition']['required_goals']
+                if not set(mandatory) <= set(data.required_goals): raise Conflict('template mandatory goals cannot be removed')
+                c.execute('INSERT INTO consumer_requests VALUES(?,?,?,?)', (p['id'], key, fp, instance['id']))
+            if not c.execute('SELECT 1 FROM consumer_stages WHERE instance_id=? AND name=?', (instance['id'], stage_name)).fetchone():
+                saved = canonical(normal(body))
+                c.execute('INSERT INTO consumer_stages VALUES(?,?,?,?,?,?,NULL,NULL)',
+                          (instance['id'], stage_name, self._stage_key(instance['id'], stage_name), digest(saved), saved, 'ADMITTED'))
+            else:
+                c.execute("UPDATE consumer_stages SET state='ADMITTED',error=NULL WHERE instance_id=? AND name=? AND state='REFUSED'", (instance['id'], stage_name))
+        preparation_id = UUID(row['preparation_id'])
+        try:
+            self._perform(token, instance, stage_name, lambda: body,
+                          lambda stage_key, saved: case_steps.adopt(self.store, token, preparation_id, stage_key, case_steps.Adopt.model_validate(saved)) if adopt
+                          else intents.save(self.store, token, preparation_id, stage_key, intents.Save.model_validate(saved), unadopted_only=True))
+        except (Denied, Conflict):
+            # A definite current-authority refusal can occur between admission
+            # and _perform's recheck, before it reaches its product-send handler.
+            try:
+                with self.repository.connect(write=True) as c:
+                    c.execute("UPDATE consumer_stages SET state='REFUSED',error='CURRENT_OPERATION_REFUSED' WHERE instance_id=? AND name=? AND state='ADMITTED'", (instance['id'], stage_name))
+            except Exception:
+                pass  # Preserve the original refusal; an unresolved journal stays blocking.
+            raise
+        return self.read(token, id)
+
+    @contextmanager
+    def _planning_key_lock(self, token, id, key):
+        # Serialize only identical consumer request keys across engine/process
+        # instances. Different keys still compete at the durable admission gate.
+        self._key(key)
+        p, database = self._auth(token)
+        instance = self._instance(p, database, id)
+        path = self.repository.path.with_name(self.repository.path.name + '.' + instance['id'] + '.' + digest(key) + '.planning.lock')
+        fd = os.open(path, os.O_CREAT | os.O_RDWR | getattr(os, 'O_NOFOLLOW', 0), 0o600)
+        try:
+            if os.name == 'nt':
+                import msvcrt
+                if os.fstat(fd).st_size == 0: os.write(fd, b'0')
+                os.lseek(fd, 0, os.SEEK_SET)
+                msvcrt.locking(fd, msvcrt.LK_LOCK, 1)
+            else:
+                import fcntl
+                fcntl.flock(fd, fcntl.LOCK_EX)
+            try:
+                yield
+            finally:
+                if os.name == 'nt':
+                    os.lseek(fd, 0, os.SEEK_SET)
+                    msvcrt.locking(fd, msvcrt.LK_UNLCK, 1)
+                else: fcntl.flock(fd, fcntl.LOCK_UN)
+        finally:
+            os.close(fd)
+
+    def edit_planning(self, token, id, key, data):
+        with self._planning_key_lock(token, id, key):
+            return self._planning_command(token, id, key, data)
+
+    def confirm_plan(self, token, id, key, data):
+        with self._planning_key_lock(token, id, key):
+            return self._planning_command(token, id, key, data, adopt=True)
+
 
 
 ConsumerEngine = TemplateConsumer
@@ -459,3 +590,17 @@ def install_routes(app, consumer):
     @app.post('/api/template-consumer/instances/{instance_id}/resume')
     def resume(instance_id: UUID, data: Resume, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
         return consumer.resume(bearer(authorization), instance_id, idempotency_key)
+
+    @app.get('/api/template-consumer/instances/{instance_id}/planning')
+    def planning_read(instance_id: UUID, authorization: str | None = Header(default=None)):
+        return consumer.planning(bearer(authorization), instance_id)
+
+    @app.post('/api/template-consumer/instances/{instance_id}/planning')
+    def planning_edit(instance_id: UUID, data: intents.Save, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
+        return consumer.edit_planning(bearer(authorization), instance_id, idempotency_key, data)
+
+    @app.post('/api/template-consumer/instances/{instance_id}/adopt')
+    def planning_adopt(instance_id: UUID, data: case_steps.Adopt, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
+        return consumer.confirm_plan(bearer(authorization), instance_id, idempotency_key, data)
+
+
