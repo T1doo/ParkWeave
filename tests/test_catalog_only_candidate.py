@@ -3,6 +3,7 @@ from copy import deepcopy
 import ast
 import json
 import io
+import os
 from pathlib import Path
 import shutil
 import signal
@@ -316,3 +317,21 @@ def test_catalog_actual_connection_options_disable_default_secret_discovery(tmp_
         assert parsed.get('passfile')==str(path)
         assert parsed.get('sslmode')==parsed.get('gssencmode')=='disable'
         assert not any(key in parsed for key in ('password','service','hostaddr','sslkey','sslcert'))
+
+
+@pytest.mark.parametrize('raises', [False, True])
+def test_catalog_native_and_python_output_are_private_and_streams_restore(tmp_path, capfd, raises):
+    path=tmp_path/'private.log'
+    try:
+        with boot.private_output(path):
+            print(POISON)
+            os.write(1,b'SYNTHETIC_NATIVE_STDOUT\n')
+            os.write(2,b'SYNTHETIC_NATIVE_STDERR\n')
+            if raises:raise ValueError('SYNTHETIC_FAILURE')
+    except ValueError:
+        assert raises
+    print('RESTORED')
+    captured=capfd.readouterr()
+    assert captured.out=='RESTORED\n' and captured.err==''
+    private=path.read_text()
+    assert POISON in private and 'SYNTHETIC_NATIVE_STDOUT' in private and 'SYNTHETIC_NATIVE_STDERR' in private

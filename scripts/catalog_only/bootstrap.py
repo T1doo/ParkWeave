@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 import traceback
-from contextlib import redirect_stdout, redirect_stderr
+from contextlib import ExitStack, contextmanager, redirect_stdout, redirect_stderr
 
 BRANCH = 'refs/heads/dev/f2-catalog-only-once-20261013'
 APPROVAL_FILE = 'scripts/catalog_only/approval.json'
@@ -88,6 +88,21 @@ def gate(checkout, sha, env):
     return approval['source_sha']
 
 
+@contextmanager
+def private_output(path):
+    """Capture Python and native dependency output before imports/PG operations."""
+    sys.stdout.flush(); sys.stderr.flush()
+    with path.open('w') as private, ExitStack() as restore:
+        for target in (1, 2):
+            saved = os.dup(target)
+            restore.callback(os.close, saved)
+            restore.callback(os.dup2, saved, target)
+            os.dup2(private.fileno(), target)
+        with redirect_stdout(private), redirect_stderr(private):
+            try:yield
+            finally:private.flush()
+
+
 def bootstrap(sha):
     value = initial(sha); stage = 'GATE'; root = None
     try:
@@ -109,7 +124,7 @@ def bootstrap(sha):
         value['cases']['DEPENDENCIES'] = 'PASS'
         stage = 'PG16_START'
         sys.path[:0] = [str(checkout), str(checkout / 'src'), str(site)]
-        with (root / 'probe.log').open('w') as private, redirect_stdout(private), redirect_stderr(private):
+        with private_output(root / 'probe.log'):
             from scripts.catalog_only.probe import run
             candidate = public_summary(run(root, value['source_sha']))
         if (candidate['source_sha'] != value['source_sha'] or candidate['cases']['GATE'] != 'PASS' or
