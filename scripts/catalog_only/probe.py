@@ -172,7 +172,13 @@ def run(root, source_sha):
             time.sleep(.05)
         if int((data/'postmaster.pid').read_text().splitlines()[0]) != pg.pid:
             raise AssertionError('EXACT_OWNED_POSTMASTER_REQUIRED')
+        # Explicit new empty file prevents libpq's default ~/.pgpass lookup.
+        # Local trust is confined to our private socket; no existing key is used.
+        passfile = root/'empty.pgpass'
+        fd = os.open(passfile, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        os.close(fd)
         maintenance = make_conninfo(host=str(socket), port=55441, dbname='postgres', user=OWNER,
+            passfile=str(passfile), sslmode='disable', gssencmode='disable',
             connect_timeout=2, options='-c statement_timeout=5000 -c lock_timeout=1000')
         proof = capture_fixture_cluster(maintenance, data)
         output['cases'][stage] = 'PASS'; stage = 'OWNED_EMPTY_STORAGE'

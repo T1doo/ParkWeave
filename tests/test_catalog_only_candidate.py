@@ -1,5 +1,6 @@
 """Pure candidate tests. All PG/process/signal/privilege actions are intercepted."""
 from copy import deepcopy
+import ast
 import json
 import io
 from pathlib import Path
@@ -300,3 +301,18 @@ def test_catalog_workflow_and_probe_stay_within_pending_catalog_scope():
     for forbidden in ('native_run_access_restricted_host', 'native_run_access_restricted_runtime', 'TestClient', 'create_app', '.seed(', 'useradd', 'os.chmod', 'os.chown', 'os.setuid'):
         assert forbidden not in text
     assert probe.REVOKE in (ROOT/'scripts/linux_trial/worker.py').read_text()
+
+
+def test_catalog_actual_connection_options_disable_default_secret_discovery(tmp_path):
+    tree=ast.parse((ROOT/'scripts/catalog_only/probe.py').read_text())
+    run=next(node for node in tree.body if isinstance(node,ast.FunctionDef) and node.name=='run')
+    statement=next(node for node in ast.walk(run) if isinstance(node,ast.Assign) and
+        any(isinstance(target,ast.Name) and target.id=='maintenance' for target in node.targets))
+    path=tmp_path/'empty.pgpass'
+    namespace=dict(make_conninfo=psycopg.conninfo.make_conninfo, socket=tmp_path/'socket', passfile=path, OWNER=probe.OWNER)
+    dsn=eval(compile(ast.Expression(statement.value),'actual_maintenance_options','eval'),namespace)
+    for role in (probe.OWNER,probe.APP,probe.WRITER):
+        parsed=psycopg.conninfo.conninfo_to_dict(psycopg.conninfo.make_conninfo(dsn,user=role))
+        assert parsed.get('passfile')==str(path)
+        assert parsed.get('sslmode')==parsed.get('gssencmode')=='disable'
+        assert not any(key in parsed for key in ('password','service','hostaddr','sslkey','sslcert'))
