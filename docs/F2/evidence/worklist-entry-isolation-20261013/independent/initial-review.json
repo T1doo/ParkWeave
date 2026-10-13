@@ -1,0 +1,45 @@
+{
+  "status": "BLOCKED_PENDING_REVIEW_FIXES",
+  "product_tests": {
+    "owned_postgres_nondefault_isolation_wait": {
+      "PASS": 4,
+      "FAIL": 0,
+      "SKIP": 0
+    },
+    "original_html_node_pass_modes": [
+      "run_403",
+      "material_to_receipt",
+      "material_to_localcase",
+      "late403",
+      "latejson",
+      "aba",
+      "storage403"
+    ],
+    "original_html_assertions_pass": 36
+  },
+  "blocking": [
+    "current 403 with non-JSON body leaves old private views",
+    "navigation omits 12 actual pending/busy globals"
+  ],
+  "failed_modes": [
+    "json403",
+    "pending_oppBusy",
+    "pending_fbBusy",
+    "pending_planApprovalBusy",
+    "pending_prepRecoveryChecking",
+    "pending_localCaseRecoveryBusy",
+    "pending_servicePlanRecoveryChecking",
+    "pending_executionPreviewSubmitting",
+    "pending_resourceExecutionPreviewSubmitting",
+    "pending_dispatchExecutionPreviewSubmitting",
+    "pending_receiptExecutionPreviewSubmitting",
+    "pending_lifecycleExecutionPreviewSubmitting",
+    "pending_runAccessPending"
+  ],
+  "qualifications": [
+    "Pending flag negative controls set actual script globals and execute original navigation, clearers and apiCall; not full POST acceptance",
+    "Early pending harness awaited unresolved promise and Node exited with no checks; confirmed-original logs are meaningful red records",
+    "No browser or security probe or production changes",
+    "Only existing synthetic owned PG fixture"
+  ]
+}

@@ -1,0 +1,75 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_full_original_page_entry_isolation[run_403] _______________
+
+mode = 'run_403'
+
+    @pytest.mark.parametrize('mode',['run_403','material_to_receipt','material_to_localcase'])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'run_403'], returncode=1...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:3\n').returncode
+
+tests/test_worklist_real_entries_offline.py:10: AssertionError
+_________ test_full_original_page_entry_isolation[material_to_receipt] _________
+
+mode = 'material_to_receipt'
+
+    @pytest.mark.parametrize('mode',['run_403','material_to_receipt','material_to_localcase'])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: {"phase":"before_extra_gets","prep":"PRIVATE_MATERIAL_A · 待准备 / 重新核对 · 版本 1 · 合成资料","receipt":"CURRENT_RECEIPT_B · 等待执行者回执 · 版本 1","feedback":"","paths":["/api/cases/worklist?limit=20","/api/preparations/00000000-0000-4000-8000-000000000003","/api/cases/worklist?limit=20","/api/executor-receipts/00000000-0000-4000-8000-000000000004","/api/preparations/00000000-0000-4000-8000-000000000003/readiness"]}
+E         AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:46:253
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'material_to_receipt'], ...s/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:46:253\n').returncode
+
+tests/test_worklist_real_entries_offline.py:10: AssertionError
+________ test_full_original_page_entry_isolation[material_to_localcase] ________
+
+mode = 'material_to_localcase'
+
+    @pytest.mark.parametrize('mode',['run_403','material_to_receipt','material_to_localcase'])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: {"phase":"before_extra_gets","prep":"PRIVATE_MATERIAL_A · 待准备 / 重新核对 · 版本 1 · 合成资料","receipt":"","feedback":"","paths":["/api/cases/worklist?limit=20","/api/preparations/00000000-0000-4000-8000-000000000003","/api/cases/worklist?limit=20","/api/preparations/00000000-0000-4000-8000-000000000005/local-case","/api/preparations/00000000-0000-4000-8000-000000000003/readiness"]}
+E         AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:46:253
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'material_to_localcase']...s/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:46:253\n').returncode
+
+tests/test_worklist_real_entries_offline.py:10: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_worklist_real_entries_offline.py::test_full_original_page_entry_isolation[run_403]
+FAILED tests/test_worklist_real_entries_offline.py::test_full_original_page_entry_isolation[material_to_receipt]
+FAILED tests/test_worklist_real_entries_offline.py::test_full_original_page_entry_isolation[material_to_localcase]
+3 failed, 1 warning in 0.26s

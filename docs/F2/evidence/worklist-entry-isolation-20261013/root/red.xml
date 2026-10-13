@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="3" time="0.214" timestamp="2026-10-13T13:45:29.077312+00:00" hostname="754d39e95154"><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[run_403]" time="0.056"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:3&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'run_403'], returncode=1...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:3\n').returncode">mode = 'run_403'
+
+    @pytest.mark.parametrize('mode',['run_403','material_to_receipt','material_to_localcase'])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:3
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'run_403'], returncode=1...sts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:40:3\n').returncode
+
+tests/test_worklist_real_entries_offline.py:10: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[material_to_receipt]" time="0.056"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)&#10;      at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:48:72&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'material_to_receipt'], ...ts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:48:72\n').returncode">mode = 'material_to_receipt'
+
+    @pytest.mark.parametrize('mode',['run_403','material_to_receipt','material_to_localcase'])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:48:72
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'material_to_receipt'], ...ts/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:48:72\n').returncode
+
+tests/test_worklist_real_entries_offline.py:10: AssertionError</failure></testcase><testcase classname="tests.test_worklist_real_entries_offline" name="test_full_original_page_entry_isolation[material_to_localcase]" time="0.050" /></testsuite></testsuites>

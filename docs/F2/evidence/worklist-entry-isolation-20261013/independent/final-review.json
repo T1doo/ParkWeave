@@ -1,0 +1,55 @@
+{
+  "status": "LIMITED_PASS_REAL_ENTRY_ISOLATION_AND_EXPLICIT_READ_COMMITTED",
+  "blocking": [],
+  "source_sha256": {
+    "src/parkweave/web.html": "8bda4e6a53b0fb47839882dc76fc8b6f9dbe7b3bc96164c857696bd987907f4c",
+    "src/parkweave/case_worklist.py": "70ea8db0f9e9124f1459caa4a728188d38ca14ed3c7ec0e153147471e48155d8",
+    "tests/worklist_real_entries_offline.js": "58921ce8d1c7b57d859f7d2894fdede1ce5712684e92e381c0ccfc0cd5272108"
+  },
+  "actual_tests": {
+    "NODE_FULL_ORIGINAL_HTML": {
+      "modes_PASS": 23,
+      "assertions_PASS": 115,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0
+    },
+    "OWNED_PG_NONDEFAULT_WAIT": {
+      "PASS": 4,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0,
+      "connection_default_isolation": [
+        "repeatable read",
+        "serializable"
+      ],
+      "revocation": [
+        "identity",
+        "PREPARE"
+      ],
+      "actual_pg_stat_activity_lock_wait_observed": true
+    }
+  },
+  "fixed_review_findings": [
+    "403 body parsing bypasses denial clearing",
+    "12 omitted actual pending/busy flags",
+    "actual runAccessCtx uses runId, not id",
+    "memory-only fact key and other original keys retained before forced private clearing",
+    "silent FIFO eviction removed"
+  ],
+  "scope": [
+    "Current Run403 clears prep/receipt/resources and announces denial",
+    "Late preparation response/403/JSON decoding after receipt/localcase and ABA cannot render or clear current view",
+    "Actual original apiCall/loadPreparation/loadReceipt/loadLocalCase and clearers/renderers executed; only DOM/HTTP doubled",
+    "Pending flags are synthetic setup of actual globals, not complete POST integration tests",
+    "8 memory-only opaque references retained; no body/token/reason/replay rights and no new cold recovery claim",
+    "Pure read transaction explicitly READ COMMITTED READ ONLY; real existing synthetic fixture proves authorization reread after revocation lock wait"
+  ],
+  "qualifications": [
+    "Do not sum Node assertions or overlapping parent product test counts",
+    "No real browser/native Windows or security prepare probe executed",
+    "Early pending harness awaited an unresolved Promise and Node exited empty; confirmed-original are the meaningful red failures",
+    "Original failing review records preserved verbatim",
+    "GET-cursor pagination is a bounded statement view, not an across-page stable/live snapshot"
+  ]
+}
