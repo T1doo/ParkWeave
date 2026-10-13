@@ -73,7 +73,7 @@ def test_receipt_source_change_affects_only_downstream_locked_decision_preserves
 def test_binding_change_expands_case_recheck_and_blocks_adopt_until_explicit_unlock(link_fixture,monkeypatch,change):
     from parkweave import bounded_planning as bp
     f=link_fixture;p=start(f,GOALS[1]);assert lock(f,p).status_code==200;old=stored(f,p)
-    if change=='request':assert save(f,p,goals=[GOALS[0]],text='SYNTHETIC changed request').status_code==200
+    if change=='request':assert save(f,p,goals=[GOALS[1],GOALS[0]],text='SYNTHETIC changed request retaining original required goal').status_code==200
     elif change=='catalog':
         with f[1].connect() as c:c.execute("UPDATE preparation_catalog SET source=jsonb_set(source,'{revision}','999'::jsonb)")
     else:

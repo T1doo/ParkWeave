@@ -8,7 +8,7 @@ import re
 from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
 from psycopg.types.json import Jsonb
 
 from . import bounded_planning as planning, controlled_plans as cp
@@ -32,6 +32,12 @@ class Adopt(BaseModel):
     reason:str=Field(min_length=1,max_length=1000)
     local_revision:Literal[True]|None=None
     partial_adoption:Literal[True]|None=None
+
+    @field_validator('partial_adoption',mode='before')
+    @classmethod
+    def explicit_partial_confirmation(cls,value):
+        if value is not None and value is not True:raise ValueError('partial adoption requires explicit boolean true')
+        return value
 
 
 def _adopt_request(data):

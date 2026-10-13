@@ -301,3 +301,9 @@ def test_existing_fixed_plan_guard_cannot_be_bypassed_by_partial_adoption(link_f
     preview=read(f,p).json()['current_preview']
     assert preview['partial_offer']['legacy_fixed_plan_conflict'] and not preview['partial_offer']['can_adopt']
     assert adopt(f,p,adopt_body(f,p,partial_adoption=True)).status_code==409
+
+@pytest.mark.parametrize('confirmation',[False,1,0,'true'])
+def test_partial_confirmation_requires_boolean_true_not_coerced_literal(link_fixture,confirmation):
+    f=link_fixture;p=setup_partial(f);before=business(f)
+    r=adopt(f,p,adopt_body(f,p,partial_adoption=confirmation));assert r.status_code==422,r.text
+    assert business(f)==before and read(f,p).json()['plan_id'] is None
