@@ -1,0 +1,44 @@
+{
+  "verdict": "PASS_LIMITED_OFFLINE_BUSINESS_BINDING",
+  "reviewer_model": "gpt-6.1-sol",
+  "reasoning_effort": "medium",
+  "frozen_sha": "b15e23d2b9808394ba1fe21942bd289288a9a3ac",
+  "root_existing_counts": {
+    "PASS": 35,
+    "FAIL": 0,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "independent_counts": {
+    "PASS": 11,
+    "FAIL": 0,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "windows_not_added": true,
+  "prior27_repeated": false,
+  "prior114_repeated": false,
+  "root35_repeated": false,
+  "actual_host_IPC": "NOT_RUN",
+  "actual_PG_business_role_ACL": "NOT_RUN",
+  "approval_authorization": "NOT_ISSUED",
+  "findings": [],
+  "zero_drift": true,
+  "checks": [
+    "22 table/column declaration rows complete for original exact cc.read/recover/cancel + prep.scoped/latest + sd._root + Store.auth/capability + api.denied/audit path.",
+    "Principals lock is shared advisory, so SELECT-only identity privilege is appropriate. All FOR SHARE/UPDATE tables have at least one required column UPDATE. RETURNING * tables have SELECT*.",
+    "Native application/writer/installer/business role names must be four distinct identifiers; no generated grants or connections.",
+    "Full InstallationSpec canonical digest is retained, and check_spec compares complete reconstructed binding including DB endpoint/OID/system identifier, roles, source and original spec digest.",
+    "DSN exact five fields host/port/dbname/user/password, private nonempty password, no service/passfile/options/discovery, no stored/returned DSN or exception echo.",
+    "Exact preparation/Case/revision request checks and bounded recovery key; lifecycle hash/current owner/auth/material/reason/confirmation remain original API transaction requirements.",
+    "No API or Store automatic integration; no new capability issuer, bootstrap, default connection or installation side effects."
+  ],
+  "limitations": [
+    "Pure declaration and comparison evidence cannot prove live SQL grants, role memberships/inheritance, ownership, row scope, authentication, connection identity or current source.",
+    "Required table privileges are scoped to exact current read/recover/cancel path. CONNECT, public schema USAGE, builtin function execution and installed constraints/trigger behavior remain live provisioning prerequisites.",
+    "Technical UPDATE columns can be exercised directly by a SQL role; declared minimum rights are not a SQL row-level security or privilege-boundary proof.",
+    "No live PG/IPC/network/OS identity/credential/ACL actions; no true host PASS.",
+    "Exact runner approval draft was not present during this code review and is outside this verdict."
+  ],
+  "permission_trace": "static-checks.json"
+}

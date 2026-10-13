@@ -1,0 +1,62 @@
+{
+  "frozen_sha": "b15e23d2b9808394ba1fe21942bd289288a9a3ac",
+  "changed_files": [
+    "scripts/windows_ci/diagnostic-test-ids.json",
+    "src/parkweave/case_cancellation_business_binding.py",
+    "tests/test_case_cancellation_business_binding.py"
+  ],
+  "source_hashes": {
+    "src/parkweave/case_cancellation_business_binding.py": "7805396dcf692f0db18f4f4f26faef3b427d4b985eab2ed855350a1c448d1580",
+    "tests/test_case_cancellation_business_binding.py": "cee84942eeb3eca6b0a87930cd7b8c5dfd7c2a0939488b5362672080ffe067da",
+    "scripts/windows_ci/diagnostic-test-ids.json": "a1b63254eafc88ed78652720656a0eb90c7791331c2ed06e32299dfdd3edcd3c"
+  },
+  "zero_drift": true,
+  "root_existing_counts": {
+    "PASS": 35,
+    "FAIL": 0,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "own_independent_counts": {
+    "PASS": 11,
+    "FAIL": 0,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "sql_permission_trace": {
+    "SELECT_ALL": {
+      "principals": "Store.auth and audit_denial",
+      "preparations": "prep.scoped; FOR SHARE/UPDATE",
+      "service_dispatches": "sd._root; FOR SHARE/UPDATE and historical acceptance joins",
+      "cases": "cc._locks; FOR SHARE/UPDATE",
+      "case_local_lifecycles": "cc._locks and _commit RETURNING *",
+      "case_local_events": "cc._original, _source closure query, _commit RETURNING *",
+      "runs": "cc._source original creation/input/fingerprint",
+      "operations": "cc._source original verified operation/receipt"
+    },
+    "SELECT_COLUMNS": {
+      "capability_grants": "Store.check_capability principal/capability/park/org/active",
+      "preparation_grants": "prep.grant principal/capability/park/org/active",
+      "schema_version": "cc._source and cancel version=30",
+      "service_dispatch_events": "historical ACCEPT query dispatch_id/action",
+      "service_dispatch_offers": "historical receipt/accepted query dispatch_id/state/receipt_step_id",
+      "service_receipt_steps": "historical preparation_id/case_id query",
+      "preparation_evidence": "prep.latest select list plus preparation_id filter"
+    },
+    "UPDATE_COLUMNS": {
+      "preparations": "revision only: technical row lock, no UPDATE issued by original cancellation",
+      "service_dispatches": "revision only: technical row lock, no UPDATE issued by original cancellation",
+      "cases": "state: row lock and original cancellation update",
+      "case_local_lifecycles": "revision/state/verified_snapshot/verified_sha256: lock and _commit"
+    },
+    "INSERT_COLUMNS": {
+      "case_local_lifecycles": "preparation_id/case_id/revision/cycle/state exact original insert",
+      "case_local_events": "id/preparation_id/actor_id/request_key/fingerprint/revision/cycle/action/payload/snapshot exact original insert",
+      "authorization_audit": "id/principal_id/category/outcome exact Store.audit called after API Denied"
+    },
+    "qualification": "Table/column privileges only. Exact database CONNECT, public schema USAGE and applicable built-in function EXECUTE are separate installer/ACL prerequisites, not claimed verified by the 22 rows."
+  },
+  "original_auth_lock": "shared advisory lock; no principals row UPDATE needed",
+  "no_api_integration_changes": true,
+  "rows_are_declarations_only": true
+}

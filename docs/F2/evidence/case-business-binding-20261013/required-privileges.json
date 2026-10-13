@@ -1,0 +1,179 @@
+[
+  {
+    "action": "SELECT",
+    "table": "principals",
+    "columns": null
+  },
+  {
+    "action": "SELECT",
+    "table": "preparations",
+    "columns": null
+  },
+  {
+    "action": "SELECT",
+    "table": "service_dispatches",
+    "columns": null
+  },
+  {
+    "action": "SELECT",
+    "table": "cases",
+    "columns": null
+  },
+  {
+    "action": "SELECT",
+    "table": "case_local_lifecycles",
+    "columns": null
+  },
+  {
+    "action": "SELECT",
+    "table": "case_local_events",
+    "columns": null
+  },
+  {
+    "action": "SELECT",
+    "table": "runs",
+    "columns": null
+  },
+  {
+    "action": "SELECT",
+    "table": "operations",
+    "columns": null
+  },
+  {
+    "action": "SELECT",
+    "table": "capability_grants",
+    "columns": [
+      "principal_id",
+      "capability",
+      "park_id",
+      "org_id",
+      "active"
+    ]
+  },
+  {
+    "action": "SELECT",
+    "table": "preparation_grants",
+    "columns": [
+      "principal_id",
+      "capability",
+      "park_id",
+      "org_id",
+      "active"
+    ]
+  },
+  {
+    "action": "SELECT",
+    "table": "schema_version",
+    "columns": [
+      "version"
+    ]
+  },
+  {
+    "action": "SELECT",
+    "table": "service_dispatch_events",
+    "columns": [
+      "dispatch_id",
+      "action"
+    ]
+  },
+  {
+    "action": "SELECT",
+    "table": "service_dispatch_offers",
+    "columns": [
+      "dispatch_id",
+      "state",
+      "receipt_step_id"
+    ]
+  },
+  {
+    "action": "SELECT",
+    "table": "service_receipt_steps",
+    "columns": [
+      "preparation_id",
+      "case_id"
+    ]
+  },
+  {
+    "action": "SELECT",
+    "table": "preparation_evidence",
+    "columns": [
+      "preparation_id",
+      "id",
+      "slot",
+      "version",
+      "text",
+      "source_kind",
+      "source_label",
+      "source_sha256",
+      "authenticity"
+    ]
+  },
+  {
+    "action": "UPDATE",
+    "table": "preparations",
+    "columns": [
+      "revision"
+    ]
+  },
+  {
+    "action": "UPDATE",
+    "table": "service_dispatches",
+    "columns": [
+      "revision"
+    ]
+  },
+  {
+    "action": "UPDATE",
+    "table": "cases",
+    "columns": [
+      "state"
+    ]
+  },
+  {
+    "action": "UPDATE",
+    "table": "case_local_lifecycles",
+    "columns": [
+      "revision",
+      "state",
+      "verified_snapshot",
+      "verified_sha256"
+    ]
+  },
+  {
+    "action": "INSERT",
+    "table": "case_local_lifecycles",
+    "columns": [
+      "preparation_id",
+      "case_id",
+      "revision",
+      "cycle",
+      "state"
+    ]
+  },
+  {
+    "action": "INSERT",
+    "table": "case_local_events",
+    "columns": [
+      "id",
+      "preparation_id",
+      "actor_id",
+      "request_key",
+      "fingerprint",
+      "revision",
+      "cycle",
+      "action",
+      "payload",
+      "snapshot"
+    ]
+  },
+  {
+    "action": "INSERT",
+    "table": "authorization_audit",
+    "columns": [
+      "id",
+      "principal_id",
+      "category",
+      "outcome"
+    ]
+  }
+]
