@@ -113,7 +113,11 @@ def test_constraints_leave_dependent_steps_waiting_and_allow_independent_resourc
     assert command(f,p,'P1').status_code==200
     assert link(f,p,g).status_code==201
     assert command(f,p,'P2').status_code==200
+    current=read(f,p).json()
     assert offer(f,p)[0].status_code==409
+    unchanged=read(f,p).json()
+    assert [s['state'] for s in unchanged['steps']]==['VERIFIED','VERIFIED']
+    assert unchanged['events']==current['events'] and unchanged['revision']==current['revision']
     results=f[3].get('/api/preparations/'+p['preparation_id']+'/goal-results',headers=headers(f[2])).json()
     assert results['state']=='PARTIAL' and results['results'][0]['state']=='WAITING_DEPENDENCY'
     assert results['results'][0]['actual_output'] is None

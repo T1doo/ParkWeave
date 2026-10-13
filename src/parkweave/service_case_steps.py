@@ -267,7 +267,7 @@ def gate(store,c,parent,through,*,observe=True):
         # lifecycle operations respectively. A truncated partial graph cannot
         # admit an unselected operation through a vacuously true prerequisite.
         if not {'P'+str(i) for i in range(1,through+2)}<=selected:
-            raise ServicePlanBlocked(parent,plan,through,'operation is outside the explicitly adopted independent subgraph')
+            raise Conflict('operation is outside the explicitly adopted independent subgraph')
     binding_issues,issues,sources,actual,states,bad=_inspect(store,c,parent,plan,observe=observe)
     required=[s for s in plan['steps'] if int(s['adapter_id'][1:])<=through]
     failed=next((s for s in required if states[s['adapter_id']]!='VERIFIED'),None)
