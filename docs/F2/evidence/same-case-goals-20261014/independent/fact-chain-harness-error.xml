@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.800" timestamp="2026-10-14T05:51:11.420988+00:00" hostname="754d39e95154"><testcase classname=".runtime.same-case-goals-20261014.independent.test_fact_chain" name="test_original_template_case_fact_bundle_declare_select_confirm_without_new_run_grant" time="1.366"><failure message="KeyError: 'revision'">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_original_template_case_fact_bundle_declare_select_confirm_without_new_run_grant(template_consumption):
+     f=template_consumption;data=body(f);data['materials'][1]['text']='地区甲 / 17 / 本次服务诉求';row=ready(f,data);p=row['preparation'];pid=row['preparation_id'];path='/api/preparations/'+pid
+     old_auth=grant_snapshot(f['owner'])
+     with f['owner'].connect() as c:old_runs=c.execute('SELECT id FROM runs ORDER BY id').fetchall()
+&gt;    r=f['client'].post(path+'/fact-clarifications/declare',headers=headers(f,key='ind-purpose'),json=dict(expected_preparation_revision=p['revision'],expected_clarification_revision=0,profile='LOCAL_SERVICE_PREPARATION_FACTS_V1',purpose='SERVICE_PREPARATION',reason='SYNTHETIC original same Case purpose'));assert r.status_code==200,r.text
+                                                                                                                                         ^^^^^^^^^^^^^
+E    KeyError: 'revision'
+
+.runtime/same-case-goals-20261014/independent/test_fact_chain.py:11: KeyError</failure></testcase></testsuite></testsuites>

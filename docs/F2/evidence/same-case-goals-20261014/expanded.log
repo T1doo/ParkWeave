@@ -1,0 +1,45 @@
+......................F                                                  [100%]
+=================================== FAILURES ===================================
+_ test_actual_original_page_same_case_facts_manual_request_lost_reply_and_cold_get _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_actual_original_page_same_case_facts_manual_request_lost_reply_and_cold_get(template_consumption):
+        import json,subprocess,selectors
+        from pathlib import Path
+        from test_template_consumer import body as consume_body
+        from test_template_consumer_planning import ready,preview,adoption,post as adopt_post
+        f=template_consumption;data=consume_body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',EXTERNAL];data['materials'][1]['text']='地区甲 / 17 / 本次服务诉求'
+        row=ready(f,data);pv=preview(f,row).json();assert adopt_post(f,row,'adopt',{**adoption(pv),'partial_adoption':True},'actual-original-partial').status_code==200
+        grants=grant_snapshot(f['owner']);before=products(f['owner']);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goals_actual.js',row['instance_id'],row['preparation_id'],ENTERPRISES[0],REVIEWERS[0]],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'manual original page bridge timeout'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None;actor=o.get('headers',{}).get('Authorization','').removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o.get('headers',{}).get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=body);messages.append(dict(method=method,path=q['path'],status=r.status_code,actor=actor,action=body.get('action') if body else None));assert r.status_code<400,r.text
+                drop=method=='POST' and q['path'].endswith('/manual-goal-requests') and not lost
+                if drop:lost=True
+>               proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               BrokenPipeError: [Errno 32] Broken pipe
+
+tests/test_manual_goal_requests.py:148: BrokenPipeError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_manual_goal_requests.py::test_original_owner_and_reviewer_request_supplement_responsibility_without_fulfillment
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_manual_goal_requests.py::test_actual_original_page_same_case_facts_manual_request_lost_reply_and_cold_get
+1 failed, 22 passed, 2 warnings in 19.31s

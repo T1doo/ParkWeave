@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="18" time="15.847" timestamp="2026-10-14T05:52:56.166067+00:00" hostname="754d39e95154"><testcase classname="tests.test_manual_goal_requests" name="test_original_owner_and_reviewer_request_supplement_responsibility_without_fulfillment" time="1.524" /><testcase classname="tests.test_manual_goal_requests" name="test_exact_original_key_recovery_same_parameters_and_changed_conflict" time="0.846" /><testcase classname="tests.test_manual_goal_requests" name="test_owner_cannot_accept_specialist_responsibility_or_skip_states[TAKE]" time="0.940" /><testcase classname="tests.test_manual_goal_requests" name="test_owner_cannot_accept_specialist_responsibility_or_skip_states[REQUEST_EVIDENCE]" time="0.975" /><testcase classname="tests.test_manual_goal_requests" name="test_owner_cannot_accept_specialist_responsibility_or_skip_states[SUPPLY_EVIDENCE]" time="0.803" /><testcase classname="tests.test_manual_goal_requests" name="test_refusal_has_zero_write[goal]" time="0.945" /><testcase classname="tests.test_manual_goal_requests" name="test_refusal_has_zero_write[plan]" time="0.764" /><testcase classname="tests.test_manual_goal_requests" name="test_refusal_has_zero_write[source]" time="0.908" /><testcase classname="tests.test_manual_goal_requests" name="test_refusal_has_zero_write[revision]" time="0.753" /><testcase classname="tests.test_manual_goal_requests" name="test_refusal_has_zero_write[other_owner]" time="0.746" /><testcase classname="tests.test_manual_goal_requests" name="test_refusal_has_zero_write[reviewer_request]" time="0.926" /><testcase classname="tests.test_manual_goal_requests" name="test_refusal_has_zero_write[capability]" time="0.754" /><testcase classname="tests.test_manual_goal_requests" name="test_refusal_has_zero_write[cancelled]" time="0.901" /><testcase classname="tests.test_manual_goal_requests" name="test_refusal_has_zero_write[reconciling]" time="0.763" /><testcase classname="tests.test_manual_goal_requests" name="test_refusal_has_zero_write[closed]" time="0.723"><failure message="ImportError: cannot import name 'ledger' from 'test_case_lifecycle' (/workspace/ParkWeave/tests/test_case_lifecycle.py)">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+kind = 'closed'
+
+    @pytest.mark.parametrize('kind',['goal','plan','source','revision','other_owner','reviewer_request','capability','cancelled','reconciling','closed'])
+    def test_refusal_has_zero_write(template_consumption,kind):
+        f=template_consumption;row,v=setup(f);data=body(v,'REQUEST');user=None
+        if kind=='goal':data['goal']='LOCAL_MATERIAL_PREPARATION'
+        if kind=='plan':data['plan_id']=str(uuid4())
+        if kind=='source':data['expected_source_sha256']='0'*64
+        if kind=='revision':data['expected_revision']=1
+        if kind=='other_owner':user=ENTERPRISES[1]
+        if kind=='reviewer_request':user=REVIEWERS[0]
+        with f['owner'].connect() as c:
+            if kind=='capability':c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='EXECUTE'",(ENTERPRISES[0],))
+            if kind in ('cancelled','reconciling'):c.execute('UPDATE cases SET state=%s WHERE id=%s',(kind.upper(),row['case_id']))
+            if kind=='closed':
+&gt;               from test_case_lifecycle import ledger
+E               ImportError: cannot import name 'ledger' from 'test_case_lifecycle' (/workspace/ParkWeave/tests/test_case_lifecycle.py)
+
+tests/test_manual_goal_requests.py:65: ImportError</failure></testcase><testcase classname="tests.test_manual_goal_requests" name="test_concurrent_original_keys_exactly_one_admission[True]" time="0.942" /><testcase classname="tests.test_manual_goal_requests" name="test_concurrent_original_keys_exactly_one_admission[False]" time="0.778" /><testcase classname="tests.test_manual_goal_requests" name="test_save_failure_rolls_back_and_original_get_can_recover_lost_reply" time="0.742" /></testsuite></testsuites>

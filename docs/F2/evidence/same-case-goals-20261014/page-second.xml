@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.033" timestamp="2026-10-14T06:00:25.627844+00:00" hostname="754d39e95154"><testcase classname="tests.test_manual_goal_requests" name="test_actual_original_page_same_case_facts_manual_request_lost_reply_and_cold_get" time="1.913"><failure message="AssertionError: evalmachine.&lt;anonymous&gt;:1&#10;  fbView.can_write&#10;         ^&#10;  &#10;  TypeError: Cannot read properties of null (reading 'can_write')&#10;      at evalmachine.&lt;anonymous&gt;:1:8&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at Object.read (/workspace/ParkWeave/tests/manual_goals_actual.js:23:121)&#10;      at /workspace/ParkWeave/tests/manual_goals_actual.js:35:44&#10;  &#10;assert 1 == 0&#10; +  where 1 = wait(timeout=15)&#10; +    where wait = &lt;Popen: returncode: 1 args: ['node', 'tests/manual_goals_actual.js', 'd81144...&gt;.wait">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_actual_original_page_same_case_facts_manual_request_lost_reply_and_cold_get(template_consumption):
+        import json,subprocess,selectors
+        from pathlib import Path
+        from test_template_consumer import body as consume_body
+        from test_template_consumer_planning import ready,preview,adoption,post as adopt_post
+        f=template_consumption;data=consume_body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',EXTERNAL];data['materials'][1]['text']='地区甲 / 17 / 本次服务诉求'
+        row=ready(f,data);pv=preview(f,row).json();assert adopt_post(f,row,'adopt',{**adoption(pv),'partial_adoption':True},'actual-original-partial').status_code==200
+        grants=grant_snapshot(f['owner']);before=products(f['owner']);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goals_actual.js',row['instance_id'],row['preparation_id'],ENTERPRISES[0],REVIEWERS[0]],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'manual original page bridge timeout'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None;actor=o.get('headers',{}).get('Authorization','').removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o.get('headers',{}).get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=body);messages.append(dict(method=method,path=q['path'],status=r.status_code,actor=actor,action=body.get('action') if body else None));assert r.status_code&lt;400,r.text
+                drop=method=='POST' and q['path'].endswith('/manual-goal-requests') and not lost
+                if drop:lost=True
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+&gt;           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['checks']&gt;=30;assert summary['manual_posts']==5 and lost
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: evalmachine.&lt;anonymous&gt;:1
+E             fbView.can_write
+E                    ^
+E             
+E             TypeError: Cannot read properties of null (reading 'can_write')
+E                 at evalmachine.&lt;anonymous&gt;:1:8
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/workspace/ParkWeave/tests/manual_goals_actual.js:23:121)
+E                 at /workspace/ParkWeave/tests/manual_goals_actual.js:35:44
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = &lt;Popen: returncode: 1 args: ['node', 'tests/manual_goals_actual.js', 'd81144...&gt;.wait
+
+tests/test_manual_goal_requests.py:149: AssertionError</failure></testcase></testsuite></testsuites>

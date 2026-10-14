@@ -1,0 +1,28 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_original_template_case_fact_bundle_declare_select_confirm_without_new_run_grant _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_original_template_case_fact_bundle_declare_select_confirm_without_new_run_grant(template_consumption):
+     f=template_consumption;data=body(f);data['materials'][1]['text']='地区甲 / 17 / 本次服务诉求';row=ready(f,data);p=row['preparation'];pid=row['preparation_id'];path='/api/preparations/'+pid
+     old_auth=grant_snapshot(f['owner'])
+     with f['owner'].connect() as c:old_runs=c.execute('SELECT id FROM runs ORDER BY id').fetchall()
+>    r=f['client'].post(path+'/fact-clarifications/declare',headers=headers(f,key='ind-purpose'),json=dict(expected_preparation_revision=p['revision'],expected_clarification_revision=0,profile='LOCAL_SERVICE_PREPARATION_FACTS_V1',purpose='SERVICE_PREPARATION',reason='SYNTHETIC original same Case purpose'));assert r.status_code==200,r.text
+                                                                                                                                         ^^^^^^^^^^^^^
+E    KeyError: 'revision'
+
+.runtime/same-case-goals-20261014/independent/test_fact_chain.py:11: KeyError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/same-case-goals-20261014/independent/test_fact_chain.py::test_original_template_case_fact_bundle_declare_select_confirm_without_new_run_grant
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/same-case-goals-20261014/independent/test_fact_chain.py::test_original_template_case_fact_bundle_declare_select_confirm_without_new_run_grant
+1 failed, 2 warnings in 1.82s

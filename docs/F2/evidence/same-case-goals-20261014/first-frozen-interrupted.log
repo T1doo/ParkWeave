@@ -1,0 +1,45 @@
+..................F..................................................... [ 19%]
+.........................................................
+=================================== FAILURES ===================================
+_____ test_actual_parent_pg_lock_wait_rechecks_committed_source[cancelled] _____
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+winner = 'cancelled'
+
+    @pytest.mark.parametrize('winner',['cancelled','material'])
+    def test_actual_parent_pg_lock_wait_rechecks_committed_source(template_consumption,winner):
+        import time,json
+        from pathlib import Path
+        from parkweave.preparation import _insert_evidence
+        f=template_consumption;row,v=setup(f);data=body(v,'REQUEST');blocked=False
+        with ThreadPoolExecutor(1) as pool:
+            with f['owner'].connect() as holder:
+                parent=holder.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(row['preparation_id'],)).fetchone();pid=holder.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid']
+                future=pool.submit(post,f,row,data,'pg-wait-'+winner)
+                deadline=time.monotonic()+2
+                with f['owner'].connect() as monitor:
+                    while time.monotonic()<deadline:
+                        blocked=monitor.execute('SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND %s=ANY(pg_blocking_pids(pid))) AS yes',(pid,)).fetchone()['yes']
+                        if blocked:break
+                        time.sleep(.01)
+>               assert blocked,'actual PG parent blocker not observed'
+E               AssertionError: actual PG parent blocker not observed
+E               assert False
+
+tests/test_manual_goal_requests.py:99: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_manual_goal_requests.py::test_original_owner_and_reviewer_request_supplement_responsibility_without_fulfillment
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_manual_goal_requests.py::test_actual_parent_pg_lock_wait_rechecks_committed_source[cancelled]
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/workspace/ParkWeave/.venv/lib/python3.12/site-packages/psycopg/connection.py:304: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+1 failed, 128 passed, 2 warnings in 112.49s (0:01:52)
