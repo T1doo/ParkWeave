@@ -135,7 +135,8 @@ def test_unknown_committed_confirmation_requires_original_key_recovery_and_no_se
     monkeypatch.setattr(service_case_steps,'adopt',lost);assert post(f,row,'adopt',data,'lost-confirm').status_code==503
     before=products(f['owner']);current=preview(f,row).json();assert current['plan_id'] is not None
     assert post(f,row,'adopt',data,'new-key-for-unknown').status_code==409;assert post(f,row,'planning',edit(current),'edit-while-unknown').status_code==409;assert products(f['owner'])==before
-    monkeypatch.setattr(service_case_steps,'adopt',original);reply=post(f,row,'adopt',data,'lost-confirm');assert reply.status_code==200 and reply.json()['state']=='PLAN_ADOPTED';assert products(f['owner'])==before
+    monkeypatch.setattr(service_case_steps,'adopt',original);assert post(f,row,'adopt',data,'lost-confirm').status_code==409
+    reply=f['client'].get(f"/api/template-consumer/instances/{row['instance_id']}/planning-recovery",headers=headers(f,key='lost-confirm'));assert reply.status_code==200 and reply.json()['status']=='COMMITTED' and reply.json()['instance']['state']=='PLAN_ADOPTED';assert products(f['owner'])==before
 
 
 def test_legacy_confirmed_adopt_stage_and_omitted_create_fingerprint_remain_compatible(template_consumption):

@@ -399,7 +399,7 @@ class TemplateConsumer:
         state = 'PLAN_ADOPTED' if plan_id else 'BLOCKED' if any(s['state'] == 'REFUSED' for s in stages) else 'UNKNOWN' if any(s['state'] in ('ADMITTED', 'STARTED', 'UNKNOWN') for s in stages) else 'PENDING_RUN' if not run or run['state'] != 'SUCCEEDED' else 'PLAN_CONFIRMATION_REQUIRED' if preparation_id else 'PENDING_PREPARATION'
         if run and run['state'] in ('FAILED', 'CANCELLED'):
             state = 'RUN_BLOCKED'
-        return dict(instance_id=instance['id'], state=state, run_id=run_id,
+        return dict(instance_id=instance['id'], actor_ref=case_steps.cp._hash(dict(actor_id=p['id'])), state=state, run_id=run_id,
                     case_id=str(run['case']['id']) if run and run.get('case') else None,
                     preparation_id=preparation_id, plan_id=plan_id, journal_plan_id=journal_plan_id, run_state=run['state'] if run else None,
                     binding=instance['binding'], release_available=available, stages=stages,
@@ -504,7 +504,7 @@ class TemplateConsumer:
             if str(parent['run_id']) != results.get('CREATE_RUN', {}).get('run_id'):
                 raise Conflict('original consumer preparation Run binding changed')
             view = case_steps._view(self.store, c, actor, parent, deepcopy(parent.get('service_case_plan')), observe=False)
-            return dict(instance_id=instance['id'], run_id=str(parent['run_id']), case_id=str(parent['case_id']),
+            return dict(instance_id=instance['id'], actor_ref=view['actor_ref'], run_id=str(parent['run_id']), case_id=str(parent['case_id']),
                         preparation_id=str(parent['id']), plan_id=view['plan_id'],
                         request_intent=intents.view(parent), current=view['current_preview'], service_case_plan=view,
                         model_inference=False, automatic_adoption=False)
@@ -525,6 +525,9 @@ class TemplateConsumer:
             old = c.execute('SELECT * FROM consumer_requests WHERE actor=? AND key=?', (p['id'], key)).fetchone()
             if old and (old['fp'] != fp or old['instance_id'] != instance['id']):
                 raise Conflict('planning request key arguments changed')
+            existing=c.execute('SELECT state FROM consumer_stages WHERE instance_id=? AND name=?',(instance['id'],stage_name)).fetchone()
+            if adopt and existing and existing['state'] in ('ADMITTED','STARTED','UNKNOWN'):
+                raise Conflict('original adoption outcome is unresolved; GET its original consumer key without resending ADOPT')
             completed = {r['name'] for r in c.execute("SELECT name FROM consumer_stages WHERE instance_id=? AND state='CONFIRMED'", (instance['id'],)).fetchall()}
             if not {'SAVE_REQUEST','ADD_need_summary','ADD_material_outline'} <= completed:
                 raise Conflict('verify all original material stage outcomes before planning commands')
@@ -556,6 +559,44 @@ class TemplateConsumer:
                 pass  # Preserve the original refusal; an unresolved journal stays blocking.
             raise
         return self.read(token, id)
+
+    def planning_recovery(self,token,id,key):
+        """Read an exact consumer-to-original receipt proof; never send or repair."""
+        p,database=self._auth(token);self._key(key)
+        instance=self._instance(p,database,id)
+        self._available(p,instance);self._reviewer(p,instance['input']['reviewer_id'])
+        name='CONFIRM_PLAN_'+digest(key)
+        with self.repository.connect() as c:
+            request=c.execute('SELECT * FROM consumer_requests WHERE actor=? AND key=?',(p['id'],key)).fetchone()
+            raw=c.execute('SELECT * FROM consumer_stages WHERE instance_id=? AND name=?',(instance['id'],name)).fetchone()
+            created=c.execute("SELECT result FROM consumer_stages WHERE instance_id=? AND name='CREATE_PREPARATION' AND state='CONFIRMED'",(instance['id'],)).fetchone()
+            run=c.execute("SELECT result FROM consumer_stages WHERE instance_id=? AND name='CREATE_RUN' AND state='CONFIRMED'",(instance['id'],)).fetchone()
+        if not request or not raw or not created or not run:raise Conflict('exact original consumer adoption admission required')
+        stage=dict(raw)
+        if (request['instance_id']!=instance['id'] or stage['request_key']!=self._stage_key(instance['id'],name) or
+            digest(stage['body'])!=stage['body_sha256']):raise Conflict('immutable consumer adoption scope or body proof changed')
+        try:data=case_steps.Adopt.model_validate(json.loads(stage['body']))
+        except (ValueError,TypeError):raise Conflict('original consumer adoption body invalid')
+        body=data.model_dump(exclude_none=True)
+        if request['fp']!=digest(canonical(dict(action='CONFIRM_PLAN',instance_id=instance['id'],body=body))):
+            raise Conflict('original consumer adoption request fingerprint changed')
+        mandatory=instance['binding']['release_snapshot']['definition']['required_goals']
+        if not set(mandatory)<=set(data.required_goals):raise Conflict('original template mandatory goals missing')
+        preparation_id=UUID(json.loads(created['result'])['preparation_id'])
+        proof=case_steps.recover(self.store,token,preparation_id,stage['request_key'],expected_request=data)
+        if (proof['preparation_id']!=str(preparation_id) or proof['run_id']!=json.loads(run['result'])['run_id'] or
+            not proof.get('saved_request_verified')):raise Conflict('original consumer preparation Run receipt binding changed')
+        # Recheck the live candidate and actor after any original source wait.
+        current,current_database=self._auth(token);self._instance(current,current_database,id)
+        self._available(current,instance);self._reviewer(current,instance['input']['reviewer_id'])
+        status='COMMITTED' if proof['status']=='COMMITTED' else 'NOT_COMMITTED_STALE' if proof.get('not_committed_final') else 'REFUSED' if stage['state']=='REFUSED' else 'NOT_OBSERVED'
+        return dict(instance_id=instance['id'],actor_ref=case_steps.cp._hash(dict(actor_id=p['id'])),
+            consumer_request_key=key,original_request_key=stage['request_key'],body_sha256=stage['body_sha256'],
+            original_request=dict(expected_preparation_revision=data.expected_preparation_revision,
+                expected_request_revision=data.expected_request_revision,expected_source_sha256=data.expected_source_sha256,
+                partial_adoption=data.partial_adoption is True,required_goals=list(data.required_goals)),
+            status=status,receipt=proof,instance=self.read(token,id),
+            automatically_replayed=False,product_read_only=True,journal_read_only=True,case_goal_completed=False)
 
     @contextmanager
     def _planning_key_lock(self, token, id, key):
@@ -655,5 +696,9 @@ def install_routes(app, consumer):
     @app.post('/api/template-consumer/instances/{instance_id}/adopt')
     def planning_adopt(instance_id: UUID, data: case_steps.Adopt, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
         return consumer.confirm_plan(bearer(authorization), instance_id, idempotency_key, data)
+
+    @app.get('/api/template-consumer/instances/{instance_id}/planning-recovery')
+    def planning_recovery(instance_id: UUID, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
+        return consumer.planning_recovery(bearer(authorization),instance_id,idempotency_key)
 
 
