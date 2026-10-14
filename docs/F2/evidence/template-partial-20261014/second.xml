@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="33" time="22.235" timestamp="2026-10-14T00:26:27.597655+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_consumer_planning" name="test_resume_and_get_never_adopt_compatible_constraint_requires_exact_explicit_confirmation" time="1.668" /><testcase classname="tests.test_template_consumer_planning" name="test_invalid_declarations_rejected_before_any_run[invalid0]" time="0.341" /><testcase classname="tests.test_template_consumer_planning" name="test_invalid_declarations_rejected_before_any_run[invalid1]" time="0.465" /><testcase classname="tests.test_template_consumer_planning" name="test_invalid_declarations_rejected_before_any_run[invalid2]" time="0.350" /><testcase classname="tests.test_template_consumer_planning" name="test_invalid_declarations_rejected_before_any_run[invalid3]" time="0.445" /><testcase classname="tests.test_template_consumer_planning" name="test_template_and_saved_goals_retained_conflict_and_unsupported_cannot_adopt[conflict]" time="0.790" /><testcase classname="tests.test_template_consumer_planning" name="test_template_and_saved_goals_retained_conflict_and_unsupported_cannot_adopt[unsupported]" time="0.738" /><testcase classname="tests.test_template_consumer_planning" name="test_return_edit_changes_source_old_confirmation_rejected_new_explicit_confirmation_succeeds" time="1.171" /><testcase classname="tests.test_template_consumer_planning" name="test_original_material_source_advance_rejects_confirm_without_plan_write" time="0.701" /><testcase classname="tests.test_template_consumer_planning" name="test_current_permission_denial_precedes_confirmation_replay_and_get[READ]" time="0.872" /><testcase classname="tests.test_template_consumer_planning" name="test_current_permission_denial_precedes_confirmation_replay_and_get[PREPARE]" time="0.718" /><testcase classname="tests.test_template_consumer_planning" name="test_current_permission_denial_precedes_confirmation_replay_and_get[EXECUTE]" time="0.703" /><testcase classname="tests.test_template_consumer_planning" name="test_cross_owner_and_release_advance_deny_new_confirmation_keep_history" time="0.937" /><testcase classname="tests.test_template_consumer_planning" name="test_unknown_edit_blocks_other_keys_and_recovers_only_immutable_original_body" time="0.914" /><testcase classname="tests.test_template_consumer_planning" name="test_concurrent_confirmations_create_one_plan_and_keep_full_target_set[True]" time="0.912" /><testcase classname="tests.test_template_consumer_planning" name="test_concurrent_confirmations_create_one_plan_and_keep_full_target_set[False]" time="0.702" /><testcase classname="tests.test_template_consumer_planning" name="test_planning_admission_registers_pending_before_original_operation_and_blocks_other_key" time="0.689" /><testcase classname="tests.test_template_consumer_planning" name="test_unknown_committed_confirmation_requires_original_key_recovery_and_no_second_plan" time="1.157" /><testcase classname="tests.test_template_consumer_planning" name="test_legacy_confirmed_adopt_stage_and_omitted_create_fingerprint_remain_compatible" time="0.764" /><testcase classname="tests.test_template_consumer_planning" name="test_definite_authority_refusal_after_admission_does_not_leave_unknown_lease" time="0.763" /><testcase classname="tests.test_template_consumer_planning" name="test_adoption_between_old_read_and_admission_refuses_new_edit" time="0.911" /><testcase classname="tests.test_template_consumer_planning" name="test_original_outside_adoption_also_blocks_consumer_edit_in_same_parent_transaction" time="0.660" /><testcase classname="tests.test_template_consumer_planning" name="test_retry_authority_refusal_never_terminates_existing_unknown_commit" time="0.776" /><testcase classname="tests.test_template_consumer_planning" name="test_unknown_retry_original_send_denial_keeps_pending_original_key" time="0.982" /><testcase classname="tests.test_template_consumer_planning" name="test_incomplete_original_material_pipeline_cannot_preview_or_confirm" time="0.649" /><testcase classname="tests.test_template_consumer_planning_offline" name="test_template_consumer_current_constraints_preview_confirmation_and_return_edit" time="2.051" /><testcase classname="tests.test_template_consumer_planning_offline" name="test_original_template_planning_guard_context_and_pending[late_preview403]" time="0.034"><failure message="AssertionError: evalmachine.&lt;anonymous&gt;:1&#10;  planningView.current.source_sha256&#10;               ^&#10;  &#10;  TypeError: Cannot read properties of null (reading 'current')&#10;      at evalmachine.&lt;anonymous&gt;:1:14&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)&#10;      at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'late_preview403'], returncode=1, stdout=...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n&quot;).returncode">mode = 'late_preview403'
+
+    @pytest.mark.parametrize('mode',['late_preview403','late_confirm_edit','nested_case','nested_sha','nested_goals','current_empty403','pending_controls'])
+    def test_original_template_planning_guard_context_and_pending(mode):
+        r=subprocess.run(['node','tests/template_consumer_planning_guards.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert r.returncode==0,r.stdout+r.stderr
+E       AssertionError: evalmachine.&lt;anonymous&gt;:1
+E         planningView.current.source_sha256
+E                      ^
+E         
+E         TypeError: Cannot read properties of null (reading 'current')
+E             at evalmachine.&lt;anonymous&gt;:1:14
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)
+E             at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'late_preview403'], returncode=1, stdout=...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n").returncode
+
+tests/test_template_consumer_planning_offline.py:35: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning_offline" name="test_original_template_planning_guard_context_and_pending[late_confirm_edit]" time="0.032"><failure message="AssertionError: evalmachine.&lt;anonymous&gt;:1&#10;  planningView.current.source_sha256&#10;               ^&#10;  &#10;  TypeError: Cannot read properties of null (reading 'current')&#10;      at evalmachine.&lt;anonymous&gt;:1:14&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)&#10;      at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'late_confirm_edit'], returncode=1, stdou...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n&quot;).returncode">mode = 'late_confirm_edit'
+
+    @pytest.mark.parametrize('mode',['late_preview403','late_confirm_edit','nested_case','nested_sha','nested_goals','current_empty403','pending_controls'])
+    def test_original_template_planning_guard_context_and_pending(mode):
+        r=subprocess.run(['node','tests/template_consumer_planning_guards.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert r.returncode==0,r.stdout+r.stderr
+E       AssertionError: evalmachine.&lt;anonymous&gt;:1
+E         planningView.current.source_sha256
+E                      ^
+E         
+E         TypeError: Cannot read properties of null (reading 'current')
+E             at evalmachine.&lt;anonymous&gt;:1:14
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)
+E             at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'late_confirm_edit'], returncode=1, stdou...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n").returncode
+
+tests/test_template_consumer_planning_offline.py:35: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning_offline" name="test_original_template_planning_guard_context_and_pending[nested_case]" time="0.031"><failure message="AssertionError: evalmachine.&lt;anonymous&gt;:1&#10;  planningView.current.source_sha256&#10;               ^&#10;  &#10;  TypeError: Cannot read properties of null (reading 'current')&#10;      at evalmachine.&lt;anonymous&gt;:1:14&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)&#10;      at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'nested_case'], returncode=1, stdout='', ...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n&quot;).returncode">mode = 'nested_case'
+
+    @pytest.mark.parametrize('mode',['late_preview403','late_confirm_edit','nested_case','nested_sha','nested_goals','current_empty403','pending_controls'])
+    def test_original_template_planning_guard_context_and_pending(mode):
+        r=subprocess.run(['node','tests/template_consumer_planning_guards.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert r.returncode==0,r.stdout+r.stderr
+E       AssertionError: evalmachine.&lt;anonymous&gt;:1
+E         planningView.current.source_sha256
+E                      ^
+E         
+E         TypeError: Cannot read properties of null (reading 'current')
+E             at evalmachine.&lt;anonymous&gt;:1:14
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)
+E             at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'nested_case'], returncode=1, stdout='', ...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n").returncode
+
+tests/test_template_consumer_planning_offline.py:35: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning_offline" name="test_original_template_planning_guard_context_and_pending[nested_sha]" time="0.033"><failure message="AssertionError: evalmachine.&lt;anonymous&gt;:1&#10;  planningView.current.source_sha256&#10;               ^&#10;  &#10;  TypeError: Cannot read properties of null (reading 'current')&#10;      at evalmachine.&lt;anonymous&gt;:1:14&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)&#10;      at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'nested_sha'], returncode=1, stdout='', s...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n&quot;).returncode">mode = 'nested_sha'
+
+    @pytest.mark.parametrize('mode',['late_preview403','late_confirm_edit','nested_case','nested_sha','nested_goals','current_empty403','pending_controls'])
+    def test_original_template_planning_guard_context_and_pending(mode):
+        r=subprocess.run(['node','tests/template_consumer_planning_guards.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert r.returncode==0,r.stdout+r.stderr
+E       AssertionError: evalmachine.&lt;anonymous&gt;:1
+E         planningView.current.source_sha256
+E                      ^
+E         
+E         TypeError: Cannot read properties of null (reading 'current')
+E             at evalmachine.&lt;anonymous&gt;:1:14
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)
+E             at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'nested_sha'], returncode=1, stdout='', s...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n").returncode
+
+tests/test_template_consumer_planning_offline.py:35: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning_offline" name="test_original_template_planning_guard_context_and_pending[nested_goals]" time="0.030"><failure message="AssertionError: evalmachine.&lt;anonymous&gt;:1&#10;  planningView.current.source_sha256&#10;               ^&#10;  &#10;  TypeError: Cannot read properties of null (reading 'current')&#10;      at evalmachine.&lt;anonymous&gt;:1:14&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)&#10;      at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'nested_goals'], returncode=1, stdout='',...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n&quot;).returncode">mode = 'nested_goals'
+
+    @pytest.mark.parametrize('mode',['late_preview403','late_confirm_edit','nested_case','nested_sha','nested_goals','current_empty403','pending_controls'])
+    def test_original_template_planning_guard_context_and_pending(mode):
+        r=subprocess.run(['node','tests/template_consumer_planning_guards.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert r.returncode==0,r.stdout+r.stderr
+E       AssertionError: evalmachine.&lt;anonymous&gt;:1
+E         planningView.current.source_sha256
+E                      ^
+E         
+E         TypeError: Cannot read properties of null (reading 'current')
+E             at evalmachine.&lt;anonymous&gt;:1:14
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)
+E             at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'nested_goals'], returncode=1, stdout='',...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n").returncode
+
+tests/test_template_consumer_planning_offline.py:35: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning_offline" name="test_original_template_planning_guard_context_and_pending[current_empty403]" time="0.032"><failure message="AssertionError: evalmachine.&lt;anonymous&gt;:1&#10;  planningView.current.source_sha256&#10;               ^&#10;  &#10;  TypeError: Cannot read properties of null (reading 'current')&#10;      at evalmachine.&lt;anonymous&gt;:1:14&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)&#10;      at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'current_empty403'], returncode=1, stdout...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n&quot;).returncode">mode = 'current_empty403'
+
+    @pytest.mark.parametrize('mode',['late_preview403','late_confirm_edit','nested_case','nested_sha','nested_goals','current_empty403','pending_controls'])
+    def test_original_template_planning_guard_context_and_pending(mode):
+        r=subprocess.run(['node','tests/template_consumer_planning_guards.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert r.returncode==0,r.stdout+r.stderr
+E       AssertionError: evalmachine.&lt;anonymous&gt;:1
+E         planningView.current.source_sha256
+E                      ^
+E         
+E         TypeError: Cannot read properties of null (reading 'current')
+E             at evalmachine.&lt;anonymous&gt;:1:14
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)
+E             at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'current_empty403'], returncode=1, stdout...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n").returncode
+
+tests/test_template_consumer_planning_offline.py:35: AssertionError</failure></testcase><testcase classname="tests.test_template_consumer_planning_offline" name="test_original_template_planning_guard_context_and_pending[pending_controls]" time="0.031"><failure message="AssertionError: evalmachine.&lt;anonymous&gt;:1&#10;  planningView.current.source_sha256&#10;               ^&#10;  &#10;  TypeError: Cannot read properties of null (reading 'current')&#10;      at evalmachine.&lt;anonymous&gt;:1:14&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)&#10;      at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'pending_controls'], returncode=1, stdout...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n&quot;).returncode">mode = 'pending_controls'
+
+    @pytest.mark.parametrize('mode',['late_preview403','late_confirm_edit','nested_case','nested_sha','nested_goals','current_empty403','pending_controls'])
+    def test_original_template_planning_guard_context_and_pending(mode):
+        r=subprocess.run(['node','tests/template_consumer_planning_guards.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert r.returncode==0,r.stdout+r.stderr
+E       AssertionError: evalmachine.&lt;anonymous&gt;:1
+E         planningView.current.source_sha256
+E                      ^
+E         
+E         TypeError: Cannot read properties of null (reading 'current')
+E             at evalmachine.&lt;anonymous&gt;:1:14
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/template_consumer_planning_guards.js:23:17)
+E             at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', 'tests/template_consumer_planning_guards.js', 'pending_controls'], returncode=1, stdout...e_consumer_planning_guards.js:23:17)\n    at /workspace/ParkWeave/tests/template_consumer_planning_guards.js:30:484\n").returncode
+
+tests/test_template_consumer_planning_offline.py:35: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="16" time="13.147" timestamp="2026-10-14T00:30:13.417895+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_partial" name="test_unknown_partial_confirmation_must_not_call_original_adopt_again" time="1.194" /><testcase classname="tests.test_template_partial" name="test_original_consumer_key_get_recovers_exact_partial_body_without_any_writes" time="0.711" /><testcase classname="tests.test_template_partial" name="test_recovery_rechecks_current_permission_without_journal_or_product_write[READ]" time="0.754" /><testcase classname="tests.test_template_partial" name="test_recovery_rechecks_current_permission_without_journal_or_product_write[PREPARE]" time="0.687" /><testcase classname="tests.test_template_partial" name="test_recovery_rechecks_current_permission_without_journal_or_product_write[EXECUTE]" time="0.707" /><testcase classname="tests.test_template_partial" name="test_recovery_cross_owner_key_scope_and_release_currentness" time="0.842" /><testcase classname="tests.test_template_partial" name="test_recovery_rejects_immutable_scope_or_body_proof_corruption[body]" time="0.686"><failure message="sqlite3.IntegrityError: immutable consumer stage body">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+corruption = 'body'
+
+    @pytest.mark.parametrize('corruption',['body','sha','key','fp','run'])
+    def test_recovery_rejects_immutable_scope_or_body_proof_corruption(template_consumption,corruption):
+        import json
+        f=template_consumption;row,_,_,_=committed(f)
+        with f['repository'].connect(write=True) as c:
+            if corruption=='fp':c.execute("UPDATE consumer_requests SET fp=? WHERE key='partial-confirm'",('0'*64,))
+            elif corruption=='run':c.execute("UPDATE consumer_stages SET result=? WHERE instance_id=? AND name='CREATE_RUN'",(json.dumps({'run_id':'00000000-0000-4000-8000-000000000001'}),row['instance_id']))
+            else:
+                column={'body':'body','sha':'body_sha256','key':'request_key'}[corruption]
+&gt;               c.execute('UPDATE consumer_stages SET '+column+"=? WHERE instance_id=? AND name LIKE 'CONFIRM_PLAN_%'",('{}' if corruption=='body' else '0'*64,row['instance_id']))
+E               sqlite3.IntegrityError: immutable consumer stage body
+
+tests/test_template_partial.py:80: IntegrityError</failure></testcase><testcase classname="tests.test_template_partial" name="test_recovery_rejects_immutable_scope_or_body_proof_corruption[sha]" time="0.812"><failure message="sqlite3.IntegrityError: immutable consumer stage body">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+corruption = 'sha'
+
+    @pytest.mark.parametrize('corruption',['body','sha','key','fp','run'])
+    def test_recovery_rejects_immutable_scope_or_body_proof_corruption(template_consumption,corruption):
+        import json
+        f=template_consumption;row,_,_,_=committed(f)
+        with f['repository'].connect(write=True) as c:
+            if corruption=='fp':c.execute("UPDATE consumer_requests SET fp=? WHERE key='partial-confirm'",('0'*64,))
+            elif corruption=='run':c.execute("UPDATE consumer_stages SET result=? WHERE instance_id=? AND name='CREATE_RUN'",(json.dumps({'run_id':'00000000-0000-4000-8000-000000000001'}),row['instance_id']))
+            else:
+                column={'body':'body','sha':'body_sha256','key':'request_key'}[corruption]
+&gt;               c.execute('UPDATE consumer_stages SET '+column+"=? WHERE instance_id=? AND name LIKE 'CONFIRM_PLAN_%'",('{}' if corruption=='body' else '0'*64,row['instance_id']))
+E               sqlite3.IntegrityError: immutable consumer stage body
+
+tests/test_template_partial.py:80: IntegrityError</failure></testcase><testcase classname="tests.test_template_partial" name="test_recovery_rejects_immutable_scope_or_body_proof_corruption[key]" time="0.676"><failure message="sqlite3.IntegrityError: immutable consumer stage body">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+corruption = 'key'
+
+    @pytest.mark.parametrize('corruption',['body','sha','key','fp','run'])
+    def test_recovery_rejects_immutable_scope_or_body_proof_corruption(template_consumption,corruption):
+        import json
+        f=template_consumption;row,_,_,_=committed(f)
+        with f['repository'].connect(write=True) as c:
+            if corruption=='fp':c.execute("UPDATE consumer_requests SET fp=? WHERE key='partial-confirm'",('0'*64,))
+            elif corruption=='run':c.execute("UPDATE consumer_stages SET result=? WHERE instance_id=? AND name='CREATE_RUN'",(json.dumps({'run_id':'00000000-0000-4000-8000-000000000001'}),row['instance_id']))
+            else:
+                column={'body':'body','sha':'body_sha256','key':'request_key'}[corruption]
+&gt;               c.execute('UPDATE consumer_stages SET '+column+"=? WHERE instance_id=? AND name LIKE 'CONFIRM_PLAN_%'",('{}' if corruption=='body' else '0'*64,row['instance_id']))
+E               sqlite3.IntegrityError: immutable consumer stage body
+
+tests/test_template_partial.py:80: IntegrityError</failure></testcase><testcase classname="tests.test_template_partial" name="test_recovery_rejects_immutable_scope_or_body_proof_corruption[fp]" time="0.652"><failure message="sqlite3.IntegrityError: immutable consumer request">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+corruption = 'fp'
+
+    @pytest.mark.parametrize('corruption',['body','sha','key','fp','run'])
+    def test_recovery_rejects_immutable_scope_or_body_proof_corruption(template_consumption,corruption):
+        import json
+        f=template_consumption;row,_,_,_=committed(f)
+        with f['repository'].connect(write=True) as c:
+&gt;           if corruption=='fp':c.execute("UPDATE consumer_requests SET fp=? WHERE key='partial-confirm'",('0'*64,))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           sqlite3.IntegrityError: immutable consumer request
+
+tests/test_template_partial.py:76: IntegrityError</failure></testcase><testcase classname="tests.test_template_partial" name="test_recovery_rejects_immutable_scope_or_body_proof_corruption[run]" time="0.994" /><testcase classname="tests.test_template_partial" name="test_unknown_before_product_send_stays_unobserved_and_does_not_resend" time="0.782" /><testcase classname="tests.test_template_partial" name="test_cold_engine_recovers_committed_original_key_without_repair" time="1.038" /><testcase classname="tests.test_template_partial" name="test_partial_full_goal_set_idempotency_and_unadopted_only" time="0.963" /><testcase classname="tests.test_template_partial" name="test_global_unknown_cannot_be_cleared_or_renamed_into_independent_goal[False]" time="0.748" /><testcase classname="tests.test_template_partial" name="test_global_unknown_cannot_be_cleared_or_renamed_into_independent_goal[True]" time="0.745" /></testsuite></testsuites>

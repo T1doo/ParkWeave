@@ -1,0 +1,38 @@
+{
+  "commands": [
+    {
+      "name": "red",
+      "command": "pytest -q tests/test_template_partial.py"
+    },
+    {
+      "name": "green-first",
+      "command": "pytest -q tests/test_template_partial.py"
+    },
+    {
+      "name": "second",
+      "command": "pytest -q tests/test_template_consumer_planning.py tests/test_template_consumer_planning_offline.py"
+    },
+    {
+      "name": "third",
+      "command": "pytest -q tests/test_template_consumer_planning_offline.py"
+    },
+    {
+      "name": "backend-expanded",
+      "command": "pytest -q tests/test_template_partial.py"
+    },
+    {
+      "name": "backend-actual",
+      "command": "pytest -q tests/test_template_partial.py"
+    },
+    {
+      "name": "final-regression",
+      "command": "pytest -q tests/test_template_partial.py tests/test_template_consumer.py tests/test_template_consumer_planning.py tests/test_template_consumer_planning_offline.py tests/test_template_consumer_offline.py tests/test_partial_service_plan.py tests/test_partial_service_plan_expansion.py tests/test_service_case_steps.py"
+    },
+    {
+      "name": "frozen-regression",
+      "command": "pytest -q tests/test_template_partial.py tests/test_template_consumer.py tests/test_template_consumer_planning.py tests/test_template_consumer_planning_offline.py tests/test_template_consumer_compatibility.py tests/test_partial_service_plan.py tests/test_partial_service_plan_expansion.py tests/test_service_case_steps.py"
+    }
+  ],
+  "python": ".venv/bin/python -m",
+  "evidence_rule": "Separate execution windows; never sum prior or independent results. Exit files third/backend-* recorded from actual tool exit results after run; other exits captured by runner."
+}

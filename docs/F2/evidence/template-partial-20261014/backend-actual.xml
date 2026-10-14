@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="17" time="16.012" timestamp="2026-10-14T00:31:39.178761+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_partial" name="test_unknown_partial_confirmation_must_not_call_original_adopt_again" time="1.273" /><testcase classname="tests.test_template_partial" name="test_original_consumer_key_get_recovers_exact_partial_body_without_any_writes" time="0.813" /><testcase classname="tests.test_template_partial" name="test_recovery_rechecks_current_permission_without_journal_or_product_write[READ]" time="0.882" /><testcase classname="tests.test_template_partial" name="test_recovery_rechecks_current_permission_without_journal_or_product_write[PREPARE]" time="0.788" /><testcase classname="tests.test_template_partial" name="test_recovery_rechecks_current_permission_without_journal_or_product_write[EXECUTE]" time="0.746" /><testcase classname="tests.test_template_partial" name="test_recovery_cross_owner_key_scope_and_release_currentness" time="0.892" /><testcase classname="tests.test_template_partial" name="test_journal_prevents_body_scope_mutation_and_recovery_rejects_changed_run[body]" time="0.838" /><testcase classname="tests.test_template_partial" name="test_journal_prevents_body_scope_mutation_and_recovery_rejects_changed_run[sha]" time="0.937" /><testcase classname="tests.test_template_partial" name="test_journal_prevents_body_scope_mutation_and_recovery_rejects_changed_run[key]" time="1.021" /><testcase classname="tests.test_template_partial" name="test_journal_prevents_body_scope_mutation_and_recovery_rejects_changed_run[fp]" time="0.816" /><testcase classname="tests.test_template_partial" name="test_journal_prevents_body_scope_mutation_and_recovery_rejects_changed_run[run]" time="0.941" /><testcase classname="tests.test_template_partial" name="test_unknown_before_product_send_stays_unobserved_and_does_not_resend" time="0.827" /><testcase classname="tests.test_template_partial" name="test_cold_engine_recovers_committed_original_key_without_repair" time="1.138" /><testcase classname="tests.test_template_partial" name="test_partial_full_goal_set_idempotency_and_unadopted_only" time="0.948" /><testcase classname="tests.test_template_partial" name="test_global_unknown_cannot_be_cleared_or_renamed_into_independent_goal[False]" time="0.747" /><testcase classname="tests.test_template_partial" name="test_global_unknown_cannot_be_cleared_or_renamed_into_independent_goal[True]" time="0.702" /><testcase classname="tests.test_template_partial" name="test_actual_template_partial_lost_reply_cold_get_original_handling_and_worklist" time="1.553"><failure message="KeyError: 'state'">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_actual_template_partial_lost_reply_cold_get_original_handling_and_worklist(template_consumption):
+        import json,selectors,subprocess
+        from pathlib import Path
+        from test_template_consumer import finish
+        from template_candidate_support import REVIEWERS
+        f=template_consumption;authority=grant_snapshot(f['owner']);requests=[];summary=None;lost=0
+        proc=subprocess.Popen(['node','tests/template_partial_actual.js','template_partial_actual',ENTERPRISES[0]],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        out=Path('.runtime/template-partial-20261014');out.mkdir(parents=True,exist_ok=True)
+        try:
+            while True:
+                assert selector.select(timeout=20),'Original template partial bridge stalled'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'prepare_review' in msg:
+                    id=msg['prepare_review']['preparation_id'];path='/api/preparations/'+id
+                    for action,principal in [('REVIEW',REVIEWERS[0]),('CONFIRM',ENTERPRISES[0])]:
+                        h={'Authorization':'Bearer '+f['tokens'][principal]};v=f['client'].get(path,headers=h).json()['preparation']
+                        r=f['client'].post(path+'/commands',headers={**h,'Idempotency-Key':'original-'+action},json={'action':action,'expected_revision':v['revision'],'reason':'SYNTHETIC original actual '+action})
+                        requests.append({'method':'POST','path':path+'/commands','status':r.status_code,'action':action,'entry':'ORIGINAL_ACTUAL_API'});assert r.status_code==200,r.text
+                    proc.stdin.write(b'{"reviewed":true}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');data=json.loads(options['body']) if options.get('body') else None;h=headers(f,key=options.get('headers',{}).get('Idempotency-Key'))
+                before=products(f['owner'],include_audit=True) if q['path'].endswith('/planning-recovery') else None;saved=journal(f) if before is not None else None
+                r=f['client'].request(method,q['path'],headers=h,json=data);requests.append({'method':method,'path':q['path'],'status':r.status_code,'key':h.get('Idempotency-Key'),'body':data,'entry':'ORIGINAL_HTML'})
+                assert r.status_code&lt;400,(method,q['path'],r.status_code,r.text)
+                if before is not None:assert products(f['owner'],include_audit=True)==before and journal(f)==saved
+                if method=='POST' and q['path']=='/api/template-consumer/instances':finish(f)
+                drop=method=='POST' and q['path'].endswith('/adopt')
+                if drop:lost+=1
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),'lost':drop})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=20)==0,proc.stderr.read().decode()
+            assert summary and summary['checks']&gt;=30 and summary['adopts']==1 and lost==1
+            assert grant_snapshot(f['owner'])==authority
+            with f['owner'].connect() as c:
+                p=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(summary['preparation'],)).fetchone()['service_case_plan']
+                assert p['partial_adoption'] and p['required_goals']==['LOCAL_MATERIAL_PREPARATION',EXTERNAL]
+&gt;               assert [s['adapter_id'] for s in p['steps']]==['P1'] and p['steps'][0]['state']=='VERIFIED'
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^
+E               KeyError: 'state'
+
+tests/test_template_partial.py:179: KeyError</failure></testcase></testsuite></testsuites>
