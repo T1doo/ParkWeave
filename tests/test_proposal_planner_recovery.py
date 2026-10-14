@@ -17,7 +17,7 @@ from test_isolated_run_access import permission_snapshot
 from test_proposal_planner_offline import planner, fake_envelope, GOAL
 
 
-@pytest.mark.parametrize('mode', ['failed_same', 'failed_cold', 'unknown_cold', 'pending_cold', 'damaged_failed', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'])
+@pytest.mark.parametrize('mode', ['failed_same', 'failed_cold', 'unknown_cold', 'pending_cold', 'damaged_failed', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome', 'damaged_extra', 'invalid_window'])
 def test_original_page_attempt_recovery_and_explicit_new_key(preparation_fixture, mode):
     f = preparation_fixture
     p = setup(f, [GOAL])
@@ -84,6 +84,15 @@ def test_original_page_attempt_recovery_and_explicit_new_key(preparation_fixture
                     assert actual['status'] == 'OUTCOME_UNKNOWN'
                     presented['status'] = 'FAILED_SAFE'; presented['attempts'][0]['status'] = 'FAILED_SAFE'
                     fault = 'NODEVM_RESPONSE_FAULT_state_FAILED_SAFE_with_unknown_outcome'
+                if mode == 'damaged_extra' and request['path'].endswith('/service-plan-candidates/recovery'):
+                    assert actual['status'] == 'FAILED_SAFE'
+                    presented['attempts'][0]['approved'] = True
+                    fault = 'NODEVM_RESPONSE_FAULT_extra_attempt_field'
+                if mode == 'invalid_window' and request['path'].endswith('/service-plan-candidates/recovery'):
+                    assert actual['status'] == 'FAILED_SAFE'
+                    presented['attempts'][0]['validity']['created_at'] = '2026-02-30T10:00:00+00:00'
+                    presented['attempts'][0]['validity']['expires_at'] = '2026-02-30T10:15:00+00:00'
+                    fault = 'NODEVM_RESPONSE_FAULT_nonexistent_calendar_date_valid_interval'
                 messages.append(dict(method=method, path=request['path'], status=response.status_code,
                                      key=options['headers'].get('Idempotency-Key'), body=body,
                                      actual_status=actual.get('status'), nodevm_fault=fault))
