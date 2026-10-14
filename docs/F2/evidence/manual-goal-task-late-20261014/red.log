@@ -1,0 +1,205 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_late_manual_task_read_cannot_render_or_replace_new_draft[refresh] ____
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+mode = 'refresh'
+
+    @pytest.mark.parametrize('mode',['refresh','page','replace_refresh','replace_live'])
+    def test_late_manual_task_read_cannot_render_or_replace_new_draft(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST')
+        if mode=='page':
+            with f['owner'].connect() as c:
+                for _ in range(100):
+                    run,case,id=uuid4(),uuid4(),uuid4()
+                    c.execute("INSERT INTO runs(id,principal_id,park_id,org_id,namespace,request_key,fingerprint,input,state) SELECT %s,principal_id,park_id,org_id,namespace,%s,fingerprint,input,state FROM runs WHERE id=%s",(run,uuid4().hex,row['run_id']))
+                    c.execute('INSERT INTO cases SELECT %s,%s,park_id,org_id,goal,state,source,external_acceptance,offline_fulfillment FROM cases WHERE id=%s',(case,run,row['case_id']))
+                    c.execute("INSERT INTO preparations(id,run_id,case_id,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,state,created_at) SELECT %s,%s,%s,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,'IN_PREPARATION',created_at-interval '1 hour' FROM preparations WHERE id=%s",(id,run,case,row['preparation_id']))
+        before=products(f['owner'],True);grants=grant_snapshot(f['owner']);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/manual_goal_tasks_late_actual.js',REVIEWERS[0],A,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+        sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'late page bridge timed out'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_plan'):
+                    replace_plan(f,row);before=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];assert o.get('method','GET')=='GET'
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][REVIEWERS[0]]});assert r.status_code==200,r.text
+                assert products(f['owner'],True)==before and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/manual_goal_tasks_late_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/manual_goal_tasks_late_actual.js:43:2
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/manual_goal_tasks_late_actual.js...>.wait
+
+tests/test_manual_goal_tasks_late.py:38: AssertionError
+_____ test_late_manual_task_read_cannot_render_or_replace_new_draft[page] ______
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+mode = 'page'
+
+    @pytest.mark.parametrize('mode',['refresh','page','replace_refresh','replace_live'])
+    def test_late_manual_task_read_cannot_render_or_replace_new_draft(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST')
+        if mode=='page':
+            with f['owner'].connect() as c:
+                for _ in range(100):
+                    run,case,id=uuid4(),uuid4(),uuid4()
+                    c.execute("INSERT INTO runs(id,principal_id,park_id,org_id,namespace,request_key,fingerprint,input,state) SELECT %s,principal_id,park_id,org_id,namespace,%s,fingerprint,input,state FROM runs WHERE id=%s",(run,uuid4().hex,row['run_id']))
+                    c.execute('INSERT INTO cases SELECT %s,%s,park_id,org_id,goal,state,source,external_acceptance,offline_fulfillment FROM cases WHERE id=%s',(case,run,row['case_id']))
+                    c.execute("INSERT INTO preparations(id,run_id,case_id,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,state,created_at) SELECT %s,%s,%s,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,'IN_PREPARATION',created_at-interval '1 hour' FROM preparations WHERE id=%s",(id,run,case,row['preparation_id']))
+        before=products(f['owner'],True);grants=grant_snapshot(f['owner']);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/manual_goal_tasks_late_actual.js',REVIEWERS[0],A,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+        sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'late page bridge timed out'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_plan'):
+                    replace_plan(f,row);before=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];assert o.get('method','GET')=='GET'
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][REVIEWERS[0]]});assert r.status_code==200,r.text
+                assert products(f['owner'],True)==before and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/manual_goal_tasks_late_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/manual_goal_tasks_late_actual.js:37:20
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/manual_goal_tasks_late_actual.js...>.wait
+
+tests/test_manual_goal_tasks_late.py:38: AssertionError
+_ test_late_manual_task_read_cannot_render_or_replace_new_draft[replace_refresh] _
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+mode = 'replace_refresh'
+
+    @pytest.mark.parametrize('mode',['refresh','page','replace_refresh','replace_live'])
+    def test_late_manual_task_read_cannot_render_or_replace_new_draft(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST')
+        if mode=='page':
+            with f['owner'].connect() as c:
+                for _ in range(100):
+                    run,case,id=uuid4(),uuid4(),uuid4()
+                    c.execute("INSERT INTO runs(id,principal_id,park_id,org_id,namespace,request_key,fingerprint,input,state) SELECT %s,principal_id,park_id,org_id,namespace,%s,fingerprint,input,state FROM runs WHERE id=%s",(run,uuid4().hex,row['run_id']))
+                    c.execute('INSERT INTO cases SELECT %s,%s,park_id,org_id,goal,state,source,external_acceptance,offline_fulfillment FROM cases WHERE id=%s',(case,run,row['case_id']))
+                    c.execute("INSERT INTO preparations(id,run_id,case_id,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,state,created_at) SELECT %s,%s,%s,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,'IN_PREPARATION',created_at-interval '1 hour' FROM preparations WHERE id=%s",(id,run,case,row['preparation_id']))
+        before=products(f['owner'],True);grants=grant_snapshot(f['owner']);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/manual_goal_tasks_late_actual.js',REVIEWERS[0],A,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+        sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'late page bridge timed out'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_plan'):
+                    replace_plan(f,row);before=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];assert o.get('method','GET')=='GET'
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][REVIEWERS[0]]});assert r.status_code==200,r.text
+                assert products(f['owner'],True)==before and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/manual_goal_tasks_late_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/manual_goal_tasks_late_actual.js:43:2
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/manual_goal_tasks_late_actual.js...>.wait
+
+tests/test_manual_goal_tasks_late.py:38: AssertionError
+_ test_late_manual_task_read_cannot_render_or_replace_new_draft[replace_live] __
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+mode = 'replace_live'
+
+    @pytest.mark.parametrize('mode',['refresh','page','replace_refresh','replace_live'])
+    def test_late_manual_task_read_cannot_render_or_replace_new_draft(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST')
+        if mode=='page':
+            with f['owner'].connect() as c:
+                for _ in range(100):
+                    run,case,id=uuid4(),uuid4(),uuid4()
+                    c.execute("INSERT INTO runs(id,principal_id,park_id,org_id,namespace,request_key,fingerprint,input,state) SELECT %s,principal_id,park_id,org_id,namespace,%s,fingerprint,input,state FROM runs WHERE id=%s",(run,uuid4().hex,row['run_id']))
+                    c.execute('INSERT INTO cases SELECT %s,%s,park_id,org_id,goal,state,source,external_acceptance,offline_fulfillment FROM cases WHERE id=%s',(case,run,row['case_id']))
+                    c.execute("INSERT INTO preparations(id,run_id,case_id,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,state,created_at) SELECT %s,%s,%s,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,'IN_PREPARATION',created_at-interval '1 hour' FROM preparations WHERE id=%s",(id,run,case,row['preparation_id']))
+        before=products(f['owner'],True);grants=grant_snapshot(f['owner']);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/manual_goal_tasks_late_actual.js',REVIEWERS[0],A,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+        sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'late page bridge timed out'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_plan'):
+                    replace_plan(f,row);before=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];assert o.get('method','GET')=='GET'
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][REVIEWERS[0]]});assert r.status_code==200,r.text
+                assert products(f['owner'],True)==before and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/manual_goal_tasks_late_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/manual_goal_tasks_late_actual.js:43:2
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/manual_goal_tasks_late_actual.js...>.wait
+
+tests/test_manual_goal_tasks_late.py:38: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_manual_goal_tasks_late.py::test_late_manual_task_read_cannot_render_or_replace_new_draft[refresh]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_manual_goal_tasks_late.py::test_late_manual_task_read_cannot_render_or_replace_new_draft[refresh]
+FAILED tests/test_manual_goal_tasks_late.py::test_late_manual_task_read_cannot_render_or_replace_new_draft[page]
+FAILED tests/test_manual_goal_tasks_late.py::test_late_manual_task_read_cannot_render_or_replace_new_draft[replace_refresh]
+FAILED tests/test_manual_goal_tasks_late.py::test_late_manual_task_read_cannot_render_or_replace_new_draft[replace_live]
+4 failed, 2 warnings in 4.74s
