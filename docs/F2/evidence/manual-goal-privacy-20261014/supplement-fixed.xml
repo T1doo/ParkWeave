@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="5" time="4.995" timestamp="2026-10-14T07:02:33.216888+00:00" hostname="754d39e95154"><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-EXECUTE]" time="1.366" /><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-case.create]" time="0.839" /><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[True-EXECUTE]" time="0.912" /><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[True-case.create]" time="0.748" /><testcase classname="tests.test_manual_goal_privacy" name="test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation" time="1.004"><failure message="AssertionError: assert ({'id': '9260d...t', ...}, ...} == {'id': '9260d...t', ...}, ...}&#10;  &#10;  Omitting 13 identical items, use -vv to show&#10;  Right contains 1 more item:&#10;  {'history': []}&#10;  Use -v to get more diff)">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation(template_consumption):
+        from copy import deepcopy
+        f=template_consumption;row=private_case(f);v=read(f,row).json();request={**body(v,'REQUEST'),'goal':A};first=post(f,row,request,'old-owner-request');assert first.status_code==200
+        v=assert_private(read(f,row,user=REVIEWERS[0]),[A]);take={**body(v,'TAKE'),'goal':A};old=post(f,row,take,'old-specialist-key',user=REVIEWERS[0]);assert old.status_code==200
+        with f['owner'].connect() as c:prior=deepcopy(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()['service_case_plan'])
+        replaced=replace_plan(f,row);assert replaced['plan_id']!=prior['id']
+        before=products(f['owner']);assert_private(read(f,row,user=REVIEWERS[0]))
+        restored=read(f,row,'old-specialist-key',user=REVIEWERS[0]);assert_private(restored,historical_shared=[A]);assert restored.json()['status']=='COMMITTED' and restored.json()['original_plan_id']==prior['id'] and restored.json()['event']==old.json()['event']
+        replay=post(f,row,take,'old-specialist-key',user=REVIEWERS[0]);assert_private(replay,historical_shared=[A]);assert replay.json()['event']==old.json()['event']
+        assert post(f,row,{**take,'reason':'SYNTHETIC changed original reason'},'old-specialist-key',user=REVIEWERS[0]).status_code==409
+        assert products(f['owner'])==before
+        with f['owner'].connect() as c:
+&gt;           current=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()['service_case_plan'];assert current['history'][-1]==prior and current.get('manual_goal_requests',[])==[]
+                                                                                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: assert ({'id': '9260d...t', ...}, ...} == {'id': '9260d...t', ...}, ...}
+E             
+E             Omitting 13 identical items, use -vv to show
+E             Right contains 1 more item:
+E             {'history': []}
+E             Use -v to get more diff)
+
+tests/test_manual_goal_privacy.py:122: AssertionError</failure></testcase></testsuite></testsuites>

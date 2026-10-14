@@ -1,0 +1,107 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_no_request_specialist_get_and_missing_key_recovery_reveal_no_private_goal _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_no_request_specialist_get_and_missing_key_recovery_reveal_no_private_goal(template_consumption):
+        f=template_consumption;row=private_case(f);before=products(f['owner'],include_audit=True);grants=grant_snapshot(f['owner'])
+        assert [x['goal'] for x in read(f,row).json()['items']]==[A,B]
+>       assert_private(read(f,row,user=REVIEWERS[0]))
+
+tests/test_manual_goal_privacy.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = <Response [200 OK]>, shared = ()
+
+    def assert_private(r,shared=()):
+        assert r.status_code==200,r.text
+>       assert [x['goal'] for x in r.json()['items']]==list(shared)
+E       AssertionError: assert ['SYNTHETIC_P...ITIVE_TARGET'] == []
+E         
+E         Left contains 2 more items, first extra item: 'SYNTHETIC_PRIVATE_ALPHA_UNREQUESTED_PURPOSE'
+E         Use -v to get more diff
+
+tests/test_manual_goal_privacy.py:18: AssertionError
+_ test_one_request_specialist_post_recovery_withdrawal_never_reveals_other_goal _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_one_request_specialist_post_recovery_withdrawal_never_reveals_other_goal(template_consumption):
+        f=template_consumption;row=private_case(f);owner=read(f,row).json();r=post(f,row,{**body(owner,'REQUEST'),'goal':A},'share-alpha');assert r.status_code==200,r.text
+>       before=products(f['owner']);v=assert_private(read(f,row,user=REVIEWERS[0]),[A]);assert products(f['owner'])==before
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_privacy.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = <Response [200 OK]>
+shared = ['SYNTHETIC_PRIVATE_ALPHA_UNREQUESTED_PURPOSE']
+
+    def assert_private(r,shared=()):
+        assert r.status_code==200,r.text
+>       assert [x['goal'] for x in r.json()['items']]==list(shared)
+E       AssertionError: assert ['SYNTHETIC_P...ITIVE_TARGET'] == ['SYNTHETIC_P...STED_PURPOSE']
+E         
+E         Left contains one more item: 'SYNTHETIC_PRIVATE_BETA_SENSITIVE_TARGET'
+E         Use -v to get more diff
+
+tests/test_manual_goal_privacy.py:18: AssertionError
+_ test_revoked_specialist_current_post_and_original_get_denied_without_mutation[READ] _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+capability = 'READ'
+
+    @pytest.mark.parametrize('capability',['READ','REVIEW_ASSIGNED'])
+    def test_revoked_specialist_current_post_and_original_get_denied_without_mutation(template_consumption,capability):
+        f=template_consumption;row=private_case(f);v=read(f,row).json();assert post(f,row,{**body(v,'REQUEST'),'goal':A},'share-alpha').status_code==200
+        v=read(f,row,user=REVIEWERS[0]).json();data={**body(v,'TAKE'),'goal':A};assert post(f,row,data,'specialist-original',user=REVIEWERS[0]).status_code==200
+        with f['owner'].connect() as c:c.execute('UPDATE '+('preparation_grants' if capability=='REVIEW_ASSIGNED' else 'capability_grants')+' SET active=false WHERE principal_id=%s AND capability=%s',(REVIEWERS[0],capability))
+        before=products(f['owner'],include_audit=True)
+        assert read(f,row,user=REVIEWERS[0]).status_code==403;assert read(f,row,'specialist-original',user=REVIEWERS[0]).status_code==403;assert post(f,row,data,'specialist-original',user=REVIEWERS[0]).status_code==403
+>       assert products(f['owner'],include_audit=True)==before
+E       AssertionError: assert {'runs': [{'i...', ...}], ...} == {'runs': [{'i...', ...}], ...}
+E         
+E         Omitting 11 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('3fb53517-c47c-4477-a661-763528dfbfd5'), 'principal_id': 'template-new-reviewer-a...6b00653573a7'), 'principal_id': 'template-new-reviewer-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_manual_goal_privacy.py:49: AssertionError
+_ test_revoked_specialist_current_post_and_original_get_denied_without_mutation[REVIEW_ASSIGNED] _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+capability = 'REVIEW_ASSIGNED'
+
+    @pytest.mark.parametrize('capability',['READ','REVIEW_ASSIGNED'])
+    def test_revoked_specialist_current_post_and_original_get_denied_without_mutation(template_consumption,capability):
+        f=template_consumption;row=private_case(f);v=read(f,row).json();assert post(f,row,{**body(v,'REQUEST'),'goal':A},'share-alpha').status_code==200
+        v=read(f,row,user=REVIEWERS[0]).json();data={**body(v,'TAKE'),'goal':A};assert post(f,row,data,'specialist-original',user=REVIEWERS[0]).status_code==200
+        with f['owner'].connect() as c:c.execute('UPDATE '+('preparation_grants' if capability=='REVIEW_ASSIGNED' else 'capability_grants')+' SET active=false WHERE principal_id=%s AND capability=%s',(REVIEWERS[0],capability))
+        before=products(f['owner'],include_audit=True)
+        assert read(f,row,user=REVIEWERS[0]).status_code==403;assert read(f,row,'specialist-original',user=REVIEWERS[0]).status_code==403;assert post(f,row,data,'specialist-original',user=REVIEWERS[0]).status_code==403
+>       assert products(f['owner'],include_audit=True)==before
+E       AssertionError: assert {'runs': [{'i...', ...}], ...} == {'runs': [{'i...', ...}], ...}
+E         
+E         Omitting 11 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('3135f772-4911-4953-bc51-1f194c1e54aa'), 'principal_id': 'template-new-reviewer-a...c6b3e5b53d66'), 'principal_id': 'template-new-reviewer-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_manual_goal_privacy.py:49: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_manual_goal_privacy.py::test_no_request_specialist_get_and_missing_key_recovery_reveal_no_private_goal
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_manual_goal_privacy.py::test_no_request_specialist_get_and_missing_key_recovery_reveal_no_private_goal
+FAILED tests/test_manual_goal_privacy.py::test_one_request_specialist_post_recovery_withdrawal_never_reveals_other_goal
+FAILED tests/test_manual_goal_privacy.py::test_revoked_specialist_current_post_and_original_get_denied_without_mutation[READ]
+FAILED tests/test_manual_goal_privacy.py::test_revoked_specialist_current_post_and_original_get_denied_without_mutation[REVIEW_ASSIGNED]
+4 failed, 2 warnings in 4.02s

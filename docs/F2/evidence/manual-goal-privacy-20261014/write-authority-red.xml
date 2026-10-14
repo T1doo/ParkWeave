@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="5" time="5.314" timestamp="2026-10-14T07:00:30.793699+00:00" hostname="754d39e95154"><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-EXECUTE]" time="1.461"><failure message="AssertionError: read incorrectly advertises revoked business write&#10;assert False&#10; +  where False = all(&lt;generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f3201228e10&gt;)">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+authority = 'EXECUTE', requested = False
+
+    @pytest.mark.parametrize('authority',['EXECUTE','case.create'])
+    @pytest.mark.parametrize('requested',[False,True])
+    def test_allowed_actions_follow_current_owner_write_authority_while_reads_remain(template_consumption,authority,requested):
+        f=template_consumption;row=private_case(f);v=read(f,row).json()
+        if requested:
+            assert post(f,row,{**body(v,'REQUEST'),'goal':A},'owner-write-key').status_code==200
+            v=read(f,row).json()
+        data={**body(v,'WITHDRAW' if requested else 'REQUEST'),'goal':A}
+        with f['owner'].connect() as c:
+            if authority=='EXECUTE':c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='EXECUTE'",(ENTERPRISES[0],))
+            else:c.execute("UPDATE action_grants SET active=false WHERE principal_id=%s AND action='case.create'",(ENTERPRISES[0],))
+        before=products(f['owner']);r=read(f,row);assert r.status_code==200,r.text
+        assert [x['goal'] for x in r.json()['items']]==[A,B]
+&gt;       assert all(x['allowed_actions']==[] for x in r.json()['items']),'read incorrectly advertises revoked business write'
+E       AssertionError: read incorrectly advertises revoked business write
+E       assert False
+E        +  where False = all(&lt;generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f3201228e10&gt;)
+
+tests/test_manual_goal_privacy.py:96: AssertionError</failure></testcase><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-case.create]" time="0.861"><failure message="AssertionError: read incorrectly advertises revoked business write&#10;assert False&#10; +  where False = all(&lt;generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f31f3c7a5a0&gt;)">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+authority = 'case.create', requested = False
+
+    @pytest.mark.parametrize('authority',['EXECUTE','case.create'])
+    @pytest.mark.parametrize('requested',[False,True])
+    def test_allowed_actions_follow_current_owner_write_authority_while_reads_remain(template_consumption,authority,requested):
+        f=template_consumption;row=private_case(f);v=read(f,row).json()
+        if requested:
+            assert post(f,row,{**body(v,'REQUEST'),'goal':A},'owner-write-key').status_code==200
+            v=read(f,row).json()
+        data={**body(v,'WITHDRAW' if requested else 'REQUEST'),'goal':A}
+        with f['owner'].connect() as c:
+            if authority=='EXECUTE':c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='EXECUTE'",(ENTERPRISES[0],))
+            else:c.execute("UPDATE action_grants SET active=false WHERE principal_id=%s AND action='case.create'",(ENTERPRISES[0],))
+        before=products(f['owner']);r=read(f,row);assert r.status_code==200,r.text
+        assert [x['goal'] for x in r.json()['items']]==[A,B]
+&gt;       assert all(x['allowed_actions']==[] for x in r.json()['items']),'read incorrectly advertises revoked business write'
+E       AssertionError: read incorrectly advertises revoked business write
+E       assert False
+E        +  where False = all(&lt;generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f31f3c7a5a0&gt;)
+
+tests/test_manual_goal_privacy.py:96: AssertionError</failure></testcase><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[True-EXECUTE]" time="0.959"><failure message="AssertionError: read incorrectly advertises revoked business write&#10;assert False&#10; +  where False = all(&lt;generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f3201edce10&gt;)">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+authority = 'EXECUTE', requested = True
+
+    @pytest.mark.parametrize('authority',['EXECUTE','case.create'])
+    @pytest.mark.parametrize('requested',[False,True])
+    def test_allowed_actions_follow_current_owner_write_authority_while_reads_remain(template_consumption,authority,requested):
+        f=template_consumption;row=private_case(f);v=read(f,row).json()
+        if requested:
+            assert post(f,row,{**body(v,'REQUEST'),'goal':A},'owner-write-key').status_code==200
+            v=read(f,row).json()
+        data={**body(v,'WITHDRAW' if requested else 'REQUEST'),'goal':A}
+        with f['owner'].connect() as c:
+            if authority=='EXECUTE':c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='EXECUTE'",(ENTERPRISES[0],))
+            else:c.execute("UPDATE action_grants SET active=false WHERE principal_id=%s AND action='case.create'",(ENTERPRISES[0],))
+        before=products(f['owner']);r=read(f,row);assert r.status_code==200,r.text
+        assert [x['goal'] for x in r.json()['items']]==[A,B]
+&gt;       assert all(x['allowed_actions']==[] for x in r.json()['items']),'read incorrectly advertises revoked business write'
+E       AssertionError: read incorrectly advertises revoked business write
+E       assert False
+E        +  where False = all(&lt;generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f3201edce10&gt;)
+
+tests/test_manual_goal_privacy.py:96: AssertionError</failure></testcase><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[True-case.create]" time="0.804"><failure message="AssertionError: read incorrectly advertises revoked business write&#10;assert False&#10; +  where False = all(&lt;generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f31f378f850&gt;)">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+authority = 'case.create', requested = True
+
+    @pytest.mark.parametrize('authority',['EXECUTE','case.create'])
+    @pytest.mark.parametrize('requested',[False,True])
+    def test_allowed_actions_follow_current_owner_write_authority_while_reads_remain(template_consumption,authority,requested):
+        f=template_consumption;row=private_case(f);v=read(f,row).json()
+        if requested:
+            assert post(f,row,{**body(v,'REQUEST'),'goal':A},'owner-write-key').status_code==200
+            v=read(f,row).json()
+        data={**body(v,'WITHDRAW' if requested else 'REQUEST'),'goal':A}
+        with f['owner'].connect() as c:
+            if authority=='EXECUTE':c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='EXECUTE'",(ENTERPRISES[0],))
+            else:c.execute("UPDATE action_grants SET active=false WHERE principal_id=%s AND action='case.create'",(ENTERPRISES[0],))
+        before=products(f['owner']);r=read(f,row);assert r.status_code==200,r.text
+        assert [x['goal'] for x in r.json()['items']]==[A,B]
+&gt;       assert all(x['allowed_actions']==[] for x in r.json()['items']),'read incorrectly advertises revoked business write'
+E       AssertionError: read incorrectly advertises revoked business write
+E       assert False
+E        +  where False = all(&lt;generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f31f378f850&gt;)
+
+tests/test_manual_goal_privacy.py:96: AssertionError</failure></testcase><testcase classname="tests.test_manual_goal_privacy" name="test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation" time="1.066"><failure message="KeyError: 'request_revision'">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation(template_consumption):
+        from copy import deepcopy
+        f=template_consumption;row=private_case(f);v=read(f,row).json();request={**body(v,'REQUEST'),'goal':A};first=post(f,row,request,'old-owner-request');assert first.status_code==200
+        v=assert_private(read(f,row,user=REVIEWERS[0]),[A]);take={**body(v,'TAKE'),'goal':A};old=post(f,row,take,'old-specialist-key',user=REVIEWERS[0]);assert old.status_code==200
+        with f['owner'].connect() as c:prior=deepcopy(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()['service_case_plan'])
+&gt;       replaced=replace_plan(f,row);assert replaced['plan_id']!=prior['id']
+                 ^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_privacy.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = {'store': &lt;parkweave.store.Store object at 0x7f31f3b8fb00&gt;, 'owner': &lt;parkweave.store.Store object at 0x7f31f3aac3b0&gt;,...YlSmQyRXcBLdAsUKTPRgBzL3LP5FQ'}, 'engine': &lt;parkweave.template_candidate.TemplateEngine object at 0x7f31f363c050&gt;, ...}
+row = {'instance_id': 'a8bccefc-2def-4a95-afb5-a1b253af28a9', 'actor_ref': '483cd953578e4966523749973543b04a4ea7b3e76869e28a769c010b0ae51591', 'state': 'PLAN_CONFIRMATION_REQUIRED', 'run_id': '9ff3095d-8252-4617-b5be-ea7f47251d8f', ...}
+
+    def replace_plan(f,row):
+        path='/api/preparations/'+row['preparation_id'];p=f['client'].get(path,headers=headers(f)).json()['preparation']
+        data=dict(expected_preparation_revision=p['revision'],request_text='SYNTHETIC explicit revised request, all goals retained',required_goals=['LOCAL_MATERIAL_PREPARATION',A,B])
+        r=f['client'].post(path+'/request-intent',headers=headers(f,key='real-revise-request'),json=data);assert r.status_code==200,r.text
+        preview=f['client'].get(path+'/planning-preview',headers=headers(f));assert preview.status_code==200,preview.text
+        current=preview.json()['current'];plan=f['client'].get(path+'/service-case-plan',headers=headers(f)).json()
+&gt;       data=dict(expected_preparation_revision=current['preparation_revision'],expected_request_revision=current['request_revision'],expected_source_sha256=current['source_sha256'],expected_plan_revision=plan['revision'],required_goals=['LOCAL_MATERIAL_PREPARATION',A,B],reason='SYNTHETIC explicit replacement preserves all original goals',partial_adoption=True)
+                                                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'request_revision'
+
+tests/test_manual_goal_privacy.py:107: KeyError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="12" time="12.806" timestamp="2026-10-14T07:05:43.419184+00:00" hostname="754d39e95154"><testcase classname=".runtime.manual-goal-privacy-20261014.independent-restore.test_restore_independent" name="test_revoked_owner_write_not_advertised_and_history_stays_readable[False-EXECUTE]" time="1.402" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent-restore.test_restore_independent" name="test_revoked_owner_write_not_advertised_and_history_stays_readable[False-case.create]" time="0.818" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent-restore.test_restore_independent" name="test_revoked_owner_write_not_advertised_and_history_stays_readable[True-EXECUTE]" time="0.982" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent-restore.test_restore_independent" name="test_revoked_owner_write_not_advertised_and_history_stays_readable[True-case.create]" time="0.860" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent-restore.test_restore_independent" name="test_original_receipt_after_actual_plan_replacement_and_current_revocation[template-new-enterprise-a]" time="1.033"><failure message="AssertionError: assert ({'id': 'de851...t', ...}, ...} == {'id': 'de851...t', ...}, ...}&#10;  &#10;  Omitting 13 identical items, use -vv to show&#10;  Right contains 1 more item:&#10;  {'history': []}&#10;  Use -v to get more diff)">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+actor = 'template-new-enterprise-a'
+
+    @pytest.mark.parametrize('actor',[ENTERPRISES[0],REVIEWERS[0]])
+    def test_original_receipt_after_actual_plan_replacement_and_current_revocation(template_consumption,actor):
+     f=template_consumption;row=setup(f);v=read(f,row).json();owner_data=data(v,'REQUEST')
+     r=post(f,row,owner_data,'ind-owner-original');assert r.status_code==200,r.text
+     v=read(f,row,user=REVIEWERS[0]).json();specialist_data=data(v,'TAKE')
+     r2=post(f,row,specialist_data,'ind-specialist-original',user=REVIEWERS[0]);assert r2.status_code==200,r2.text
+     payload,key,event=(owner_data,'ind-owner-original',r.json()['event']) if actor==ENTERPRISES[0] else (specialist_data,'ind-specialist-original',r2.json()['event'])
+     with f['owner'].connect() as c:old=deepcopy(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()['service_case_plan'])
+     replace(f,row);before=products(f['owner'])
+     cold=read(f,row,user=REVIEWERS[0]);assert cold.status_code==200 and cold.json()['items']==[] and A not in cold.text and B not in cold.text
+     restored=read(f,row,key,user=actor);assert restored.status_code==200 and restored.json()['status']=='COMMITTED' and restored.json()['event']==event and restored.json()['original_plan_id']==old['id']
+     same=post(f,row,payload,key,user=actor);assert same.status_code==200 and same.json()['event']==event
+     assert post(f,row,{**payload,'reason':'SYNTHETIC changed parameter'},key,user=actor).status_code==409
+     assert products(f['owner'])==before
+     v=read(f,row).json();new=post(f,row,data(v,'REQUEST',B),'ind-new-plan-request');assert new.status_code==200,new.text
+     cold=read(f,row,user=REVIEWERS[0]);assert [x['goal'] for x in cold.json()['items']]==[B] and A not in cold.text
+     restored=read(f,row,key,user=actor);assert restored.status_code==200 and restored.json()['event']==event
+     with f['owner'].connect() as c:
+      current=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()['service_case_plan']
+&gt;     assert current['history'][-1]==old and len(current['manual_goal_requests'])==1
+E     AssertionError: assert ({'id': 'de851...t', ...}, ...} == {'id': 'de851...t', ...}, ...}
+E       
+E       Omitting 13 identical items, use -vv to show
+E       Right contains 1 more item:
+E       {'history': []}
+E       Use -v to get more diff)
+
+.runtime/manual-goal-privacy-20261014/independent-restore/test_restore_independent.py:68: AssertionError</failure></testcase><testcase classname=".runtime.manual-goal-privacy-20261014.independent-restore.test_restore_independent" name="test_original_receipt_after_actual_plan_replacement_and_current_revocation[template-new-reviewer-a]" time="1.176"><failure message="AssertionError: assert ({'id': '4d31e...t', ...}, ...} == {'id': '4d31e...t', ...}, ...}&#10;  &#10;  Omitting 13 identical items, use -vv to show&#10;  Right contains 1 more item:&#10;  {'history': []}&#10;  Use -v to get more diff)">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+actor = 'template-new-reviewer-a'
+
+    @pytest.mark.parametrize('actor',[ENTERPRISES[0],REVIEWERS[0]])
+    def test_original_receipt_after_actual_plan_replacement_and_current_revocation(template_consumption,actor):
+     f=template_consumption;row=setup(f);v=read(f,row).json();owner_data=data(v,'REQUEST')
+     r=post(f,row,owner_data,'ind-owner-original');assert r.status_code==200,r.text
+     v=read(f,row,user=REVIEWERS[0]).json();specialist_data=data(v,'TAKE')
+     r2=post(f,row,specialist_data,'ind-specialist-original',user=REVIEWERS[0]);assert r2.status_code==200,r2.text
+     payload,key,event=(owner_data,'ind-owner-original',r.json()['event']) if actor==ENTERPRISES[0] else (specialist_data,'ind-specialist-original',r2.json()['event'])
+     with f['owner'].connect() as c:old=deepcopy(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()['service_case_plan'])
+     replace(f,row);before=products(f['owner'])
+     cold=read(f,row,user=REVIEWERS[0]);assert cold.status_code==200 and cold.json()['items']==[] and A not in cold.text and B not in cold.text
+     restored=read(f,row,key,user=actor);assert restored.status_code==200 and restored.json()['status']=='COMMITTED' and restored.json()['event']==event and restored.json()['original_plan_id']==old['id']
+     same=post(f,row,payload,key,user=actor);assert same.status_code==200 and same.json()['event']==event
+     assert post(f,row,{**payload,'reason':'SYNTHETIC changed parameter'},key,user=actor).status_code==409
+     assert products(f['owner'])==before
+     v=read(f,row).json();new=post(f,row,data(v,'REQUEST',B),'ind-new-plan-request');assert new.status_code==200,new.text
+     cold=read(f,row,user=REVIEWERS[0]);assert [x['goal'] for x in cold.json()['items']]==[B] and A not in cold.text
+     restored=read(f,row,key,user=actor);assert restored.status_code==200 and restored.json()['event']==event
+     with f['owner'].connect() as c:
+      current=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()['service_case_plan']
+&gt;     assert current['history'][-1]==old and len(current['manual_goal_requests'])==1
+E     AssertionError: assert ({'id': '4d31e...t', ...}, ...} == {'id': '4d31e...t', ...}, ...}
+E       
+E       Omitting 13 identical items, use -vv to show
+E       Right contains 1 more item:
+E       {'history': []}
+E       Use -v to get more diff)
+
+.runtime/manual-goal-privacy-20261014/independent-restore/test_restore_independent.py:68: AssertionError</failure></testcase><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_empty_current_and_absent_recovery_private_and_zero_write" time="1.291" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_share_second_goal_only_all_specialist_responses_and_recovery_private" time="1.142" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_withdraw_keeps_original_shared_history_late_response_zero_write" time="0.854" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_specialist_revocation_stops_exact_key_recovery_and_late_cached_post[READ]" time="0.992" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_specialist_revocation_stops_exact_key_recovery_and_late_cached_post[REVIEW_ASSIGNED]" time="0.869" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_illegitimate_specialist_request_record_is_not_shared_by_metadata" time="0.968" /></testsuite></testsuites>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="10" time="9.344" timestamp="2026-10-14T07:01:21.305451+00:00" hostname="754d39e95154"><testcase classname="tests.test_manual_goal_privacy" name="test_no_request_specialist_get_and_missing_key_recovery_reveal_no_private_goal" time="1.275" /><testcase classname="tests.test_manual_goal_privacy" name="test_one_request_specialist_post_recovery_withdrawal_never_reveals_other_goal" time="0.788" /><testcase classname="tests.test_manual_goal_privacy" name="test_revoked_specialist_current_post_and_original_get_denied_without_mutation[READ]" time="0.880" /><testcase classname="tests.test_manual_goal_privacy" name="test_revoked_specialist_current_post_and_original_get_denied_without_mutation[REVIEW_ASSIGNED]" time="0.787" /><testcase classname="tests.test_manual_goal_privacy" name="test_original_full_page_private_goal_projection_cold_get_and_late_owner_response" time="1.093" /><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-EXECUTE]" time="0.791" /><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-case.create]" time="0.706" /><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[True-EXECUTE]" time="0.953" /><testcase classname="tests.test_manual_goal_privacy" name="test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[True-case.create]" time="0.824" /><testcase classname="tests.test_manual_goal_privacy" name="test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation" time="1.112"><failure message="AssertionError: never requested private free-text goal leaked&#10;assert 'SYNTHETIC_P...STED_PURPOSE' not in '{&quot;scope&quot;:&quot;S...ayed&quot;:false}'&#10;  &#10;  'SYNTHETIC_PRIVATE_...UNREQUESTED_PURPOSE' is contained here:&#10;  ?        ----------------------------&#10;    :{&quot;goal&quot;:&quot;SYNTHETIC_PRIVATE_ALPHA_UNREQUESTED_PURPOSE&quot;,&quot;action&quot;:&quot;TAKE&quot;,&quot;reason&quot;:&quot;SYNTHETIC explicit manual TAKE&quot;,&quot;plan_id&quot;:&quot;d06e3a37-9360-4968-872a-17b122750bb7&quot;,&quot;evidence&quot;:[],&quot;expected_revision&quot;:1,&quot;expected_source_sha256&quot;:&quot;dd84c16546f9e3da3defc3cfb3f5a8a4f470a97d2fa4650ad54997652ab623a3&quot;},&quot;actor_id&quot;:&quot;template-new-reviewer-a&quot;,&quot;revision&quot;:2,&quot;fingerprint&quot;:&quot;e1c1e2b9c57f4ec3e9191813d067a45b779e282a4ace5fbfd5d1a64b88242837&quot;,&quot;request_key&quot;:&quot;old-specialist-key&quot;},&quot;overall_goal_stat...&#10;  &#10;  ...Full output truncated (2 lines hidden), use '-vv' to show">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation(template_consumption):
+        from copy import deepcopy
+        f=template_consumption;row=private_case(f);v=read(f,row).json();request={**body(v,'REQUEST'),'goal':A};first=post(f,row,request,'old-owner-request');assert first.status_code==200
+        v=assert_private(read(f,row,user=REVIEWERS[0]),[A]);take={**body(v,'TAKE'),'goal':A};old=post(f,row,take,'old-specialist-key',user=REVIEWERS[0]);assert old.status_code==200
+        with f['owner'].connect() as c:prior=deepcopy(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()['service_case_plan'])
+        replaced=replace_plan(f,row);assert replaced['plan_id']!=prior['id']
+        before=products(f['owner']);assert_private(read(f,row,user=REVIEWERS[0]))
+&gt;       restored=read(f,row,'old-specialist-key',user=REVIEWERS[0]);assert_private(restored);assert restored.json()['status']=='COMMITTED' and restored.json()['original_plan_id']==prior['id'] and restored.json()['event']==old.json()['event']
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_privacy.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = &lt;Response [200 OK]&gt;, shared = ()
+
+    def assert_private(r,shared=()):
+        assert r.status_code==200,r.text
+        assert [x['goal'] for x in r.json()['items']]==list(shared)
+        for goal in (A,B):
+&gt;           if goal not in shared:assert goal not in r.text,'never requested private free-text goal leaked'
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: never requested private free-text goal leaked
+E           assert 'SYNTHETIC_P...STED_PURPOSE' not in '{"scope":"S...ayed":false}'
+E             
+E             'SYNTHETIC_PRIVATE_...UNREQUESTED_PURPOSE' is contained here:
+E             ?        ----------------------------
+E               :{"goal":"SYNTHETIC_PRIVATE_ALPHA_UNREQUESTED_PURPOSE","action":"TAKE","reason":"SYNTHETIC explicit manual TAKE","plan_id":"d06e3a37-9360-4968-872a-17b122750bb7","evidence":[],"expected_revision":1,"expected_source_sha256":"dd84c16546f9e3da3defc3cfb3f5a8a4f470a97d2fa4650ad54997652ab623a3"},"actor_id":"template-new-reviewer-a","revision":2,"fingerprint":"e1c1e2b9c57f4ec3e9191813d067a45b779e282a4ace5fbfd5d1a64b88242837","request_key":"old-specialist-key"},"overall_goal_stat...
+E             
+E             ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_manual_goal_privacy.py:20: AssertionError</failure></testcase></testsuite></testsuites>

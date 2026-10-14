@@ -1,0 +1,144 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-EXECUTE] _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+authority = 'EXECUTE', requested = False
+
+    @pytest.mark.parametrize('authority',['EXECUTE','case.create'])
+    @pytest.mark.parametrize('requested',[False,True])
+    def test_allowed_actions_follow_current_owner_write_authority_while_reads_remain(template_consumption,authority,requested):
+        f=template_consumption;row=private_case(f);v=read(f,row).json()
+        if requested:
+            assert post(f,row,{**body(v,'REQUEST'),'goal':A},'owner-write-key').status_code==200
+            v=read(f,row).json()
+        data={**body(v,'WITHDRAW' if requested else 'REQUEST'),'goal':A}
+        with f['owner'].connect() as c:
+            if authority=='EXECUTE':c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='EXECUTE'",(ENTERPRISES[0],))
+            else:c.execute("UPDATE action_grants SET active=false WHERE principal_id=%s AND action='case.create'",(ENTERPRISES[0],))
+        before=products(f['owner']);r=read(f,row);assert r.status_code==200,r.text
+        assert [x['goal'] for x in r.json()['items']]==[A,B]
+>       assert all(x['allowed_actions']==[] for x in r.json()['items']),'read incorrectly advertises revoked business write'
+E       AssertionError: read incorrectly advertises revoked business write
+E       assert False
+E        +  where False = all(<generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.<locals>.<genexpr> at 0x7f3201228e10>)
+
+tests/test_manual_goal_privacy.py:96: AssertionError
+_ test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-case.create] _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+authority = 'case.create', requested = False
+
+    @pytest.mark.parametrize('authority',['EXECUTE','case.create'])
+    @pytest.mark.parametrize('requested',[False,True])
+    def test_allowed_actions_follow_current_owner_write_authority_while_reads_remain(template_consumption,authority,requested):
+        f=template_consumption;row=private_case(f);v=read(f,row).json()
+        if requested:
+            assert post(f,row,{**body(v,'REQUEST'),'goal':A},'owner-write-key').status_code==200
+            v=read(f,row).json()
+        data={**body(v,'WITHDRAW' if requested else 'REQUEST'),'goal':A}
+        with f['owner'].connect() as c:
+            if authority=='EXECUTE':c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='EXECUTE'",(ENTERPRISES[0],))
+            else:c.execute("UPDATE action_grants SET active=false WHERE principal_id=%s AND action='case.create'",(ENTERPRISES[0],))
+        before=products(f['owner']);r=read(f,row);assert r.status_code==200,r.text
+        assert [x['goal'] for x in r.json()['items']]==[A,B]
+>       assert all(x['allowed_actions']==[] for x in r.json()['items']),'read incorrectly advertises revoked business write'
+E       AssertionError: read incorrectly advertises revoked business write
+E       assert False
+E        +  where False = all(<generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.<locals>.<genexpr> at 0x7f31f3c7a5a0>)
+
+tests/test_manual_goal_privacy.py:96: AssertionError
+_ test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[True-EXECUTE] _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+authority = 'EXECUTE', requested = True
+
+    @pytest.mark.parametrize('authority',['EXECUTE','case.create'])
+    @pytest.mark.parametrize('requested',[False,True])
+    def test_allowed_actions_follow_current_owner_write_authority_while_reads_remain(template_consumption,authority,requested):
+        f=template_consumption;row=private_case(f);v=read(f,row).json()
+        if requested:
+            assert post(f,row,{**body(v,'REQUEST'),'goal':A},'owner-write-key').status_code==200
+            v=read(f,row).json()
+        data={**body(v,'WITHDRAW' if requested else 'REQUEST'),'goal':A}
+        with f['owner'].connect() as c:
+            if authority=='EXECUTE':c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='EXECUTE'",(ENTERPRISES[0],))
+            else:c.execute("UPDATE action_grants SET active=false WHERE principal_id=%s AND action='case.create'",(ENTERPRISES[0],))
+        before=products(f['owner']);r=read(f,row);assert r.status_code==200,r.text
+        assert [x['goal'] for x in r.json()['items']]==[A,B]
+>       assert all(x['allowed_actions']==[] for x in r.json()['items']),'read incorrectly advertises revoked business write'
+E       AssertionError: read incorrectly advertises revoked business write
+E       assert False
+E        +  where False = all(<generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.<locals>.<genexpr> at 0x7f3201edce10>)
+
+tests/test_manual_goal_privacy.py:96: AssertionError
+_ test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[True-case.create] _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+authority = 'case.create', requested = True
+
+    @pytest.mark.parametrize('authority',['EXECUTE','case.create'])
+    @pytest.mark.parametrize('requested',[False,True])
+    def test_allowed_actions_follow_current_owner_write_authority_while_reads_remain(template_consumption,authority,requested):
+        f=template_consumption;row=private_case(f);v=read(f,row).json()
+        if requested:
+            assert post(f,row,{**body(v,'REQUEST'),'goal':A},'owner-write-key').status_code==200
+            v=read(f,row).json()
+        data={**body(v,'WITHDRAW' if requested else 'REQUEST'),'goal':A}
+        with f['owner'].connect() as c:
+            if authority=='EXECUTE':c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='EXECUTE'",(ENTERPRISES[0],))
+            else:c.execute("UPDATE action_grants SET active=false WHERE principal_id=%s AND action='case.create'",(ENTERPRISES[0],))
+        before=products(f['owner']);r=read(f,row);assert r.status_code==200,r.text
+        assert [x['goal'] for x in r.json()['items']]==[A,B]
+>       assert all(x['allowed_actions']==[] for x in r.json()['items']),'read incorrectly advertises revoked business write'
+E       AssertionError: read incorrectly advertises revoked business write
+E       assert False
+E        +  where False = all(<generator object test_allowed_actions_follow_current_owner_write_authority_while_reads_remain.<locals>.<genexpr> at 0x7f31f378f850>)
+
+tests/test_manual_goal_privacy.py:96: AssertionError
+_ test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation(template_consumption):
+        from copy import deepcopy
+        f=template_consumption;row=private_case(f);v=read(f,row).json();request={**body(v,'REQUEST'),'goal':A};first=post(f,row,request,'old-owner-request');assert first.status_code==200
+        v=assert_private(read(f,row,user=REVIEWERS[0]),[A]);take={**body(v,'TAKE'),'goal':A};old=post(f,row,take,'old-specialist-key',user=REVIEWERS[0]);assert old.status_code==200
+        with f['owner'].connect() as c:prior=deepcopy(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()['service_case_plan'])
+>       replaced=replace_plan(f,row);assert replaced['plan_id']!=prior['id']
+                 ^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_privacy.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = {'store': <parkweave.store.Store object at 0x7f31f3b8fb00>, 'owner': <parkweave.store.Store object at 0x7f31f3aac3b0>,...YlSmQyRXcBLdAsUKTPRgBzL3LP5FQ'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7f31f363c050>, ...}
+row = {'instance_id': 'a8bccefc-2def-4a95-afb5-a1b253af28a9', 'actor_ref': '483cd953578e4966523749973543b04a4ea7b3e76869e28a769c010b0ae51591', 'state': 'PLAN_CONFIRMATION_REQUIRED', 'run_id': '9ff3095d-8252-4617-b5be-ea7f47251d8f', ...}
+
+    def replace_plan(f,row):
+        path='/api/preparations/'+row['preparation_id'];p=f['client'].get(path,headers=headers(f)).json()['preparation']
+        data=dict(expected_preparation_revision=p['revision'],request_text='SYNTHETIC explicit revised request, all goals retained',required_goals=['LOCAL_MATERIAL_PREPARATION',A,B])
+        r=f['client'].post(path+'/request-intent',headers=headers(f,key='real-revise-request'),json=data);assert r.status_code==200,r.text
+        preview=f['client'].get(path+'/planning-preview',headers=headers(f));assert preview.status_code==200,preview.text
+        current=preview.json()['current'];plan=f['client'].get(path+'/service-case-plan',headers=headers(f)).json()
+>       data=dict(expected_preparation_revision=current['preparation_revision'],expected_request_revision=current['request_revision'],expected_source_sha256=current['source_sha256'],expected_plan_revision=plan['revision'],required_goals=['LOCAL_MATERIAL_PREPARATION',A,B],reason='SYNTHETIC explicit replacement preserves all original goals',partial_adoption=True)
+                                                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'request_revision'
+
+tests/test_manual_goal_privacy.py:107: KeyError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_manual_goal_privacy.py::test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-EXECUTE]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_manual_goal_privacy.py::test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-EXECUTE]
+FAILED tests/test_manual_goal_privacy.py::test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[False-case.create]
+FAILED tests/test_manual_goal_privacy.py::test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[True-EXECUTE]
+FAILED tests/test_manual_goal_privacy.py::test_allowed_actions_follow_current_owner_write_authority_while_reads_remain[True-case.create]
+FAILED tests/test_manual_goal_privacy.py::test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation
+5 failed, 5 deselected, 2 warnings in 5.32s

@@ -1,0 +1,50 @@
+.........F                                                               [100%]
+=================================== FAILURES ===================================
+_ test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+
+    def test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation(template_consumption):
+        from copy import deepcopy
+        f=template_consumption;row=private_case(f);v=read(f,row).json();request={**body(v,'REQUEST'),'goal':A};first=post(f,row,request,'old-owner-request');assert first.status_code==200
+        v=assert_private(read(f,row,user=REVIEWERS[0]),[A]);take={**body(v,'TAKE'),'goal':A};old=post(f,row,take,'old-specialist-key',user=REVIEWERS[0]);assert old.status_code==200
+        with f['owner'].connect() as c:prior=deepcopy(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()['service_case_plan'])
+        replaced=replace_plan(f,row);assert replaced['plan_id']!=prior['id']
+        before=products(f['owner']);assert_private(read(f,row,user=REVIEWERS[0]))
+>       restored=read(f,row,'old-specialist-key',user=REVIEWERS[0]);assert_private(restored);assert restored.json()['status']=='COMMITTED' and restored.json()['original_plan_id']==prior['id'] and restored.json()['event']==old.json()['event']
+                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_privacy.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = <Response [200 OK]>, shared = ()
+
+    def assert_private(r,shared=()):
+        assert r.status_code==200,r.text
+        assert [x['goal'] for x in r.json()['items']]==list(shared)
+        for goal in (A,B):
+>           if goal not in shared:assert goal not in r.text,'never requested private free-text goal leaked'
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: never requested private free-text goal leaked
+E           assert 'SYNTHETIC_P...STED_PURPOSE' not in '{"scope":"S...ayed":false}'
+E             
+E             'SYNTHETIC_PRIVATE_...UNREQUESTED_PURPOSE' is contained here:
+E             ?        ----------------------------
+E               :{"goal":"SYNTHETIC_PRIVATE_ALPHA_UNREQUESTED_PURPOSE","action":"TAKE","reason":"SYNTHETIC explicit manual TAKE","plan_id":"d06e3a37-9360-4968-872a-17b122750bb7","evidence":[],"expected_revision":1,"expected_source_sha256":"dd84c16546f9e3da3defc3cfb3f5a8a4f470a97d2fa4650ad54997652ab623a3"},"actor_id":"template-new-reviewer-a","revision":2,"fingerprint":"e1c1e2b9c57f4ec3e9191813d067a45b779e282a4ace5fbfd5d1a64b88242837","request_key":"old-specialist-key"},"overall_goal_stat...
+E             
+E             ...Full output truncated (2 lines hidden), use '-vv' to show
+
+tests/test_manual_goal_privacy.py:20: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_manual_goal_privacy.py::test_no_request_specialist_get_and_missing_key_recovery_reveal_no_private_goal
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_manual_goal_privacy.py::test_real_original_api_plan_replacement_old_key_recovery_and_new_ledger_isolation
+1 failed, 9 passed, 2 warnings in 9.35s

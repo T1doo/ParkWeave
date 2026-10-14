@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="6" time="6.118" timestamp="2026-10-14T06:35:06.581727+00:00" hostname="754d39e95154"><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_empty_current_and_absent_recovery_private_and_zero_write" time="1.327" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_share_second_goal_only_all_specialist_responses_and_recovery_private" time="0.844" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_withdraw_keeps_original_shared_history_late_response_zero_write" time="0.987" /><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_specialist_revocation_stops_exact_key_recovery_and_late_cached_post[READ]" time="0.865"><failure message="AssertionError: assert {'runs': [{'i...', ...}], ...} == {'runs': [{'i...', ...}], ...}&#10;  &#10;  Omitting 11 identical items, use -vv to show&#10;  Differing items:&#10;  {'authorization_audit': [{'id': UUID('55104edf-ae88-4c45-b658-13d03f3e55a8'), 'principal_id': 'template-new-reviewer-a...7eb4a32e6274'), 'principal_id': 'template-new-reviewer-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}&#10;  Use -v to get more diff">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+capability = 'READ'
+
+    @pytest.mark.parametrize('capability',['READ','REVIEW_ASSIGNED'])
+    def test_specialist_revocation_stops_exact_key_recovery_and_late_cached_post(template_consumption,capability):
+     f=template_consumption;row=setup(f);assert send(f,row,read(f,row).json(),'REQUEST',B,'ind-share').status_code==200
+     v=private(read(f,row,user=REVIEWERS[0]),[B]);data=dict(body(v,'TAKE'),goal=B);assert post(f,row,data,'ind-original',user=REVIEWERS[0]).status_code==200
+     with f['owner'].connect() as c:
+      table='preparation_grants' if capability=='REVIEW_ASSIGNED' else 'capability_grants';c.execute('UPDATE '+table+' SET active=false WHERE principal_id=%s AND capability=%s',(REVIEWERS[0],capability))
+     before=products(f['owner'],True)
+     for r in [read(f,row,user=REVIEWERS[0]),read(f,row,'ind-original',user=REVIEWERS[0]),post(f,row,data,'ind-original',user=REVIEWERS[0])]:
+      assert r.status_code==403 and A not in r.text and B not in r.text
+&gt;    assert products(f['owner'],True)==before
+E    AssertionError: assert {'runs': [{'i...', ...}], ...} == {'runs': [{'i...', ...}], ...}
+E      
+E      Omitting 11 identical items, use -vv to show
+E      Differing items:
+E      {'authorization_audit': [{'id': UUID('55104edf-ae88-4c45-b658-13d03f3e55a8'), 'principal_id': 'template-new-reviewer-a...7eb4a32e6274'), 'principal_id': 'template-new-reviewer-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E      Use -v to get more diff
+
+.runtime/manual-goal-privacy-20261014/independent/test_privacy_independent.py:60: AssertionError</failure></testcase><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_specialist_revocation_stops_exact_key_recovery_and_late_cached_post[REVIEW_ASSIGNED]" time="0.852"><failure message="AssertionError: assert {'runs': [{'i...', ...}], ...} == {'runs': [{'i...', ...}], ...}&#10;  &#10;  Omitting 11 identical items, use -vv to show&#10;  Differing items:&#10;  {'authorization_audit': [{'id': UUID('6364d512-f8d0-4177-b82b-bf5ba274d7d1'), 'principal_id': 'template-new-reviewer-a...1a420501d499'), 'principal_id': 'template-new-reviewer-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}&#10;  Use -v to get more diff">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+capability = 'REVIEW_ASSIGNED'
+
+    @pytest.mark.parametrize('capability',['READ','REVIEW_ASSIGNED'])
+    def test_specialist_revocation_stops_exact_key_recovery_and_late_cached_post(template_consumption,capability):
+     f=template_consumption;row=setup(f);assert send(f,row,read(f,row).json(),'REQUEST',B,'ind-share').status_code==200
+     v=private(read(f,row,user=REVIEWERS[0]),[B]);data=dict(body(v,'TAKE'),goal=B);assert post(f,row,data,'ind-original',user=REVIEWERS[0]).status_code==200
+     with f['owner'].connect() as c:
+      table='preparation_grants' if capability=='REVIEW_ASSIGNED' else 'capability_grants';c.execute('UPDATE '+table+' SET active=false WHERE principal_id=%s AND capability=%s',(REVIEWERS[0],capability))
+     before=products(f['owner'],True)
+     for r in [read(f,row,user=REVIEWERS[0]),read(f,row,'ind-original',user=REVIEWERS[0]),post(f,row,data,'ind-original',user=REVIEWERS[0])]:
+      assert r.status_code==403 and A not in r.text and B not in r.text
+&gt;    assert products(f['owner'],True)==before
+E    AssertionError: assert {'runs': [{'i...', ...}], ...} == {'runs': [{'i...', ...}], ...}
+E      
+E      Omitting 11 identical items, use -vv to show
+E      Differing items:
+E      {'authorization_audit': [{'id': UUID('6364d512-f8d0-4177-b82b-bf5ba274d7d1'), 'principal_id': 'template-new-reviewer-a...1a420501d499'), 'principal_id': 'template-new-reviewer-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E      Use -v to get more diff
+
+.runtime/manual-goal-privacy-20261014/independent/test_privacy_independent.py:60: AssertionError</failure></testcase><testcase classname=".runtime.manual-goal-privacy-20261014.independent.test_privacy_independent" name="test_illegitimate_specialist_request_record_is_not_shared_by_metadata" time="0.850" /></testsuite></testsuites>
