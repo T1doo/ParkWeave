@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="2.355" timestamp="2026-10-14T02:19:32.771758+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_terminal" name="test_committed_unknown_only_explicit_finalize_confirms_journal" time="1.445"><failure message="KeyError: 'journal_state'">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f1cca5a3500&gt;
+
+    def test_committed_unknown_only_explicit_finalize_confirms_journal(template_consumption,monkeypatch):
+        f=template_consumption;row,v,data=unknown(f,monkeypatch);before=products(f['owner'],include_audit=True);saved=journal(f)
+        r=recover(f,row,'terminal-original');assert r.status_code==200,r.text
+&gt;       proof=r.json();assert proof['journal_state']=='UNKNOWN' and not proof['journal_terminal']
+                              ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'journal_state'
+
+tests/test_template_terminal.py:27: KeyError</failure></testcase><testcase classname="tests.test_template_terminal" name="test_unobserved_cannot_finish_or_unlock_original_key" time="0.811"><failure message="KeyError: 'journal_state'">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f1cc9167200&gt;
+
+    def test_unobserved_cannot_finish_or_unlock_original_key(template_consumption,monkeypatch):
+        f=template_consumption;row,v,data=unknown(f,monkeypatch,commit=False);proof=recover(f,row,'terminal-original').json()
+        before=products(f['owner'],include_audit=True);saved=journal(f)
+&gt;       assert finish(f,row,'terminal-original',finish_body(proof)).status_code==409
+                                                ^^^^^^^^^^^^^^^^^^
+
+tests/test_template_terminal.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+proof = {'instance_id': '1c540d68-bef1-48ef-925e-8033caa96d72', 'actor_ref': '483cd953578e4966523749973543b04a4ea7b3e76869e28a...uest_key': 'tc_1c540d68bef148ef925e8033caa96d72_6e03f71f07710fcfd92dfb5559fe6ee1955fdf644512da2ddf08c5e0bec0d9fc', ...}
+reason = 'SYNTHETIC explicitly finish exact original adoption'
+
+    def finish_body(proof,reason='SYNTHETIC explicitly finish exact original adoption'):
+&gt;       return dict(expected_body_sha256=proof['body_sha256'],expected_original_request_key=proof['original_request_key'],expected_journal_state=proof['journal_state'],reason=reason)
+                                                                                                                                                 ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'journal_state'
+
+tests/test_template_terminal.py:19: KeyError</failure></testcase></testsuite></testsuites>

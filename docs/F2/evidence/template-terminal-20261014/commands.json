@@ -1,0 +1,20 @@
+{
+  "python": ".venv/bin/python -m",
+  "windows": {
+    "red": "pytest -q tests/test_template_terminal.py",
+    "green": "pytest -q tests/test_template_terminal.py",
+    "first-regression": "pytest -q tests/test_template_terminal.py tests/test_template_consumer_planning.py tests/test_template_consumer_planning_offline.py",
+    "backend-expanded": "pytest -q tests/test_template_terminal.py tests/test_template_consumer_planning.py",
+    "capacity-first": "pytest -q tests/test_template_terminal.py tests/test_template_partial.py",
+    "pg-cas": "pytest -q tests/test_template_terminal.py::test_real_pg_source_wait_then_terminal_cas_beats_delayed_old_raw_send",
+    "frozen-regression": "pytest -q tests/test_template_terminal.py tests/test_template_partial.py tests/test_template_consumer.py tests/test_template_consumer_planning.py tests/test_template_consumer_planning_offline.py tests/test_template_consumer_compatibility.py tests/test_partial_service_plan.py tests/test_partial_service_plan_expansion.py tests/test_service_case_steps.py",
+    "pre-command-flag-regression": "pytest -q tests/test_template_terminal.py tests/test_template_partial.py tests/test_template_consumer.py tests/test_template_consumer_planning.py tests/test_template_consumer_planning_offline.py tests/test_template_consumer_compatibility.py tests/test_partial_service_plan.py tests/test_partial_service_plan_expansion.py tests/test_service_case_steps.py",
+    "final-regression": "pytest -q tests/test_template_terminal.py tests/test_template_partial.py tests/test_template_consumer.py tests/test_template_consumer_planning.py tests/test_template_consumer_planning_offline.py tests/test_template_consumer_compatibility.py tests/test_partial_service_plan.py tests/test_partial_service_plan_expansion.py tests/test_service_case_steps.py"
+  },
+  "qualifications": {
+    "frozen-regression": "superseded/mixed UI selection repair; not final SHA acceptance",
+    "pre-command-flag-regression": "exact7b64 prior window; response flag fix followed",
+    "final-regression": "exact577db0879a080c685609e2bd5fcef5d4683beb1b final window"
+  },
+  "rule": "No prior/repeated/independent sums"
+}

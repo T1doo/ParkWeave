@@ -1,0 +1,23 @@
+# Independent review — explicit original-key terminal reconciliation
+
+Final source: `7b64ccf7372de04754959a2957953a296357cdec`.
+Read-only source/Git review; all reviewer writes were confined to this directory.
+The root remains the sole source and Git writer.
+
+Final independent window: **12 PASS / 0 FAIL / 0 ERROR / 0 SKIP**, real isolated owned PostgreSQL, 13.95 seconds, exit 0. Separate original full HTML NodeVM storage guard window: **25 assertions PASS**, exit 0. These figures are separate; prior repeated windows are not added to them. All 225 source-freeze files were checked, no changed files; independent before/after hashes match.
+
+The PostgreSQL window independently verifies committed response loss and cold engine recovery, explicit journal finalization, exact-body idempotency and different-reason conflict, durable first-send refusal, closed old external key never calling ADOPT again, strict monotonic source advance, unknown and legacy REFUSED/ADMITTED/STARTED remaining unresolved, current READ/PREPARE/EXECUTE revocation, and original delayed send competing with finalization under the same external-key file lock.
+
+It also uses the separate currently authorized original product API to create a real immutable receipt with the exposed original inner key after journal-only first refusal closure. Recovery correctly rejects the contradiction with 409, preserving the actual successful fact and never falsely reporting NOT_COMMITTED_FINAL. The scope of the terminal prohibition is the consumer external key; this slice does not change the independent original API's own permission/operation contract.
+
+The NodeVM window verifies eight successful handles remain until explicit server terminal confirmation, lost finalization response persists finishPending and prevents repeated POST, cold GET removes exactly one confirmed handle while seven other values remain byte-identical, late GET does not delete a changed disk handle, damaged handle emits no HTTP and is preserved, same-instance second-key selection reads exactly that key, and missing selected key fails closed without falling back to another key. This is a page storage/response-guard test, not backend authorization evidence.
+
+Two review findings were repaired by the root: CLOSED_NOT_COMMITTED must reject a contradictory actual COMMITTED receipt, and a list row labelled with one original key must select that exact disk handle rather than the first key for its instance. Final windows verify both. Individual per-key storage names and strict sameStored checks address unrelated-handle deletion/overwrite; old base-name v1 handles remain compatible.
+
+GET remains read-only. Finalization is an explicit journal CAS under the original consumer-key lock; no original ADOPT replay. NOT_OBSERVED, current denial/conflict, malformed/missing records and absent proof cannot unlock. The source and UI preserve unknown results and avoid silently clearing ambiguous handles. No browser, production migration, deployment, live model, credential configuration, safety prepare or Git mutation was performed by this reviewer.
+
+Archive repair independently checked: tracked actual-chain.json is 7808 bytes and SHA256 dfb0685e68a260e2787f374659f7a35c04c1a6767debdcbbf540b9aaca5aaf61. Documentation now distinguishes 23 page HTTP calls plus 4 review bridge calls = 27, and successful read-only reads from current 403 refusal audit writes.
+
+Retained attempts: first backend window 12 PASS on hash 161a5bda…; first page harness attempt failed because the independent fake Element lacked removeAttribute (raw ui-harness-first.log/exit retained), fixed only the reviewer harness and passed 21 assertions. Final exact selection additions produce the separate 25-assertion window. The first harness failure is not a product defect. Final logs, XML, exits, hashes and final-freeze-check.json remain unmodified originals in this directory.
+
+Current blocking findings: none within the tested scope. Remaining product limit: a current refusal or absence is not proof of a prior no-commit, and the consumer terminal journal cannot prohibit separately authorized original API use; contradictory later actual facts are rejected instead of fabricated into never-committed results.
