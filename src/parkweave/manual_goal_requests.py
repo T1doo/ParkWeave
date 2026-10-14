@@ -90,6 +90,9 @@ def view(store,c,p,parent,plan,event=None):
     owner=p['id']==parent['owner_id'];current=not steps._binding_issues(c,parent,plan)
     local=c.execute('SELECT state FROM case_local_lifecycles WHERE preparation_id=%s',(parent['id'],)).fetchone()
     writable=not prep.case_write_blocked(c,parent) and not(local and local['state']=='LOCAL_RECORD_CLOSED') and current and all(r['integrity_current'] for r in source['materials']) and plan.get('partial_adoption') is True and len(events)<LIMIT
+    if owner and writable:
+        try:store.check_execution(c,p,store.scoped_run(c,p,parent['run_id']))
+        except Denied:writable=False  # Historical READ survives revoked write authority.
     # Free-text goals remain private until the original owner explicitly requests
     # human review. Validated REQUEST history also preserves sharing on withdrawal.
     shared={e['request']['goal'] for e in events if e['actor_id']==parent['owner_id'] and e['request']['action']=='REQUEST'}
