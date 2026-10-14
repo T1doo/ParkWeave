@@ -1,0 +1,46 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_original_reply_explicit_awareness_closes_only_human_responsibility[INFORMATION] _
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+kind = 'INFORMATION'
+
+    @pytest.mark.parametrize('kind',['INFORMATION','UNABLE_TO_HANDLE'])
+    def test_original_reply_explicit_awareness_closes_only_human_responsibility(template_consumption,kind):
+        f=template_consumption;row=ready(f);before=products(f['owner']);grants=grant_snapshot(f['owner']);v=read(f,row,user=REVIEWERS[0]).json();d=reply_data(v,kind)
+>       r=post(f,row,d,'original-reply',user=REVIEWERS[0]);assert r.status_code==200,r.text
+                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"literal_error","loc":["body","action"],"msg":"Input should be 'REQUEST', 'TAKE', 'REQUEST_EVIDENCE', 'SUPPLY_EVIDENCE' or 'WITHDRAW'","input":"REPLY","ctx":{"expected":"'REQUEST', 'TAKE', 'REQUEST_EVIDENCE', 'SUPPLY_EVIDENCE' or 'WITHDRAW'"}},{"type":"extra_forbidden","loc":["body","reply_kind"],"msg":"Extra inputs are not permitted","input":"INFORMATION"}]}
+E       assert 422 == 200
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+tests/test_manual_goal_reply.py:33: AssertionError
+_ test_original_reply_explicit_awareness_closes_only_human_responsibility[UNABLE_TO_HANDLE] _
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+kind = 'UNABLE_TO_HANDLE'
+
+    @pytest.mark.parametrize('kind',['INFORMATION','UNABLE_TO_HANDLE'])
+    def test_original_reply_explicit_awareness_closes_only_human_responsibility(template_consumption,kind):
+        f=template_consumption;row=ready(f);before=products(f['owner']);grants=grant_snapshot(f['owner']);v=read(f,row,user=REVIEWERS[0]).json();d=reply_data(v,kind)
+>       r=post(f,row,d,'original-reply',user=REVIEWERS[0]);assert r.status_code==200,r.text
+                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"literal_error","loc":["body","action"],"msg":"Input should be 'REQUEST', 'TAKE', 'REQUEST_EVIDENCE', 'SUPPLY_EVIDENCE' or 'WITHDRAW'","input":"REPLY","ctx":{"expected":"'REQUEST', 'TAKE', 'REQUEST_EVIDENCE', 'SUPPLY_EVIDENCE' or 'WITHDRAW'"}},{"type":"extra_forbidden","loc":["body","reply_kind"],"msg":"Extra inputs are not permitted","input":"UNABLE_TO_HANDLE"}]}
+E       assert 422 == 200
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+tests/test_manual_goal_reply.py:33: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_manual_goal_reply.py::test_original_reply_explicit_awareness_closes_only_human_responsibility[INFORMATION]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_manual_goal_reply.py::test_original_reply_explicit_awareness_closes_only_human_responsibility[INFORMATION]
+FAILED tests/test_manual_goal_reply.py::test_original_reply_explicit_awareness_closes_only_human_responsibility[UNABLE_TO_HANDLE]
+2 failed, 2 warnings in 2.41s
