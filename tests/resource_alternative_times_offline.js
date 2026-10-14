@@ -1,27 +1,34 @@
 // Executes the real resource form code with offline DOM/fetch doubles.
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const html=fs.readFileSync('src/parkweave/web.html','utf8');
-const actual=html.slice(html.indexOf('let resourceGeneration=0'),html.indexOf('function updateCombinationSelection'));
+const actual=html.match(/<script[^>]*>([\s\S]*?)<\/script>/)[1];
 const mode=process.argv[2],rid='fa161ea0-b665-4ec5-b345-a070bfec764d';let checks=0;
 const check=v=>{checks++;assert(v);};
 class Element{
- constructor(tag='div'){this.tagName=tag;this.value='';this.textContent='';this.children=[];this.dataset={};this.disabled=false;this.hidden=false;}
+ constructor(tag='div'){this.tagName=tag;this.value='';this.textContent='';this.children=[];this.dataset={};this.disabled=false;this.hidden=false;this.checked=false;this.style={};this.listeners={};const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});}
  append(...xs){this.children.push(...xs);}
  prepend(...xs){this.children.unshift(...xs);}
  replaceChildren(...xs){this.children=xs;this.textContent='';}
- querySelectorAll(){return inputs;}
+ querySelectorAll(){return this===elements.get('resource-form')?inputs:[];}
+ addEventListener(name,fn){(this.listeners[name]??=[]).push(fn);}
+ setAttribute(){} removeAttribute(name){delete this[name];} closest(){return null;} scrollIntoView(){} focus(){} select(){} remove(){}
+ get options(){return this.children.filter(e=>e.tagName==='option');}
+ get selectedOptions(){return this.options.filter(e=>e.value===this.value);}
  reset(){for(const el of inputs)el.value='';}
  get firstElementChild(){return this.children[0];}
  replaceWith(){}
 }
-const elements=new Map(),$=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
+const elements=new Map(),$=id=>{if(!elements.has(id)){const el=new Element();el.id=id;elements.set(id,el);}return elements.get(id);};
 const inputIds=['resource-select','resource-start','resource-end','resource-quantity','resource-ttl','resource-purpose','resource-search-from','resource-search-until'];
 const inputs=inputIds.map($),calls=[];
-const context=vm.createContext({$,Date,JSON,Number,String,Map,Set,Error,Infinity,encodeURIComponent,
- crypto:{randomUUID:()=> '00000000-0000-0000-0000-000000000001'},
- document:{createElement:tag=>new Element(tag),querySelectorAll:()=>[]},
- textElement:(tag,text)=>{const e=new Element(tag);e.textContent=text;return e;},
- bundleActor:null,bundleBusy:false,bundleLocked:()=>false,clearCombinationSelection:()=>{},updateCombinationSelection:()=>{},
+const store={};
+const storage=new Proxy({getItem:n=>store[n]??null,setItem:(n,v)=>store[n]=v,removeItem:n=>delete store[n]},{ownKeys:()=>Object.keys(store),getOwnPropertyDescriptor:()=>({enumerable:true,configurable:true})});
+$('run-access-valid-until').parentElement={firstChild:{textContent:''}};
+const context=vm.createContext({Date,JSON,Number,String,Map,Set,WeakMap,Error,Infinity,encodeURIComponent,URLSearchParams,structuredClone,TextEncoder,Uint8Array,
+ crypto:{randomUUID:()=> '00000000-0000-0000-0000-000000000001',subtle:require('crypto').webcrypto.subtle},
+ Option:function(text,value){const e=new Element('option');e.textContent=text;e.value=value;return e;},
+ localStorage:storage,setTimeout:()=>1,clearTimeout(){},location:{search:''},window:{addEventListener(){}},
+ document:{getElementById:$,createElement:tag=>new Element(tag),querySelectorAll:()=>[],addEventListener(){},body:new Element('body')},
  fetch:(path,options)=>new Promise((resolve,reject)=>calls.push({path,options,resolve,reject}))});
 vm.runInContext(actual,context);
 function draft(){ $('token').value='PRIVATE_TOKEN_A';$('resource-select').value=rid;$('resource-start').value='2026-10-12T10:00';$('resource-end').value='2026-10-12T11:00';$('resource-quantity').value='2';$('resource-ttl').value='120';$('resource-purpose').value='PRIVATE_PURPOSE';$('resource-search-from').value='2026-10-12T10:00';$('resource-search-until').value='2026-10-12T14:00';$('resource-form').hidden=false;}
@@ -46,11 +53,10 @@ const buttons=()=> $('resource-alternative-results').children.filter(e=>e.tagNam
    const card=$('resource-current').children[0],confirm=card.children.find(e=>e.dataset.resourceAction==='confirm');check(!!confirm&&calls.length===3);const confirming=confirm.onclick();check(calls.length===4&&calls[3].path.endsWith('/confirm'));finish(3,200,{hold:{...h,state:'CONFIRMED'}});await confirming;
   }
  }else if(mode==='unknown_bundle_controls'){
-  context.bundleLocked=()=>true;context.bundleBusyContext=null;
+  vm.runInContext('bundleBusy=true;bundleBusyContext=null',context);
   const formButtons=['resource-preview','resource-hold','resource-alternatives'].map($);
   context.document.querySelectorAll=()=>formButtons;
-  const controls=html.slice(html.indexOf('function bundleControls(){'),html.indexOf('async function bundleIdentify'));
-  vm.runInContext(controls+'\nbundleControls();',context);
+  vm.runInContext('bundleControls();',context);
   check(!$('resource-alternatives').disabled&&$('resource-hold').disabled&&$('resource-preview').disabled);
   const p=start();finish(0,200,result());await p;check(buttons().length===1);
   buttons()[0].onclick();check(calls.length===1&&$('resource-hold').disabled&&$('resource-preview').disabled);
