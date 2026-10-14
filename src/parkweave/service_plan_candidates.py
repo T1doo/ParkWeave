@@ -12,6 +12,7 @@ from . import bounded_planning as bp,controlled_plans as cp
 from . import preparation as prep
 from .store import Conflict
 from .intern_adapter import ModelBoundaryError
+from .service_plan_planner import UNKNOWN_OUTCOMES,SAFE_OUTCOMES,valid_attempt_outcome
 
 SCOPE='SYNTHETIC_SERVICE_PLAN_CANDIDATE'
 ORIGIN='SYNTHETIC_UNTRUSTED_CANDIDATE'
@@ -66,7 +67,8 @@ def _producer(record):
         type(producer['version']) is not int or producer['version']!=3 or producer['origin']!=planner_origin or producer['model']!=MODEL or
         type(producer['returned_model']) is not str or not producer['returned_model'].isascii() or producer['returned_model'].casefold()!=MODEL or
         producer['provider_enabled'] is not False or producer['executed'] is not False or producer['mode']!='OFFLINE_HTTP_FIXTURE' or
-        attempt['state']!='COMMITTED' or attempt['outcome']!='VALIDATED' or type(attempt['version']) is not int or attempt['version']!=3 or producer['attempt_sha256']!=attempt_sha or
+        type(attempt) is not dict or set(attempt)!={'version','state','outcome','producer_sha256'} or
+        attempt['state']!='COMMITTED' or not valid_attempt_outcome(attempt['state'],attempt['outcome']) or type(attempt['version']) is not int or attempt['version']!=3 or producer['attempt_sha256']!=attempt_sha or
         cp._hash(producer)!=cp._hash(record['document'].get('candidate_producer')) or
         attempt['producer_sha256']!=cp._hash(producer) or producer['proposal_sha256']!=record['candidate_sha256'] or producer['budget_sha256']!=cp._hash(budget) or
         type(producer['response_sha256']) is not str or len(producer['response_sha256'])!=64 or any(v not in '0123456789abcdef' for v in producer['response_sha256']) or
@@ -167,7 +169,8 @@ def read(store,token,id,candidate_id=None,key=None):
 def _attempt_view(parent,record):
     try:
         UUID(record['id']);request=bp.Capture.model_validate(record['candidate_request']);attempt=record['planner_attempt']
-        if (type(attempt['version']) is not int or attempt['version']!=3 or attempt['state'] not in ('STARTED','COMMITTED','FAILED_SAFE','OUTCOME_UNKNOWN') or
+        if (type(attempt) is not dict or set(attempt)!=({'version','state','outcome','producer_sha256'} if attempt.get('state')=='COMMITTED' else {'version','state','outcome'}) or
+            type(attempt['version']) is not int or attempt['version']!=3 or not valid_attempt_outcome(attempt['state'],attempt['outcome']) or
             record['actor_id']!=parent['owner_id'] or record['document']['preparation_id']!=str(parent['id']) or
             request.expected_preparation_revision!=record['document']['preparation_revision'] or request.expected_source_sha256!=record['document']['source_sha256'] or
             record['fingerprint']!=_fingerprint(parent['id'],request,model=True) or _window(record) is None or
@@ -211,7 +214,9 @@ def _failure(store,token,id,key,fp,attempt_id,code):
             h=_prior(c,p,parent,key,fp)
             if h is None or h['id']!=attempt_id or h['planner_attempt']['state']!='STARTED':return
             _attempt_view(parent,h)
-            unknown=code in ('TIMEOUT_OUTCOME_UNKNOWN','TRANSPORT_OUTCOME_UNKNOWN','PLANNER_OUTCOME_UNKNOWN')
+            # Unknown/new exception codes cannot certify a safe refusal.
+            if code not in UNKNOWN_OUTCOMES and code not in SAFE_OUTCOMES:code='PLANNER_OUTCOME_UNKNOWN'
+            unknown=code in UNKNOWN_OUTCOMES
             h['planner_attempt'].update(state='OUTCOME_UNKNOWN' if unknown else 'FAILED_SAFE',outcome=code)
             c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(parent['planning_previews']),id))
     except (Denied,Conflict):return
