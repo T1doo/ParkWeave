@@ -62,8 +62,10 @@ def structure(plan,*,parent=None):
         keys=set();event_ids=set()
         for i,event in enumerate(plan['events'],1):
             UUID(event['id'])
+            legacy_adoption_key=bool(plan.get('template_migration') and i==1 and event['action']=='ADOPT' and
+                isinstance(event['request_key'],str) and re.fullmatch(r'tc:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:ADOPT_PLAN',event['request_key']))
             if (type(event['revision']) is not int or event['revision']!=i or event['plan_id']!=plan['id'] or event['id'] in event_ids or
-                (event['actor_id'],event['request_key']) in keys or not re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or not re.fullmatch('[a-f0-9]{64}',event['fingerprint']) or
+                (event['actor_id'],event['request_key']) in keys or not (re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or legacy_adoption_key) or not re.fullmatch('[a-f0-9]{64}',event['fingerprint']) or
                 event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK','TEMPLATE_UPGRADE') or
                 (i==1 and event['action']!='ADOPT') or (event['step_id'] is None if event['action'] in ('ADOPT','TEMPLATE_UPGRADE') else event['step_id'] in ids) is not True):raise ValueError()
             keys.add((event['actor_id'],event['request_key']));event_ids.add(event['id'])

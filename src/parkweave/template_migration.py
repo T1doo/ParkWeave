@@ -132,6 +132,8 @@ def validate_plan(parent,plan):
             before=patch['previous_release'];target=patch['target_release'];origin=patch['origin_binding']
             if set(patch)!={'request','origin_binding','previous_release','target_release','check','choice','affected','preserved','source_changed'}:raise ValueError()
             scope=patch['check']['scope'];choice=patch['choice'];choice_body={k:v for k,v in choice.items() if k!='event_sha256'}
+            initial_key=plan['events'][0]['request_key']
+            if initial_key.startswith('tc:') and initial_key!='tc:'+scope['instance_id']+':ADOPT_PLAN':raise ValueError()
             for release in (before,target):
                 snapshot=release['snapshot'];TemplateDraft.model_validate(snapshot['definition'])
                 if (snapshot['release_id']!=release['release_id'] or sha(snapshot)!=release['release_sha256'] or
