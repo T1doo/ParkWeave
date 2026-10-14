@@ -1,0 +1,44 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_actual_owned_pg_parent_wait_material_implementation_wins_candidate_adoption _
+
+preparation_fixture = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+
+    def test_actual_owned_pg_parent_wait_material_implementation_wins_candidate_adoption(preparation_fixture):
+     import time
+     from concurrent.futures import ThreadPoolExecutor
+     from parkweave import preparation as prep
+     from contextlib import contextmanager
+     from uuid import UUID
+     f=preparation_fixture;p=setup(f,[GOAL]);v=generate(f,p).json();d=adoption(f,p,v);observed=False
+     with ThreadPoolExecutor(1) as pool:
+      with f[1].connect() as holder:
+       parent=holder.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(p['preparation_id'],)).fetchone();pid=holder.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid'];future=pool.submit(adopt,f,p,v,'ind-pg-adopt',d);end=time.monotonic()+2
+       with f[1].connect() as monitor:
+        while time.monotonic()<end:
+         monitor.execute('SELECT pg_stat_clear_snapshot()');observed=monitor.execute('SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND %s=ANY(pg_blocking_pids(pid))) AS yes',(pid,)).fetchone()['yes']
+         if observed:break
+         time.sleep(.01)
+       assert observed
+       class BorrowedStore:
+        @contextmanager
+        def connect(self):yield holder
+        def __getattr__(self,name):return getattr(f[0],name)
+>      changed=prep.command(BorrowedStore(),f[2]['fixture-a'],UUID(p['preparation_id']),'ind-original-material-write',prep.Command(action='ADD_EVIDENCE',expected_revision=parent['revision'],slot='material_outline',text='SYNTHETIC independent actual original command material mutation',source_kind='DOCUMENT_EXCERPT',source_label='SYNTHETIC changed during owned parent wait'))
+                                                                                                                      ^^^^^^^^^^^^
+E      AttributeError: module 'parkweave.preparation' has no attribute 'Command'. Did you mean: 'command'?
+
+.runtime/service-plan-candidates-20261014/independent/test_candidates_independent.py:86: AttributeError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/service-plan-candidates-20261014/independent/test_candidates_independent.py::test_actual_owned_pg_parent_wait_material_implementation_wins_candidate_adoption
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/service-plan-candidates-20261014/independent/test_candidates_independent.py::test_actual_owned_pg_parent_wait_material_implementation_wins_candidate_adoption
+1 failed, 14 deselected, 2 warnings in 1.58s

@@ -1,5 +1,10 @@
 ## 普通合成 Case 首次实际接单前取消
 
+## 20261014：F2-T02 有界合成候选ID消费
+
+基于已接受3ae2215852c1c2e3aa8080ac4f3dde4d7643cace，源码85869726c1418816478facecc6dc0d21c7cdfdaa。原页合成候选生成、按原ID确定性核全目标/DAG/硬约束及CaseRun/资料/目录/registry来源，明确采用原ADOPT；provider关闭，未知不判满足，Case仍未完成。根26模块678PASS，独立15PASS，原失败窗完整保留，513源零漂移；不签收完整T02/AT07/AT14、模型或目录发布。范围与交付证据见[候选消费合同](ServicePlanCandidateConsumer-20261014.md)，下方历史仍限各自时点范围。
+
+
 源码及测试 `557528da70d905859d7fd09dc0b4ed8f5545af51`，从原远端 `e40bd24329ec21bd881ee7521e63e32a8ee3c13a` 建独立分支开发。企业原 owner 按当前权限、精确 Case/资料/来源版本、原 key 与明确原因取消；状态及事件同事务。任何历史 ACCEPT、receipt、本地关闭或隔离来源拒绝；取消后服务端封锁所有业务写及执行者/资源关联旁路，有权历史 GET 保留且不追加计划隐式失效。原成功 Run、资料、分派和预约保留，资源按原权限独立释放。
 
 独审 LIMITED_PASS，398 路径零漂移，真实 PG 双向竞争及离线 NodeVM 恢复验证通过；每窗实际 PASS/FAIL/ERROR/SKIP、原失败哈希和交付范围见 [合同与证据](CaseCancellationBeforeAccept.md)。schema 30 只装于具有原创建票据的自有 Linux 临时 PG，无新 Grant/registry、生产迁移或权限扩大。历史浏览器 `ERR_BLOCKED_BY_ADMINISTRATOR` 未重试，真实浏览器/全仓/完整原 AT/Windows/native 未执行。不支持取消后恢复、首次接单后或履约后取消，不签收完整 Case 生命周期。以下历史保持各自原范围。

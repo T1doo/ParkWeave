@@ -1,0 +1,42 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_candidate_current_plan_keeps_event_request_and_consumed_graph_proof[both_removed] _
+
+preparation_fixture = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+change = 'both_removed'
+
+    @pytest.mark.parametrize('change',['consumption','request_reason','event_fingerprint','step_contract','missing_consumption','both_removed'])
+    def test_candidate_current_plan_keeps_event_request_and_consumed_graph_proof(preparation_fixture,change):
+        f=preparation_fixture;p=setup(f,[GOAL]);v=generate(f,p).json();data=adoption(f,p,v);key=uuid4().hex;assert adopt(f,p,v,key,data).status_code==201
+        with f[1].connect() as c:
+            plan=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['service_case_plan']
+            if change=='consumption':plan['candidate_consumption']['verification_sha256']='0'*64
+            elif change=='request_reason':plan['adoption_request']['reason']='SYNTHETIC replaced private reason'
+            elif change=='event_fingerprint':plan['events'][0]['fingerprint']='0'*64
+            elif change=='step_contract':plan['steps'][0]['contract']['actions'][0]['role']='service_executor'
+            else:
+                plan.pop('candidate_consumption')
+                if change=='both_removed':plan.pop('adoption_request')
+            c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),p['preparation_id']))
+>       before=digest(f);assert f[3].get('/api/preparations/'+p['preparation_id']+'/service-case-plan',headers=headers(f[2])).status_code==409
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+E        +    where <Response [200 OK]> = get((('/api/preparations/' + '54a548f4-9891-435f-81b6-ec76ffba0de9') + '/service-case-plan'), headers={'Authorization': 'Bearer [REDACTED_SYNTHETIC_FIXTURE_SESSION]'})
+E        +      where get = <starlette.testclient.TestClient object at 0x7f91a34fa5a0>.get
+E        +      and   {'Authorization': 'Bearer [REDACTED_SYNTHETIC_FIXTURE_SESSION]'} = headers({'fixture-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', 'fixture-b': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', 'prep-specialist-fixture-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...})
+
+tests/test_service_plan_candidates.py:246: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_service_plan_candidates.py::test_candidate_current_plan_keeps_event_request_and_consumed_graph_proof[both_removed]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_service_plan_candidates.py::test_candidate_current_plan_keeps_event_request_and_consumed_graph_proof[both_removed]
+1 failed, 57 deselected, 2 warnings in 1.29s

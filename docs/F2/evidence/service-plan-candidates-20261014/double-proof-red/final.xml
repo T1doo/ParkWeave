@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.283" timestamp="2026-10-14T15:43:10.709279+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_plan_candidates" name="test_candidate_current_plan_keeps_event_request_and_consumed_graph_proof[both_removed]" time="1.107"><failure message="AssertionError: assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code&#10; +    where &lt;Response [200 OK]&gt; = get((('/api/preparations/' + '54a548f4-9891-435f-81b6-ec76ffba0de9') + '/service-case-plan'), headers={'Authorization': 'Bearer [REDACTED_SYNTHETIC_FIXTURE_SESSION]'})&#10; +      where get = &lt;starlette.testclient.TestClient object at 0x7f91a34fa5a0&gt;.get&#10; +      and   {'Authorization': 'Bearer [REDACTED_SYNTHETIC_FIXTURE_SESSION]'} = headers({'fixture-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', 'fixture-b': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', 'prep-specialist-fixture-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...})">preparation_fixture = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+change = 'both_removed'
+
+    @pytest.mark.parametrize('change',['consumption','request_reason','event_fingerprint','step_contract','missing_consumption','both_removed'])
+    def test_candidate_current_plan_keeps_event_request_and_consumed_graph_proof(preparation_fixture,change):
+        f=preparation_fixture;p=setup(f,[GOAL]);v=generate(f,p).json();data=adoption(f,p,v);key=uuid4().hex;assert adopt(f,p,v,key,data).status_code==201
+        with f[1].connect() as c:
+            plan=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['service_case_plan']
+            if change=='consumption':plan['candidate_consumption']['verification_sha256']='0'*64
+            elif change=='request_reason':plan['adoption_request']['reason']='SYNTHETIC replaced private reason'
+            elif change=='event_fingerprint':plan['events'][0]['fingerprint']='0'*64
+            elif change=='step_contract':plan['steps'][0]['contract']['actions'][0]['role']='service_executor'
+            else:
+                plan.pop('candidate_consumption')
+                if change=='both_removed':plan.pop('adoption_request')
+            c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),p['preparation_id']))
+&gt;       before=digest(f);assert f[3].get('/api/preparations/'+p['preparation_id']+'/service-case-plan',headers=headers(f[2])).status_code==409
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+E        +    where &lt;Response [200 OK]&gt; = get((('/api/preparations/' + '54a548f4-9891-435f-81b6-ec76ffba0de9') + '/service-case-plan'), headers={'Authorization': 'Bearer [REDACTED_SYNTHETIC_FIXTURE_SESSION]'})
+E        +      where get = &lt;starlette.testclient.TestClient object at 0x7f91a34fa5a0&gt;.get
+E        +      and   {'Authorization': 'Bearer [REDACTED_SYNTHETIC_FIXTURE_SESSION]'} = headers({'fixture-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', 'fixture-b': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', 'prep-specialist-fixture-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...})
+
+tests/test_service_plan_candidates.py:246: AssertionError</failure></testcase></testsuite></testsuites>

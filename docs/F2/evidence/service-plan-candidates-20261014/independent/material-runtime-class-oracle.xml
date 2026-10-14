@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.569" timestamp="2026-10-14T15:54:15.513315+00:00" hostname="754d39e95154"><testcase classname=".runtime.service-plan-candidates-20261014.independent.test_candidates_independent" name="test_actual_owned_pg_parent_wait_material_implementation_wins_candidate_adoption" time="1.114"><failure message="AttributeError: module 'parkweave.preparation' has no attribute 'Command'. Did you mean: 'command'?">preparation_fixture = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+
+    def test_actual_owned_pg_parent_wait_material_implementation_wins_candidate_adoption(preparation_fixture):
+     import time
+     from concurrent.futures import ThreadPoolExecutor
+     from parkweave import preparation as prep
+     from contextlib import contextmanager
+     from uuid import UUID
+     f=preparation_fixture;p=setup(f,[GOAL]);v=generate(f,p).json();d=adoption(f,p,v);observed=False
+     with ThreadPoolExecutor(1) as pool:
+      with f[1].connect() as holder:
+       parent=holder.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(p['preparation_id'],)).fetchone();pid=holder.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid'];future=pool.submit(adopt,f,p,v,'ind-pg-adopt',d);end=time.monotonic()+2
+       with f[1].connect() as monitor:
+        while time.monotonic()&lt;end:
+         monitor.execute('SELECT pg_stat_clear_snapshot()');observed=monitor.execute('SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND %s=ANY(pg_blocking_pids(pid))) AS yes',(pid,)).fetchone()['yes']
+         if observed:break
+         time.sleep(.01)
+       assert observed
+       class BorrowedStore:
+        @contextmanager
+        def connect(self):yield holder
+        def __getattr__(self,name):return getattr(f[0],name)
+&gt;      changed=prep.command(BorrowedStore(),f[2]['fixture-a'],UUID(p['preparation_id']),'ind-original-material-write',prep.Command(action='ADD_EVIDENCE',expected_revision=parent['revision'],slot='material_outline',text='SYNTHETIC independent actual original command material mutation',source_kind='DOCUMENT_EXCERPT',source_label='SYNTHETIC changed during owned parent wait'))
+                                                                                                                      ^^^^^^^^^^^^
+E      AttributeError: module 'parkweave.preparation' has no attribute 'Command'. Did you mean: 'command'?
+
+.runtime/service-plan-candidates-20261014/independent/test_candidates_independent.py:86: AttributeError</failure></testcase></testsuite></testsuites>
