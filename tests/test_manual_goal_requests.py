@@ -93,6 +93,7 @@ def test_actual_parent_pg_lock_wait_rechecks_committed_source(template_consumpti
             deadline=time.monotonic()+2
             with f['owner'].connect() as monitor:
                 while time.monotonic()<deadline:
+                    monitor.execute('SELECT pg_stat_clear_snapshot()')
                     blocked=monitor.execute('SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND %s=ANY(pg_blocking_pids(pid))) AS yes',(pid,)).fetchone()['yes']
                     if blocked:break
                     time.sleep(.01)
