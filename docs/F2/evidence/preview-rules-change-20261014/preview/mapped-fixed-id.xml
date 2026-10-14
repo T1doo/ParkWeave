@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.054" timestamp="2026-10-14T21:59:24.568580+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_selection_execution_preview" name="test_second_park_v4_actual_preview_writes_preserve_all_public_business" time="1.904"><failure message="AssertionError: {&quot;detail&quot;:&quot;record unavailable or authorization denied&quot;}&#10;assert 403 == 200&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code">mapped_preview = {'a': {'f': (&lt;parkweave.store.Store object at 0x7fda3a3f6ed0&gt;, &lt;parkweave.store.Store object at 0x7fda3a3f67e0&gt;, {'fix...d': '4b2c90ef-57ea-493f-b342-c88a85e56b56', 'run_id': 'c6955689-43aa-49ab-be84-801c09a53c49', 'revision': 1, ...}, ...}
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fda3a005a30&gt;
+
+    def test_second_park_v4_actual_preview_writes_preserve_all_public_business(mapped_preview,monkeypatch):
+        a=mapped_preview;f=a['f'];before=snapshot(f);authority=authority_snapshot(f[1]);control=case_history(f[1],a['control']['preparation_id']);calls=[];connections=[]
+        original=lc.command
+        def observed(store,*args,**kwargs):
+            raw=store.connection._raw;connections.append(raw)
+            assert raw.execute('SHOW search_path').fetchone()['search_path']=='pg_temp'
+            assert {r['relname'] for r in raw.execute("SELECT relname FROM pg_class WHERE relnamespace=pg_my_temp_schema() AND relkind='r'")}==set(p5.TABLES)
+            assert raw.execute('SELECT count(*) n FROM synthetic_resource_holds').fetchone()['n']==2
+            assert raw.execute('SELECT count(*) n FROM service_step_receipts').fetchone()['n']==1
+            calls.append(args[-1].action)
+            return original(store,*args,**kwargs)
+        monkeypatch.setattr(lc,'command',observed)
+&gt;       key=uuid4().hex;result=ok(execute(a,key=key),201)['result'];art=result['artifact']
+                                  ^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_execution_preview.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_selection_execution_preview.py:87: in execute
+    f=a['f'];return f[3].post('/api/preparations/'+a['parent']['preparation_id']+'/lifecycle-execution-preview',headers=headers(f[2],user,key or uuid4().hex),json=data or body(a))
+                                                                                                                                                                           ^^^^^^^
+tests/test_service_selection_execution_preview.py:83: in body
+    value=ok(read(a));return dict(expected_preparation_revision=value['preparation_revision'],expected_request_revision=value['request_revision'],expected_source_sha256=value['current_source_sha256'],review_decision='ACKNOWLEDGE',lifecycle_sequence='REVALIDATE_CLOSE_REOPEN')
+          ^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+response = &lt;Response [403 Forbidden]&gt;, code = 200
+
+    def ok(response, code=200):
+&gt;       assert response.status_code == code, response.text
+E       AssertionError: {"detail":"record unavailable or authorization denied"}
+E       assert 403 == 200
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+
+tests/test_service_selection_full_chain.py:35: AssertionError</failure></testcase></testsuite></testsuites>

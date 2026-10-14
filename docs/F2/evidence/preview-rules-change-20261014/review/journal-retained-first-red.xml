@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="0.059" timestamp="2026-10-14T22:11:04.806237+00:00" hostname="754d39e95154"><testcase classname="tests.test_independent_rule_journal_review" name="test_retained_journal_schema_tamper_is_refused_without_ddl[missing-trigger]" time="0.002"><failure message="Failed: DID NOT RAISE Conflict">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-463/test_retained_journal_schema_t0')
+change = 'missing-trigger'
+
+    @pytest.mark.parametrize('change',['missing-trigger','forged-trigger'])
+    def test_retained_journal_schema_tamper_is_refused_without_ddl(tmp_path,change):
+        path=tmp_path/'retained.synthetic-readiness.sqlite3';SimulationJournal(path)
+        with sqlite3.connect(path) as c:
+            c.execute('DROP TRIGGER simulation_immutable_delete')
+            if change=='forged-trigger':c.execute('CREATE TRIGGER simulation_immutable_delete BEFORE DELETE ON simulation_assessments BEGIN SELECT 1; END')
+        before=path.read_bytes()
+&gt;       with pytest.raises(Conflict):SimulationJournal(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_independent_rule_journal_review.py:14: Failed</failure></testcase><testcase classname="tests.test_independent_rule_journal_review" name="test_retained_journal_schema_tamper_is_refused_without_ddl[forged-trigger]" time="0.001"><failure message="Failed: DID NOT RAISE Conflict">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-463/test_retained_journal_schema_t1')
+change = 'forged-trigger'
+
+    @pytest.mark.parametrize('change',['missing-trigger','forged-trigger'])
+    def test_retained_journal_schema_tamper_is_refused_without_ddl(tmp_path,change):
+        path=tmp_path/'retained.synthetic-readiness.sqlite3';SimulationJournal(path)
+        with sqlite3.connect(path) as c:
+            c.execute('DROP TRIGGER simulation_immutable_delete')
+            if change=='forged-trigger':c.execute('CREATE TRIGGER simulation_immutable_delete BEFORE DELETE ON simulation_assessments BEGIN SELECT 1; END')
+        before=path.read_bytes()
+&gt;       with pytest.raises(Conflict):SimulationJournal(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_independent_rule_journal_review.py:14: Failed</failure></testcase></testsuite></testsuites>

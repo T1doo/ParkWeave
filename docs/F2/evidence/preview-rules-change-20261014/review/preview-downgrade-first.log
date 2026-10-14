@@ -1,0 +1,42 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_review_removed_v4_markers_cannot_attempt_legacy_fixed_resources _____
+
+mapped_preview = {'a': {'f': (<parkweave.store.Store object at 0x7f57a52119a0>, <parkweave.store.Store object at 0x7f57a5211910>, {'fix...d': 'b03c108f-2a90-4c7b-b420-c167b8c70c2b', 'run_id': '4dc4c49e-f610-4d68-8a8b-22e5015f8f27', 'revision': 1, ...}, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f57a4e15400>
+
+    def test_review_removed_v4_markers_cannot_attempt_legacy_fixed_resources(mapped_preview,monkeypatch):
+        from parkweave import resource_holds as rh
+        a=mapped_preview;f=a['f'];data=body(a)
+        with f[1].connect() as c:
+            plan=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(a['parent']['preparation_id'],)).fetchone()['service_case_plan']
+            plan['adoption_preview'].pop('profile',None)
+            plan['binding'].pop('service_selection',None)
+            plan.pop('candidate_consumption',None)
+            for field in ('candidate_id','expected_candidate_sha256','expected_verification_sha256'):
+                plan['adoption_request'].pop(field,None)
+            c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),a['parent']['preparation_id']))
+        attempted=[];original=rh._scope
+        def track(c,p,id,*args,**kwargs):
+            attempted.append(str(id));return original(c,p,id,*args,**kwargs)
+        monkeypatch.setattr(rh,'_scope',track)
+        saved=a['engine'].path.read_bytes()
+        reply=execute(a,data)
+>       assert reply.status_code==409
+E       assert 403 == 409
+E        +  where 403 = <Response [403 Forbidden]>.status_code
+
+tests/test_independent_preview_change_review.py:84: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_independent_preview_change_review.py::test_review_removed_v4_markers_cannot_attempt_legacy_fixed_resources
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_independent_preview_change_review.py::test_review_removed_v4_markers_cannot_attempt_legacy_fixed_resources
+1 failed, 4 deselected, 2 warnings in 1.89s

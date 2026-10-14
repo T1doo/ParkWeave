@@ -1,0 +1,786 @@
+FFFFFFFFFFFFFFFFFFFFF                                                    [100%]
+=================================== FAILURES ===================================
+___ test_actual_resource_suggestions_with_offline_doubles[choose_fills_only] ___
+
+mode = 'choose_fills_only'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:39:54
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+______ test_actual_resource_suggestions_with_offline_doubles[empty_grid] _______
+
+mode = 'empty_grid'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:59:94
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+____ test_actual_resource_suggestions_with_offline_doubles[truncated_grid] _____
+
+mode = 'truncated_grid'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:59:94
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+__ test_actual_resource_suggestions_with_offline_doubles[current_403_clears] ___
+
+mode = 'current_403_clears'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:62:63
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+_ test_actual_resource_suggestions_with_offline_doubles[late_403_other_identity] _
+
+mode = 'late_403_other_identity'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:68:160
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+_ test_actual_resource_suggestions_with_offline_doubles[identity_aba_delayed_json] _
+
+mode = 'identity_aba_delayed_json'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:66:51
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+____ test_actual_resource_suggestions_with_offline_doubles[change_resource] ____
+
+mode = 'change_resource'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:72:69
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+_____ test_actual_resource_suggestions_with_offline_doubles[change_start] ______
+
+mode = 'change_start'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:72:69
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+______ test_actual_resource_suggestions_with_offline_doubles[change_end] _______
+
+mode = 'change_end'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:72:69
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+____ test_actual_resource_suggestions_with_offline_doubles[change_quantity] ____
+
+mode = 'change_quantity'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:72:69
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+__ test_actual_resource_suggestions_with_offline_doubles[change_search_from] ___
+
+mode = 'change_search_from'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:72:69
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+__ test_actual_resource_suggestions_with_offline_doubles[change_search_until] __
+
+mode = 'change_search_until'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:72:69
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+_ test_actual_resource_suggestions_with_offline_doubles[two_searches_latest_wins] _
+
+mode = 'two_searches_latest_wins'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:75:51
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+____ test_actual_resource_suggestions_with_offline_doubles[wrong_resource] _____
+
+mode = 'wrong_resource'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:79:3
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+____ test_actual_resource_suggestions_with_offline_doubles[wrong_quantity] _____
+
+mode = 'wrong_quantity'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:79:3
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+____ test_actual_resource_suggestions_with_offline_doubles[wrong_duration] _____
+
+mode = 'wrong_duration'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:79:3
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+______ test_actual_resource_suggestions_with_offline_doubles[wrong_grid] _______
+
+mode = 'wrong_grid'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:79:3
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+_______ test_actual_resource_suggestions_with_offline_doubles[unsorted] ________
+
+mode = 'unsorted'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:79:3
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+___ test_actual_resource_suggestions_with_offline_doubles[too_many_results] ____
+
+mode = 'too_many_results'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:79:3
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+_ test_actual_resource_suggestions_with_offline_doubles[original_flow_explicit] _
+
+mode = 'original_flow_explicit'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:39:54
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+_ test_actual_resource_suggestions_with_offline_doubles[unknown_bundle_controls] _
+
+mode = 'unknown_bundle_controls'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:31:42)
+E             at /workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:55:19
+E             at Object.<anonymous> (/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_times_offline.js:83:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:8
+E         function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                       ^
+E         
+E         ReferenceError: failCurrentEntryRead is not defined
+E             at resourceError (evalmachine.<anonymous>:8:111)
+E             at $.onclick (evalmachine.<anonymous>:26:251)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-resource-harness-baseline-20261014/tests/resource_alternative_tim...esourceError (evalmachine.<anonymous>:8:111)\n    at $.onclick (evalmachine.<anonymous>:26:251)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[choose_fills_only]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[empty_grid]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[truncated_grid]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[current_403_clears]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[late_403_other_identity]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[identity_aba_delayed_json]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[change_resource]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[change_start]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[change_end]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[change_quantity]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[change_search_from]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[change_search_until]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[two_searches_latest_wins]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[wrong_resource]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[wrong_quantity]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[wrong_duration]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[wrong_grid]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[unsorted]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[too_many_results]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[original_flow_explicit]
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[unknown_bundle_controls]
+21 failed, 1 warning in 0.90s

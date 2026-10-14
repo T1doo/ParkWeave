@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="4.864" timestamp="2026-10-14T22:15:48.016027+00:00" hostname="754d39e95154"><testcase classname="tests.test_preview_rules_change_nodevm_actual" name="test_actual_case_alternative_prefill_original_confirmation_and_key_reads[c_lost_hold]" time="4.734"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: original unknown gate blocked GET recovery:  请先核对原入口尚未确定的操作 &#10;      at /workspace/parkweave-preview-rules-ui-20261014/tests/preview_rules_change_actual_nodevm.js:21:255&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0&#10; +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/preview_rules_change_actual_node...&gt;.returncode">replay = {'a': {'f': (&lt;parkweave.store.Store object at 0x7f2ab56ffd10&gt;, &lt;parkweave.store.Store object at 0x7f2ab56ff680&gt;, {'fix...S', 'LOCAL_CASE_RECORD_RECHECK'], 'planning_constraints': {'excluded_roles': [], 'additional_requirements': []}, ...}]}
+mode = 'c_lost_hold'
+
+    @pytest.mark.parametrize('mode',['c_normal','c_lost_hold'])
+    def test_actual_case_alternative_prefill_original_confirmation_and_key_reads(replay,mode):
+        r=replay;f=r['f'];p,old_group,old_result=prepare_changed(r,'HTML-'+mode)
+        authority=authority_snapshot(f[1]);rows=all_public_rows(f[1])
+        with f[1].connect() as c:now=c.execute('SELECT clock_timestamp() t').fetchone()['t']
+        start=(now+timedelta(hours=5)).replace(second=0,microsecond=0)
+        params=dict(mode=mode,preparation_id=p['preparation_id'],search_from=start.strftime('%Y-%m-%dT%H:%M'),search_until=(start+timedelta(hours=3)).strftime('%Y-%m-%dT%H:%M'))
+&gt;       evidence=bridge(f[3],f,p,params,'fixture-c',readonly_rows=rows)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_preview_rules_change_nodevm_actual.py:83: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+api = &lt;starlette.testclient.TestClient object at 0x7f2ab525ef60&gt;
+f = (&lt;parkweave.store.Store object at 0x7f2ab56ffd10&gt;, &lt;parkweave.store.Store object at 0x7f2ab56ff680&gt;, {'fixture-a': 'OY...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7f2ab525ef60&gt;)
+p = {'preparation_id': 'bac2b6f4-b7dc-4c06-9f46-6fd3c1d09baf', 'case_id': 'b452670d-efbf-42dd-b5dc-5ab970fca441', 'run_id': '4e63355e-c699-4ca3-86db-66060e4daa08', 'revision': 6, ...}
+params = {'mode': 'c_lost_hold', 'preparation_id': 'bac2b6f4-b7dc-4c06-9f46-6fd3c1d09baf', 'search_from': '2026-10-15T03:15', 'search_until': '2026-10-15T06:15'}
+actor = 'fixture-c'
+readonly_rows = {'action_grants': [{'principal_id': 'fixture-a', 'action': 'case.create', 'active': True, 'park_id': 'park-a', ...}, {...-b7dc-4c06-9f46-6fd3c1d09baf'), 'actor_id': 'fixture-c', 'request_key': 'd77658b5fa054ad5b4eb5c7bed5addf7', ...}], ...}
+
+    def bridge(api,f,p,params,actor,*,readonly_rows=None):
+        out=Path('.runtime/preview-rules-ui-20261014');out.mkdir(parents=True,exist_ok=True)
+        errpath=out/(params['mode']+'-node.stderr.log');errfile=errpath.open('w')
+        proc=subprocess.Popen(['node','tests/preview_rules_change_actual_nodevm.js',json.dumps(params)],cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=errfile,bufsize=0)
+        traffic=[];external=[];value=None;selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            until=time.monotonic()+45
+            buffered=b'';lines=[]
+            while time.monotonic()&lt;until:
+                if not lines:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    chunk=os.read(proc.stdout.fileno(),65536)
+                    if not chunk:break
+                    buffered+=chunk
+                    while b'\n' in buffered:
+                        line,buffered=buffered.split(b'\n',1);lines.append(line)
+                    if not lines:continue
+                message=json.loads(lines.pop(0))
+                if message['type']=='result':value=message;break
+                if message['type']=='readonly_checkpoint':
+                    assert all_public_rows(f[1])==readonly_rows,'read-only proposal changed business rows'
+                    reply=dict(id=message['id'],status=200,body={})
+                elif message['type']=='explicit_original_binding_confirmation':
+                    # This is a separately simulated explicit owner action using the
+                    # original compare/confirm API, not an automatic page request.
+                    base='/api/preparations/'+p['preparation_id'];key=uuid4().hex
+                    comparison=ok(api.get(base+'/resource-plan-binding',params=dict(candidate_combination_id=message['combination_id']),headers=headers(f[2],actor)))
+                    assert comparison['comparison']['can_confirm']
+                    body=dict(combination_id=message['combination_id'],expected_preparation_revision=p['revision'],expected_link_revision=1,expected_comparison_sha256=comparison['comparison']['sha256'],reason='SYNTHETIC separate owner explicitly confirms original current comparison')
+                    confirmed=ok(api.post(base+'/resource-plan-binding/confirm',headers=headers(f[2],actor,key),json=body),201)
+                    assert confirmed['event']['revision']==2
+                    external.append(dict(action='EXPLICIT_ORIGINAL_COMPARE_AND_CONFIRM',request_key=key,comparison=comparison,response=confirmed))
+                    reply=dict(id=message['id'],key=key)
+                else:
+                    assert message['type']=='request';options=message['options'];assert options['headers']['Authorization']=='Bearer SYNTHETIC_NODE_API_SESSION'
+                    h={**options['headers'],'Authorization':'Bearer '+f[2][actor]}
+                    response=api.request(options.get('method','GET'),message['path'],headers=h,content=options.get('body'))
+                    body=response.json();traffic.append(dict(path=message['path'],method=options.get('method','GET'),key=options.get('headers',{}).get('Idempotency-Key'),status=response.status_code,body=body))
+                    reply=dict(id=message['id'],status=response.status_code,body=body)
+                    (out/(params['mode']+'-latest-observed-traffic.json')).write_text(json.dumps(traffic,indent=2)+'\n')
+                proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush()
+            proc.wait(timeout=5);errfile.flush();stderr=errpath.read_text()
+            evidence=dict(mode=params['mode'],process_exit=proc.returncode,result=value,traffic=traffic,external_explicit_original_actions=external,stderr=stderr)
+            out=Path('.runtime/preview-rules-ui-20261014');out.mkdir(parents=True,exist_ok=True)
+            (out/(params['mode']+'-actual-traffic.json')).write_text(json.dumps(evidence,indent=2)+'\n')
+&gt;           assert proc.returncode==0,stderr
+E           AssertionError: AssertionError [ERR_ASSERTION]: original unknown gate blocked GET recovery:  请先核对原入口尚未确定的操作 
+E                 at /workspace/parkweave-preview-rules-ui-20261014/tests/preview_rules_change_actual_nodevm.js:21:255
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/preview_rules_change_actual_node...&gt;.returncode
+
+tests/test_preview_rules_change_nodevm_actual.py:66: AssertionError</failure></testcase></testsuite></testsuites>

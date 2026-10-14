@@ -1,0 +1,57 @@
+{
+  "base": "e550983e3f4415415145b6ee677b0b1098c803ed",
+  "files": {
+    "src/parkweave/resource_execution_preview.py": "e9c5d7dc5a13c05f8a9c0e43934679c1ac705b1757da346ee258c5fc8a800fb8",
+    "tests/test_service_selection_execution_preview.py": "8a6cbd3f87486dd543891dceba75699e0278258f67d401c9cd37bb96b7b08e7f"
+  },
+  "source_changes": "62 additions / 9 deletions in original resource preview; new tests only",
+  "windows": [
+    {
+      "name": "mapped-first",
+      "outcome": "1 ERROR: test offline mock id invalid, preserved"
+    },
+    {
+      "name": "mapped-fixed-id",
+      "outcome": "1 FAIL: original fixed park A resource path rejects real B preview with 403, preserved"
+    },
+    {
+      "name": "mapped-implemented",
+      "outcome": "1 FAIL: real B P5 and business control passed; test incorrectly counted 46 business rather than 45 plus audit, preserved"
+    },
+    {
+      "name": "mapped-expanded",
+      "outcome": "17 PASS / 2 warnings / 28.97 seconds"
+    },
+    {
+      "name": "permitted-preview-final",
+      "outcome": "187 PASS / 0 FES / 2 warnings /157.11 seconds;554 tracked/new source/tests/scripts files before-after unchanged; test bytes pre-audit strengthening"
+    },
+    {
+      "name": "mapped-final-20",
+      "outcome": "20 PASS / 0 FES /2 warnings /35.78 seconds;554 files before-after unchanged; final two-file hashes above"
+    },
+    {
+      "name": "marker-fixed-final",
+      "outcome": "191 PASS /0 FES /2 warnings /172.67 seconds;554 source/tests/scripts files unchanged;final source/test byte freeze above"
+    }
+  ],
+  "controls": {
+    "success": "46 public tables:45 business exact rows plus authorization_audit exact rows;all current business resource/hold/capacity/history/grant values unchanged",
+    "denied": "45 business tables unchanged;only original API_AUTHORIZATION/DENIED audit appends permitted",
+    "fixture_preconditions": "existing base fixture;4 additional B resource READ/HOLD rows;original managed access REQUEST + separate reviewer APPROVE produces one B Run assignment before measurement",
+    "runtime_new_business_grants": 0,
+    "new_registry": 0,
+    "real_model_calls": 0,
+    "browser_launches": 0,
+    "protected_branch_changes": 0
+  },
+  "limitations": [
+    "owned synthetic business control is not production acceptance",
+    "original P5 issued artifact proof remains bounded to living issuer process",
+    "snapshot comparison with cooperative guards does not prove full source atomicity",
+    "no Windows/browser/CI/real provider/production governance verification",
+    "Existing execution contract SHA identifies legacy default adapter profile; actual V4 B IDs are bound by dynamic source snapshot and saved P5 source-to-shadow mapping, not by that static contract constant."
+  ],
+  "private_redaction_file": "redaction-values.private.json;one destroyed ephemeral owned-fixture session exact value only;never export file",
+  "review_fix": "Original independent marker downgrade probe failed (403 attempted A fallback instead of409), preserved by reviewer. All existing plans now first pass original initial adoption proof; remaining service_refs/instance_mappings also identify selection mode and fail closed through complete proof."
+}

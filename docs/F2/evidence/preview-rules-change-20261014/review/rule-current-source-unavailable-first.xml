@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.357" timestamp="2026-10-14T22:12:46.887730+00:00" hostname="754d39e95154"><testcase classname="tests.test_independent_rule_simulation_review" name="test_review_unavailable_current_release_preserves_saved_readonly_receipt" time="1.161"><failure message="parkweave.store.Conflict: original synthetic rule source unavailable">self = &lt;parkweave.synthetic_rule_readiness.SyntheticRuleReadiness object at 0x7f4761e923f0&gt;
+c = &lt;psycopg.Connection [BAD] at 0x7f4761da6f30&gt;
+p = {'id': 'fixture-a', 'token_hash': '745d69d8ce7b807007a64d64297ab4327b4975b9c0660331816d9e8617cf4833', 'park_id': 'park-a', 'org_id': 'org-a', ...}
+row = {'id': UUID('8d0b3d47-855c-46de-98c0-12262089b557'), 'run_id': UUID('0e91df07-3522-449d-8118-18c74374edfc'), 'case_id': UUID('040a492f-7e92-4459-b4d8-349d9b2ac869'), 'owner_id': 'fixture-a', ...}
+context = Context(binding_id='rule-a', as_of='2026-10-14T22:12:48.119446+00:00')
+source_connection = &lt;sqlite3.Connection object at 0x7f4761edde40&gt;
+
+    def _source(self, c, p, row, context, source_connection):
+        binding = next((x for x in self.bindings if x.binding_id == context.binding_id), None)
+        if binding is None or (binding.scope.park_id, binding.scope.org_id, binding.scope.service_id) != (p['park_id'], p['org_id'], row['service_id']): raise Denied('trusted rule binding scope required')
+        now = self.engine.clock()
+        self.engine._authorize(p['id'], 'READ', binding.scope, now)
+        candidate_row = self.engine._get(source_connection, binding.scope)
+        try:
+&gt;           view = self.engine._view(source_connection, binding.scope, candidate_row, now)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+src/parkweave/synthetic_rule_readiness.py:162: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.rule_publication_candidate.CandidateEngine object at 0x7f476243a1e0&gt;
+c = &lt;sqlite3.Connection object at 0x7f4761edde40&gt;
+scope = Scope(park_id='park-a', org_id='org-a', service_id='synthetic-material-preparation')
+row = {'scope': '{"org_id":"org-a","park_id":"park-a","service_id":"synthetic-material-preparation"}', 'id': 'e4b68d68-442d-4e60-bcc3-554e37498787', 'revision': 4, 'content_version': 1, ...}
+now = datetime.datetime(2026, 10, 14, 22, 12, 48, 165724, tzinfo=datetime.timezone.utc)
+
+    def _view(self,c,scope,row,now):
+        key=canonical(scope.model_dump());history=[json.loads(r['payload']) for r in c.execute('SELECT payload FROM candidate_events WHERE scope=? ORDER BY revision',(key,))]
+        releases=[{'state':r['state'],**json.loads(r['payload'])} for r in c.execute('SELECT * FROM candidate_releases WHERE scope=? ORDER BY rowid',(key,))]
+        available=False;reason='NOT_CREATED';draft=json.loads(row['draft']) if row else None
+        if row:
+            reason='UNREVIEWED_OR_UNPUBLISHED'
+            if not self._sources_current(draft,now):reason='EXPIRED_SOURCE'
+            elif row['state']=='PUBLISHED' and row['current_release']:
+&gt;               release=next(r for r in releases if r['id']==row['current_release'])
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               StopIteration
+
+src/parkweave/rule_publication_candidate.py:145: StopIteration
+
+During handling of the above exception, another exception occurred:
+
+simulation = ((&lt;parkweave.store.Store object at 0x7f476243be60&gt;, &lt;parkweave.store.Store object at 0x7f476243b830&gt;, {'fixture-a': 'P...ntheticRuleReadiness object at 0x7f4761e923f0&gt;, Context(binding_id='rule-a', as_of='2026-10-14T22:12:48.119446+00:00'))
+
+    def test_review_unavailable_current_release_preserves_saved_readonly_receipt(simulation):
+        f,p,e,a,context=simulation;original,_=assess(simulation,'saved-before-unavailable')
+        with e.repository.connect(write=True) as c:c.execute('DELETE FROM candidate_releases')
+        before=business(f);journal=a.journal.path.read_bytes()
+&gt;       recovered=a.recover(f[2]['fixture-a'],UUID(p['preparation_id']),'saved-before-unavailable',context)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_independent_rule_simulation_review.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/synthetic_rule_readiness.py:296: in recover
+    view=self.read(token,id,context)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_rule_readiness.py:267: in read
+    p,row=self._parent(c,token,id); source,hash,result=self._source(c,p,row,context,src)
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.synthetic_rule_readiness.SyntheticRuleReadiness object at 0x7f4761e923f0&gt;
+c = &lt;psycopg.Connection [BAD] at 0x7f4761da6f30&gt;
+p = {'id': 'fixture-a', 'token_hash': '745d69d8ce7b807007a64d64297ab4327b4975b9c0660331816d9e8617cf4833', 'park_id': 'park-a', 'org_id': 'org-a', ...}
+row = {'id': UUID('8d0b3d47-855c-46de-98c0-12262089b557'), 'run_id': UUID('0e91df07-3522-449d-8118-18c74374edfc'), 'case_id': UUID('040a492f-7e92-4459-b4d8-349d9b2ac869'), 'owner_id': 'fixture-a', ...}
+context = Context(binding_id='rule-a', as_of='2026-10-14T22:12:48.119446+00:00')
+source_connection = &lt;sqlite3.Connection object at 0x7f4761edde40&gt;
+
+    def _source(self, c, p, row, context, source_connection):
+        binding = next((x for x in self.bindings if x.binding_id == context.binding_id), None)
+        if binding is None or (binding.scope.park_id, binding.scope.org_id, binding.scope.service_id) != (p['park_id'], p['org_id'], row['service_id']): raise Denied('trusted rule binding scope required')
+        now = self.engine.clock()
+        self.engine._authorize(p['id'], 'READ', binding.scope, now)
+        candidate_row = self.engine._get(source_connection, binding.scope)
+        try:
+            view = self.engine._view(source_connection, binding.scope, candidate_row, now)
+        except (KeyError, ValueError, TypeError, StopIteration):
+&gt;           raise Conflict('original synthetic rule source unavailable')
+E           parkweave.store.Conflict: original synthetic rule source unavailable
+
+src/parkweave/synthetic_rule_readiness.py:164: Conflict</failure></testcase></testsuite></testsuites>

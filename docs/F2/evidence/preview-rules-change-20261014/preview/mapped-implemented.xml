@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.551" timestamp="2026-10-14T22:00:17.267205+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_selection_execution_preview" name="test_second_park_v4_actual_preview_writes_preserve_all_public_business" time="2.422"><failure message="assert (45 == 46)&#10; +  where 45 = len({'action_grants': ['{&quot;action&quot;: &quot;case.create&quot;, &quot;active&quot;: true, &quot;org_id&quot;: &quot;org-a&quot;, &quot;park_id&quot;: &quot;park-a&quot;, &quot;principal_id&quot;: ...park-b&quot;, &quot;principal_id&quot;: &quot;fixture-c&quot;, &quot;revision&quot;: 1}', ...], 'case_local_events': [], 'case_local_lifecycles': [], ...})">mapped_preview = {'a': {'f': (&lt;parkweave.store.Store object at 0x7f5d40dc9280&gt;, &lt;parkweave.store.Store object at 0x7f5d40dcb920&gt;, {'fix...d': 'b7c992e7-2dee-46bc-95cd-7536d93daeb5', 'run_id': '6f3b230f-4350-45ac-9b85-cdd0b9a2e4a9', 'revision': 1, ...}, ...}
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5d40e25a90&gt;
+
+    def test_second_park_v4_actual_preview_writes_preserve_all_public_business(mapped_preview,monkeypatch):
+        a=mapped_preview;f=a['f'];before=snapshot(f);authority=authority_snapshot(f[1]);control=case_history(f[1],a['control']['preparation_id']);calls=[];connections=[]
+        original=lc.command
+        def observed(store,*args,**kwargs):
+            raw=store.connection._raw;connections.append(raw)
+            assert raw.execute('SHOW search_path').fetchone()['search_path']=='pg_temp'
+            assert {r['relname'] for r in raw.execute("SELECT relname FROM pg_class WHERE relnamespace=pg_my_temp_schema() AND relkind='r'")}==set(p5.TABLES)
+            assert raw.execute('SELECT count(*) n FROM synthetic_resource_holds').fetchone()['n']==2
+            assert raw.execute('SELECT count(*) n FROM service_step_receipts').fetchone()['n']==1
+            calls.append(args[-1].action)
+            return original(store,*args,**kwargs)
+        monkeypatch.setattr(lc,'command',observed)
+        key=uuid4().hex;result=ok(execute(a,key=key),201)['result'];art=result['artifact']
+        assert result['state']=='SUCCEEDED' and result['required_goals']==GOALS and result['not_previewed']==[]
+        assert calls==['REVALIDATE','CLOSE_LOCAL_RECORD','REOPEN'] and all(c.closed for c in connections)
+        assert {r['source_id'] for r in art['p2_resource_mapping']}==set(a['a']['b_resources'])
+        assert not set(a['a']['b_resources']) &amp; {h['resource_id'] for h in art['holds']}
+        assert all(p.startswith('preview-') for p in [art['p1']['owner_id'],art['p1']['reviewer_id'],art['executor_id']])
+        assert art['roles']=='SIMULATED_ROLES_ONLY' and art['namespace']=='PREVIEW_EXECUTION'
+        assert result['formal_writes']==0 and not result['new_grants'] and not result['case_goal_completed']
+        assert art['lifecycle_final']['local_record_state']=='REOPENED'
+        assert snapshot(f)==before and authority_snapshot(f[1])==authority and case_history(f[1],a['control']['preparation_id'])==control
+&gt;       assert len(before)==46 and len(a['calls'])==1
+E       assert (45 == 46)
+E        +  where 45 = len({'action_grants': ['{"action": "case.create", "active": true, "org_id": "org-a", "park_id": "park-a", "principal_id": ...park-b", "principal_id": "fixture-c", "revision": 1}', ...], 'case_local_events': [], 'case_local_lifecycles': [], ...})
+
+tests/test_service_selection_execution_preview.py:112: AssertionError</failure></testcase></testsuite></testsuites>

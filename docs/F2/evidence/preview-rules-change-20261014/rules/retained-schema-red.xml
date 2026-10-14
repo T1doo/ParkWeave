@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="5" time="0.145" timestamp="2026-10-14T22:11:14.216485+00:00" hostname="754d39e95154"><testcase classname="tests.test_synthetic_rule_readiness" name="test_retained_simulation_journal_invalid_schema_refused_before_any_ddl[missing-trigger]" time="0.002"><failure message="Failed: DID NOT RAISE Conflict">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-464/test_retained_simulation_journ0')
+corruption = 'missing-trigger'
+
+    @pytest.mark.parametrize('corruption',['missing-trigger','noop-trigger','extra-column','extra-table'])
+    def test_retained_simulation_journal_invalid_schema_refused_before_any_ddl(tmp_path,corruption):
+        path=tmp_path/'retained.synthetic-readiness.sqlite3';sr.SimulationJournal(path)
+        with sqlite3.connect(path) as c:
+            if corruption=='missing-trigger':c.execute('DROP TRIGGER simulation_immutable_update')
+            elif corruption=='noop-trigger':
+                c.execute('DROP TRIGGER simulation_immutable_update');c.execute('CREATE TRIGGER simulation_immutable_update BEFORE UPDATE ON simulation_assessments BEGIN SELECT 1; END')
+            elif corruption=='extra-column':c.execute('ALTER TABLE simulation_assessments ADD COLUMN foreign_column TEXT')
+            else:c.execute('CREATE TABLE foreign_table(value TEXT)')
+        before=path.read_bytes()
+&gt;       with pytest.raises(Conflict):sr.SimulationJournal(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_synthetic_rule_readiness.py:208: Failed</failure></testcase><testcase classname="tests.test_synthetic_rule_readiness" name="test_retained_simulation_journal_invalid_schema_refused_before_any_ddl[noop-trigger]" time="0.002"><failure message="Failed: DID NOT RAISE Conflict">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-464/test_retained_simulation_journ1')
+corruption = 'noop-trigger'
+
+    @pytest.mark.parametrize('corruption',['missing-trigger','noop-trigger','extra-column','extra-table'])
+    def test_retained_simulation_journal_invalid_schema_refused_before_any_ddl(tmp_path,corruption):
+        path=tmp_path/'retained.synthetic-readiness.sqlite3';sr.SimulationJournal(path)
+        with sqlite3.connect(path) as c:
+            if corruption=='missing-trigger':c.execute('DROP TRIGGER simulation_immutable_update')
+            elif corruption=='noop-trigger':
+                c.execute('DROP TRIGGER simulation_immutable_update');c.execute('CREATE TRIGGER simulation_immutable_update BEFORE UPDATE ON simulation_assessments BEGIN SELECT 1; END')
+            elif corruption=='extra-column':c.execute('ALTER TABLE simulation_assessments ADD COLUMN foreign_column TEXT')
+            else:c.execute('CREATE TABLE foreign_table(value TEXT)')
+        before=path.read_bytes()
+&gt;       with pytest.raises(Conflict):sr.SimulationJournal(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_synthetic_rule_readiness.py:208: Failed</failure></testcase><testcase classname="tests.test_synthetic_rule_readiness" name="test_retained_simulation_journal_invalid_schema_refused_before_any_ddl[extra-column]" time="0.001"><failure message="Failed: DID NOT RAISE Conflict">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-464/test_retained_simulation_journ2')
+corruption = 'extra-column'
+
+    @pytest.mark.parametrize('corruption',['missing-trigger','noop-trigger','extra-column','extra-table'])
+    def test_retained_simulation_journal_invalid_schema_refused_before_any_ddl(tmp_path,corruption):
+        path=tmp_path/'retained.synthetic-readiness.sqlite3';sr.SimulationJournal(path)
+        with sqlite3.connect(path) as c:
+            if corruption=='missing-trigger':c.execute('DROP TRIGGER simulation_immutable_update')
+            elif corruption=='noop-trigger':
+                c.execute('DROP TRIGGER simulation_immutable_update');c.execute('CREATE TRIGGER simulation_immutable_update BEFORE UPDATE ON simulation_assessments BEGIN SELECT 1; END')
+            elif corruption=='extra-column':c.execute('ALTER TABLE simulation_assessments ADD COLUMN foreign_column TEXT')
+            else:c.execute('CREATE TABLE foreign_table(value TEXT)')
+        before=path.read_bytes()
+&gt;       with pytest.raises(Conflict):sr.SimulationJournal(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_synthetic_rule_readiness.py:208: Failed</failure></testcase><testcase classname="tests.test_synthetic_rule_readiness" name="test_retained_simulation_journal_invalid_schema_refused_before_any_ddl[extra-table]" time="0.001" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_assessment_requires_nonblank_explicit_reason" time="0.000"><failure message="Failed: DID NOT RAISE ValidationError">def test_assessment_requires_nonblank_explicit_reason():
+        from pydantic import ValidationError
+&gt;       with pytest.raises(ValidationError):sr.Assess(context=sr.Context(binding_id='x',as_of=datetime.now(timezone.utc).isoformat()),expected_preparation_revision=1,expected_source_sha256='0'*64,reason='  ')
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE ValidationError
+
+tests/test_synthetic_rule_readiness.py:213: Failed</failure></testcase></testsuite></testsuites>

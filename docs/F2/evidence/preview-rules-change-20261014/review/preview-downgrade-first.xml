@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.893" timestamp="2026-10-14T22:11:35.590281+00:00" hostname="754d39e95154"><testcase classname="tests.test_independent_preview_change_review" name="test_review_removed_v4_markers_cannot_attempt_legacy_fixed_resources" time="1.753"><failure message="assert 403 == 409&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code">mapped_preview = {'a': {'f': (&lt;parkweave.store.Store object at 0x7f57a52119a0&gt;, &lt;parkweave.store.Store object at 0x7f57a5211910&gt;, {'fix...d': 'b03c108f-2a90-4c7b-b420-c167b8c70c2b', 'run_id': '4dc4c49e-f610-4d68-8a8b-22e5015f8f27', 'revision': 1, ...}, ...}
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f57a4e15400&gt;
+
+    def test_review_removed_v4_markers_cannot_attempt_legacy_fixed_resources(mapped_preview,monkeypatch):
+        from parkweave import resource_holds as rh
+        a=mapped_preview;f=a['f'];data=body(a)
+        with f[1].connect() as c:
+            plan=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(a['parent']['preparation_id'],)).fetchone()['service_case_plan']
+            plan['adoption_preview'].pop('profile',None)
+            plan['binding'].pop('service_selection',None)
+            plan.pop('candidate_consumption',None)
+            for field in ('candidate_id','expected_candidate_sha256','expected_verification_sha256'):
+                plan['adoption_request'].pop(field,None)
+            c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),a['parent']['preparation_id']))
+        attempted=[];original=rh._scope
+        def track(c,p,id,*args,**kwargs):
+            attempted.append(str(id));return original(c,p,id,*args,**kwargs)
+        monkeypatch.setattr(rh,'_scope',track)
+        saved=a['engine'].path.read_bytes()
+        reply=execute(a,data)
+&gt;       assert reply.status_code==409
+E       assert 403 == 409
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+
+tests/test_independent_preview_change_review.py:84: AssertionError</failure></testcase></testsuite></testsuites>

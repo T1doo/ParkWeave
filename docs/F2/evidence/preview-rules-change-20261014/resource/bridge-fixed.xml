@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.329" timestamp="2026-10-14T21:59:12.180047+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_resource_change_replay" name="test_original_v4_same_resource_time_replacement_bridge" time="4.846"><failure message="psycopg.errors.ReadOnlySqlTransaction: cannot execute SELECT FOR SHARE in a read-only transaction">replay = {'a': {'f': (&lt;parkweave.store.Store object at 0x7f8e9656eea0&gt;, &lt;parkweave.store.Store object at 0x7f8e9656e840&gt;, {'fix...S', 'LOCAL_CASE_RECORD_RECHECK'], 'planning_constraints': {'excluded_roles': [], 'additional_requirements': []}, ...}]}
+
+    def test_original_v4_same_resource_time_replacement_bridge(replay):
+        r=replay;f=r['f'];store,owner,tokens,api=f
+        p,_=new_confirmed_parent(r,'AT33-C-CHANGE');adopt_selection(r,p)
+        group,dispatch,receipt=execute_to_receipt(r,p,'AT33-C-CHANGE',3)
+        path='/api/preparations/'+p['preparation_id']
+        assert result(r,p)['state']=='LOCAL_OUTPUTS_VERIFIED'
+        ok(api.post('/api/resource-combinations/'+group['id']+'/cancel',headers=headers(tokens,'fixture-c',uuid4().hex),json={}))
+        assert result(r,p)['state']!='LOCAL_OUTPUTS_VERIFIED'
+        with owner.connect() as c:now=c.execute('SELECT clock_timestamp() t').fetchone()['t']
+        body=dict(starts_at=(now+timedelta(hours=5)).isoformat(),ends_at=(now+timedelta(hours=6)).isoformat(),quantity=2,expected_revision=1,ttl_seconds=300,purpose='SYNTHETIC explicit replacement time')
+        holds=[ok(api.post('/api/synthetic-resources/'+rid+'/holds',headers=headers(tokens,'fixture-c',uuid4().hex),json=body),201)['hold'] for rid in r['a']['b_resources']]
+        new=ok(api.post('/api/resource-combinations',headers=headers(tokens,'fixture-c',uuid4().hex),json=dict(members=[dict(hold_id=h['id'],expected_revision=h['resource_revision']) for h in holds])),201)['combination']
+&gt;       proposal=ok(api.get(path+'/resource-plan-binding',params=dict(candidate_combination_id=new['id']),headers=headers(tokens,'fixture-c')))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_resource_change_replay.py:24: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+../ParkWeave/.venv/lib/python3.12/site-packages/httpx/_client.py:1053: in get
+    return self.request(
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/testclient.py:463: in request
+    return super().request(
+../ParkWeave/.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../ParkWeave/.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+../ParkWeave/.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+../ParkWeave/.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../ParkWeave/.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/testclient.py:360: in handle_request
+    raise exc
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/testclient.py:357: in handle_request
+    portal.call(self.app, scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/anyio/from_thread.py:340: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+../ParkWeave/.venv/lib/python3.12/site-packages/anyio/from_thread.py:265: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/applications.py:1215: in __call__
+    await super().__call__(scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py:151: in __call__
+    await self.app(scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py:197: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/api.py:114: in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py:173: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py:149: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py:676: in __call__
+    await self.middleware_stack(scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py:2786: in app
+    await route.handle(scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py:1310: in handle
+    await super().handle(scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py:282: in handle
+    await self.app(scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py:165: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py:151: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py:727: in app
+    raw_response = await run_endpoint_function(
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py:362: in run_endpoint_function
+    return await run_in_threadpool(
+../ParkWeave/.venv/lib/python3.12/site-packages/starlette/concurrency.py:34: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+../ParkWeave/.venv/lib/python3.12/site-packages/anyio/to_thread.py:65: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+../ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2706: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+../ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1100: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py:240: in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/api.py:851: in case_resource_plan_binding
+    return resource_plan_binding.read(store,token(authorization),preparation_id,candidate_combination_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/executor_receipts.py:18: in call
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+src/parkweave/resource_plan_binding.py:185: in read
+    return proposal(store,c,p,parent,candidate_combination_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/resource_plan_binding.py:223: in proposal
+    changed, _, _, _, states, _=case_steps._inspect(store,c,parent,adopted,observe=False)
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_case_steps.py:320: in _inspect
+    issues,sources,actual=current_sources(store,c,parent,plan)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_case_steps.py:186: in current_sources
+    issues,sources=cp._sources(store,c,parent)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/controlled_plans.py:151: in _sources
+    issues,snap,group,holds,rules=life._sources(store,c,owner,parent)
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/case_lifecycle.py:57: in _sources
+    dispatch=sd._root(c,parent)
+             ^^^^^^^^^^^^^^^^^^
+src/parkweave/service_dispatches.py:116: in _root
+    return c.execute('SELECT * FROM service_dispatches WHERE preparation_id=%s ' +
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f8e942d4590&gt;
+query = 'SELECT * FROM service_dispatches WHERE preparation_id=%s FOR SHARE'
+params = (UUID('23a3e418-7f50-49ad-bb4f-2967f9739c3f'),), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.ReadOnlySqlTransaction: cannot execute SELECT FOR SHARE in a read-only transaction
+
+../ParkWeave/.venv/lib/python3.12/site-packages/psycopg/connection.py:304: ReadOnlySqlTransaction</failure></testcase></testsuite></testsuites>

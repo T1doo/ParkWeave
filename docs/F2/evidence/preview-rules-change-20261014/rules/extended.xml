@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="34" time="10.937" timestamp="2026-10-14T22:04:00.215138+00:00" hostname="754d39e95154"><testcase classname="tests.test_synthetic_rule_readiness" name="test_actual_reviewed_source_authorized_facts_true_and_no_business_mutation" time="1.082" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_cross_identity_denies_without_journal_write[fixture-b]" time="0.362" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_cross_identity_denies_without_journal_write[fixture-c]" time="0.370" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_cross_identity_denies_without_journal_write[prep-specialist-fixture-a]" time="0.352" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_changes_unknown_preserve_historical_truth[conflict]" time="0.473" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_changes_unknown_preserve_historical_truth[fact-expiry]" time="0.384" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_changes_unknown_preserve_historical_truth[region]" time="0.394" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_changes_unknown_preserve_historical_truth[as-of]" time="0.366" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_changes_unknown_preserve_historical_truth[review-revoked]" time="0.384" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_changes_unknown_preserve_historical_truth[publisher-revoked]" time="0.530" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_changes_unknown_preserve_historical_truth[withdraw]" time="0.410" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_changes_unknown_preserve_historical_truth[execute]" time="0.406" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_changes_unknown_preserve_historical_truth[field-write]" time="0.369" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_source_tamper_never_self_approves[candidate_rules]" time="0.455" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_source_tamper_never_self_approves[candidate_releases]" time="0.373" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_current_scope_revocation_denies[READ]" time="0.357" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_current_scope_revocation_denies[PREPARE]" time="0.312" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_current_scope_revocation_denies[FIELD_READ]" time="0.353" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_finite_three_values[EQ-17-TRUE]" time="0.000" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_finite_three_values[EQ-3-FALSE]" time="0.000" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_finite_three_values[EXISTS-None-TRUE]" time="0.000" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_finite_three_values[MANUAL-None-UNKNOWN]" time="0.000" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_unknown_never_coerced[missing]" time="0.000" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_unknown_never_coerced[expired]" time="0.000" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_unknown_never_coerced[conflict]" time="0.000" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_unknown_never_coerced[purpose]" time="0.000" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_journal_append_only_and_foreign_refused" time="0.001" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_real_false_from_original_reviewed_different_mechanical_rule" time="0.588" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_conflicting_region_not_in_expression_stays_unknown_even_after_owner_selection" time="0.429" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_missing_original_purpose_cannot_be_forged_by_context" time="0.291" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_same_key_concurrent_one_receipt_and_event_failure_full_journal_rollback" time="0.401" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_closed_or_cancelled_case_new_assessment_denied_history_kept[CANCELLED]" time="0.543" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_closed_or_cancelled_case_new_assessment_denied_history_kept[RECONCILING]" time="0.404" /><testcase classname="tests.test_synthetic_rule_readiness" name="test_closed_or_cancelled_case_new_assessment_denied_history_kept[LOCAL_RECORD_CLOSED]" time="0.379"><failure message="psycopg.errors.UndefinedColumn: column &quot;park_id&quot; of relation &quot;case_local_lifecycles&quot; does not exist&#10;LINE 1: ...INTO case_local_lifecycles(preparation_id,case_id,park_id,or...&#10;                                                             ^">simulation = ((&lt;parkweave.store.Store object at 0x7f0a695c00e0&gt;, &lt;parkweave.store.Store object at 0x7f0a695c0170&gt;, {'fixture-a': 'O...ntheticRuleReadiness object at 0x7f0a68251b80&gt;, Context(binding_id='rule-a', as_of='2026-10-14T22:04:11.082302+00:00'))
+change = 'LOCAL_RECORD_CLOSED'
+
+    @pytest.mark.parametrize('change',['CANCELLED','RECONCILING','LOCAL_RECORD_CLOSED'])
+    def test_closed_or_cancelled_case_new_assessment_denied_history_kept(simulation,change):
+        f,p,e,a,context=simulation;record,data=assess(simulation,'before-block')
+        with f[1].connect() as c:
+            if change=='LOCAL_RECORD_CLOSED':
+&gt;               c.execute("INSERT INTO case_local_lifecycles(preparation_id,case_id,park_id,org_id,owner_id,state,revision,cycle) VALUES(%s,%s,'park-a','org-a','fixture-a',%s,1,1)",(UUID(p['preparation_id']),UUID(p['case_id']),change))
+
+tests/test_synthetic_rule_readiness.py:167: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f0a637ffe90&gt;
+query = "INSERT INTO case_local_lifecycles(preparation_id,case_id,park_id,org_id,owner_id,state,revision,cycle) VALUES(%s,%s,'park-a','org-a','fixture-a',%s,1,1)"
+params = (UUID('a2e15807-d61d-4893-9cf0-d067c7cee595'), UUID('0d0c7437-b630-4447-b3b6-06f598ffc0fd'), 'LOCAL_RECORD_CLOSED')
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedColumn: column "park_id" of relation "case_local_lifecycles" does not exist
+E           LINE 1: ...INTO case_local_lifecycles(preparation_id,case_id,park_id,or...
+E                                                                        ^
+
+../ParkWeave/.venv/lib/python3.12/site-packages/psycopg/connection.py:304: UndefinedColumn</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,21 @@
+# Bounded AT-33 business C implementation
+
+Base e550983e3f4415415145b6ee677b0b1098c803ed. Detached private worktree only; no commit/push or shared source edit.
+
+Product files: resource_change_proposals.py (new), resource_plan_binding.py (V4-only comparison bridge), explicit API route patch (four GET routes). Test: test_service_resource_change_replay.py (21 owned PostgreSQL/ASGI cases). Existing browser refusal, GraphQL Forbidden, real model/Windows/production routes untouched.
+
+Supported: two identical-duration, same-start original holds on the exact two selected V4 resource UUIDs. Finite UTC search <=24 hours, 15-minute grid, <=100 scanned starts and <=10 options. Quantity and buffers come from original reservations/current rules. Original source/plan/material/link/dependency collection fingerprints are retained. No fallback resource, automatic reservation, release, adoption or chained send.
+
+Execution remains original HOLD, original two-resource combination confirmation, original exact Case binding comparison confirmation, original P2/P3/P4/P5 verification. Resource collection changes require explicit original local-revision ADOPT first. It preserves original V4 candidate consumption proof, selected resource mappings, P1 witness, plan ID and event prefix. A new comparison accepts V4 only after original frozen adoption/consumer/dependency/event fingerprint proof and a current verified P1 event/source witness; legacy rules are unchanged.
+
+Original key GET recovery covers single resource receipts, two-resource combination receipts and Case links. It never resends. Current READ and original actor/park/org/resource scopes are checked; EXECUTE/HOLD are not historical read gates. A request fingerprint may be supplied and must match. NOT_OBSERVED explicitly does not prove not committed.
+
+Actual strong replay: independently seeded second-park resources revision 1 -> 2, buffer 300 -> 360 under the original resource mutex. Read-only discovery produces literal should-update P2/P3/P4/P5 and should-preserve P1. Explicit original local revision, new time occupation, combination, comparison and P2-P5 rechecks restore all six local goals. Old confirmed occupancy survives, and original A history/results remain equal. This is owned synthetic development simulation, not formal resource administrator approval or full AT-33 acceptance.
+
+Development evidence retained separately: bridge-first and bridge-second each fail on legacy REQUEST_GOAL_COVERAGE_REQUIRED; bridge-fixed fails on my first implementation invoking downstream FOR SHARE inside READ ONLY; bridge-third passes after the P1-only proof bridge. proposal-first 2 PASS is a mutable development window. loop-expanded-first 16 PASS (57.33s) predates the final P1 event witness strengthening. actual-rule-first 1 PASS / 16 deselected (8.65s) proves real revision replacement. full-proof-first 6 PASS / 15 deselected (33.98s) covers the final bridge plus proof tampering. No counts are added across windows.
+
+Final six complete related modules run with before/after manifest; final-window.json, final.log, final.xml and final.exit are the source of truth. An earlier result is never erased or relabelled PASS.
+
+Final completed: 150 PASS / 0 FAIL / 0 ERROR / 0 SKIP / 2 existing warnings, pytest 284.74 seconds, controlled 286.1589334490127 seconds, pytest exit 0. All 555 src/tests/scripts files are identical before and after. git diff --check exit 0. Source hashes: resource_change_proposals.py 7c30fb63541b3fa464987be8dee48af59f81b1459c8c5e6fb679c3a99d750510; resource_plan_binding.py aba09601eccc17621bb6e99fafee1c2c7949574f0c1c5cba866610e8a1ead0db; test_service_resource_change_replay.py a28663404f340b978731132adcef2a6271e873a26b8155e7adece494dbca6538; API patch be03d22c84df7f9d719c3071b16f0b93dc4fbb4ae7fe6e279aad77611b913aef. Root confirms all three files plus four GET routes integrated at these bytes. No source changes after this freeze.
+
+P3 acceptance and P4 synthetic text receipts remain original historical facts and are explicitly reverified; no new external or physical fulfillment receipt is invented. Full AT-33, real production resource governance, browser, Windows, real provider, CI and deployment are NOT RUN in this subtask. Root owns final shared frozen batch, independent signoff, packaging, evidence export and normal branch push.

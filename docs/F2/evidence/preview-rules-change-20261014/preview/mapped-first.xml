@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="2.630" timestamp="2026-10-14T21:59:13.413167+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_selection_execution_preview" name="test_second_park_v4_actual_preview_writes_preserve_all_public_business" time="1.499"><error message="failed on setup with &quot;parkweave.store.Conflict: offline selection INVALID_ID; GET original key only&quot;">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7f1e667ce030&gt;, &lt;parkweave.store.Store object at 0x7f1e6669b260&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-442/test_second_park_v4_actual_pre0')
+
+    @pytest.fixture
+    def mapped_preview(selection_full_chain, tmp_path):
+        a=selection_full_chain;f=a['f'];store,owner,tokens,api=f
+        store._isolated_service_capability_catalog=a['catalog']
+        # A remains a distinct original business control. No application publication.
+        control,_,_=create(f)
+        p,_,_=create(f,user='fixture-c',goal='SYNTHETIC AT14 B new six-goal preview')
+        p={**p,'revision':ok(save(f,p,goals=GOALS,user='fixture-c'))['revision']}
+        for slot in ('need_summary','material_outline'):
+            p=ok(command(f,p,'ADD_EVIDENCE',user='fixture-c',slot=slot,
+                text='SYNTHETIC AT14 NEW B '+slot,source_kind='USER_STATEMENT',source_label='SYNTHETIC B owner input'))
+        p=ok(command(f,p,'REVIEW',user='prep-specialist-fixture-c',reason='SYNTHETIC B material review'))
+        p=ok(command(f,p,'CONFIRM',user='fixture-c',reason='SYNTHETIC B explicit material confirmation'))
+        bridge=IsolatedRunAccessBridge(owner,owner._case_fact_fixture_receipt,
+            tmp_path/'b-preview.run-access.candidate.sqlite3',approver_ids={'prep-specialist-fixture-c'},
+            enabled_for_isolated_tests=True,clock=lambda:datetime.now(timezone.utc))
+        bridge.attach_store(store)
+        now=bridge.clock();validity=dict(valid_from=now.isoformat(),valid_until=(now+timedelta(minutes=10)).isoformat(),timezone='UTC')
+        for action,user in [('REQUEST','fixture-c'),('APPROVE','prep-specialist-fixture-c')]:
+            view=bridge.read(tokens[user],UUID(p['run_id']))
+            body=dict(action=action,expected_revision=view['revision'],expected_run_revision=view['run_revision'],
+                expected_authority_sha256=view['authority_sha256'],reason='SYNTHETIC owned B fixture '+action)
+            body.update(dict(target_id='executor-c',target_role='service_executor',capability='READ',requested_validity=validity) if action=='REQUEST' else dict(approved_validity=validity))
+            bridge.command(tokens[user],UUID(p['run_id']),uuid4().hex,body)
+        local.IsolatedLocalExecutor(bridge,enabled_for_isolated_tests=True).attach_store(store)
+        calls=[]
+        def model(request):
+            prompt=json.loads(json.loads(request.content)['messages'][-1]['content']);calls.append(prompt)
+            value=dict(schema_version=1,binding=prompt['binding'],selections=[s['ref'] for s in prompt['available_services']])
+            return httpx.Response(200,json=dict(id='SYNTHETIC AT14',model='intern-s2',usage=dict(prompt_tokens=2,completion_tokens=3,total_tokens=5),choices=[dict(index=0,finish_reason='stop',message=dict(role='assistant',content=json.dumps(value)))]))
+        planner=OfflineSelectionPlanner(transport=httpx.MockTransport(model))
+        with a['catalog'].connection() as c:
+            actor,parent=bp._context(store,c,tokens['fixture-c'],UUID(p['preparation_id']))
+            current=sc.current(store,c,actor,parent,a['catalog'])
+&gt;       candidate=sc.generate(store,tokens['fixture-c'],UUID(p['preparation_id']),uuid4().hex,
+            sc.Capture(expected_preparation_revision=p['revision'],expected_source_sha256=current['source_sha256'],expected_capability_catalog_sha256=current['capability_catalog_sha256']),catalog=a['catalog'],planner=planner)
+
+tests/test_service_selection_execution_preview.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = &lt;parkweave.store.Store object at 0x7f1e667ce030&gt;
+token = '[REDACTED_SYNTHETIC_FIXTURE_SESSION]'
+id = UUID('566c4051-1ba0-4f38-8683-a897a65a9ca9')
+key = '8f74fa8368fa4f2fa283f14c1302d284'
+data = Capture(expected_preparation_revision=6, expected_source_sha256='3db7b6e4e314b9444676c13e24724754251861f70840280bc37c9abe19092764', expected_capability_catalog_sha256='2acf68f1e9a2ca5efb6cd09f59bf5ddcddbe0c0914e5dda68a1b496e90590408')
+catalog = &lt;parkweave.service_capability_catalog.IsolatedServiceCapabilityCatalog object at 0x7f1e660c38f0&gt;
+planner = &lt;parkweave.service_selection_planner.OfflineSelectionPlanner object at 0x7f1e66466840&gt;
+
+    def generate(store,token,id,key,data,*,catalog,planner):
+        from .service_selection_planner import OfflineSelectionPlanner
+        if type(planner) is not OfflineSelectionPlanner:raise Conflict('explicit offline-only selection planner required')
+        planner.require();fp=_fingerprint(id,data)
+        with catalog.connection() as c:
+            p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);prior=_prior(c,p,parent,key,fp)
+            if prior is not None:
+                if 'candidate' not in prior:return _attempt(parent,prior)
+                return _availability_view(store,c,p,parent,catalog,prior)
+            value=current(store,c,p,parent,catalog);_exact(data,parent,value)
+            if value['selection_oracle']['state'] not in ('UNIQUE','MULTIPLE'):raise Conflict('current service capabilities unresolved')
+            history=deepcopy(parent.get('planning_previews') or [])
+            if len(history)&gt;=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):raise Conflict('bounded original attempt requires GET recovery')
+            now=clock(c).astimezone(timezone.utc);window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
+            saved=deepcopy(value);saved['candidate_validity']=deepcopy(window)
+            record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=data.model_dump(),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
+            history.append(record);c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
+        def authority():
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED':raise Conflict('selection original attempt changed before dispatch')
+                _exact(data,parent,current(store,c,p,parent,catalog));now=clock(c)
+                if not old._time(h['validity']['created_at'])&lt;=now&lt;old._time(h['validity']['expires_at']):raise Conflict('selection original attempt expired before dispatch')
+        try:
+            result=planner.propose(value['selection_context'],before_dispatch=authority)
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED' or h['validity']!=record['validity']:raise Conflict('selection original attempt changed')
+                selection=ss.parse_selection(result['selection_raw'],binding(value))
+                if selection!=result['selection']:raise Conflict('selection parsed response changed')
+                # A completed response can still refer to an older immutable source.
+                # Distinguish that known, uncommitted refusal from malformed DSL.
+                fresh=current(store,c,p,parent,catalog);_exact(data,parent,fresh)
+                latest=current(store,c,p,parent,catalog,selection);_exact(data,parent,latest)
+                saved=deepcopy(latest);saved['candidate_validity']=deepcopy(h['validity'])
+                h.update(document=saved,selection=selection,candidate=document(saved),selection_raw=result['selection_raw'],response_raw=result['response_raw'],producer=deepcopy(result['producer']),budget_record=deepcopy(result['budget_record']),frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+                h['candidate_sha256']=cp._hash(h['candidate']);h['producer'].update(attempt_sha256=cp._hash({k:h[k] for k in ('id','actor_id','request_key','fingerprint','validity')}),budget_sha256=cp._hash(h['budget_record']))
+                h['document']['candidate_producer']=deepcopy(h['producer']);h['planner_attempt'].update(state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(h['producer']))
+                bp._context(store,c,token,id,True);view=verify(parent,h,latest,now=clock(c))
+                if view['state'] in ('EXPIRED','CLOCK_UNCERTAIN','STALE','REJECTED'):raise Conflict('selection current source or validity changed')
+                c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(parent['planning_previews']),id));return view
+        except ModelBoundaryError as e:
+&gt;           _failure(store,token,id,key,fp,record['id'],e.code,catalog);raise Conflict('offline selection '+e.code+'; GET original key only') from None
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: offline selection INVALID_ID; GET original key only
+
+src/parkweave/service_selection_candidates.py:292: Conflict</error></testcase></testsuite></testsuites>

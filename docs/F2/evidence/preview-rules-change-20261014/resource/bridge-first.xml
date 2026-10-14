@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.473" timestamp="2026-10-14T21:58:37.847506+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_resource_change_replay" name="test_original_v4_same_resource_time_replacement_bridge" time="4.636"><failure message="AssertionError: {'sha256': '97bc01a9a6662fcbfe02d283b618115ecde19ed4c7e4dc3f64e8f064b0d0bad0', 'preparation_revision': 6, 'link_revision': 1, 'can_confirm': False, ...}&#10;assert False">replay = {'a': {'f': (&lt;parkweave.store.Store object at 0x7f44097ae990&gt;, &lt;parkweave.store.Store object at 0x7f44097ae660&gt;, {'fix...S', 'LOCAL_CASE_RECORD_RECHECK'], 'planning_constraints': {'excluded_roles': [], 'additional_requirements': []}, ...}]}
+
+    def test_original_v4_same_resource_time_replacement_bridge(replay):
+        r=replay;f=r['f'];store,owner,tokens,api=f
+        p,_=new_confirmed_parent(r,'AT33-C-CHANGE');adopt_selection(r,p)
+        group,dispatch,receipt=execute_to_receipt(r,p,'AT33-C-CHANGE',3)
+        path='/api/preparations/'+p['preparation_id']
+        assert result(r,p)['state']=='LOCAL_OUTPUTS_VERIFIED'
+        ok(api.post('/api/resource-combinations/'+group['id']+'/cancel',headers=headers(tokens,'fixture-c',uuid4().hex),json={}))
+        assert result(r,p)['state']!='LOCAL_OUTPUTS_VERIFIED'
+        with owner.connect() as c:now=c.execute('SELECT clock_timestamp() t').fetchone()['t']
+        body=dict(starts_at=(now+timedelta(hours=5)).isoformat(),ends_at=(now+timedelta(hours=6)).isoformat(),quantity=2,expected_revision=1,ttl_seconds=300,purpose='SYNTHETIC explicit replacement time')
+        holds=[ok(api.post('/api/synthetic-resources/'+rid+'/holds',headers=headers(tokens,'fixture-c',uuid4().hex),json=body),201)['hold'] for rid in r['a']['b_resources']]
+        new=ok(api.post('/api/resource-combinations',headers=headers(tokens,'fixture-c',uuid4().hex),json=dict(members=[dict(hold_id=h['id'],expected_revision=h['resource_revision']) for h in holds])),201)['combination']
+        proposal=ok(api.get(path+'/resource-plan-binding',params=dict(candidate_combination_id=new['id']),headers=headers(tokens,'fixture-c')))
+&gt;       assert proposal['comparison']['can_confirm'],proposal['comparison']
+E       AssertionError: {'sha256': '97bc01a9a6662fcbfe02d283b618115ecde19ed4c7e4dc3f64e8f064b0d0bad0', 'preparation_revision': 6, 'link_revision': 1, 'can_confirm': False, ...}
+E       assert False
+
+tests/test_service_resource_change_replay.py:25: AssertionError</failure></testcase></testsuite></testsuites>

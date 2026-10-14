@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="62.499" timestamp="2026-10-14T22:12:28.937521+00:00" hostname="754d39e95154"><testcase classname="tests.test_preview_rules_change_nodevm_actual" name="test_actual_case_alternative_prefill_original_confirmation_and_key_reads[c_normal]" time="6.025" /><testcase classname="tests.test_preview_rules_change_nodevm_actual" name="test_actual_case_alternative_prefill_original_confirmation_and_key_reads[c_lost_hold]" time="54.400"><failure message="subprocess.TimeoutExpired: Command '['node', 'tests/preview_rules_change_actual_nodevm.js', '{&quot;mode&quot;: &quot;c_lost_hold&quot;, &quot;preparation_id&quot;: &quot;fa25b350-dafd-4036-b0dc-89188fda93f7&quot;, &quot;search_from&quot;: &quot;2026-10-15T03:12&quot;, &quot;search_until&quot;: &quot;2026-10-15T06:12&quot;}']' timed out after 5 seconds">replay = {'a': {'f': (&lt;parkweave.store.Store object at 0x7f1315df1970&gt;, &lt;parkweave.store.Store object at 0x7f131616f8c0&gt;, {'fix...S', 'LOCAL_CASE_RECORD_RECHECK'], 'planning_constraints': {'excluded_roles': [], 'additional_requirements': []}, ...}]}
+mode = 'c_lost_hold'
+
+    @pytest.mark.parametrize('mode',['c_normal','c_lost_hold'])
+    def test_actual_case_alternative_prefill_original_confirmation_and_key_reads(replay,mode):
+        r=replay;f=r['f'];p,old_group,old_result=prepare_changed(r,'HTML-'+mode)
+        authority=authority_snapshot(f[1]);rows=all_public_rows(f[1])
+        with f[1].connect() as c:now=c.execute('SELECT clock_timestamp() t').fetchone()['t']
+        start=(now+timedelta(hours=5)).replace(second=0,microsecond=0)
+        params=dict(mode=mode,preparation_id=p['preparation_id'],search_from=start.strftime('%Y-%m-%dT%H:%M'),search_until=(start+timedelta(hours=3)).strftime('%Y-%m-%dT%H:%M'))
+&gt;       evidence=bridge(f[3],f,p,params,'fixture-c',readonly_rows=rows)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_preview_rules_change_nodevm_actual.py:73: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_preview_rules_change_nodevm_actual.py:53: in bridge
+    proc.wait(timeout=5);stderr=proc.stderr.read()
+    ^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py:1264: in wait
+    return self._wait(timeout=timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;Popen: returncode: -9 args: ['node', 'tests/preview_rules_change_actual_nod...&gt;
+timeout = 5
+
+    def _wait(self, timeout):
+        """Internal implementation of wait() on POSIX."""
+        if self.returncode is not None:
+            return self.returncode
+    
+        if timeout is not None:
+            endtime = _time() + timeout
+            # Enter a busy loop if we have a timeout.  This busy loop was
+            # cribbed from Lib/threading.py in Thread.wait() at r71065.
+            delay = 0.0005 # 500 us -&gt; initial delay of 1 ms
+            while True:
+                if self._waitpid_lock.acquire(False):
+                    try:
+                        if self.returncode is not None:
+                            break  # Another thread waited.
+                        (pid, sts) = self._try_wait(os.WNOHANG)
+                        assert pid == self.pid or pid == 0
+                        if pid == self.pid:
+                            self._handle_exitstatus(sts)
+                            break
+                    finally:
+                        self._waitpid_lock.release()
+                remaining = self._remaining_time(endtime)
+                if remaining &lt;= 0:
+&gt;                   raise TimeoutExpired(self.args, timeout)
+E                   subprocess.TimeoutExpired: Command '['node', 'tests/preview_rules_change_actual_nodevm.js', '{"mode": "c_lost_hold", "preparation_id": "fa25b350-dafd-4036-b0dc-89188fda93f7", "search_from": "2026-10-15T03:12", "search_until": "2026-10-15T06:12"}']' timed out after 5 seconds
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py:2045: TimeoutExpired</failure></testcase><testcase classname="tests.test_preview_rules_change_nodevm_actual" name="test_actual_synthetic_rule_read_original_purpose_facts_and_no_business_writes" time="0.858" /></testsuite></testsuites>

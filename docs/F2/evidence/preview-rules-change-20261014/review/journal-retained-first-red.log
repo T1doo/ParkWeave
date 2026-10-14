@@ -1,0 +1,46 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_retained_journal_schema_tamper_is_refused_without_ddl[missing-trigger] __
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-463/test_retained_journal_schema_t0')
+change = 'missing-trigger'
+
+    @pytest.mark.parametrize('change',['missing-trigger','forged-trigger'])
+    def test_retained_journal_schema_tamper_is_refused_without_ddl(tmp_path,change):
+        path=tmp_path/'retained.synthetic-readiness.sqlite3';SimulationJournal(path)
+        with sqlite3.connect(path) as c:
+            c.execute('DROP TRIGGER simulation_immutable_delete')
+            if change=='forged-trigger':c.execute('CREATE TRIGGER simulation_immutable_delete BEFORE DELETE ON simulation_assessments BEGIN SELECT 1; END')
+        before=path.read_bytes()
+>       with pytest.raises(Conflict):SimulationJournal(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_independent_rule_journal_review.py:14: Failed
+__ test_retained_journal_schema_tamper_is_refused_without_ddl[forged-trigger] __
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-463/test_retained_journal_schema_t1')
+change = 'forged-trigger'
+
+    @pytest.mark.parametrize('change',['missing-trigger','forged-trigger'])
+    def test_retained_journal_schema_tamper_is_refused_without_ddl(tmp_path,change):
+        path=tmp_path/'retained.synthetic-readiness.sqlite3';SimulationJournal(path)
+        with sqlite3.connect(path) as c:
+            c.execute('DROP TRIGGER simulation_immutable_delete')
+            if change=='forged-trigger':c.execute('CREATE TRIGGER simulation_immutable_delete BEFORE DELETE ON simulation_assessments BEGIN SELECT 1; END')
+        before=path.read_bytes()
+>       with pytest.raises(Conflict):SimulationJournal(path)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_independent_rule_journal_review.py:14: Failed
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_independent_rule_journal_review.py::test_retained_journal_schema_tamper_is_refused_without_ddl[missing-trigger]
+FAILED tests/test_independent_rule_journal_review.py::test_retained_journal_schema_tamper_is_refused_without_ddl[forged-trigger]
+2 failed, 1 warning in 0.06s

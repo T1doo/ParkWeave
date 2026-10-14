@@ -1,0 +1,60 @@
+............F........                                                    [100%]
+=================================== FAILURES ===================================
+_ test_actual_resource_suggestions_with_offline_doubles[two_searches_latest_wins] _
+
+mode = 'two_searches_latest_wins'
+
+    @pytest.mark.parametrize('mode', ['choose_fills_only', 'empty_grid', 'truncated_grid',
+        'current_403_clears', 'late_403_other_identity', 'identity_aba_delayed_json',
+        'change_resource', 'change_start', 'change_end', 'change_quantity',
+        'change_search_from', 'change_search_until', 'two_searches_latest_wins',
+        'wrong_resource', 'wrong_quantity', 'wrong_duration', 'wrong_grid', 'unsorted',
+        'too_many_results', 'original_flow_explicit', 'unknown_bundle_controls'])
+    def test_actual_resource_suggestions_with_offline_doubles(mode):
+        result = subprocess.run(['node', str(Path(__file__).with_name('resource_alternative_times_offline.js')), mode],
+                                cwd=Path(__file__).resolve().parents[1], capture_output=True, text=True, timeout=15)
+>       assert result.returncode == 0, result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/parkweave-preview-rules-ui-20261014/tests/resource_alternative_times_offline.js:38:42)
+E             at /workspace/parkweave-preview-rules-ui-20261014/tests/resource_alternative_times_offline.js:81:51
+E             at Object.<anonymous> (/workspace/parkweave-preview-rules-ui-20261014/tests/resource_alternative_times_offline.js:89:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:62
+E          const refuse=message=>{const error=Error(message);error.independentEntryRefusal=true;if(handler)pageError(error);return error;};
+E                                             ^
+E         
+E         Error: 请先在原入口核对尚未确定的操作，再提交另一操作。
+E             at refuse (evalmachine.<anonymous>:62:37)
+E             at Element.onclick (evalmachine.<anonymous>:63:119)
+E             at start (/workspace/parkweave-preview-rules-ui-20261014/tests/resource_alternative_times_offline.js:39:45)
+E             at /workspace/parkweave-preview-rules-ui-20261014/tests/resource_alternative_times_offline.js:81:32
+E             at Object.<anonymous> (/workspace/parkweave-preview-rules-ui-20261014/tests/resource_alternative_times_offline.js:89:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19) {
+E           independentEntryRefusal: true
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/parkweave-preview-rules-ui-20261014/tests/resource_alternative_times_offlin... wrapModuleLoad (node:internal/modules/cjs/loader:255:19) {\n  independentEntryRefusal: true\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_resource_alternative_times_offline.py:18: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[two_searches_latest_wins]
+1 failed, 20 passed, 1 warning in 1.43s
