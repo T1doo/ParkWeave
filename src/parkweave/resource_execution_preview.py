@@ -56,9 +56,56 @@ class ResourceExecutionPreview(ep.IsolatedExecutionPreview):
     storage_scope = SCOPE
     attachment_attribute = '_isolated_resource_execution_preview'
 
-    def _rules(self, c, p):
+    def _selection(self, c, p):
+        """Only original, explicitly adopted V4 contracts select other resources.
+
+        No client resource selector or new adapter is admitted. The original
+        candidate consumption proof binds each mapping; current catalog checks
+        are cooperative guards, not an atomic publication guarantee.
+        """
+        from . import service_case_steps as steps
+        parent=p['_preview_parent'];store=p['_preview_store']
+        plan=parent.get('service_case_plan')
+        if not plan:return RESOURCES,None
+        steps._initial_adoption_proof(parent,plan)
+        # An altered V4 marker must not turn a selected plan into legacy mode.
+        request=plan.get('adoption_request') or {}
+        contracts=list(plan.get('adoption_preview',{}).get('steps',[]))+[s.get('contract',{}) for s in plan.get('steps',[])]
+        selected=steps._selection_plan(plan) or any('service_refs' in s or 'instance_mappings' in s for s in contracts)
+        if request.get('candidate_id') is not None:
+            selected=selected or steps._candidate_module(parent,request['candidate_id']).__name__.endswith('.service_selection_candidates')
+        if not selected:return RESOURCES,None
+        steps._recovery_proofs(parent)
+        if steps._binding_issues(c,parent,plan,store=store):
+            raise Conflict('current explicitly adopted service selection required for preview')
+        rows=[s for s in plan['adoption_preview']['steps'] if s['id']=='P2']
+        if len(rows)!=1 or not rows[0].get('instance_mappings'):
+            raise Conflict('adopted exact P2 instance resource mapping required')
+        resources=None;executors=set()
+        for mapping in rows[0]['instance_mappings']:
+            roles=mapping['roles'];values=mapping['resources']
+            if (roles['enterprise_operator']!=parent['owner_id'] or
+                    roles.get('park_specialist')!=parent['reviewer_id'] or
+                    set(values)!={'primary','secondary'} or len(set(values.values()))!=2):
+                raise Conflict('adopted exact Case role and resource mapping required')
+            ids=tuple(sorted((UUID(v) for v in values.values()),key=str))
+            if resources is not None and ids!=resources:
+                raise Conflict('selected P2 instance resource mappings conflict')
+            resources=ids
+            if roles.get('service_executor'):executors.add(roles['service_executor'])
+        if executors:
+            assigned=store.assigned_executors(c,parent['run_id'],parent['park_id'],parent['org_id'])
+            if len(executors)!=1 or {r['id'] for r in assigned}!=executors:
+                raise Denied('existing exact selected Run executor required for preview')
+        binding=dict(plan_id=plan['id'],plan_revision=plan['revision'],
+                     selection_sha256=ep._sha(plan['binding']['service_selection']),
+                     mappings_sha256=ep._sha(rows[0]['instance_mappings']))
+        return resources,binding
+
+    def _rules(self, c, p, resource_ids=None):
         result = []
-        for id in sorted(RESOURCES,key=str):
+        if resource_ids is None:resource_ids,_=self._selection(c,p)
+        for id in sorted(resource_ids,key=str):
             r = rh._scope(c,p,id,write=True)
             if (r['namespace']!='SYNTHETIC' or r['authority']!='LOCAL_AUTHORITY' or
                     not isinstance(r['source'],dict) or r['source'].get('kind')!='SYNTHETIC' or
@@ -69,14 +116,17 @@ class ResourceExecutionPreview(ep.IsolatedExecutionPreview):
 
     def _source(self, store, c, token, id):
         p,parent,current = super()._source(store,c,token,id)
-        # The actor/Case/catalogue locks precede resource locks, as on original
-        # association routes. Only existing authorised fixed resources are read.
-        for resource_id in sorted(RESOURCES,key=str):
+        p['_preview_parent']=parent;p['_preview_store']=store
+        resource_ids,selection=self._selection(c,p)
+        # Actor/Case/catalogue locks precede existing authorized resource reads.
+        for resource_id in sorted(resource_ids,key=str):
             rh._scope(c,p,resource_id,write=True)
             rh._lock(c,resource_id,shared=True)
-        current['resource_rules'] = self._rules(c,p)
+        current['resource_rules'] = self._rules(c,p,resource_ids)
         current['planning_source_sha256'] = current['source_sha256']
-        current['source_sha256'] = ep._sha(dict(planning=current['planning_source_sha256'],resources=current['resource_rules']))
+        basis=dict(planning=current['planning_source_sha256'],resources=current['resource_rules'])
+        if selection is not None:basis['service_selection']=selection
+        current['source_sha256'] = ep._sha(basis)
         return p,parent,current
 
     def _guard(self, store, c, token, p):
@@ -85,8 +135,11 @@ class ResourceExecutionPreview(ep.IsolatedExecutionPreview):
 
     def _comparison(self, store, c, p, parent):
         current = planning._proposal(store,c,p,parent)
-        rules = self._rules(c,p)
-        return ep._sha(dict(planning=current['source_sha256'],resources=rules))
+        resource_ids,selection=self._selection(c,p)
+        rules = self._rules(c,p,resource_ids)
+        basis=dict(planning=current['source_sha256'],resources=rules)
+        if selection is not None:basis['service_selection']=selection
+        return ep._sha(basis)
 
     def _view(self, db, p, parent, current):
         rows=db.execute('SELECT * FROM previews WHERE owner=? AND preparation=? ORDER BY rowid',(p['id'],str(parent['id']))).fetchall()

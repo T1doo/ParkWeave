@@ -12,7 +12,12 @@ from .run_access_candidate import RunCommand
 from .native_run_access import RunCommand as NativeRunCommand
 
 
-def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None) -> FastAPI:
+    if synthetic_rule_readiness is not None:
+        from .synthetic_rule_readiness import SyntheticRuleReadiness
+        if type(synthetic_rule_readiness) is not SyntheticRuleReadiness or synthetic_rule_readiness.store is not store:
+            raise Denied('explicit matching owned synthetic rule simulation required')
+        with store.connect() as c: synthetic_rule_readiness._fixture(c)
     if capability_catalog is not None:
         from .service_capability_catalog import IsolatedServiceCapabilityCatalog
         if type(capability_catalog) is not IsolatedServiceCapabilityCatalog or capability_catalog.consumer.store is not store:
@@ -844,8 +849,53 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     def executor_receipt_execute_local(step_id: UUID,data: ExecuteLocal,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return executor_receipts.command(store,token(authorization),step_id,resource_key(idempotency_key),data)
 
+    from . import synthetic_rule_readiness as srr
+    def simulation_adapter():
+        if synthetic_rule_readiness is None:
+            raise Denied('isolated synthetic rule simulation disabled')
+        return synthetic_rule_readiness
+
+    def simulation_context(binding_id,as_of):
+        from pydantic import ValidationError
+        try:return srr.Context(binding_id=binding_id,as_of=as_of)
+        except ValidationError:raise HTTPException(422,'invalid synthetic rule context')
+
+    @app.get('/api/preparations/{preparation_id}/synthetic-rule-readiness')
+    def synthetic_rule_read(preparation_id: UUID,binding_id: str,as_of: str,authorization: str | None=Header(default=None)):
+        return simulation_adapter().read(token(authorization),preparation_id,simulation_context(binding_id,as_of))
+
+    @app.post('/api/preparations/{preparation_id}/synthetic-rule-readiness')
+    def synthetic_rule_assess(preparation_id: UUID,data: srr.Assess,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return simulation_adapter().assess(token(authorization),preparation_id,resource_key(idempotency_key),data)
+
+    @app.get('/api/preparations/{preparation_id}/synthetic-rule-readiness/recovery/{request_key}')
+    def synthetic_rule_recover(preparation_id: UUID,request_key: str,binding_id: str,as_of: str,authorization: str | None=Header(default=None)):
+        return simulation_adapter().recover(token(authorization),preparation_id,resource_key(request_key),simulation_context(binding_id,as_of))
+
     from . import case_resources as case_resources
     from . import resource_plan_binding
+    from . import resource_change_proposals
+    @app.get('/api/preparations/{preparation_id}/resource-time-alternatives')
+    def case_resource_time_alternatives(preparation_id: UUID,search_from: str,search_until: str,authorization: str | None=Header(default=None)):
+        from pydantic import ValidationError
+        import json
+        try:
+            data=resource_change_proposals.Search.model_validate_json(json.dumps(dict(search_from=search_from,search_until=search_until)))
+        except ValidationError:raise HTTPException(422,'invalid bounded resource alternative search')
+        return resource_change_proposals.read(store,token(authorization),preparation_id,data)
+
+    @app.get('/api/resource-holds/recovery/{request_key}')
+    def resource_hold_recover(request_key: str,expected_fingerprint: str | None=Query(default=None,pattern='^[a-f0-9]{64}$'),authorization: str | None=Header(default=None)):
+        return resource_change_proposals.recover_resource(store,token(authorization),resource_key(request_key),'HOLD',expected_fingerprint)
+
+    @app.get('/api/resource-combinations/recovery/{request_key}')
+    def resource_combination_recover(request_key: str,expected_fingerprint: str | None=Query(default=None,pattern='^[a-f0-9]{64}$'),authorization: str | None=Header(default=None)):
+        return resource_change_proposals.recover_resource(store,token(authorization),resource_key(request_key),'COMBINATION',expected_fingerprint)
+
+    @app.get('/api/preparations/{preparation_id}/resource-link/recovery/{request_key}')
+    def resource_link_recover(preparation_id: UUID,request_key: str,expected_fingerprint: str | None=Query(default=None,pattern='^[a-f0-9]{64}$'),authorization: str | None=Header(default=None)):
+        return resource_change_proposals.recover_link(store,token(authorization),preparation_id,resource_key(request_key),expected_fingerprint)
+
     @app.get('/api/preparations/{preparation_id}/resource-plan-binding')
     def case_resource_plan_binding(preparation_id: UUID,candidate_combination_id: UUID | None=None,authorization: str | None=Header(default=None)):
         return resource_plan_binding.read(store,token(authorization),preparation_id,candidate_combination_id)

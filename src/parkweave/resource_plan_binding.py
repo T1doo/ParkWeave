@@ -212,9 +212,27 @@ def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None
         try:prep.grant(store,c,reviewer,'REVIEW_ASSIGNED')
         except Denied:reviewer=None
     if not reviewer:issues['P1'].append('CURRENT_REVIEWER_AUTHORITY_REQUIRED')
-    if delivery_plan:
-        from . import service_case_steps as case_steps
-        adopted=parent.get('service_case_plan')
+    from . import service_case_steps as case_steps
+    adopted=parent.get('service_case_plan')
+    if adopted and case_steps._selection_plan(adopted):
+        # This projection runs in a READ ONLY transaction. Validate the frozen
+        # adoption and its P1 snapshot without invoking downstream FOR SHARE
+        # readers or persisting their invalidation observations.
+        from . import registered_dependencies as dependencies
+        dependencies.plan_proof(parent,adopted)
+        case_steps._initial_adoption_proof(parent,adopted)
+        case_steps._recovery_proofs(parent)
+        p1=next((s for s in adopted['steps'] if s['adapter_id']=='P1'),None)
+        verified=next((e for e in reversed(adopted['events']) if p1 and e['step_id']==p1['id'] and e['action']=='VERIFY'),None)
+        if (case_steps._binding_issues(c,parent,adopted,store=store) or
+            adopted['required_goals']!=(parent.get('request_intent') or {}).get('required_goals') or
+            not p1 or p1['coordination_state']!='VERIFIED' or p1.get('invalidated') or
+            p1.get('verified_sha256')!=cp._hash(snapshots['P1']) or
+            not verified or verified['source_sha256']!=p1.get('verified_sha256') or
+            cp._normal(verified['sources'])!=cp._normal(p1.get('verified_sources')) or
+            not any(s['adapter_id']=='P2' for s in adopted['steps'])):
+            issues['P1'].append('CURRENT_PLAN_P1_REQUIRED')
+    elif delivery_plan:
         if not adopted:
             issues['P1'].append('ADOPTED_RESOURCE_PLAN_REQUIRED')
         else:
