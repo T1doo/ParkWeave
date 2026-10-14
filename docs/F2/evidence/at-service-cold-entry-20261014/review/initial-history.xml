@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="2.266" timestamp="2026-10-14T21:38:20.846112+00:00" hostname="754d39e95154"><testcase classname="tests.test_at_cold_independent" name="test_read_history_survives_write_authority_revocation[EXECUTE]" time="1.094"><failure message="AssertionError: historical recovery acquired source writer lease">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5cbd6cfec0&gt;, &lt;parkweave.store.Store object at 0x7f5cbdb220f0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-419/test_read_history_survives_wri0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5cbd20b1d0&gt;
+capability = 'EXECUTE'
+
+    @pytest.mark.parametrize('capability',['EXECUTE','PREPARE','case.create'])
+    def test_read_history_survives_write_authority_revocation(capability_catalog,tmp_path,monkeypatch,capability):
+        a=capability_catalog
+        facade,data=setup(a,tmp_path)
+        store,owner,tokens,api=a['f']
+        key=uuid4().hex
+        original=facade.prepare(tokens['fixture-c'],key,data)
+        command=stage(original,'CREATE_RUN')
+        response=api.post('/api/runs',headers=headers(tokens,'fixture-c',command['request_key']),json=command['body'])
+        assert response.status_code==202,response.text
+        with owner.connect() as c:
+            owner.lock_principal(c,'fixture-c',exclusive=True)
+            if capability=='PREPARE':
+                c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-c' AND capability='PREPARE'")
+            elif capability=='case.create':
+                c.execute("UPDATE action_grants SET active=false WHERE principal_id='fixture-c' AND action='case.create'")
+            else:
+                c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-c' AND capability='EXECUTE'")
+        authority=authority_snapshot(owner)
+        def forbidden(*args,**kwargs):raise AssertionError('historical recovery acquired source writer lease')
+        monkeypatch.setattr(a['catalog'],'source_lease',forbidden)
+        recovered=facade.read(tokens['fixture-c'],key)
+        assert recovered['input']==original['input']
+        assert recovered['product_observations'][0]['status']=='COMMITTED'
+        assert recovered['product_observations'][0]['result']['run_state']=='QUEUED'
+        assert recovered['automatic_execution'] is False
+        assert authority_snapshot(owner)==authority
+&gt;       with pytest.raises(Denied):facade.prepare(tokens['fixture-c'],key,data)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_at_cold_independent.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_instance_consumer.py:90: in prepare
+    with self.catalog.connection() as c:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+src/parkweave/service_capability_catalog.py:116: in connection
+    with self.source_lease():
+         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (), kwargs = {}
+
+&gt;   def forbidden(*args,**kwargs):raise AssertionError('historical recovery acquired source writer lease')
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: historical recovery acquired source writer lease
+
+tests/test_at_cold_independent.py:29: AssertionError</failure></testcase><testcase classname="tests.test_at_cold_independent" name="test_read_history_survives_write_authority_revocation[PREPARE]" time="0.344"><failure message="AssertionError: historical recovery acquired source writer lease">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5cbd2d7ec0&gt;, &lt;parkweave.store.Store object at 0x7f5cbdb202c0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-419/test_read_history_survives_wri1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5cbc907dd0&gt;
+capability = 'PREPARE'
+
+    @pytest.mark.parametrize('capability',['EXECUTE','PREPARE','case.create'])
+    def test_read_history_survives_write_authority_revocation(capability_catalog,tmp_path,monkeypatch,capability):
+        a=capability_catalog
+        facade,data=setup(a,tmp_path)
+        store,owner,tokens,api=a['f']
+        key=uuid4().hex
+        original=facade.prepare(tokens['fixture-c'],key,data)
+        command=stage(original,'CREATE_RUN')
+        response=api.post('/api/runs',headers=headers(tokens,'fixture-c',command['request_key']),json=command['body'])
+        assert response.status_code==202,response.text
+        with owner.connect() as c:
+            owner.lock_principal(c,'fixture-c',exclusive=True)
+            if capability=='PREPARE':
+                c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-c' AND capability='PREPARE'")
+            elif capability=='case.create':
+                c.execute("UPDATE action_grants SET active=false WHERE principal_id='fixture-c' AND action='case.create'")
+            else:
+                c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-c' AND capability='EXECUTE'")
+        authority=authority_snapshot(owner)
+        def forbidden(*args,**kwargs):raise AssertionError('historical recovery acquired source writer lease')
+        monkeypatch.setattr(a['catalog'],'source_lease',forbidden)
+        recovered=facade.read(tokens['fixture-c'],key)
+        assert recovered['input']==original['input']
+        assert recovered['product_observations'][0]['status']=='COMMITTED'
+        assert recovered['product_observations'][0]['result']['run_state']=='QUEUED'
+        assert recovered['automatic_execution'] is False
+        assert authority_snapshot(owner)==authority
+&gt;       with pytest.raises(Denied):facade.prepare(tokens['fixture-c'],key,data)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_at_cold_independent.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_instance_consumer.py:90: in prepare
+    with self.catalog.connection() as c:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+src/parkweave/service_capability_catalog.py:116: in connection
+    with self.source_lease():
+         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (), kwargs = {}
+
+&gt;   def forbidden(*args,**kwargs):raise AssertionError('historical recovery acquired source writer lease')
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: historical recovery acquired source writer lease
+
+tests/test_at_cold_independent.py:29: AssertionError</failure></testcase><testcase classname="tests.test_at_cold_independent" name="test_read_history_survives_write_authority_revocation[case.create]" time="0.391"><failure message="AssertionError: historical recovery acquired source writer lease">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5cb7e5aa20&gt;, &lt;parkweave.store.Store object at 0x7f5cb7fe4500&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-419/test_read_history_survives_wri2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5cb7ef5a00&gt;
+capability = 'case.create'
+
+    @pytest.mark.parametrize('capability',['EXECUTE','PREPARE','case.create'])
+    def test_read_history_survives_write_authority_revocation(capability_catalog,tmp_path,monkeypatch,capability):
+        a=capability_catalog
+        facade,data=setup(a,tmp_path)
+        store,owner,tokens,api=a['f']
+        key=uuid4().hex
+        original=facade.prepare(tokens['fixture-c'],key,data)
+        command=stage(original,'CREATE_RUN')
+        response=api.post('/api/runs',headers=headers(tokens,'fixture-c',command['request_key']),json=command['body'])
+        assert response.status_code==202,response.text
+        with owner.connect() as c:
+            owner.lock_principal(c,'fixture-c',exclusive=True)
+            if capability=='PREPARE':
+                c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-c' AND capability='PREPARE'")
+            elif capability=='case.create':
+                c.execute("UPDATE action_grants SET active=false WHERE principal_id='fixture-c' AND action='case.create'")
+            else:
+                c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-c' AND capability='EXECUTE'")
+        authority=authority_snapshot(owner)
+        def forbidden(*args,**kwargs):raise AssertionError('historical recovery acquired source writer lease')
+        monkeypatch.setattr(a['catalog'],'source_lease',forbidden)
+        recovered=facade.read(tokens['fixture-c'],key)
+        assert recovered['input']==original['input']
+        assert recovered['product_observations'][0]['status']=='COMMITTED'
+        assert recovered['product_observations'][0]['result']['run_state']=='QUEUED'
+        assert recovered['automatic_execution'] is False
+        assert authority_snapshot(owner)==authority
+&gt;       with pytest.raises(Denied):facade.prepare(tokens['fixture-c'],key,data)
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_at_cold_independent.py:37: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_instance_consumer.py:90: in prepare
+    with self.catalog.connection() as c:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+src/parkweave/service_capability_catalog.py:116: in connection
+    with self.source_lease():
+         ^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+args = (), kwargs = {}
+
+&gt;   def forbidden(*args,**kwargs):raise AssertionError('historical recovery acquired source writer lease')
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: historical recovery acquired source writer lease
+
+tests/test_at_cold_independent.py:29: AssertionError</failure></testcase></testsuite></testsuites>

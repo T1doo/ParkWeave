@@ -1,0 +1,75 @@
+{
+  "reviewed_head": "3bc1e96ccc6b6d73a5f1488bee644f92a15ddd97",
+  "method": "READ_ONLY_SOURCE_REVIEW_NO_TESTS_EXECUTED",
+  "fixed_cases": [
+    {
+      "id": "AT-07",
+      "scenario": "复合目标服务编排",
+      "steps": "模型选服务、拆步骤、绑定动作并预检",
+      "oracle": "必需目标不删；步骤有责任与验收；不可行明确等待/拒绝，软件输出不是虚假履约",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定"
+    },
+    {
+      "id": "AT-08",
+      "scenario": "模板新输入与冷会话",
+      "steps": "应用参数化模板并运行有效新输入及错误输入",
+      "oracle": "产生新Case和结果；不复制旧材料/授权；错误明确处理",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定"
+    },
+    {
+      "id": "AT-14",
+      "scenario": "预览与真实数据隔离",
+      "steps": "预览执行写入，然后核对真实命名空间",
+      "oracle": "预览只影响测试命名空间，不能占用生产资源或沿用生产Grant",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定"
+    },
+    {
+      "id": "AT-33",
+      "scenario": "第二园区配置迁移",
+      "steps": "映射配置并在新授权下运行A/B/C任务",
+      "oracle": "结果可核对、不同园区隔离；统计人工配置/代码与回归问题，不预设一键迁移",
+      "stage": "F3",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定"
+    },
+    {
+      "id": "AT-35",
+      "scenario": "首个完整办理和重新使用",
+      "steps": "规划→确认→本地办理→补件/接单→回执→确认；再次运行",
+      "oracle": "关键状态持久化并能被对应角色操作；不靠手改源码/数据库；不同输入输出不混淆",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "initial_state": "待实现fixture",
+      "type": "待执行时指定"
+    }
+  ],
+  "source_sha256": {
+    "docs/验收规格.json": "747fafdf948012b3569ef5d43fcf5c279b3e6acad25231b4a68c493e6f32a17b",
+    "docs/sources/V1/平台产品设计 (2).md": "48ff72723678546500973b6ad45ae841320cda69f08f9ca24013137ae5e7b02b",
+    "docs/sources/V1/分阶段开发计划 (2).md": "4437dac3b86c12bd1ffc57cf7c4e66c154eea5ec2a5d8562d0ddfc1f6cfb5989",
+    "src/parkweave/service_selection_candidates.py": "602f0ee8cb8aa3c156aa3c78867270912348cdf5e6674b76d25ea1551c02abbd",
+    "src/parkweave/service_selection_planner.py": "d4e67ac302bdd882bd9b050a6eb153bc5a04c79cd969466b16487fe102a8b45e",
+    "src/parkweave/service_instance_consumer.py": "153dfa2dd768b72c3df5ddcdd8fce71af8f4d76a748cb7d5db98af1e3c199b47",
+    "src/parkweave/service_case_steps.py": "6bfa3feffac1968cd26066108cfb9e53032117d6e21a9d1e48a8145fbee9bb31",
+    "src/parkweave/material_objections.py": "90eb58179b083785e7c711c6ed299b6313802e61a46fd45c8af8e8baff85e811",
+    "src/parkweave/model_chain.py": "2701bf05fe4ae3435e2b188e14d91ca12a13e410abbf72c1083c3748e54a4e58",
+    "tests/test_service_selection_full_chain.py": "45aa4e22a988ecbf0d899507b8f54ce3fd5bdcf8b5c153b48d32efe56372ff65",
+    "tests/test_new_enterprise_local_chain.py": "6d22e501cc096ec7851144a2010c20a2dc264940fdae1f1206920957fbc77430"
+  },
+  "no_source_git_network_model_browser_actions": true
+}

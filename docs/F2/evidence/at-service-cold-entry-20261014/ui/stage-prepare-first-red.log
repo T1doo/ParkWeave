@@ -1,0 +1,42 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_cold_entry_complete_original_html[lost_stage_prepare] __________
+
+mode = 'lost_stage_prepare'
+
+    @pytest.mark.parametrize("mode", ["happy", "lost_stage_prepare", "readonly_completed", "bad_saved_goals", "bad_saved_material", "completed_open", "completed_new", "original_guard", "other_pending", "bad_actor_mapping", "disabled", "without_confirmation", "no_send_confirmation", "lost_prepare", "lost_send", "unknown_send", "cold_reload", "revoked_read", "revoked_403", "late_directory", "late_recovery", "unsupported_goal", "bad_directory_scope", "bad_directory_flags", "bad_directory_union", "bad_directory_duplicate", "bad_directory_fields", "bad_directory_count", "bad_directory_goal", "bad_subject", "bad_original_key", "bad_cold_flags", "bad_hash", "bad_stage_action", "bad_observation_key", "bad_duplicate_stage"])
+    def test_cold_entry_complete_original_html(mode):
+        assert shutil.which("node")
+        root = Path(__file__).resolve().parents[1]
+        result = subprocess.run(["node", "-e", HARNESS, mode], cwd=root, text=True, capture_output=True, timeout=25)
+>       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: {
+E           actor_ref: '375ef82ce6d5e4aa0f8e0ba209051aae05136cb024c8b755ed7f67d21fdff543',
+E           automatic_adoption: false,
+E           automatic_execution: false,
+E           automatically_replayed: false,
+E           binding: {
+E             instance: {
+E               config_revision: 1,
+E               config_sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E               fields: {
+E                 material_outline: 'park_b_outline',
+E                 need_summary: 'park_b_need'
+E               },
+E               instance_id: 'park-b-current-material-instance',
+E               release_id: '00000000-00... == null
+E             at [eval]:48:1206
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\'),crypto=... instance_id: 'park-b-current-material-instance',\n      release_id: '00000000-00... == null\n    at [eval]:48:1206\n").returncode
+
+tests/test_service_instance_cold_web.py:70: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_service_instance_cold_web.py::test_cold_entry_complete_original_html[lost_stage_prepare]
+1 failed, 35 deselected, 1 warning in 0.15s

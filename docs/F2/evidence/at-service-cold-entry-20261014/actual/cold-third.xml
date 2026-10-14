@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="5" time="8.488" timestamp="2026-10-14T21:42:11.436123+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_cold_entry_nodevm_actual" name="test_complete_original_html_fresh_cold_input_actual_pg_asgi[normal]" time="2.063" /><testcase classname="tests.test_service_cold_entry_nodevm_actual" name="test_complete_original_html_fresh_cold_input_actual_pg_asgi[facade_loss]" time="1.602" /><testcase classname="tests.test_service_cold_entry_nodevm_actual" name="test_complete_original_html_fresh_cold_input_actual_pg_asgi[run_loss]" time="1.570" /><testcase classname="tests.test_service_cold_entry_nodevm_actual" name="test_complete_original_html_fresh_cold_input_actual_pg_asgi[material_loss]" time="1.599" /><testcase classname="tests.test_service_cold_entry_nodevm_actual" name="test_complete_original_html_fresh_cold_input_actual_pg_asgi[execute_revoked]" time="1.542"><failure message="AssertionError: evalmachine.&lt;anonymous&gt;:1&#10;  preparationView.preparation.id&#10;                  ^&#10;  &#10;  TypeError: Cannot read properties of null (reading 'preparation')&#10;      at evalmachine.&lt;anonymous&gt;:1:17&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at Object.read (/workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:18:140)&#10;      at /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:46:51&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0&#10; +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7f201861b860&gt;, &lt;parkweave.store.Store object at 0x7f20188e9940&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-426/test_complete_original_html_fr4')
+mode = 'execute_revoked'
+
+    @pytest.mark.parametrize('mode',['normal','facade_loss','run_loss','material_loss','execute_revoked'])
+    def test_complete_original_html_fresh_cold_input_actual_pg_asgi(selection_full_chain,tmp_path,mode):
+        a=selection_full_chain;f=a['f'];store,owner,tokens,_=f
+        facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'node-cold.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+        assert shutil.which('node'),'Node is required for the permitted offline full HTML harness'
+        before=authority_snapshot(owner)
+        with owner.connect() as c:
+            assert c.execute('SELECT count(*) n FROM cases').fetchone()['n']==0
+        root=Path(__file__).resolve().parents[1]
+        out=root/'.runtime/at-replay-20261014/cold-entry'/('pytest-'+str(os.getpid()));out.mkdir(parents=True,exist_ok=True)
+        proc=subprocess.Popen(['node','tests/service_cold_entry_actual_nodevm.js',mode],cwd=root,text=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        traffic=[];controls=[];result=None;stderr='';run_id=None
+        try:
+            with TestClient(create_app(store,capability_catalog=a['catalog'],instance_consumer=facade)) as api:
+                until=time.monotonic()+40
+                while time.monotonic()&lt;until:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if message['type']=='result':result=message;break
+                    if message['type']=='control':
+                        action=message['action']
+                        if action=='worker':
+                            claimed=store.claim('SYNTHETIC independent Python worker for cold '+mode)
+                            assert claimed is not None
+                            store.finish(claimed)
+                            body=dict(worker='ORIGINAL_LOCAL_WORKER',run_id=run_id)
+                        else:
+                            assert action=='revoke_execute'
+                            with owner.connect() as c:
+                                owner.lock_principal(c,'fixture-c',exclusive=True)
+                                changed=c.execute("UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-c' AND capability='EXECUTE' RETURNING principal_id").fetchall()
+                                assert len(changed)==1
+                            body=dict(test_fixture_permission_change='EXECUTE_REVOKED')
+                        controls.append(dict(action=action,body=body));status=200
+                    else:
+                        assert message['type']=='request'
+                        options=message['options'];assert options['headers']['Authorization']=='Bearer SYNTHETIC_NODE_API_SESSION'
+                        actual_headers={**options['headers'],'Authorization':'Bearer '+tokens['fixture-c']}
+                        reply=api.request(options.get('method','GET'),message['path'],headers=actual_headers,content=options.get('body'))
+                        status=reply.status_code;body=reply.json()
+                        traffic.append(dict(path=message['path'],method=options.get('method','GET'),key=options['headers'].get('Idempotency-Key'),request_body=json.loads(options['body']) if options.get('body') else None,status=status,body=body))
+                        if status==200 and message['path']=='/api/service-instance-cold-inputs/recovery':
+                            assert body['actor_ref']!='fixture-c'
+                            for observation in body['product_observations']:
+                                if observation['status']=='COMMITTED' and observation['name']!='CREATE_RUN':
+                                    assert observation['result']['actor_id']=='fixture-c'
+                                    assert observation['result']['actor_id']!=body['actor_ref']
+                        if options.get('method')=='POST' and message['path']=='/api/runs' and status==202:run_id=body['run_id']
+                    proc.stdin.write(json.dumps(dict(id=message['id'],status=status,body=body))+'\n');proc.stdin.flush()
+            proc.wait(timeout=5);stderr=proc.stderr.read()
+        finally:
+            selector.close()
+            if proc.poll() is None:proc.kill();proc.wait(timeout=5)
+            if not stderr:stderr=proc.stderr.read()
+            (out/(mode+'-traffic.json')).write_text(json.dumps(dict(mode=mode,process_exit=proc.returncode,result=result,traffic=traffic,controls=controls,stderr=stderr),indent=2,default=str)+'\n')
+&gt;       assert proc.returncode==0,stderr
+E       AssertionError: evalmachine.&lt;anonymous&gt;:1
+E         preparationView.preparation.id
+E                         ^
+E         
+E         TypeError: Cannot read properties of null (reading 'preparation')
+E             at evalmachine.&lt;anonymous&gt;:1:17
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at Object.read (/workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:18:140)
+E             at /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:46:51
+E             at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E         
+E       assert 1 == 0
+E        +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode
+
+tests/test_service_cold_entry_nodevm_actual.py:87: AssertionError</failure></testcase></testsuite></testsuites>

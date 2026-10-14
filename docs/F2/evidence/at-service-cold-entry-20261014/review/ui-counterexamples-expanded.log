@@ -1,0 +1,133 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_______________ test_independent_cold_state_guards[prepare_loss] _______________
+
+probe = 'prepare_loss'
+
+    @pytest.mark.parametrize('probe',['prepare_loss','prepare_unknown_reload','denied_other_views'])
+    def test_independent_cold_state_guards(probe):
+        script=HARNESS
+        if probe in ('prepare_loss','prepare_unknown_reload'):
+            script=script.replace("admit(name);body=dto();}","admit(name);if(mode==='independent_prepare_loss'&&!lost){lost=true;throw Error('independent lost stage preparation response');}body=dto();}")
+            if probe=='prepare_unknown_reload':
+                script=script.replace("admit(name);if(mode==='independent_prepare_loss'","if(mode==='independent_prepare_loss'&&!lost){lost=true;throw Error('independent unobserved stage preparation response');}admit(name);if(mode==='independent_prepare_loss'")
+            marker="for(const name of stages.slice(1)){"
+            inject="""if(mode==='independent_prepare_loss'){
+    const before=calls.length;await p.get('cold-stage-prepare').onclick();
+    const first=calls.slice(before);await p.get('cold-stage-prepare').onclick();
+    const writes=calls.filter(c=>c.path.startsWith('/api/service-instance-cold-inputs/prepare-stage?')&&c.options.method==='POST');
+    assert.equal(writes.length,1,'lost prepare-stage response allowed repeated POST instead of GET-only recovery');
+    assert(first.some(c=>c.path==='/api/service-instance-cold-inputs/recovery'),'lost prepare-stage response did not GET original key');
+    console.log(JSON.stringify({result:'PASS',probe:'prepare_loss'}));process.exit(0);
+    }for(const name of stages.slice(1)){"""
+            if probe=='prepare_unknown_reload':
+                inject=inject.replace("const first=calls.slice(before);await p.get('cold-stage-prepare').onclick();","const first=calls.slice(before),saved=p.snapshot();p=page(saved);p.get('token').value='SYNTHETIC_UI_SESSION';await p.get('cold-recover').onclick();await p.get('cold-directory-read').onclick();assert(p.get('cold-stage-prepare').disabled,'unobserved prepare-stage marker did not survive reload');await p.get('cold-stage-prepare').onclick();assert.deepEqual(p.snapshot(),saved);")
+            assert marker in script
+            script=script.replace(marker,inject)
+            mode='independent_prepare_loss'
+        else:
+            marker="const snapshot=p.snapshot();denied=true;await p.get('cold-recover').onclick();"
+            replacement="const snapshot=p.snapshot();p.read(\"servicePlanView={secret:'private original Case source'}\");p.get('service-plan-summary').textContent='private original Case source';denied=true;await p.get('cold-recover').onclick();assert.equal(p.read('servicePlanView'),null,'403 left original non-cold private view in memory');assert.equal(p.get('service-plan-summary').textContent,'','403 left original non-cold private content visible');"
+            assert marker in script
+            script=script.replace(marker,replacement)
+            mode='revoked_403'
+        result=subprocess.run(['node','-e',script,mode],cwd=Path(__file__).resolve().parents[1],text=True,capture_output=True,timeout=25)
+>       assert result.returncode==0,result.stdout+result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: lost prepare-stage response allowed repeated POST instead of GET-only recovery
+E             at [eval]:52:8
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\'),crypto=...[ERR_ASSERTION]: lost prepare-stage response allowed repeated POST instead of GET-only recovery\n    at [eval]:52:8\n').returncode
+
+tests/test_at_cold_ui_independent.py:35: AssertionError
+__________ test_independent_cold_state_guards[prepare_unknown_reload] __________
+
+probe = 'prepare_unknown_reload'
+
+    @pytest.mark.parametrize('probe',['prepare_loss','prepare_unknown_reload','denied_other_views'])
+    def test_independent_cold_state_guards(probe):
+        script=HARNESS
+        if probe in ('prepare_loss','prepare_unknown_reload'):
+            script=script.replace("admit(name);body=dto();}","admit(name);if(mode==='independent_prepare_loss'&&!lost){lost=true;throw Error('independent lost stage preparation response');}body=dto();}")
+            if probe=='prepare_unknown_reload':
+                script=script.replace("admit(name);if(mode==='independent_prepare_loss'","if(mode==='independent_prepare_loss'&&!lost){lost=true;throw Error('independent unobserved stage preparation response');}admit(name);if(mode==='independent_prepare_loss'")
+            marker="for(const name of stages.slice(1)){"
+            inject="""if(mode==='independent_prepare_loss'){
+    const before=calls.length;await p.get('cold-stage-prepare').onclick();
+    const first=calls.slice(before);await p.get('cold-stage-prepare').onclick();
+    const writes=calls.filter(c=>c.path.startsWith('/api/service-instance-cold-inputs/prepare-stage?')&&c.options.method==='POST');
+    assert.equal(writes.length,1,'lost prepare-stage response allowed repeated POST instead of GET-only recovery');
+    assert(first.some(c=>c.path==='/api/service-instance-cold-inputs/recovery'),'lost prepare-stage response did not GET original key');
+    console.log(JSON.stringify({result:'PASS',probe:'prepare_loss'}));process.exit(0);
+    }for(const name of stages.slice(1)){"""
+            if probe=='prepare_unknown_reload':
+                inject=inject.replace("const first=calls.slice(before);await p.get('cold-stage-prepare').onclick();","const first=calls.slice(before),saved=p.snapshot();p=page(saved);p.get('token').value='SYNTHETIC_UI_SESSION';await p.get('cold-recover').onclick();await p.get('cold-directory-read').onclick();assert(p.get('cold-stage-prepare').disabled,'unobserved prepare-stage marker did not survive reload');await p.get('cold-stage-prepare').onclick();assert.deepEqual(p.snapshot(),saved);")
+            assert marker in script
+            script=script.replace(marker,inject)
+            mode='independent_prepare_loss'
+        else:
+            marker="const snapshot=p.snapshot();denied=true;await p.get('cold-recover').onclick();"
+            replacement="const snapshot=p.snapshot();p.read(\"servicePlanView={secret:'private original Case source'}\");p.get('service-plan-summary').textContent='private original Case source';denied=true;await p.get('cold-recover').onclick();assert.equal(p.read('servicePlanView'),null,'403 left original non-cold private view in memory');assert.equal(p.get('service-plan-summary').textContent,'','403 left original non-cold private content visible');"
+            assert marker in script
+            script=script.replace(marker,replacement)
+            mode='revoked_403'
+        result=subprocess.run(['node','-e',script,mode],cwd=Path(__file__).resolve().parents[1],text=True,capture_output=True,timeout=25)
+>       assert result.returncode==0,result.stdout+result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: unobserved prepare-stage marker did not survive reload
+E             at [eval]:50:193
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\'),crypto=...tderr='AssertionError [ERR_ASSERTION]: unobserved prepare-stage marker did not survive reload\n    at [eval]:50:193\n').returncode
+
+tests/test_at_cold_ui_independent.py:35: AssertionError
+____________ test_independent_cold_state_guards[denied_other_views] ____________
+
+probe = 'denied_other_views'
+
+    @pytest.mark.parametrize('probe',['prepare_loss','prepare_unknown_reload','denied_other_views'])
+    def test_independent_cold_state_guards(probe):
+        script=HARNESS
+        if probe in ('prepare_loss','prepare_unknown_reload'):
+            script=script.replace("admit(name);body=dto();}","admit(name);if(mode==='independent_prepare_loss'&&!lost){lost=true;throw Error('independent lost stage preparation response');}body=dto();}")
+            if probe=='prepare_unknown_reload':
+                script=script.replace("admit(name);if(mode==='independent_prepare_loss'","if(mode==='independent_prepare_loss'&&!lost){lost=true;throw Error('independent unobserved stage preparation response');}admit(name);if(mode==='independent_prepare_loss'")
+            marker="for(const name of stages.slice(1)){"
+            inject="""if(mode==='independent_prepare_loss'){
+    const before=calls.length;await p.get('cold-stage-prepare').onclick();
+    const first=calls.slice(before);await p.get('cold-stage-prepare').onclick();
+    const writes=calls.filter(c=>c.path.startsWith('/api/service-instance-cold-inputs/prepare-stage?')&&c.options.method==='POST');
+    assert.equal(writes.length,1,'lost prepare-stage response allowed repeated POST instead of GET-only recovery');
+    assert(first.some(c=>c.path==='/api/service-instance-cold-inputs/recovery'),'lost prepare-stage response did not GET original key');
+    console.log(JSON.stringify({result:'PASS',probe:'prepare_loss'}));process.exit(0);
+    }for(const name of stages.slice(1)){"""
+            if probe=='prepare_unknown_reload':
+                inject=inject.replace("const first=calls.slice(before);await p.get('cold-stage-prepare').onclick();","const first=calls.slice(before),saved=p.snapshot();p=page(saved);p.get('token').value='SYNTHETIC_UI_SESSION';await p.get('cold-recover').onclick();await p.get('cold-directory-read').onclick();assert(p.get('cold-stage-prepare').disabled,'unobserved prepare-stage marker did not survive reload');await p.get('cold-stage-prepare').onclick();assert.deepEqual(p.snapshot(),saved);")
+            assert marker in script
+            script=script.replace(marker,inject)
+            mode='independent_prepare_loss'
+        else:
+            marker="const snapshot=p.snapshot();denied=true;await p.get('cold-recover').onclick();"
+            replacement="const snapshot=p.snapshot();p.read(\"servicePlanView={secret:'private original Case source'}\");p.get('service-plan-summary').textContent='private original Case source';denied=true;await p.get('cold-recover').onclick();assert.equal(p.read('servicePlanView'),null,'403 left original non-cold private view in memory');assert.equal(p.get('service-plan-summary').textContent,'','403 left original non-cold private content visible');"
+            assert marker in script
+            script=script.replace(marker,replacement)
+            mode='revoked_403'
+        result=subprocess.run(['node','-e',script,mode],cwd=Path(__file__).resolve().parents[1],text=True,capture_output=True,timeout=25)
+>       assert result.returncode==0,result.stdout+result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: 403 left original non-cold private view in memory
+E             at [eval]:45:255
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\'),crypto=...'', stderr='AssertionError [ERR_ASSERTION]: 403 left original non-cold private view in memory\n    at [eval]:45:255\n').returncode
+
+tests/test_at_cold_ui_independent.py:35: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_at_cold_ui_independent.py::test_independent_cold_state_guards[prepare_loss]
+FAILED tests/test_at_cold_ui_independent.py::test_independent_cold_state_guards[prepare_unknown_reload]
+FAILED tests/test_at_cold_ui_independent.py::test_independent_cold_state_guards[denied_other_views]
+3 failed, 1 warning in 0.32s

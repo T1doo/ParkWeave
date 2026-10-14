@@ -1,0 +1,26 @@
+Copied tool-call stderr witnesses; these were not standalone replay logs. Original pytest files are kept separately.
+
+1. Initial syntax-check invocation used Node --check with bash process substitution, which Node could not open. No product JS was executed.
+node --check <(python -c "...extract original script...")
+node:fs:484
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+Error: ENOENT: no such file or directory, open '/proc/1136008/fd/pipe:[2505658]'
+    at Object.readFileSync (node:fs:484:20)
+    at node:internal/main/check_syntax:36:21 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/proc/1136008/fd/pipe:[2505658]'
+}
+Node.js v24.19.0
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+BrokenPipeError: [Errno 32] Broken pipe
+Later syntax check used /tmp/parkweave-cold-ui.js and returned exit 0.
+
+2. Initial test-file generator helper had an unused malformed string literal, so the new file was absent. Original pytest missing-module output/XML/exit retained in cold-first.*. The helper line was removed before cold-second.* (27 PASS).
+  File "/tmp/create_cold_test.py", line 61
+    end="'''\n\n\"
+        ^
+SyntaxError: unterminated string literal (detected at line 61)

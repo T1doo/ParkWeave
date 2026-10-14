@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="3.087" timestamp="2026-10-14T21:33:43.762618+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_selection_replay_acceptance" name="test_v4_twice_new_inputs_receipt_correction_and_feedback_recheck" time="2.032"><failure message="KeyError: 'plan'">replay = {'a': {'f': (&lt;parkweave.store.Store object at 0x7fd9d3ccf200&gt;, &lt;parkweave.store.Store object at 0x7fd9d3cceed0&gt;, {'fix...S', 'LOCAL_CASE_RECORD_RECHECK'], 'planning_constraints': {'excluded_roles': [], 'additional_requirements': []}, ...}]}
+
+    def test_v4_twice_new_inputs_receipt_correction_and_feedback_recheck(replay):
+        r=replay;f=r['f'];owner=f[1]
+        p1,key1=new_confirmed_parent(r,'AT35-FIRST'); authority1=authority_snapshot(owner)
+&gt;       candidate1=adopt_selection(r,p1)
+                   ^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_replay_acceptance.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = {'a': {'f': (&lt;parkweave.store.Store object at 0x7fd9d3ccf200&gt;, &lt;parkweave.store.Store object at 0x7fd9d3cceed0&gt;, {'fix...S', 'LOCAL_CASE_RECORD_RECHECK'], 'planning_constraints': {'excluded_roles': [], 'additional_requirements': []}, ...}]}
+p = {'preparation_id': 'b7f7b61c-766a-4c2b-9e5c-58eb1ebc6f39', 'case_id': 'cf94bc3e-e0e7-4965-8a65-b34337f2b821', 'run_id': '8bc47296-5ba1-4db8-9734-24ef6d57f43d', 'revision': 6, ...}
+
+    def adopt_selection(r,p):
+        f=r['f']; _,_,tokens,api=f; path='/api/preparations/'+p['preparation_id']
+        current=ok(api.get(path+'/service-capabilities',headers=headers(tokens,'fixture-c')))
+        assert current['selection_oracle']['state']=='UNIQUE'
+        assert current['required_goals']==GOALS
+        key=uuid4().hex
+        candidate=ok(api.post(path+'/service-selections',headers=headers(tokens,'fixture-c',key),json={
+            'expected_preparation_revision':p['revision'], 'expected_source_sha256':current['source_sha256'], 'expected_capability_catalog_sha256':current['capability_catalog_sha256']}),201)
+        assert candidate['can_adopt'] and candidate['required_goals']==GOALS
+&gt;       assert ok(api.get(path+'/service-case-plan',headers=headers(tokens,'fixture-c')))['plan'] is None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'plan'
+
+tests/test_service_selection_replay_acceptance.py:79: KeyError</failure></testcase></testsuite></testsuites>

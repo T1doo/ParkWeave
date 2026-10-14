@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="0.239" timestamp="2026-10-14T21:46:48.031179+00:00" hostname="754d39e95154"><testcase classname="tests.test_at_cold_ui_independent" name="test_independent_cold_state_guards[prepare_loss]" time="0.096"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: lost prepare-stage response allowed repeated POST instead of GET-only recovery&#10;      at [eval]:52:8&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\'),crypto=...[ERR_ASSERTION]: lost prepare-stage response allowed repeated POST instead of GET-only recovery\n    at [eval]:52:8\n').returncode">probe = 'prepare_loss'
+
+    @pytest.mark.parametrize('probe',['prepare_loss','denied_other_views'])
+    def test_independent_cold_state_guards(probe):
+        script=HARNESS
+        if probe=='prepare_loss':
+            script=script.replace("admit(name);body=dto();}","admit(name);if(mode==='independent_prepare_loss'&amp;&amp;!lost){lost=true;throw Error('independent lost stage preparation response');}body=dto();}")
+            marker="for(const name of stages.slice(1)){"
+            inject="""if(mode==='independent_prepare_loss'){
+    const before=calls.length;await p.get('cold-stage-prepare').onclick();
+    const first=calls.slice(before);await p.get('cold-stage-prepare').onclick();
+    const writes=calls.filter(c=&gt;c.path.startsWith('/api/service-instance-cold-inputs/prepare-stage?')&amp;&amp;c.options.method==='POST');
+    assert.equal(writes.length,1,'lost prepare-stage response allowed repeated POST instead of GET-only recovery');
+    assert(first.some(c=&gt;c.path==='/api/service-instance-cold-inputs/recovery'),'lost prepare-stage response did not GET original key');
+    console.log(JSON.stringify({result:'PASS',probe:'prepare_loss'}));process.exit(0);
+    }for(const name of stages.slice(1)){"""
+            assert marker in script
+            script=script.replace(marker,inject)
+            mode='independent_prepare_loss'
+        else:
+            marker="const snapshot=p.snapshot();denied=true;await p.get('cold-recover').onclick();"
+            replacement="const snapshot=p.snapshot();p.read(\"servicePlanView={secret:'private original Case source'}\");p.get('service-plan-summary').textContent='private original Case source';denied=true;await p.get('cold-recover').onclick();assert.equal(p.read('servicePlanView'),null,'403 left original non-cold private view in memory');assert.equal(p.get('service-plan-summary').textContent,'','403 left original non-cold private content visible');"
+            assert marker in script
+            script=script.replace(marker,replacement)
+            mode='revoked_403'
+        result=subprocess.run(['node','-e',script,mode],cwd=Path(__file__).resolve().parents[1],text=True,capture_output=True,timeout=25)
+&gt;       assert result.returncode==0,result.stdout+result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: lost prepare-stage response allowed repeated POST instead of GET-only recovery
+E             at [eval]:52:8
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\'),crypto=...[ERR_ASSERTION]: lost prepare-stage response allowed repeated POST instead of GET-only recovery\n    at [eval]:52:8\n').returncode
+
+tests/test_at_cold_ui_independent.py:31: AssertionError</failure></testcase><testcase classname="tests.test_at_cold_ui_independent" name="test_independent_cold_state_guards[denied_other_views]" time="0.082"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: 403 left original non-cold private view in memory&#10;      at [eval]:45:255&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\'),crypto=...'', stderr='AssertionError [ERR_ASSERTION]: 403 left original non-cold private view in memory\n    at [eval]:45:255\n').returncode">probe = 'denied_other_views'
+
+    @pytest.mark.parametrize('probe',['prepare_loss','denied_other_views'])
+    def test_independent_cold_state_guards(probe):
+        script=HARNESS
+        if probe=='prepare_loss':
+            script=script.replace("admit(name);body=dto();}","admit(name);if(mode==='independent_prepare_loss'&amp;&amp;!lost){lost=true;throw Error('independent lost stage preparation response');}body=dto();}")
+            marker="for(const name of stages.slice(1)){"
+            inject="""if(mode==='independent_prepare_loss'){
+    const before=calls.length;await p.get('cold-stage-prepare').onclick();
+    const first=calls.slice(before);await p.get('cold-stage-prepare').onclick();
+    const writes=calls.filter(c=&gt;c.path.startsWith('/api/service-instance-cold-inputs/prepare-stage?')&amp;&amp;c.options.method==='POST');
+    assert.equal(writes.length,1,'lost prepare-stage response allowed repeated POST instead of GET-only recovery');
+    assert(first.some(c=&gt;c.path==='/api/service-instance-cold-inputs/recovery'),'lost prepare-stage response did not GET original key');
+    console.log(JSON.stringify({result:'PASS',probe:'prepare_loss'}));process.exit(0);
+    }for(const name of stages.slice(1)){"""
+            assert marker in script
+            script=script.replace(marker,inject)
+            mode='independent_prepare_loss'
+        else:
+            marker="const snapshot=p.snapshot();denied=true;await p.get('cold-recover').onclick();"
+            replacement="const snapshot=p.snapshot();p.read(\"servicePlanView={secret:'private original Case source'}\");p.get('service-plan-summary').textContent='private original Case source';denied=true;await p.get('cold-recover').onclick();assert.equal(p.read('servicePlanView'),null,'403 left original non-cold private view in memory');assert.equal(p.get('service-plan-summary').textContent,'','403 left original non-cold private content visible');"
+            assert marker in script
+            script=script.replace(marker,replacement)
+            mode='revoked_403'
+        result=subprocess.run(['node','-e',script,mode],cwd=Path(__file__).resolve().parents[1],text=True,capture_output=True,timeout=25)
+&gt;       assert result.returncode==0,result.stdout+result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: 403 left original non-cold private view in memory
+E             at [eval]:45:255
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\'),crypto=...'', stderr='AssertionError [ERR_ASSERTION]: 403 left original non-cold private view in memory\n    at [eval]:45:255\n').returncode
+
+tests/test_at_cold_ui_independent.py:31: AssertionError</failure></testcase></testsuite></testsuites>

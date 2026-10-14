@@ -1,0 +1,53 @@
+"""Independent actual directory/resource/publication lock ordering probe."""
+from concurrent.futures import ThreadPoolExecutor
+from copy import deepcopy
+from threading import Event
+from uuid import UUID, uuid4
+import json
+from pathlib import Path
+from parkweave.service_instance_consumer import ParkInstanceConsumer
+from parkweave.template_consumer import ConsumerRepository
+from parkweave.service_capability_contract import hash_instance
+from parkweave.service_capability_catalog import lock
+from parkweave.resource_holds import _lock
+from test_preparation import preparation_fixture
+from test_executor_receipts import receipt_fixture
+from test_service_capability_catalog_actual import capability_catalog
+from test_service_selection_full_chain import selection_full_chain
+from service_release_acceptance_support import wait_for_pg_blocker
+
+
+def test_directory_resource_writer_and_catalog_writer_complete_without_deadlock(selection_full_chain,tmp_path,monkeypatch):
+    a=selection_full_chain
+    facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'lock.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+    entered=Event(); dpids=[]
+    original=a['catalog'].mapping_states
+    def instrument(c,instance,parent=None):
+        if parent and instance['resources']:
+            dpids.append(c.execute('SELECT pg_backend_pid() pid').fetchone()['pid'])
+            entered.set()
+        return original(c,instance,parent)
+    monkeypatch.setattr(a['catalog'],'mapping_states',instrument)
+    material=deepcopy(a['configs']['park-b','synthetic-material-preparation'])
+    material['instance_id']='park-b-independent-concurrent-material'
+    material['config_sha256']=hash_instance(material)
+    evidence={}; errors=[]
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        with a['f'][0].connect() as business:
+            business.execute("SET LOCAL statement_timeout='5000ms'")
+            bpid=business.execute('SELECT pg_backend_pid() pid').fetchone()['pid']
+            _lock(business,UUID(a['b_resources'][0]))
+            directory=pool.submit(facade.configurations,a['f'][2]['fixture-c'])
+            assert entered.wait(5)
+            evidence['resource_waiter']=wait_for_pg_blocker(a['f'][1],bpid)
+            binder=pool.submit(a['catalog'].bind_instance,'park-b',uuid4().hex,material)
+            evidence['catalog_waiter']=wait_for_pg_blocker(a['f'][1],dpids[0])
+            try:lock(business,'park-b')
+            except Exception as e:
+                errors.append(type(e).__name__+': '+str(e)); business.rollback()
+        for name,future in [('directory',directory),('binder',binder)]:
+            try:future.result(timeout=10)
+            except Exception as e:errors.append(name+' '+type(e).__name__+': '+str(e))
+    evidence['errors']=errors
+    path=Path('.runtime/at-independent/lock-cycle.json');path.write_text(json.dumps(evidence,default=str,indent=2))
+    assert errors==[],errors

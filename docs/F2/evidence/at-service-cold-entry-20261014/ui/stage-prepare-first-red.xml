@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.148" timestamp="2026-10-14T21:46:31.110826+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_instance_cold_web" name="test_cold_entry_complete_original_html[lost_stage_prepare]" time="0.090"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: {&#10;    actor_ref: '375ef82ce6d5e4aa0f8e0ba209051aae05136cb024c8b755ed7f67d21fdff543',&#10;    automatic_adoption: false,&#10;    automatic_execution: false,&#10;    automatically_replayed: false,&#10;    binding: {&#10;      instance: {&#10;        config_revision: 1,&#10;        config_sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;        fields: {&#10;          material_outline: 'park_b_outline',&#10;          need_summary: 'park_b_need'&#10;        },&#10;        instance_id: 'park-b-current-material-instance',&#10;        release_id: '00000000-00... == null&#10;      at [eval]:48:1206&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\'),crypto=... instance_id: 'park-b-current-material-instance',\n      release_id: '00000000-00... == null\n    at [eval]:48:1206\n&quot;).returncode">mode = 'lost_stage_prepare'
+
+    @pytest.mark.parametrize("mode", ["happy", "lost_stage_prepare", "readonly_completed", "bad_saved_goals", "bad_saved_material", "completed_open", "completed_new", "original_guard", "other_pending", "bad_actor_mapping", "disabled", "without_confirmation", "no_send_confirmation", "lost_prepare", "lost_send", "unknown_send", "cold_reload", "revoked_read", "revoked_403", "late_directory", "late_recovery", "unsupported_goal", "bad_directory_scope", "bad_directory_flags", "bad_directory_union", "bad_directory_duplicate", "bad_directory_fields", "bad_directory_count", "bad_directory_goal", "bad_subject", "bad_original_key", "bad_cold_flags", "bad_hash", "bad_stage_action", "bad_observation_key", "bad_duplicate_stage"])
+    def test_cold_entry_complete_original_html(mode):
+        assert shutil.which("node")
+        root = Path(__file__).resolve().parents[1]
+        result = subprocess.run(["node", "-e", HARNESS, mode], cwd=root, text=True, capture_output=True, timeout=25)
+&gt;       assert result.returncode == 0, result.stdout + result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: {
+E           actor_ref: '375ef82ce6d5e4aa0f8e0ba209051aae05136cb024c8b755ed7f67d21fdff543',
+E           automatic_adoption: false,
+E           automatic_execution: false,
+E           automatically_replayed: false,
+E           binding: {
+E             instance: {
+E               config_revision: 1,
+E               config_sha256: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E               fields: {
+E                 material_outline: 'park_b_outline',
+E                 need_summary: 'park_b_need'
+E               },
+E               instance_id: 'park-b-current-material-instance',
+E               release_id: '00000000-00... == null
+E             at [eval]:48:1206
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\'),crypto=... instance_id: 'park-b-current-material-instance',\n      release_id: '00000000-00... == null\n    at [eval]:48:1206\n").returncode
+
+tests/test_service_instance_cold_web.py:70: AssertionError</failure></testcase></testsuite></testsuites>

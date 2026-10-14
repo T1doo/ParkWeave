@@ -1,0 +1,45 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_______ test_v4_twice_new_inputs_receipt_correction_and_feedback_recheck _______
+
+replay = {'a': {'f': (<parkweave.store.Store object at 0x7fd9d3ccf200>, <parkweave.store.Store object at 0x7fd9d3cceed0>, {'fix...S', 'LOCAL_CASE_RECORD_RECHECK'], 'planning_constraints': {'excluded_roles': [], 'additional_requirements': []}, ...}]}
+
+    def test_v4_twice_new_inputs_receipt_correction_and_feedback_recheck(replay):
+        r=replay;f=r['f'];owner=f[1]
+        p1,key1=new_confirmed_parent(r,'AT35-FIRST'); authority1=authority_snapshot(owner)
+>       candidate1=adopt_selection(r,p1)
+                   ^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_replay_acceptance.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = {'a': {'f': (<parkweave.store.Store object at 0x7fd9d3ccf200>, <parkweave.store.Store object at 0x7fd9d3cceed0>, {'fix...S', 'LOCAL_CASE_RECORD_RECHECK'], 'planning_constraints': {'excluded_roles': [], 'additional_requirements': []}, ...}]}
+p = {'preparation_id': 'b7f7b61c-766a-4c2b-9e5c-58eb1ebc6f39', 'case_id': 'cf94bc3e-e0e7-4965-8a65-b34337f2b821', 'run_id': '8bc47296-5ba1-4db8-9734-24ef6d57f43d', 'revision': 6, ...}
+
+    def adopt_selection(r,p):
+        f=r['f']; _,_,tokens,api=f; path='/api/preparations/'+p['preparation_id']
+        current=ok(api.get(path+'/service-capabilities',headers=headers(tokens,'fixture-c')))
+        assert current['selection_oracle']['state']=='UNIQUE'
+        assert current['required_goals']==GOALS
+        key=uuid4().hex
+        candidate=ok(api.post(path+'/service-selections',headers=headers(tokens,'fixture-c',key),json={
+            'expected_preparation_revision':p['revision'], 'expected_source_sha256':current['source_sha256'], 'expected_capability_catalog_sha256':current['capability_catalog_sha256']}),201)
+        assert candidate['can_adopt'] and candidate['required_goals']==GOALS
+>       assert ok(api.get(path+'/service-case-plan',headers=headers(tokens,'fixture-c')))['plan'] is None
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'plan'
+
+tests/test_service_selection_replay_acceptance.py:79: KeyError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_service_selection_replay_acceptance.py::test_v4_twice_new_inputs_receipt_correction_and_feedback_recheck
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_service_selection_replay_acceptance.py::test_v4_twice_new_inputs_receipt_correction_and_feedback_recheck
+1 failed, 2 warnings in 3.09s

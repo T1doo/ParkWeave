@@ -39,3 +39,9 @@ ServiceRelease绑定稳定release/revision/hash、六个有限本地目标的合
 真实provider/凭据读取、LIVE/执行网关、真实服务目录业务发布、生产迁移/部署、权限扩大、真实业务/运行期新增registry或Grant、强推及主线修改均为0；上述owned fixture初始化另计。Chromium渲染浏览器NOT RUN：保留历史`data:`导航`ERR_BLOCKED_BY_ADMINISTRATOR`拒绝，本批不启动或换工具重试。历史prepare Forbidden不重试；两审批文件保持false/null及原hash。native Windows、完整PR0和真实园区正式投用NOT RUN。
 
 下一步在另行授权的真实园区治理范围中完成正式目录审核发布、实际园区原有映射核验及原生环境验收；本批只交付默认关闭、可复核的owned synthetic开发链。
+
+## 20261014归档独审补核与精确脱敏更正
+
+新独审已实际执行，发现原exporter漏检pytest的token参数：candidates/first.log与first.xml共8个临时SYNTHETIC fixture会话、16处。上文与旧核对回执的0值/0替换仅描述旧导出，不能当没有会话的正确结论。原NOT RUN回执及全部runtime原件保持；新独审首次FAIL/exit1保留。仅对这两份导出逐个精确值替换，索引修正为8值/16处，其他字节不变。修后独审518件PASS/exit0，新索引SHA256为0aa134d3272b404a09c6e4accfe0f36376492aa3f93bc8aef801d50a8de396d6。
+
+[新独审机器结果](evidence/at-service-cold-entry-20261014/archive518/audit518-corrected-result.json)、[首FAIL](evidence/at-service-cold-entry-20261014/archive518/audit518-result.json)与[原日志](evidence/at-service-cold-entry-20261014/archive518/audit518-corrected.log)分别保留。该修复不修改31d冻结源码或转签历史测试。

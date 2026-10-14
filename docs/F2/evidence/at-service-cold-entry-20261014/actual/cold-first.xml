@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="5" time="4.450" timestamp="2026-10-14T21:40:13.976363+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_cold_entry_nodevm_actual" name="test_complete_original_html_fresh_cold_input_actual_pg_asgi[normal]" time="1.261"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: initial real cold facade DTO rejected: 原阶段正文指纹无法核实&#10;      at /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:30:1&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0&#10; +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7f142c41bf50&gt;, &lt;parkweave.store.Store object at 0x7f142e162270&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-423/test_complete_original_html_fr0')
+mode = 'normal'
+
+    @pytest.mark.parametrize('mode',['normal','facade_loss','run_loss','material_loss','execute_revoked'])
+    def test_complete_original_html_fresh_cold_input_actual_pg_asgi(selection_full_chain,tmp_path,mode):
+        a=selection_full_chain;f=a['f'];store,owner,tokens,_=f
+        facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'node-cold.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+        assert shutil.which('node'),'Node is required for the permitted offline full HTML harness'
+        before=authority_snapshot(owner)
+        with owner.connect() as c:
+            assert c.execute('SELECT count(*) n FROM cases').fetchone()['n']==0
+        root=Path(__file__).resolve().parents[1]
+        out=root/'.runtime/at-replay-20261014/cold-entry';out.mkdir(parents=True,exist_ok=True)
+        proc=subprocess.Popen(['node','tests/service_cold_entry_actual_nodevm.js',mode],cwd=root,text=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        traffic=[];controls=[];result=None;stderr='';run_id=None
+        try:
+            with TestClient(create_app(store,capability_catalog=a['catalog'],instance_consumer=facade)) as api:
+                until=time.monotonic()+40
+                while time.monotonic()&lt;until:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if message['type']=='result':result=message;break
+                    if message['type']=='control':
+                        action=message['action']
+                        if action=='worker':
+                            claimed=store.claim('SYNTHETIC independent Python worker for cold '+mode)
+                            assert claimed is not None
+                            store.finish(claimed)
+                            body=dict(worker='ORIGINAL_LOCAL_WORKER',run_id=run_id)
+                        else:
+                            assert action=='revoke_execute'
+                            with owner.connect() as c:
+                                owner.lock_principal(c,'fixture-c',exclusive=True)
+                                changed=c.execute("UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-c' AND capability='EXECUTE' RETURNING principal_id").fetchall()
+                                assert len(changed)==1
+                            body=dict(test_fixture_permission_change='EXECUTE_REVOKED')
+                        controls.append(dict(action=action,body=body));status=200
+                    else:
+                        assert message['type']=='request'
+                        options=message['options'];assert options['headers']['Authorization']=='Bearer SYNTHETIC_NODE_API_SESSION'
+                        actual_headers={**options['headers'],'Authorization':'Bearer '+tokens['fixture-c']}
+                        reply=api.request(options.get('method','GET'),message['path'],headers=actual_headers,content=options.get('body'))
+                        status=reply.status_code;body=reply.json()
+                        traffic.append(dict(path=message['path'],method=options.get('method','GET'),key=options['headers'].get('Idempotency-Key'),request_body=json.loads(options['body']) if options.get('body') else None,status=status,body=body))
+                        if options.get('method')=='POST' and message['path']=='/api/runs' and status==202:run_id=body['run_id']
+                    proc.stdin.write(json.dumps(dict(id=message['id'],status=status,body=body))+'\n');proc.stdin.flush()
+            proc.wait(timeout=5);stderr=proc.stderr.read()
+        finally:
+            selector.close()
+            if proc.poll() is None:proc.kill();proc.wait(timeout=5)
+            if not stderr:stderr=proc.stderr.read()
+            (out/(mode+'-traffic.json')).write_text(json.dumps(dict(mode=mode,process_exit=proc.returncode,result=result,traffic=traffic,controls=controls,stderr=stderr),indent=2,default=str)+'\n')
+&gt;       assert proc.returncode==0,stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: initial real cold facade DTO rejected: 原阶段正文指纹无法核实
+E             at /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:30:1
+E             at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E         
+E       assert 1 == 0
+E        +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode
+
+tests/test_service_cold_entry_nodevm_actual.py:80: AssertionError</failure></testcase><testcase classname="tests.test_service_cold_entry_nodevm_actual" name="test_complete_original_html_fresh_cold_input_actual_pg_asgi[facade_loss]" time="0.745"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: cold real recovery DTO rejected: 原阶段正文指纹无法核实&#10;      at coldPage (/workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:28:135)&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;      at async /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:29:25&#10;  &#10;assert 1 == 0&#10; +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7f142bf44980&gt;, &lt;parkweave.store.Store object at 0x7f142bf447d0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-423/test_complete_original_html_fr1')
+mode = 'facade_loss'
+
+    @pytest.mark.parametrize('mode',['normal','facade_loss','run_loss','material_loss','execute_revoked'])
+    def test_complete_original_html_fresh_cold_input_actual_pg_asgi(selection_full_chain,tmp_path,mode):
+        a=selection_full_chain;f=a['f'];store,owner,tokens,_=f
+        facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'node-cold.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+        assert shutil.which('node'),'Node is required for the permitted offline full HTML harness'
+        before=authority_snapshot(owner)
+        with owner.connect() as c:
+            assert c.execute('SELECT count(*) n FROM cases').fetchone()['n']==0
+        root=Path(__file__).resolve().parents[1]
+        out=root/'.runtime/at-replay-20261014/cold-entry';out.mkdir(parents=True,exist_ok=True)
+        proc=subprocess.Popen(['node','tests/service_cold_entry_actual_nodevm.js',mode],cwd=root,text=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        traffic=[];controls=[];result=None;stderr='';run_id=None
+        try:
+            with TestClient(create_app(store,capability_catalog=a['catalog'],instance_consumer=facade)) as api:
+                until=time.monotonic()+40
+                while time.monotonic()&lt;until:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if message['type']=='result':result=message;break
+                    if message['type']=='control':
+                        action=message['action']
+                        if action=='worker':
+                            claimed=store.claim('SYNTHETIC independent Python worker for cold '+mode)
+                            assert claimed is not None
+                            store.finish(claimed)
+                            body=dict(worker='ORIGINAL_LOCAL_WORKER',run_id=run_id)
+                        else:
+                            assert action=='revoke_execute'
+                            with owner.connect() as c:
+                                owner.lock_principal(c,'fixture-c',exclusive=True)
+                                changed=c.execute("UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-c' AND capability='EXECUTE' RETURNING principal_id").fetchall()
+                                assert len(changed)==1
+                            body=dict(test_fixture_permission_change='EXECUTE_REVOKED')
+                        controls.append(dict(action=action,body=body));status=200
+                    else:
+                        assert message['type']=='request'
+                        options=message['options'];assert options['headers']['Authorization']=='Bearer SYNTHETIC_NODE_API_SESSION'
+                        actual_headers={**options['headers'],'Authorization':'Bearer '+tokens['fixture-c']}
+                        reply=api.request(options.get('method','GET'),message['path'],headers=actual_headers,content=options.get('body'))
+                        status=reply.status_code;body=reply.json()
+                        traffic.append(dict(path=message['path'],method=options.get('method','GET'),key=options['headers'].get('Idempotency-Key'),request_body=json.loads(options['body']) if options.get('body') else None,status=status,body=body))
+                        if options.get('method')=='POST' and message['path']=='/api/runs' and status==202:run_id=body['run_id']
+                    proc.stdin.write(json.dumps(dict(id=message['id'],status=status,body=body))+'\n');proc.stdin.flush()
+            proc.wait(timeout=5);stderr=proc.stderr.read()
+        finally:
+            selector.close()
+            if proc.poll() is None:proc.kill();proc.wait(timeout=5)
+            if not stderr:stderr=proc.stderr.read()
+            (out/(mode+'-traffic.json')).write_text(json.dumps(dict(mode=mode,process_exit=proc.returncode,result=result,traffic=traffic,controls=controls,stderr=stderr),indent=2,default=str)+'\n')
+&gt;       assert proc.returncode==0,stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: cold real recovery DTO rejected: 原阶段正文指纹无法核实
+E             at coldPage (/workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:28:135)
+E             at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             at async /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:29:25
+E         
+E       assert 1 == 0
+E        +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode
+
+tests/test_service_cold_entry_nodevm_actual.py:80: AssertionError</failure></testcase><testcase classname="tests.test_service_cold_entry_nodevm_actual" name="test_complete_original_html_fresh_cold_input_actual_pg_asgi[run_loss]" time="0.828"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: initial real cold facade DTO rejected: 原阶段正文指纹无法核实&#10;      at /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:30:1&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0&#10; +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7f142c060980&gt;, &lt;parkweave.store.Store object at 0x7f142c4dc9e0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-423/test_complete_original_html_fr2')
+mode = 'run_loss'
+
+    @pytest.mark.parametrize('mode',['normal','facade_loss','run_loss','material_loss','execute_revoked'])
+    def test_complete_original_html_fresh_cold_input_actual_pg_asgi(selection_full_chain,tmp_path,mode):
+        a=selection_full_chain;f=a['f'];store,owner,tokens,_=f
+        facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'node-cold.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+        assert shutil.which('node'),'Node is required for the permitted offline full HTML harness'
+        before=authority_snapshot(owner)
+        with owner.connect() as c:
+            assert c.execute('SELECT count(*) n FROM cases').fetchone()['n']==0
+        root=Path(__file__).resolve().parents[1]
+        out=root/'.runtime/at-replay-20261014/cold-entry';out.mkdir(parents=True,exist_ok=True)
+        proc=subprocess.Popen(['node','tests/service_cold_entry_actual_nodevm.js',mode],cwd=root,text=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        traffic=[];controls=[];result=None;stderr='';run_id=None
+        try:
+            with TestClient(create_app(store,capability_catalog=a['catalog'],instance_consumer=facade)) as api:
+                until=time.monotonic()+40
+                while time.monotonic()&lt;until:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if message['type']=='result':result=message;break
+                    if message['type']=='control':
+                        action=message['action']
+                        if action=='worker':
+                            claimed=store.claim('SYNTHETIC independent Python worker for cold '+mode)
+                            assert claimed is not None
+                            store.finish(claimed)
+                            body=dict(worker='ORIGINAL_LOCAL_WORKER',run_id=run_id)
+                        else:
+                            assert action=='revoke_execute'
+                            with owner.connect() as c:
+                                owner.lock_principal(c,'fixture-c',exclusive=True)
+                                changed=c.execute("UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-c' AND capability='EXECUTE' RETURNING principal_id").fetchall()
+                                assert len(changed)==1
+                            body=dict(test_fixture_permission_change='EXECUTE_REVOKED')
+                        controls.append(dict(action=action,body=body));status=200
+                    else:
+                        assert message['type']=='request'
+                        options=message['options'];assert options['headers']['Authorization']=='Bearer SYNTHETIC_NODE_API_SESSION'
+                        actual_headers={**options['headers'],'Authorization':'Bearer '+tokens['fixture-c']}
+                        reply=api.request(options.get('method','GET'),message['path'],headers=actual_headers,content=options.get('body'))
+                        status=reply.status_code;body=reply.json()
+                        traffic.append(dict(path=message['path'],method=options.get('method','GET'),key=options['headers'].get('Idempotency-Key'),request_body=json.loads(options['body']) if options.get('body') else None,status=status,body=body))
+                        if options.get('method')=='POST' and message['path']=='/api/runs' and status==202:run_id=body['run_id']
+                    proc.stdin.write(json.dumps(dict(id=message['id'],status=status,body=body))+'\n');proc.stdin.flush()
+            proc.wait(timeout=5);stderr=proc.stderr.read()
+        finally:
+            selector.close()
+            if proc.poll() is None:proc.kill();proc.wait(timeout=5)
+            if not stderr:stderr=proc.stderr.read()
+            (out/(mode+'-traffic.json')).write_text(json.dumps(dict(mode=mode,process_exit=proc.returncode,result=result,traffic=traffic,controls=controls,stderr=stderr),indent=2,default=str)+'\n')
+&gt;       assert proc.returncode==0,stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: initial real cold facade DTO rejected: 原阶段正文指纹无法核实
+E             at /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:30:1
+E             at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E         
+E       assert 1 == 0
+E        +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode
+
+tests/test_service_cold_entry_nodevm_actual.py:80: AssertionError</failure></testcase><testcase classname="tests.test_service_cold_entry_nodevm_actual" name="test_complete_original_html_fresh_cold_input_actual_pg_asgi[material_loss]" time="0.661"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: initial real cold facade DTO rejected: 原阶段正文指纹无法核实&#10;      at /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:30:1&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0&#10; +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7f142c7c4bc0&gt;, &lt;parkweave.store.Store object at 0x7f142b503e00&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-423/test_complete_original_html_fr3')
+mode = 'material_loss'
+
+    @pytest.mark.parametrize('mode',['normal','facade_loss','run_loss','material_loss','execute_revoked'])
+    def test_complete_original_html_fresh_cold_input_actual_pg_asgi(selection_full_chain,tmp_path,mode):
+        a=selection_full_chain;f=a['f'];store,owner,tokens,_=f
+        facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'node-cold.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+        assert shutil.which('node'),'Node is required for the permitted offline full HTML harness'
+        before=authority_snapshot(owner)
+        with owner.connect() as c:
+            assert c.execute('SELECT count(*) n FROM cases').fetchone()['n']==0
+        root=Path(__file__).resolve().parents[1]
+        out=root/'.runtime/at-replay-20261014/cold-entry';out.mkdir(parents=True,exist_ok=True)
+        proc=subprocess.Popen(['node','tests/service_cold_entry_actual_nodevm.js',mode],cwd=root,text=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        traffic=[];controls=[];result=None;stderr='';run_id=None
+        try:
+            with TestClient(create_app(store,capability_catalog=a['catalog'],instance_consumer=facade)) as api:
+                until=time.monotonic()+40
+                while time.monotonic()&lt;until:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if message['type']=='result':result=message;break
+                    if message['type']=='control':
+                        action=message['action']
+                        if action=='worker':
+                            claimed=store.claim('SYNTHETIC independent Python worker for cold '+mode)
+                            assert claimed is not None
+                            store.finish(claimed)
+                            body=dict(worker='ORIGINAL_LOCAL_WORKER',run_id=run_id)
+                        else:
+                            assert action=='revoke_execute'
+                            with owner.connect() as c:
+                                owner.lock_principal(c,'fixture-c',exclusive=True)
+                                changed=c.execute("UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-c' AND capability='EXECUTE' RETURNING principal_id").fetchall()
+                                assert len(changed)==1
+                            body=dict(test_fixture_permission_change='EXECUTE_REVOKED')
+                        controls.append(dict(action=action,body=body));status=200
+                    else:
+                        assert message['type']=='request'
+                        options=message['options'];assert options['headers']['Authorization']=='Bearer SYNTHETIC_NODE_API_SESSION'
+                        actual_headers={**options['headers'],'Authorization':'Bearer '+tokens['fixture-c']}
+                        reply=api.request(options.get('method','GET'),message['path'],headers=actual_headers,content=options.get('body'))
+                        status=reply.status_code;body=reply.json()
+                        traffic.append(dict(path=message['path'],method=options.get('method','GET'),key=options['headers'].get('Idempotency-Key'),request_body=json.loads(options['body']) if options.get('body') else None,status=status,body=body))
+                        if options.get('method')=='POST' and message['path']=='/api/runs' and status==202:run_id=body['run_id']
+                    proc.stdin.write(json.dumps(dict(id=message['id'],status=status,body=body))+'\n');proc.stdin.flush()
+            proc.wait(timeout=5);stderr=proc.stderr.read()
+        finally:
+            selector.close()
+            if proc.poll() is None:proc.kill();proc.wait(timeout=5)
+            if not stderr:stderr=proc.stderr.read()
+            (out/(mode+'-traffic.json')).write_text(json.dumps(dict(mode=mode,process_exit=proc.returncode,result=result,traffic=traffic,controls=controls,stderr=stderr),indent=2,default=str)+'\n')
+&gt;       assert proc.returncode==0,stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: initial real cold facade DTO rejected: 原阶段正文指纹无法核实
+E             at /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:30:1
+E             at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E         
+E       assert 1 == 0
+E        +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode
+
+tests/test_service_cold_entry_nodevm_actual.py:80: AssertionError</failure></testcase><testcase classname="tests.test_service_cold_entry_nodevm_actual" name="test_complete_original_html_fresh_cold_input_actual_pg_asgi[execute_revoked]" time="0.786"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: initial real cold facade DTO rejected: 原阶段正文指纹无法核实&#10;      at /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:30:1&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0&#10; +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7f1429b3d3a0&gt;, &lt;parkweave.store.Store object at 0x7f1429e8ea80&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-423/test_complete_original_html_fr4')
+mode = 'execute_revoked'
+
+    @pytest.mark.parametrize('mode',['normal','facade_loss','run_loss','material_loss','execute_revoked'])
+    def test_complete_original_html_fresh_cold_input_actual_pg_asgi(selection_full_chain,tmp_path,mode):
+        a=selection_full_chain;f=a['f'];store,owner,tokens,_=f
+        facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'node-cold.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+        assert shutil.which('node'),'Node is required for the permitted offline full HTML harness'
+        before=authority_snapshot(owner)
+        with owner.connect() as c:
+            assert c.execute('SELECT count(*) n FROM cases').fetchone()['n']==0
+        root=Path(__file__).resolve().parents[1]
+        out=root/'.runtime/at-replay-20261014/cold-entry';out.mkdir(parents=True,exist_ok=True)
+        proc=subprocess.Popen(['node','tests/service_cold_entry_actual_nodevm.js',mode],cwd=root,text=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+        selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        traffic=[];controls=[];result=None;stderr='';run_id=None
+        try:
+            with TestClient(create_app(store,capability_catalog=a['catalog'],instance_consumer=facade)) as api:
+                until=time.monotonic()+40
+                while time.monotonic()&lt;until:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if message['type']=='result':result=message;break
+                    if message['type']=='control':
+                        action=message['action']
+                        if action=='worker':
+                            claimed=store.claim('SYNTHETIC independent Python worker for cold '+mode)
+                            assert claimed is not None
+                            store.finish(claimed)
+                            body=dict(worker='ORIGINAL_LOCAL_WORKER',run_id=run_id)
+                        else:
+                            assert action=='revoke_execute'
+                            with owner.connect() as c:
+                                owner.lock_principal(c,'fixture-c',exclusive=True)
+                                changed=c.execute("UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-c' AND capability='EXECUTE' RETURNING principal_id").fetchall()
+                                assert len(changed)==1
+                            body=dict(test_fixture_permission_change='EXECUTE_REVOKED')
+                        controls.append(dict(action=action,body=body));status=200
+                    else:
+                        assert message['type']=='request'
+                        options=message['options'];assert options['headers']['Authorization']=='Bearer SYNTHETIC_NODE_API_SESSION'
+                        actual_headers={**options['headers'],'Authorization':'Bearer '+tokens['fixture-c']}
+                        reply=api.request(options.get('method','GET'),message['path'],headers=actual_headers,content=options.get('body'))
+                        status=reply.status_code;body=reply.json()
+                        traffic.append(dict(path=message['path'],method=options.get('method','GET'),key=options['headers'].get('Idempotency-Key'),request_body=json.loads(options['body']) if options.get('body') else None,status=status,body=body))
+                        if options.get('method')=='POST' and message['path']=='/api/runs' and status==202:run_id=body['run_id']
+                    proc.stdin.write(json.dumps(dict(id=message['id'],status=status,body=body))+'\n');proc.stdin.flush()
+            proc.wait(timeout=5);stderr=proc.stderr.read()
+        finally:
+            selector.close()
+            if proc.poll() is None:proc.kill();proc.wait(timeout=5)
+            if not stderr:stderr=proc.stderr.read()
+            (out/(mode+'-traffic.json')).write_text(json.dumps(dict(mode=mode,process_exit=proc.returncode,result=result,traffic=traffic,controls=controls,stderr=stderr),indent=2,default=str)+'\n')
+&gt;       assert proc.returncode==0,stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: initial real cold facade DTO rejected: 原阶段正文指纹无法核实
+E             at /workspace/parkweave-at-replay-20261014/tests/service_cold_entry_actual_nodevm.js:30:1
+E             at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E         
+E       assert 1 == 0
+E        +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_cold_entry_actual_nodevm...&gt;.returncode
+
+tests/test_service_cold_entry_nodevm_actual.py:80: AssertionError</failure></testcase></testsuite></testsuites>

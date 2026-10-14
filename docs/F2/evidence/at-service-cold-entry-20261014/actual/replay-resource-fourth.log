@@ -1,0 +1,71 @@
+F.                                                                       [100%]
+=================================== FAILURES ===================================
+_______ test_v4_twice_new_inputs_receipt_correction_and_feedback_recheck _______
+
+replay = {'a': {'f': (<parkweave.store.Store object at 0x7f4181792030>, <parkweave.store.Store object at 0x7f4181791fa0>, {'fix...S', 'LOCAL_CASE_RECORD_RECHECK'], 'planning_constraints': {'excluded_roles': [], 'additional_requirements': []}, ...}]}
+
+    def test_v4_twice_new_inputs_receipt_correction_and_feedback_recheck(replay):
+        r=replay;f=r['f'];owner=f[1]
+        p1,key1=new_confirmed_parent(r,'AT35-FIRST'); authority1=authority_snapshot(owner)
+        candidate1=adopt_selection(r,p1)
+        g1,d1,s1=execute_to_receipt(r,p1,'AT35-FIRST',1)
+        first=result(r,p1)
+        assert first['state']=='LOCAL_OUTPUTS_VERIFIED' and not first['case_goal_completed']
+        outputs={x['adapter_id']:x['actual_output'] for x in first['results']}
+        assert outputs['P4']['receipt_version']==2
+        old_p5=outputs['P5']['revalidation_event_id']
+        s1=ok(receipt_command(f,s1,'REOPEN',user='fixture-c',reason='SYNTHETIC explicit new feedback after verification'))
+        changed=result(r,p1)
+        assert changed['state']!='LOCAL_OUTPUTS_VERIFIED'
+        for adapter in ('P4','P5'):
+            rows=[x for x in changed['results'] if x['adapter_id']==adapter]
+            assert rows and all(x['state']!='LOCAL_OUTPUT_VERIFIED' and x['actual_output'] is None for x in rows)
+        s1=ok(receipt_command(f,s1,'SUBMIT',user='executor-c',text='SYNTHETIC AT35-FIRST feedback revision three',source_label='SYNTHETIC replay feedback v3'))
+        s1=ok(receipt_command(f,s1,'ACKNOWLEDGE',user='fixture-c')); verify(f,p1,'P4')
+        assert result(r,p1)['state']!='LOCAL_OUTPUTS_VERIFIED'
+        ok(local_command(f,p1,ok(local_read(f,p1,user='fixture-c')),'REVALIDATE',user='fixture-c')); verify(f,p1,'P5')
+        restored=result(r,p1)
+        assert restored['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert next(x['actual_output'] for x in restored['results'] if x['adapter_id']=='P5')['revalidation_event_id']!=old_p5
+        assert authority_snapshot(owner)==authority1
+        historical=case_history(owner,p1['preparation_id'])
+        p2,key2=new_confirmed_parent(r,'AT35-SECOND'); authority2=authority_snapshot(owner)
+        assert len(authority2['run_assignments'])==len(authority1['run_assignments'])+1
+        assert all(authority1[t]==authority2[t] for t in authority1 if t!='run_assignments')
+        candidate2=adopt_selection(r,p2);g2,d2,s2=execute_to_receipt(r,p2,'AT35-SECOND',3)
+        second=result(r,p2)
+        assert second['state']=='LOCAL_OUTPUTS_VERIFIED' and not second['case_goal_completed']
+        for field in ('case_id','run_id','preparation_id'):assert p1[field]!=p2[field]
+        assert candidate1['candidate_id']!=candidate2['candidate_id'] and key1!=key2
+        assert g1['id']!=g2['id'] and d1['dispatch_id']!=d2['dispatch_id'] and s1['current_receipt']['id']!=s2['current_receipt']['id']
+        materials=[ok(f[3].get('/api/preparations/'+p['preparation_id'],headers=headers(f[2],'fixture-c')))['current_materials'] for p in (p1,p2)]
+        assert {m['id'] for m in materials[0]}.isdisjoint(m['id'] for m in materials[1])
+        assert {m['text'] for m in materials[0]}.isdisjoint(m['text'] for m in materials[1])
+        assert case_history(owner,p1['preparation_id'])==historical and result(r,p1)==restored
+        assert authority_snapshot(owner)==authority2 and len(r['calls'])==2
+        assert all(c['required_goals']==GOALS for c in r['calls'])
+        # Business C subset: an original explicit resource cancellation changes
+        # current feasibility; it cannot leave old P2/P5 output proofs current.
+        cancel_key=uuid4().hex
+        cancelled=ok(f[3].post('/api/resource-combinations/'+g2['id']+'/cancel',headers=headers(f[2],'fixture-c',cancel_key),json={}))
+        assert cancelled['combination']['state']=='CANCELLED'
+        assert all(h['state']=='RELEASED' for h in cancelled['combination']['members'])
+        impacted=result(r,p2)
+>       assert impacted['required_goals']==GOALS and impacted['state']!='LOCAL_OUTPUTS_VERIFIED'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'required_goals'
+
+tests/test_service_selection_replay_acceptance.py:159: KeyError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_service_selection_replay_acceptance.py::test_v4_twice_new_inputs_receipt_correction_and_feedback_recheck
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_service_selection_replay_acceptance.py::test_v4_twice_new_inputs_receipt_correction_and_feedback_recheck
+1 failed, 1 passed, 2 warnings in 9.68s
