@@ -27,7 +27,7 @@ function exactAdoptionProof(x,h,id){
  if(x.instance_id!==id||x.actor_ref!==h.actor||x.consumer_request_key!==h.key||x.automatically_replayed!==false||x.product_read_only!==true||x.journal_read_only!==true||x.case_goal_completed!==false||!r||r.actor_ref!==h.actor||r.preparation_id!==h.preparation||r.case_id!==h.case||r.run_id!==h.run||!q||q.expected_source_sha256!==h.source||q.expected_preparation_revision!==h.preparationRevision||q.expected_request_revision!==h.requestRevision||q.partial_adoption!==h.partial||!y||y.instance_id!==id||y.actor_ref!==h.actor||y.preparation_id!==h.preparation||y.case_id!==h.case||y.run_id!==h.run||!['COMMITTED','NOT_OBSERVED','NOT_COMMITTED_STALE','REFUSED','REFUSED_FIRST_SEND','NOT_COMMITTED_FINAL'].includes(x.status)||typeof x.journal_terminal!=='boolean'||typeof x.finalizable!=='boolean'||!/^[a-f0-9]{64}$/.test(x.body_sha256))throw Error('原采纳请求与当前事项证明无法核对，保持未决');
  if(x.status==='COMMITTED'&&(r.status!=='COMMITTED'||r.event?.action!=='ADOPT'||r.event.request_key!==x.original_request_key||!adoptionUuid(r.event.plan_id)||(r.event.current_plan&&y.plan_id!==r.event.plan_id)))throw Error('原采纳事件不能核对');
  if(x.journal_terminal){const f=x.finalization;
-  if(!f||f.original_request_key!==x.original_request_key||f.body_sha256!==x.body_sha256||f.state!==x.journal_state||!/^[a-f0-9]{64}$/.test(f.fingerprint)||f.request?.expected_original_request_key!==x.original_request_key||f.request.expected_body_sha256!==x.body_sha256||!(x.status==='COMMITTED'&&x.journal_state==='CONFIRMED'&&f.proof_kind==='COMMITTED'||x.status==='NOT_COMMITTED_FINAL'&&r.status==='NOT_OBSERVED'&&x.journal_state==='CLOSED_NOT_COMMITTED'&&(r.not_committed_final===true&&f.proof_kind==='STRICTLY_ADVANCED_SOURCE'||f.proof_kind==='FIRST_DEFINITE_REFUSAL'&&f.request.expected_journal_state==='REJECTED_FIRST_SEND'&&['FIRST_CURRENT_OPERATION_REFUSED','FIRST_PRODUCT_AUTHORIZATION_REFUSED','FIRST_PRODUCT_CONFLICT'].includes(f.refusal_code))))throw Error('服务端原键终态无法核对，不清理句柄');
+  if(!f||f.original_request_key!==x.original_request_key||f.body_sha256!==x.body_sha256||f.state!==x.journal_state||!/^[a-f0-9]{64}$/.test(f.fingerprint)||f.request?.expected_original_request_key!==x.original_request_key||f.request.expected_body_sha256!==x.body_sha256||!(x.status==='COMMITTED'&&x.journal_state==='CONFIRMED'&&f.proof_kind==='COMMITTED'||x.status==='NOT_COMMITTED_FINAL'&&r.status==='NOT_OBSERVED'&&x.journal_state==='CLOSED_NOT_COMMITTED'&&r.not_committed_final===true&&f.proof_kind==='STRICTLY_ADVANCED_SOURCE'))throw Error('服务端原键终态无法核对，不清理句柄');
  }
 }
 async function recoverConsumerAdoption(){
@@ -46,7 +46,7 @@ async function recoverConsumerAdoption(){
    cp=null;renderInstance(x.instance,x.original_request_key);adoptionHandle=h;adoptionVerified=x;adoptionFinalizeUnknown=!!h.finishPending;$('consumer-retry').hidden=true;
    $('consumer-status').textContent='原采纳事件已核实；句柄仍保留。明确收尾并取得服务端终态后才清理本条。整体目标完成仍未验证。';
   }else{adoptionVerified=x;adoptionFinalizeUnknown=!!h.finishPending;
-   $('consumer-status').textContent=x.finalizable?'原请求已有永久不提交证明；请填写原因明确收尾，服务端确认终态后才清理本条。':'原采纳 '+x.status+'；原键保持未决，不解锁、不自动重新采纳。';
+   $('consumer-status').textContent=x.finalizable?'原请求已有永久不提交证明；请填写原因明确收尾，服务端确认终态后才清理本条。':'原采纳 '+x.status+'；首次拒绝也不能证明永久不提交，原键与句柄保持未决，不解锁、不自动重新采纳。';
   }
   $('consumer-error').textContent='';
  }catch(e){if(!current('consumer',c)||generation!==pg||instance?.instance_id!==id)return;fail('consumer',e,c);}

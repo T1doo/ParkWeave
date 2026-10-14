@@ -4,7 +4,7 @@ The durable SQLite journal records separate ordinary product transactions. A
 pending or unknown stage is not completion; retry uses its original key/body.
 No principal, Grant, assignment, source Case, or deployment schema is changed.
 """
-from contextlib import contextmanager
+from contextlib import contextmanager, nullcontext
 from copy import deepcopy
 import json
 import os
@@ -208,9 +208,9 @@ class TemplateConsumer:
                 raise Denied('actual PostgreSQL database is not the approved isolated fixture')
             return row['database_name']
 
-    def _auth(self, token):
+    def _auth(self, token, connection=None):
         database = self.validate_fixture()
-        with self.store.connect() as c:
+        with nullcontext(connection) if connection is not None else self.store.connect() as c:
             p = self.store.auth(c, token, lock=True)
             prep.grant(self.store, c, p, 'PREPARE')
             self.store.check_capability(c, p, 'EXECUTE')
@@ -220,8 +220,8 @@ class TemplateConsumer:
                 raise Denied('current original Case creation grant required')
             return p, database
 
-    def _reviewer(self, p, reviewer_id):
-        with self.store.connect() as c:
+    def _reviewer(self, p, reviewer_id, connection=None):
+        with nullcontext(connection) if connection is not None else self.store.connect() as c:
             self.store.lock_principal(c, reviewer_id)
             reviewer = c.execute('SELECT * FROM principals WHERE id=%s AND active', (reviewer_id,)).fetchone()
             if not reviewer or (reviewer['park_id'], reviewer['org_id']) != (p['park_id'], p['org_id']):
@@ -613,11 +613,10 @@ class TemplateConsumer:
             saved=FinalizeAdoption.model_validate(finalization['request'])
             if saved.expected_original_request_key!=stage['request_key'] or saved.expected_body_sha256!=stage['body_sha256']:raise Conflict('terminal request binding changed')
             terminal=(stage['state']=='CONFIRMED' and status=='COMMITTED' and finalization.get('proof_kind')=='COMMITTED' or
-                      stage['state']=='CLOSED_NOT_COMMITTED' and proof['status']!='COMMITTED' and (proof.get('not_committed_final') and finalization.get('proof_kind')=='STRICTLY_ADVANCED_SOURCE' or
-                       saved.expected_journal_state=='REJECTED_FIRST_SEND' and finalization.get('proof_kind')=='FIRST_DEFINITE_REFUSAL' and finalization.get('refusal_code') in ('FIRST_CURRENT_OPERATION_REFUSED','FIRST_PRODUCT_AUTHORIZATION_REFUSED','FIRST_PRODUCT_CONFLICT')))
+                      stage['state']=='CLOSED_NOT_COMMITTED' and proof['status']!='COMMITTED' and proof.get('not_committed_final') and finalization.get('proof_kind')=='STRICTLY_ADVANCED_SOURCE')
             if not terminal:raise Conflict('persistent terminal outcome cannot be verified')
         if terminal and stage['state']=='CLOSED_NOT_COMMITTED':status='NOT_COMMITTED_FINAL'
-        finalizable=not terminal and status in ('COMMITTED','NOT_COMMITTED_STALE','REFUSED_FIRST_SEND')
+        finalizable=not terminal and status in ('COMMITTED','NOT_COMMITTED_STALE')
         return dict(instance_id=instance['id'],actor_ref=case_steps.cp._hash(dict(actor_id=p['id'])),
             consumer_request_key=key,original_request_key=stage['request_key'],body_sha256=stage['body_sha256'],
             original_request=dict(expected_preparation_revision=data.expected_preparation_revision,
@@ -641,27 +640,32 @@ class TemplateConsumer:
             if not proof['finalizable'] or proof['journal_state']!=data.expected_journal_state:
                 raise Conflict('original adoption not proven terminal or journal state changed')
             state='CONFIRMED' if proof['status']=='COMMITTED' else 'CLOSED_NOT_COMMITTED'
-            kind='COMMITTED' if state=='CONFIRMED' else 'STRICTLY_ADVANCED_SOURCE' if proof['receipt'].get('not_committed_final') else 'FIRST_DEFINITE_REFUSAL'
+            kind='COMMITTED' if state=='CONFIRMED' else 'STRICTLY_ADVANCED_SOURCE'
             finalization=dict(original_request_key=proof['original_request_key'],body_sha256=proof['body_sha256'],
-                              state=state,proof_kind=kind,refusal_code=proof['journal_error'] if kind=='FIRST_DEFINITE_REFUSAL' else None,request=request,fingerprint=fp)
+                              state=state,proof_kind=kind,request=request,fingerprint=fp)
             # Exact recovery takes the original PG parent/key locks. A committed
             # event is immutable; advanced revisions cannot decrease. The file
             # lock also serializes every consumer send against this journal CAS.
-            p,database=self._auth(token);instance=self._instance(p,database,id)
-            self._available(p,instance);self._reviewer(p,instance['input']['reviewer_id'])
-            with self.repository.connect(write=True) as c:
-                # BEGIN IMMEDIATE may itself wait: authority must be current here.
-                p,database=self._auth(token);self._instance(p,database,id)
-                self._available(p,instance);self._reviewer(p,instance['input']['reviewer_id'])
-                stage=c.execute('SELECT * FROM consumer_stages WHERE instance_id=? AND name=?',(instance['id'],name)).fetchone()
-                if not stage or stage['state']!=data.expected_journal_state or stage['request_key']!=data.expected_original_request_key or stage['body_sha256']!=data.expected_body_sha256:
-                    raise Conflict('original adoption journal CAS changed')
-                result=json.loads(stage['result']) if stage['result'] else {}
-                result.update(consumer_finalization=finalization)
-                if state=='CONFIRMED':result['plan_id']=proof['receipt']['event']['plan_id']
-                changed=c.execute('UPDATE consumer_stages SET state=?,result=?,error=NULL WHERE instance_id=? AND name=? AND state=? AND request_key=? AND body_sha256=? AND result IS ? AND error IS ?',
-                    (state,canonical(result),instance['id'],name,stage['state'],stage['request_key'],stage['body_sha256'],stage['result'],stage['error'])).rowcount
-                if changed!=1:raise Conflict('original adoption journal CAS lost')
+            # Keep shared principal/reviewer authority locks until the SQLite
+            # journal commit. Supported revokers take the exclusive same locks.
+            # The PG context is outermost so no post-check revocation can commit
+            # between authorization and the durable journal CAS.
+            with self.store.connect() as authority:
+                p,database=self._auth(token,connection=authority);instance=self._instance(p,database,id)
+                self._available(p,instance);self._reviewer(p,instance['input']['reviewer_id'],connection=authority)
+                with self.repository.connect(write=True) as c:
+                    # BEGIN IMMEDIATE can wait; recheck on the held PG transaction.
+                    p,database=self._auth(token,connection=authority);self._instance(p,database,id)
+                    self._available(p,instance);self._reviewer(p,instance['input']['reviewer_id'],connection=authority)
+                    stage=c.execute('SELECT * FROM consumer_stages WHERE instance_id=? AND name=?',(instance['id'],name)).fetchone()
+                    if not stage or stage['state']!=data.expected_journal_state or stage['request_key']!=data.expected_original_request_key or stage['body_sha256']!=data.expected_body_sha256:
+                        raise Conflict('original adoption journal CAS changed')
+                    result=json.loads(stage['result']) if stage['result'] else {}
+                    result.update(consumer_finalization=finalization)
+                    if state=='CONFIRMED':result['plan_id']=proof['receipt']['event']['plan_id']
+                    changed=c.execute('UPDATE consumer_stages SET state=?,result=?,error=NULL WHERE instance_id=? AND name=? AND state=? AND request_key=? AND body_sha256=? AND result IS ? AND error IS ?',
+                        (state,canonical(result),instance['id'],name,stage['state'],stage['request_key'],stage['body_sha256'],stage['result'],stage['error'])).rowcount
+                    if changed!=1:raise Conflict('original adoption journal CAS lost')
             return self.planning_recovery(token,id,key)
 
     @contextmanager
