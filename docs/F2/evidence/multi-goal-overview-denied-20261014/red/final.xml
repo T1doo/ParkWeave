@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.864" timestamp="2026-10-14T13:24:25.956739+00:00" hostname="754d39e95154"><testcase classname="tests.test_multi_goal_overview_denied" name="test_original_page_target_denial_clears_current_scope_only[manual_deny]" time="1.758"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)&#10;      at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:46:4&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0">template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+mode = 'manual_deny'
+
+    @pytest.mark.parametrize('mode',MODES)
+    def test_original_page_target_denial_clears_current_scope_only(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST',goal=A)
+        baseline=products(f['owner']);resources=resource_state(f);grants=grant_snapshot(f['owner']);messages=[];summary=None;checkpoints=[];revoked=False;stderr=''
+        target='/api/preparations/'+row['preparation_id']+('/readiness' if 'aux' in mode else '' if mode.startswith('support') else '/manual-goal-requests')
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'denied overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'checkpoint' in msg:checkpoints.append(msg['checkpoint']);continue
+                if 'restore' in msg or 'restore_and_new_case' in msg:
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    reply={'actor':REVIEWERS[0]}
+                    if msg.get('restore_and_new_case'):
+                        from test_template_consumer import consume,finish,resume,body
+                        from test_template_consumer_planning import preview,adoption,post
+                        data=body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',A,B]
+                        new=consume(f,key='denial-new-case',data=data).json();finish(f);new=resume(f,new,key='denial-new-resume').json();v=preview(f,new).json();assert post(f,new,'adopt',{**adoption(v),'partial_adoption':True},'denial-new-adopt').status_code==200;confirmed(f,new);reply['preparation_id']=new['preparation_id'];assert reply['preparation_id']!=row['preparation_id'];baseline=products(f['owner']);resources=resource_state(f)
+                    grants=grant_snapshot(f['owner']);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET'
+                if q['path']==target and not revoked:
+                    assert messages[-1]['path'].endswith('/goal-results') or mode=='support_deny_aux'
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    revoked=True;grants=grant_snapshot(f['owner'])
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][q['options']['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')]});assert r.status_code in (200,403),r.text
+                assert products(f['owner'])==baseline and resource_state(f)==resources and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code,authorization=q['options']['headers']['Authorization']));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+&gt;           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['posts']==0 and revoked
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:46:4
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+
+tests/test_multi_goal_overview_denied.py:43: AssertionError</failure></testcase></testsuite></testsuites>
