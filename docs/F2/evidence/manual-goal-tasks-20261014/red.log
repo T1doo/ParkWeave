@@ -1,0 +1,29 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_confirmed_case_manual_responsibility_and_shared_privacy_without_any_read_write _
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+
+    def test_confirmed_case_manual_responsibility_and_shared_privacy_without_any_read_write(template_consumption):
+        f=template_consumption;row=private_case(f);confirmed(f,row);before=products(f['owner']);grants=grant_snapshot(f['owner'])
+        assert manual_items(tasks(f,REVIEWERS[0]))==[] and A not in tasks(f,REVIEWERS[0]).text and B not in tasks(f,REVIEWERS[0]).text
+        assert products(f['owner'])==before
+>       act(f,row,'REQUEST');before=products(f['owner']);items=manual_items(tasks(f,REVIEWERS[0]));assert len(items)==1 and items[0]['kind']=='MANUAL_ACCEPT_REQUEST' and items[0]['manual_goal']==A
+                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests/test_manual_goal_tasks.py:31: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_manual_goal_tasks.py::test_confirmed_case_manual_responsibility_and_shared_privacy_without_any_read_write
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_manual_goal_tasks.py::test_confirmed_case_manual_responsibility_and_shared_privacy_without_any_read_write
+1 failed, 12 deselected, 2 warnings in 1.64s

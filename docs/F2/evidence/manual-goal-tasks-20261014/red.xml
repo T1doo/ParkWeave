@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.631" timestamp="2026-10-14T07:22:48.394923+00:00" hostname="754d39e95154"><testcase classname="tests.test_manual_goal_tasks" name="test_confirmed_case_manual_responsibility_and_shared_privacy_without_any_read_write" time="1.500"><failure message="assert (0 == 1)&#10; +  where 0 = len([])">template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+
+    def test_confirmed_case_manual_responsibility_and_shared_privacy_without_any_read_write(template_consumption):
+        f=template_consumption;row=private_case(f);confirmed(f,row);before=products(f['owner']);grants=grant_snapshot(f['owner'])
+        assert manual_items(tasks(f,REVIEWERS[0]))==[] and A not in tasks(f,REVIEWERS[0]).text and B not in tasks(f,REVIEWERS[0]).text
+        assert products(f['owner'])==before
+&gt;       act(f,row,'REQUEST');before=products(f['owner']);items=manual_items(tasks(f,REVIEWERS[0]));assert len(items)==1 and items[0]['kind']=='MANUAL_ACCEPT_REQUEST' and items[0]['manual_goal']==A
+                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert (0 == 1)
+E        +  where 0 = len([])
+
+tests/test_manual_goal_tasks.py:31: AssertionError</failure></testcase></testsuite></testsuites>

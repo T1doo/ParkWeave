@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.957" timestamp="2026-10-14T07:37:43.441226+00:00" hostname="754d39e95154"><testcase classname="tests.test_manual_goal_tasks" name="test_original_page_cold_confirmed_manual_tasks_stale_subject_permission_and_pages" time="1.866"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:&#10;  &#10;    assert(v)&#10;  &#10;      at check (/workspace/ParkWeave/tests/manual_goal_tasks_actual.js:4:26)&#10;      at /workspace/ParkWeave/tests/manual_goal_tasks_actual.js:40:365&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0&#10; +  where 1 = wait(timeout=15)&#10; +    where wait = &lt;Popen: returncode: 1 args: ['node', 'tests/manual_goal_tasks_actual.js', 't...&gt;.wait">template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+
+    def test_original_page_cold_confirmed_manual_tasks_stale_subject_permission_and_pages(template_consumption):
+        import json,subprocess,selectors
+        from pathlib import Path
+        from uuid import UUID
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST');messages=[];bridges=[];summary=None;page_snapshot=products(f['owner']);expected_case=row['case_id'];grants=grant_snapshot(f['owner'])
+        proc=subprocess.Popen(['node','tests/manual_goal_tasks_actual.js',ENTERPRISES[0],REVIEWERS[0],A,B],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'task page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg and 'result' not in msg:
+                    if msg.get('replace_current_plan'):replace_plan(f,row)
+                    elif msg.get('create_beta_request'):act(f,row,'REQUEST',goal=B)
+                    elif msg.get('revoke_specialist_list'):
+                        assert grant_snapshot(f['owner'])==grants
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(REVIEWERS[0],))
+                    elif msg.get('scale_owner_pages'):
+                        # Deliberately restore only the test prerequisite already used, not an app permission repair.
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(REVIEWERS[0],))
+                        act(f,row,'TAKE',REVIEWERS[0],goal=B);act(f,row,'REQUEST_EVIDENCE',REVIEWERS[0],goal=B)
+                        with f['owner'].connect() as c:
+                            for _ in range(100):
+                                run,case,id=uuid4(),uuid4(),uuid4()
+                                c.execute("INSERT INTO runs(id,principal_id,park_id,org_id,namespace,request_key,fingerprint,input,state) SELECT %s,principal_id,park_id,org_id,namespace,%s,fingerprint,input,state FROM runs WHERE id=%s",(run,uuid4().hex,UUID(row['run_id'])))
+                                c.execute('INSERT INTO cases SELECT %s,%s,park_id,org_id,goal,state,source,external_acceptance,offline_fulfillment FROM cases WHERE id=%s',(case,run,UUID(row['case_id'])))
+                                c.execute("INSERT INTO preparations(id,run_id,case_id,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,state) SELECT %s,%s,%s,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,'IN_PREPARATION' FROM preparations WHERE id=%s",(id,run,case,UUID(row['preparation_id'])))
+                    else:raise AssertionError(msg)
+                    bridges.append(msg);page_snapshot=products(f['owner']);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None))
+                assert r.status_code in (200,403),r.text
+                if method=='GET':assert products(f['owner'])==page_snapshot,'queue or entry GET changed business records'
+                else:page_snapshot=products(f['owner'])
+                if q['path'].startswith('/api/preparation-tasks') and actor==REVIEWERS[0] and not any(x.get('create_beta_request') for x in bridges):assert B not in r.text
+                if q['path'].startswith('/api/preparations/') and method=='POST':assert q['path'].split('/')[3]==row['preparation_id'] and r.json()['case_id']==expected_case
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+&gt;           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['checks']&gt;=30 and summary['posts']==3;assert products(f['owner'])==page_snapshot
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/manual_goal_tasks_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/manual_goal_tasks_actual.js:40:365
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = &lt;Popen: returncode: 1 args: ['node', 'tests/manual_goal_tasks_actual.js', 't...&gt;.wait
+
+tests/test_manual_goal_tasks.py:117: AssertionError</failure></testcase></testsuite></testsuites>
