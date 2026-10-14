@@ -469,6 +469,20 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
     def service_case_plan_command(preparation_id: UUID,data: service_steps.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return service_steps.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
 
+    from . import service_plan_candidates as plan_candidates
+    @app.get('/api/preparations/{preparation_id}/service-plan-candidates')
+    def service_plan_candidates_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return plan_candidates.read(store,token(authorization),preparation_id)
+    @app.get('/api/preparations/{preparation_id}/service-plan-candidates/recovery')
+    def service_plan_candidates_recover(preparation_id: UUID,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return plan_candidates.read(store,token(authorization),preparation_id,key=resource_key(idempotency_key))
+    @app.get('/api/preparations/{preparation_id}/service-plan-candidates/{candidate_id}/preview')
+    def service_plan_candidate_preview(preparation_id: UUID,candidate_id: UUID,authorization: str | None=Header(default=None)):
+        return plan_candidates.read(store,token(authorization),preparation_id,candidate_id)
+    @app.post('/api/preparations/{preparation_id}/service-plan-candidates',status_code=201)
+    def service_plan_candidate_generate(preparation_id: UUID,data: plan_candidates.bp.Capture,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return plan_candidates.generate(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
     from . import bounded_planning as planning
     from . import case_goal_results
     @app.get('/api/preparations/{preparation_id}/goal-results')

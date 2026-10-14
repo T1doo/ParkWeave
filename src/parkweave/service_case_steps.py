@@ -33,6 +33,16 @@ class Adopt(BaseModel):
     local_revision:Literal[True]|None=None
     partial_adoption:Literal[True]|None=None
 
+    candidate_id:str|None=Field(default=None,pattern='^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
+    expected_candidate_sha256:str|None=Field(default=None,pattern='^[a-f0-9]{64}$')
+    expected_verification_sha256:str|None=Field(default=None,pattern='^[a-f0-9]{64}$')
+
+    @model_validator(mode='after')
+    def paired_candidate(self):
+        values=(self.candidate_id,self.expected_candidate_sha256,self.expected_verification_sha256)
+        if any(v is not None for v in values) and (not all(v is not None for v in values) or self.local_revision is not None):raise ValueError('complete candidate confirmation for adoption required')
+        return self
+
     @field_validator('partial_adoption',mode='before')
     @classmethod
     def explicit_partial_confirmation(cls,value):
@@ -92,6 +102,24 @@ def _supported(parent):
     goals=(parent.get('request_intent') or {}).get('required_goals',[])
     coverage,nodes=planning.compile(goals)
     return bool(goals and nodes and all(g['status']=='SUPPORTED_PREVIEW' for g in coverage))
+
+def _initial_adoption_proof(parent,plan):
+    # Even with both optional candidate fields missing, the original ADOPT
+    # fingerprint cannot be reinterpreted as a legacy request.
+    try:
+        event=plan['events'][0];previous=(plan.get('history') or [None])[-1]
+        data=Adopt(expected_preparation_revision=plan['adoption_preparation_revision'],
+                   expected_request_revision=plan['binding']['request_intent']['revision'],
+                   expected_plan_revision=previous['revision'] if previous else 0,
+                   expected_source_sha256=plan['adoption_preview']['source_sha256'],
+                   required_goals=plan['required_goals'],reason=event['reason'],
+                   partial_adoption=True if plan.get('partial_adoption') is True else None)
+        if plan.get('candidate_consumption') is not None or (plan.get('adoption_request') or {}).get('candidate_id') is not None:
+            _recovery_proofs(parent)
+            return
+        if event['fingerprint']!=cp._hash(dict(preparation_id=str(parent['id']),action='ADOPT',**_adopt_request(data))):raise ValueError()
+    except (KeyError,TypeError,ValueError,IndexError):raise Conflict('original initial adoption proof invalid')
+
 
 def adopted_preview_steps(plan):
     """Prove the saved partial selection without rewriting historical contracts."""
@@ -232,6 +260,7 @@ def persist_rejected_observation(store,error):
 def _inspect(store,c,parent,plan,observe=True,fresh_clock=False):
     if prep.case_write_blocked(c,parent):observe=False
     dependencies.plan_proof(parent,plan)
+    _initial_adoption_proof(parent,plan)
     if any(e['action'] in ('LOCK','UNLOCK') for e in plan['events']) or any(s.get('manual_lock') is not None for s in plan['steps']):
         _recovery_proofs(parent)
     binding_issues=_binding_issues(c,parent,plan)
@@ -341,6 +370,7 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
                      request_key=event['request_key'],actor_ref=context['actor_ref'],expected_revision=event['revision']-1 if local else previous['revision'] if previous else 0 if event['action']=='ADOPT' else event['revision']-1,
                      previous_plan_id=plan['id'] if local else previous['id'] if previous else None)
     return dict(**context,scope=SCOPE,plan_id=plan['id'],revision=plan['revision'],state=status,steps=steps,
+                candidate_consumption=plan.get('candidate_consumption') if owner else None,
                 partial_adoption=plan.get('partial_adoption') is True,
                 overall_goal_state='PARTIAL' if plan.get('partial_adoption') is True else 'LOCAL_PLAN_ONLY',
                 manual_goals=plan['adoption_preview']['partial_offer']['manual_goals'] if owner and plan.get('partial_adoption') is True else None,
@@ -425,6 +455,11 @@ def _recovery_proofs(parent):
                     expected=previous['revision'] if previous else 0
                     data=Adopt(expected_preparation_revision=plan['adoption_preparation_revision'],expected_request_revision=plan['binding']['request_intent']['revision'],
                                expected_plan_revision=expected,expected_source_sha256=plan['adoption_preview']['source_sha256'],required_goals=plan['required_goals'],reason=event['reason'],partial_adoption=True if plan.get('partial_adoption') is True else None)
+                    if plan.get('candidate_consumption') is not None or (plan.get('adoption_request') or {}).get('candidate_id') is not None:
+                        data=Adopt.model_validate(plan['adoption_request'])
+                        if data.expected_plan_revision!=expected or data.reason!=event['reason']:raise ValueError()
+                        from . import service_plan_candidates as candidates
+                        candidates.consumption_proof(parent,plan,data)
                     fp=cp._hash(dict(preparation_id=str(parent['id']),action='ADOPT',**_adopt_request(data)))
                     latest_dependencies=event.get('dependencies')
                     if latest_dependencies is not None:dependencies.validate(latest_dependencies)
@@ -523,7 +558,9 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
         prep.key_lock(c,p,'service-case-plan:'+key)
         fp=cp._hash(dict(preparation_id=str(id),action='ADOPT',**_adopt_request(data)))
         old=_replay(c,p,parent,key,fp);prior=deepcopy(parent.get('service_case_plan'))
-        if old:return _view(store,c,p,parent,prior,old)
+        if old:
+            if data.candidate_id is not None:_recovery_proofs(parent)
+            return _view(store,c,p,parent,prior,old)
         if unadopted_only and prior is not None:raise Conflict('template consumer cannot replace an already adopted original plan')
         intent=parent.get('request_intent')
         if not intent or data.required_goals!=intent['required_goals'] or intent['revision']!=data.expected_request_revision:
@@ -533,6 +570,10 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
         partial=data.partial_adoption is True
         if (not (current['state']=='PARTIAL' and current['partial_offer']['can_adopt'] if partial else current['state']=='COVERED_PREVIEW_ONLY' and _supported(parent)) or current['source_sha256']!=data.expected_source_sha256):
             raise Conflict('current bounded planning preview required')
+        candidate_proof=None
+        if data.candidate_id is not None:
+            from . import service_plan_candidates as candidates
+            candidate_proof=candidates.consume(parent,current,data)
         binding=cp._normal(_binding(c,parent))
         if cp._hash(binding['catalog'])!=current['catalog_sha256'] or cp._hash(binding['registry'])!=current['registry_sha256']:
             raise Conflict('catalog or registry changed during service plan adoption')
@@ -573,6 +614,7 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
                   binding=binding,adoption_preparation_revision=parent['revision'],
                   adoption_preview=current,steps=steps,events=[],history=history)
         if partial:plan.update(partial_adoption=True,adoption_request=_adopt_request(data))
+        if candidate_proof is not None:plan.update(candidate_consumption=candidate_proof,adoption_request=_adopt_request(data))
         plan['dependency_manifest']=dependencies.manifest(steps,current['dependency_collections'])
         event=_event(plan,p,key,fp,'ADOPT',data.reason)
         event['dependencies']=deepcopy(plan['dependency_manifest'])

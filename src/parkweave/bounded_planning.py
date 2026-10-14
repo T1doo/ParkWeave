@@ -121,7 +121,7 @@ def _proposal(store,c,p,parent):
         for step,impact in zip(steps,constraints['steps']):step['constraint_impact']=impact
     state='UNKNOWN' if not goals or any(i['status']=='UNKNOWN' for i in items) else 'PARTIAL' if any(i['status']=='UNSUPPORTED' for i in items) else 'COVERED_PREVIEW_ONLY'
     if constraints and state=='COVERED_PREVIEW_ONLY' and constraints['state']!='COMPATIBLE':state='PARTIAL' if constraints['state']=='UNSUPPORTED' else 'CONSTRAINT_BLOCKED'
-    return dict(**({'constraint_evaluation':constraints} if constraints else {}),namespace='PLANNING_METADATA_PREVIEW',planner='DETERMINISTIC_REGISTERED_ADAPTER_SUBGRAPH',preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],source_sha256=sha,
+    return dict(**({'constraint_evaluation':constraints} if constraints else {}),namespace='PLANNING_METADATA_PREVIEW',planner='DETERMINISTIC_REGISTERED_ADAPTER_SUBGRAPH',preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],request_revision=(intent or {}).get('revision',0),source_sha256=sha,
       catalog_sha256=cp._hash(cp._normal(catalog)),registry_sha256=cp._hash({'steps':REGISTRY,'actions':ACTIONS}),required_goals=goals,goal_coverage=items,optional_suggestions=[],state=state,steps=steps,
       dependency_collections=collection_sources,
       global_requirements=global_requirements,
@@ -131,7 +131,8 @@ def _proposal(store,c,p,parent):
 
 def _view(store,c,p,parent):
     current=_proposal(store,c,p,parent);history=parent['planning_previews'] or []
-    return dict(current=current,history=[dict(id=h['id'],revision=h['revision'],document=h['document'],state='CURRENT' if h['document']['source_sha256']==current['source_sha256'] else 'STALE') for h in history],history_limit=LIMIT,
+    return dict(current=current,history=[dict(id=h['id'],revision=h['revision'],document=h['document'],state='CURRENT' if h['document']['source_sha256']==current['source_sha256'] else 'STALE') for h in history if 'candidate' not in h],history_limit=LIMIT,
+                candidate_metadata_count=sum('candidate' in h for h in history),
                 isolated_execution_preview_enabled=getattr(store,'_isolated_execution_preview',None) is not None,
                 isolated_resource_execution_preview_enabled=getattr(store,'_isolated_resource_execution_preview',None) is not None,
                 isolated_dispatch_execution_preview_enabled=getattr(store,'_isolated_dispatch_execution_preview',None) is not None, isolated_receipt_execution_preview_enabled=getattr(store,'_isolated_receipt_execution_preview',None) is not None,isolated_lifecycle_execution_preview_enabled=getattr(store,'_isolated_lifecycle_execution_preview',None) is not None)
