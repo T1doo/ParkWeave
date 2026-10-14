@@ -1,5 +1,5 @@
 """Read-only owner goal overview and exact same-Case goal navigation."""
-import json,subprocess,selectors
+import json,subprocess,selectors,os
 from pathlib import Path
 import pytest
 from test_template_consumer import template_consumption,headers,products
@@ -82,5 +82,5 @@ def test_original_page_second_unsupported_goal_opens_exact_selected_goal(templat
             messages.append(dict(path=q['path'],status=r.status_code));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
         assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
     finally:
-        p=Path('.runtime/multi-goal-overview-20261014');p.mkdir(exist_ok=True);(p/('page-'+mode+'-chain.json')).write_text(json.dumps(dict(summary=summary,requests=messages),indent=2)+'\n');sel.close()
+        p=Path(os.environ.get('OVERVIEW_EVIDENCE_DIRECTORY','.runtime/multi-goal-overview-20261014'));p.mkdir(parents=True,exist_ok=True);(p/('page-'+mode+'-chain.json')).write_text(json.dumps(dict(summary=summary,requests=messages),indent=2)+'\n');sel.close()
         if proc.poll() is None:proc.terminate();proc.wait(timeout=5)
