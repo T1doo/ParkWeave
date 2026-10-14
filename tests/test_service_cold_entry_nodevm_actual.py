@@ -24,7 +24,7 @@ from test_service_selection_full_chain import selection_full_chain
 from service_release_acceptance_support import authority_snapshot
 
 
-@pytest.mark.parametrize('mode',['normal','facade_loss','run_loss','material_loss','execute_revoked'])
+@pytest.mark.parametrize('mode',['normal','facade_loss','run_loss','material_loss','execute_revoked','stage_prepare_loss','stage_prepare_unknown'])
 def test_complete_original_html_fresh_cold_input_actual_pg_asgi(selection_full_chain,tmp_path,mode):
     a=selection_full_chain;f=a['f'];store,owner,tokens,_=f
     facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'node-cold.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
@@ -87,13 +87,26 @@ def test_complete_original_html_fresh_cold_input_actual_pg_asgi(selection_full_c
     assert proc.returncode==0,stderr
     assert result and result['result']=='PASS' and result['completeOriginalHTML'] and result['realASGIResponses']
     posts=[row for row in traffic if row['method']=='POST']
-    assert len(posts)==10
+    assert len(posts)==(2 if mode=='stage_prepare_unknown' else 10)
     assert [row['path'] for row in posts].count('/api/service-instance-cold-inputs')==1
     assert [row['path'] for row in posts].count('/api/runs')==1
-    assert len([row for row in posts if '/prepare-stage?' in row['path']])==4
-    assert len({row['key'] for row in posts if '/prepare-stage?' not in row['path']})==6
+    descriptors=[row for row in posts if '/prepare-stage?' in row['path']]
+    assert len(descriptors)==(0 if mode=='stage_prepare_unknown' else 4)
+    assert len({row['path'] for row in descriptors})==len(descriptors)
+    assert len({row['key'] for row in posts if '/prepare-stage?' not in row['path']})==(2 if mode=='stage_prepare_unknown' else 6)
     assert all(row['status']<300 for row in traffic if not(mode=='execute_revoked' and row['path']=='/api/service-instance-configurations' and row['status']==403))
     assert not any(row['method']=='POST' and ('service-selections' in row['path'] or 'service-case-plan' in row['path']) for row in traffic)
+    if mode=='stage_prepare_unknown':
+        assert result['transportFailedBeforeASGI'] and result['unknownDescriptorRetained']
+        assert result['allOriginalStagesObserved'] is False and result['preparation_id'] is None
+        assert result['descriptorTransportAttempts']==1
+        assert all('/prepare-stage?' not in row['path'] for row in traffic)
+        with owner.connect() as c:
+            assert c.execute('SELECT count(*) n FROM preparations').fetchone()['n']==0
+            run=c.execute('SELECT state,namespace FROM runs WHERE id=%s',(UUID(run_id),)).fetchone()
+            assert run==dict(state='SUCCEEDED',namespace='SYNTHETIC')
+        assert authority_snapshot(owner)==before
+        return
     with owner.connect() as c:
         parent=c.execute('SELECT * FROM preparations WHERE id=%s',(UUID(result['preparation_id']),)).fetchone()
         assert parent['park_id']=='park-b' and parent['owner_id']=='fixture-c' and parent['run_id']==UUID(run_id)

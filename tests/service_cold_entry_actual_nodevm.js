@@ -4,8 +4,8 @@ const mode=process.argv[2]||'normal';let lost=false,dropRecovery=false,lastRecov
 readline.createInterface({input:process.stdin}).on('line',line=>{const answer=JSON.parse(line);const resolve=pending.get(answer.id);pending.delete(answer.id);resolve(answer)});
 async function ipc(message){const requestId=++number;const answer=new Promise(resolve=>pending.set(requestId,resolve));process.stdout.write(JSON.stringify({...message,id:requestId})+'\n');return await answer;}
 async function control(action){const answer=await ipc({type:'control',action});assert.equal(answer.status,200);return answer.body;}
-async function fetchAPI(path,options={}){requests.push({path,method:options.method||'GET'});const reply=await ipc({type:'request',path,options});
- const target=mode==='facade_loss'&&path==='/api/service-instance-cold-inputs'||mode==='run_loss'&&path==='/api/runs'||mode==='material_loss'&&path.endsWith('/commands')&&JSON.parse(options.body||'{}').slot==='need_summary';
+async function fetchAPI(path,options={}){requests.push({path,method:options.method||'GET'});if(mode==='stage_prepare_unknown'&&!lost&&options.method==='POST'&&path==='/api/service-instance-cold-inputs/prepare-stage?stage=CREATE_PREPARATION'){lost=true;throw Error('SYNTHETIC transport failure before ASGI delivery, not a business outcome');}const reply=await ipc({type:'request',path,options});
+ const target=mode==='facade_loss'&&path==='/api/service-instance-cold-inputs'||mode==='run_loss'&&path==='/api/runs'||mode==='material_loss'&&path.endsWith('/commands')&&JSON.parse(options.body||'{}').slot==='need_summary'||mode==='stage_prepare_loss'&&path==='/api/service-instance-cold-inputs/prepare-stage?stage=CREATE_PREPARATION';
  if(!lost&&options.method==='POST'&&target){lost=true;dropRecovery=true;assert(reply.status<300);throw Error('SYNTHETIC dropped committed original POST reply');}
  if(path==='/api/service-instance-cold-inputs/recovery'){if(dropRecovery){dropRecovery=false;throw Error('SYNTHETIC first GET reply also lost before page close');}lastRecovery=reply.body;}
  return {ok:reply.status>=200&&reply.status<300,status:reply.status,json:async()=>reply.body};}
@@ -31,7 +31,18 @@ assert(p.read('coldView'),'initial real cold facade DTO rejected: '+p.get('cold-
 const stages=['CREATE_RUN','CREATE_PREPARATION','SAVE_REQUEST','ADD_need_summary','ADD_material_outline'];
 for(const name of stages){
  assert.equal(p.get('cold-stage').value,name);
- if(name!=='CREATE_RUN'){await p.get('cold-stage-prepare').onclick();assert(p.read('coldView.stages.some(s=>s.name==='+JSON.stringify(name)+')'),'real stage description rejected '+name+': '+p.get('cold-status').textContent);}
+ if(name!=='CREATE_RUN'){
+ await p.get('cold-stage-prepare').onclick();
+ if(name==='CREATE_PREPARATION'&&mode==='stage_prepare_unknown'){
+  await coldPage();assert.equal(p.read('coldView.stages.length'),1,'real GET must not fabricate undelivered descriptor');
+  const handle=JSON.parse(p.snapshot()['parkweave.cold-input-original-key.v1']);assert(handle.sent.includes('PREPARE_STAGE:CREATE_PREPARATION'));
+  assert.equal(p.get('cold-stage-prepare').disabled,true);assert.equal(p.get('cold-stage-send').disabled,true);assert.equal(p.get('cold-open').disabled,true);
+  const previous=requests.length;await p.get('cold-stage-prepare').onclick();assert.equal(requests.length,previous,'unknown descriptor marker must block cross-reload resubmission');
+  process.stdout.write(JSON.stringify({type:'result',result:'PASS',mode,completeOriginalHTML:true,realASGIResponses:true,preparation_id:null,coldReloads,originalPostCount:2,descriptorTransportAttempts:1,lostCommittedReply:false,transportFailedBeforeASGI:true,unknownDescriptorRetained:true,allOriginalStagesObserved:false,automaticGeneration:false,automaticAdoption:false})+'\n');process.exit(0);
+ }
+ if(name==='CREATE_PREPARATION'&&mode==='stage_prepare_loss')await coldPage();
+ assert(p.read('coldView.stages.some(s=>s.name==='+JSON.stringify(name)+')'),'real stage description rejected '+name+': '+p.get('cold-status').textContent);
+ }
  assert.equal(p.get('cold-stage-send').disabled,true,'each original command needs explicit confirmation');p.get('cold-send-confirm').checked=true;p.get('cold-send-confirm').onchange();assert.equal(p.get('cold-stage-send').disabled,false,'original stage send unexpectedly disabled '+name);
  await p.get('cold-stage-send').onclick();
  if(name==='CREATE_RUN'){await control('worker');if(mode==='run_loss')await coldPage();else await p.get('cold-recover').onclick();}
@@ -50,7 +61,7 @@ if(mode==='execute_revoked'){await control('revoke_execute');const before=reques
  for(const material of Object.values(p.read('coldView.input.fields'))){assert(visible.includes(material.source_label));assert(visible.includes(material.source_kind));}
  assert.equal(p.get('cold-open').disabled,true);const beforeOpen=requests.length,handle=p.snapshot()['parkweave.cold-input-original-key.v1'];await p.get('cold-open').onclick();assert.equal(requests.length,beforeOpen,'READ-only open handler must not fetch original writable page');assert.equal(p.snapshot()['parkweave.cold-input-original-key.v1'],handle,'READ-only history must retain opaque handle');}
 
-if(mode!=='execute_revoked'){await p.get('cold-open').onclick();assert.equal(p.read('preparationView.preparation.id'),prep);assert.equal(p.read('prepRole'),'enterprise_operator');assert.equal(p.read('servicePlanView.plan_id'),null);assert.equal(p.snapshot()['parkweave.cold-input-original-key.v1'],undefined,'resolved original handle should be released on explicit open');}else{assert(p.snapshot()['parkweave.cold-input-original-key.v1'],'READ-only recovery retains original history handle');}
+if(mode!=='execute_revoked'){await p.get('cold-open').onclick();assert.equal(p.read('preparationView.preparation.id'),prep);assert.equal(p.read('prepRole'),'enterprise_operator');assert.equal(p.read('servicePlanView.plan_id'),null);assert.equal(p.snapshot()['parkweave.cold-input-original-key.v1'],undefined,'resolved original handle should be released on explicit open');}else{assert(p.snapshot()['parkweave.cold-input-original-key.v1'],'READ-only recovery retains original history handle');const count=requests.length;assert.equal(p.get('cold-new').disabled,false);await p.get('cold-new').onclick();assert.equal(requests.length,count,'ending verified input needs no request');assert.equal(p.snapshot()['parkweave.cold-input-original-key.v1'],undefined);assert.equal(p.read('coldView'),null);assert.equal(p.get('cold-need').value,'');p.get('token').value='SYNTHETIC_REVIEWER_SESSION';assert.equal(p.read('coldUnresolved()'),false,'resolved input must not block another role');}
 assert.equal(requests.filter(r=>r.method==='POST'&&r.path==='/api/service-instance-cold-inputs').length,1);assert.equal(requests.filter(r=>r.method==='POST'&&r.path==='/api/runs').length,1);assert.equal(requests.filter(r=>r.method==='POST'&&r.path.endsWith('/commands')).length,2);
 assert(!requests.some(r=>r.method==='POST'&&(/service-selections|service-case-plan/.test(r.path))));
 process.stdout.write(JSON.stringify({type:'result',result:'PASS',mode,completeOriginalHTML:true,realASGIResponses:true,preparation_id:prep,coldReloads,originalPostCount:requests.filter(r=>r.method==='POST').length,lostCommittedReply:lost,onlyOpaqueStorage:true,allOriginalStagesObserved:true,originalPreparationOpened:mode!=='execute_revoked',automaticGeneration:false,automaticAdoption:false})+'\n');process.exit(0);
