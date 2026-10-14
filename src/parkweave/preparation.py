@@ -323,7 +323,7 @@ def personal_tasks(store,token,*,limit=100,before=None):
             from . import manual_goal_requests as human, registered_dependencies as dependencies
             from .case_goal_results import structure
             try:
-                structure(plan);dependencies.plan_proof(row,plan);projected=human.view(store,c,p,row,plan)
+                structure(plan,parent=row);dependencies.plan_proof(row,plan);projected=human.view(store,c,p,row,plan)
             except Conflict:
                 # A damaged journal never grants sharing or invents a goal task.
                 if owner:tasks.append(dict(id=row['id'],case_id=row['case_id'],run_id=row['run_id'],goal=row['goal'],state=row['state'],revision=row['revision'],service_id=row['service_id'],service_version=row['service_version'],kind='MANUAL_REQUEST_RECHECK',missing_slots=[],correction_reason=None,blocked_reason='MANUAL_JOURNAL_UNVERIFIED',blocked_reasons=['MANUAL_JOURNAL_UNVERIFIED'],plan_id=None,manual_goal=None,manual_state='UNKNOWN',manual_revision=None,manual_source_sha256=None,goal_state='UNSUPPORTED',overall_goal_state='PARTIAL',case_goal_completed=False,requires_current_read=True))

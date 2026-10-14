@@ -23,7 +23,7 @@ def source_trace(parent,plan):
     saved=plan['adoption_preview'];event=plan['events'][0];consumed=plan.get('candidate_consumption')
     candidate={k:deepcopy(consumed[k]) for k in ('candidate_id','candidate_sha256','verification_sha256')} if consumed else None
     if candidate is not None:candidate.update(validator_version=consumed['verification_basis']['validator_version'],accepted_at=consumed.get('accepted_at'),validity=deepcopy(consumed['verification_basis'].get('validity')))
-    if candidate is not None and consumed['verification_basis']['validator_version']==3:candidate['producer']=deepcopy(consumed['producer'])
+    if candidate is not None and consumed['verification_basis']['validator_version'] in (3,4):candidate['producer']=deepcopy(consumed['producer'])
     trace=dict(scope='SYNTHETIC_ADOPTED_PLAN_SOURCE_TRACE',preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),
                plan_id=plan['id'],plan_revision=plan['revision'],origin='SYNTHETIC_UNTRUSTED_CANDIDATE' if consumed else 'ORIGINAL_REGISTERED_DETERMINISTIC_PLAN',
                adoption=dict(event_id=event['id'],event_revision=event['revision'],fingerprint=event['fingerprint'],preparation_revision=plan['adoption_preparation_revision'],
@@ -32,14 +32,24 @@ def source_trace(parent,plan):
                steps=[dict(step_id=s['id'],adapter_id=s['adapter_id'],depends_on=deepcopy(s['depends_on']),contract_sha256=cp._hash(s['contract']),
                            responsibility=s['contract']['responsibility'],output=s['contract']['output'],acceptance=s['contract']['acceptance']) for s in plan['steps']],
                historical_adoption_only=True,read_only=True,execution_enabled=False,new_grants=False,case_goal_completed=False)
+    if steps._selection_plan(plan):
+        trace['service_selection']=deepcopy(plan['binding']['service_selection'])
+        refs=trace['service_selection']['selection']['selections']
+        trace['service_capabilities']=[deepcopy(r) for r in saved['catalog_snapshot']['releases'] if r['release_id'] in {ref['release_id'] for ref in refs}]
+        trace['park_instances']=[deepcopy(i) for i in saved['catalog_snapshot']['instances'] if i['instance_id'] in {ref['instance_id'] for ref in refs}]
     return dict(**trace,trace_sha256=cp._hash(trace))
 
-def structure(plan):
+def structure(plan,*,parent=None):
     """Stored application proof, not a signature against an administrator rewrite."""
     try:
         UUID(plan['id'])
         if type(plan['revision']) is not int or not 1<=plan['revision']<=64 or len(plan['events'])!=plan['revision'] or len(plan.get('history',[]))>8:raise ValueError()
-        coverage,expected=bp.compile(plan['required_goals'])
+        if steps._selection_plan(plan):
+            if parent is None:raise ValueError()
+            steps._initial_adoption_proof(parent,plan)
+            expected=plan['adoption_preview']['steps']
+            coverage=plan['adoption_preview']['goal_coverage']
+        else:coverage,expected=bp.compile(plan['required_goals'])
         if plan.get('partial_adoption') is True:
             expected=steps.adopted_preview_steps(plan)
         elif any(x['status']!='SUPPORTED_PREVIEW' for x in coverage):raise ValueError()
@@ -131,7 +141,7 @@ def read(store,token,id):
         if not case or parent['service_id']!=prep.SERVICE or parent['service_version']!=1 or run['state']!='SUCCEEDED' or run['input'].get('action','case.create')!='case.create':raise Denied('bound existing synthetic Case required')
         intent=parent.get('request_intent') or {};goals=intent.get('required_goals',[]);plan=deepcopy(parent.get('service_case_plan'));rows=[];binding_issues=[];states={};proofs={};out={};sources={};issues={}
         if plan:
-            structure(plan);binding_issues=steps._binding_issues(c,parent,plan)
+            structure(plan,parent=parent);binding_issues=steps._binding_issues(c,parent,plan,store=store)
             steps.dependencies.plan_proof(parent,plan)
             if any(e['action'] in ('LOCK','UNLOCK') for e in plan['events']) or any(s.get('manual_lock') is not None for s in plan['steps']):steps._recovery_proofs(parent)
             if plan['required_goals']!=goals:binding_issues.append('PLAN_REQUIRED_GOALS_CHANGED')

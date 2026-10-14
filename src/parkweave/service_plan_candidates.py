@@ -51,7 +51,7 @@ def document(current):
                 global_requirements=deepcopy(current['global_requirements']))
 
 
-def _records(parent):return [h for h in parent.get('planning_previews') or [] if 'candidate' in h]
+def _records(parent):return [h for h in parent.get('planning_previews') or [] if 'candidate' in h and h.get('profile')!='TRUSTED_SERVICE_SELECTION_V4']
 
 
 def _producer(record):
@@ -157,7 +157,7 @@ def read(store,token,id,candidate_id=None,key=None):
         records=_records(parent)
         if key is not None:records=[h for h in records if h['actor_id']==p['id'] and h['request_key']==key]
         result=[verify(parent,h,current,now=now) for h in records]
-        attempts=[h for h in parent.get('planning_previews') or [] if 'planner_attempt' in h]
+        attempts=[h for h in parent.get('planning_previews') or [] if 'planner_attempt' in h and h.get('profile')!='TRUSTED_SERVICE_SELECTION_V4']
         if key is not None:attempts=[h for h in attempts if h['actor_id']==p['id'] and h['request_key']==key]
         statuses=[_attempt_view(parent,h) for h in attempts]
         status='COMMITTED' if key is not None and result else statuses[0]['status'] if key is not None and statuses else 'NOT_OBSERVED' if key is not None else 'LIST'

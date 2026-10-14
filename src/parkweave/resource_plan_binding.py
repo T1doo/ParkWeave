@@ -219,7 +219,7 @@ def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None
             issues['P1'].append('ADOPTED_RESOURCE_PLAN_REQUIRED')
         else:
             changed, _, _, _, states, _=case_steps._inspect(store,c,parent,adopted,observe=False)
-            if changed or not (case_steps._supported(parent) or case_steps.current_partial(c,parent,adopted)) or adopted['required_goals']!=(parent.get('request_intent') or {}).get('required_goals') or states.get('P1')!='VERIFIED' or not any(s['adapter_id']=='P2' for s in adopted['steps']):
+            if changed or not (case_steps._supported(parent) or case_steps.current_partial(c,parent,adopted,store=store)) or adopted['required_goals']!=(parent.get('request_intent') or {}).get('required_goals') or states.get('P1')!='VERIFIED' or not any(s['adapter_id']=='P2' for s in adopted['steps']):
                 issues['P1'].append('CURRENT_PLAN_P1_REQUIRED')
     elif parent.get('request_intent') and intents.state(parent)!='SUPPORTED_LOCAL':issues['P1'].append('REQUEST_GOAL_COVERAGE_REQUIRED')
     if not cp.binding_catalog_known(snapshots['P1']['service_catalog']):issues['P1'].append('CURRENT_SERVICE_CATALOG_REQUIRED')

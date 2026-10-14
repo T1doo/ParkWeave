@@ -118,12 +118,12 @@ def context(store,c,token,id,write=False):
     plan=deepcopy(parent.get('service_case_plan'))
     if not plan:raise Conflict('existing adopted partial plan required')
     from .case_goal_results import structure
-    structure(plan);dependencies.plan_proof(parent,plan)
+    structure(plan,parent=parent);dependencies.plan_proof(parent,plan)
     return p,parent,plan
 
 def view(store,c,p,parent,plan,event=None):
     events,states=ledger(parent,plan);source=basis(c,parent,plan);materials={r['id']:(r['version'],r['source_sha256']) for r in source['materials'] if r['integrity_current']}
-    owner=p['id']==parent['owner_id'];binding_issues=steps._binding_issues(c,parent,plan);current=not binding_issues
+    owner=p['id']==parent['owner_id'];binding_issues=steps._binding_issues(c,parent,plan,store=store);current=not binding_issues
     local=c.execute('SELECT state FROM case_local_lifecycles WHERE preparation_id=%s',(parent['id'],)).fetchone()
     case_state=prep.case_state(c,parent);blocked=list(binding_issues)
     if case_state in ('CANCELLED','RECONCILING'):blocked.append('CASE_'+case_state)

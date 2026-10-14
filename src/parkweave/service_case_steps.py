@@ -4,6 +4,7 @@ Business operations remain in their existing adapters. Neither an intention nor
 a reported obstacle is execution, acceptance, authorization, or fulfillment.
 """
 from copy import deepcopy
+from contextlib import contextmanager
 import re
 from typing import Annotated, Literal
 from uuid import UUID, uuid4
@@ -90,12 +91,47 @@ def _binding(c,parent):
                 catalog=_catalog(c,parent),registry=dict(steps=planning.REGISTRY,actions=planning.ACTIONS))
 
 
-def _binding_issues(c,parent,plan):
+def _selection_plan(plan):
+    return bool(plan.get('adoption_preview',{}).get('profile')=='TRUSTED_SERVICE_SELECTION_V4' or
+        'service_selection' in plan.get('binding',{}) or
+        (plan.get('candidate_consumption') or {}).get('verification_basis',{}).get('validator_version')==4)
+
+
+def _candidate_module(parent,id):
+    from . import service_plan_candidates as legacy
+    records=[h for h in parent.get('planning_previews') or [] if h.get('id')==str(id)]
+    if len(records)!=1:raise Conflict('exact original candidate required')
+    record=records[0]
+    if (record.get('profile')=='TRUSTED_SERVICE_SELECTION_V4' or record.get('producer',{}).get('version')==4 or
+        record.get('document',{}).get('profile')=='TRUSTED_SERVICE_SELECTION_V4' or 'selection' in record):
+        from . import service_selection_candidates
+        return service_selection_candidates
+    return legacy
+
+
+def _selection_catalog(store):
+    from .service_capability_catalog import IsolatedServiceCapabilityCatalog
+    catalog=getattr(store,'_isolated_service_capability_catalog',None)
+    if type(catalog) is not IsolatedServiceCapabilityCatalog or catalog.consumer.store is not store:
+        raise Denied('explicit owned service capability catalog required')
+    return catalog
+
+
+def _binding_issues(c,parent,plan,*,store=None):
     current=_binding(c,parent);saved=plan['binding']
     labels={'request_intent':'REQUEST_CHANGED','original_goal':'REQUEST_CHANGED',
             'service_id':'SERVICE_CHANGED','service_version':'SERVICE_CHANGED',
             'catalog':'CATALOG_CHANGED','registry':'REGISTRY_CHANGED'}
-    return sorted({labels[k] for k in labels if cp._normal(saved.get(k))!=cp._normal(current.get(k))})
+    issues={labels[k] for k in labels if cp._normal(saved.get(k))!=cp._normal(current.get(k))}
+    if _selection_plan(plan):
+        try:
+            selected=saved['service_selection']
+            snapshot=_selection_catalog(store).snapshot(c,parent)
+            if (selected['profile']!='TRUSTED_SERVICE_SELECTION_V4' or
+                selected['capability_catalog_sha256']!=cp._hash(cp._normal(snapshot)) or snapshot['unknowns']):
+                issues.add('SERVICE_CAPABILITY_BINDING_CHANGED')
+        except (KeyError,TypeError,ValueError,Denied,Conflict):issues.add('CURRENT_SERVICE_CAPABILITY_SOURCE_REQUIRED')
+    return sorted(issues)
 
 
 def _supported(parent):
@@ -140,16 +176,16 @@ def adopted_preview_steps(plan):
         raise Conflict('partial service plan explicit confirmation proof invalid')
     return [s for s in preview['steps'] if s['id'] in offer['step_ids']]
 
-def current_partial(c,parent,plan):
+def current_partial(c,parent,plan,*,store=None):
     if plan.get('partial_adoption') is not True:return False
     adopted_preview_steps(plan);dependencies.plan_proof(parent,plan)
-    return not _binding_issues(c,parent,plan)
+    return not _binding_issues(c,parent,plan,store=store)
 
 
 def current_sources(store,c,parent,plan):
     issues,sources=cp._sources(store,c,parent)
     fixed=cp._row(c,parent['id'])
-    if not fixed and (_supported(parent) or current_partial(c,parent,plan)):
+    if not fixed and (_selection_plan(plan) or _supported(parent) or current_partial(c,parent,plan,store=store)):
         issues['P1']=[s for s in issues['P1'] if s!='REQUEST_GOAL_COVERAGE_REQUIRED']
     dispatch=c.execute('SELECT * FROM service_dispatches WHERE preparation_id=%s',(parent['id'],)).fetchone()
     offer=c.execute('SELECT * FROM service_dispatch_offers WHERE id=%s',(dispatch['current_offer_id'],)).fetchone() if dispatch else None
@@ -210,6 +246,23 @@ def current_sources(store,c,parent,plan):
     if plan.get('dependency_manifest') is not None:
         sources['P2']['resource_collection']=values['resources']
         sources['P3']['run_access_collection']=values['existing_access']
+    if _selection_plan(plan):
+        # A configured reference is a prerequisite, not evidence that the
+        # original business action used that actor or resource. Check its output.
+        for registered in plan['steps']:
+            adapter=registered['adapter_id']
+            for mapping in registered['contract'].get('instance_mappings',[]):
+                roles=mapping['roles']
+                if (roles['enterprise_operator']!=parent['owner_id'] or
+                    roles.get('park_specialist',parent['reviewer_id'])!=parent['reviewer_id']):
+                    issues[adapter].append('SELECTED_INSTANCE_ACTOR_BINDING_CHANGED')
+                if adapter=='P2' and sources['P2'].get('resource_link_id'):
+                    actual_ids={m['resource_id'] for m in sources['P2'].get('members') or []}
+                    if actual_ids!=set(mapping['resources'].values()):issues['P2'].append('SELECTED_INSTANCE_RESOURCE_BINDING_CHANGED')
+                if adapter=='P3' and offer and offer['executor_id']!=roles.get('service_executor'):
+                    issues['P3'].append('SELECTED_INSTANCE_EXECUTOR_BINDING_CHANGED')
+                if adapter=='P4' and step and step['executor_id']!=roles.get('service_executor'):
+                    issues['P4'].append('SELECTED_INSTANCE_EXECUTOR_BINDING_CHANGED')
     return {k:sorted(set(v)) for k,v in issues.items()},cp._normal(sources),actual
 
 
@@ -263,7 +316,7 @@ def _inspect(store,c,parent,plan,observe=True,fresh_clock=False):
     _initial_adoption_proof(parent,plan)
     if any(e['action'] in ('LOCK','UNLOCK') for e in plan['events']) or any(s.get('manual_lock') is not None for s in plan['steps']):
         _recovery_proofs(parent)
-    binding_issues=_binding_issues(c,parent,plan)
+    binding_issues=_binding_issues(c,parent,plan,store=store)
     issues,sources,actual=current_sources(store,c,parent,plan)
     if fresh_clock:issues,sources,actual=current_sources(store,c,parent,plan)
     _,dependency_affected,_=dependency_impact(store,c,parent,plan,issues)
@@ -336,9 +389,17 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
     owner=p['role']=='enterprise_operator';cp._write_flag(store,c,p)
     cancelled=prep.case_write_blocked(c,parent)
     if cancelled:p['_plan_write']=False;observe=False
+    preview=None;source_unavailable=False
+    if owner:
+        try:preview=planning._proposal(store,c,p,parent)
+        except Conflict:
+            if not plan or not _selection_plan(plan):raise
+            _initial_adoption_proof(parent,plan)
+            source_unavailable=True;observe=False
     context=dict(role=p['role'],actor_ref=cp._hash(dict(actor_id=p['id'])),preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),
                  preparation_revision=parent['revision'],request_revision=(parent.get('request_intent') or {}).get('revision',0),
-                 current_preview=planning._proposal(store,c,p,parent) if owner else None)
+                 current_preview=preview)
+    if source_unavailable:context['current_source_unavailable']=True
     if not plan:return dict(**context,scope=SCOPE,state='NOT_ADOPTED',plan_id=None,revision=0,steps=[],history=[],events=[],can_adopt=owner and p.get('_plan_write') and context['current_preview']['state']=='COVERED_PREVIEW_ONLY',can_adopt_partial=bool(owner and p.get('_plan_write') and context['current_preview']['partial_offer']['can_adopt']),new_grants=False,automatic_execution=False,case_goal_completed=False)
     binding_issues,issues,sources,actual,states,bad=_inspect(store,c,parent,plan,observe=observe,fresh_clock=fresh_clock)
     dependency_basis,dependency_affected,dependency_unknown=dependency_impact(store,c,parent,plan)
@@ -377,12 +438,12 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
                 binding=plan['binding'] if owner else None,binding_issues=binding_issues if owner else None,
                 required_goals=plan['required_goals'] if owner else None,goal_coverage=plan['goal_coverage'] if owner else None,
                 history=plan.get('history',[]) if owner else [],events=events,event=event if owner else None,command_receipt=receipt,
-                can_adopt=owner and p.get('_plan_write') and context['current_preview']['state']=='COVERED_PREVIEW_ONLY' and (
+                can_adopt=owner and p.get('_plan_write') and bool(preview) and preview['state']=='COVERED_PREVIEW_ONLY' and (
                     bool(binding_issues) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8 or
                     not binding_issues and bool(dependency_affected) and plan['revision']+1+sum(bool(s.get('manual_lock')) for s in plan['steps'])<=LIMIT and
                     not any(s.get('manual_lock') and s['adapter_id'] in dependency_affected for s in plan['steps']) and not any(not v['known'] for v in dependency_basis['collections'].values())),
                 local_revision_required=plan.get('partial_adoption') is not True and not binding_issues and bool(dependency_affected),
-                can_adopt_partial=bool(owner and p.get('_plan_write') and context['current_preview']['partial_offer']['can_adopt'] and (binding_issues or plan.get('partial_adoption') is True and dependency_affected) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8),
+                can_adopt_partial=bool(owner and p.get('_plan_write') and preview and preview['partial_offer']['can_adopt'] and (binding_issues or plan.get('partial_adoption') is True and dependency_affected) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8),
                 change_impact=impact if owner else None,
                 new_grants=False,automatic_execution=False,case_goal_completed=False,
                 external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
@@ -417,7 +478,8 @@ def _save(c,parent,plan):
 def read(store,token,id):
     with store.connect() as c:
         p,parent=_context(store,c,token,id)
-        return _view(store,c,p,parent,deepcopy(parent.get('service_case_plan')))
+        plan=deepcopy(parent.get('service_case_plan'))
+        return _view(store,c,p,parent,plan,observe=not (plan and _selection_plan(plan)))
 
 
 def _recovery_proofs(parent):
@@ -458,7 +520,7 @@ def _recovery_proofs(parent):
                     if plan.get('candidate_consumption') is not None or (plan.get('adoption_request') or {}).get('candidate_id') is not None:
                         data=Adopt.model_validate(plan['adoption_request'])
                         if data.expected_plan_revision!=expected or data.reason!=event['reason']:raise ValueError()
-                        from . import service_plan_candidates as candidates
+                        candidates=_candidate_module(parent,data.candidate_id)
                         candidates.consumption_proof(parent,plan,data)
                     fp=cp._hash(dict(preparation_id=str(parent['id']),action='ADOPT',**_adopt_request(data)))
                     latest_dependencies=event.get('dependencies')
@@ -550,9 +612,27 @@ def recover(store,token,id,key=None,*,expected_request=None):
                     historical_only=True,automatically_replayed=False,read_only=True,case_goal_completed=False)
 
 
+@contextmanager
+def _adoption_connection(store,token,id,key,data):
+    if data.candidate_id is None:
+        with store.connect() as c:yield c
+        return
+    # Resolve the locator under original authority, then recheck everything in
+    # the final transaction. Existing receipts never need a publication lease.
+    with store.connect() as c:
+        p,parent=_context(store,c,token,id,True)
+        prep.key_lock(c,p,'service-case-plan:'+key)
+        fp=cp._hash(dict(preparation_id=str(id),action='ADOPT',**_adopt_request(data)))
+        if _replay(c,p,parent,key,fp):
+            yield c
+            return
+        selected=_candidate_module(parent,data.candidate_id).__name__.endswith('.service_selection_candidates')
+    with (_selection_catalog(store).connection() if selected else store.connect()) as c:yield c
+
+
 @er.bounded
 def adopt(store,token,id,key,data,*,unadopted_only=False):
-    with store.connect() as c:
+    with _adoption_connection(store,token,id,key,data) as c:
         p,parent=_context(store,c,token,id,True)
         if p['role']!='enterprise_operator':raise Denied('owner adopted plan required')
         prep.key_lock(c,p,'service-case-plan:'+key)
@@ -566,23 +646,31 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
         if not intent or data.required_goals!=intent['required_goals'] or intent['revision']!=data.expected_request_revision:
             raise Conflict('explicit supported current request goals required')
         if parent['revision']!=data.expected_preparation_revision:raise Conflict('preparation revision changed')
-        current=planning._proposal(store,c,p,parent)
+        candidates=_candidate_module(parent,data.candidate_id) if data.candidate_id is not None else None
+        selected=candidates is not None and candidates.__name__.endswith('.service_selection_candidates')
+        if selected:
+            catalog=_selection_catalog(store)
+            record=candidates.find(parent,data.candidate_id)
+            current=candidates.current(store,c,p,parent,catalog,record['selection'])
+        else:current=planning._proposal(store,c,p,parent)
         partial=data.partial_adoption is True
         if (not (current['state']=='PARTIAL' and current['partial_offer']['can_adopt'] if partial else current['state']=='COVERED_PREVIEW_ONLY' and _supported(parent)) or current['source_sha256']!=data.expected_source_sha256):
             raise Conflict('current bounded planning preview required')
         candidate_proof=None
         if data.candidate_id is not None:
-            from . import service_plan_candidates as candidates
             candidate_proof=candidates.consume(parent,current,data,now=candidates.clock(c))
         binding=cp._normal(_binding(c,parent))
         if cp._hash(binding['catalog'])!=current['catalog_sha256'] or cp._hash(binding['registry'])!=current['registry_sha256']:
             raise Conflict('catalog or registry changed during service plan adoption')
+        if selected:
+            binding['service_selection']=dict(profile=current['profile'],capability_catalog_sha256=current['capability_catalog_sha256'],
+                selection=deepcopy(current['selection']))
         if (prior['revision'] if prior else 0)!=data.expected_plan_revision:raise Conflict('service plan revision changed')
         if data.local_revision:
             if partial or prior and prior.get('partial_adoption') is True:raise Conflict('partial plan dependency changes require explicit replacement')
             if not prior:raise Conflict('existing registered plan required for local revision')
             _recovery_proofs(parent)
-            if _binding_issues(c,parent,prior):raise Conflict('changed request or service contract requires original explicit replacement')
+            if _binding_issues(c,parent,prior,store=store):raise Conflict('changed request or service contract requires original explicit replacement')
             basis,affected,unknown=dependency_impact(store,c,parent,prior)
             if not affected or any(not v['known'] for v in basis['collections'].values()):raise Conflict('known current dependency patch required')
             if basis!=dependencies.manifest(prior['steps'],current['dependency_collections']):raise Conflict('dependency collection changed during local adoption')
@@ -603,7 +691,7 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
         if prior:
             if any(e['action'] in ('LOCK','UNLOCK') for e in prior['events']):_recovery_proofs(parent)
             if any(_manual_lock(prior,s) for s in prior['steps']):raise Conflict('locked service step decisions require explicit unlock before replacement')
-            if not _binding_issues(c,parent,prior) and not (partial and prior.get('partial_adoption') is True and dependency_impact(store,c,parent,prior)[1]):raise Conflict('current adopted plan already exists')
+            if not _binding_issues(c,parent,prior,store=store) and not (partial and prior.get('partial_adoption') is True and dependency_impact(store,c,parent,prior)[1]):raise Conflict('current adopted plan already exists')
             history=prior.pop('history',[])+[prior]
             if len(history)>8:raise Conflict('service plan replacement history limit reached')
         selected=[s for s in current['steps'] if not partial or s['id'] in current['partial_offer']['step_ids']]

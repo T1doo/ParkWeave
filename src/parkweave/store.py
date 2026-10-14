@@ -312,6 +312,21 @@ class Store:
                 elif type(receipt) is not NativeDatabaseCreationEvidence:
                     raise Denied('Linux isolated fixture receipt required for migration 032')
 
+    def migrate_service_capability_fixture(self):
+        """Explicit owned Linux fixture extension; ordinary startup stays at 032.
+
+        This is not an application publisher or a native/production migration.
+        Retained 033 is checked byte-for-byte by its original SQL guard.
+        """
+        from .case_fact_clarifications import FixtureDatabaseEvidence
+        receipt=getattr(self,'_case_fact_fixture_receipt',None)
+        if type(receipt) is not FixtureDatabaseEvidence:
+            raise Denied('issued Linux fixture creation evidence required for capability storage')
+        with self.connect() as c:
+            c.execute("SELECT pg_advisory_xact_lock(hashtextextended('parkweave:migrate',0))")
+            receipt.authorize_migration(c)
+            c.execute(Path(__file__).with_name('migration-033.sql').read_text(encoding='utf-8'))
+
     def seed(self, identities: dict[str, str]):
         """Explicit synthetic setup only. Never reactivates a revoked identity."""
         scopes = {"fixture-a": ("park-a", "org-a"), "fixture-b": ("park-a", "org-b"),

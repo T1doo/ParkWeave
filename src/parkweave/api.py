@@ -12,7 +12,22 @@ from .run_access_candidate import RunCommand
 from .native_run_access import RunCommand as NativeRunCommand
 
 
-def create_app(store: Store, *, summary_reader=None, proposal_planner=None) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None) -> FastAPI:
+    if capability_catalog is not None:
+        from .service_capability_catalog import IsolatedServiceCapabilityCatalog
+        if type(capability_catalog) is not IsolatedServiceCapabilityCatalog or capability_catalog.consumer.store is not store:
+            raise Denied('explicit owned service capability catalog required')
+        capability_catalog.consumer.validate_fixture()
+        store._isolated_service_capability_catalog=capability_catalog
+    if selection_planner is not None:
+        from .service_selection_planner import OfflineSelectionPlanner
+        if capability_catalog is None or type(selection_planner) is not OfflineSelectionPlanner:
+            raise Denied('explicit owned catalog and offline selection planner required')
+        selection_planner.require()
+    if instance_consumer is not None:
+        from .service_instance_consumer import ParkInstanceConsumer
+        if type(instance_consumer) is not ParkInstanceConsumer or instance_consumer.catalog is not capability_catalog:
+            raise Denied('explicit matching owned park instance consumer required')
     if proposal_planner is not None:
         from .service_plan_planner import OfflineProposalPlanner
         if type(proposal_planner) is not OfflineProposalPlanner:raise Denied('explicit offline-only proposal planner required')
@@ -486,6 +501,53 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None) -> F
     @app.post('/api/preparations/{preparation_id}/service-plan-candidates',status_code=201)
     def service_plan_candidate_generate(preparation_id: UUID,data: plan_candidates.bp.Capture,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return plan_candidates.generate(store,token(authorization),preparation_id,resource_key(idempotency_key),data,planner=proposal_planner)
+
+    from . import service_selection_candidates as selections
+    from .service_instance_consumer import ColdInput
+
+    def selected_catalog():
+        if capability_catalog is None:raise Denied('isolated service capability selection disabled')
+        return capability_catalog
+
+    @app.get('/api/preparations/{preparation_id}/service-capabilities')
+    def service_capability_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        catalog=selected_catalog()
+        with catalog.read_connection() as c:
+            p,parent=selections.bp._context(store,c,token(authorization),preparation_id)
+            current=selections.current(store,c,p,parent,catalog)
+            return dict(**current,scope='SYNTHETIC_SERVICE_CAPABILITY_SELECTION_PREVIEW',actor_ref=selections.cp._hash(dict(actor_id=p['id'])),read_only=True,automatically_replayed=False)
+
+    @app.post('/api/preparations/{preparation_id}/service-selections',status_code=201)
+    def service_selection_generate(preparation_id: UUID,data: selections.Capture,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return selections.generate(store,token(authorization),preparation_id,resource_key(idempotency_key),data,catalog=selected_catalog(),planner=selection_planner)
+
+    @app.get('/api/preparations/{preparation_id}/service-selections')
+    def service_selection_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return selections.read(store,token(authorization),preparation_id,catalog=selected_catalog())
+
+    @app.get('/api/preparations/{preparation_id}/service-selections/recovery')
+    def service_selection_recovery(preparation_id: UUID,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return selections.read(store,token(authorization),preparation_id,key=resource_key(idempotency_key),catalog=selected_catalog())
+
+    @app.get('/api/preparations/{preparation_id}/service-selections/{candidate_id}/preview')
+    def service_selection_preview(preparation_id: UUID,candidate_id: UUID,authorization: str | None=Header(default=None)):
+        return selections.read(store,token(authorization),preparation_id,candidate_id,catalog=selected_catalog())
+
+    def cold_inputs():
+        if instance_consumer is None:raise Denied('isolated park instance cold input disabled')
+        return instance_consumer
+
+    @app.post('/api/service-instance-cold-inputs',status_code=201)
+    def service_instance_prepare(data: ColdInput,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return cold_inputs().prepare(token(authorization),resource_key(idempotency_key),data)
+
+    @app.get('/api/service-instance-cold-inputs/recovery')
+    def service_instance_recovery(authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return cold_inputs().read(token(authorization),resource_key(idempotency_key))
+
+    @app.post('/api/service-instance-cold-inputs/prepare-stage')
+    def service_instance_stage(stage: Literal['CREATE_PREPARATION','SAVE_REQUEST','ADD_need_summary','ADD_material_outline'],authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return cold_inputs().prepare_stage(token(authorization),resource_key(idempotency_key),stage)
 
     from . import bounded_planning as planning
     from . import case_goal_results
