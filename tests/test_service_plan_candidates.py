@@ -109,7 +109,7 @@ def test_candidate_generation_and_adoption_roll_back_metadata_on_write_failure(p
     with pytest.raises(RuntimeError):adopt(f,p,v)
     assert digest(f)==before
 
-@pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired'])
+@pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
 def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
     import os,json,selectors,subprocess
     from pathlib import Path
@@ -121,6 +121,11 @@ def test_original_page_candidate_consumer_never_hand_fills_candidate_json(prepar
             assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
             if not line:break
             msg=json.loads(line)
+            if msg.get('replace_source_plan'):
+                from test_request_intents import save
+                assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                proc.stdin.write(b'{}\n');proc.stdin.flush();continue
             if msg.get('expire_candidate'):
                 from parkweave import service_plan_candidates as candidates
                 with f[1].connect() as c:

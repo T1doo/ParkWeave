@@ -16,6 +16,23 @@ TITLES={
  'LOCAL_CASE_RECORD_RECHECK':'当前本地事项记录重验',
 }
 
+
+def source_trace(parent,plan):
+    if plan is None:return None
+    steps._initial_adoption_proof(parent,plan)
+    saved=plan['adoption_preview'];event=plan['events'][0];consumed=plan.get('candidate_consumption')
+    candidate={k:deepcopy(consumed[k]) for k in ('candidate_id','candidate_sha256','verification_sha256')} if consumed else None
+    if candidate is not None:candidate.update(validator_version=consumed['verification_basis']['validator_version'],accepted_at=consumed.get('accepted_at'),validity=deepcopy(consumed['verification_basis'].get('validity')))
+    trace=dict(scope='SYNTHETIC_ADOPTED_PLAN_SOURCE_TRACE',preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),
+               plan_id=plan['id'],plan_revision=plan['revision'],origin='SYNTHETIC_UNTRUSTED_CANDIDATE' if consumed else 'ORIGINAL_REGISTERED_DETERMINISTIC_PLAN',
+               adoption=dict(event_id=event['id'],event_revision=event['revision'],fingerprint=event['fingerprint'],preparation_revision=plan['adoption_preparation_revision'],
+                             request_revision=plan['binding']['request_intent']['revision'],source_sha256=saved['source_sha256'],catalog_sha256=saved['catalog_sha256'],registry_sha256=saved['registry_sha256']),
+               candidate=candidate,required_goals=deepcopy(plan['required_goals']),goal_coverage=deepcopy(plan['goal_coverage']),
+               steps=[dict(step_id=s['id'],adapter_id=s['adapter_id'],depends_on=deepcopy(s['depends_on']),contract_sha256=cp._hash(s['contract']),
+                           responsibility=s['contract']['responsibility'],output=s['contract']['output'],acceptance=s['contract']['acceptance']) for s in plan['steps']],
+               historical_adoption_only=True,read_only=True,execution_enabled=False,new_grants=False,case_goal_completed=False)
+    return dict(**trace,trace_sha256=cp._hash(trace))
+
 def structure(plan):
     """Stored application proof, not a signature against an administrator rewrite."""
     try:
@@ -158,9 +175,12 @@ def read(store,token,id):
                     row['human_revision']=human_view['revision'] if item else None
                     row['human_source_sha256']=human_view['source_sha256'] if item else None
                     row['human_request_next_action']='READ_ORIGINAL_HUMAN_REQUEST'
-        for row in rows:row['result_sha256']=cp._hash(row)
+        trace=source_trace(parent,plan)
+        for row in rows:
+            row['adoption_trace_sha256']=trace['trace_sha256'] if trace else None
+            row['result_sha256']=cp._hash(row)
         return dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(id),case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],
                     request_revision=intent.get('revision',0),current_request=intent.get('request_text',parent['goal']),original_request=parent['goal'],plan_id=plan['id'] if plan else None,plan_revision=plan['revision'] if plan else 0,
                     state='PARTIAL' if plan and plan.get('partial_adoption') is True else 'UNKNOWN' if not rows else 'LOCAL_OUTPUTS_VERIFIED' if all(r['state']=='LOCAL_OUTPUT_VERIFIED' for r in rows) else 'UNVERIFIED',
                     results=rows,adopted_goals=list(plan['required_goals']) if plan else [],historical_plans=[dict(id=h['id'],revision=h['revision'],goals=h['required_goals']) for h in plan.get('history',[])] if plan else [],
-                    binding_issues=sorted(set(binding_issues)),read_only=True,automatically_verified=False,case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
+                    source_trace=trace,binding_issues=sorted(set(binding_issues)),read_only=True,automatically_verified=False,case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
