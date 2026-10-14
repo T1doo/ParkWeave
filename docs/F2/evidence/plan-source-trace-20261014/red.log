@@ -1,0 +1,62 @@
+FFFFFFF                                                                  [100%]
+=================================== FAILURES ===================================
+______ test_original_adopted_candidate_trace_is_owner_scoped_and_readonly ______
+tests/test_plan_source_trace.py:16: in test_original_adopted_candidate_trace_is_owner_scoped_and_readonly
+    before=digest(f);r=overview(f,p);assert r.status_code==200,r.text;x=r.json();trace=x['source_trace']
+                                                                                       ^^^^^^^^^^^^^^^^^
+E   KeyError: 'source_trace'
+_ test_goal_overview_cannot_bypass_original_candidate_consumption_proof[consumption] _
+tests/test_plan_source_trace.py:35: in test_goal_overview_cannot_bypass_original_candidate_consumption_proof
+    before=digest(f);r=overview(f,p);assert r.status_code==409,r.text;assert digest(f)==before
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: {"scope":"SYNTHETIC_ADOPTED_LOCAL_GOAL_RESULTS_ONLY","actor_id":"fixture-a","preparation_id":"4973d069-ccab-4707-9303-5f1af89090d0","case_id":"46ab8832-48b5-4a28-8ad3-af0193b00c0f","run_id":"11cc3890-46df-4e09-a5f2-be49cc135271","preparation_revision":2,"request_revision":2,"current_request":"SYNTHETIC 用户明确修订诉求","original_request":"SYNTHETIC资料准备","plan_id":"2df84b53-b7ab-4051-8b83-e8a96fea90c5","plan_revision":1,"state":"UNVERIFIED","results":[{"goal":"LOCAL_CASE_RECORD_RECHECK","title":"当前本地事项记录重验","adapter_id":"P5","step_id":"bb58bbdb-ee12-4c9d-94b6-66d2c9191fbd","state":"WAITING_DEPENDENCY","issues":["ACCEPTED_DISPATCH_REQUIRED","CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED","CURRENT_CASE_RESOURCE_LINK_REQUIRED","CURRENT_LOCAL_CASE_REVALIDATION_REQUIRED","CURRENT_LOCAL_REVALIDATE_EVENT_PROOF_REQUIRED","CURRENT_MATERIAL_CONFIRMATION_REQUIRED","CURRENT_PREDECESSOR_OUTPUT_VERIFICATION_REQUIRED"],"actual_output":null,"historical_verification":null,"next_action":"USE_ORIGINAL_ADAPTER_TO_RECHECK","result_sha256":"7c9f89616997a239f17f36d0ed39d694a01e80f45cb43d610443e87f0745049b"}],"adopted_goals":["LOCAL_CASE_RECORD_RECHECK"],"historical_plans":[],"binding_issues":[],"read_only":true,"automatically_verified":false,"case_goal_completed":false,"qualification":"NOT_EVALUATED","external_acceptance":"NOT_SUBMITTED","offline_fulfillment":"NO_EVIDENCE"}
+E   assert 200 == 409
+E    +  where 200 = <Response [200 OK]>.status_code
+_ test_goal_overview_cannot_bypass_original_candidate_consumption_proof[both_removed] _
+tests/test_plan_source_trace.py:35: in test_goal_overview_cannot_bypass_original_candidate_consumption_proof
+    before=digest(f);r=overview(f,p);assert r.status_code==409,r.text;assert digest(f)==before
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: {"scope":"SYNTHETIC_ADOPTED_LOCAL_GOAL_RESULTS_ONLY","actor_id":"fixture-a","preparation_id":"f4b49f2b-6489-4ee5-b44b-7594a4a15a3f","case_id":"9c01634e-b800-4db7-a3ca-fa0adab3dd10","run_id":"3d17de55-5658-4a10-8e41-5aab2fd00dda","preparation_revision":2,"request_revision":2,"current_request":"SYNTHETIC 用户明确修订诉求","original_request":"SYNTHETIC资料准备","plan_id":"1a244425-1ebf-4cac-9c0a-a2afe64c971c","plan_revision":1,"state":"UNVERIFIED","results":[{"goal":"LOCAL_CASE_RECORD_RECHECK","title":"当前本地事项记录重验","adapter_id":"P5","step_id":"dc03da2f-a3ff-4114-9e2f-cb1b6dd56ba4","state":"WAITING_DEPENDENCY","issues":["ACCEPTED_DISPATCH_REQUIRED","CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED","CURRENT_CASE_RESOURCE_LINK_REQUIRED","CURRENT_LOCAL_CASE_REVALIDATION_REQUIRED","CURRENT_LOCAL_REVALIDATE_EVENT_PROOF_REQUIRED","CURRENT_MATERIAL_CONFIRMATION_REQUIRED","CURRENT_PREDECESSOR_OUTPUT_VERIFICATION_REQUIRED"],"actual_output":null,"historical_verification":null,"next_action":"USE_ORIGINAL_ADAPTER_TO_RECHECK","result_sha256":"2451c2f47f9eb788194eb16ec9bc4fb98c2cd88d48e650abe630221d9bf64fe6"}],"adopted_goals":["LOCAL_CASE_RECORD_RECHECK"],"historical_plans":[],"binding_issues":[],"read_only":true,"automatically_verified":false,"case_goal_completed":false,"qualification":"NOT_EVALUATED","external_acceptance":"NOT_SUBMITTED","offline_fulfillment":"NO_EVIDENCE"}
+E   assert 200 == 409
+E    +  where 200 = <Response [200 OK]>.status_code
+_ test_goal_overview_cannot_bypass_original_candidate_consumption_proof[event_digest] _
+tests/test_plan_source_trace.py:35: in test_goal_overview_cannot_bypass_original_candidate_consumption_proof
+    before=digest(f);r=overview(f,p);assert r.status_code==409,r.text;assert digest(f)==before
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: {"scope":"SYNTHETIC_ADOPTED_LOCAL_GOAL_RESULTS_ONLY","actor_id":"fixture-a","preparation_id":"66d4e6fd-748a-4796-9b86-3b39819c59d6","case_id":"407ec75f-f6fb-4faa-93f0-dd80e232177c","run_id":"906f9ac1-aa05-41c7-b212-0ead3223a192","preparation_revision":2,"request_revision":2,"current_request":"SYNTHETIC 用户明确修订诉求","original_request":"SYNTHETIC资料准备","plan_id":"e53fc227-2be1-4324-a95a-b80cc334b28d","plan_revision":1,"state":"UNVERIFIED","results":[{"goal":"LOCAL_CASE_RECORD_RECHECK","title":"当前本地事项记录重验","adapter_id":"P5","step_id":"bba5d337-caf5-4ecf-9465-a1ef85ec7f7a","state":"WAITING_DEPENDENCY","issues":["ACCEPTED_DISPATCH_REQUIRED","CURRENT_ACKNOWLEDGED_RECEIPT_REQUIRED","CURRENT_CASE_RESOURCE_LINK_REQUIRED","CURRENT_LOCAL_CASE_REVALIDATION_REQUIRED","CURRENT_LOCAL_REVALIDATE_EVENT_PROOF_REQUIRED","CURRENT_MATERIAL_CONFIRMATION_REQUIRED","CURRENT_PREDECESSOR_OUTPUT_VERIFICATION_REQUIRED"],"actual_output":null,"historical_verification":null,"next_action":"USE_ORIGINAL_ADAPTER_TO_RECHECK","result_sha256":"0ba1da262d1b1c2718a288a93bca02249c8aaf133b564f89d39197a726eaecdd"}],"adopted_goals":["LOCAL_CASE_RECORD_RECHECK"],"historical_plans":[],"binding_issues":[],"read_only":true,"automatically_verified":false,"case_goal_completed":false,"qualification":"NOT_EVALUATED","external_acceptance":"NOT_SUBMITTED","offline_fulfillment":"NO_EVIDENCE"}
+E   assert 200 == 409
+E    +  where 200 = <Response [200 OK]>.status_code
+_ test_historical_adopted_trace_survives_live_candidate_expiry_and_material_change _
+tests/test_plan_source_trace.py:38: in test_historical_adopted_trace_survives_live_candidate_expiry_and_material_change
+    f=preparation_fixture;p=setup(f,[GOAL]);v=generate(f,p).json();assert adopt(f,p,v).status_code==201;trace=overview(f,p).json()['source_trace']
+                                                                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'source_trace'
+____ test_original_plan_without_candidate_trace_does_not_invent_generation _____
+tests/test_plan_source_trace.py:44: in test_original_plan_without_candidate_trace_does_not_invent_generation
+    f=preparation_fixture;p=setup(f,[GOAL]);assert overview(f,p).json()['source_trace'] is None
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'source_trace'
+_________ test_new_plan_trace_keeps_old_candidate_and_history_separate _________
+tests/test_plan_source_trace.py:50: in test_new_plan_trace_keeps_old_candidate_and_history_separate
+    f=preparation_fixture;p=setup(f,[GOAL]);v=generate(f,p).json();r=adopt(f,p,v);assert r.status_code==201;old=overview(f,p).json()['source_trace']
+                                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   KeyError: 'source_trace'
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_plan_source_trace.py::test_original_adopted_candidate_trace_is_owner_scoped_and_readonly
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_plan_source_trace.py::test_original_adopted_candidate_trace_is_owner_scoped_and_readonly
+FAILED tests/test_plan_source_trace.py::test_goal_overview_cannot_bypass_original_candidate_consumption_proof[consumption]
+FAILED tests/test_plan_source_trace.py::test_goal_overview_cannot_bypass_original_candidate_consumption_proof[both_removed]
+FAILED tests/test_plan_source_trace.py::test_goal_overview_cannot_bypass_original_candidate_consumption_proof[event_digest]
+FAILED tests/test_plan_source_trace.py::test_historical_adopted_trace_survives_live_candidate_expiry_and_material_change
+FAILED tests/test_plan_source_trace.py::test_original_plan_without_candidate_trace_does_not_invent_generation
+FAILED tests/test_plan_source_trace.py::test_new_plan_trace_keeps_old_candidate_and_history_separate
+7 failed, 2 warnings in 3.72s

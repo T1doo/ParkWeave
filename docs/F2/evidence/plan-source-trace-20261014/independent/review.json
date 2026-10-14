@@ -1,0 +1,220 @@
+{
+  "decision": "PASS",
+  "source_sha": "5fe302052682d54c9ec38751068e4a11f9f00687",
+  "source": {
+    "head": "5fe302052682d54c9ec38751068e4a11f9f00687",
+    "files": 515,
+    "differences": [],
+    "HEAD_blob_differences": []
+  },
+  "final": {
+    "tests": 21,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "seconds": 16.211,
+    "exit": 0,
+    "warnings": 2,
+    "modules": {
+      ".runtime.plan-source-trace-20261014.independent.test_trace_independent": 8,
+      "tests.test_plan_source_trace": 7,
+      "tests.test_service_plan_candidates": 6
+    }
+  },
+  "authorship": {
+    "original_independent_runtime_API_PG": 8,
+    "explicitly_reused_root_trace_API_PG": 7,
+    "explicitly_reused_full_original_HTML_NodeVM_actual_ASGI_owned_PG": 6,
+    "total": 21,
+    "earlier_or_root_windows_not_summed": true
+  },
+  "pages": {
+    "trace": {
+      "result": "PASS",
+      "checks": 13,
+      "http": 9,
+      "posts": 2,
+      "post_paths": [
+        "service-plan-candidates",
+        "service-case-plan"
+      ],
+      "actual_goal_results_GET": 2,
+      "post_statuses": [
+        201,
+        201
+      ]
+    },
+    "trace_expired": {
+      "result": "PASS",
+      "checks": 13,
+      "http": 9,
+      "posts": 2,
+      "post_paths": [
+        "service-plan-candidates",
+        "service-case-plan"
+      ],
+      "actual_goal_results_GET": 2,
+      "post_statuses": [
+        201,
+        201
+      ]
+    },
+    "trace_late": {
+      "result": "PASS",
+      "checks": 13,
+      "http": 10,
+      "posts": 2,
+      "post_paths": [
+        "service-plan-candidates",
+        "service-case-plan"
+      ],
+      "actual_goal_results_GET": 3,
+      "post_statuses": [
+        201,
+        201
+      ]
+    },
+    "trace_pending_material": {
+      "result": "PASS",
+      "checks": 15,
+      "http": 18,
+      "posts": 3,
+      "post_paths": [
+        "service-plan-candidates",
+        "service-case-plan",
+        "commands"
+      ],
+      "actual_goal_results_GET": 2,
+      "post_statuses": [
+        201,
+        201,
+        200
+      ]
+    },
+    "trace_plan_switch": {
+      "result": "PASS",
+      "checks": 14,
+      "http": 11,
+      "posts": 2,
+      "post_paths": [
+        "service-plan-candidates",
+        "service-case-plan"
+      ],
+      "actual_goal_results_GET": 2,
+      "post_statuses": [
+        201,
+        201
+      ]
+    },
+    "trace_revoke": {
+      "result": "PASS",
+      "checks": 13,
+      "http": 9,
+      "posts": 2,
+      "post_paths": [
+        "service-plan-candidates",
+        "service-case-plan"
+      ],
+      "actual_goal_results_GET": 2,
+      "post_statuses": [
+        201,
+        201
+      ]
+    }
+  },
+  "full_public_snapshot": {
+    "public_tables_compared": [
+      "action_grants",
+      "capability_grants",
+      "case_local_events",
+      "case_local_lifecycles",
+      "case_resource_links",
+      "cases",
+      "controlled_plan_events",
+      "controlled_plans",
+      "deliveries",
+      "dispatch_notice_outbox",
+      "dispatch_notices",
+      "fact_assertions",
+      "fact_followups",
+      "fact_reviews",
+      "field_grants",
+      "file_resources",
+      "fixture_effects",
+      "model_plans",
+      "model_steps",
+      "operations",
+      "outbox",
+      "preparation_catalog",
+      "preparation_events",
+      "preparation_evidence",
+      "preparation_grants",
+      "preparations",
+      "principals",
+      "resource_case_claims",
+      "run_assignments",
+      "run_projection",
+      "runs",
+      "schema_version",
+      "service_dispatch_events",
+      "service_dispatch_offers",
+      "service_dispatches",
+      "service_receipt_events",
+      "service_receipt_steps",
+      "service_step_receipts",
+      "synthetic_resource_combination_members",
+      "synthetic_resource_combination_receipts",
+      "synthetic_resource_combinations",
+      "synthetic_resource_grants",
+      "synthetic_resource_holds",
+      "synthetic_resource_receipts",
+      "synthetic_resources"
+    ],
+    "count": 45,
+    "all_columns_unchanged": true,
+    "audit_separate": true,
+    "audit_rows": 0,
+    "trace_hash_verified": true,
+    "per_goal_result_and_trace_hashes_verified": true
+  },
+  "concrete_defect_found_and_fixed": {
+    "file": "src/parkweave/web.html",
+    "defect": "Source trace pending write guard was only before await; a delayed current GET could render after original material submit started without changing trace generation.",
+    "repair_verified": "goalSourceWritePending checked both before and after GET; r.ok/error handling retains 403 private-view clearing priority.",
+    "actual_page_race": "trace_pending_material uses original sendPrepCommand and actual ADD_EVIDENCE POST200 committed while response still withheld and prepCommandPending SUBMITTING; prior trace GET response released then rejected from rendering; original readback eventually completes. Root owns preserved red1FAIL/green1PASS windows; final six pages include corrected race.",
+    "no_other_concrete_source_defects_found": true
+  },
+  "coverage": [
+    "Trace body canonical SHA and every goal result/adoption trace SHA",
+    "45 public tables/all columns unchanged; authorization audit recorded separately",
+    "Owner with READ but revoked EXECUTE retains historical read; trace never grants execution",
+    "Original candidate metadata missing, adoption request missing, out-of-window accepted_at with recomputed event hash reject409",
+    "Historic trace stable despite material revision and candidate expiration; current eligibility remains separate",
+    "New plain registered replacement does not inherit old candidate origin; old historical plan remains separate",
+    "Independently reconstructed exact old V1 persisted consumption basis has trace validator1 with no invented accepted_at/validity",
+    "Original HTML trace/expired/late/revoke/plan switch/actual material pending race"
+  ],
+  "approval_sha256": {
+    "scripts/host_case_once/approval.json": "c5ad0c6c38daa921479972d864e9f2da5478bfeead0acec034f1758305f8a69a",
+    "scripts/host_case_once/prepare_approval.json": "c5ad0c6c38daa921479972d864e9f2da5478bfeead0acec034f1758305f8a69a"
+  },
+  "scripts": {
+    "test_trace_independent.py": "3cce7d84c6e27d895cc46326026358bddee2b5b06147dc0f8826fc76059f155b"
+  },
+  "limits": [
+    "Six page cases reuse root full original HTML bridge and assertions, counted separately from original independent8; offline NodeVM is not browser rendering.",
+    "Resource tables may be empty; full table invariant is not occupied capacity acceptance.",
+    "Source trace is historical adoption origin, not proof of current material/resource eligibility, permission, goal completion or real fulfillment."
+  ],
+  "not_run": [
+    "browser",
+    "prepare",
+    "network",
+    "provider/live/paid model",
+    "native Windows",
+    "whole repository",
+    "deployment/production migration/catalog publication",
+    "complete T02/AT07/AT14"
+  ],
+  "mutation_scope": "Only independent runtime tests/evidence, owned ephemeral fixture business data; no src/tests/scripts/docs/Git/configuration mutation; original pytest default temporary dir and creation receipt/ownership guards retained."
+}
