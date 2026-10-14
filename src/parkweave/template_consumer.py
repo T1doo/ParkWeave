@@ -387,6 +387,45 @@ class TemplateConsumer:
         return [dict(name=r['name'], request_key=r['request_key'], body_sha256=r['body_sha256'], state=r['state'],
                      result=json.loads(r['result']) if r['result'] else None, error=r['error']) for r in rows]
 
+    def _closed_quarantine(self,token,instance,connection=None):
+        """Revalidate closed original keys; project issues without repairing history."""
+        with nullcontext(connection) if connection is not None else self.repository.connect() as c:
+            stages=[dict(r) for r in c.execute("SELECT * FROM consumer_stages WHERE instance_id=? AND name LIKE 'CONFIRM_PLAN_%' AND state='CLOSED_NOT_COMMITTED'",(instance['id'],)).fetchall()]
+            if not stages:return []
+            requests=[dict(r) for r in c.execute('SELECT * FROM consumer_requests WHERE actor=? AND instance_id=?',(instance['actor'],instance['id'])).fetchall()]
+            created={r['name']:json.loads(r['result']) for r in c.execute("SELECT name,result FROM consumer_stages WHERE instance_id=? AND name IN ('CREATE_RUN','CREATE_PREPARATION') AND state='CONFIRMED'",(instance['id'],)).fetchall()}
+        issues=[]
+        for stage in stages:
+            reason='CLOSED_ORIGINAL_PROOF_UNVERIFIED'
+            try:
+                finalization=json.loads(stage['result'])['consumer_finalization']
+                if finalization.get('proof_kind')=='FIRST_DEFINITE_REFUSAL':
+                    reason='LEGACY_FIRST_REFUSAL_NOT_TERMINAL'
+                    raise Conflict('first refusal never proves permanent noncommit')
+                if (finalization.get('proof_kind')!='STRICTLY_ADVANCED_SOURCE' or finalization.get('state')!=stage['state'] or
+                    finalization.get('original_request_key')!=stage['request_key'] or finalization.get('body_sha256')!=stage['body_sha256'] or
+                    stage['request_key']!=self._stage_key(instance['id'],stage['name']) or digest(stage['body'])!=stage['body_sha256']):raise Conflict('closed adoption binding changed')
+                saved=FinalizeAdoption.model_validate(finalization['request'])
+                if (saved.expected_original_request_key!=stage['request_key'] or saved.expected_body_sha256!=stage['body_sha256'] or
+                    finalization.get('fingerprint')!=digest(canonical(saved.model_dump()))):raise Conflict('closed reconciliation request changed')
+                data=case_steps.Adopt.model_validate(json.loads(stage['body']))
+                matches=[r for r in requests if 'CONFIRM_PLAN_'+digest(r['key'])==stage['name']]
+                fp=digest(canonical(dict(action='CONFIRM_PLAN',instance_id=instance['id'],body=data.model_dump(exclude_none=True))))
+                if len(matches)!=1 or matches[0]['fp']!=fp:raise Conflict('original consumer request proof missing')
+                mandatory=instance['binding']['release_snapshot']['definition']['required_goals']
+                if not set(mandatory)<=set(data.required_goals):raise Conflict('original mandatory goals changed')
+                preparation_id=UUID(created['CREATE_PREPARATION']['preparation_id'])
+                proof=case_steps.recover(self.store,token,preparation_id,stage['request_key'],expected_request=data)
+                if (proof['status']=='COMMITTED' or proof.get('not_committed_final') is not True or proof.get('saved_request_verified') is not True or
+                    proof['preparation_id']!=str(preparation_id) or proof['run_id']!=created['CREATE_RUN']['run_id']):raise Conflict('closed original request is not proven permanently uncommitted')
+            except (Conflict,ValueError,TypeError,KeyError,AttributeError):
+                issues.append(dict(name=stage['name'],request_key=stage['request_key'],body_sha256=stage['body_sha256'],journal_state=stage['state'],reason=reason))
+        return issues
+
+    def _closed_write_guard(self,token,instance,connection=None):
+        if self._closed_quarantine(token,instance,connection):
+            raise Conflict('unproven legacy original closure is unresolved; template writes remain quarantined')
+
     def read(self, token, id):
         p, database = self._auth(token)
         instance = self._instance(p, database, id)
@@ -407,14 +446,18 @@ class TemplateConsumer:
                 actor,parent=case_steps._context(self.store,c,token,UUID(preparation_id))
                 if str(parent['run_id'])!=run_id:raise Conflict('original consumer preparation Run binding changed')
                 service_plan=case_steps._view(self.store,c,actor,parent,deepcopy(parent.get('service_case_plan')),observe=False)
+        quarantine=self._closed_quarantine(token,instance)
+        reasons={x['name']:x['reason'] for x in quarantine}
+        stages=[dict(stage,journal_state=stage['state'],state='UNKNOWN',quarantine_reason=reasons[stage['name']]) if stage['name'] in reasons else stage for stage in stages]
         plan_id=service_plan['plan_id'] if service_plan else None
-        state = 'PLAN_ADOPTED' if plan_id else 'BLOCKED' if any(s['state'] in ('REFUSED','REJECTED_FIRST_SEND') for s in stages) else 'UNKNOWN' if any(s['state'] in ('ADMITTED', 'STARTED', 'UNKNOWN') for s in stages) else 'PENDING_RUN' if not run or run['state'] != 'SUCCEEDED' else 'PLAN_CONFIRMATION_REQUIRED' if preparation_id else 'PENDING_PREPARATION'
+        state = 'UNKNOWN' if quarantine else 'PLAN_ADOPTED' if plan_id else 'BLOCKED' if any(s['state'] in ('REFUSED','REJECTED_FIRST_SEND') for s in stages) else 'UNKNOWN' if any(s['state'] in ('ADMITTED', 'STARTED', 'UNKNOWN') for s in stages) else 'PENDING_RUN' if not run or run['state'] != 'SUCCEEDED' else 'PLAN_CONFIRMATION_REQUIRED' if preparation_id else 'PENDING_PREPARATION'
         if run and run['state'] in ('FAILED', 'CANCELLED'):
             state = 'RUN_BLOCKED'
         return dict(instance_id=instance['id'], actor_ref=case_steps.cp._hash(dict(actor_id=p['id'])), state=state, run_id=run_id,
                     case_id=str(run['case']['id']) if run and run.get('case') else None,
                     preparation_id=preparation_id, plan_id=plan_id, journal_plan_id=journal_plan_id, run_state=run['state'] if run else None,
                     binding=instance['binding'], release_available=available, stages=stages,
+                    adoption_quarantined=bool(quarantine),unresolved_adoptions=quarantine,
                     issues=[dict(stage=s['name'], code=s['error']) for s in stages if s['state'] == 'REFUSED'],
                     preparation=prep.read(self.store, token, UUID(preparation_id)) if preparation_id else None,
                     service_case_plan=service_plan if plan_id else None,
@@ -434,6 +477,7 @@ class TemplateConsumer:
         self._reviewer(p, instance['input']['reviewer_id'])
         fp = digest(canonical(dict(action='RESUME', instance_id=instance['id'])))
         with self.repository.connect(write=True) as c:
+            self._closed_write_guard(token,instance,c)
             old = c.execute('SELECT * FROM consumer_requests WHERE actor=? AND key=?', (p['id'], key)).fetchone()
             if old and (old['fp'] != fp or old['instance_id'] != instance['id']):
                 raise Conflict('consumer resume request key scope changed')
@@ -496,6 +540,7 @@ class TemplateConsumer:
             self._instance(current,current_database,id);self._available(current,instance)
             self._reviewer(current,instance['input']['reviewer_id'])
             with self.repository.connect(write=True) as c:
+                self._closed_write_guard(token,instance,c)
                 c.execute("UPDATE consumer_stages SET state=?,result=?,error=? WHERE instance_id=? AND name='ADOPT_PLAN' AND request_key=? AND body_sha256=? AND state IN ('STARTED','UNKNOWN')",
                           (state,canonical(result),None if state=='CONFIRMED' else 'LEGACY_NOT_COMMITTED_STALE',instance['id'],stage['request_key'],stage['body_sha256']))
         return dict(status=status,original_request_key=stage['request_key'],receipt=proof,
@@ -506,6 +551,7 @@ class TemplateConsumer:
         instance = self._instance(p, database, id)
         self._available(p, instance)
         self._reviewer(p, instance['input']['reviewer_id'])
+        quarantine=self._closed_quarantine(token,instance)
         results = {s['name']: s['result'] for s in self._stages(instance['id']) if s['state']=='CONFIRMED'}
         preparation_id = results.get('CREATE_PREPARATION', {}).get('preparation_id')
         if not preparation_id or not {'SAVE_REQUEST','ADD_need_summary','ADD_material_outline'} <= set(results): raise Conflict('resume and verify all original materials before planning')
@@ -516,7 +562,8 @@ class TemplateConsumer:
             if str(parent['run_id']) != results.get('CREATE_RUN', {}).get('run_id'):
                 raise Conflict('original consumer preparation Run binding changed')
             view = case_steps._view(self.store, c, actor, parent, deepcopy(parent.get('service_case_plan')), observe=False)
-            return dict(instance_id=instance['id'], actor_ref=view['actor_ref'], run_id=str(parent['run_id']), case_id=str(parent['case_id']),
+            if quarantine:view.update(can_adopt=False,can_adopt_partial=False)
+            return dict(adoption_quarantined=bool(quarantine),unresolved_adoptions=quarantine,instance_id=instance['id'], actor_ref=view['actor_ref'], run_id=str(parent['run_id']), case_id=str(parent['case_id']),
                         preparation_id=str(parent['id']), plan_id=view['plan_id'],
                         request_intent=intents.view(parent), current=view['current_preview'], service_case_plan=view,
                         model_inference=False, automatic_adoption=False)
@@ -534,6 +581,7 @@ class TemplateConsumer:
         stage_name = action + '_' + digest(key)
         fp = digest(canonical(dict(action=action, instance_id=instance['id'], body=body)))
         with self.repository.connect(write=True) as c:
+            self._closed_write_guard(token,instance,c)
             old = c.execute('SELECT * FROM consumer_requests WHERE actor=? AND key=?', (p['id'], key)).fetchone()
             if old and (old['fp'] != fp or old['instance_id'] != instance['id']):
                 raise Conflict('planning request key arguments changed')
