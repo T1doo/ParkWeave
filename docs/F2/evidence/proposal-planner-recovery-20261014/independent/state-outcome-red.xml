@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.633" timestamp="2026-10-14T18:55:00.803241+00:00" hostname="754d39e95154"><testcase classname=".runtime.proposal-planner-recovery-20261014.independent.test_state_outcome" name="test_unknown_attempt_state_only_damage_must_not_be_safe" time="1.189"><failure message="AssertionError: {'status': 200, 'body': {'scope': 'SYNTHETIC_SERVICE_PLAN_CANDIDATE', 'preparation_id': '4791377b-02a0-42b4-8eac-09be86adaf2a', 'case_id': 'f46dbfae-21fc-41f4-9fd8-54832d4ea197', 'run_id': 'd0b32d36-6f2b-480b-9f03-82bab18737d1', ...}}&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f09a6bffa70&gt;, &lt;parkweave.store.Store object at 0x7f09a6bff350&gt;, {'fixture-a': '34...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7f09a7756570&gt;)
+
+    def test_unknown_attempt_state_only_damage_must_not_be_safe(preparation_fixture):
+     f=preparation_fixture;p=setup(f,['LOCAL_CASE_RECORD_RECHECK']);key=uuid4().hex
+     def fail(req):raise httpx.ConnectError('SYNTHETIC unknown transport result',request=req)
+     planner=OfflineProposalPlanner(transport=httpx.MockTransport(fail));path='/api/preparations/'+p['preparation_id']+'/service-plan-candidates'
+     current=f[3].get('/api/preparations/'+p['preparation_id']+'/planning-preview',headers=headers(f[2])).json()['current'];data={'expected_preparation_revision':current['preparation_revision'],'expected_source_sha256':current['source_sha256']}
+     with TestClient(create_app(f[0],proposal_planner=planner)) as api:
+      assert api.post(path,headers=headers(f[2],key=key),json=data).status_code==409
+      original=api.get(path+'/recovery',headers=headers(f[2],key=key));assert original.status_code==200 and original.json()['status']=='OUTCOME_UNKNOWN'
+      with f[1].connect() as c:
+       history=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'];h=history[0];assert h['planner_attempt']['outcome']=='TRANSPORT_OUTCOME_UNKNOWN';h['planner_attempt']['state']='FAILED_SAFE';c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),p['preparation_id']))
+&gt;     r=api.get(path+'/recovery',headers=headers(f[2],key=key));assert r.status_code==409,{'status':r.status_code,'body':r.json()}
+                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E     AssertionError: {'status': 200, 'body': {'scope': 'SYNTHETIC_SERVICE_PLAN_CANDIDATE', 'preparation_id': '4791377b-02a0-42b4-8eac-09be86adaf2a', 'case_id': 'f46dbfae-21fc-41f4-9fd8-54832d4ea197', 'run_id': 'd0b32d36-6f2b-480b-9f03-82bab18737d1', ...}}
+E     assert 200 == 409
+E      +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+.runtime/proposal-planner-recovery-20261014/independent/test_state_outcome.py:24: AssertionError</failure></testcase></testsuite></testsuites>

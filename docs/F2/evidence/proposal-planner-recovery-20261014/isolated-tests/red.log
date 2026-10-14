@@ -1,0 +1,270 @@
+FFFFFFFF                                                                 [100%]
+=================================== FAILURES ===================================
+____ test_original_page_attempt_recovery_and_explicit_new_key[failed_same] _____
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1c77a72c60>, <parkweave.store.Store object at 0x7f1c77a72ea0>, {'fixture-a': 'JX...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7f1c774b1760>)
+mode = 'failed_same'
+
+    @pytest.mark.parametrize('mode', ['failed_same', 'failed_cold', 'unknown_cold', 'pending_cold', 'damaged_failed', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'])
+    def test_original_page_attempt_recovery_and_explicit_new_key(preparation_fixture, mode):
+        f = preparation_fixture
+        p = setup(f, [GOAL])
+        permissions = [permission_snapshot(f[1])]
+        provider_requests = []
+        def handler(request):
+            provider_requests.append(request.method)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            if len(provider_requests) == 1:
+                if mode == 'pending_cold':
+                    with f[1].connect() as connection:
+                        connection.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+                    permissions[0] = permission_snapshot(f[1])
+                if mode in ('unknown_cold', 'pending_cold', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'):
+                    raise httpx.ConnectError('SYNTHETIC unknown offline producer result', request=request)
+                proposal['approved'] = True
+            return httpx.Response(200, json=fake_envelope(proposal))
+        instance = planner(handler)
+        messages = []; summary = None; stderr = ''; proc = None
+        output = Path(os.environ.get('PROPOSAL_RECOVERY_EVIDENCE', '.runtime/proposal-planner-recovery-20261014/pages'))
+>       with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+                        ^^^^^^^^^^
+E       NameError: name 'create_app' is not defined
+
+tests/test_proposal_planner_recovery.py:40: NameError
+____ test_original_page_attempt_recovery_and_explicit_new_key[failed_cold] _____
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1c7776f230>, <parkweave.store.Store object at 0x7f1c774e8560>, {'fixture-a': 'NC...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7f1c77418b90>)
+mode = 'failed_cold'
+
+    @pytest.mark.parametrize('mode', ['failed_same', 'failed_cold', 'unknown_cold', 'pending_cold', 'damaged_failed', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'])
+    def test_original_page_attempt_recovery_and_explicit_new_key(preparation_fixture, mode):
+        f = preparation_fixture
+        p = setup(f, [GOAL])
+        permissions = [permission_snapshot(f[1])]
+        provider_requests = []
+        def handler(request):
+            provider_requests.append(request.method)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            if len(provider_requests) == 1:
+                if mode == 'pending_cold':
+                    with f[1].connect() as connection:
+                        connection.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+                    permissions[0] = permission_snapshot(f[1])
+                if mode in ('unknown_cold', 'pending_cold', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'):
+                    raise httpx.ConnectError('SYNTHETIC unknown offline producer result', request=request)
+                proposal['approved'] = True
+            return httpx.Response(200, json=fake_envelope(proposal))
+        instance = planner(handler)
+        messages = []; summary = None; stderr = ''; proc = None
+        output = Path(os.environ.get('PROPOSAL_RECOVERY_EVIDENCE', '.runtime/proposal-planner-recovery-20261014/pages'))
+>       with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+                        ^^^^^^^^^^
+E       NameError: name 'create_app' is not defined
+
+tests/test_proposal_planner_recovery.py:40: NameError
+____ test_original_page_attempt_recovery_and_explicit_new_key[unknown_cold] ____
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1c762e63c0>, <parkweave.store.Store object at 0x7f1c775732c0>, {'fixture-a': 'cx...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7f1c760c9160>)
+mode = 'unknown_cold'
+
+    @pytest.mark.parametrize('mode', ['failed_same', 'failed_cold', 'unknown_cold', 'pending_cold', 'damaged_failed', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'])
+    def test_original_page_attempt_recovery_and_explicit_new_key(preparation_fixture, mode):
+        f = preparation_fixture
+        p = setup(f, [GOAL])
+        permissions = [permission_snapshot(f[1])]
+        provider_requests = []
+        def handler(request):
+            provider_requests.append(request.method)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            if len(provider_requests) == 1:
+                if mode == 'pending_cold':
+                    with f[1].connect() as connection:
+                        connection.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+                    permissions[0] = permission_snapshot(f[1])
+                if mode in ('unknown_cold', 'pending_cold', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'):
+                    raise httpx.ConnectError('SYNTHETIC unknown offline producer result', request=request)
+                proposal['approved'] = True
+            return httpx.Response(200, json=fake_envelope(proposal))
+        instance = planner(handler)
+        messages = []; summary = None; stderr = ''; proc = None
+        output = Path(os.environ.get('PROPOSAL_RECOVERY_EVIDENCE', '.runtime/proposal-planner-recovery-20261014/pages'))
+>       with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+                        ^^^^^^^^^^
+E       NameError: name 'create_app' is not defined
+
+tests/test_proposal_planner_recovery.py:40: NameError
+____ test_original_page_attempt_recovery_and_explicit_new_key[pending_cold] ____
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1c7615f6e0>, <parkweave.store.Store object at 0x7f1c75f90410>, {'fixture-a': 'w7...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7f1c75efb020>)
+mode = 'pending_cold'
+
+    @pytest.mark.parametrize('mode', ['failed_same', 'failed_cold', 'unknown_cold', 'pending_cold', 'damaged_failed', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'])
+    def test_original_page_attempt_recovery_and_explicit_new_key(preparation_fixture, mode):
+        f = preparation_fixture
+        p = setup(f, [GOAL])
+        permissions = [permission_snapshot(f[1])]
+        provider_requests = []
+        def handler(request):
+            provider_requests.append(request.method)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            if len(provider_requests) == 1:
+                if mode == 'pending_cold':
+                    with f[1].connect() as connection:
+                        connection.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+                    permissions[0] = permission_snapshot(f[1])
+                if mode in ('unknown_cold', 'pending_cold', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'):
+                    raise httpx.ConnectError('SYNTHETIC unknown offline producer result', request=request)
+                proposal['approved'] = True
+            return httpx.Response(200, json=fake_envelope(proposal))
+        instance = planner(handler)
+        messages = []; summary = None; stderr = ''; proc = None
+        output = Path(os.environ.get('PROPOSAL_RECOVERY_EVIDENCE', '.runtime/proposal-planner-recovery-20261014/pages'))
+>       with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+                        ^^^^^^^^^^
+E       NameError: name 'create_app' is not defined
+
+tests/test_proposal_planner_recovery.py:40: NameError
+___ test_original_page_attempt_recovery_and_explicit_new_key[damaged_failed] ___
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1c75e54c20>, <parkweave.store.Store object at 0x7f1c75e544d0>, {'fixture-a': 'As...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7f1c75ca89e0>)
+mode = 'damaged_failed'
+
+    @pytest.mark.parametrize('mode', ['failed_same', 'failed_cold', 'unknown_cold', 'pending_cold', 'damaged_failed', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'])
+    def test_original_page_attempt_recovery_and_explicit_new_key(preparation_fixture, mode):
+        f = preparation_fixture
+        p = setup(f, [GOAL])
+        permissions = [permission_snapshot(f[1])]
+        provider_requests = []
+        def handler(request):
+            provider_requests.append(request.method)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            if len(provider_requests) == 1:
+                if mode == 'pending_cold':
+                    with f[1].connect() as connection:
+                        connection.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+                    permissions[0] = permission_snapshot(f[1])
+                if mode in ('unknown_cold', 'pending_cold', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'):
+                    raise httpx.ConnectError('SYNTHETIC unknown offline producer result', request=request)
+                proposal['approved'] = True
+            return httpx.Response(200, json=fake_envelope(proposal))
+        instance = planner(handler)
+        messages = []; summary = None; stderr = ''; proc = None
+        output = Path(os.environ.get('PROPOSAL_RECOVERY_EVIDENCE', '.runtime/proposal-planner-recovery-20261014/pages'))
+>       with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+                        ^^^^^^^^^^
+E       NameError: name 'create_app' is not defined
+
+tests/test_proposal_planner_recovery.py:40: NameError
+____ test_original_page_attempt_recovery_and_explicit_new_key[revoke_read] _____
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1c75fef140>, <parkweave.store.Store object at 0x7f1c75cf3080>, {'fixture-a': 'Nk...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7f1c75f0dca0>)
+mode = 'revoke_read'
+
+    @pytest.mark.parametrize('mode', ['failed_same', 'failed_cold', 'unknown_cold', 'pending_cold', 'damaged_failed', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'])
+    def test_original_page_attempt_recovery_and_explicit_new_key(preparation_fixture, mode):
+        f = preparation_fixture
+        p = setup(f, [GOAL])
+        permissions = [permission_snapshot(f[1])]
+        provider_requests = []
+        def handler(request):
+            provider_requests.append(request.method)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            if len(provider_requests) == 1:
+                if mode == 'pending_cold':
+                    with f[1].connect() as connection:
+                        connection.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+                    permissions[0] = permission_snapshot(f[1])
+                if mode in ('unknown_cold', 'pending_cold', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'):
+                    raise httpx.ConnectError('SYNTHETIC unknown offline producer result', request=request)
+                proposal['approved'] = True
+            return httpx.Response(200, json=fake_envelope(proposal))
+        instance = planner(handler)
+        messages = []; summary = None; stderr = ''; proc = None
+        output = Path(os.environ.get('PROPOSAL_RECOVERY_EVIDENCE', '.runtime/proposal-planner-recovery-20261014/pages'))
+>       with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+                        ^^^^^^^^^^
+E       NameError: name 'create_app' is not defined
+
+tests/test_proposal_planner_recovery.py:40: NameError
+_ test_original_page_attempt_recovery_and_explicit_new_key[backend_bad_outcome] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1c75a3ba10>, <parkweave.store.Store object at 0x7f1c75a84bc0>, {'fixture-a': 'ue...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7f1c758db320>)
+mode = 'backend_bad_outcome'
+
+    @pytest.mark.parametrize('mode', ['failed_same', 'failed_cold', 'unknown_cold', 'pending_cold', 'damaged_failed', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'])
+    def test_original_page_attempt_recovery_and_explicit_new_key(preparation_fixture, mode):
+        f = preparation_fixture
+        p = setup(f, [GOAL])
+        permissions = [permission_snapshot(f[1])]
+        provider_requests = []
+        def handler(request):
+            provider_requests.append(request.method)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            if len(provider_requests) == 1:
+                if mode == 'pending_cold':
+                    with f[1].connect() as connection:
+                        connection.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+                    permissions[0] = permission_snapshot(f[1])
+                if mode in ('unknown_cold', 'pending_cold', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'):
+                    raise httpx.ConnectError('SYNTHETIC unknown offline producer result', request=request)
+                proposal['approved'] = True
+            return httpx.Response(200, json=fake_envelope(proposal))
+        instance = planner(handler)
+        messages = []; summary = None; stderr = ''; proc = None
+        output = Path(os.environ.get('PROPOSAL_RECOVERY_EVIDENCE', '.runtime/proposal-planner-recovery-20261014/pages'))
+>       with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+                        ^^^^^^^^^^
+E       NameError: name 'create_app' is not defined
+
+tests/test_proposal_planner_recovery.py:40: NameError
+_ test_original_page_attempt_recovery_and_explicit_new_key[frontend_bad_outcome] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1c75bc3f50>, <parkweave.store.Store object at 0x7f1c75bc3ce0>, {'fixture-a': 's3...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7f1c75f57ec0>)
+mode = 'frontend_bad_outcome'
+
+    @pytest.mark.parametrize('mode', ['failed_same', 'failed_cold', 'unknown_cold', 'pending_cold', 'damaged_failed', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'])
+    def test_original_page_attempt_recovery_and_explicit_new_key(preparation_fixture, mode):
+        f = preparation_fixture
+        p = setup(f, [GOAL])
+        permissions = [permission_snapshot(f[1])]
+        provider_requests = []
+        def handler(request):
+            provider_requests.append(request.method)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            if len(provider_requests) == 1:
+                if mode == 'pending_cold':
+                    with f[1].connect() as connection:
+                        connection.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+                    permissions[0] = permission_snapshot(f[1])
+                if mode in ('unknown_cold', 'pending_cold', 'revoke_read', 'backend_bad_outcome', 'frontend_bad_outcome'):
+                    raise httpx.ConnectError('SYNTHETIC unknown offline producer result', request=request)
+                proposal['approved'] = True
+            return httpx.Response(200, json=fake_envelope(proposal))
+        instance = planner(handler)
+        messages = []; summary = None; stderr = ''; proc = None
+        output = Path(os.environ.get('PROPOSAL_RECOVERY_EVIDENCE', '.runtime/proposal-planner-recovery-20261014/pages'))
+>       with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+                        ^^^^^^^^^^
+E       NameError: name 'create_app' is not defined
+
+tests/test_proposal_planner_recovery.py:40: NameError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_proposal_planner_recovery.py::test_original_page_attempt_recovery_and_explicit_new_key[failed_same]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_proposal_planner_recovery.py::test_original_page_attempt_recovery_and_explicit_new_key[failed_same]
+FAILED tests/test_proposal_planner_recovery.py::test_original_page_attempt_recovery_and_explicit_new_key[failed_cold]
+FAILED tests/test_proposal_planner_recovery.py::test_original_page_attempt_recovery_and_explicit_new_key[unknown_cold]
+FAILED tests/test_proposal_planner_recovery.py::test_original_page_attempt_recovery_and_explicit_new_key[pending_cold]
+FAILED tests/test_proposal_planner_recovery.py::test_original_page_attempt_recovery_and_explicit_new_key[damaged_failed]
+FAILED tests/test_proposal_planner_recovery.py::test_original_page_attempt_recovery_and_explicit_new_key[revoke_read]
+FAILED tests/test_proposal_planner_recovery.py::test_original_page_attempt_recovery_and_explicit_new_key[backend_bad_outcome]
+FAILED tests/test_proposal_planner_recovery.py::test_original_page_attempt_recovery_and_explicit_new_key[frontend_bad_outcome]
+8 failed, 2 warnings in 3.11s

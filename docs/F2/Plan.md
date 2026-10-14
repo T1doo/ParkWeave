@@ -1,5 +1,9 @@
 ## 普通合成 Case 首次实际接单前取消
 
+## 20261014：原规划尝试失败与未知恢复
+
+冻结源码48028dd360ab99ada38160d4aac07f65295f3ddb，修复实际PG/API与原页复现的未知状态被损坏成安全拒绝后错误清句柄。服务端恢复与预核/ADOPT同核有限状态结果码，原页核精确字段和UTC窗口；原key只GET，安全拒绝须核实后明确新key。实际统计及原失败保全见[恢复合同](ProposalPlannerRecovery-20261014.md)，provider/LIVE/业务规划执行继续0。
+
 ## 20261014：默认关闭的离线 JSON 规划闭环
 
 冻结源码a60c83c5cfc5b037c607f6f192f840dfdde42783，独立严格解析假 provider 完整注册合同，原 key 持久 attempt、网络等待不占 Case 锁、发送/保存复核权限与来源；原预核、明确 ADOPT 与来源追溯，V1/V2 保留。主测510PASS，隔离26PASS，独审159PASS和另窗原页4PASS，各窗不加总。实际 provider/凭据/LIVE/规划业务执行均0；范围、原失败及独审见[离线规划合同](ProposalPlannerOffline-20261014.md)。下片补原页失败/未知冷读交互；非真实模型/完整PR0。

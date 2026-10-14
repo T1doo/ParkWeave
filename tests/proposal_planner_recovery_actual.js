@@ -81,5 +81,3 @@ async function waitFor(predicate){const end=Date.now()+10000;while(!predicate())
  }
  console.log(JSON.stringify({result:'PASS',mode,checks,http:calls.length,posts:calls.filter(c=>c.options.method==='POST').length,cold:mode!=='failed_same',exactOriginalKeyOnly:true}));process.exit(0);
 })().catch(e=>{console.error(e.stack);process.exit(1);});
-
-
