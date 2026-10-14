@@ -28,6 +28,8 @@ def test_committed_unknown_only_explicit_finalize_confirms_journal(template_cons
     assert journal(f)==saved
     reply=finish(f,row,'terminal-original',finish_body(proof));assert reply.status_code==200,reply.text
     assert reply.json()['journal_terminal'] and reply.json()['journal_state']=='CONFIRMED'
+    assert reply.json()['journal_read_only'] is False and reply.json()['journal_command'] is True
+    read=recover(f,row,'terminal-original').json();assert read['journal_read_only'] is True and read['journal_command'] is False
     assert products(f['owner'],include_audit=True)==before
 
 def test_unobserved_cannot_finish_or_unlock_original_key(template_consumption,monkeypatch):
@@ -64,7 +66,7 @@ def test_finalization_wrong_proof_cannot_mutate_journal(template_consumption,mon
 def test_finalization_same_body_replay_different_reason_conflict_and_late_unknown_noop(template_consumption,monkeypatch):
     f=template_consumption;row,_,_=unknown(f,monkeypatch);p=recover(f,row,'terminal-original').json();data=finish_body(p)
     assert finish(f,row,'terminal-original',data).status_code==200;saved=journal(f)
-    assert finish(f,row,'terminal-original',data).status_code==200
+    again=finish(f,row,'terminal-original',data);assert again.status_code==200 and again.json()['journal_read_only'] is False and again.json()['journal_command'] is True
     assert finish(f,row,'terminal-original',{**data,'reason':'SYNTHETIC other reason'}).status_code==409
     actor,database=f['consumer']._auth(f['tokens']['template-new-enterprise-a']);instance=f['consumer']._instance(actor,database,row['instance_id'])
     from parkweave.store import digest

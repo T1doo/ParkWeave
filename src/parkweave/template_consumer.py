@@ -625,7 +625,7 @@ class TemplateConsumer:
                 partial_adoption=data.partial_adoption is True,required_goals=list(data.required_goals)),
             status=status,receipt=proof,instance=self.read(token,id),
             journal_state=stage['state'],journal_error=stage['error'],journal_terminal=terminal,finalization=finalization,finalizable=finalizable,
-            automatically_replayed=False,product_read_only=True,journal_read_only=True,case_goal_completed=False)
+            automatically_replayed=False,product_read_only=True,journal_read_only=True,journal_command=False,case_goal_completed=False)
 
     def finalize_planning(self,token,id,key,data):
         """Explicit exact-key journal CAS. Never replay the original product send."""
@@ -765,7 +765,8 @@ def install_routes(app, consumer):
 
     @app.post('/api/template-consumer/instances/{instance_id}/planning-finalization')
     def planning_finalization(instance_id: UUID, data: FinalizeAdoption, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
-        return consumer.finalize_planning(bearer(authorization),instance_id,idempotency_key,data)
+        proof=consumer.finalize_planning(bearer(authorization),instance_id,idempotency_key,data)
+        return {**proof,'journal_read_only':False,'journal_command':True}
 
     @app.get('/api/template-consumer/instances/{instance_id}/planning-recovery')
     def planning_recovery(instance_id: UUID, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
