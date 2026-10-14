@@ -1,0 +1,59 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_overview_keeps_supported_result_and_per_goal_human_responsibility_blocking_readonly _
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+
+    def test_overview_keeps_supported_result_and_per_goal_human_responsibility_blocking_readonly(template_consumption):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST');act(f,row,'TAKE',REVIEWERS[0]);act(f,row,'REQUEST_EVIDENCE',REVIEWERS[0]);before=products(f['owner'],True);grants=grant_snapshot(f['owner']);resources=resource_state(f)
+        r=overview(f,row);assert r.status_code==200,r.text;x=r.json();items={i['goal']:i for i in x['results']}
+        assert len(items)==3 and items['LOCAL_MATERIAL_PREPARATION']['state']=='AWAITING_OWNER_VERIFICATION'
+>       assert items[A]['human_request_state']=='WAITING_OWNER_EVIDENCE' and items[A]['human_responsible_actor_id']==ENTERPRISES[0]
+                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'human_responsible_actor_id'
+
+tests/test_multi_goal_overview.py:18: KeyError
+_____ test_original_page_second_unsupported_goal_opens_exact_selected_goal _____
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+
+    def test_original_page_second_unsupported_goal_opens_exact_selected_goal(template_consumption):
+        f=template_consumption;row=private_case(f);confirmed(f,row);baseline=products(f['owner'],True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET';r=f['client'].get(q['path'],headers=headers(f));assert r.status_code==200,r.text;assert products(f['owner'],True)==baseline
+                messages.append(dict(path=q['path'],status=r.status_code));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:33:254
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait
+
+tests/test_multi_goal_overview.py:35: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_multi_goal_overview.py::test_overview_keeps_supported_result_and_per_goal_human_responsibility_blocking_readonly
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_multi_goal_overview.py::test_overview_keeps_supported_result_and_per_goal_human_responsibility_blocking_readonly
+FAILED tests/test_multi_goal_overview.py::test_original_page_second_unsupported_goal_opens_exact_selected_goal
+2 failed, 2 warnings in 2.82s
