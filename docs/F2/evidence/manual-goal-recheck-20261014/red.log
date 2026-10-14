@@ -1,0 +1,50 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_owner_recheck_application_does_not_resume_until_original_specialist_takes[False] _
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+ended = False
+
+    @pytest.mark.parametrize('ended',[False,True])
+    def test_owner_recheck_application_does_not_resume_until_original_specialist_takes(template_consumption,ended):
+        f=template_consumption;row,_=replied(f)
+        if ended:assert post(f,row,ack_data(read(f,row).json()),'first-awareness').status_code==200
+        before=products(f['owner']);grants=grant_snapshot(f['owner']);original=read(f,row,'original-reply',user=REVIEWERS[0]).json()['event'];v=read(f,row).json()
+>       r=post(f,row,request_data(v),'original-recheck');assert r.status_code==200,r.text;v=r.json();item=v['items'][0]
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"literal_error","loc":["body","action"],"msg":"Input should be 'REQUEST', 'TAKE', 'REQUEST_EVIDENCE', 'SUPPLY_EVIDENCE', 'WITHDRAW', 'REPLY' or 'ACKNOWLEDGE_REPLY'","input":"REQUEST_RECHECK","ctx":{"expected":"'REQUEST', 'TAKE', 'REQUEST_EVIDENCE', 'SUPPLY_EVIDENCE', 'WITHDRAW', 'REPLY' or 'ACKNOWLEDGE_REPLY'"}}]}
+E       assert 422 == 200
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+tests/test_manual_goal_recheck.py:31: AssertionError
+_ test_owner_recheck_application_does_not_resume_until_original_specialist_takes[True] _
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+ended = True
+
+    @pytest.mark.parametrize('ended',[False,True])
+    def test_owner_recheck_application_does_not_resume_until_original_specialist_takes(template_consumption,ended):
+        f=template_consumption;row,_=replied(f)
+        if ended:assert post(f,row,ack_data(read(f,row).json()),'first-awareness').status_code==200
+        before=products(f['owner']);grants=grant_snapshot(f['owner']);original=read(f,row,'original-reply',user=REVIEWERS[0]).json()['event'];v=read(f,row).json()
+>       r=post(f,row,request_data(v),'original-recheck');assert r.status_code==200,r.text;v=r.json();item=v['items'][0]
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"literal_error","loc":["body","action"],"msg":"Input should be 'REQUEST', 'TAKE', 'REQUEST_EVIDENCE', 'SUPPLY_EVIDENCE', 'WITHDRAW', 'REPLY' or 'ACKNOWLEDGE_REPLY'","input":"REQUEST_RECHECK","ctx":{"expected":"'REQUEST', 'TAKE', 'REQUEST_EVIDENCE', 'SUPPLY_EVIDENCE', 'WITHDRAW', 'REPLY' or 'ACKNOWLEDGE_REPLY'"}}]}
+E       assert 422 == 200
+E        +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+
+tests/test_manual_goal_recheck.py:31: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_manual_goal_recheck.py::test_owner_recheck_application_does_not_resume_until_original_specialist_takes[False]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_manual_goal_recheck.py::test_owner_recheck_application_does_not_resume_until_original_specialist_takes[False]
+FAILED tests/test_manual_goal_recheck.py::test_owner_recheck_application_does_not_resume_until_original_specialist_takes[True]
+2 failed, 2 warnings in 2.68s

@@ -1,0 +1,62 @@
+..FF............................                                         [100%]
+=================================== FAILURES ===================================
+_ test_original_reply_explicit_awareness_closes_only_human_responsibility[INFORMATION] _
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+kind = 'INFORMATION'
+
+    @pytest.mark.parametrize('kind',['INFORMATION','UNABLE_TO_HANDLE'])
+    def test_original_reply_explicit_awareness_closes_only_human_responsibility(template_consumption,kind):
+        f=template_consumption;row=ready(f);before=products(f['owner']);grants=grant_snapshot(f['owner']);v=read(f,row,user=REVIEWERS[0]).json();d=reply_data(v,kind)
+        r=post(f,row,d,'original-reply',user=REVIEWERS[0]);assert r.status_code==200,r.text
+        v=read(f,row).json();item=v['items'][0];assert item['state']=='WAITING_OWNER_ACKNOWLEDGEMENT' and item['reply']['request']['reply_kind']==kind
+        assert item['reply']['awareness_proves_reading'] is False and item['reply']['truth_verified'] is False
+        assert manual_items(tasks(f))[0]['kind']=='MANUAL_ACKNOWLEDGE_REPLY' and manual_items(tasks(f,REVIEWERS[0]))==[]
+        r=post(f,row,ack_data(v),'original-awareness');assert r.status_code==200,r.text
+>       item=r.json()['items'][0];assert item['state']=='COORDINATION_ENDED' and item['allowed_actions']==[] and item['responsible_actor_id'] is None
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert ('COORDINATION_ENDED' == 'COORDINATION_ENDED'
+E         
+E           COORDINATION_ENDED and ['REQUEST_RECHECK'] == []
+E         
+E         Left contains one more item: 'REQUEST_RECHECK'
+E         Use -v to get more diff)
+
+tests/test_manual_goal_reply.py:38: AssertionError
+_ test_original_reply_explicit_awareness_closes_only_human_responsibility[UNABLE_TO_HANDLE] _
+
+template_consumption = [REDACTED_SYNTHETIC_FIXTURE_SESSION_REPR]
+kind = 'UNABLE_TO_HANDLE'
+
+    @pytest.mark.parametrize('kind',['INFORMATION','UNABLE_TO_HANDLE'])
+    def test_original_reply_explicit_awareness_closes_only_human_responsibility(template_consumption,kind):
+        f=template_consumption;row=ready(f);before=products(f['owner']);grants=grant_snapshot(f['owner']);v=read(f,row,user=REVIEWERS[0]).json();d=reply_data(v,kind)
+        r=post(f,row,d,'original-reply',user=REVIEWERS[0]);assert r.status_code==200,r.text
+        v=read(f,row).json();item=v['items'][0];assert item['state']=='WAITING_OWNER_ACKNOWLEDGEMENT' and item['reply']['request']['reply_kind']==kind
+        assert item['reply']['awareness_proves_reading'] is False and item['reply']['truth_verified'] is False
+        assert manual_items(tasks(f))[0]['kind']=='MANUAL_ACKNOWLEDGE_REPLY' and manual_items(tasks(f,REVIEWERS[0]))==[]
+        r=post(f,row,ack_data(v),'original-awareness');assert r.status_code==200,r.text
+>       item=r.json()['items'][0];assert item['state']=='COORDINATION_ENDED' and item['allowed_actions']==[] and item['responsible_actor_id'] is None
+                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert ('COORDINATION_ENDED' == 'COORDINATION_ENDED'
+E         
+E           COORDINATION_ENDED and ['REQUEST_RECHECK'] == []
+E         
+E         Left contains one more item: 'REQUEST_RECHECK'
+E         Use -v to get more diff)
+
+tests/test_manual_goal_reply.py:38: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_manual_goal_recheck.py::test_owner_recheck_application_does_not_resume_until_original_specialist_takes[False]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_manual_goal_reply.py::test_original_reply_explicit_awareness_closes_only_human_responsibility[INFORMATION]
+FAILED tests/test_manual_goal_reply.py::test_original_reply_explicit_awareness_closes_only_human_responsibility[UNABLE_TO_HANDLE]
+2 failed, 30 passed, 6 deselected, 2 warnings in 34.41s
