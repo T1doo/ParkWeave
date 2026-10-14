@@ -285,29 +285,31 @@ def list_items(store,token):
         rows=c.execute(f'SELECT id,case_id,goal,state,revision FROM preparations WHERE {column}=%s AND park_id=%s AND org_id=%s ORDER BY created_at DESC LIMIT 100',(p['id'],p['park_id'],p['org_id'])).fetchall()
         return {'items':rows,'role':p['role'],'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY'}
 
-def personal_tasks(store,token):
-    """Read-only current work, not notices, eligibility, or a write authorization."""
+def personal_tasks(store,token,*,limit=100,before=None):
+    """Read-only scoped work; current-plan human requests never mean fulfillment."""
+    if type(limit) is not int or not 1<=limit<=100:raise ValueError('bounded task page required')
+    if before is not None and type(before) is not UUID:raise ValueError('task UUID cursor required')
     with store.connect() as c:
+        c.execute('SET TRANSACTION ISOLATION LEVEL READ COMMITTED, READ ONLY')
         p=store.auth(c,token,lock=True)
-        owner=p['role']=='enterprise_operator'
-        grant(store,c,p,'PREPARE' if owner else 'REVIEW_ASSIGNED')
+        owner=p['role']=='enterprise_operator';grant(store,c,p,'PREPARE' if owner else 'REVIEW_ASSIGNED')
         column='owner_id' if owner else 'reviewer_id'
-        # One statement snapshot covers state, material presence and correction.
-        # Fetch one extra scoped row to report truncation, never claim completeness.
-        rows=c.execute(f"""SELECT p.id,p.case_id,p.goal,p.state,p.revision,
-            p.service_id,p.service_version,
-            ARRAY(SELECT DISTINCT e.slot FROM preparation_evidence e
-                  WHERE e.preparation_id=p.id) AS present_slots,
-            (SELECT e.payload->>'reason' FROM preparation_events e
-             WHERE e.preparation_id=p.id AND e.action='REQUEST_CHANGES'
-             ORDER BY e.revision DESC LIMIT 1) AS correction_reason
-            FROM preparations p WHERE p.{column}=%s AND p.park_id=%s AND p.org_id=%s
-            AND p.state<>'LOCAL_CONFIRMED' ORDER BY p.created_at DESC,p.id DESC LIMIT 101
-            """,(p['id'],p['park_id'],p['org_id'])).fetchall()
+        if before is not None and not c.execute(f'SELECT id FROM preparations WHERE id=%s AND {column}=%s AND park_id=%s AND org_id=%s',(before,p['id'],p['park_id'],p['org_id'])).fetchone():raise Denied('own original task cursor required')
+        # Candidate state, material presence and corrections share one snapshot.
+        # Human source projection is SELECT only; clicks must reread live sources.
+        rows=c.execute(f"""SELECT p.*,
+            ARRAY(SELECT DISTINCT e.slot FROM preparation_evidence e WHERE e.preparation_id=p.id) AS present_slots,
+            (SELECT e.payload->>'reason' FROM preparation_events e WHERE e.preparation_id=p.id AND e.action='REQUEST_CHANGES' ORDER BY e.revision DESC LIMIT 1) AS correction_reason,
+            (jsonb_typeof(r.input)='object' AND r.state='SUCCEEDED' AND r.principal_id=p.owner_id AND r.park_id=p.park_id AND r.org_id=p.org_id AND r.namespace='SYNTHETIC' AND COALESCE(r.input->>'action','case.create')='case.create'
+             AND ca.id=p.case_id AND ca.park_id=p.park_id AND ca.org_id=p.org_id AND ca.source='SYNTHETIC') AS manual_case_bound
+            FROM preparations p JOIN runs r ON r.id=p.run_id JOIN cases ca ON ca.run_id=r.id AND ca.id=p.case_id
+            WHERE p.{column}=%s AND p.park_id=%s AND p.org_id=%s
+              AND (p.state<>'LOCAL_CONFIRMED' OR p.service_case_plan ? 'manual_goal_requests')
+              AND (%s::uuid IS NULL OR (p.created_at,p.id)<(SELECT created_at,id FROM preparations WHERE id=%s))
+            ORDER BY p.created_at DESC,p.id DESC LIMIT %s""",(p['id'],p['park_id'],p['org_id'],before,before,limit+1)).fetchall()
         tasks=[]
-        for row in rows[:100]:
-            missing=[slot for slot in SLOTS if slot not in row['present_slots']]
-            kind=None
+        for row in rows[:limit]:
+            missing=[slot for slot in SLOTS if slot not in row['present_slots']];kind=None
             if owner:
                 if row['state']=='CHANGES_REQUESTED':kind='RESPOND_TO_CORRECTION'
                 elif row['state']=='IN_PREPARATION' and missing:kind='SUPPLY_MATERIALS'
@@ -315,13 +317,24 @@ def personal_tasks(store,token):
             elif row['state']=='IN_PREPARATION' and not missing:kind='REVIEW_MATERIALS'
             if kind:
                 tasks.append({key:row[key] for key in ('id','case_id','goal','state','revision','service_id','service_version')})
-                tasks[-1].update(kind=kind,missing_slots=missing,
-                    correction_reason=row['correction_reason'] if row['state']=='CHANGES_REQUESTED' else None,
-                    blocked_reason='HISTORY_LIMIT_REACHED' if row['revision']>=64 else None)
-        return {'items':tasks,'role':p['role'],'checked_count':min(len(rows),100),
-                'check_limit':100,'has_older_records':len(rows)>100,
-                'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY','qualification':'NOT_EVALUATED',
-                'external_acceptance':'NOT_SUBMITTED','offline_fulfillment':'NO_EVIDENCE'}
+                tasks[-1].update(kind=kind,missing_slots=missing,correction_reason=row['correction_reason'] if row['state']=='CHANGES_REQUESTED' else None,blocked_reason='HISTORY_LIMIT_REACHED' if row['revision']>=64 else None)
+            plan=row.get('service_case_plan')
+            if not isinstance(plan,dict) or not plan.get('manual_goal_requests') or not row['manual_case_bound'] or row['namespace']!='SYNTHETIC' or row['service_id']!=SERVICE or row['service_version']!=1:continue
+            from . import manual_goal_requests as human, registered_dependencies as dependencies
+            from .case_goal_results import structure
+            try:
+                structure(plan);dependencies.plan_proof(row,plan);projected=human.view(store,c,p,row,plan)
+            except Conflict:
+                # A damaged journal never grants sharing or invents a goal task.
+                if owner:tasks.append(dict(id=row['id'],case_id=row['case_id'],run_id=row['run_id'],goal=row['goal'],state=row['state'],revision=row['revision'],service_id=row['service_id'],service_version=row['service_version'],kind='MANUAL_REQUEST_RECHECK',missing_slots=[],correction_reason=None,blocked_reason='MANUAL_JOURNAL_UNVERIFIED',blocked_reasons=['MANUAL_JOURNAL_UNVERIFIED'],plan_id=None,manual_goal=None,manual_state='UNKNOWN',manual_revision=None,manual_source_sha256=None,goal_state='UNSUPPORTED',overall_goal_state='PARTIAL',case_goal_completed=False,requires_current_read=True))
+                continue
+            for item in projected['items']:
+                kind='MANUAL_SUPPLY_EVIDENCE' if owner and item['state']=='WAITING_OWNER_EVIDENCE' else 'MANUAL_ACCEPT_REQUEST' if not owner and item['state']=='REQUESTED' else 'MANUAL_REVIEW_REQUEST' if not owner and item['state'] in ('UNDER_MANUAL_REVIEW','AWAITING_SPECIALIST_REVIEW') else None
+                if kind is None:continue
+                blocked=list(item['blocked_reasons'])
+                if item['supplement_state']=='STALE':blocked.append('SUPPLEMENT_REFERENCE_STALE')
+                tasks.append(dict(id=row['id'],case_id=row['case_id'],run_id=row['run_id'],goal=item['goal'],state=row['state'],revision=row['revision'],service_id=row['service_id'],service_version=row['service_version'],kind=kind,missing_slots=[],correction_reason=None,blocked_reason=blocked[0] if blocked else None,blocked_reasons=blocked,plan_id=projected['plan_id'],manual_goal=item['goal'],manual_state=item['state'],manual_revision=projected['revision'],manual_source_sha256=projected['source_sha256'],goal_state='UNSUPPORTED',overall_goal_state=projected['overall_goal_state'],case_goal_completed=False,requires_current_read=True))
+        return dict(items=tasks,role=p['role'],checked_count=min(len(rows),limit),check_limit=limit,has_older_records=len(rows)>limit,next_before=str(rows[limit-1]['id']) if len(rows)>limit else None,read_only=True,recorded_states_only=True,scope='SYNTHETIC_LOCAL_PREPARATION_ONLY',qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
 
 def seed_synthetic(owner,tokens):
     """Explicit fixture owner setup; never production identity/automatic Grant repair."""

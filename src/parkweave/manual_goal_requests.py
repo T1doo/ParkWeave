@@ -87,12 +87,17 @@ def context(store,c,token,id,write=False):
 
 def view(store,c,p,parent,plan,event=None):
     events,states=ledger(parent,plan);source=basis(c,parent,plan);materials={r['id']:(r['version'],r['source_sha256']) for r in source['materials'] if r['integrity_current']}
-    owner=p['id']==parent['owner_id'];current=not steps._binding_issues(c,parent,plan)
+    owner=p['id']==parent['owner_id'];binding_issues=steps._binding_issues(c,parent,plan);current=not binding_issues
     local=c.execute('SELECT state FROM case_local_lifecycles WHERE preparation_id=%s',(parent['id'],)).fetchone()
-    writable=not prep.case_write_blocked(c,parent) and not(local and local['state']=='LOCAL_RECORD_CLOSED') and current and all(r['integrity_current'] for r in source['materials']) and plan.get('partial_adoption') is True and len(events)<LIMIT
+    case_state=prep.case_state(c,parent);blocked=list(binding_issues)
+    if case_state in ('CANCELLED','RECONCILING'):blocked.append('CASE_'+case_state)
+    if local and local['state']=='LOCAL_RECORD_CLOSED':blocked.append('LOCAL_RECORD_CLOSED')
+    if not all(r['integrity_current'] for r in source['materials']):blocked.append('MATERIAL_REFERENCE_INTEGRITY_REQUIRED')
+    if len(events)>=LIMIT:blocked.append('MANUAL_HISTORY_LIMIT_REACHED')
+    writable=not blocked and current and plan.get('partial_adoption') is True
     if owner and writable:
         try:store.check_execution(c,p,store.scoped_run(c,p,parent['run_id']))
-        except Denied:writable=False  # Historical READ survives revoked write authority.
+        except Denied:blocked.append('CURRENT_WRITE_AUTHORITY_REQUIRED');writable=False  # Historical READ survives revoked write authority.
     # Free-text goals remain private until the original owner explicitly requests
     # human review. Validated REQUEST history also preserves sharing on withdrawal.
     shared={e['request']['goal'] for e in events if e['actor_id']==parent['owner_id'] and e['request']['action']=='REQUEST'}
@@ -106,7 +111,7 @@ def view(store,c,p,parent,plan,event=None):
                 except Conflict:pass
         history=[dict(e,evidence_current=all(materials.get(r['id'])==(r['version'],r['source_sha256']) for r in e['request']['evidence'])) for e in events if e['request']['goal']==goal]
         supplements=[e for e in history if e['request']['action']=='SUPPLY_EVIDENCE']
-        items.append(dict(goal=goal,state=state or 'NOT_REQUESTED',responsible_actor_id=parent['owner_id'] if state in (None,'WAITING_OWNER_EVIDENCE','WITHDRAWN') else parent['reviewer_id'],responsibility='OWNER_PREPARATION' if state in (None,'WAITING_OWNER_EVIDENCE','WITHDRAWN') else 'ORIGINAL_SPECIALIST_REVIEW' if state in ('UNDER_MANUAL_REVIEW','AWAITING_SPECIALIST_REVIEW') else 'WAITING_ORIGINAL_SPECIALIST_ACCEPTANCE',allowed_actions=actions,history=history,supplement_state='STALE' if supplements and not supplements[-1]['evidence_current'] else 'CURRENT_REFERENCE_UNVERIFIED' if supplements else 'NOT_SUPPLIED',goal_state='UNSUPPORTED'))
+        items.append(dict(goal=goal,state=state or 'NOT_REQUESTED',responsible_actor_id=parent['owner_id'] if state in (None,'WAITING_OWNER_EVIDENCE','WITHDRAWN') else parent['reviewer_id'],responsibility='OWNER_PREPARATION' if state in (None,'WAITING_OWNER_EVIDENCE','WITHDRAWN') else 'ORIGINAL_SPECIALIST_REVIEW' if state in ('UNDER_MANUAL_REVIEW','AWAITING_SPECIALIST_REVIEW') else 'WAITING_ORIGINAL_SPECIALIST_ACCEPTANCE',allowed_actions=actions,blocked_reasons=sorted(set(blocked)),history=history,supplement_state='STALE' if supplements and not supplements[-1]['evidence_current'] else 'CURRENT_REFERENCE_UNVERIFIED' if supplements else 'NOT_SUPPLIED',goal_state='UNSUPPORTED'))
     return dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),plan_id=plan['id'],revision=len(events),source_sha256=cp._hash(source),materials=source['materials'],items=items,event=event,overall_goal_state='PARTIAL' if plan.get('partial_adoption') is True else 'UNVERIFIED',case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',new_grants=False)
 
 @steps.er.bounded

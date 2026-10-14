@@ -292,8 +292,8 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
         return preparation.catalog(store,token(authorization))
 
     @app.get('/api/preparation-tasks')
-    def preparation_tasks(authorization: str | None=Header(default=None)):
-        return preparation.personal_tasks(store,token(authorization))
+    def preparation_tasks(authorization: str | None=Header(default=None),limit:int=Query(default=100,ge=1,le=100),before:UUID|None=Query(default=None)):
+        return preparation.personal_tasks(store,token(authorization),limit=limit,before=before)
 
     @app.get('/api/preparations')
     def preparations(authorization: str | None=Header(default=None)):
