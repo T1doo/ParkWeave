@@ -12,7 +12,11 @@ from .run_access_candidate import RunCommand
 from .native_run_access import RunCommand as NativeRunCommand
 
 
-def create_app(store: Store, *, summary_reader=None) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None, proposal_planner=None) -> FastAPI:
+    if proposal_planner is not None:
+        from .service_plan_planner import OfflineProposalPlanner
+        if type(proposal_planner) is not OfflineProposalPlanner:raise Denied('explicit offline-only proposal planner required')
+        proposal_planner.require()
     # A private writer context may only run in its separate transaction process.
     bridge = getattr(store, '_native_run_access', None)
     if bridge is not None and getattr(bridge, 'writer', None) is not None:
@@ -481,7 +485,7 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
         return plan_candidates.read(store,token(authorization),preparation_id,candidate_id)
     @app.post('/api/preparations/{preparation_id}/service-plan-candidates',status_code=201)
     def service_plan_candidate_generate(preparation_id: UUID,data: plan_candidates.bp.Capture,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
-        return plan_candidates.generate(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+        return plan_candidates.generate(store,token(authorization),preparation_id,resource_key(idempotency_key),data,planner=proposal_planner)
 
     from . import bounded_planning as planning
     from . import case_goal_results

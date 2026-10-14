@@ -131,8 +131,9 @@ def _proposal(store,c,p,parent):
 
 def _view(store,c,p,parent):
     current=_proposal(store,c,p,parent);history=parent['planning_previews'] or []
-    return dict(current=current,history=[dict(id=h['id'],revision=h['revision'],document=h['document'],state='CURRENT' if h['document']['source_sha256']==current['source_sha256'] else 'STALE') for h in history if 'candidate' not in h],history_limit=LIMIT,
+    return dict(current=current,history=[dict(id=h['id'],revision=h['revision'],document=h['document'],state='CURRENT' if h['document']['source_sha256']==current['source_sha256'] else 'STALE') for h in history if 'candidate' not in h and 'planner_attempt' not in h],history_limit=LIMIT,
                 candidate_metadata_count=sum('candidate' in h for h in history),
+                planner_attempt_count=sum('planner_attempt' in h for h in history),
                 isolated_execution_preview_enabled=getattr(store,'_isolated_execution_preview',None) is not None,
                 isolated_resource_execution_preview_enabled=getattr(store,'_isolated_resource_execution_preview',None) is not None,
                 isolated_dispatch_execution_preview_enabled=getattr(store,'_isolated_dispatch_execution_preview',None) is not None, isolated_receipt_execution_preview_enabled=getattr(store,'_isolated_receipt_execution_preview',None) is not None,isolated_lifecycle_execution_preview_enabled=getattr(store,'_isolated_lifecycle_execution_preview',None) is not None)

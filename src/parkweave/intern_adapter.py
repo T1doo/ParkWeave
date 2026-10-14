@@ -71,6 +71,16 @@ def strict_json(raw):
     return json.loads(raw,object_pairs_hook=object_pairs,parse_constant=bad_constant)
 
 
+def validated_usage(raw_usage):
+    if raw_usage is None:return None
+    keys=('prompt_tokens','completion_tokens','total_tokens')
+    if not isinstance(raw_usage,dict) or any(type(raw_usage.get(k)) is not int or not 0<=raw_usage[k]<=2**63-1 for k in keys):
+        raise ModelBoundaryError('INVALID_USAGE')
+    usage={k:raw_usage[k] for k in keys}
+    if usage['prompt_tokens']+usage['completion_tokens']!=usage['total_tokens']:raise ModelBoundaryError('INVALID_USAGE')
+    return usage
+
+
 def validate_call(call):
     try:
         if set(call)!={'id','type','function'} or call['type']!='function':raise ValueError()
@@ -163,14 +173,7 @@ class InternChatAdapter:
             if status!=200:raise ModelBoundaryError('HTTP_ERROR_NO_RETRY')
             body=strict_json(raw)
             if self.token.get_secret_value() in json.dumps(body,ensure_ascii=False):raise ModelBoundaryError('SECRET_OUTPUT_REJECTED')
-            raw_usage=body.get('usage')
-            if raw_usage is not None:
-                keys=('prompt_tokens','completion_tokens','total_tokens')
-                if not isinstance(raw_usage,dict) or any(type(raw_usage.get(k)) is not int or not 0<=raw_usage[k]<=2**63-1 for k in keys):
-                    raise ModelBoundaryError('INVALID_USAGE')
-                candidate={k:raw_usage[k] for k in keys}
-                if candidate['prompt_tokens']+candidate['completion_tokens']!=candidate['total_tokens']:raise ModelBoundaryError('INVALID_USAGE')
-                usage=candidate
+            usage=validated_usage(body.get('usage'))
             if not isinstance(body.get('model'),str) or not body['model'].isascii() or body['model'].casefold()!=MODEL:
                 raise ModelBoundaryError('MODEL_IDENTITY_MISMATCH')
             call_id=safe_id(body.get('id'));choices=body.get('choices')
