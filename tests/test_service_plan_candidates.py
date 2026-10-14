@@ -109,8 +109,8 @@ def test_candidate_generation_and_adoption_roll_back_metadata_on_write_failure(p
     with pytest.raises(RuntimeError):adopt(f,p,v)
     assert digest(f)==before
 
-@pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke'])
-def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode):
+@pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired'])
+def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
     import os,json,selectors,subprocess
     from pathlib import Path
     from test_isolated_run_access import permission_snapshot
@@ -121,6 +121,12 @@ def test_original_page_candidate_consumer_never_hand_fills_candidate_json(prepar
             assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
             if not line:break
             msg=json.loads(line)
+            if msg.get('expire_candidate'):
+                from parkweave import service_plan_candidates as candidates
+                with f[1].connect() as c:
+                    record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                proc.stdin.write(b'{}\n');proc.stdin.flush();continue
             if msg.get('change_context'):
                 if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
                 else:
@@ -138,11 +144,11 @@ def test_original_page_candidate_consumer_never_hand_fills_candidate_json(prepar
             r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
             if method=='GET':assert digest(f)==before
             assert permission_snapshot(f[1])==permissions
-            lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt') and q['path'].endswith('/service-case-plan')))
+            lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
             dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
         code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
         assert sum(m['method']=='POST' and m['path'].endswith('/service-plan-candidates') for m in messages)==(2 if mode in ('late_newcase','late_plan') else 1)
-        if mode in ('lost_generate','cold_generate','lost_adopt','cold_adopt'):assert dropped
+        if mode in ('lost_generate','cold_generate','lost_adopt','cold_adopt','cold_adopt_expired'):assert dropped
     finally:
         out=Path(os.environ.get('PLAN_CANDIDATE_EVIDENCE','.runtime/service-plan-candidates-20261014/page-dev'));out.mkdir(parents=True,exist_ok=True);out.joinpath('page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,stderr=stderr),indent=2)+'\n');selector.close()
         if proc.poll() is None:proc.terminate();proc.wait(timeout=5)

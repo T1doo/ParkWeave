@@ -573,7 +573,7 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
         candidate_proof=None
         if data.candidate_id is not None:
             from . import service_plan_candidates as candidates
-            candidate_proof=candidates.consume(parent,current,data)
+            candidate_proof=candidates.consume(parent,current,data,now=candidates.clock(c))
         binding=cp._normal(_binding(c,parent))
         if cp._hash(binding['catalog'])!=current['catalog_sha256'] or cp._hash(binding['registry'])!=current['registry_sha256']:
             raise Conflict('catalog or registry changed during service plan adoption')
@@ -619,6 +619,11 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
         event=_event(plan,p,key,fp,'ADOPT',data.reason)
         event['dependencies']=deepcopy(plan['dependency_manifest'])
         _context(store,c,token,id,True)
+        if candidate_proof is not None:
+            # Recheck the database wall clock after every authority/source wait,
+            # immediately before saving the original plan and its event together.
+            plan['candidate_consumption']=candidates.consume(parent,current,data,now=candidates.clock(c))
+            event['candidate_consumption_sha256']=cp._hash(plan['candidate_consumption'])
         _save(c,parent,plan)
         return _view(store,c,p,parent,plan,event)
 
