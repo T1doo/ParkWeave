@@ -133,7 +133,7 @@ def _view(c,p,parent,case,row,issues=None,snapshot=None,event=None):
     if not owner:
         history=[{k:v for k,v in e.items() if k!='payload'} for e in history];event=None
     state=row['state'] if row else 'NOT_STARTED'
-    return dict(scope=SCOPE,actor_id=p['id'],role=p['role'],preparation_id=parent['id'],case_id=parent['case_id'],goal=parent['goal'],case_state=case['state'],
+    return dict(scope=SCOPE,actor_id=p['id'],role=p['role'],preparation_id=parent['id'],case_id=parent['case_id'],run_id=parent['run_id'],preparation_revision=parent['revision'],goal=parent['goal'],case_state=case['state'],
         local_record_state=state,revision=row['revision'] if row else 0,cycle=cycle,
         verification_current=current,current_snapshot_sha256=current_sha if owner else None,
         verified_snapshot_sha256=row['verified_sha256'] if owner and row else None,

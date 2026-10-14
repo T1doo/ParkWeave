@@ -145,12 +145,20 @@ def read(store,token,id):
                              historical_verification=dict(id=proof['id'],revision=proof['revision'],actor_id=proof['actor_id'],current=state=='LOCAL_OUTPUT_VERIFIED') if proof else None,
                              next_action='READ_ORIGINAL_STEP_AND_UNLOCK' if step and step.get('manual_lock') and state!='LOCAL_OUTPUT_VERIFIED' else 'READ_ORIGINAL_STEP_AND_VERIFY' if state=='AWAITING_OWNER_VERIFICATION' else 'USE_ORIGINAL_ADAPTER_TO_RECHECK' if state not in ('LOCAL_OUTPUT_VERIFIED','UNSUPPORTED') else 'MANUAL_SERVICE_CONTRACT_REQUIRED' if state=='UNSUPPORTED' else None))
         if plan:
-            from .manual_goal_requests import ledger
-            _,human_states=ledger(parent,plan)
+            from . import manual_goal_requests as human
+            human_view=human.view(store,c,p,parent,plan)
+            human_items={item['goal']:item for item in human_view['items']}
             for row in rows:
                 if row['state']=='UNSUPPORTED':
-                    row['human_request_state']=human_states.get(row['goal'],'NOT_REQUESTED')
+                    item=human_items.get(row['goal'])
+                    row['human_request_state']=item['state'] if item else 'NOT_REQUESTED'
+                    row['human_responsible_actor_id']=item['responsible_actor_id'] if item else None
+                    row['human_responsibility']=item['responsibility'] if item else 'CURRENT_PLAN_REQUIRED'
+                    row['human_blocked_reasons']=item['blocked_reasons'] if item else ['PLAN_REQUIRED_GOALS_CHANGED']
+                    row['human_revision']=human_view['revision'] if item else None
+                    row['human_source_sha256']=human_view['source_sha256'] if item else None
                     row['human_request_next_action']='READ_ORIGINAL_HUMAN_REQUEST'
+        for row in rows:row['result_sha256']=cp._hash(row)
         return dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(id),case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],
                     request_revision=intent.get('revision',0),current_request=intent.get('request_text',parent['goal']),original_request=parent['goal'],plan_id=plan['id'] if plan else None,plan_revision=plan['revision'] if plan else 0,
                     state='PARTIAL' if plan and plan.get('partial_adoption') is True else 'UNKNOWN' if not rows else 'LOCAL_OUTPUTS_VERIFIED' if all(r['state']=='LOCAL_OUTPUT_VERIFIED' for r in rows) else 'UNVERIFIED',

@@ -198,7 +198,7 @@ def _event(c, p, root, offer, key, fp, action, reason, **extra):
 
 def _view(c, p, parent, root, event=None,store=None):
     cancelled=prep.case_cancelled(c,parent);blocked=prep.case_write_blocked(c,parent)
-    result = dict(scope=SCOPE, case_id=parent['case_id'], case_cancelled=cancelled, case_reconciling=prep.case_state(c,parent)=='RECONCILING', case_write_blocked=blocked, can_accept=False, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
+    result = dict(scope=SCOPE, case_id=parent['case_id'], run_id=parent['run_id'], case_cancelled=cancelled, case_reconciling=prep.case_state(c,parent)=='RECONCILING', case_write_blocked=blocked, can_accept=False, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
                   service_id=parent['service_id'], service_version=parent['service_version'],
                   preparation_revision=parent['revision'], dispatch_id=root['id'] if root else None,
                   revision=root['revision'] if root else 0, current_offer=None, offers=[], history=[], event=event,
