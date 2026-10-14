@@ -22,7 +22,7 @@ class Evidence(BaseModel):
 
 class Command(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True,str_strip_whitespace=True)
-    action: Literal['REQUEST','TAKE','REQUEST_EVIDENCE','SUPPLY_EVIDENCE','WITHDRAW','REPLY','ACKNOWLEDGE_REPLY']
+    action: Literal['REQUEST','TAKE','REQUEST_EVIDENCE','SUPPLY_EVIDENCE','WITHDRAW','REPLY','ACKNOWLEDGE_REPLY','REQUEST_RECHECK','TAKE_RECHECK']
     plan_id: UUID=Field(strict=False)
     goal: str=Field(min_length=1,max_length=160)
     expected_revision: int=Field(ge=0,le=LIMIT-1)
@@ -32,15 +32,20 @@ class Command(BaseModel):
     reply_kind: Literal['INFORMATION','UNABLE_TO_HANDLE'] | None=None
     reply_event_id: UUID | None=Field(default=None,strict=False)
     reply_fingerprint: str | None=Field(default=None,pattern='^[a-f0-9]{64}$')
+    recheck_event_id: UUID | None=Field(default=None,strict=False)
+    recheck_fingerprint: str | None=Field(default=None,pattern='^[a-f0-9]{64}$')
     @model_validator(mode='after')
     def shape(self):
         if self.action=='SUPPLY_EVIDENCE' and not self.evidence:raise ValueError('explicit supplement requires current material references')
         if self.action not in ('SUPPLY_EVIDENCE','REPLY') and self.evidence:raise ValueError('material references only for supplement or reply')
         if (self.action=='REPLY')!=(self.reply_kind is not None):raise ValueError('explicit reply kind required only for reply')
         if self.reply_kind=='INFORMATION' and not self.evidence:raise ValueError('informational reply requires current material references')
-        if self.action=='ACKNOWLEDGE_REPLY':
+        if self.action in ('ACKNOWLEDGE_REPLY','REQUEST_RECHECK','TAKE_RECHECK'):
             if self.reply_event_id is None or self.reply_fingerprint is None:raise ValueError('exact reply event and fingerprint required')
         elif self.reply_event_id is not None or self.reply_fingerprint is not None:raise ValueError('reply awareness binding only for acknowledgment')
+        if self.action=='TAKE_RECHECK':
+            if self.recheck_event_id is None or self.recheck_fingerprint is None:raise ValueError('exact recheck application required')
+        elif self.recheck_event_id is not None or self.recheck_fingerprint is not None:raise ValueError('recheck acceptance binding only for explicit take')
         if len({x.id for x in self.evidence})!=len(self.evidence):raise ValueError('distinct material references required')
         return self
 
@@ -54,20 +59,25 @@ def transition(state,action,owner):
     if action=='TAKE' and not owner and state in ('REQUESTED','AWAITING_SPECIALIST_REVIEW'):return 'UNDER_MANUAL_REVIEW'
     if action=='REQUEST_EVIDENCE' and not owner and state=='UNDER_MANUAL_REVIEW':return 'WAITING_OWNER_EVIDENCE'
     if action=='SUPPLY_EVIDENCE' and owner and state=='WAITING_OWNER_EVIDENCE':return 'AWAITING_SPECIALIST_REVIEW'
-    if action=='REPLY' and not owner and state=='UNDER_MANUAL_REVIEW':return 'WAITING_OWNER_ACKNOWLEDGEMENT'
+    if action=='REPLY' and not owner and state in ('UNDER_MANUAL_REVIEW','UNDER_MANUAL_RECHECK'):return 'WAITING_OWNER_ACKNOWLEDGEMENT'
     if action=='ACKNOWLEDGE_REPLY' and owner and state=='WAITING_OWNER_ACKNOWLEDGEMENT':return 'COORDINATION_ENDED'
+    if action=='REQUEST_RECHECK' and owner and state in ('WAITING_OWNER_ACKNOWLEDGEMENT','COORDINATION_ENDED'):return 'RECHECK_REQUESTED'
+    if action=='TAKE_RECHECK' and not owner and state=='RECHECK_REQUESTED':return 'UNDER_MANUAL_RECHECK'
     if action=='WITHDRAW' and owner and state not in (None,'WITHDRAWN','COORDINATION_ENDED'):return 'WITHDRAWN'
     raise Conflict('current human request state and original responsibility required')
 
 def admission_budget(states,remaining,action,state):
-    """Reserve one event per waiting reply for ACK or explicit withdrawal."""
-    pending=sum(value=='WAITING_OWNER_ACKNOWLEDGEMENT' for value in states.values())
+    """Reserve ACK or explicit withdrawal; recheck also reserves take and reply."""
+    weight={'WAITING_OWNER_ACKNOWLEDGEMENT':1,'RECHECK_REQUESTED':3,'UNDER_MANUAL_RECHECK':2}
+    pending=sum(weight.get(value,0) for value in states.values())
+    if action=='REQUEST_RECHECK':return remaining>=pending+4-weight.get(state,0)
+    if action=='TAKE_RECHECK' or action=='REPLY' and state=='UNDER_MANUAL_RECHECK':return remaining>=pending
     if action=='REPLY':return remaining>=pending+2
-    if state=='WAITING_OWNER_ACKNOWLEDGEMENT' and action in ('ACKNOWLEDGE_REPLY','WITHDRAW'):return remaining>=pending
+    if weight.get(state,0) and action in ('ACKNOWLEDGE_REPLY','WITHDRAW'):return remaining>=pending
     return remaining>pending
 
 def ledger(parent,plan):
-    events=plan.get('manual_goal_requests',[]);states={};seen=set();ids=set();replies={}
+    events=plan.get('manual_goal_requests',[]);states={};seen=set();ids=set();replies={};rechecks={}
     try:
         if not isinstance(events,list) or len(events)>LIMIT:raise ValueError()
         for revision,e in enumerate(events,1):
@@ -78,9 +88,13 @@ def ledger(parent,plan):
                 data.expected_revision!=revision-1 or type(e['revision']) is not int or e['revision']!=revision or e['id'] in ids or not re.fullmatch('[A-Za-z0-9_-]{1,100}',e['request_key']) or (e['actor_id'],e['request_key']) in seen or
                 e['fingerprint']!=cp._hash(dict(preparation_id=str(parent['id']),**data.model_dump(mode='json',exclude_none=True))) or
                 e['state']!=transition(states.get(data.goal),data.action,owner)):raise ValueError()
-            if data.action=='ACKNOWLEDGE_REPLY':
+            if data.action in ('ACKNOWLEDGE_REPLY','REQUEST_RECHECK','TAKE_RECHECK'):
                 reply=replies.get(data.goal)
                 if not reply or (str(data.reply_event_id),data.reply_fingerprint,data.expected_source_sha256)!=(reply['id'],reply['fingerprint'],reply['request']['expected_source_sha256']):raise ValueError()
+            if data.action=='TAKE_RECHECK':
+                application=rechecks.get(data.goal)
+                if not application or (str(data.recheck_event_id),data.recheck_fingerprint,data.expected_source_sha256)!=(application['id'],application['fingerprint'],application['request']['expected_source_sha256']):raise ValueError()
+            if data.action=='REQUEST_RECHECK':rechecks[data.goal]=e
             if data.action=='REPLY':replies[data.goal]=e
             seen.add((e['actor_id'],e['request_key']));ids.add(e['id']);states[data.goal]=e['state']
     except (ValueError,KeyError,TypeError,Conflict):raise Conflict('human request journal proof invalid')
@@ -128,7 +142,7 @@ def view(store,c,p,parent,plan,event=None):
         if goal in bp.GOALS or not owner and goal not in shared:continue
         state=states.get(goal);actions=[]
         if writable:
-            for action in ('REQUEST','TAKE','REQUEST_EVIDENCE','SUPPLY_EVIDENCE','WITHDRAW','REPLY','ACKNOWLEDGE_REPLY'):
+            for action in ('REQUEST','TAKE','REQUEST_EVIDENCE','SUPPLY_EVIDENCE','WITHDRAW','REPLY','ACKNOWLEDGE_REPLY','REQUEST_RECHECK','TAKE_RECHECK'):
                 try:
                     transition(state,action,owner)
                     if admission_budget(states,LIMIT-len(events),action,state):actions.append(action)
@@ -139,9 +153,13 @@ def view(store,c,p,parent,plan,event=None):
         reply_current=bool(reply and reply['request']['expected_source_sha256']==cp._hash(source) and reply['evidence_current'])
         item_blocked=list(blocked)
         if reply and not reply_current:
-            item_blocked.append('REPLY_SOURCE_CHANGED');actions=[a for a in actions if a!='ACKNOWLEDGE_REPLY']
+            item_blocked.append('REPLY_SOURCE_CHANGED');actions=[a for a in actions if a not in ('ACKNOWLEDGE_REPLY','REQUEST_RECHECK','TAKE_RECHECK')]
+        rechecks=[e for e in history if e['request']['action']=='REQUEST_RECHECK'];recheck=rechecks[-1] if rechecks else None
+        recheck_current=bool(recheck and reply_current and recheck['request']['reply_event_id']==reply['id'] and recheck['request']['reply_fingerprint']==reply['fingerprint'] and recheck['request']['expected_source_sha256']==cp._hash(source))
+        if not recheck_current:actions=[a for a in actions if a!='TAKE_RECHECK']
+        recheck_view=dict(recheck,source_current=recheck_current) if recheck else None
         reply_view=dict(reply,source_current=reply_current,truth_verified=False,awareness_proves_reading=False) if reply else None
-        items.append(dict(goal=goal,state=state or 'NOT_REQUESTED',responsible_actor_id=None if state=='COORDINATION_ENDED' else parent['owner_id'] if state in (None,'WAITING_OWNER_EVIDENCE','WITHDRAWN','WAITING_OWNER_ACKNOWLEDGEMENT') else parent['reviewer_id'],responsibility='NO_ACTIVE_HUMAN_RESPONSIBILITY' if state=='COORDINATION_ENDED' else 'OWNER_REPLY_AWARENESS' if state=='WAITING_OWNER_ACKNOWLEDGEMENT' else 'OWNER_PREPARATION' if state in (None,'WAITING_OWNER_EVIDENCE','WITHDRAWN') else 'ORIGINAL_SPECIALIST_REVIEW' if state in ('UNDER_MANUAL_REVIEW','AWAITING_SPECIALIST_REVIEW') else 'WAITING_ORIGINAL_SPECIALIST_ACCEPTANCE',allowed_actions=actions,blocked_reasons=sorted(set(item_blocked)),reply=reply_view,history=history,supplement_state='STALE' if supplements and not supplements[-1]['evidence_current'] else 'CURRENT_REFERENCE_UNVERIFIED' if supplements else 'NOT_SUPPLIED',goal_state='UNSUPPORTED'))
+        items.append(dict(goal=goal,state=state or 'NOT_REQUESTED',responsible_actor_id=None if state in ('COORDINATION_ENDED','RECHECK_REQUESTED') else parent['owner_id'] if state in (None,'WAITING_OWNER_EVIDENCE','WITHDRAWN','WAITING_OWNER_ACKNOWLEDGEMENT') else parent['reviewer_id'],responsibility='WAITING_ORIGINAL_SPECIALIST_RECHECK_ACCEPTANCE' if state=='RECHECK_REQUESTED' else 'NO_ACTIVE_HUMAN_RESPONSIBILITY' if state=='COORDINATION_ENDED' else 'OWNER_REPLY_AWARENESS' if state=='WAITING_OWNER_ACKNOWLEDGEMENT' else 'OWNER_PREPARATION' if state in (None,'WAITING_OWNER_EVIDENCE','WITHDRAWN') else 'ORIGINAL_SPECIALIST_REVIEW' if state in ('UNDER_MANUAL_REVIEW','UNDER_MANUAL_RECHECK','AWAITING_SPECIALIST_REVIEW') else 'WAITING_ORIGINAL_SPECIALIST_ACCEPTANCE',allowed_actions=actions,blocked_reasons=sorted(set(item_blocked)),reply=reply_view,recheck=recheck_view,history=history,supplement_state='STALE' if supplements and not supplements[-1]['evidence_current'] else 'CURRENT_REFERENCE_UNVERIFIED' if supplements else 'NOT_SUPPLIED',goal_state='UNSUPPORTED'))
     return dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),plan_id=plan['id'],revision=len(events),source_sha256=cp._hash(source),materials=source['materials'],items=items,event=event,overall_goal_state='PARTIAL' if plan.get('partial_adoption') is True else 'UNVERIFIED',case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',new_grants=False)
 
 @steps.er.bounded
@@ -170,9 +188,12 @@ def command(store,token,id,key,data):
         current=view(store,c,p,parent,plan);item=next((x for x in current['items'] if x['goal']==data.goal),None)
         if data.plan_id!=UUID(plan['id']) or data.expected_revision!=current['revision'] or data.expected_source_sha256!=current['source_sha256']:raise Conflict('current original plan and human request source required')
         if not item or data.action not in item['allowed_actions']:raise Conflict('unsupported goal action and original responsibility required')
-        if data.action=='ACKNOWLEDGE_REPLY':
+        if data.action in ('ACKNOWLEDGE_REPLY','REQUEST_RECHECK','TAKE_RECHECK'):
             reply=item['reply']
             if not reply or not reply['source_current'] or (str(data.reply_event_id),data.reply_fingerprint)!=(reply['id'],reply['fingerprint']):raise Conflict('exact current original reply event and fingerprint required')
+        if data.action=='TAKE_RECHECK':
+            application=item['recheck']
+            if not application or not application['source_current'] or (str(data.recheck_event_id),data.recheck_fingerprint)!=(application['id'],application['fingerprint']):raise Conflict('exact current original recheck application required')
         materials={x['id']:x for x in current['materials']}
         for e in data.evidence:
             if not (r:=materials.get(str(e.id))) or (e.version,e.source_sha256)!=(r['version'],r['source_sha256']):raise Conflict('exact current Case material supplement required')

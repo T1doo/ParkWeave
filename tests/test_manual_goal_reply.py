@@ -35,7 +35,7 @@ def test_original_reply_explicit_awareness_closes_only_human_responsibility(temp
     assert item['reply']['awareness_proves_reading'] is False and item['reply']['truth_verified'] is False
     assert manual_items(tasks(f))[0]['kind']=='MANUAL_ACKNOWLEDGE_REPLY' and manual_items(tasks(f,REVIEWERS[0]))==[]
     r=post(f,row,ack_data(v),'original-awareness');assert r.status_code==200,r.text
-    item=r.json()['items'][0];assert item['state']=='COORDINATION_ENDED' and item['allowed_actions']==[] and item['responsible_actor_id'] is None
+    item=r.json()['items'][0];assert item['state']=='COORDINATION_ENDED' and item['allowed_actions']==['REQUEST_RECHECK'] and item['responsible_actor_id'] is None
     assert manual_items(tasks(f))==[] and manual_items(tasks(f,REVIEWERS[0]))==[]
     assert r.json()['case_goal_completed'] is False and r.json()['overall_goal_state']=='PARTIAL' and item['goal_state']=='UNSUPPORTED'
     after=products(f['owner']);a=deepcopy(after);b=deepcopy(before)
