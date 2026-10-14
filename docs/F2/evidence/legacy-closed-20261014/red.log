@@ -1,0 +1,64 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_cold_instance_and_new_key_adoption_remain_unresolved_without_any_browser_handle _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fae2f25e210>
+
+    def test_cold_instance_and_new_key_adoption_remain_unresolved_without_any_browser_handle(template_consumption,monkeypatch):
+        f=template_consumption;row,v,data,p=legacy(f,monkeypatch);saved=journal(f);before=products(f['owner'],include_audit=True)
+        cold=f['client'].get('/api/template-consumer/instances/'+row['instance_id'],headers=headers(f));assert cold.status_code==200
+>       assert cold.json()['state']=='UNKNOWN' and cold.json()['adoption_quarantined'] is True
+E       AssertionError: assert ('PLAN_CONFIRMATION_REQUIRED' == 'UNKNOWN'
+E         
+E         - UNKNOWN
+E         + PLAN_CONFIRMATION_REQUIRED)
+
+tests/test_legacy_closed.py:27: AssertionError
+_ test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fae2dd4b650>
+
+    def test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first(template_consumption,monkeypatch):
+        f=template_consumption;row,v,data,p=legacy(f,monkeypatch);saved=journal(f);before=products(f['owner'],include_audit=True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/legacy_closed_actual.js',row['instance_id']],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'legacy cold page bridge timeout'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                r=f['client'].request(method,q['path'],headers=headers(f,key=o.get('headers',{}).get('Idempotency-Key')),json=body);messages.append({'method':method,'path':q['path'],'status':r.status_code});assert r.status_code<400,r.text
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['checks']>=7
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/legacy_closed_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/legacy_closed_actual.js:31:75
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/legacy_closed_actual.js', '1ac73...>.wait
+
+tests/test_legacy_closed.py:44: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_legacy_closed.py::test_cold_instance_and_new_key_adoption_remain_unresolved_without_any_browser_handle
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_legacy_closed.py::test_cold_instance_and_new_key_adoption_remain_unresolved_without_any_browser_handle
+FAILED tests/test_legacy_closed.py::test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first
+2 failed, 2 warnings in 2.30s
