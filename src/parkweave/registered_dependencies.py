@@ -104,8 +104,8 @@ def plan_proof(parent,plan):
                 (event['actor_id'],event['request_key']) in keys or not (re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or legacy_key) or
                 not isinstance(event['fingerprint'],str) or not re.fullmatch('[a-f0-9]{64}',event['fingerprint']) or
                 type(event['coordination_only']) is not bool or type(event['reason']) is not str or not 1<=len(event['reason'])<=1000 or
-                event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK') or
-                (n==1 and event['action']!='ADOPT') or (event['step_id'] is None if event['action']=='ADOPT' else event['step_id'] in step_ids) is not True):raise ValueError()
+                event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK','TEMPLATE_UPGRADE') or
+                (n==1 and event['action']!='ADOPT') or (event['step_id'] is None if event['action'] in ('ADOPT','TEMPLATE_UPGRADE') else event['step_id'] in step_ids) is not True):raise ValueError()
             event_ids.add(event['id']);keys.add((event['actor_id'],event['request_key']))
             if event['action']!='ADOPT':continue
             if (event['actor_id']!=parent['owner_id'] or event['coordination_only'] is not True or
@@ -135,6 +135,8 @@ def plan_proof(parent,plan):
                     set(patch['preserved'])!={s['id'] for s in plan['steps'] if s['adapter_id'] not in affected}):raise ValueError()
             latest=value
         if latest!=plan.get('dependency_manifest'):raise ValueError()
+        from .template_migration import validate_plan
+        validate_plan(parent,plan)
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('registered dependency journal proof invalid')
 
 

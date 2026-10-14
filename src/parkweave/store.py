@@ -35,6 +35,8 @@ class _AccessConnection(psycopg.Connection):
                 store.check_capability(self, p, 'READ')
                 if not store.assignment_allowed(self, p, run_id, track=False):
                     raise Denied('managed access expired or changed before completion')
+            for lease in getattr(self, '_template_source_leases', {}).values():
+                lease.recheck()
             super().commit()
         except BaseException:
             super().rollback()
@@ -44,6 +46,7 @@ class _AccessConnection(psycopg.Connection):
             self._managed_checks = set()
             self._plan_approval_checks = []
             self._writer_checks = []
+            self._release_template_sources()
 
     def rollback(self):
         try:
@@ -52,6 +55,18 @@ class _AccessConnection(psycopg.Connection):
             self._managed_checks = set()
             self._plan_approval_checks = []
             self._writer_checks = []
+            self._release_template_sources()
+
+    def _release_template_sources(self):
+        leases=getattr(self,'_template_source_leases',{})
+        self._template_source_leases={}
+        for lease in reversed(list(leases.values())):lease.close()
+
+    def close(self):
+        try:
+            super().close()
+        finally:
+            self._release_template_sources()
 
 
 def digest(value: str) -> str:
@@ -67,7 +82,7 @@ class Store:
 
     def connect(self):
         if all(getattr(self, name, None) is None for name in
-               ('_isolated_run_access','_isolated_plan_approval','_native_run_access')):
+               ('_isolated_run_access','_isolated_plan_approval','_native_run_access','_isolated_template_migration_checker')):
             return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
         return self._guarded_connect()
 

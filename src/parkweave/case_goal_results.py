@@ -64,9 +64,12 @@ def structure(plan,*,parent=None):
             UUID(event['id'])
             if (type(event['revision']) is not int or event['revision']!=i or event['plan_id']!=plan['id'] or event['id'] in event_ids or
                 (event['actor_id'],event['request_key']) in keys or not re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or not re.fullmatch('[a-f0-9]{64}',event['fingerprint']) or
-                event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK') or
-                (i==1 and event['action']!='ADOPT') or (event['step_id'] is None if event['action']=='ADOPT' else event['step_id'] in ids) is not True):raise ValueError()
+                event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK','TEMPLATE_UPGRADE') or
+                (i==1 and event['action']!='ADOPT') or (event['step_id'] is None if event['action'] in ('ADOPT','TEMPLATE_UPGRADE') else event['step_id'] in ids) is not True):raise ValueError()
             keys.add((event['actor_id'],event['request_key']));event_ids.add(event['id'])
+        if any(e['action']=='TEMPLATE_UPGRADE' for e in plan['events']) or plan.get('template_migration') is not None:
+            if parent is None:raise ValueError()
+            steps._recovery_proofs(parent)
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('adopted goal result plan proof invalid')
 
 
@@ -186,6 +189,15 @@ def read(store,token,id):
                     row['human_revision']=human_view['revision'] if item else None
                     row['human_source_sha256']=human_view['source_sha256'] if item else None
                     row['human_request_next_action']='READ_ORIGINAL_HUMAN_REQUEST'
+        # All PG source/history waits precede the final read-only wall-clock check.
+        from .template_migration import availability
+        template_availability=availability(store,parent,plan) if plan else None
+        if template_availability is not None and not template_availability['current']:
+            for row in rows:
+                if row['state']!='UNSUPPORTED':row['state']='NEEDS_RECHECK'
+                row['issues']=sorted(set(row['issues']+template_availability['reasons']))
+                if row['historical_verification']:row['historical_verification']['current']=False
+                row['next_action']='READ_CURRENT_TEMPLATE_SOURCE_AND_ORIGINAL_STEP'
         trace=source_trace(parent,plan)
         for row in rows:
             row['adoption_trace_sha256']=trace['trace_sha256'] if trace else None
@@ -194,4 +206,4 @@ def read(store,token,id):
                     request_revision=intent.get('revision',0),current_request=intent.get('request_text',parent['goal']),original_request=parent['goal'],plan_id=plan['id'] if plan else None,plan_revision=plan['revision'] if plan else 0,
                     state='PARTIAL' if plan and plan.get('partial_adoption') is True else 'UNKNOWN' if not rows else 'LOCAL_OUTPUTS_VERIFIED' if all(r['state']=='LOCAL_OUTPUT_VERIFIED' for r in rows) else 'UNVERIFIED',
                     results=rows,adopted_goals=list(plan['required_goals']) if plan else [],historical_plans=[dict(id=h['id'],revision=h['revision'],goals=h['required_goals']) for h in plan.get('history',[])] if plan else [],
-                    source_trace=trace,binding_issues=sorted(set(binding_issues)),read_only=True,automatically_verified=False,case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
+                    source_trace=trace,template_availability=template_availability,binding_issues=sorted(set(binding_issues)),read_only=True,automatically_verified=False,case_goal_completed=False,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')

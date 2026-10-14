@@ -263,6 +263,8 @@ def current_sources(store,c,parent,plan):
                     issues['P3'].append('SELECTED_INSTANCE_EXECUTOR_BINDING_CHANGED')
                 if adapter=='P4' and step and step['executor_id']!=roles.get('service_executor'):
                     issues['P4'].append('SELECTED_INSTANCE_EXECUTOR_BINDING_CHANGED')
+    from .template_migration import add_sources
+    add_sources(parent,plan,sources)
     return {k:sorted(set(v)) for k,v in issues.items()},cp._normal(sources),actual
 
 
@@ -343,6 +345,8 @@ def _inspect(store,c,parent,plan,observe=True,fresh_clock=False):
 def gate(store,c,parent,through,*,observe=True):
     plan=deepcopy(parent.get('service_case_plan'))
     if not plan:return
+    from .template_migration import check_live
+    if observe:check_live(store,c,parent,plan)
     if plan.get('partial_adoption') is True:
         selected={s['adapter_id'] for s in plan['steps']}
         # These gates precede P2 link, P3 dispatch, P4 receipt and P5 local
@@ -401,22 +405,29 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
                  current_preview=preview)
     if source_unavailable:context['current_source_unavailable']=True
     if not plan:return dict(**context,scope=SCOPE,state='NOT_ADOPTED',plan_id=None,revision=0,steps=[],history=[],events=[],can_adopt=owner and p.get('_plan_write') and context['current_preview']['state']=='COVERED_PREVIEW_ONLY',can_adopt_partial=bool(owner and p.get('_plan_write') and context['current_preview']['partial_offer']['can_adopt']),new_grants=False,automatic_execution=False,case_goal_completed=False)
-    binding_issues,issues,sources,actual,states,bad=_inspect(store,c,parent,plan,observe=observe,fresh_clock=fresh_clock)
+    # A migrated read preserves stored decisions even when its live source expires.
+    binding_issues,issues,sources,actual,states,bad=_inspect(store,c,parent,plan,observe=observe and not bool(plan.get('template_migration')),fresh_clock=fresh_clock)
     dependency_basis,dependency_affected,dependency_unknown=dependency_impact(store,c,parent,plan)
+    from .template_migration import availability
+    template_availability=availability(store,parent,plan)
+    template_current=template_availability is None or template_availability['current']
     steps=[]
     for step in plan['steps']:
         adapter=step['adapter_id']
         # Executors never receive the current other executor's offer or sources.
         own=owner or p['role']=='park_specialist' or sources['P3'].get('executor_id')==p['id']
+        allowed=_allowed(p,step,states,binding_issues,issues,sources,plan['revision'],sum(bool(s.get('manual_lock')) for s in plan['steps'])) if own and not cancelled else []
+        if not template_current:allowed=[a for a in allowed if a=='UNLOCK']
         steps.append(dict(id=step['id'],adapter_id=adapter,adapter=step['adapter'],depends_on=step['depends_on'],
-                          state=states[adapter],actual_business_state=actual[adapter] if own and not (p['role']=='park_specialist' and adapter=='P4') else None,
-                          allowed_actions=_allowed(p,step,states,binding_issues,issues,sources,plan['revision'],sum(bool(s.get('manual_lock')) for s in plan['steps'])) if own and not cancelled else [],
+                          state=states[adapter] if template_current else 'LOCK_CONFLICT' if step.get('manual_lock') else 'NEEDS_RECHECK',actual_business_state=actual[adapter] if own and not (p['role']=='park_specialist' and adapter=='P4') else None,
+                          allowed_actions=allowed,
                           source_sha256=cp._hash(sources[adapter]) if owner else None,
-                          issues=issues[adapter] if owner else None,
+                          issues=sorted(set(issues[adapter]+([] if template_current else template_availability['reasons']))) if owner else None,
                           verified_sources=step.get('verified_sources') if owner else None,
                           verified_sha256=step.get('verified_sha256') if owner else None,
                           manually_locked=bool(step.get('manual_lock'))))
     status='VERIFIED' if all(v=='VERIFIED' for v in states.values()) else 'BLOCKED' if binding_issues or any(v in ('BLOCKED','REPORTED_BLOCKED','LOCK_CONFLICT') for v in states.values()) else 'NEEDS_RECHECK' if any(v=='NEEDS_RECHECK' for v in states.values()) else 'ACTIVE'
+    if not template_current:status='BLOCKED'
     direct=[s['id'] for s in plan['steps'] if s.get('verified_sha256') and (set(issues[s['adapter_id']])-{'DEPENDENCY_REVISION_REQUIRES_EXPLICIT_ADOPT'} or s['verified_sha256']!=cp._hash(sources[s['adapter_id']]))]
     affected=[s['id'] for s in plan['steps'] if binding_issues or s['adapter_id'] in dependency_affected or s.get('invalidated') or states[s['adapter_id']] in ('BLOCKED','LOCK_CONFLICT')]
     impact=dict(scope='REGISTERED_CASE_CHAIN',unknown_scope='THIS_CASE' if binding_issues or dependency_unknown else None,
@@ -431,6 +442,8 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
                      request_key=event['request_key'],actor_ref=context['actor_ref'],expected_revision=event['revision']-1 if local else previous['revision'] if previous else 0 if event['action']=='ADOPT' else event['revision']-1,
                      previous_plan_id=plan['id'] if local else previous['id'] if previous else None)
     return dict(**context,scope=SCOPE,plan_id=plan['id'],revision=plan['revision'],state=status,steps=steps,
+                template_migration=deepcopy(plan.get('template_migration')) if owner else None,
+                template_availability=template_availability if owner else None,
                 candidate_consumption=plan.get('candidate_consumption') if owner else None,
                 partial_adoption=plan.get('partial_adoption') is True,
                 overall_goal_state='PARTIAL' if plan.get('partial_adoption') is True else 'LOCAL_PLAN_ONLY',
@@ -438,12 +451,12 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
                 binding=plan['binding'] if owner else None,binding_issues=binding_issues if owner else None,
                 required_goals=plan['required_goals'] if owner else None,goal_coverage=plan['goal_coverage'] if owner else None,
                 history=plan.get('history',[]) if owner else [],events=events,event=event if owner else None,command_receipt=receipt,
-                can_adopt=owner and p.get('_plan_write') and bool(preview) and preview['state']=='COVERED_PREVIEW_ONLY' and (
+                can_adopt=template_current and owner and p.get('_plan_write') and bool(preview) and preview['state']=='COVERED_PREVIEW_ONLY' and (
                     bool(binding_issues) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8 or
                     not binding_issues and bool(dependency_affected) and plan['revision']+1+sum(bool(s.get('manual_lock')) for s in plan['steps'])<=LIMIT and
                     not any(s.get('manual_lock') and s['adapter_id'] in dependency_affected for s in plan['steps']) and not any(not v['known'] for v in dependency_basis['collections'].values())),
                 local_revision_required=plan.get('partial_adoption') is not True and not binding_issues and bool(dependency_affected),
-                can_adopt_partial=bool(owner and p.get('_plan_write') and preview and preview['partial_offer']['can_adopt'] and (binding_issues or plan.get('partial_adoption') is True and dependency_affected) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8),
+                can_adopt_partial=bool(template_current and owner and p.get('_plan_write') and preview and preview['partial_offer']['can_adopt'] and (binding_issues or plan.get('partial_adoption') is True and dependency_affected) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8),
                 change_impact=impact if owner else None,
                 new_grants=False,automatic_execution=False,case_goal_completed=False,
                 external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
@@ -539,6 +552,10 @@ def _recovery_proofs(parent):
                         set(patch['affected']+patch['preserved'])!=step_ids):raise ValueError()
                     latest_dependencies=event['dependencies'];dependencies.validate(latest_dependencies)
                     fp=cp._hash(dict(preparation_id=str(parent['id']),action='ADOPT',**_adopt_request(data)))
+                elif event['action']=='TEMPLATE_UPGRADE':
+                    from .template_migration import Apply,fingerprint
+                    request=Apply.model_validate(event['template_upgrade']['request'])
+                    fp=fingerprint(request.expected_instance_id,request)
                 else:
                     if event['step_id'] not in step_ids or event['action']=='ADOPT':raise ValueError()
                     expected=revision-1
@@ -552,6 +569,8 @@ def _recovery_proofs(parent):
                 proofs.append((plan,event,expected,previous))
             if latest_dependencies!=plan.get('dependency_manifest'):raise ValueError()
             dependencies.plan_proof(parent,plan)
+            from .template_migration import validate_plan
+            validate_plan(parent,plan)
         return proofs
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('original service plan recovery proof invalid')
 
@@ -641,6 +660,10 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
         if old:
             if data.candidate_id is not None:_recovery_proofs(parent)
             return _view(store,c,p,parent,prior,old)
+        if prior and prior.get('template_migration'):
+            from .template_migration import live_guard
+            live_guard(store,c,parent,prior)
+            if not data.local_revision:raise Conflict('migrated template plans require original explicit local revision')
         if unadopted_only and prior is not None:raise Conflict('template consumer cannot replace an already adopted original plan')
         intent=parent.get('request_intent')
         if not intent or data.required_goals!=intent['required_goals'] or intent['revision']!=data.expected_request_revision:
@@ -742,7 +765,12 @@ def command(store,token,id,key,data):
         if data.action not in _allowed(p,step,states,binding_issues,issues,sources,plan['revision'],lock_count):
             raise ServicePlanBlocked(parent,plan,bad or int(step['adapter_id'][1:]),'adapter sources, binding, reported obstacle or predecessors need recheck')
         adapter=step['adapter_id'];source=None
+        if data.action not in ('UNLOCK','VERIFY','LOCK'):
+            from .template_migration import check_live
+            check_live(store,c,parent,plan)
         if data.action in ('VERIFY','LOCK'):
+            from .template_migration import live_guard
+            live_guard(store,c,parent,plan)
             if data.expected_source_sha256!=cp._hash(sources[adapter]):
                 if data.action=='LOCK':raise Conflict('current source fingerprint required for lock')
                 raise ServicePlanBlocked(parent,plan,int(adapter[1:]),'adapter source changed')

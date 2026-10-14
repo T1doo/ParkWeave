@@ -27,6 +27,7 @@ def create_isolated_template_app(store, engine, consumer, upgrade_checker=None):
         if getattr(route, 'path', '/') not in ('/', '/openapi.json', '/docs', '/docs/oauth2-redirect', '/redoc'):
             app.router.routes.append(route)
     if upgrade_checker is not None:
+        store._isolated_template_migration_checker = upgrade_checker
         from .template_upgrade import install_routes
         install_routes(app, upgrade_checker)
 

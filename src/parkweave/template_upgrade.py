@@ -82,7 +82,7 @@ class TemplateUpgradeChecker:
         self.consumer = consumer; self.engine = consumer.template_engine; self.repository = repository
 
     @contextmanager
-    def _context(self, token, instance_id):
+    def _context(self, token, instance_id, *, business_write=False):
         consumer = self.consumer
         database = consumer.validate_fixture()
         with consumer.store.connect() as c:
@@ -98,7 +98,7 @@ class TemplateUpgradeChecker:
             stages = consumer._stages(instance['id'])
             preparation_id = next((s['result']['preparation_id'] for s in stages if s['name'] == 'CREATE_PREPARATION' and s['state'] == 'CONFIRMED'), None)
             if not preparation_id: raise Conflict('existing Case preparation required; unresolved consumption is not completion')
-            parent = prep.scoped(consumer.store, c, p, UUID(preparation_id))
+            parent = prep.scoped(consumer.store, c, p, UUID(preparation_id),write=business_write,business_write=business_write)
             case = c.execute('SELECT * FROM cases WHERE id=%s AND run_id=%s AND park_id=%s AND org_id=%s', (parent['case_id'], parent['run_id'], p['park_id'], p['org_id'])).fetchone()
             run_id = next((s['result']['run_id'] for s in stages if s['name'] == 'CREATE_RUN' and s['state'] == 'CONFIRMED'), None)
             if not case or str(parent['run_id']) != run_id: raise Conflict('original consumer Case binding changed')
@@ -152,12 +152,19 @@ class TemplateUpgradeChecker:
         if new['scope'] != old['scope'] or old['scope']['park_id'] != p['park_id']: raise Denied('same template park required')
         if str(release_id) == binding['release_id']: raise Conflict('distinct target revision required')
         TemplateDraft.model_validate(new['definition'])
-        a, b = old['definition'], new['definition']
-        breaking = (new['content_version'] <= old['content_version'] or
+        comparison = old
+        current_plan = parent.get('service_case_plan')
+        if current_plan and current_plan.get('template_migration'):
+            from .template_migration import validate_plan,release_proof
+            effective = validate_plan(parent,current_plan)['release']
+            release_proof(self.engine,t,effective['release_id'],effective['release_sha256'])
+            comparison = effective['snapshot']
+        a, b = comparison['definition'], new['definition']
+        breaking = (new['content_version'] <= comparison['content_version'] or
                     any(a[k] != b[k] for k in ('service_id', 'service_version', 'parameter_schema')) or
                     not set(a['required_goals']) <= set(b['required_goals']) or
                     any(step not in b['steps'] for step in a['steps']) or
-                    old['registry_sha256'] != new['registry_sha256'] or old['contract_sha256'] != new['contract_sha256'])
+                    comparison['registry_sha256'] != new['registry_sha256'] or comparison['contract_sha256'] != new['contract_sha256'])
         plan = deepcopy(parent.get('service_case_plan'))
         if plan:
             plans._recovery_proofs(parent)
@@ -192,17 +199,30 @@ class TemplateUpgradeChecker:
                     target_release_id=str(release_id), target_release_sha256=target_sha,
                     original_definition_sha256=old['definition_sha256'], target_definition_sha256=new['definition_sha256'],
                     original_content_version=old['content_version'], target_content_version=new['content_version'],
-                    original_source_revision=a['source']['revision'], target_source_revision=b['source']['revision'], changes=changes,
+                    comparison_release_id=comparison['release_id'],comparison_content_version=comparison['content_version'],comparison_source_revision=a['source']['revision'],
+                    original_source_revision=old['definition']['source']['revision'], target_source_revision=b['source']['revision'], changes=changes,
                     case_state_sha256=state_hash, classification=classification, allowed_choices=allowed,
                     locked_steps=[s['id'] for s in plan['steps'] if s.get('manual_lock')] if plan else [],
                     unresolved_stages=[s['name'] for s in stages if s['state'] != 'CONFIRMED'],
                     observed_step_states=states, future_validity_guaranteed=False)
 
+    def apply(self, token, instance_id, key, data):
+        from . import template_migration
+        return template_migration.apply(self,token,instance_id,key,data)
+
+    def recover_application(self, token, instance_id, key):
+        from . import template_migration
+        return template_migration.recover(self,token,instance_id,key)
+
     def inspect(self, token, instance_id, release_id, target_sha):
         with self._context(token, instance_id) as context, self.engine.lock, self.engine.repository.transaction() as t:
             check = self._check(context, release_id, target_sha, t)
             with self.repository.connect() as c: events = self._history(c, context[-1])
-            return dict(check=check, check_sha256=sha(check), revision=len(events), history=events)
+            from . import template_migration
+            try: application = template_migration.application(self, context, check, events, t)
+            except (Denied, Conflict) as error:
+                application = dict(eligible=False,blockers=['ORIGINAL_TEMPLATE_PROOF_REQUIRED'],detail=str(error))
+            return dict(check=check, check_sha256=sha(check), revision=len(events), history=events, application=application)
 
     def select(self, token, instance_id, key, data):
         self.consumer._key(key)
@@ -241,6 +261,16 @@ def install_routes(app, checker):
     def token(authorization):
         if not authorization or not authorization.startswith('Bearer '): raise Denied('original Bearer required')
         return authorization[7:]
+
+    from . import template_migration
+
+    @app.post('/api/template-upgrade/{instance_id}/apply')
+    def apply_revision(instance_id: UUID, data: template_migration.Apply, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
+        return checker.apply(token(authorization), instance_id, idempotency_key, data)
+
+    @app.get('/api/template-upgrade/{instance_id}/apply-requests/{key}')
+    def recover_application(instance_id: UUID, key: str, authorization: str | None = Header(default=None)):
+        return checker.recover_application(token(authorization), instance_id, key)
 
     @app.get('/api/template-upgrade/{instance_id}/check')
     def inspect(instance_id: UUID, target_release_id: UUID, target_sha256: str, authorization: str | None = Header(default=None)):

@@ -457,6 +457,7 @@ class TemplateConsumer:
                     case_id=str(run['case']['id']) if run and run.get('case') else None,
                     preparation_id=preparation_id, plan_id=plan_id, journal_plan_id=journal_plan_id, run_state=run['state'] if run else None,
                     binding=instance['binding'], release_available=available, stages=stages,
+                    effective_binding=deepcopy(service_plan.get('template_migration')) if service_plan else None,
                     adoption_quarantined=bool(quarantine),unresolved_adoptions=quarantine,
                     issues=[dict(stage=s['name'], code=s['error']) for s in stages if s['state'] == 'REFUSED'],
                     preparation=prep.read(self.store, token, UUID(preparation_id)) if preparation_id else None,
