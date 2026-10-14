@@ -1,5 +1,9 @@
 ## 普通合成 Case 首次实际接单前取消
 
+## 20261014：候选期限与原采用历史
+
+源码0dc2135e2e885c3fac736fb08c22c7c7f343e3cd，为新的合成候选采用加原数据库时钟15分钟窗口、最终保存前再核验及事件绑定accepted_at；原key不续期，V1消费历史与原恢复兼容。原页明确过期和闭包未变化，provider关闭；主测10模块341PASS，独审与失败窗分别见[期限合同](PlanCandidateExpiry-20261014.md)。非完整T02/真实模型/正式履约。
+
 ## 20261014：F2-T02 有界合成候选ID消费
 
 基于已接受3ae2215852c1c2e3aa8080ac4f3dde4d7643cace，源码85869726c1418816478facecc6dc0d21c7cdfdaa。原页合成候选生成、按原ID确定性核全目标/DAG/硬约束及CaseRun/资料/目录/registry来源，明确采用原ADOPT；provider关闭，未知不判满足，Case仍未完成。根26模块678PASS，独立15PASS，原失败窗完整保留，513源零漂移；不签收完整T02/AT07/AT14、模型或目录发布。范围与交付证据见[候选消费合同](ServicePlanCandidateConsumer-20261014.md)，下方历史仍限各自时点范围。

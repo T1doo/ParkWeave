@@ -1,0 +1,49 @@
+...F........................                                             [100%]
+=================================== FAILURES ===================================
+_____________ test_independent_actual_pg_blocker_crosses_deadline ______________
+
+preparation_fixture = [REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_independent_actual_pg_blocker_crosses_deadline(preparation_fixture):
+        f=preparation_fixture;p=setup(f,[GOAL]);v=generate(f,p).json()
+        with f[1].connect() as holder:
+            records=holder.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews']
+            end=candidates.clock(holder)+timedelta(seconds=2)
+            w=dict(version=2,created_at=(end-timedelta(seconds=900)).isoformat(),expires_at=end.isoformat(),seconds=900)
+            records[0]['validity']=w;records[0]['document']['candidate_validity']=deepcopy(w)
+            holder.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(records),p['preparation_id']))
+        v=preview(f,p,v['candidate_id']).json();assert v['state']=='VERIFIED_STRUCTURE_ONLY';before=digest(f)
+        with ThreadPoolExecutor(1) as pool:
+            with f[1].connect() as holder:
+                holder.execute('SELECT id FROM preparations WHERE id=%s FOR UPDATE',(p['preparation_id'],))
+                pid=holder.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid']
+>               pending=pool.submit(adopt,f,p,v,'ind-expiry-wait',adoption(f,p,v));seen=False;limit=time.monotonic()+5
+                                                                  ^^^^^^^^^^^^^^^
+
+.runtime/plan-candidate-expiry-20261014/independent/test_expiry_independent.py:42: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = [REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'fef0742d-6d51-4a32-8e9f-6337c12c82c7', 'case_id': '64621db3-3372-4e31-8c55-106f51915507', 'run_id': '73156735-6b37-47f6-82cf-2e1d78e230b9', 'revision': 2, ...}
+v = {'validator_version': 2, 'validated_contract_sha256': '4e05b4048f6241543be1532b390c497c773020ca8fa7a6160cf582135066826...1-4237-a93d-94e2bc64a726', 'candidate_sha256': '31c40e11613e3f71eb2e81f7a7fda6afa32b8d4bccd64052468ea405f71e18ff', ...}
+
+    def adoption(f,p,v):
+        x=f[3].get('/api/preparations/'+p['preparation_id']+'/service-case-plan',headers=headers(f[2])).json()
+>       return dict(expected_preparation_revision=x['preparation_revision'],expected_request_revision=x['request_revision'],expected_source_sha256=x['current_preview']['source_sha256'],expected_plan_revision=x['revision'],required_goals=x['current_preview']['required_goals'],reason='SYNTHETIC explicit candidate preview confirmation',candidate_id=v['candidate_id'],expected_candidate_sha256=v['candidate_sha256'],expected_verification_sha256=v['verification_sha256'],**({'partial_adoption':True} if v['can_adopt_partial'] else {}))
+                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'preparation_revision'
+
+tests/test_service_plan_candidates.py:21: KeyError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/plan-candidate-expiry-20261014/independent/test_expiry_independent.py::test_independent_half_open_server_window[-1-CLOCK_UNCERTAIN]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/plan-candidate-expiry-20261014/independent/test_expiry_independent.py::test_independent_actual_pg_blocker_crosses_deadline
+1 failed, 27 passed, 2 warnings in 20.50s

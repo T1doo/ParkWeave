@@ -1,0 +1,133 @@
+{
+  "decision": "PASS",
+  "source_sha": "0dc2135e2e885c3fac736fb08c22c7c7f343e3cd",
+  "source_before_after": {
+    "files": 514,
+    "differences": [],
+    "frozen_before": "frozen-before.json",
+    "legal_fixture_before": "legal-fixture-before.json",
+    "frozen_after": "frozen-after.json"
+  },
+  "windows": {
+    "first-setup": {
+      "tests": 28,
+      "failures": 0,
+      "errors": 28,
+      "skipped": 0,
+      "seconds": 2.456,
+      "exit": 1
+    },
+    "first-legal-driver": {
+      "tests": 28,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 20.503,
+      "exit": 1
+    },
+    "final": {
+      "tests": 28,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 18.091,
+      "exit": 0
+    }
+  },
+  "final_modules": {
+    ".runtime.plan-candidate-expiry-20261014.independent.test_expiry_independent": 10,
+    "tests.test_plan_candidate_expiry": 13,
+    "tests.test_service_plan_candidates": 5
+  },
+  "warnings": 2,
+  "test_authorship": {
+    "original_independent_runtime_API_PG_cases": 10,
+    "reused_root_expiry_cases": 13,
+    "reused_original_full_HTML_NodeVM_actual_ASGI_owned_PG_cases": 5,
+    "total_final_suite": 28,
+    "counts_are_disjoint": "10+13+5=28; earlier windows not summed"
+  },
+  "pages": {
+    "cold_adopt_expired": {
+      "result": "PASS",
+      "checks": 11,
+      "http": 12,
+      "posts": 2,
+      "only_expected_page_posts": true,
+      "lost_reply_after_actual_commit": true
+    },
+    "cold_generate": {
+      "result": "PASS",
+      "checks": 11,
+      "http": 9,
+      "posts": 2,
+      "only_expected_page_posts": true,
+      "lost_reply_after_actual_commit": true
+    },
+    "expired": {
+      "result": "PASS",
+      "checks": 8,
+      "http": 7,
+      "posts": 1,
+      "only_expected_page_posts": true,
+      "lost_reply_after_actual_commit": false
+    },
+    "opaque_wrongname": {
+      "result": "PASS",
+      "checks": 6,
+      "http": 3,
+      "posts": 1,
+      "only_expected_page_posts": true,
+      "lost_reply_after_actual_commit": true
+    },
+    "pending_adopt": {
+      "result": "PASS",
+      "checks": 11,
+      "http": 7,
+      "posts": 2,
+      "only_expected_page_posts": true,
+      "lost_reply_after_actual_commit": false
+    }
+  },
+  "actual_pg_wait": {
+    "actual_pg_blocking_pid_observed": true,
+    "fixture_deadline_accelerated_seconds": 2,
+    "clock": "real PG clock_timestamp",
+    "response": 409,
+    "business_snapshot_unchanged": true
+  },
+  "static_review": {
+    "concrete_source_defects": [],
+    "V1": "Live V1 records fail closed as LEGACY_REVALIDATION_REQUIRED; historical old basis/hash/receipts have no invented timestamps and remain readable. Independently reconstructed exact previous persistence format.",
+    "locking": "Original auth parent FOR UPDATE then original actor/key lock preserved; no candidate-first lock introduced.",
+    "final_clock": "Second consume occurs after final original authority context and PG clock_timestamp immediately before original atomic plan/event save; injected exact second-clock expiry rolls back business snapshot.",
+    "history": "Accepted_at half-open window and initial ADOPT event consumption digest validated; out-of-window accepted_at rejected even with recomputed event digest; old committed plan/read/recovery and exact POST replay survive current expiry/material changes in reused root cases.",
+    "original_key": "Expired generation recovery/replay returns original id/window and does not append metadata; changed request rejected; never renews original key.",
+    "graph": "Material/catalog/registry changes preserve graph-comparison scope and deny stale adoption in reused tests."
+  },
+  "failure_windows_preserved": {
+    "first_setup": "28 setup ERROR/0 product assertions: erroneous runtime --basetemp violates original tempfile ownership contract; stopped. Parent explicitly authorized fresh fixture using untouched pytest default system temporary path; no rejected cluster reuse/guard/Grant/credentials/TMPDIR override.",
+    "first_legal_driver": "27PASS/1FAIL: own request helper GET mistakenly called while parent lock held, so actual ADOPT never started. Original log/XML/exit and initial driver retained. Corrected request construction before holder lock, complete 28 rerun passes."
+  },
+  "approval_sha256": {
+    "scripts/host_case_once/approval.json": "c5ad0c6c38daa921479972d864e9f2da5478bfeead0acec034f1758305f8a69a",
+    "scripts/host_case_once/prepare_approval.json": "c5ad0c6c38daa921479972d864e9f2da5478bfeead0acec034f1758305f8a69a"
+  },
+  "mutation_scope": "Only own independent runtime tests/evidence; source/tests/scripts/docs/Git readonly; PYTHONDONTWRITEBYTECODE and pytest no cacheprovider; actual existing owned ephemeral PG fixture checks retained.",
+  "not_run": [
+    "browser",
+    "prepare",
+    "network",
+    "provider/live/paid model",
+    "native Windows",
+    "full repository suite",
+    "deployment/production migration/catalog publication",
+    "complete T02/AT07/AT14",
+    "independent HTTP ADD_EVIDENCE race/occupied-capacity matrix"
+  ],
+  "limitations": [
+    "Synthetic fixture window shortened to 2s for actual PG wall-clock deadline crossing; independent final-clock boundary uses explicit injected clock fault.",
+    "Root reused test/HTML modes are identified separately from original independent tests.",
+    "Resource tables may be empty; audit exclusions follow original business digest and original page permissions snapshot contracts."
+  ]
+}
