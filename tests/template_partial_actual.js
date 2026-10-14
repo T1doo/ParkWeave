@@ -41,7 +41,7 @@ async function waitFor(predicate){const end=Date.now()+10000;while(!predicate())
  const original=t.read('cp.key'),instance=t.read('instance.instance_id'),preparation=t.read('instance.preparation_id');
  const cold=page(file,'',t.snapshot());await waitFor(()=>cold.read('status!==null'));cold.get('consumer-token').value=actor;cold.get('consumer-instance-id').value=instance;
  await cold.get('consumer-read').onclick();check(cold.read('adoptionHandle.key')===original);check(cold.get('product-link').hidden);
- await cold.get('consumer-adoption-recover').onclick();check(cold.read('adoptionHandle')===null);check(!cold.get('product-link').hidden);check(cold.read('instance.service_case_plan.overall_goal_state')==='PARTIAL');
+ await cold.get('consumer-adoption-recover').onclick();check(cold.read('adoptionHandle.key')===original);check(cold.read('adoptionVerified.status')==='COMMITTED');check(!cold.get('product-link').hidden);check(cold.read('instance.service_case_plan.overall_goal_state')==='PARTIAL');
  check(cold.snapshot()[cold.storageKeys().find(x=>x.startsWith('parkweave.template-adoption-recovery'))]!==undefined);
  check(calls.filter(x=>x.options.method==='POST'&&x.path.endsWith('/adopt')).length===1);
  const again=page(file,'',cold.snapshot());await waitFor(()=>again.read('status!==null'));again.get('consumer-token').value=actor;again.get('consumer-instance-id').value=instance;await again.get('consumer-read').onclick();check(again.get('product-link').hidden);await again.get('consumer-adoption-recover').onclick();check(!again.get('product-link').hidden);

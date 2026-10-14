@@ -64,6 +64,9 @@ def test_template_and_saved_goals_retained_conflict_and_unsupported_cannot_adopt
 def test_return_edit_changes_source_old_confirmation_rejected_new_explicit_confirmation_succeeds(template_consumption):
     f=template_consumption;row=ready(f);old=preview(f,row).json();request=edit(old,planning_constraints={'excluded_roles':['service_executor']});request['request_text']='Current edited explicit need';r=post(f,row,'planning',request,'edit-source');assert r.status_code==200,r.text
     v=preview(f,row).json();assert v['current']['source_sha256']!=old['current']['source_sha256'];assert v['request_intent']['current_request']==request['request_text'];assert post(f,row,'adopt',adoption(old),'stale-confirm').status_code==409
+    from test_template_terminal import finish,finish_body
+    stale=f['client'].get(f"/api/template-consumer/instances/{row['instance_id']}/planning-recovery",headers=headers(f,key='stale-confirm')).json()
+    assert finish(f,row,'stale-confirm',finish_body(stale)).status_code==200
     good=post(f,row,'adopt',adoption(v),'current-confirm');assert good.status_code==200,good.text
     snapshot=products(f['owner']);assert post(f,row,'planning',edit(v),'edit-after-adopt').status_code==409;assert products(f['owner'])==snapshot
     assert post(f,row,'planning',request,'edit-source').status_code==200;assert products(f['owner'])==snapshot

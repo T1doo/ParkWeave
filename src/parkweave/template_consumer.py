@@ -105,6 +105,14 @@ class Resume(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
 
 
+class FinalizeAdoption(BaseModel):
+    model_config = ConfigDict(extra='forbid', strict=True, str_strip_whitespace=True)
+    expected_body_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
+    expected_original_request_key: str = Field(min_length=1,max_length=100)
+    expected_journal_state: Literal['ADMITTED','STARTED','UNKNOWN','REFUSED','REJECTED_FIRST_SEND','CONFIRMED','CLOSED_NOT_COMMITTED']
+    reason: str = Field(min_length=1,max_length=1000)
+
+
 class ConsumerRepository:
     """A separate, schema-checked, exclusively created isolated journal file."""
     COLUMNS = {
@@ -243,7 +251,7 @@ class TemplateConsumer:
             templates.append(dict(scope=snapshot['scope'], release_id=item['release_id'], release_sha256=item['release_sha256'],
                                   name=definition.get('name', definition.get('title', snapshot['scope']['template_id'])),
                                   definition=definition, required_goals=definition['required_goals'], state=item['state']))
-        return dict(enabled=True, park_id=p['park_id'], org_id=p['org_id'], reviewers=original['reviewers'], templates=templates,
+        return dict(enabled=True, actor_ref=case_steps.cp._hash(dict(actor_id=p['id'])), park_id=p['park_id'], org_id=p['org_id'], reviewers=original['reviewers'], templates=templates,
                     business_publication=False, new_grants=False, case_goal_completed=False)
 
     @staticmethod
@@ -277,7 +285,7 @@ class TemplateConsumer:
         # Retain all old stage keys; hash only the new long per-request names.
         return key if len(key) <= 100 else 'tc_' + UUID(instance_id).hex + '_' + digest(name)
 
-    def _perform(self, token, instance, name, build, send):
+    def _perform(self, token, instance, name, build, send, *, first_adoption_attempt=False):
         # Recheck both live authorities before every original product operation,
         # including a retry after an unknown response.
         p, database = self._auth(token)
@@ -298,6 +306,8 @@ class TemplateConsumer:
                 if stage['state'] == 'ADMITTED':
                     c.execute("UPDATE consumer_stages SET state='STARTED' WHERE instance_id=? AND name=? AND state='ADMITTED'", (instance['id'], name))
                     stage['state'] = 'STARTED'
+                elif stage['state'] in ('REJECTED_FIRST_SEND','CLOSED_NOT_COMMITTED'):
+                    raise Conflict('original adoption key is permanently unsendable')
                 elif stage['state'] == 'REFUSED' and name.startswith(('EDIT_REQUEST_', 'CONFIRM_PLAN_')):
                     raise Conflict('planning admission was definitely refused; explicitly retry its original key')
             if digest(stage['body']) != stage['body_sha256']:
@@ -311,9 +321,11 @@ class TemplateConsumer:
                 self._unknown(instance, name)
                 raise  # Current refusal cannot disprove an earlier unknown commit.
             code = 'PRODUCT_AUTHORIZATION_REFUSED' if isinstance(error, Denied) else 'PRODUCT_CONFLICT'
+            refusal_state='REJECTED_FIRST_SEND' if first_adoption_attempt and name.startswith('CONFIRM_PLAN_') and stage['fresh_attempt'] else 'REFUSED'
+            if refusal_state=='REJECTED_FIRST_SEND':code='FIRST_'+code
             try:
                 with self.repository.connect(write=True) as c:
-                    c.execute("UPDATE consumer_stages SET state='REFUSED',error=? WHERE instance_id=? AND name=? AND state<>'CONFIRMED'", (code, instance['id'], name))
+                    c.execute("UPDATE consumer_stages SET state=?,error=? WHERE instance_id=? AND name=? AND state NOT IN ('CONFIRMED','REJECTED_FIRST_SEND','CLOSED_NOT_COMMITTED')", (refusal_state,code, instance['id'], name))
                     c.execute("UPDATE consumer_instances SET state='BLOCKED' WHERE id=?", (instance['id'],))
             except Exception:
                 # The product refusal is definite even if its journal update is busy.
@@ -324,7 +336,7 @@ class TemplateConsumer:
             raise ConsumerUnknown('consumer operation reply is unknown; retry the original request') from error
         try:
             with self.repository.connect(write=True) as c:
-                c.execute("UPDATE consumer_stages SET state='CONFIRMED',result=?,error=NULL WHERE instance_id=? AND name=?", (canonical(result), instance['id'], name))
+                c.execute("UPDATE consumer_stages SET state='CONFIRMED',result=?,error=NULL WHERE instance_id=? AND name=? AND state NOT IN ('REJECTED_FIRST_SEND','CLOSED_NOT_COMMITTED')", (canonical(result), instance['id'], name))
         except Exception as error:
             self._unknown(instance, name)
             raise ConsumerUnknown('consumer confirmation reply is unknown; retry the original request') from error
@@ -333,8 +345,8 @@ class TemplateConsumer:
     def _unknown(self, instance, name):
         try:
             with self.repository.connect(write=True) as c:
-                c.execute("UPDATE consumer_stages SET state='UNKNOWN',error='REPLY_UNKNOWN' WHERE instance_id=? AND name=? AND state<>'CONFIRMED'", (instance['id'], name))
-                c.execute("UPDATE consumer_instances SET state='UNKNOWN' WHERE id=?", (instance['id'],))
+                changed=c.execute("UPDATE consumer_stages SET state='UNKNOWN',error='REPLY_UNKNOWN' WHERE instance_id=? AND name=? AND state NOT IN ('CONFIRMED','REJECTED_FIRST_SEND','CLOSED_NOT_COMMITTED')", (instance['id'], name)).rowcount
+                if changed:c.execute("UPDATE consumer_instances SET state='UNKNOWN' WHERE id=?", (instance['id'],))
         except Exception:
             # STARTED already records an unresolved call if the journal is busy.
             pass
@@ -396,7 +408,7 @@ class TemplateConsumer:
                 if str(parent['run_id'])!=run_id:raise Conflict('original consumer preparation Run binding changed')
                 service_plan=case_steps._view(self.store,c,actor,parent,deepcopy(parent.get('service_case_plan')),observe=False)
         plan_id=service_plan['plan_id'] if service_plan else None
-        state = 'PLAN_ADOPTED' if plan_id else 'BLOCKED' if any(s['state'] == 'REFUSED' for s in stages) else 'UNKNOWN' if any(s['state'] in ('ADMITTED', 'STARTED', 'UNKNOWN') for s in stages) else 'PENDING_RUN' if not run or run['state'] != 'SUCCEEDED' else 'PLAN_CONFIRMATION_REQUIRED' if preparation_id else 'PENDING_PREPARATION'
+        state = 'PLAN_ADOPTED' if plan_id else 'BLOCKED' if any(s['state'] in ('REFUSED','REJECTED_FIRST_SEND') for s in stages) else 'UNKNOWN' if any(s['state'] in ('ADMITTED', 'STARTED', 'UNKNOWN') for s in stages) else 'PENDING_RUN' if not run or run['state'] != 'SUCCEEDED' else 'PLAN_CONFIRMATION_REQUIRED' if preparation_id else 'PENDING_PREPARATION'
         if run and run['state'] in ('FAILED', 'CANCELLED'):
             state = 'RUN_BLOCKED'
         return dict(instance_id=instance['id'], actor_ref=case_steps.cp._hash(dict(actor_id=p['id'])), state=state, run_id=run_id,
@@ -526,12 +538,12 @@ class TemplateConsumer:
             if old and (old['fp'] != fp or old['instance_id'] != instance['id']):
                 raise Conflict('planning request key arguments changed')
             existing=c.execute('SELECT state FROM consumer_stages WHERE instance_id=? AND name=?',(instance['id'],stage_name)).fetchone()
-            if adopt and existing and existing['state'] in ('ADMITTED','STARTED','UNKNOWN'):
+            if adopt and existing and existing['state'] in ('ADMITTED','STARTED','UNKNOWN','REJECTED_FIRST_SEND','CLOSED_NOT_COMMITTED'):
                 raise Conflict('original adoption outcome is unresolved; GET its original consumer key without resending ADOPT')
             completed = {r['name'] for r in c.execute("SELECT name FROM consumer_stages WHERE instance_id=? AND state='CONFIRMED'", (instance['id'],)).fetchall()}
             if not {'SAVE_REQUEST','ADD_need_summary','ADD_material_outline'} <= completed:
                 raise Conflict('verify all original material stage outcomes before planning commands')
-            if c.execute("SELECT 1 FROM consumer_stages WHERE instance_id=? AND state IN ('ADMITTED','STARTED','UNKNOWN') AND name<>?", (instance['id'], stage_name)).fetchone():
+            if c.execute("SELECT 1 FROM consumer_stages WHERE instance_id=? AND state IN ('ADMITTED','STARTED','UNKNOWN','REJECTED_FIRST_SEND') AND name<>?", (instance['id'], stage_name)).fetchone():
                 raise Conflict('resolve the original pending stage key and body before another planning command')
             if not old:
                 if row['plan_id'] or c.execute("SELECT 1 FROM consumer_stages WHERE instance_id=? AND state='CONFIRMED' AND (name='ADOPT_PLAN' OR name LIKE 'CONFIRM_PLAN_%')", (instance['id'],)).fetchone(): raise Conflict('adopted instance is historical; use original plan entry')
@@ -548,13 +560,15 @@ class TemplateConsumer:
         try:
             self._perform(token, instance, stage_name, lambda: body,
                           lambda stage_key, saved: case_steps.adopt(self.store, token, preparation_id, stage_key, case_steps.Adopt.model_validate(saved), unadopted_only=True) if adopt
-                          else intents.save(self.store, token, preparation_id, stage_key, intents.Save.model_validate(saved), unadopted_only=True))
+                          else intents.save(self.store, token, preparation_id, stage_key, intents.Save.model_validate(saved), unadopted_only=True),
+                          first_adoption_attempt=adopt and not old)
         except (Denied, Conflict):
             # A definite current-authority refusal can occur between admission
             # and _perform's recheck, before it reaches its product-send handler.
             try:
                 with self.repository.connect(write=True) as c:
-                    c.execute("UPDATE consumer_stages SET state='REFUSED',error='CURRENT_OPERATION_REFUSED' WHERE instance_id=? AND name=? AND state='ADMITTED'", (instance['id'], stage_name))
+                    first=adopt and not old
+                    c.execute("UPDATE consumer_stages SET state=?,error=? WHERE instance_id=? AND name=? AND state='ADMITTED'", ('REJECTED_FIRST_SEND' if first else 'REFUSED','FIRST_CURRENT_OPERATION_REFUSED' if first else 'CURRENT_OPERATION_REFUSED',instance['id'],stage_name))
             except Exception:
                 pass  # Preserve the original refusal; an unresolved journal stays blocking.
             raise
@@ -589,14 +603,66 @@ class TemplateConsumer:
         # Recheck the live candidate and actor after any original source wait.
         current,current_database=self._auth(token);self._instance(current,current_database,id)
         self._available(current,instance);self._reviewer(current,instance['input']['reviewer_id'])
-        status='COMMITTED' if proof['status']=='COMMITTED' else 'NOT_COMMITTED_STALE' if proof.get('not_committed_final') else 'REFUSED' if stage['state']=='REFUSED' else 'NOT_OBSERVED'
+        status='COMMITTED' if proof['status']=='COMMITTED' else 'NOT_COMMITTED_STALE' if proof.get('not_committed_final') else 'REFUSED_FIRST_SEND' if stage['state']=='REJECTED_FIRST_SEND' and stage['error'] in ('FIRST_CURRENT_OPERATION_REFUSED','FIRST_PRODUCT_AUTHORIZATION_REFUSED','FIRST_PRODUCT_CONFLICT') else 'REFUSED' if stage['state']=='REFUSED' else 'NOT_OBSERVED'
+        finalization=(json.loads(stage['result']) if stage['result'] else {}).get('consumer_finalization')
+        terminal=False
+        if finalization:
+            if (finalization.get('original_request_key')!=stage['request_key'] or finalization.get('body_sha256')!=stage['body_sha256'] or
+                finalization.get('state')!=stage['state'] or not isinstance(finalization.get('request'),dict) or
+                finalization.get('fingerprint')!=digest(canonical(finalization['request']))):raise Conflict('original terminal proof changed')
+            saved=FinalizeAdoption.model_validate(finalization['request'])
+            if saved.expected_original_request_key!=stage['request_key'] or saved.expected_body_sha256!=stage['body_sha256']:raise Conflict('terminal request binding changed')
+            terminal=(stage['state']=='CONFIRMED' and status=='COMMITTED' and finalization.get('proof_kind')=='COMMITTED' or
+                      stage['state']=='CLOSED_NOT_COMMITTED' and proof['status']!='COMMITTED' and (proof.get('not_committed_final') and finalization.get('proof_kind')=='STRICTLY_ADVANCED_SOURCE' or
+                       saved.expected_journal_state=='REJECTED_FIRST_SEND' and finalization.get('proof_kind')=='FIRST_DEFINITE_REFUSAL' and finalization.get('refusal_code') in ('FIRST_CURRENT_OPERATION_REFUSED','FIRST_PRODUCT_AUTHORIZATION_REFUSED','FIRST_PRODUCT_CONFLICT')))
+            if not terminal:raise Conflict('persistent terminal outcome cannot be verified')
+        if terminal and stage['state']=='CLOSED_NOT_COMMITTED':status='NOT_COMMITTED_FINAL'
+        finalizable=not terminal and status in ('COMMITTED','NOT_COMMITTED_STALE','REFUSED_FIRST_SEND')
         return dict(instance_id=instance['id'],actor_ref=case_steps.cp._hash(dict(actor_id=p['id'])),
             consumer_request_key=key,original_request_key=stage['request_key'],body_sha256=stage['body_sha256'],
             original_request=dict(expected_preparation_revision=data.expected_preparation_revision,
                 expected_request_revision=data.expected_request_revision,expected_source_sha256=data.expected_source_sha256,
                 partial_adoption=data.partial_adoption is True,required_goals=list(data.required_goals)),
             status=status,receipt=proof,instance=self.read(token,id),
+            journal_state=stage['state'],journal_error=stage['error'],journal_terminal=terminal,finalization=finalization,finalizable=finalizable,
             automatically_replayed=False,product_read_only=True,journal_read_only=True,case_goal_completed=False)
+
+    def finalize_planning(self,token,id,key,data):
+        """Explicit exact-key journal CAS. Never replay the original product send."""
+        with self._planning_key_lock(token,id,key):
+            proof=self.planning_recovery(token,id,key)
+            name='CONFIRM_PLAN_'+digest(key)
+            request=data.model_dump();fp=digest(canonical(request))
+            if data.expected_original_request_key!=proof['original_request_key'] or data.expected_body_sha256!=proof['body_sha256']:
+                raise Conflict('exact original adoption proof required')
+            if proof['journal_terminal']:
+                if proof['finalization']['fingerprint']!=fp:raise Conflict('terminal reconciliation arguments changed')
+                return proof
+            if not proof['finalizable'] or proof['journal_state']!=data.expected_journal_state:
+                raise Conflict('original adoption not proven terminal or journal state changed')
+            state='CONFIRMED' if proof['status']=='COMMITTED' else 'CLOSED_NOT_COMMITTED'
+            kind='COMMITTED' if state=='CONFIRMED' else 'STRICTLY_ADVANCED_SOURCE' if proof['receipt'].get('not_committed_final') else 'FIRST_DEFINITE_REFUSAL'
+            finalization=dict(original_request_key=proof['original_request_key'],body_sha256=proof['body_sha256'],
+                              state=state,proof_kind=kind,refusal_code=proof['journal_error'] if kind=='FIRST_DEFINITE_REFUSAL' else None,request=request,fingerprint=fp)
+            # Exact recovery takes the original PG parent/key locks. A committed
+            # event is immutable; advanced revisions cannot decrease. The file
+            # lock also serializes every consumer send against this journal CAS.
+            p,database=self._auth(token);instance=self._instance(p,database,id)
+            self._available(p,instance);self._reviewer(p,instance['input']['reviewer_id'])
+            with self.repository.connect(write=True) as c:
+                # BEGIN IMMEDIATE may itself wait: authority must be current here.
+                p,database=self._auth(token);self._instance(p,database,id)
+                self._available(p,instance);self._reviewer(p,instance['input']['reviewer_id'])
+                stage=c.execute('SELECT * FROM consumer_stages WHERE instance_id=? AND name=?',(instance['id'],name)).fetchone()
+                if not stage or stage['state']!=data.expected_journal_state or stage['request_key']!=data.expected_original_request_key or stage['body_sha256']!=data.expected_body_sha256:
+                    raise Conflict('original adoption journal CAS changed')
+                result=json.loads(stage['result']) if stage['result'] else {}
+                result.update(consumer_finalization=finalization)
+                if state=='CONFIRMED':result['plan_id']=proof['receipt']['event']['plan_id']
+                changed=c.execute('UPDATE consumer_stages SET state=?,result=?,error=NULL WHERE instance_id=? AND name=? AND state=? AND request_key=? AND body_sha256=? AND result IS ? AND error IS ?',
+                    (state,canonical(result),instance['id'],name,stage['state'],stage['request_key'],stage['body_sha256'],stage['result'],stage['error'])).rowcount
+                if changed!=1:raise Conflict('original adoption journal CAS lost')
+            return self.planning_recovery(token,id,key)
 
     @contextmanager
     def _planning_key_lock(self, token, id, key):
@@ -697,8 +763,10 @@ def install_routes(app, consumer):
     def planning_adopt(instance_id: UUID, data: case_steps.Adopt, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
         return consumer.confirm_plan(bearer(authorization), instance_id, idempotency_key, data)
 
+    @app.post('/api/template-consumer/instances/{instance_id}/planning-finalization')
+    def planning_finalization(instance_id: UUID, data: FinalizeAdoption, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
+        return consumer.finalize_planning(bearer(authorization),instance_id,idempotency_key,data)
+
     @app.get('/api/template-consumer/instances/{instance_id}/planning-recovery')
     def planning_recovery(instance_id: UUID, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
         return consumer.planning_recovery(bearer(authorization),instance_id,idempotency_key)
-
-
