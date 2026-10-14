@@ -144,6 +144,13 @@ def read(store,token,id):
                              actual_output=out.get(adapter) if step and step['_output_readable'] else None,
                              historical_verification=dict(id=proof['id'],revision=proof['revision'],actor_id=proof['actor_id'],current=state=='LOCAL_OUTPUT_VERIFIED') if proof else None,
                              next_action='READ_ORIGINAL_STEP_AND_UNLOCK' if step and step.get('manual_lock') and state!='LOCAL_OUTPUT_VERIFIED' else 'READ_ORIGINAL_STEP_AND_VERIFY' if state=='AWAITING_OWNER_VERIFICATION' else 'USE_ORIGINAL_ADAPTER_TO_RECHECK' if state not in ('LOCAL_OUTPUT_VERIFIED','UNSUPPORTED') else 'MANUAL_SERVICE_CONTRACT_REQUIRED' if state=='UNSUPPORTED' else None))
+        if plan:
+            from .manual_goal_requests import ledger
+            _,human_states=ledger(parent,plan)
+            for row in rows:
+                if row['state']=='UNSUPPORTED':
+                    row['human_request_state']=human_states.get(row['goal'],'NOT_REQUESTED')
+                    row['human_request_next_action']='READ_ORIGINAL_HUMAN_REQUEST'
         return dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(id),case_id=str(parent['case_id']),run_id=str(parent['run_id']),preparation_revision=parent['revision'],
                     request_revision=intent.get('revision',0),current_request=intent.get('request_text',parent['goal']),original_request=parent['goal'],plan_id=plan['id'] if plan else None,plan_revision=plan['revision'] if plan else 0,
                     state='PARTIAL' if plan and plan.get('partial_adoption') is True else 'UNKNOWN' if not rows else 'LOCAL_OUTPUTS_VERIFIED' if all(r['state']=='LOCAL_OUTPUT_VERIFIED' for r in rows) else 'UNVERIFIED',

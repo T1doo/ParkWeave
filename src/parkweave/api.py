@@ -475,6 +475,17 @@ def create_app(store: Store, *, summary_reader=None) -> FastAPI:
     def goal_results_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return case_goal_results.read(store,token(authorization),preparation_id)
 
+    from . import manual_goal_requests
+    @app.get('/api/preparations/{preparation_id}/manual-goal-requests')
+    def manual_goals_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return manual_goal_requests.read(store,token(authorization),preparation_id)
+    @app.get('/api/preparations/{preparation_id}/manual-goal-requests/recovery/{request_key}')
+    def manual_goals_recover(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return manual_goal_requests.read(store,token(authorization),preparation_id,resource_key(request_key))
+    @app.post('/api/preparations/{preparation_id}/manual-goal-requests')
+    def manual_goals_command(preparation_id: UUID,data: manual_goal_requests.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return manual_goal_requests.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+
     @app.get('/api/preparations/{preparation_id}/planning-preview')
     def planning_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return planning.read(store,token(authorization),preparation_id)
