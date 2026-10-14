@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="9" time="6.658" timestamp="2026-10-14T18:20:49.760067+00:00" hostname="754d39e95154"><testcase classname=".runtime.proposal-planner-20261014.independent.test_independent_proposal" name="test_real_socket_disabled_before_connect" time="0.051" /><testcase classname=".runtime.proposal-planner-20261014.independent.test_independent_proposal" name="test_success_persists_v3_and_historical_source_trace" time="1.383"><failure message="KeyError: 'candidate_id'">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f8965be3800&gt;, &lt;parkweave.store.Store object at 0x7f8965be3770&gt;, {'fixture-a': 'gB...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7f8964b56630&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8965be35c0&gt;
+
+    def test_success_persists_v3_and_historical_source_trace(preparation_fixture,monkeypatch):
+        f=preparation_fixture;p=setup(f,[GOAL]);planner=OfflineProposalPlanner(transport=httpx.MockTransport(responder));key=uuid4().hex;data=body(f,p)
+        with TestClient(create_app(f[0],proposal_planner=planner)) as api:
+            r=api.post(path(p),headers=headers(f[2],key=key),json=data);assert r.status_code==201,r.text;v=r.json();assert v['validator_version']==3
+&gt;           assert api.post(path(p),headers=headers(f[2],key=key),json=data).json()['candidate_id']==v['candidate_id'];assert planner.budget.calls==1
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           KeyError: 'candidate_id'
+
+.runtime/proposal-planner-20261014/independent/test_independent_proposal.py:48: KeyError</failure></testcase><testcase classname=".runtime.proposal-planner-20261014.independent.test_independent_proposal" name="test_corrupt_v3_provenance_conflict_not_500[call_id]" time="0.471"><failure message="KeyError: 'producer'">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f8964cd1310&gt;, &lt;parkweave.store.Store object at 0x7f8965fbe9f0&gt;, {'fixture-a': 'M6...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7f89639c6480&gt;)
+corruption = 'call_id'
+
+    @pytest.mark.parametrize('corruption',['call_id','usage_bool','budget_attempt_bool','remove_producer'])
+    def test_corrupt_v3_provenance_conflict_not_500(preparation_fixture,corruption):
+        f=preparation_fixture;p=setup(f,[GOAL]);planner=OfflineProposalPlanner(transport=httpx.MockTransport(responder))
+        with TestClient(create_app(f[0],proposal_planner=planner)) as api:
+            r=api.post(path(p),headers=headers(f[2],key=uuid4().hex),json=body(f,p));assert r.status_code==201,r.text;v=r.json()
+            with f[1].connect() as c:
+                records=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'];h=records[0]
+&gt;               if corruption=='call_id':h['producer']['call_id']='space bad'
+                                         ^^^^^^^^^^^^^
+E               KeyError: 'producer'
+
+.runtime/proposal-planner-20261014/independent/test_independent_proposal.py:66: KeyError</failure></testcase><testcase classname=".runtime.proposal-planner-20261014.independent.test_independent_proposal" name="test_corrupt_v3_provenance_conflict_not_500[usage_bool]" time="0.486"><failure message="KeyError: 'producer'">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f8963808ec0&gt;, &lt;parkweave.store.Store object at 0x7f8964b4d910&gt;, {'fixture-a': 'Sd...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7f89623b5730&gt;)
+corruption = 'usage_bool'
+
+    @pytest.mark.parametrize('corruption',['call_id','usage_bool','budget_attempt_bool','remove_producer'])
+    def test_corrupt_v3_provenance_conflict_not_500(preparation_fixture,corruption):
+        f=preparation_fixture;p=setup(f,[GOAL]);planner=OfflineProposalPlanner(transport=httpx.MockTransport(responder))
+        with TestClient(create_app(f[0],proposal_planner=planner)) as api:
+            r=api.post(path(p),headers=headers(f[2],key=uuid4().hex),json=body(f,p));assert r.status_code==201,r.text;v=r.json()
+            with f[1].connect() as c:
+                records=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'];h=records[0]
+                if corruption=='call_id':h['producer']['call_id']='space bad'
+&gt;               elif corruption=='usage_bool':h['producer']['usage']['total_tokens']=True
+                                              ^^^^^^^^^^^^^
+E               KeyError: 'producer'
+
+.runtime/proposal-planner-20261014/independent/test_independent_proposal.py:67: KeyError</failure></testcase><testcase classname=".runtime.proposal-planner-20261014.independent.test_independent_proposal" name="test_corrupt_v3_provenance_conflict_not_500[budget_attempt_bool]" time="0.702"><failure message="KeyError: 'budget_record'">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f896258d910&gt;, &lt;parkweave.store.Store object at 0x7f8962211760&gt;, {'fixture-a': 'Mx...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7f8963956e40&gt;)
+corruption = 'budget_attempt_bool'
+
+    @pytest.mark.parametrize('corruption',['call_id','usage_bool','budget_attempt_bool','remove_producer'])
+    def test_corrupt_v3_provenance_conflict_not_500(preparation_fixture,corruption):
+        f=preparation_fixture;p=setup(f,[GOAL]);planner=OfflineProposalPlanner(transport=httpx.MockTransport(responder))
+        with TestClient(create_app(f[0],proposal_planner=planner)) as api:
+            r=api.post(path(p),headers=headers(f[2],key=uuid4().hex),json=body(f,p));assert r.status_code==201,r.text;v=r.json()
+            with f[1].connect() as c:
+                records=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'];h=records[0]
+                if corruption=='call_id':h['producer']['call_id']='space bad'
+                elif corruption=='usage_bool':h['producer']['usage']['total_tokens']=True
+&gt;               elif corruption=='budget_attempt_bool':h['budget_record']['attempt']=True
+                                                       ^^^^^^^^^^^^^^^^^^
+E               KeyError: 'budget_record'
+
+.runtime/proposal-planner-20261014/independent/test_independent_proposal.py:68: KeyError</failure></testcase><testcase classname=".runtime.proposal-planner-20261014.independent.test_independent_proposal" name="test_corrupt_v3_provenance_conflict_not_500[remove_producer]" time="0.523"><failure message="KeyError: 'producer'">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f89621f6b10&gt;, &lt;parkweave.store.Store object at 0x7f896201e4b0&gt;, {'fixture-a': 'o3...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7f8962633bf0&gt;)
+corruption = 'remove_producer'
+
+    @pytest.mark.parametrize('corruption',['call_id','usage_bool','budget_attempt_bool','remove_producer'])
+    def test_corrupt_v3_provenance_conflict_not_500(preparation_fixture,corruption):
+        f=preparation_fixture;p=setup(f,[GOAL]);planner=OfflineProposalPlanner(transport=httpx.MockTransport(responder))
+        with TestClient(create_app(f[0],proposal_planner=planner)) as api:
+            r=api.post(path(p),headers=headers(f[2],key=uuid4().hex),json=body(f,p));assert r.status_code==201,r.text;v=r.json()
+            with f[1].connect() as c:
+                records=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'];h=records[0]
+                if corruption=='call_id':h['producer']['call_id']='space bad'
+                elif corruption=='usage_bool':h['producer']['usage']['total_tokens']=True
+                elif corruption=='budget_attempt_bool':h['budget_record']['attempt']=True
+&gt;               else:h.pop('producer')
+                     ^^^^^^^^^^^^^^^^^
+E               KeyError: 'producer'
+
+.runtime/proposal-planner-20261014/independent/test_independent_proposal.py:69: KeyError</failure></testcase><testcase classname=".runtime.proposal-planner-20261014.independent.test_independent_proposal" name="test_provider_wait_has_no_case_lock_pending_no_resend[material]" time="0.675"><failure message="AssertionError: assert 'PENDING' == 'FAILED_SAFE'&#10;  &#10;  - FAILED_SAFE&#10;  + PENDING">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f8961e6ac00&gt;, &lt;parkweave.store.Store object at 0x7f896260b1d0&gt;, {'fixture-a': '4v...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7f8964d0a030&gt;)
+change = 'material'
+
+    @pytest.mark.parametrize('change',['material','revoke'])
+    def test_provider_wait_has_no_case_lock_pending_no_resend(preparation_fixture,change):
+        f=preparation_fixture;p=setup(f,[GOAL]);data=body(f,p);key=uuid4().hex;entered=threading.Event();release=threading.Event();requests=[]
+        def blocked(request):
+            requests.append(request);entered.set();assert release.wait(12);return responder(request)
+        planner=OfflineProposalPlanner(transport=httpx.MockTransport(blocked))
+        with TestClient(create_app(f[0],proposal_planner=planner)) as api,ThreadPoolExecutor(max_workers=3) as pool:
+            pending=pool.submit(api.post,path(p),headers=headers(f[2],key=key),json=data)
+            try:
+                assert entered.wait(8)
+                duplicate=pool.submit(api.post,path(p),headers=headers(f[2],key=key),json=data).result(4);assert duplicate.status_code==201,duplicate.text;assert duplicate.json()['status']=='PENDING'
+                assert api.post(path(p),headers=headers(f[2],key=key),json={**data,'expected_source_sha256':'0'*64}).status_code==409
+                before=digest(f);recovery=api.get(path(p)+'/recovery',headers=headers(f[2],key=key));assert recovery.status_code==200 and recovery.json()['status']=='PENDING';assert digest(f)==before
+                if change=='material':
+                    material=pool.submit(add,f,p).result(4);assert material.status_code==200,material.text
+                else:
+                    with f[1].connect() as c:
+                        c.execute("SET LOCAL lock_timeout='3s'");c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+                release.set();out=pending.result(8);assert out.status_code==(409 if change=='material' else 403),out.text
+                recovery=api.get(path(p)+'/recovery',headers=headers(f[2],key=key));assert recovery.status_code==200,recovery.text
+&gt;               assert recovery.json()['status']==('FAILED_SAFE' if change=='material' else 'PENDING')
+E               AssertionError: assert 'PENDING' == 'FAILED_SAFE'
+E                 
+E                 - FAILED_SAFE
+E                 + PENDING
+
+.runtime/proposal-planner-20261014/independent/test_independent_proposal.py:93: AssertionError</failure></testcase><testcase classname=".runtime.proposal-planner-20261014.independent.test_independent_proposal" name="test_provider_wait_has_no_case_lock_pending_no_resend[revoke]" time="0.732" /><testcase classname=".runtime.proposal-planner-20261014.independent.test_independent_proposal" name="test_transport_unknown_never_resend" time="0.513"><failure message="AssertionError: assert 'PENDING' == 'OUTCOME_UNKNOWN'&#10;  &#10;  - OUTCOME_UNKNOWN&#10;  + PENDING">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f8961f71610&gt;, &lt;parkweave.store.Store object at 0x7f8964b56ff0&gt;, {'fixture-a': 'X3...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7f8961e6bfb0&gt;)
+
+    def test_transport_unknown_never_resend(preparation_fixture):
+        f=preparation_fixture;p=setup(f,[GOAL]);requests=[]
+        def failed(req):requests.append(req);raise httpx.ConnectError('SYNTHETIC unavailable',request=req)
+        planner=OfflineProposalPlanner(transport=httpx.MockTransport(failed));data=body(f,p);key=uuid4().hex
+        with TestClient(create_app(f[0],proposal_planner=planner)) as api:
+            r=api.post(path(p),headers=headers(f[2],key=key),json=data);assert r.status_code==409,r.text
+&gt;           before=digest(f);r=api.get(path(p)+'/recovery',headers=headers(f[2],key=key));assert r.status_code==200,r.text;assert r.json()['status']=='OUTCOME_UNKNOWN';assert digest(f)==before
+                                                                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: assert 'PENDING' == 'OUTCOME_UNKNOWN'
+E             
+E             - OUTCOME_UNKNOWN
+E             + PENDING
+
+.runtime/proposal-planner-20261014/independent/test_independent_proposal.py:105: AssertionError</failure></testcase></testsuite></testsuites>

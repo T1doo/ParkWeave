@@ -1,5 +1,9 @@
 ## 普通合成 Case 首次实际接单前取消
 
+## 20261014：默认关闭的离线 JSON 规划闭环
+
+冻结源码a60c83c5cfc5b037c607f6f192f840dfdde42783，独立严格解析假 provider 完整注册合同，原 key 持久 attempt、网络等待不占 Case 锁、发送/保存复核权限与来源；原预核、明确 ADOPT 与来源追溯，V1/V2 保留。主测510PASS，隔离26PASS，独审159PASS和另窗原页4PASS，各窗不加总。实际 provider/凭据/LIVE/规划业务执行均0；范围、原失败及独审见[离线规划合同](ProposalPlannerOffline-20261014.md)。下片补原页失败/未知冷读交互；非真实模型/完整PR0。
+
 ## 20261014：原多目标总览追溯已采用来源
 
 源码5fe302052682d54c9ec38751068e4a11f9f00687，原owner goal-results GET核首ADOPT/候选消费证明，追溯原来源版本、完整目标及实际稳定步骤依赖；原页显式只读预核，迟到材料提交pending再查，403清私有，原历史保留。无新Grant/provider/业务写，独审21PASS。最终主测、失败窗和普通交付见[来源追溯合同](PlanSourceTrace-20261014.md)，非完整PR0/真实模型/正式履约。

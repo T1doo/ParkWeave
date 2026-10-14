@@ -1,0 +1,726 @@
+FFFFFFFF.F.....FFFFFFFFF..                                               [100%]
+=================================== FAILURES ===================================
+__________ test_fake_transport_original_candidate_adopt_source_trace ___________
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd47bd6e000>, <parkweave.store.Store object at 0x7fd47bd6e0c0>, {'fixture-a': '7m...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47bedc6e0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd47bd6ef00>
+
+    def test_fake_transport_original_candidate_adopt_source_trace(preparation_fixture, monkeypatch):
+        f = preparation_fixture
+        p = setup(f, [GOAL])
+        body, _ = request_body(f, p)
+        from parkweave.gateway import ExecutionGateway
+        from parkweave.quota import PersistentBudget
+        def prohibited(*args, **kwargs):
+            raise AssertionError('proposal flow called business gateway or persistent quota')
+        monkeypatch.setattr(ExecutionGateway, 'execute', prohibited)
+        for method in ('reserve', 'dispatch', 'finish'):
+            monkeypatch.setattr(PersistentBudget, method, prohibited)
+        requests = []
+        instance = planner(echo_handler(requests))
+        before = business_snapshot(f)
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex
+            response = post_candidate(client, f, p, body, key)
+            assert response.status_code == 201, response.text
+            value = response.json()
+            assert value['state'] == 'VERIFIED_STRUCTURE_ONLY'
+            assert value['can_adopt'] and value['execution_enabled'] is False
+            assert business_snapshot(f) == before
+>           candidate = assert_read_only(client, f, path(p) + '/' + value['candidate_id'] + '/preview')
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_proposal_planner_offline.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x7fd47b9b8c20>
+f = (<parkweave.store.Store object at 0x7fd47bd6e000>, <parkweave.store.Store object at 0x7fd47bd6e0c0>, {'fixture-a': '7m...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47bedc6e0>)
+url = '/api/preparations/58c831c6-96b2-410e-986d-b6663cf55b9a/service-plan-candidates/bef06785-a8f6-488c-ad02-5b110f303402/preview'
+
+    def assert_read_only(client, f, url):
+        before = digest(f)
+        response = client.get(url, headers=headers(f[2]))
+>       assert response.status_code == 200, response.text
+E       AssertionError: {"detail":"candidate unavailable in this Case"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_proposal_planner_offline.py:50: AssertionError
+______ test_untrusted_proposal_never_downgrades_original_contract[extra] _______
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd47bbee930>, <parkweave.store.Store object at 0x7fd47bbffd70>, {'fixture-a': 'FZ...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47b9b8d70>)
+kind = 'extra'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+>           assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+
+tests/test_proposal_planner_offline.py:154: AssertionError
+____ test_untrusted_proposal_never_downgrades_original_contract[drop_goal] _____
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd479703320>, <parkweave.store.Store object at 0x7fd47bc48a10>, {'fixture-a': 'DT...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd4792f6c30>)
+kind = 'drop_goal'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+>           assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+
+tests/test_proposal_planner_offline.py:154: AssertionError
+_ test_untrusted_proposal_never_downgrades_original_contract[unknown_version] __
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd4792f58e0>, <parkweave.store.Store object at 0x7fd479365130>, {'fixture-a': 'ON...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd478f8f1a0>)
+kind = 'unknown_version'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+>           assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+
+tests/test_proposal_planner_offline.py:154: AssertionError
+______ test_untrusted_proposal_never_downgrades_original_contract[cycle] _______
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd4795244d0>, <parkweave.store.Store object at 0x7fd478fa0f50>, {'fixture-a': 'lz...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47a88d3a0>)
+kind = 'cycle'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+>           assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+
+tests/test_proposal_planner_offline.py:154: AssertionError
+_ test_untrusted_proposal_never_downgrades_original_contract[missing_dependency] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd478fa1070>, <parkweave.store.Store object at 0x7fd47a8cf8f0>, {'fixture-a': 'vK...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47ba08c20>)
+kind = 'missing_dependency'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+>           assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+
+tests/test_proposal_planner_offline.py:154: AssertionError
+______ test_untrusted_proposal_never_downgrades_original_contract[source] ______
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd478e3d8e0>, <parkweave.store.Store object at 0x7fd47bbf4470>, {'fixture-a': 'pL...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd4797b3c20>)
+kind = 'source'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+>           assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+
+tests/test_proposal_planner_offline.py:154: AssertionError
+__ test_untrusted_proposal_never_downgrades_original_contract[hard_condition] __
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd479877b60>, <parkweave.store.Store object at 0x7fd479877080>, {'fixture-a': '21...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd479473920>)
+kind = 'hard_condition'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+>           assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+
+tests/test_proposal_planner_offline.py:154: AssertionError
+________ test_same_key_wait_has_one_fake_dispatch_and_original_recovery ________
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd47919bdd0>, <parkweave.store.Store object at 0x7fd47986f8f0>, {'fixture-a': '7R...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd478f44140>)
+
+    def test_same_key_wait_has_one_fake_dispatch_and_original_recovery(preparation_fixture):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; entered = Event(); release = Event()
+        instance = planner(echo_handler(requests, entered=entered, release=release))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client, ThreadPoolExecutor(2) as pool:
+            key = uuid4().hex; waiting = pool.submit(post_candidate, client, f, p, body, key)
+            try:
+                assert entered.wait(5)
+                second = pool.submit(post_candidate, client, f, p, body, key).result(timeout=5)
+>               assert second.status_code in (200, 202, 409), second.text
+E               AssertionError: {"attempt_id":"acefb391-1ad3-4bb8-bf7b-e5a317651734","status":"PENDING","outcome":null,"validity":{"seconds":900,"version":2,"created_at":"2026-10-14T18:19:32.652299+00:00","expires_at":"2026-10-14T18:34:32.652299+00:00"},"automatically_replayed":false,"read_only":true,"can_adopt":false,"provider_enabled":false,"execution_enabled":false,"new_grants":false}
+E               assert 201 in (200, 202, 409)
+E                +  where 201 = <Response [201 Created]>.status_code
+
+tests/test_proposal_planner_offline.py:191: AssertionError
+_ test_malformed_or_failed_producer_preserves_original_key_without_retry[duplicate] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd47bd6ec30>, <parkweave.store.Store object at 0x7fd479526600>, {'fixture-a': 'zQ...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd4797e00b0>)
+kind = 'duplicate'
+
+    @pytest.mark.parametrize('kind', ['duplicate', 'tool_field', 'timeout', 'socket'])
+    def test_malformed_or_failed_producer_preserves_original_key_without_retry(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []
+        def handler(request):
+            requests.append(request.method)
+            if kind == 'timeout':
+                raise httpx.ReadTimeout('SYNTHETIC offline timeout', request=request)
+            if kind == 'socket':
+                import socket
+                with socket.socket() as listener:
+                    listener.bind(('127.0.0.1', 0)); endpoint = listener.getsockname()
+                    # Bound, non-listening own loopback socket: OS refuses connection.
+                    with pytest.raises(ConnectionRefusedError):
+                        socket.create_connection(endpoint, timeout=0.5)
+                raise httpx.ConnectError('SYNTHETIC local socket refused', request=request)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            envelope = fake_envelope(proposal)
+            if kind == 'duplicate':
+                content = envelope['choices'][0]['message']['content']
+                envelope['choices'][0]['message']['content'] = '{"schema_version":1,' + content[1:]
+            else:
+                envelope['choices'][0]['message']['tool_calls'] = []
+            return httpx.Response(200, json=envelope)
+        instance = planner(handler)
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+>           assert recovered.status_code == 200 and recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert (200 == 200 and 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN'))
+E            +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_proposal_planner_offline.py:283: AssertionError
+_ test_malformed_or_failed_producer_preserves_original_key_without_retry[tool_field] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd47ba28da0>, <parkweave.store.Store object at 0x7fd47968dd30>, {'fixture-a': 'jC...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd478c10c20>)
+kind = 'tool_field'
+
+    @pytest.mark.parametrize('kind', ['duplicate', 'tool_field', 'timeout', 'socket'])
+    def test_malformed_or_failed_producer_preserves_original_key_without_retry(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []
+        def handler(request):
+            requests.append(request.method)
+            if kind == 'timeout':
+                raise httpx.ReadTimeout('SYNTHETIC offline timeout', request=request)
+            if kind == 'socket':
+                import socket
+                with socket.socket() as listener:
+                    listener.bind(('127.0.0.1', 0)); endpoint = listener.getsockname()
+                    # Bound, non-listening own loopback socket: OS refuses connection.
+                    with pytest.raises(ConnectionRefusedError):
+                        socket.create_connection(endpoint, timeout=0.5)
+                raise httpx.ConnectError('SYNTHETIC local socket refused', request=request)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            envelope = fake_envelope(proposal)
+            if kind == 'duplicate':
+                content = envelope['choices'][0]['message']['content']
+                envelope['choices'][0]['message']['content'] = '{"schema_version":1,' + content[1:]
+            else:
+                envelope['choices'][0]['message']['tool_calls'] = []
+            return httpx.Response(200, json=envelope)
+        instance = planner(handler)
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+>           assert recovered.status_code == 200 and recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert (200 == 200 and 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN'))
+E            +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_proposal_planner_offline.py:283: AssertionError
+_ test_malformed_or_failed_producer_preserves_original_key_without_retry[timeout] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd47bbf7230>, <parkweave.store.Store object at 0x7fd4781b8410>, {'fixture-a': 'OX...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47bdf05f0>)
+kind = 'timeout'
+
+    @pytest.mark.parametrize('kind', ['duplicate', 'tool_field', 'timeout', 'socket'])
+    def test_malformed_or_failed_producer_preserves_original_key_without_retry(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []
+        def handler(request):
+            requests.append(request.method)
+            if kind == 'timeout':
+                raise httpx.ReadTimeout('SYNTHETIC offline timeout', request=request)
+            if kind == 'socket':
+                import socket
+                with socket.socket() as listener:
+                    listener.bind(('127.0.0.1', 0)); endpoint = listener.getsockname()
+                    # Bound, non-listening own loopback socket: OS refuses connection.
+                    with pytest.raises(ConnectionRefusedError):
+                        socket.create_connection(endpoint, timeout=0.5)
+                raise httpx.ConnectError('SYNTHETIC local socket refused', request=request)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            envelope = fake_envelope(proposal)
+            if kind == 'duplicate':
+                content = envelope['choices'][0]['message']['content']
+                envelope['choices'][0]['message']['content'] = '{"schema_version":1,' + content[1:]
+            else:
+                envelope['choices'][0]['message']['tool_calls'] = []
+            return httpx.Response(200, json=envelope)
+        instance = planner(handler)
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+>           assert recovered.status_code == 200 and recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert (200 == 200 and 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN'))
+E            +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_proposal_planner_offline.py:283: AssertionError
+_ test_malformed_or_failed_producer_preserves_original_key_without_retry[socket] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd4790949e0>, <parkweave.store.Store object at 0x7fd478a84440>, {'fixture-a': 'I3...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd4787d3aa0>)
+kind = 'socket'
+
+    @pytest.mark.parametrize('kind', ['duplicate', 'tool_field', 'timeout', 'socket'])
+    def test_malformed_or_failed_producer_preserves_original_key_without_retry(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []
+        def handler(request):
+            requests.append(request.method)
+            if kind == 'timeout':
+                raise httpx.ReadTimeout('SYNTHETIC offline timeout', request=request)
+            if kind == 'socket':
+                import socket
+                with socket.socket() as listener:
+                    listener.bind(('127.0.0.1', 0)); endpoint = listener.getsockname()
+                    # Bound, non-listening own loopback socket: OS refuses connection.
+                    with pytest.raises(ConnectionRefusedError):
+                        socket.create_connection(endpoint, timeout=0.5)
+                raise httpx.ConnectError('SYNTHETIC local socket refused', request=request)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            envelope = fake_envelope(proposal)
+            if kind == 'duplicate':
+                content = envelope['choices'][0]['message']['content']
+                envelope['choices'][0]['message']['content'] = '{"schema_version":1,' + content[1:]
+            else:
+                envelope['choices'][0]['message']['tool_calls'] = []
+            return httpx.Response(200, json=envelope)
+        instance = planner(handler)
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+>           assert recovered.status_code == 200 and recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+E           AssertionError: assert (200 == 200 and 'PENDING' in ('FAILED_SAFE', 'OUTCOME_UNKNOWN'))
+E            +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_proposal_planner_offline.py:283: AssertionError
+___________ test_unsupported_goal_and_unknown_catalog_remain_honest ____________
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd4793cd880>, <parkweave.store.Store object at 0x7fd479170980>, {'fixture-a': '47...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47a8573e0>)
+
+    def test_unsupported_goal_and_unknown_catalog_remain_honest(preparation_fixture):
+        f = preparation_fixture; p = setup(f, [GOAL, 'UNSUPPORTED_EXTERNAL_ACCEPTANCE']); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            response = post_candidate(client, f, p, body, uuid4().hex)
+            assert response.status_code == 201, response.text
+            value = response.json()
+            assert value['required_goals'] == [GOAL, 'UNSUPPORTED_EXTERNAL_ACCEPTANCE']
+            assert not value['can_adopt'] and value['can_adopt_partial']
+            with f[1].connect() as connection:
+                connection.execute("UPDATE preparation_catalog SET source='{}'::jsonb")
+            body, _ = request_body(f, p)
+            response = post_candidate(client, f, p, body, uuid4().hex)
+>           assert response.status_code == 201, response.text
+E           AssertionError: {"detail":"original planner attempt requires GET recovery first"}
+E           assert 409 == 201
+E            +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_proposal_planner_offline.py:302: AssertionError
+_____________ test_original_page_fake_planner_closed_loop[normal] ______________
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd47a644440>, <parkweave.store.Store object at 0x7fd47a92d8e0>, {'fixture-a': 'gV...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47c0d4500>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd47a89dfa0>
+mode = 'normal'
+
+    @pytest.mark.parametrize('mode', ['normal', 'cold_generate', 'cold_adopt', 'trace'])
+    def test_original_page_fake_planner_closed_loop(preparation_fixture, monkeypatch, mode):
+        from test_service_plan_candidates import test_original_page_candidate_consumer_never_hand_fills_candidate_json
+        requests = []; instance = planner(echo_handler(requests))
+        f = preparation_fixture
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            original_fixture = (f[0], f[1], f[2], client)
+>           test_original_page_candidate_consumer_never_hand_fills_candidate_json(original_fixture, mode, monkeypatch)
+
+tests/test_proposal_planner_offline.py:316: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd47a644440>, <parkweave.store.Store object at 0x7fd47a92d8e0>, {'fixture-a': 'gV...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd4791eb350>)
+mode = 'normal'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd47a89dfa0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: evalmachine.<anonymous>:1
+E             planCandidateView.candidate_id
+E                               ^
+E             
+E             TypeError: Cannot read properties of null (reading 'candidate_id')
+E                 at evalmachine.<anonymous>:1:19
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/workspace/parkweave-planner-tests/tests/service_plan_candidates_actual.js:24:121)
+E                 at /workspace/parkweave-planner-tests/tests/service_plan_candidates_actual.js:35:10
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+
+tests/test_service_plan_candidates.py:154: AssertionError
+__________ test_original_page_fake_planner_closed_loop[cold_generate] __________
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd4787ded20>, <parkweave.store.Store object at 0x7fd4791c9a60>, {'fixture-a': 'hZ...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47945baa0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd47baa9d30>
+mode = 'cold_generate'
+
+    @pytest.mark.parametrize('mode', ['normal', 'cold_generate', 'cold_adopt', 'trace'])
+    def test_original_page_fake_planner_closed_loop(preparation_fixture, monkeypatch, mode):
+        from test_service_plan_candidates import test_original_page_candidate_consumer_never_hand_fills_candidate_json
+        requests = []; instance = planner(echo_handler(requests))
+        f = preparation_fixture
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            original_fixture = (f[0], f[1], f[2], client)
+>           test_original_page_candidate_consumer_never_hand_fills_candidate_json(original_fixture, mode, monkeypatch)
+
+tests/test_proposal_planner_offline.py:316: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd4787ded20>, <parkweave.store.Store object at 0x7fd4791c9a60>, {'fixture-a': 'hZ...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd4793ee4e0>)
+mode = 'cold_generate'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd47baa9d30>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: evalmachine.<anonymous>:1
+E             planCandidateView.candidate_id
+E                               ^
+E             
+E             TypeError: Cannot read properties of null (reading 'candidate_id')
+E                 at evalmachine.<anonymous>:1:19
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/workspace/parkweave-planner-tests/tests/service_plan_candidates_actual.js:24:121)
+E                 at /workspace/parkweave-planner-tests/tests/service_plan_candidates_actual.js:35:10
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+
+tests/test_service_plan_candidates.py:154: AssertionError
+___________ test_original_page_fake_planner_closed_loop[cold_adopt] ____________
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd478e83b30>, <parkweave.store.Store object at 0x7fd478e81d30>, {'fixture-a': 'Uu...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd4791266f0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd47a8b92b0>
+mode = 'cold_adopt'
+
+    @pytest.mark.parametrize('mode', ['normal', 'cold_generate', 'cold_adopt', 'trace'])
+    def test_original_page_fake_planner_closed_loop(preparation_fixture, monkeypatch, mode):
+        from test_service_plan_candidates import test_original_page_candidate_consumer_never_hand_fills_candidate_json
+        requests = []; instance = planner(echo_handler(requests))
+        f = preparation_fixture
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            original_fixture = (f[0], f[1], f[2], client)
+>           test_original_page_candidate_consumer_never_hand_fills_candidate_json(original_fixture, mode, monkeypatch)
+
+tests/test_proposal_planner_offline.py:316: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd478e83b30>, <parkweave.store.Store object at 0x7fd478e81d30>, {'fixture-a': 'Uu...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47893fc50>)
+mode = 'cold_adopt'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd47a8b92b0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: evalmachine.<anonymous>:1
+E             planCandidateView.candidate_id
+E                               ^
+E             
+E             TypeError: Cannot read properties of null (reading 'candidate_id')
+E                 at evalmachine.<anonymous>:1:19
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/workspace/parkweave-planner-tests/tests/service_plan_candidates_actual.js:24:121)
+E                 at /workspace/parkweave-planner-tests/tests/service_plan_candidates_actual.js:35:10
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+
+tests/test_service_plan_candidates.py:154: AssertionError
+______________ test_original_page_fake_planner_closed_loop[trace] ______________
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd478b41c10>, <parkweave.store.Store object at 0x7fd47bedec00>, {'fixture-a': 'lj...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47c245040>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd47bbbf530>
+mode = 'trace'
+
+    @pytest.mark.parametrize('mode', ['normal', 'cold_generate', 'cold_adopt', 'trace'])
+    def test_original_page_fake_planner_closed_loop(preparation_fixture, monkeypatch, mode):
+        from test_service_plan_candidates import test_original_page_candidate_consumer_never_hand_fills_candidate_json
+        requests = []; instance = planner(echo_handler(requests))
+        f = preparation_fixture
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            original_fixture = (f[0], f[1], f[2], client)
+>           test_original_page_candidate_consumer_never_hand_fills_candidate_json(original_fixture, mode, monkeypatch)
+
+tests/test_proposal_planner_offline.py:316: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd478b41c10>, <parkweave.store.Store object at 0x7fd47bedec00>, {'fixture-a': 'lj...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7fd47a5a9760>)
+mode = 'trace'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd47bbbf530>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: evalmachine.<anonymous>:1
+E             planCandidateView.candidate_id
+E                               ^
+E             
+E             TypeError: Cannot read properties of null (reading 'candidate_id')
+E                 at evalmachine.<anonymous>:1:19
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/workspace/parkweave-planner-tests/tests/service_plan_candidates_actual.js:24:121)
+E                 at /workspace/parkweave-planner-tests/tests/service_plan_candidates_actual.js:35:10
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+
+tests/test_service_plan_candidates.py:154: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_proposal_planner_offline.py::test_fake_transport_original_candidate_adopt_source_trace
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_proposal_planner_offline.py::test_fake_transport_original_candidate_adopt_source_trace
+FAILED tests/test_proposal_planner_offline.py::test_untrusted_proposal_never_downgrades_original_contract[extra]
+FAILED tests/test_proposal_planner_offline.py::test_untrusted_proposal_never_downgrades_original_contract[drop_goal]
+FAILED tests/test_proposal_planner_offline.py::test_untrusted_proposal_never_downgrades_original_contract[unknown_version]
+FAILED tests/test_proposal_planner_offline.py::test_untrusted_proposal_never_downgrades_original_contract[cycle]
+FAILED tests/test_proposal_planner_offline.py::test_untrusted_proposal_never_downgrades_original_contract[missing_dependency]
+FAILED tests/test_proposal_planner_offline.py::test_untrusted_proposal_never_downgrades_original_contract[source]
+FAILED tests/test_proposal_planner_offline.py::test_untrusted_proposal_never_downgrades_original_contract[hard_condition]
+FAILED tests/test_proposal_planner_offline.py::test_same_key_wait_has_one_fake_dispatch_and_original_recovery
+FAILED tests/test_proposal_planner_offline.py::test_malformed_or_failed_producer_preserves_original_key_without_retry[duplicate]
+FAILED tests/test_proposal_planner_offline.py::test_malformed_or_failed_producer_preserves_original_key_without_retry[tool_field]
+FAILED tests/test_proposal_planner_offline.py::test_malformed_or_failed_producer_preserves_original_key_without_retry[timeout]
+FAILED tests/test_proposal_planner_offline.py::test_malformed_or_failed_producer_preserves_original_key_without_retry[socket]
+FAILED tests/test_proposal_planner_offline.py::test_unsupported_goal_and_unknown_catalog_remain_honest
+FAILED tests/test_proposal_planner_offline.py::test_original_page_fake_planner_closed_loop[normal]
+FAILED tests/test_proposal_planner_offline.py::test_original_page_fake_planner_closed_loop[cold_generate]
+FAILED tests/test_proposal_planner_offline.py::test_original_page_fake_planner_closed_loop[cold_adopt]
+FAILED tests/test_proposal_planner_offline.py::test_original_page_fake_planner_closed_loop[trace]
+18 failed, 8 passed, 2 warnings in 14.42s

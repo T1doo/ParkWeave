@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="11" skipped="0" tests="26" time="20.621" timestamp="2026-10-14T18:21:14.672177+00:00" hostname="754d39e95154"><testcase classname="tests.test_proposal_planner_offline" name="test_fake_transport_original_candidate_adopt_source_trace" time="1.554" /><testcase classname="tests.test_proposal_planner_offline" name="test_untrusted_proposal_never_downgrades_original_contract[extra]" time="0.550"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68e1773e0&gt;, (&lt;parkweave.store.Store object at 0x7fc690745310&gt;, &lt;parkweave.store.Store object at 0x7fc6907a6330&gt;, {'fixture-a': 'Hv...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f4d4c20&gt;), {'preparation_id': '158e2ddc-4950-4776-a0a9-ece6cd0c7cb7', 'case_id': '44c5dc76-123c-46c3-955c-bd7dc0fc876b', 'run_id': 'c96f0cd7-85d7-46e4-a261-8693e37903e5', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': 'f1405e6056cc1ace3f6e272660e484662070a45945fb906461c08f927ae1870b'}, '9f7cc968fc624c23a924e1c131469a56')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc690745310&gt;, &lt;parkweave.store.Store object at 0x7fc6907a6330&gt;, {'fixture-a': 'Hv...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f4d4c20&gt;)
+kind = 'extra'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+            assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68e1773e0&gt;, (&lt;parkweave.store.Store object at 0x7fc690745310&gt;, &lt;parkweave.store.Store object at 0x7fc6907a6330&gt;, {'fixture-a': 'Hv...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f4d4c20&gt;), {'preparation_id': '158e2ddc-4950-4776-a0a9-ece6cd0c7cb7', 'case_id': '44c5dc76-123c-46c3-955c-bd7dc0fc876b', 'run_id': 'c96f0cd7-85d7-46e4-a261-8693e37903e5', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': 'f1405e6056cc1ace3f6e272660e484662070a45945fb906461c08f927ae1870b'}, '9f7cc968fc624c23a924e1c131469a56')
+
+tests/test_proposal_planner_offline.py:156: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_untrusted_proposal_never_downgrades_original_contract[drop_goal]" time="0.617"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68dc22360&gt;, (&lt;parkweave.store.Store object at 0x7fc68dfd8c80&gt;, &lt;parkweave.store.Store object at 0x7fc68deb1cd0&gt;, {'fixture-a': 'JN...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68dee3560&gt;), {'preparation_id': '77ad4f2a-7c83-496b-a045-a9b2a537b62c', 'case_id': 'bf57ebdc-497c-44dd-8e8b-8a19834a0552', 'run_id': 'b1ec9aaa-bcd8-4848-bd0e-7cf7722cfb22', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': 'ac25f028529bbbc35b2dff66b0fa89d57a49d95f28651bde3ec777ca04977037'}, '052544fb5d35436499eb344c19879894')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc68dfd8c80&gt;, &lt;parkweave.store.Store object at 0x7fc68deb1cd0&gt;, {'fixture-a': 'JN...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68dee3560&gt;)
+kind = 'drop_goal'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+            assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68dc22360&gt;, (&lt;parkweave.store.Store object at 0x7fc68dfd8c80&gt;, &lt;parkweave.store.Store object at 0x7fc68deb1cd0&gt;, {'fixture-a': 'JN...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68dee3560&gt;), {'preparation_id': '77ad4f2a-7c83-496b-a045-a9b2a537b62c', 'case_id': 'bf57ebdc-497c-44dd-8e8b-8a19834a0552', 'run_id': 'b1ec9aaa-bcd8-4848-bd0e-7cf7722cfb22', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': 'ac25f028529bbbc35b2dff66b0fa89d57a49d95f28651bde3ec777ca04977037'}, '052544fb5d35436499eb344c19879894')
+
+tests/test_proposal_planner_offline.py:156: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_untrusted_proposal_never_downgrades_original_contract[unknown_version]" time="0.503"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68f42cb60&gt;, (&lt;parkweave.store.Store object at 0x7fc68de77170&gt;, &lt;parkweave.store.Store object at 0x7fc68dd11a60&gt;, {'fixture-a': 'SZ...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f2e2b40&gt;), {'preparation_id': '6142c230-c97c-481d-aac1-02c79bb0763a', 'case_id': '7c31484b-9bf7-4af8-9a6b-ce8b41597770', 'run_id': '3bf3c557-d233-4d40-addf-5f8bcf595a0f', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': 'b6816c6b91c948b906c6bce0b4c806a51176889b37aa80fe07893dc62ada5c49'}, '09942726d2e645c0b8ca5e0b2317eb37')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc68de77170&gt;, &lt;parkweave.store.Store object at 0x7fc68dd11a60&gt;, {'fixture-a': 'SZ...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f2e2b40&gt;)
+kind = 'unknown_version'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+            assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68f42cb60&gt;, (&lt;parkweave.store.Store object at 0x7fc68de77170&gt;, &lt;parkweave.store.Store object at 0x7fc68dd11a60&gt;, {'fixture-a': 'SZ...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f2e2b40&gt;), {'preparation_id': '6142c230-c97c-481d-aac1-02c79bb0763a', 'case_id': '7c31484b-9bf7-4af8-9a6b-ce8b41597770', 'run_id': '3bf3c557-d233-4d40-addf-5f8bcf595a0f', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': 'b6816c6b91c948b906c6bce0b4c806a51176889b37aa80fe07893dc62ada5c49'}, '09942726d2e645c0b8ca5e0b2317eb37')
+
+tests/test_proposal_planner_offline.py:156: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_untrusted_proposal_never_downgrades_original_contract[cycle]" time="0.540"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc690784c20&gt;, (&lt;parkweave.store.Store object at 0x7fc68e174c20&gt;, &lt;parkweave.store.Store object at 0x7fc68f534290&gt;, {'fixture-a': 'I3...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f500c50&gt;), {'preparation_id': 'a46b17d2-29e0-4363-8f3a-3675f83423bc', 'case_id': '5a06febc-40a4-49ec-8df7-b06c87ef5fad', 'run_id': '4d547eeb-06bf-4637-9e67-f7a920236282', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '2fe4841ec9d2472a5bf3d5a64af57f9753c6f03a4ddc6839e3ff2b50baf92dc9'}, 'ffa74b54fd9b436698dd74e1b73667d1')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc68e174c20&gt;, &lt;parkweave.store.Store object at 0x7fc68f534290&gt;, {'fixture-a': 'I3...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f500c50&gt;)
+kind = 'cycle'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+            assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc690784c20&gt;, (&lt;parkweave.store.Store object at 0x7fc68e174c20&gt;, &lt;parkweave.store.Store object at 0x7fc68f534290&gt;, {'fixture-a': 'I3...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f500c50&gt;), {'preparation_id': 'a46b17d2-29e0-4363-8f3a-3675f83423bc', 'case_id': '5a06febc-40a4-49ec-8df7-b06c87ef5fad', 'run_id': '4d547eeb-06bf-4637-9e67-f7a920236282', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '2fe4841ec9d2472a5bf3d5a64af57f9753c6f03a4ddc6839e3ff2b50baf92dc9'}, 'ffa74b54fd9b436698dd74e1b73667d1')
+
+tests/test_proposal_planner_offline.py:156: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_untrusted_proposal_never_downgrades_original_contract[missing_dependency]" time="0.659"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68e19cb60&gt;, (&lt;parkweave.store.Store object at 0x7fc68e230680&gt;, &lt;parkweave.store.Store object at 0x7fc69081c200&gt;, {'fixture-a': 'JG...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc69091e030&gt;), {'preparation_id': '3c1283f9-eece-45f1-9483-d31d14a826ee', 'case_id': '5e3d8683-51e3-411a-88cb-ff8418a7b5ae', 'run_id': 'b52f59f4-8c4f-4288-b1b1-00eac646e336', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': 'a94cd6f271fd5094491be970b5b08f2e123e9403b749310ce5232b0010df5531'}, 'daff597676f84d12a5c495fc31c57003')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc68e230680&gt;, &lt;parkweave.store.Store object at 0x7fc69081c200&gt;, {'fixture-a': 'JG...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc69091e030&gt;)
+kind = 'missing_dependency'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+            assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68e19cb60&gt;, (&lt;parkweave.store.Store object at 0x7fc68e230680&gt;, &lt;parkweave.store.Store object at 0x7fc69081c200&gt;, {'fixture-a': 'JG...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc69091e030&gt;), {'preparation_id': '3c1283f9-eece-45f1-9483-d31d14a826ee', 'case_id': '5e3d8683-51e3-411a-88cb-ff8418a7b5ae', 'run_id': 'b52f59f4-8c4f-4288-b1b1-00eac646e336', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': 'a94cd6f271fd5094491be970b5b08f2e123e9403b749310ce5232b0010df5531'}, 'daff597676f84d12a5c495fc31c57003')
+
+tests/test_proposal_planner_offline.py:156: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_untrusted_proposal_never_downgrades_original_contract[source]" time="0.489"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68e1d5b80&gt;, (&lt;parkweave.store.Store object at 0x7fc68df74470&gt;, &lt;parkweave.store.Store object at 0x7fc68d9079b0&gt;, {'fixture-a': 'QT...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68de2acc0&gt;), {'preparation_id': '66052463-429a-46c1-840e-5928b69efd98', 'case_id': '406d92d5-a644-4085-bae4-9b86248afc67', 'run_id': '263f12a9-79e4-4422-bd46-bdf6334f08e2', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '8ab029a94a03b6583504acb44f7f7ccba32437bf0f905492e5cc42be58bd53fa'}, '8882a2c13d51434dbc5074874086f7ef')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc68df74470&gt;, &lt;parkweave.store.Store object at 0x7fc68d9079b0&gt;, {'fixture-a': 'QT...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68de2acc0&gt;)
+kind = 'source'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+            assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68e1d5b80&gt;, (&lt;parkweave.store.Store object at 0x7fc68df74470&gt;, &lt;parkweave.store.Store object at 0x7fc68d9079b0&gt;, {'fixture-a': 'QT...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68de2acc0&gt;), {'preparation_id': '66052463-429a-46c1-840e-5928b69efd98', 'case_id': '406d92d5-a644-4085-bae4-9b86248afc67', 'run_id': '263f12a9-79e4-4422-bd46-bdf6334f08e2', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '8ab029a94a03b6583504acb44f7f7ccba32437bf0f905492e5cc42be58bd53fa'}, '8882a2c13d51434dbc5074874086f7ef')
+
+tests/test_proposal_planner_offline.py:156: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_untrusted_proposal_never_downgrades_original_contract[hard_condition]" time="0.802"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68dcc1a60&gt;, (&lt;parkweave.store.Store object at 0x7fc68e2310d0&gt;, &lt;parkweave.store.Store object at 0x7fc68e154d40&gt;, {'fixture-a': 'Ok...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68d5f6900&gt;), {'preparation_id': '7090a450-112e-438e-8f05-6338de935318', 'case_id': '115bef60-f31b-4ac7-a2e2-7e4901efb8e4', 'run_id': '3cece351-5fdb-409c-9bda-3e9dfc0db27c', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '9aac4ec04e73e7be58958784e7139b7ac4a83d7bcb379d18cd173be4f363d488'}, 'ae8afb8f3f19494b99d078c5f605023b')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc68e2310d0&gt;, &lt;parkweave.store.Store object at 0x7fc68e154d40&gt;, {'fixture-a': 'Ok...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68d5f6900&gt;)
+kind = 'hard_condition'
+
+    @pytest.mark.parametrize('kind', ['extra', 'drop_goal', 'unknown_version', 'cycle', 'missing_dependency', 'source', 'hard_condition'])
+    def test_untrusted_proposal_never_downgrades_original_contract(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []; instance = planner(echo_handler(requests, corrupt_document(kind)))
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200, recovered.text
+            assert recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68dcc1a60&gt;, (&lt;parkweave.store.Store object at 0x7fc68e2310d0&gt;, &lt;parkweave.store.Store object at 0x7fc68e154d40&gt;, {'fixture-a': 'Ok...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68d5f6900&gt;), {'preparation_id': '7090a450-112e-438e-8f05-6338de935318', 'case_id': '115bef60-f31b-4ac7-a2e2-7e4901efb8e4', 'run_id': '3cece351-5fdb-409c-9bda-3e9dfc0db27c', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '9aac4ec04e73e7be58958784e7139b7ac4a83d7bcb379d18cd173be4f363d488'}, 'ae8afb8f3f19494b99d078c5f605023b')
+
+tests/test_proposal_planner_offline.py:156: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_wait_releases_case_lock_real_material_command_and_stale_result" time="0.615" /><testcase classname="tests.test_proposal_planner_offline" name="test_same_key_wait_has_one_fake_dispatch_and_original_recovery" time="0.590" /><testcase classname="tests.test_proposal_planner_offline" name="test_wait_rechecks_current_permissions_before_committing_proposal[READ]" time="0.743" /><testcase classname="tests.test_proposal_planner_offline" name="test_wait_rechecks_current_permissions_before_committing_proposal[PREPARE]" time="0.555" /><testcase classname="tests.test_proposal_planner_offline" name="test_wait_rechecks_current_permissions_before_committing_proposal[EXECUTE]" time="0.745" /><testcase classname="tests.test_proposal_planner_offline" name="test_wait_rechecks_original_version_fingerprints[catalog]" time="0.590" /><testcase classname="tests.test_proposal_planner_offline" name="test_wait_rechecks_original_version_fingerprints[registry]" time="0.624" /><testcase classname="tests.test_proposal_planner_offline" name="test_malformed_or_failed_producer_preserves_original_key_without_retry[duplicate]" time="0.864"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68d2df3e0&gt;, (&lt;parkweave.store.Store object at 0x7fc68f35ffb0&gt;, &lt;parkweave.store.Store object at 0x7fc68f35f5c0&gt;, {'fixture-a': 'qH...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc690607710&gt;), {'preparation_id': '533a1199-e942-4155-ab44-ee060d09c4f0', 'case_id': '4ba98f76-7431-4a27-81a7-226d141be586', 'run_id': '80b5d479-f002-4928-b900-e6fba2b62422', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '6b809e00c9fe0e134cf4f690b9ae2149c425adc11daea40e95b300e3e267e4ec'}, '349ee3380a1d4c73ab5e757def9d1632')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc68f35ffb0&gt;, &lt;parkweave.store.Store object at 0x7fc68f35f5c0&gt;, {'fixture-a': 'qH...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc690607710&gt;)
+kind = 'duplicate'
+
+    @pytest.mark.parametrize('kind', ['duplicate', 'tool_field', 'timeout', 'socket'])
+    def test_malformed_or_failed_producer_preserves_original_key_without_retry(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []
+        def handler(request):
+            requests.append(request.method)
+            if kind == 'timeout':
+                raise httpx.ReadTimeout('SYNTHETIC offline timeout', request=request)
+            if kind == 'socket':
+                import socket
+                with socket.socket() as listener:
+                    listener.bind(('127.0.0.1', 0)); endpoint = listener.getsockname()
+                    # Bound, non-listening own loopback socket: OS refuses connection.
+                    with pytest.raises(ConnectionRefusedError):
+                        socket.create_connection(endpoint, timeout=0.5)
+                raise httpx.ConnectError('SYNTHETIC local socket refused', request=request)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            envelope = fake_envelope(proposal)
+            if kind == 'duplicate':
+                content = envelope['choices'][0]['message']['content']
+                envelope['choices'][0]['message']['content'] = '{"schema_version":1,' + content[1:]
+            else:
+                envelope['choices'][0]['message']['tool_calls'] = []
+            return httpx.Response(200, json=envelope)
+        instance = planner(handler)
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200 and recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68d2df3e0&gt;, (&lt;parkweave.store.Store object at 0x7fc68f35ffb0&gt;, &lt;parkweave.store.Store object at 0x7fc68f35f5c0&gt;, {'fixture-a': 'qH...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc690607710&gt;), {'preparation_id': '533a1199-e942-4155-ab44-ee060d09c4f0', 'case_id': '4ba98f76-7431-4a27-81a7-226d141be586', 'run_id': '80b5d479-f002-4928-b900-e6fba2b62422', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '6b809e00c9fe0e134cf4f690b9ae2149c425adc11daea40e95b300e3e267e4ec'}, '349ee3380a1d4c73ab5e757def9d1632')
+
+tests/test_proposal_planner_offline.py:287: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_malformed_or_failed_producer_preserves_original_key_without_retry[tool_field]" time="0.656"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc69081ecf0&gt;, (&lt;parkweave.store.Store object at 0x7fc68f202ab0&gt;, &lt;parkweave.store.Store object at 0x7fc68f2032c0&gt;, {'fixture-a': 'jB...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f477380&gt;), {'preparation_id': '6e8a3589-fb4e-4b32-aa4c-72b1fe4c130e', 'case_id': 'f5b17502-da2a-44a1-be79-c2aa1c4bbaba', 'run_id': '7633f4d5-033d-45c1-a647-7e7b3e97bc63', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '615e11378e989b8f9fe4466e84d4e1df286e8a1967cea6d94139603313d85984'}, '84f41c6e713c4159b0c7d200a7e1ac5b')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc68f202ab0&gt;, &lt;parkweave.store.Store object at 0x7fc68f2032c0&gt;, {'fixture-a': 'jB...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f477380&gt;)
+kind = 'tool_field'
+
+    @pytest.mark.parametrize('kind', ['duplicate', 'tool_field', 'timeout', 'socket'])
+    def test_malformed_or_failed_producer_preserves_original_key_without_retry(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []
+        def handler(request):
+            requests.append(request.method)
+            if kind == 'timeout':
+                raise httpx.ReadTimeout('SYNTHETIC offline timeout', request=request)
+            if kind == 'socket':
+                import socket
+                with socket.socket() as listener:
+                    listener.bind(('127.0.0.1', 0)); endpoint = listener.getsockname()
+                    # Bound, non-listening own loopback socket: OS refuses connection.
+                    with pytest.raises(ConnectionRefusedError):
+                        socket.create_connection(endpoint, timeout=0.5)
+                raise httpx.ConnectError('SYNTHETIC local socket refused', request=request)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            envelope = fake_envelope(proposal)
+            if kind == 'duplicate':
+                content = envelope['choices'][0]['message']['content']
+                envelope['choices'][0]['message']['content'] = '{"schema_version":1,' + content[1:]
+            else:
+                envelope['choices'][0]['message']['tool_calls'] = []
+            return httpx.Response(200, json=envelope)
+        instance = planner(handler)
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200 and recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc69081ecf0&gt;, (&lt;parkweave.store.Store object at 0x7fc68f202ab0&gt;, &lt;parkweave.store.Store object at 0x7fc68f2032c0&gt;, {'fixture-a': 'jB...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f477380&gt;), {'preparation_id': '6e8a3589-fb4e-4b32-aa4c-72b1fe4c130e', 'case_id': 'f5b17502-da2a-44a1-be79-c2aa1c4bbaba', 'run_id': '7633f4d5-033d-45c1-a647-7e7b3e97bc63', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '615e11378e989b8f9fe4466e84d4e1df286e8a1967cea6d94139603313d85984'}, '84f41c6e713c4159b0c7d200a7e1ac5b')
+
+tests/test_proposal_planner_offline.py:287: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_malformed_or_failed_producer_preserves_original_key_without_retry[timeout]" time="0.622"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68db7b950&gt;, (&lt;parkweave.store.Store object at 0x7fc68d305340&gt;, &lt;parkweave.store.Store object at 0x7fc68d3068a0&gt;, {'fixture-a': 'PI...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f321e50&gt;), {'preparation_id': '86068889-7550-4d73-b7d1-c98adf2ac2d1', 'case_id': '4fb2a774-e55d-40a8-82a4-8e72c2738b36', 'run_id': '5b8e57c3-4b3e-4197-9579-1af8c24515fc', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '4d3d194282437dfde03cef40854cb42bc2bd593529ab76ba16e42e2628699d70'}, 'e96fcdfe27e049f592bbe212a8481511')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc68d305340&gt;, &lt;parkweave.store.Store object at 0x7fc68d3068a0&gt;, {'fixture-a': 'PI...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f321e50&gt;)
+kind = 'timeout'
+
+    @pytest.mark.parametrize('kind', ['duplicate', 'tool_field', 'timeout', 'socket'])
+    def test_malformed_or_failed_producer_preserves_original_key_without_retry(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []
+        def handler(request):
+            requests.append(request.method)
+            if kind == 'timeout':
+                raise httpx.ReadTimeout('SYNTHETIC offline timeout', request=request)
+            if kind == 'socket':
+                import socket
+                with socket.socket() as listener:
+                    listener.bind(('127.0.0.1', 0)); endpoint = listener.getsockname()
+                    # Bound, non-listening own loopback socket: OS refuses connection.
+                    with pytest.raises(ConnectionRefusedError):
+                        socket.create_connection(endpoint, timeout=0.5)
+                raise httpx.ConnectError('SYNTHETIC local socket refused', request=request)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            envelope = fake_envelope(proposal)
+            if kind == 'duplicate':
+                content = envelope['choices'][0]['message']['content']
+                envelope['choices'][0]['message']['content'] = '{"schema_version":1,' + content[1:]
+            else:
+                envelope['choices'][0]['message']['tool_calls'] = []
+            return httpx.Response(200, json=envelope)
+        instance = planner(handler)
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200 and recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68db7b950&gt;, (&lt;parkweave.store.Store object at 0x7fc68d305340&gt;, &lt;parkweave.store.Store object at 0x7fc68d3068a0&gt;, {'fixture-a': 'PI...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc68f321e50&gt;), {'preparation_id': '86068889-7550-4d73-b7d1-c98adf2ac2d1', 'case_id': '4fb2a774-e55d-40a8-82a4-8e72c2738b36', 'run_id': '5b8e57c3-4b3e-4197-9579-1af8c24515fc', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': '4d3d194282437dfde03cef40854cb42bc2bd593529ab76ba16e42e2628699d70'}, 'e96fcdfe27e049f592bbe212a8481511')
+
+tests/test_proposal_planner_offline.py:287: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_malformed_or_failed_producer_preserves_original_key_without_retry[socket]" time="0.951"><failure message="AssertionError: assert 201 in (200, 409, 422, 502)&#10; +  where 201 = &lt;Response [201 Created]&gt;.status_code&#10; +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68db1b8c0&gt;, (&lt;parkweave.store.Store object at 0x7fc6908caff0&gt;, &lt;parkweave.store.Store object at 0x7fc68de838c0&gt;, {'fixture-a': 'zV...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc690745b20&gt;), {'preparation_id': '3496de58-8821-4b18-a478-cca7e9f85ed9', 'case_id': '3f0b6232-8aee-4f4d-858d-97c7d244b8dd', 'run_id': '9f89fd4f-605f-4a0d-b188-09ee71ce3899', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': 'e332d589510a3a15c00758dcd62995597d401ebd109c8611f44644dc6ecee650'}, 'ebfba3df176c4d89b49f1d436564de48')">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc6908caff0&gt;, &lt;parkweave.store.Store object at 0x7fc68de838c0&gt;, {'fixture-a': 'zV...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc690745b20&gt;)
+kind = 'socket'
+
+    @pytest.mark.parametrize('kind', ['duplicate', 'tool_field', 'timeout', 'socket'])
+    def test_malformed_or_failed_producer_preserves_original_key_without_retry(preparation_fixture, kind):
+        f = preparation_fixture; p = setup(f, [GOAL]); body, _ = request_body(f, p)
+        requests = []
+        def handler(request):
+            requests.append(request.method)
+            if kind == 'timeout':
+                raise httpx.ReadTimeout('SYNTHETIC offline timeout', request=request)
+            if kind == 'socket':
+                import socket
+                with socket.socket() as listener:
+                    listener.bind(('127.0.0.1', 0)); endpoint = listener.getsockname()
+                    # Bound, non-listening own loopback socket: OS refuses connection.
+                    with pytest.raises(ConnectionRefusedError):
+                        socket.create_connection(endpoint, timeout=0.5)
+                raise httpx.ConnectError('SYNTHETIC local socket refused', request=request)
+            proposal = json.loads(json.loads(request.content)['messages'][-1]['content'])['proposal']
+            envelope = fake_envelope(proposal)
+            if kind == 'duplicate':
+                content = envelope['choices'][0]['message']['content']
+                envelope['choices'][0]['message']['content'] = '{"schema_version":1,' + content[1:]
+            else:
+                envelope['choices'][0]['message']['tool_calls'] = []
+            return httpx.Response(200, json=envelope)
+        instance = planner(handler)
+        with TestClient(create_app(f[0], proposal_planner=instance)) as client:
+            key = uuid4().hex; response = post_candidate(client, f, p, body, key)
+            assert response.status_code in (409, 422, 502), response.text
+            recovered = exact_recovery(client, f, p, key)
+            assert recovered.status_code == 200 and recovered.json()['status'] in ('FAILED_SAFE', 'OUTCOME_UNKNOWN')
+            assert not recovered.json().get('items')
+&gt;           assert post_candidate(client, f, p, body, key).status_code in (200, 409, 422, 502)
+E           AssertionError: assert 201 in (200, 409, 422, 502)
+E            +  where 201 = &lt;Response [201 Created]&gt;.status_code
+E            +    where &lt;Response [201 Created]&gt; = post_candidate(&lt;starlette.testclient.TestClient object at 0x7fc68db1b8c0&gt;, (&lt;parkweave.store.Store object at 0x7fc6908caff0&gt;, &lt;parkweave.store.Store object at 0x7fc68de838c0&gt;, {'fixture-a': 'zV...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc690745b20&gt;), {'preparation_id': '3496de58-8821-4b18-a478-cca7e9f85ed9', 'case_id': '3f0b6232-8aee-4f4d-858d-97c7d244b8dd', 'run_id': '9f89fd4f-605f-4a0d-b188-09ee71ce3899', 'revision': 2, ...}, {'expected_preparation_revision': 2, 'expected_source_sha256': 'e332d589510a3a15c00758dcd62995597d401ebd109c8611f44644dc6ecee650'}, 'ebfba3df176c4d89b49f1d436564de48')
+
+tests/test_proposal_planner_offline.py:287: AssertionError</failure></testcase><testcase classname="tests.test_proposal_planner_offline" name="test_unsupported_goal_and_unknown_catalog_remain_honest" time="0.878" /><testcase classname="tests.test_proposal_planner_offline" name="test_original_page_fake_planner_closed_loop[normal]" time="1.205" /><testcase classname="tests.test_proposal_planner_offline" name="test_original_page_fake_planner_closed_loop[cold_generate]" time="1.650" /><testcase classname="tests.test_proposal_planner_offline" name="test_original_page_fake_planner_closed_loop[cold_adopt]" time="1.754" /><testcase classname="tests.test_proposal_planner_offline" name="test_original_page_fake_planner_closed_loop[trace]" time="1.196" /><testcase classname="tests.test_proposal_planner_offline" name="test_planner_offline_boundary_rejects_real_transport_or_untrusted_budget" time="0.000" /><testcase classname="tests.test_proposal_planner_offline" name="test_default_app_keeps_original_synthetic_path_without_producer_dispatch" time="0.376" /></testsuite></testsuites>
