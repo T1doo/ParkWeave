@@ -1,0 +1,71 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_first_refusal_is_not_permanent_and_same_inner_request_can_really_commit _
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f76729a4ef0>
+
+    def test_first_refusal_is_not_permanent_and_same_inner_request_can_really_commit(template_consumption,monkeypatch):
+        f=template_consumption;row=partial(f);data={**adoption(preview(f,row).json()),'partial_adoption':True};original=service_case_steps.adopt
+        def refused(*a,**kw):raise Conflict('SYNTHETIC first definite refusal does not prove permanent noncommit')
+        monkeypatch.setattr(service_case_steps,'adopt',refused);assert post(f,row,'adopt',data,'hold-first').status_code==409
+        p=recover(f,row,'hold-first').json();assert p['status']=='REFUSED_FIRST_SEND'
+>       assert p['finalizable'] is False and p['journal_terminal'] is False
+E       assert (True is False)
+
+tests/test_template_hold.py:21: AssertionError
+_______ test_post_check_pre_cas_revocation_must_wait_for_journal_commit ________
+
+template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f767163c830>
+
+    def test_post_check_pre_cas_revocation_must_wait_for_journal_commit(template_consumption,monkeypatch):
+        f=template_consumption;row,_,_=unknown(f,monkeypatch);p=recover(f,row,'terminal-original').json();before=journal(f)
+        entered=Event();release=Event();original=f['repository'].connect;waiting=False;revoked_before_cas=False;response=None
+        class Paused:
+            def __init__(self,c):self.c=c
+            def __getattr__(self,n):return getattr(self.c,n)
+            def execute(self,q,*a,**kw):
+                result=self.c.execute(q,*a,**kw)
+                if q.startswith('SELECT * FROM consumer_stages WHERE instance_id='):
+                    entered.set();assert release.wait(8),'CAS pause release deadline'
+                return result
+        @contextmanager
+        def paused(write=False):
+            with original(write=write) as c:yield Paused(c) if write else c
+        monkeypatch.setattr(f['repository'],'connect',paused)
+        try:
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                finishing=pool.submit(finish,f,row,'terminal-original',finish_body(p));assert entered.wait(4)
+                revoke=pool.submit(f['owner'].revoke_capability,ENTERPRISES[0],'EXECUTE')
+                try:
+                    with f['owner'].connect() as monitor:
+                        until=time.monotonic()+2
+                        while time.monotonic()<until:
+                            monitor.execute('SELECT pg_stat_clear_snapshot()')
+                            waiting=monitor.execute("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query ILIKE '%%pg_advisory_xact_lock%%' AND cardinality(pg_blocking_pids(pid))>0) AS waiting").fetchone()['waiting']
+                            if waiting or revoke.done():break
+                            time.sleep(.01)
+                    revoked_before_cas=revoke.done()
+                finally:release.set()
+                response=finishing.result(8);revoke.result(8)
+            after=journal(f)
+>           assert waiting and not revoked_before_cas,'authority lock was released after check but before journal CAS; final GET403 cannot undo a committed journal'
+E           AssertionError: authority lock was released after check but before journal CAS; final GET403 cannot undo a committed journal
+E           assert (False)
+
+tests/test_template_hold.py:62: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_template_hold.py::test_first_refusal_is_not_permanent_and_same_inner_request_can_really_commit
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_template_hold.py::test_first_refusal_is_not_permanent_and_same_inner_request_can_really_commit
+FAILED tests/test_template_hold.py::test_post_check_pre_cas_revocation_must_wait_for_journal_commit
+2 failed, 2 warnings in 2.31s

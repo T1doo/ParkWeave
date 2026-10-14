@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.357" timestamp="2026-10-14T03:42:43.268023+00:00" hostname="754d39e95154"><testcase classname=".runtime.template-hold-20261014.independent.test_hold_independent" name="test_first_refusal_remains_unresolved_then_same_inner_original_can_commit" time="1.262"><failure message="assert (True is False)">template_consumption = [GENERATED_FIXTURE_SESSION_REPR_REDACTED]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f14d4e9a630&gt;
+
+    def test_first_refusal_remains_unresolved_then_same_inner_original_can_commit(template_consumption, monkeypatch):
+        f=template_consumption;row=ready(f);data=adoption(preview(f,row).json());key='ind-hold-first'
+        original=service_case_steps.adopt
+        def refused(*args,**kwargs):raise Conflict('SYNTHETIC independent first refusal')
+        monkeypatch.setattr(service_case_steps,'adopt',refused)
+        assert post(f,row,'adopt',data,key).status_code==409
+        proof=recover(f,row,key).json();assert proof['journal_state']=='REJECTED_FIRST_SEND'
+&gt;       assert proof['finalizable'] is False and proof['journal_terminal'] is False
+E       assert (True is False)
+
+.runtime/template-hold-20261014/independent/test_hold_independent.py:22: AssertionError</failure></testcase></testsuite></testsuites>

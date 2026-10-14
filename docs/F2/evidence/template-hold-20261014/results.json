@@ -1,0 +1,66 @@
+{
+  "source_sha": "0cc8e0e54ad90b83c2f8e2e5245bca074d6670a7",
+  "base_sha": "237e9d574558e3e61682f1dd01bafae7ac1b387f",
+  "root_final": {
+    "unique_pass": 219,
+    "fail": 0,
+    "error": 0,
+    "skip": 0,
+    "warn": 2,
+    "seconds": "158.846",
+    "exit": 0,
+    "modules": {
+      "tests.test_template_hold": 7,
+      "tests.test_template_terminal": 12,
+      "tests.test_template_partial": 17,
+      "tests.test_template_consumer": 30,
+      "tests.test_template_consumer_planning": 25,
+      "tests.test_template_consumer_planning_offline": 8,
+      "tests.test_template_consumer_compatibility": 17,
+      "tests.test_partial_service_plan": 34,
+      "tests.test_partial_service_plan_expansion": 1,
+      "tests.test_service_case_steps": 68
+    }
+  },
+  "independent": {
+    "unique_pass": 3,
+    "fail": 0,
+    "error": 0,
+    "skip": 0,
+    "warn": 1,
+    "exit": 0,
+    "nodevm_assertions": 34,
+    "startup_warning": 1
+  },
+  "red_counterexample": {
+    "actual_pg_authority_lock_wait": false,
+    "revocation_committed_before_cas": true,
+    "response_status": 403,
+    "journal_changed": true,
+    "rule": "last GET403 does not imply rollback; shared authority must cover journal commit"
+  },
+  "fixed_authority_race": {
+    "actual_pg_authority_lock_wait": true,
+    "revocation_committed_before_cas": false,
+    "response_status": 403,
+    "journal_changed": true,
+    "rule": "last GET403 does not imply rollback; shared authority must cover journal commit"
+  },
+  "source_frozen_files": 227,
+  "source_mismatches": [],
+  "counts_not_summed": true,
+  "limits": [
+    "First definite refusal is inconclusive and never sufficient for terminal cleanup, including old invalid FIRST terminal metadata.",
+    "Only actual COMMITTED or strict monotonic permanent noncommit proof can finalize/clear a handle.",
+    "PG authority locks protect journal commit against supported exclusive-principal revokers; postcommit GET403 never means rollback.",
+    "No schema/Grant/registry change, deployment, browser retry or model call."
+  ],
+  "separate_prepare": {
+    "status": "BLOCKED_NOT_RUN",
+    "metadata": "GitHub API Forbidden",
+    "activation_commit": false,
+    "execution_branch": false,
+    "authorization_consumption": "UNKNOWN_CANNOT_VERIFY",
+    "cleanup": "NOT_RUN"
+  }
+}

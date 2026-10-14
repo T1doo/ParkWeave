@@ -1,0 +1,44 @@
+{
+  "source_sha": "0cc8e0e54ad90b83c2f8e2e5245bca074d6670a7",
+  "frozen_files": 227,
+  "all_frozen_hashes_unchanged": true,
+  "actual_independent_pytest": {
+    "PASS": 3,
+    "FAIL": 0,
+    "ERROR": 0,
+    "SKIP": 0,
+    "seconds": 3.83
+  },
+  "ui": {
+    "checks": 34,
+    "result": "PASS",
+    "scope": "ORIGINAL_HTML_NODEVM_STORAGE_GUARDS_ONLY_NOT_BACKEND_AUTHORIZATION"
+  },
+  "pg_cas": {
+    "real_owned_pg_waits": [
+      {
+        "wait_event_type": "Lock",
+        "wait_event": "advisory",
+        "blocking_backend_count": 1
+      }
+    ],
+    "response_status": 403,
+    "journal_state": "CONFIRMED",
+    "revocation_finished": true,
+    "final_get_denial_is_not_rollback": true
+  },
+  "earlier_windows": [
+    {
+      "attempt": "red-first",
+      "ERROR": 1,
+      "reason": "outside tests directory fixture plugin not loaded; exact original log retained"
+    },
+    {
+      "attempt": "red-second",
+      "FAIL": 1,
+      "reason": "base FIRST refusal wrongly finalizable"
+    }
+  ],
+  "review": "No new HOLD found; FIRST refusal cannot finalize; later actual same-inner original API201 is recovered COMMITTED, then explicit finalize. Revoker-first denies before journal write; finalizer-first holds shared principal PG lock through SQLite commit. Last GET403 is not used as rollback evidence.",
+  "source_or_git_mutations": false
+}
