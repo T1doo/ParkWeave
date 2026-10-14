@@ -1,0 +1,392 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="14" skipped="0" tests="24" time="0.431" timestamp="2026-10-14T19:30:51.943039+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_selection" name="test_unique_is_actual_single_solution_and_trusted_reconstruction" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">def test_unique_is_actual_single_solution_and_trusted_reconstruction():
+        r=release(); i=instance(r); req=request()
+&gt;       oracle=enumerate_solutions([r],[i],req,now=NOW)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_two_actual_equivalent_releases_are_two_minimal_solutions_not_synthetic_diagrams" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">def test_two_actual_equivalent_releases_are_two_minimal_solutions_not_synthetic_diagrams():
+        rs=[release(suffix='a'),release(suffix='b')]; ins=[instance(r,suffix=s) for r,s in zip(rs,('a','b'))]
+&gt;       oracle=enumerate_solutions(rs,ins,request(),now=NOW)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_cross_service_goal_coverage_combines_closure_and_stable_adapter_refs" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">def test_cross_service_goal_coverage_combines_closure_and_stable_adapter_refs():
+        rs=[release(),release('synthetic-resource-coordination',['LOCAL_INTERNAL_ACCEPTANCE'],'b')]
+        ins=[instance(r,suffix=s) for r,s in zip(rs,('a','b'))]
+        req=request(['LOCAL_MATERIAL_PREPARATION','LOCAL_INTERNAL_ACCEPTANCE'])
+&gt;       oracle=enumerate_solutions(rs,ins,req,now=NOW)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:70: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_mapping_reference_unknown_is_not_false_or_verified[FALSE-UNSAT]" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">state = 'FALSE', expected = 'UNSAT'
+
+    @pytest.mark.parametrize('state,expected',[('FALSE','UNSAT'),('UNKNOWN','UNKNOWN')])
+    def test_mapping_reference_unknown_is_not_false_or_verified(state,expected):
+        r=release(); i=instance(r); req=request(); req['mapping_states']['fields']['need_summary']=state
+&gt;       value=enumerate_solutions([r],[i],req,now=NOW)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:81: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_mapping_reference_unknown_is_not_false_or_verified[UNKNOWN-UNKNOWN]" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">state = 'UNKNOWN', expected = 'UNKNOWN'
+
+    @pytest.mark.parametrize('state,expected',[('FALSE','UNSAT'),('UNKNOWN','UNKNOWN')])
+    def test_mapping_reference_unknown_is_not_false_or_verified(state,expected):
+        r=release(); i=instance(r); req=request(); req['mapping_states']['fields']['need_summary']=state
+&gt;       value=enumerate_solutions([r],[i],req,now=NOW)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:81: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_missing_reference_state_stays_unknown" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">def test_missing_reference_state_stays_unknown():
+        r=release(); i=instance(r); req=request(); del req['mapping_states']
+&gt;       assert enumerate_solutions([r],[i],req,now=NOW)['state']=='UNKNOWN'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:88: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_unsupported_goal_preserved_and_never_partial_adopt" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">def test_unsupported_goal_preserved_and_never_partial_adopt():
+        r=release(); i=instance(r); req=request(['LOCAL_MATERIAL_PREPARATION','REAL_FULFILMENT'])
+&gt;       value=enumerate_solutions([r],[i],req,now=NOW)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:93: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_other_park_instance_is_unsatisfiable_not_unknown_or_unsupported" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">def test_other_park_instance_is_unsatisfiable_not_unknown_or_unsupported():
+        r=release(); i=instance(r,park='park-b')
+&gt;       assert enumerate_solutions([r],[i],request(),now=NOW)['state']=='UNSAT'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_hard_constraints_not_erased[constraint0-UNSAT]" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">constraint = {'excluded_roles': ['park_specialist'], 'additional_requirements': []}
+expected = 'UNSAT'
+
+    @pytest.mark.parametrize('constraint,expected',[(dict(excluded_roles=['park_specialist'],additional_requirements=[]),'UNSAT'),(dict(excluded_roles=[],additional_requirements=['真实交付保证']),'UNKNOWN')])
+    def test_hard_constraints_not_erased(constraint,expected):
+        r=release(); i=instance(r); req=request();req['planning_constraints']=constraint
+&gt;       assert enumerate_solutions([r],[i],req,now=NOW)['state']==expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_hard_constraints_not_erased[constraint1-UNKNOWN]" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">constraint = {'excluded_roles': [], 'additional_requirements': ['真实交付保证']}
+expected = 'UNKNOWN'
+
+    @pytest.mark.parametrize('constraint,expected',[(dict(excluded_roles=['park_specialist'],additional_requirements=[]),'UNSAT'),(dict(excluded_roles=[],additional_requirements=['真实交付保证']),'UNKNOWN')])
+    def test_hard_constraints_not_erased(constraint,expected):
+        r=release(); i=instance(r); req=request();req['planning_constraints']=constraint
+&gt;       assert enumerate_solutions([r],[i],req,now=NOW)['state']==expected
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:108: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_merge_semantic_mapping_conflict_rejects_covering_set" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">def test_merge_semantic_mapping_conflict_rejects_covering_set():
+        rs=[release(),release('synthetic-resource-coordination',['LOCAL_INTERNAL_ACCEPTANCE'],'b')]
+        ins=[instance(r,suffix=s) for r,s in zip(rs,('a','b'))]
+        ins[1]['roles']['enterprise_operator']='principal-different';ins[1]['config_sha256']=hash_instance(ins[1])
+        req=request(['LOCAL_MATERIAL_PREPARATION','LOCAL_INTERNAL_ACCEPTANCE']);req['mapping_states']['principals']['principal-different']='TRUE'
+&gt;       assert enumerate_solutions(rs,ins,req,now=NOW)['state']=='UNSAT'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:116: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_compact_dsl_forbids_model_authority_sources_and_goal_drop[&lt;lambda&gt;0]" time="0.001" /><testcase classname="tests.test_service_selection" name="test_compact_dsl_forbids_model_authority_sources_and_goal_drop[&lt;lambda&gt;1]" time="0.000" /><testcase classname="tests.test_service_selection" name="test_compact_dsl_forbids_model_authority_sources_and_goal_drop[&lt;lambda&gt;2]" time="0.000" /><testcase classname="tests.test_service_selection" name="test_compact_dsl_forbids_model_authority_sources_and_goal_drop[&lt;lambda&gt;3]" time="0.000" /><testcase classname="tests.test_service_selection" name="test_compact_dsl_forbids_model_authority_sources_and_goal_drop[&lt;lambda&gt;4]" time="0.000" /><testcase classname="tests.test_service_selection" name="test_compact_dsl_forbids_model_authority_sources_and_goal_drop[&lt;lambda&gt;5]" time="0.000" /><testcase classname="tests.test_service_selection" name="test_compact_dsl_forbids_model_authority_sources_and_goal_drop[&lt;lambda&gt;6]" time="0.000" /><testcase classname="tests.test_service_selection" name="test_compact_dsl_forbids_model_authority_sources_and_goal_drop[&lt;lambda&gt;7]" time="0.000" /><testcase classname="tests.test_service_selection" name="test_compact_dsl_forbids_model_authority_sources_and_goal_drop[&lt;lambda&gt;8]" time="0.000" /><testcase classname="tests.test_service_selection" name="test_duplicate_json_key_rejected" time="0.000" /><testcase classname="tests.test_service_selection" name="test_nonminimal_selection_is_rejected_even_if_coverage_sufficient" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">def test_nonminimal_selection_is_rejected_even_if_coverage_sufficient():
+        rs=[release(suffix='a'),release(suffix='b')];ins=[instance(r,suffix=s) for r,s in zip(rs,('a','b'))]
+        with pytest.raises(SelectionError):
+&gt;           rebuild_selection(dict(schema_version=1,binding=BINDING,selections=[selection_ref(r,i) for r,i in zip(rs,ins)]),rs,ins,request(),BINDING,now=NOW)
+
+tests/test_service_selection.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:188: in rebuild_selection
+    oracle = enumerate_solutions(releases, instances, request, now=now)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_unknown_superset_does_not_destroy_known_minimal_solution" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">def test_unknown_superset_does_not_destroy_known_minimal_solution():
+        rs=[release(suffix='a'),release(suffix='b')];ins=[instance(r,suffix=s) for r,s in zip(rs,('a','b'))]
+        ins[1]['roles']['enterprise_operator']='unknown-owner';ins[1]['config_sha256']=hash_instance(ins[1])
+&gt;       oracle=enumerate_solutions(rs,ins,request(),now=NOW)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase><testcase classname="tests.test_service_selection" name="test_oracle_does_not_call_builder" time="0.001"><failure message="pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease&#10;  Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/value_error">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f061edf6390&gt;
+
+    def test_oracle_does_not_call_builder(monkeypatch):
+        import parkweave.service_selection as module
+        monkeypatch.setattr(module,'rebuild_selection',lambda *a,**k:pytest.fail('builder used as oracle'))
+        r=release();i=instance(r)
+&gt;       assert module.enumerate_solutions([r],[i],request(),now=NOW)['state']=='UNIQUE'
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection.py:152: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_selection.py:159: in enumerate_solutions
+    pairs = _catalog(releases, instances, request, now)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_selection.py:76: in _catalog
+    validated = [validate_release(value, now=now) for value in releases]
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+data = {'schema_version': 1, 'service_id': 'synthetic-material-preparation', 'release_id': 'release-a', 'revision': 1, ...}
+now = datetime.datetime(2026, 10, 14, 0, 0, tzinfo=datetime.timezone.utc)
+
+    def validate_release(data, *, now=None):
+        """Validate integrity/time only; caller must separately resolve publication."""
+&gt;       value = ServiceRelease.model_validate(deepcopy(data)).model_dump(mode='json')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for ServiceRelease
+E         Value error, immutable release hash changed [type=value_error, input_value={'schema_version': 1, 'se...62d8b0e67b6bd67d05fae3'}, input_type=dict]
+E           For further information visit https://errors.pydantic.dev/2.13/v/value_error
+
+src/parkweave/service_capability_contract.py:182: ValidationError</failure></testcase></testsuite></testsuites>

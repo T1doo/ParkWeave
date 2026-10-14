@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="5" time="2.100" timestamp="2026-10-14T20:19:20.010805+00:00" hostname="754d39e95154"><testcase classname="tests.test_independent_instance_cold_runtime" name="test_cold_constructor_needs_exact_true_flag[1]" time="0.789"><failure message="ValueError: dedicated nonsymlink consumer journal required">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7ffbb56ce990&gt;, &lt;parkweave.store.Store object at 0x7ffbb56ce900&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-377/test_cold_constructor_needs_ex0')
+flag = 1
+
+    @pytest.mark.parametrize('flag',[1,'true',object()])
+    def test_cold_constructor_needs_exact_true_flag(capability_catalog,tmp_path,flag):
+        a=capability_catalog
+&gt;       with pytest.raises(Denied):ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'flag.sqlite3'),enabled_for_isolated_tests=flag)
+                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_independent_instance_cold_runtime.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.template_consumer.ConsumerRepository object at 0x7ffbb5c66780&gt;
+path = PosixPath('/tmp/pytest-of-agent/pytest-377/test_cold_constructor_needs_ex0/flag.sqlite3')
+
+    def __init__(self, path):
+        self.path = Path(path).absolute()
+        if not self.path.name.endswith('.consumer.candidate.sqlite3') or any(p.is_symlink() for p in [self.path, *self.path.parents]):
+&gt;           raise ValueError('dedicated nonsymlink consumer journal required')
+E           ValueError: dedicated nonsymlink consumer journal required
+
+src/parkweave/template_consumer.py:135: ValueError</failure></testcase><testcase classname="tests.test_independent_instance_cold_runtime" name="test_cold_constructor_needs_exact_true_flag[true]" time="0.247"><failure message="ValueError: dedicated nonsymlink consumer journal required">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7ffbb5197bf0&gt;, &lt;parkweave.store.Store object at 0x7ffbb5197b60&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-377/test_cold_constructor_needs_ex1')
+flag = 'true'
+
+    @pytest.mark.parametrize('flag',[1,'true',object()])
+    def test_cold_constructor_needs_exact_true_flag(capability_catalog,tmp_path,flag):
+        a=capability_catalog
+&gt;       with pytest.raises(Denied):ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'flag.sqlite3'),enabled_for_isolated_tests=flag)
+                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_independent_instance_cold_runtime.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.template_consumer.ConsumerRepository object at 0x7ffbb47eddc0&gt;
+path = PosixPath('/tmp/pytest-of-agent/pytest-377/test_cold_constructor_needs_ex1/flag.sqlite3')
+
+    def __init__(self, path):
+        self.path = Path(path).absolute()
+        if not self.path.name.endswith('.consumer.candidate.sqlite3') or any(p.is_symlink() for p in [self.path, *self.path.parents]):
+&gt;           raise ValueError('dedicated nonsymlink consumer journal required')
+E           ValueError: dedicated nonsymlink consumer journal required
+
+src/parkweave/template_consumer.py:135: ValueError</failure></testcase><testcase classname="tests.test_independent_instance_cold_runtime" name="test_cold_constructor_needs_exact_true_flag[flag2]" time="0.230"><failure message="ValueError: dedicated nonsymlink consumer journal required">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7ffbb47ef470&gt;, &lt;parkweave.store.Store object at 0x7ffbb5b72630&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-377/test_cold_constructor_needs_ex2')
+flag = &lt;object object at 0x7ffbba056b30&gt;
+
+    @pytest.mark.parametrize('flag',[1,'true',object()])
+    def test_cold_constructor_needs_exact_true_flag(capability_catalog,tmp_path,flag):
+        a=capability_catalog
+&gt;       with pytest.raises(Denied):ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'flag.sqlite3'),enabled_for_isolated_tests=flag)
+                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_independent_instance_cold_runtime.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.template_consumer.ConsumerRepository object at 0x7ffbb483b740&gt;
+path = PosixPath('/tmp/pytest-of-agent/pytest-377/test_cold_constructor_needs_ex2/flag.sqlite3')
+
+    def __init__(self, path):
+        self.path = Path(path).absolute()
+        if not self.path.name.endswith('.consumer.candidate.sqlite3') or any(p.is_symlink() for p in [self.path, *self.path.parents]):
+&gt;           raise ValueError('dedicated nonsymlink consumer journal required')
+E           ValueError: dedicated nonsymlink consumer journal required
+
+src/parkweave/template_consumer.py:135: ValueError</failure></testcase><testcase classname="tests.test_independent_instance_cold_runtime" name="test_cold_constructor_rejects_duck_catalog" time="0.253"><failure message="ValueError: dedicated nonsymlink consumer journal required">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7ffbb47ed460&gt;, &lt;parkweave.store.Store object at 0x7ffbb4516750&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-377/test_cold_constructor_rejects_0')
+
+    def test_cold_constructor_rejects_duck_catalog(capability_catalog,tmp_path):
+        from types import SimpleNamespace
+        a=capability_catalog
+&gt;       with pytest.raises(Denied):ParkInstanceConsumer(SimpleNamespace(consumer=a['consumer']),ConsumerRepository(tmp_path/'duck.sqlite3'),enabled_for_isolated_tests=True)
+                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_independent_instance_cold_runtime.py:21: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.template_consumer.ConsumerRepository object at 0x7ffbb486c2c0&gt;
+path = PosixPath('/tmp/pytest-of-agent/pytest-377/test_cold_constructor_rejects_0/duck.sqlite3')
+
+    def __init__(self, path):
+        self.path = Path(path).absolute()
+        if not self.path.name.endswith('.consumer.candidate.sqlite3') or any(p.is_symlink() for p in [self.path, *self.path.parents]):
+&gt;           raise ValueError('dedicated nonsymlink consumer journal required')
+E           ValueError: dedicated nonsymlink consumer journal required
+
+src/parkweave/template_consumer.py:135: ValueError</failure></testcase><testcase classname="tests.test_independent_instance_cold_runtime" name="test_expired_original_source_preserves_admitted_inputs_and_zero_original_sends" time="0.313" /></testsuite></testsuites>

@@ -1,0 +1,50 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_config_resource_references_cannot_alias_original_uuid_lock_identity[uppercase] _
+
+capability_resource_catalog = {'f': (<parkweave.store.Store object at 0x7f3d9595a8a0>, <parkweave.store.Store object at 0x7f3d9595a960>, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+shape = 'uppercase'
+
+    @pytest.mark.parametrize('shape',['uppercase','duplicate-alias'])
+    def test_config_resource_references_cannot_alias_original_uuid_lock_identity(capability_resource_catalog,shape):
+        from parkweave.service_capability_contract import hash_instance
+        a=capability_resource_catalog;release=register(a,service='synthetic-resource-coordination')['release'];instance=coordination_instance(release)
+        if shape=='uppercase':instance['resources']['primary']=instance['resources']['primary'].upper()
+        else:instance['resources']['secondary']=instance['resources']['primary'].upper()
+        instance['config_sha256']=hash_instance(instance)
+>       with pytest.raises((Denied,Conflict,ValueError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (Denied, Conflict, ValueError)
+
+tests/test_independent_catalog_runtime.py:234: Failed
+_ test_config_resource_references_cannot_alias_original_uuid_lock_identity[duplicate-alias] _
+
+capability_resource_catalog = {'f': (<parkweave.store.Store object at 0x7f3d95b2f680>, <parkweave.store.Store object at 0x7f3d952afb00>, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+shape = 'duplicate-alias'
+
+    @pytest.mark.parametrize('shape',['uppercase','duplicate-alias'])
+    def test_config_resource_references_cannot_alias_original_uuid_lock_identity(capability_resource_catalog,shape):
+        from parkweave.service_capability_contract import hash_instance
+        a=capability_resource_catalog;release=register(a,service='synthetic-resource-coordination')['release'];instance=coordination_instance(release)
+        if shape=='uppercase':instance['resources']['primary']=instance['resources']['primary'].upper()
+        else:instance['resources']['secondary']=instance['resources']['primary'].upper()
+        instance['config_sha256']=hash_instance(instance)
+>       with pytest.raises((Denied,Conflict,ValueError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (Denied, Conflict, ValueError)
+
+tests/test_independent_catalog_runtime.py:234: Failed
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_independent_catalog_runtime.py::test_config_resource_references_cannot_alias_original_uuid_lock_identity[uppercase]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_independent_catalog_runtime.py::test_config_resource_references_cannot_alias_original_uuid_lock_identity[uppercase]
+FAILED tests/test_independent_catalog_runtime.py::test_config_resource_references_cannot_alias_original_uuid_lock_identity[duplicate-alias]
+2 failed, 2 warnings in 1.35s

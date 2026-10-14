@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.378" timestamp="2026-10-14T20:19:02.714528+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_selection_full_chain" name="test_three_capability_selection_second_park_original_local_outputs" time="1.177"><failure message="ValueError: dedicated nonsymlink consumer journal required">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7fe6ce043e30&gt;, &lt;parkweave.store.Store object at 0x7fe6ce043f50&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-375/test_three_capability_selectio0')
+
+    def test_three_capability_selection_second_park_original_local_outputs(selection_full_chain,tmp_path):
+        # New interfaces are imported here so a pending integration cannot mask an
+        # otherwise collectable old regression suite with an import-time error.
+        from parkweave import bounded_planning as bp,service_selection_candidates as candidates
+        from parkweave.service_selection_planner import OfflineSelectionPlanner
+        from parkweave.service_instance_consumer import ColdInput,ParkInstanceConsumer
+        from parkweave import case_goal_results
+        a=selection_full_chain;f=a['f'];store,owner,tokens,api=f
+        store._isolated_service_capability_catalog=a['catalog']
+        a_parent,_,_=create(f,goal='SYNTHETIC A historical Case remains unchanged')
+        old_history=case_history(owner,a_parent['preparation_id'])
+        instance=a['configs']['park-b','synthetic-material-preparation']
+&gt;       facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'full-chain-cold.sqlite3'),enabled_for_isolated_tests=True)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_full_chain.py:106: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.template_consumer.ConsumerRepository object at 0x7fe6cda17980&gt;
+path = PosixPath('/tmp/pytest-of-agent/pytest-375/test_three_capability_selectio0/full-chain-cold.sqlite3')
+
+    def __init__(self, path):
+        self.path = Path(path).absolute()
+        if not self.path.name.endswith('.consumer.candidate.sqlite3') or any(p.is_symlink() for p in [self.path, *self.path.parents]):
+&gt;           raise ValueError('dedicated nonsymlink consumer journal required')
+E           ValueError: dedicated nonsymlink consumer journal required
+
+src/parkweave/template_consumer.py:135: ValueError</failure></testcase></testsuite></testsuites>

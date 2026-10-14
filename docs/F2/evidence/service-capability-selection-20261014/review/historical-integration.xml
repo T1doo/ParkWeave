@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="5" time="3.786" timestamp="2026-10-14T20:26:04.884684+00:00" hostname="754d39e95154"><testcase classname="tests.test_independent_selection_integration" name="test_mixed_v3_v4_legacy_read_and_adopt_do_not_require_new_source_lease" time="1.214" /><testcase classname="tests.test_independent_selection_integration" name="test_v4_new_adoption_refuses_withdrawal_and_original_key_stays_cold_readable" time="0.485" /><testcase classname="tests.test_independent_selection_integration" name="test_v4_adoption_save_failure_rolls_back_plan_and_event" time="0.520" /><testcase classname="tests.test_independent_selection_integration" name="test_actual_adoption_parent_wait_holds_original_source_lease_until_commit" time="0.517" /><testcase classname="tests.test_independent_selection_integration" name="test_adopted_v4_frozen_goal_trace_survives_current_registry_revision_change" time="0.880"><failure message="parkweave.store.Conflict: unsupported registered adapter/version">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f41da374bc0&gt;, &lt;parkweave.store.Store object at 0x7f41da03fd40&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f41d8ca0e90&gt;
+
+    def test_adopted_v4_frozen_goal_trace_survives_current_registry_revision_change(capability_catalog,monkeypatch):
+        from copy import deepcopy
+        from test_plan_preview import digest
+        from parkweave import bounded_planning as bp,case_goal_results
+        a=capability_catalog;f,p,v,data=generate(a)
+        plan=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,data)
+        initial=case_goal_results.read(f[0],f[2]['fixture-a'],UUID(p['preparation_id']))
+        with f[1].connect() as c:row=c.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+        trace=case_goal_results.source_trace(row,row['service_case_plan'])
+        registry=deepcopy(bp.REGISTRY);registry[0]['revision']=2
+        monkeypatch.setattr(bp,'REGISTRY',registry)
+        before=digest(f)
+        reply=f[3].get('/api/preparations/'+p['preparation_id']+'/goal-results',headers=headers(f[2]))
+        assert reply.status_code==200,reply.text
+        current=reply.json()
+        assert current['source_trace']==initial['source_trace']==trace
+        assert 'REGISTRY_CHANGED' in current['binding_issues']
+        assert digest(f)==before
+        candidate=sc.read(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),candidate_id=v['candidate_id'],catalog=a['catalog'])
+        assert not candidate['can_adopt']
+        with pytest.raises(Conflict):steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,data)
+&gt;       view=steps.read(f[0],f[2]['fixture-a'],UUID(p['preparation_id']))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_independent_selection_integration.py:113: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/executor_receipts.py:18: in call
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+src/parkweave/service_case_steps.py:473: in read
+    return _view(store,c,p,parent,deepcopy(parent.get('service_case_plan')))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_case_steps.py:394: in _view
+    current_preview=planning._proposal(store,c,p,parent) if owner else None)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/bounded_planning.py:90: in _proposal
+    validate_registry(REGISTRY)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+registry = [{'id': 'P1', 'depends_on': [], 'adapter': 'preparation', 'revision': 2, ...}, {'id': 'P2', 'depends_on': ['P1'], 'ada...or-receipts', 'revision': 1, ...}, {'id': 'P5', 'depends_on': ['P4'], 'adapter': 'case-lifecycle', 'revision': 1, ...}]
+
+    def validate_registry(registry):
+        if not 1&lt;=len(registry)&lt;=16:raise Conflict('bounded registry size required')
+        if any(not isinstance(s,dict) or not {'id','adapter','revision','depends_on','responsibility','preconditions','output','acceptance'}&lt;=set(s) or not isinstance(s['depends_on'],list) or len(s['depends_on'])&gt;16 for s in registry):raise Conflict('invalid registered step contract')
+        ids={s['id'] for s in registry}
+        if len(ids)!=len(registry):raise Conflict('duplicate registered step')
+        done=set()
+        for s in registry:
+&gt;           if (s['id'],s['adapter'],s['revision']) not in TRUSTED:raise Conflict('unsupported registered adapter/version')
+                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: unsupported registered adapter/version
+
+src/parkweave/bounded_planning.py:34: Conflict</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.674" timestamp="2026-10-14T20:19:16.989619+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_selection_full_chain" name="test_three_capability_selection_second_park_original_local_outputs" time="1.541"><failure message="KeyError: 'current_materials'">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7f863fbf5490&gt;, &lt;parkweave.store.Store object at 0x7f863fbf7b60&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-376/test_three_capability_selectio0')
+
+    def test_three_capability_selection_second_park_original_local_outputs(selection_full_chain,tmp_path):
+        # New interfaces are imported here so a pending integration cannot mask an
+        # otherwise collectable old regression suite with an import-time error.
+        from parkweave import bounded_planning as bp,service_selection_candidates as candidates
+        from parkweave.service_selection_planner import OfflineSelectionPlanner
+        from parkweave.service_instance_consumer import ColdInput,ParkInstanceConsumer
+        from parkweave import case_goal_results
+        a=selection_full_chain;f=a['f'];store,owner,tokens,api=f
+        store._isolated_service_capability_catalog=a['catalog']
+        a_parent,_,_=create(f,goal='SYNTHETIC A historical Case remains unchanged')
+        old_history=case_history(owner,a_parent['preparation_id'])
+        instance=a['configs']['park-b','synthetic-material-preparation']
+        facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'full-chain-cold.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+        data=ColdInput(instance_id=instance['instance_id'],expected_config_revision=instance['config_revision'],
+            expected_config_sha256=instance['config_sha256'],expected_release_id=instance['release_id'],
+            expected_release_sha256=instance['release_sha256'],goal='SYNTHETIC B fresh six-goal request',
+            required_goals=GOALS,fields={mapping['input_field']:dict(slot=slot,text='SYNTHETIC B FRESH PRIVATE '+slot,
+            source_kind='USER_STATEMENT',source_label='SYNTHETIC B newly supplied source') for slot,mapping in instance['fields'].items()},
+            reason='SYNTHETIC B explicitly confirms current cold inputs')
+        key=uuid4().hex;initial_authority=authority_snapshot(owner)
+        view=facade.prepare(tokens['fixture-c'],key,data)
+        assert len(view['stages'])==1 and not view['automatic_execution']
+        stage=next(s for s in view['stages'] if s['name']=='CREATE_RUN')
+        run=ok(api.post('/api/runs',headers=headers(tokens,'fixture-c',stage['request_key']),json=stage['body']),202)
+        # Original local Run worker uses actual ordinary processing; no provider.
+        store.finish(store.claim('SYNTHETIC B original local worker'))
+        run_view=ok(api.get('/api/runs/'+run['run_id'],headers=headers(tokens,'fixture-c')))
+        assert run_view['state']=='SUCCEEDED' and run_view['success_scope']=='LOCAL_CASE_CREATED'
+        assert run_view['operation']['state']=='VERIFIED' and run_view['case']['state']=='NEEDS_INPUT'
+        view=facade.prepare_stage(tokens['fixture-c'],key,'CREATE_PREPARATION')
+        stage=next(s for s in view['stages'] if s['name']=='CREATE_PREPARATION')
+        p=ok(api.post('/api/preparations',headers=headers(tokens,'fixture-c',stage['request_key']),json=stage['body']),201)
+        for name in ('SAVE_REQUEST','ADD_need_summary','ADD_material_outline'):
+            view=facade.prepare_stage(tokens['fixture-c'],key,name);stage=next(s for s in view['stages'] if s['name']==name)
+            suffix='/request-intent' if name=='SAVE_REQUEST' else '/commands'
+            p=ok(api.post('/api/preparations/'+p['preparation_id']+suffix,headers=headers(tokens,'fixture-c',stage['request_key']),json=stage['body']))
+        assert authority_snapshot(owner)==initial_authority
+&gt;       assert {m['text'] for m in p['current_materials']}=={m.text for m in data.fields.values()}
+                                   ^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'current_materials'
+
+tests/test_service_selection_full_chain.py:131: KeyError</failure></testcase></testsuite></testsuites>

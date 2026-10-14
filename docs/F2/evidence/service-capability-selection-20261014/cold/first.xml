@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="2.507" timestamp="2026-10-14T20:11:48.375899+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_instance_consumer" name="test_fresh_second_park_original_case_materials_no_auto_adopt" time="1.133"><failure message="assert 0 == (0 + 1)&#10; +  where 0 = len([])&#10; +  and   0 = len([])">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f106356c170&gt;, &lt;parkweave.store.Store object at 0x7f10632b3fe0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-357/test_fresh_second_park_origina0')
+
+    def test_fresh_second_park_original_case_materials_no_auto_adopt(capability_catalog, tmp_path):
+        a = capability_catalog
+        facade, data = setup(a, tmp_path)
+        store, owner, tokens, api = a['f']
+        before = authority_snapshot(owner)
+        key = uuid4().hex
+        view = facade.prepare(tokens['fixture-c'], key, data)
+        assert len(view['stages']) == 1 and view['automatic_execution'] is False
+        assert facade.prepare(tokens['fixture-c'], key, data) == view
+        command = stage(view, 'CREATE_RUN')
+        reply = api.post('/api/runs', headers=headers(tokens, 'fixture-c', command['request_key']), json=command['body'])
+        assert reply.status_code == 202, reply.text
+        store.finish(store.claim('SYNTHETIC second park cold-input worker'))
+        view = facade.prepare_stage(tokens['fixture-c'], key, 'CREATE_PREPARATION')
+        command = stage(view, 'CREATE_PREPARATION')
+        reply = api.post('/api/preparations', headers=headers(tokens, 'fixture-c', command['request_key']), json=command['body'])
+        assert reply.status_code == 201, reply.text
+        preparation_id = reply.json()['preparation_id']
+        for name in ('SAVE_REQUEST', 'ADD_need_summary', 'ADD_material_outline'):
+            view = facade.prepare_stage(tokens['fixture-c'], key, name)
+            command = stage(view, name)
+            path = '/api/preparations/' + preparation_id + ('/request-intent' if name == 'SAVE_REQUEST' else '/commands')
+            reply = api.post(path, headers=headers(tokens, 'fixture-c', command['request_key']), json=command['body'])
+            assert reply.status_code in (200, 201), reply.text
+        actual = api.get('/api/preparations/' + preparation_id, headers=headers(tokens, 'fixture-c')).json()
+        assert {m['text'] for m in actual['current_materials']} == {material.text for material in data.fields.values()}
+        with owner.connect() as c:
+            parent = c.execute('SELECT * FROM preparations WHERE id=%s', (preparation_id,)).fetchone()
+            assert (parent['park_id'], parent['owner_id'], parent['reviewer_id']) == ('park-b', 'fixture-c', 'prep-specialist-fixture-c')
+            assert parent['service_case_plan'] is None
+        # prep.create adds the original reviewer Run assignment; no new Grant.
+        after = authority_snapshot(owner)
+        assert {k:v for k,v in after.items() if k != 'run_assignments'} == {k:v for k,v in before.items() if k != 'run_assignments'}
+&gt;       assert len(after['run_assignments']) == len(before['run_assignments']) + 1
+E       assert 0 == (0 + 1)
+E        +  where 0 = len([])
+E        +  and   0 = len([])
+
+tests/test_service_instance_consumer.py:61: AssertionError</failure></testcase><testcase classname="tests.test_service_instance_consumer" name="test_cold_binding_exact_external_fields_and_same_key_conflict" time="0.330" /><testcase classname="tests.test_service_instance_consumer" name="test_history_read_retained_after_source_withdrawal_no_new_commands" time="0.410" /><testcase classname="tests.test_service_instance_consumer" name="test_cross_park_nonowner_and_default_disabled" time="0.323" /></testsuite></testsuites>

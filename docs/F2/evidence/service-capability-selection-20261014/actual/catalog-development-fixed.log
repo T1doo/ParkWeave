@@ -1,0 +1,31 @@
+......................FF                                                 [100%]
+=================================== FAILURES ===================================
+______ test_migration_marker_repair_preserves_original_capability_history ______
+tests/test_service_capability_catalog_actual.py:255: in test_migration_marker_repair_preserves_original_capability_history
+    a['f'][1].migrate()
+src/parkweave/store.py:321: in migrate
+    c.execute(Path(__file__).with_name('migration-033.sql').read_text(encoding='utf-8'))
+../ParkWeave/.venv/lib/python3.12/site-packages/psycopg/connection.py:304: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.DuplicateFunction: function "service_capability_prefix" already exists with same argument types
+______ test_actual_current_mapping_snapshot_proves_one_material_solution _______
+tests/test_service_capability_catalog_actual.py:272: in test_actual_current_mapping_snapshot_proves_one_material_solution
+    assert verdict['state'] == 'UNIQUE'
+E   AssertionError: assert 'UNKNOWN' == 'UNIQUE'
+E     
+E     - UNIQUE
+E     + UNKNOWN
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_service_capability_catalog_actual.py::test_original_reviewed_release_registers_and_second_park_binds_own_existing_principals
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_service_capability_catalog_actual.py::test_migration_marker_repair_preserves_original_capability_history
+FAILED tests/test_service_capability_catalog_actual.py::test_actual_current_mapping_snapshot_proves_one_material_solution
+2 failed, 22 passed, 2 warnings in 8.13s

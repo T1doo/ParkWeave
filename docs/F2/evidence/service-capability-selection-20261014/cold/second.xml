@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="4" time="2.333" timestamp="2026-10-14T20:12:51.652194+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_instance_consumer" name="test_fresh_second_park_original_case_materials_no_auto_adopt" time="1.091"><failure message="parkweave.store.Conflict: idempotency key fingerprint mismatch">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f09d9f42450&gt;, &lt;parkweave.store.Store object at 0x7f09d9c52180&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-361/test_fresh_second_park_origina0')
+
+    def test_fresh_second_park_original_case_materials_no_auto_adopt(capability_catalog, tmp_path):
+        a = capability_catalog
+        facade, data = setup(a, tmp_path)
+        store, owner, tokens, api = a['f']
+        before = authority_snapshot(owner)
+        key = uuid4().hex
+        view = facade.prepare(tokens['fixture-c'], key, data)
+        assert len(view['stages']) == 1 and view['automatic_execution'] is False
+        assert facade.prepare(tokens['fixture-c'], key, data) == view
+        command = stage(view, 'CREATE_RUN')
+        reply = api.post('/api/runs', headers=headers(tokens, 'fixture-c', command['request_key']), json=command['body'])
+        assert reply.status_code == 202, reply.text
+        store.finish(store.claim('SYNTHETIC second park cold-input worker'))
+        view = facade.prepare_stage(tokens['fixture-c'], key, 'CREATE_PREPARATION')
+        command = stage(view, 'CREATE_PREPARATION')
+        reply = api.post('/api/preparations', headers=headers(tokens, 'fixture-c', command['request_key']), json=command['body'])
+        assert reply.status_code == 201, reply.text
+        preparation_id = reply.json()['preparation_id']
+        for name in ('SAVE_REQUEST', 'ADD_need_summary', 'ADD_material_outline'):
+&gt;           view = facade.prepare_stage(tokens['fixture-c'], key, name)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_instance_consumer.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/service_instance_consumer.py:205: in prepare_stage
+    return self.read(token, key)
+           ^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_instance_consumer.py:123: in read
+    observations = self._observations(c, p, saved, stages)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/service_instance_consumer.py:163: in _observations
+    result = prep.replay(c, p, stage['request_key'], expected, parent['id'])
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+c = &lt;psycopg.Connection [BAD] at 0x7f09d8d997f0&gt;
+p = {'id': 'fixture-c', 'token_hash': '25b7ce5dffe3362effbadb34f1400535748bdea349310e758903bf39a006d985', 'park_id': 'park-b', 'org_id': 'org-c', ...}
+key = 'tc_2d38b59570284815820111f72042b449_ADD_need_summary'
+fingerprint = 'e615b98d35eb2ff1eaa75b419751362047afd78e705ca32869ff99a0805dca9a'
+preparation_id = UUID('25d24ae4-4046-4cab-837c-ee9b4467199b')
+
+    def replay(c,p,key,fingerprint,preparation_id=None):
+        event=c.execute('SELECT * FROM preparation_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+        if event:
+&gt;           if event['fingerprint']!=fingerprint or (preparation_id and event['preparation_id']!=preparation_id):raise Conflict('idempotency key fingerprint mismatch')
+                                                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: idempotency key fingerprint mismatch
+
+src/parkweave/preparation.py:92: Conflict</failure></testcase><testcase classname="tests.test_service_instance_consumer" name="test_cold_binding_exact_external_fields_and_same_key_conflict" time="0.422" /><testcase classname="tests.test_service_instance_consumer" name="test_history_read_retained_after_source_withdrawal_no_new_commands" time="0.352" /><testcase classname="tests.test_service_instance_consumer" name="test_cross_park_nonowner_and_default_disabled" time="0.328" /></testsuite></testsuites>

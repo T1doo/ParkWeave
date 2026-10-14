@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="3" time="2.275" timestamp="2026-10-14T20:16:24.223826+00:00" hostname="754d39e95154"><testcase classname="tests.test_independent_selection_v4_runtime" name="test_resigned_frozen_goal_claims_require_original_selection_proof[goal_coverage]" time="0.979"><failure message="Failed: DID NOT RAISE Conflict">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7ff916ff26c0&gt;, &lt;parkweave.store.Store object at 0x7ff916ff2630&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+change = 'goal_coverage'
+
+    @pytest.mark.parametrize('change',['goal_coverage','required_goals','oracle'])
+    def test_resigned_frozen_goal_claims_require_original_selection_proof(capability_catalog,change):
+        a=capability_catalog;f,p,data,_=arrangement(a);v=run(a,f,p,data,uuid4().hex,planner([]))
+        with f[1].connect() as c:parent=c.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+        record=deepcopy(sc.find(parent,v['candidate_id']))
+        if change=='goal_coverage':record['document']['goal_coverage'][0]['status']='UNSUPPORTED'
+        elif change=='required_goals':record['document']['required_goals']=['EXTERNAL_REAL_FULFILMENT']
+        else:record['document']['selection_oracle']['minimal_solutions']=[]
+        record['candidate']=sc.document(record['document']);record['candidate_sha256']=cp._hash(record['candidate'])
+&gt;       with pytest.raises(Conflict,match='provenance proof'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_independent_selection_v4_runtime.py:20: Failed</failure></testcase><testcase classname="tests.test_independent_selection_v4_runtime" name="test_resigned_frozen_goal_claims_require_original_selection_proof[required_goals]" time="0.386" /><testcase classname="tests.test_independent_selection_v4_runtime" name="test_resigned_frozen_goal_claims_require_original_selection_proof[oracle]" time="0.403"><failure message="Failed: DID NOT RAISE Conflict">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7ff916917d70&gt;, &lt;parkweave.store.Store object at 0x7ff91733b320&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+change = 'oracle'
+
+    @pytest.mark.parametrize('change',['goal_coverage','required_goals','oracle'])
+    def test_resigned_frozen_goal_claims_require_original_selection_proof(capability_catalog,change):
+        a=capability_catalog;f,p,data,_=arrangement(a);v=run(a,f,p,data,uuid4().hex,planner([]))
+        with f[1].connect() as c:parent=c.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+        record=deepcopy(sc.find(parent,v['candidate_id']))
+        if change=='goal_coverage':record['document']['goal_coverage'][0]['status']='UNSUPPORTED'
+        elif change=='required_goals':record['document']['required_goals']=['EXTERNAL_REAL_FULFILMENT']
+        else:record['document']['selection_oracle']['minimal_solutions']=[]
+        record['candidate']=sc.document(record['document']);record['candidate_sha256']=cp._hash(record['candidate'])
+&gt;       with pytest.raises(Conflict,match='provenance proof'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_independent_selection_v4_runtime.py:20: Failed</failure></testcase></testsuite></testsuites>

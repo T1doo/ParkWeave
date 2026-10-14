@@ -1,0 +1,59 @@
+F...                                                                     [100%]
+=================================== FAILURES ===================================
+_________ test_fresh_second_park_original_case_materials_no_auto_adopt _________
+
+capability_catalog = {'f': (<parkweave.store.Store object at 0x7f106356c170>, <parkweave.store.Store object at 0x7f10632b3fe0>, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-357/test_fresh_second_park_origina0')
+
+    def test_fresh_second_park_original_case_materials_no_auto_adopt(capability_catalog, tmp_path):
+        a = capability_catalog
+        facade, data = setup(a, tmp_path)
+        store, owner, tokens, api = a['f']
+        before = authority_snapshot(owner)
+        key = uuid4().hex
+        view = facade.prepare(tokens['fixture-c'], key, data)
+        assert len(view['stages']) == 1 and view['automatic_execution'] is False
+        assert facade.prepare(tokens['fixture-c'], key, data) == view
+        command = stage(view, 'CREATE_RUN')
+        reply = api.post('/api/runs', headers=headers(tokens, 'fixture-c', command['request_key']), json=command['body'])
+        assert reply.status_code == 202, reply.text
+        store.finish(store.claim('SYNTHETIC second park cold-input worker'))
+        view = facade.prepare_stage(tokens['fixture-c'], key, 'CREATE_PREPARATION')
+        command = stage(view, 'CREATE_PREPARATION')
+        reply = api.post('/api/preparations', headers=headers(tokens, 'fixture-c', command['request_key']), json=command['body'])
+        assert reply.status_code == 201, reply.text
+        preparation_id = reply.json()['preparation_id']
+        for name in ('SAVE_REQUEST', 'ADD_need_summary', 'ADD_material_outline'):
+            view = facade.prepare_stage(tokens['fixture-c'], key, name)
+            command = stage(view, name)
+            path = '/api/preparations/' + preparation_id + ('/request-intent' if name == 'SAVE_REQUEST' else '/commands')
+            reply = api.post(path, headers=headers(tokens, 'fixture-c', command['request_key']), json=command['body'])
+            assert reply.status_code in (200, 201), reply.text
+        actual = api.get('/api/preparations/' + preparation_id, headers=headers(tokens, 'fixture-c')).json()
+        assert {m['text'] for m in actual['current_materials']} == {material.text for material in data.fields.values()}
+        with owner.connect() as c:
+            parent = c.execute('SELECT * FROM preparations WHERE id=%s', (preparation_id,)).fetchone()
+            assert (parent['park_id'], parent['owner_id'], parent['reviewer_id']) == ('park-b', 'fixture-c', 'prep-specialist-fixture-c')
+            assert parent['service_case_plan'] is None
+        # prep.create adds the original reviewer Run assignment; no new Grant.
+        after = authority_snapshot(owner)
+        assert {k:v for k,v in after.items() if k != 'run_assignments'} == {k:v for k,v in before.items() if k != 'run_assignments'}
+>       assert len(after['run_assignments']) == len(before['run_assignments']) + 1
+E       assert 0 == (0 + 1)
+E        +  where 0 = len([])
+E        +  and   0 = len([])
+
+tests/test_service_instance_consumer.py:61: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_service_instance_consumer.py::test_fresh_second_park_original_case_materials_no_auto_adopt
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_service_instance_consumer.py::test_fresh_second_park_original_case_materials_no_auto_adopt
+1 failed, 3 passed, 2 warnings in 2.51s

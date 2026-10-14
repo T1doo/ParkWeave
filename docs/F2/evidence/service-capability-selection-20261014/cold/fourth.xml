@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="6" time="2.902" timestamp="2026-10-14T20:15:02.396463+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_instance_consumer" name="test_fresh_second_park_original_case_materials_no_auto_adopt" time="1.080" /><testcase classname="tests.test_service_instance_consumer" name="test_cold_binding_exact_external_fields_and_same_key_conflict" time="0.377" /><testcase classname="tests.test_service_instance_consumer" name="test_history_read_retained_after_source_withdrawal_no_new_commands" time="0.307" /><testcase classname="tests.test_service_instance_consumer" name="test_cross_park_nonowner_and_default_disabled" time="0.337" /><testcase classname="tests.test_service_instance_consumer" name="test_original_run_reply_recovered_after_journal_restart_without_resend" time="0.365" /><testcase classname="tests.test_service_instance_consumer" name="test_current_prepare_revocation_blocks_replay_but_owner_read_retained" time="0.319"><failure message="TypeError: Store.lock_principal() got an unexpected keyword argument 'shared'">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7fc5700efb30&gt;, &lt;parkweave.store.Store object at 0x7fc571bd33b0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-365/test_current_prepare_revocatio0')
+
+    def test_current_prepare_revocation_blocks_replay_but_owner_read_retained(capability_catalog, tmp_path):
+        a = capability_catalog
+        facade, data = setup(a, tmp_path)
+        token = a['f'][2]['fixture-c']
+        key = uuid4().hex
+        view = facade.prepare(token, key, data)
+        with a['f'][1].connect() as c:
+&gt;           a['f'][1].lock_principal(c, 'fixture-c', shared=False)
+E           TypeError: Store.lock_principal() got an unexpected keyword argument 'shared'
+
+tests/test_service_instance_consumer.py:134: TypeError</failure></testcase></testsuite></testsuites>

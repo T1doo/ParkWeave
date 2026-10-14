@@ -1,0 +1,28 @@
+...........F..                                                           [100%]
+=================================== FAILURES ===================================
+______________ test_admitted_catalog_journal_cannot_be_truncated _______________
+
+capability_catalog = {'f': (<parkweave.store.Store object at 0x7f32eb22af00>, <parkweave.store.Store object at 0x7f32eb22ba70>, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+
+    def test_admitted_catalog_journal_cannot_be_truncated(capability_catalog):
+        a=capability_catalog;register(a)
+>       with pytest.raises(Exception,match='immutable|capability|history'):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Regex pattern did not match.
+E         Expected regex: 'immutable|capability|history'
+E         Actual message: 'cannot truncate a table referenced in a foreign key constraint\nDETAIL:  Table "preparations" references "preparation_catalog".\nHINT:  Truncate table "preparations" at the same time, or use TRUNCATE ... CASCADE.'
+
+tests/test_independent_catalog_runtime.py:171: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_independent_catalog_runtime.py::test_declared_reviewer_with_revoked_original_review_capability_not_satisfiable
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_independent_catalog_runtime.py::test_admitted_catalog_journal_cannot_be_truncated
+1 failed, 13 passed, 2 warnings in 4.96s

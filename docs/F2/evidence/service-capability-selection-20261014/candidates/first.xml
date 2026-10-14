@@ -1,0 +1,542 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="14" time="7.549" timestamp="2026-10-14T20:12:37.071737+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_selection_candidates" name="test_v4_real_pg_compact_selection_rebuild_recovery_no_business_or_grant_writes" time="1.110"><failure message="parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5ec5d97d40&gt;, &lt;parkweave.store.Store object at 0x7f5ec5d979b0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+
+    def test_v4_real_pg_compact_selection_rebuild_recovery_no_business_or_grant_writes(capability_catalog):
+        a=capability_catalog;f,p,data,current=arrangement(a);calls=[];model=planner(calls);key=uuid4().hex
+&gt;       before=digest(f);v=run(a,f,p,data,key,model)
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_candidates.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_selection_candidates.py:42: in run
+    def run(a,f,parent,data,key,model):return sc.generate(f[0],f[2]['fixture-a'],parent['preparation_id'],key,data,catalog=a['catalog'],planner=model)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = &lt;parkweave.store.Store object at 0x7f5ec5d97d40&gt;
+token = 'tkHMNMdmFRsaLvAtG2pGpk4Hms-YzODpczHYWebXVJc'
+id = '34337e2c-69a2-418e-af3b-28ed9de4bc88'
+key = '4bae79292464425e8974603dac29433d'
+data = Capture(expected_preparation_revision=2, expected_source_sha256='519389dcc94e09e07944096140dc35eeb1574b0134e51de05a93423bbf12b125', expected_capability_catalog_sha256='fd17016712599dc723f7ada6db9da092ea266160fdfa9391f556dc1978530b26')
+catalog = &lt;parkweave.service_capability_catalog.IsolatedServiceCapabilityCatalog object at 0x7f5ec58f5970&gt;
+planner = &lt;parkweave.service_selection_planner.OfflineSelectionPlanner object at 0x7f5ec5866540&gt;
+
+    def generate(store,token,id,key,data,*,catalog,planner):
+        from .service_selection_planner import OfflineSelectionPlanner
+        if type(planner) is not OfflineSelectionPlanner:raise Conflict('explicit offline-only selection planner required')
+        planner.require();fp=_fingerprint(id,data)
+        with catalog.connection() as c:
+            p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);prior=_prior(c,p,parent,key,fp)
+            if prior is not None:
+                if 'candidate' not in prior:return _attempt(parent,prior)
+                return verify(parent,prior,current(store,c,p,parent,catalog,prior['selection']),now=old.clock(c))
+            value=current(store,c,p,parent,catalog);_exact(data,parent,value)
+            if value['selection_oracle']['state'] not in ('UNIQUE','MULTIPLE'):raise Conflict('current service capabilities unresolved')
+            history=deepcopy(parent.get('planning_previews') or [])
+            if len(history)&gt;=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):raise Conflict('bounded original attempt requires GET recovery')
+            now=old.clock(c).astimezone(timezone.utc);window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
+            saved=deepcopy(value);saved['candidate_validity']=deepcopy(window)
+            record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=data.model_dump(),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
+            history.append(record);c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
+        def authority():
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED':raise Conflict('selection original attempt changed before dispatch')
+                _exact(data,parent,current(store,c,p,parent,catalog));now=old.clock(c)
+                if not old._time(h['validity']['created_at'])&lt;=now&lt;old._time(h['validity']['expires_at']):raise Conflict('selection original attempt expired before dispatch')
+        try:
+            result=planner.propose(value['selection_context'],before_dispatch=authority)
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED' or h['validity']!=record['validity']:raise Conflict('selection original attempt changed')
+                selection=ss.parse_selection(result['selection_raw'],binding(value))
+                if selection!=result['selection']:raise Conflict('selection parsed response changed')
+                latest=current(store,c,p,parent,catalog,selection);_exact(data,parent,latest)
+                saved=deepcopy(latest);saved['candidate_validity']=deepcopy(h['validity'])
+                h.update(document=saved,selection=selection,candidate=document(saved),selection_raw=result['selection_raw'],response_raw=result['response_raw'],producer=deepcopy(result['producer']),budget_record=deepcopy(result['budget_record']),frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+                h['candidate_sha256']=cp._hash(h['candidate']);h['producer'].update(attempt_sha256=cp._hash({k:h[k] for k in ('id','actor_id','request_key','fingerprint','validity')}),budget_sha256=cp._hash(h['budget_record']))
+                h['document']['candidate_producer']=deepcopy(h['producer']);h['planner_attempt'].update(state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(h['producer']))
+                bp._context(store,c,token,id,True);view=verify(parent,h,latest,now=old.clock(c))
+                if view['state'] in ('EXPIRED','CLOCK_UNCERTAIN','STALE','REJECTED'):raise Conflict('selection current source or validity changed')
+                c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(parent['planning_previews']),id));return view
+        except ModelBoundaryError as e:
+&gt;           _failure(store,token,id,key,fp,record['id'],e.code,catalog);raise Conflict('offline selection '+e.code+'; GET original key only') from None
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only
+
+src/parkweave/service_selection_candidates.py:235: Conflict</failure></testcase><testcase classname="tests.test_service_selection_candidates" name="test_v4_rehashed_tampering_cannot_be_consumed[downgrade]" time="0.459"><failure message="parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5ec583fb00&gt;, &lt;parkweave.store.Store object at 0x7f5ec58f4230&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+change = 'downgrade'
+
+    @pytest.mark.parametrize('change',['downgrade','producer','selection','mapping','action'])
+    def test_v4_rehashed_tampering_cannot_be_consumed(capability_catalog,change):
+&gt;       a=capability_catalog;f,p,data,_=arrangement(a);v=run(a,f,p,data,uuid4().hex,planner([]))
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_candidates.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_selection_candidates.py:42: in run
+    def run(a,f,parent,data,key,model):return sc.generate(f[0],f[2]['fixture-a'],parent['preparation_id'],key,data,catalog=a['catalog'],planner=model)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = &lt;parkweave.store.Store object at 0x7f5ec583fb00&gt;
+token = 'dotSo-NFAadjDc_24UmRzLrK2LNq4pWbqpufNIv25F8'
+id = 'dcf8b24a-1664-4da9-8d74-2e4d6e637f1f'
+key = 'acd2e5c4aa3946bba7052659ec8aba3c'
+data = Capture(expected_preparation_revision=2, expected_source_sha256='f6f143d90ac4e19dd3474fe004839150d2fac77f788fd36491102d34951a63ff', expected_capability_catalog_sha256='a2d2c54d4bff5048ed7f1ee4a3867683461e65ae838a0e51bea675a1872c6ef5')
+catalog = &lt;parkweave.service_capability_catalog.IsolatedServiceCapabilityCatalog object at 0x7f5ec4653d40&gt;
+planner = &lt;parkweave.service_selection_planner.OfflineSelectionPlanner object at 0x7f5ec466a180&gt;
+
+    def generate(store,token,id,key,data,*,catalog,planner):
+        from .service_selection_planner import OfflineSelectionPlanner
+        if type(planner) is not OfflineSelectionPlanner:raise Conflict('explicit offline-only selection planner required')
+        planner.require();fp=_fingerprint(id,data)
+        with catalog.connection() as c:
+            p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);prior=_prior(c,p,parent,key,fp)
+            if prior is not None:
+                if 'candidate' not in prior:return _attempt(parent,prior)
+                return verify(parent,prior,current(store,c,p,parent,catalog,prior['selection']),now=old.clock(c))
+            value=current(store,c,p,parent,catalog);_exact(data,parent,value)
+            if value['selection_oracle']['state'] not in ('UNIQUE','MULTIPLE'):raise Conflict('current service capabilities unresolved')
+            history=deepcopy(parent.get('planning_previews') or [])
+            if len(history)&gt;=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):raise Conflict('bounded original attempt requires GET recovery')
+            now=old.clock(c).astimezone(timezone.utc);window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
+            saved=deepcopy(value);saved['candidate_validity']=deepcopy(window)
+            record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=data.model_dump(),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
+            history.append(record);c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
+        def authority():
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED':raise Conflict('selection original attempt changed before dispatch')
+                _exact(data,parent,current(store,c,p,parent,catalog));now=old.clock(c)
+                if not old._time(h['validity']['created_at'])&lt;=now&lt;old._time(h['validity']['expires_at']):raise Conflict('selection original attempt expired before dispatch')
+        try:
+            result=planner.propose(value['selection_context'],before_dispatch=authority)
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED' or h['validity']!=record['validity']:raise Conflict('selection original attempt changed')
+                selection=ss.parse_selection(result['selection_raw'],binding(value))
+                if selection!=result['selection']:raise Conflict('selection parsed response changed')
+                latest=current(store,c,p,parent,catalog,selection);_exact(data,parent,latest)
+                saved=deepcopy(latest);saved['candidate_validity']=deepcopy(h['validity'])
+                h.update(document=saved,selection=selection,candidate=document(saved),selection_raw=result['selection_raw'],response_raw=result['response_raw'],producer=deepcopy(result['producer']),budget_record=deepcopy(result['budget_record']),frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+                h['candidate_sha256']=cp._hash(h['candidate']);h['producer'].update(attempt_sha256=cp._hash({k:h[k] for k in ('id','actor_id','request_key','fingerprint','validity')}),budget_sha256=cp._hash(h['budget_record']))
+                h['document']['candidate_producer']=deepcopy(h['producer']);h['planner_attempt'].update(state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(h['producer']))
+                bp._context(store,c,token,id,True);view=verify(parent,h,latest,now=old.clock(c))
+                if view['state'] in ('EXPIRED','CLOCK_UNCERTAIN','STALE','REJECTED'):raise Conflict('selection current source or validity changed')
+                c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(parent['planning_previews']),id));return view
+        except ModelBoundaryError as e:
+&gt;           _failure(store,token,id,key,fp,record['id'],e.code,catalog);raise Conflict('offline selection '+e.code+'; GET original key only') from None
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only
+
+src/parkweave/service_selection_candidates.py:235: Conflict</failure></testcase><testcase classname="tests.test_service_selection_candidates" name="test_v4_rehashed_tampering_cannot_be_consumed[producer]" time="0.466"><failure message="parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5ec4f1ad20&gt;, &lt;parkweave.store.Store object at 0x7f5ec5964cb0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+change = 'producer'
+
+    @pytest.mark.parametrize('change',['downgrade','producer','selection','mapping','action'])
+    def test_v4_rehashed_tampering_cannot_be_consumed(capability_catalog,change):
+&gt;       a=capability_catalog;f,p,data,_=arrangement(a);v=run(a,f,p,data,uuid4().hex,planner([]))
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_candidates.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_selection_candidates.py:42: in run
+    def run(a,f,parent,data,key,model):return sc.generate(f[0],f[2]['fixture-a'],parent['preparation_id'],key,data,catalog=a['catalog'],planner=model)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = &lt;parkweave.store.Store object at 0x7f5ec4f1ad20&gt;
+token = 'SGwI8DGUyi1RSA41Vz6ZUh4fF3VUdEDjmU851gmaFkU'
+id = 'a55e4808-6402-4033-9b91-13efd595e456'
+key = '7e9762427e09443b976994a319b76633'
+data = Capture(expected_preparation_revision=2, expected_source_sha256='8451b9f4d800bea6e1511f3f90edb48c8f3fede3c00cb65317c755d472540595', expected_capability_catalog_sha256='8ecc87f15f46c3d544d70bcd8c36aae933fc52e96a0724107a4808a039857723')
+catalog = &lt;parkweave.service_capability_catalog.IsolatedServiceCapabilityCatalog object at 0x7f5ec439d970&gt;
+planner = &lt;parkweave.service_selection_planner.OfflineSelectionPlanner object at 0x7f5ec4562000&gt;
+
+    def generate(store,token,id,key,data,*,catalog,planner):
+        from .service_selection_planner import OfflineSelectionPlanner
+        if type(planner) is not OfflineSelectionPlanner:raise Conflict('explicit offline-only selection planner required')
+        planner.require();fp=_fingerprint(id,data)
+        with catalog.connection() as c:
+            p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);prior=_prior(c,p,parent,key,fp)
+            if prior is not None:
+                if 'candidate' not in prior:return _attempt(parent,prior)
+                return verify(parent,prior,current(store,c,p,parent,catalog,prior['selection']),now=old.clock(c))
+            value=current(store,c,p,parent,catalog);_exact(data,parent,value)
+            if value['selection_oracle']['state'] not in ('UNIQUE','MULTIPLE'):raise Conflict('current service capabilities unresolved')
+            history=deepcopy(parent.get('planning_previews') or [])
+            if len(history)&gt;=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):raise Conflict('bounded original attempt requires GET recovery')
+            now=old.clock(c).astimezone(timezone.utc);window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
+            saved=deepcopy(value);saved['candidate_validity']=deepcopy(window)
+            record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=data.model_dump(),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
+            history.append(record);c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
+        def authority():
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED':raise Conflict('selection original attempt changed before dispatch')
+                _exact(data,parent,current(store,c,p,parent,catalog));now=old.clock(c)
+                if not old._time(h['validity']['created_at'])&lt;=now&lt;old._time(h['validity']['expires_at']):raise Conflict('selection original attempt expired before dispatch')
+        try:
+            result=planner.propose(value['selection_context'],before_dispatch=authority)
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED' or h['validity']!=record['validity']:raise Conflict('selection original attempt changed')
+                selection=ss.parse_selection(result['selection_raw'],binding(value))
+                if selection!=result['selection']:raise Conflict('selection parsed response changed')
+                latest=current(store,c,p,parent,catalog,selection);_exact(data,parent,latest)
+                saved=deepcopy(latest);saved['candidate_validity']=deepcopy(h['validity'])
+                h.update(document=saved,selection=selection,candidate=document(saved),selection_raw=result['selection_raw'],response_raw=result['response_raw'],producer=deepcopy(result['producer']),budget_record=deepcopy(result['budget_record']),frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+                h['candidate_sha256']=cp._hash(h['candidate']);h['producer'].update(attempt_sha256=cp._hash({k:h[k] for k in ('id','actor_id','request_key','fingerprint','validity')}),budget_sha256=cp._hash(h['budget_record']))
+                h['document']['candidate_producer']=deepcopy(h['producer']);h['planner_attempt'].update(state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(h['producer']))
+                bp._context(store,c,token,id,True);view=verify(parent,h,latest,now=old.clock(c))
+                if view['state'] in ('EXPIRED','CLOCK_UNCERTAIN','STALE','REJECTED'):raise Conflict('selection current source or validity changed')
+                c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(parent['planning_previews']),id));return view
+        except ModelBoundaryError as e:
+&gt;           _failure(store,token,id,key,fp,record['id'],e.code,catalog);raise Conflict('offline selection '+e.code+'; GET original key only') from None
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only
+
+src/parkweave/service_selection_candidates.py:235: Conflict</failure></testcase><testcase classname="tests.test_service_selection_candidates" name="test_v4_rehashed_tampering_cannot_be_consumed[selection]" time="0.432"><failure message="parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5ec454b860&gt;, &lt;parkweave.store.Store object at 0x7f5ec5928290&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+change = 'selection'
+
+    @pytest.mark.parametrize('change',['downgrade','producer','selection','mapping','action'])
+    def test_v4_rehashed_tampering_cannot_be_consumed(capability_catalog,change):
+&gt;       a=capability_catalog;f,p,data,_=arrangement(a);v=run(a,f,p,data,uuid4().hex,planner([]))
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_candidates.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_selection_candidates.py:42: in run
+    def run(a,f,parent,data,key,model):return sc.generate(f[0],f[2]['fixture-a'],parent['preparation_id'],key,data,catalog=a['catalog'],planner=model)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = &lt;parkweave.store.Store object at 0x7f5ec454b860&gt;
+token = 'gUYHhrSs6ioQDM7gMZJimHeCrfPox0Zst66Q5n41Yhg'
+id = '7034c3e0-caeb-436d-a84e-0ed002852be3'
+key = '5b6d2aa200ed4057aefd6bb79b08ba10'
+data = Capture(expected_preparation_revision=2, expected_source_sha256='6ec0c2ba90c63cfc8f9a018000612ced489b6a3e1ff608ed38e71b35b48af7ff', expected_capability_catalog_sha256='5bc4c6894432c1da88c21ca95535ab383736d4ab9226c3b4c7d083332321751c')
+catalog = &lt;parkweave.service_capability_catalog.IsolatedServiceCapabilityCatalog object at 0x7f5ec4373890&gt;
+planner = &lt;parkweave.service_selection_planner.OfflineSelectionPlanner object at 0x7f5ec4373c20&gt;
+
+    def generate(store,token,id,key,data,*,catalog,planner):
+        from .service_selection_planner import OfflineSelectionPlanner
+        if type(planner) is not OfflineSelectionPlanner:raise Conflict('explicit offline-only selection planner required')
+        planner.require();fp=_fingerprint(id,data)
+        with catalog.connection() as c:
+            p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);prior=_prior(c,p,parent,key,fp)
+            if prior is not None:
+                if 'candidate' not in prior:return _attempt(parent,prior)
+                return verify(parent,prior,current(store,c,p,parent,catalog,prior['selection']),now=old.clock(c))
+            value=current(store,c,p,parent,catalog);_exact(data,parent,value)
+            if value['selection_oracle']['state'] not in ('UNIQUE','MULTIPLE'):raise Conflict('current service capabilities unresolved')
+            history=deepcopy(parent.get('planning_previews') or [])
+            if len(history)&gt;=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):raise Conflict('bounded original attempt requires GET recovery')
+            now=old.clock(c).astimezone(timezone.utc);window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
+            saved=deepcopy(value);saved['candidate_validity']=deepcopy(window)
+            record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=data.model_dump(),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
+            history.append(record);c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
+        def authority():
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED':raise Conflict('selection original attempt changed before dispatch')
+                _exact(data,parent,current(store,c,p,parent,catalog));now=old.clock(c)
+                if not old._time(h['validity']['created_at'])&lt;=now&lt;old._time(h['validity']['expires_at']):raise Conflict('selection original attempt expired before dispatch')
+        try:
+            result=planner.propose(value['selection_context'],before_dispatch=authority)
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED' or h['validity']!=record['validity']:raise Conflict('selection original attempt changed')
+                selection=ss.parse_selection(result['selection_raw'],binding(value))
+                if selection!=result['selection']:raise Conflict('selection parsed response changed')
+                latest=current(store,c,p,parent,catalog,selection);_exact(data,parent,latest)
+                saved=deepcopy(latest);saved['candidate_validity']=deepcopy(h['validity'])
+                h.update(document=saved,selection=selection,candidate=document(saved),selection_raw=result['selection_raw'],response_raw=result['response_raw'],producer=deepcopy(result['producer']),budget_record=deepcopy(result['budget_record']),frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+                h['candidate_sha256']=cp._hash(h['candidate']);h['producer'].update(attempt_sha256=cp._hash({k:h[k] for k in ('id','actor_id','request_key','fingerprint','validity')}),budget_sha256=cp._hash(h['budget_record']))
+                h['document']['candidate_producer']=deepcopy(h['producer']);h['planner_attempt'].update(state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(h['producer']))
+                bp._context(store,c,token,id,True);view=verify(parent,h,latest,now=old.clock(c))
+                if view['state'] in ('EXPIRED','CLOCK_UNCERTAIN','STALE','REJECTED'):raise Conflict('selection current source or validity changed')
+                c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(parent['planning_previews']),id));return view
+        except ModelBoundaryError as e:
+&gt;           _failure(store,token,id,key,fp,record['id'],e.code,catalog);raise Conflict('offline selection '+e.code+'; GET original key only') from None
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only
+
+src/parkweave/service_selection_candidates.py:235: Conflict</failure></testcase><testcase classname="tests.test_service_selection_candidates" name="test_v4_rehashed_tampering_cannot_be_consumed[mapping]" time="0.449"><failure message="parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5ec41e20c0&gt;, &lt;parkweave.store.Store object at 0x7f5ec4561370&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+change = 'mapping'
+
+    @pytest.mark.parametrize('change',['downgrade','producer','selection','mapping','action'])
+    def test_v4_rehashed_tampering_cannot_be_consumed(capability_catalog,change):
+&gt;       a=capability_catalog;f,p,data,_=arrangement(a);v=run(a,f,p,data,uuid4().hex,planner([]))
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_candidates.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_selection_candidates.py:42: in run
+    def run(a,f,parent,data,key,model):return sc.generate(f[0],f[2]['fixture-a'],parent['preparation_id'],key,data,catalog=a['catalog'],planner=model)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = &lt;parkweave.store.Store object at 0x7f5ec41e20c0&gt;
+token = 'nqrP9TMUhqm7gxnYrN4lmliflH-FZhfXJZmS6AzhJKg'
+id = '38976e5f-f5d7-4bd2-9fb9-cb4fbe73ff11'
+key = '1c3e4057209347ad9ed988c568af3f04'
+data = Capture(expected_preparation_revision=2, expected_source_sha256='b32e12fcbce23a6603f3ee784ee632c9aeee9559879e90d58525f64147c7e678', expected_capability_catalog_sha256='3ae9e9b9ff5e64bb1a9c8fc8a7e409c612396e99691cb6a6b159ce6faa1d9104')
+catalog = &lt;parkweave.service_capability_catalog.IsolatedServiceCapabilityCatalog object at 0x7f5ebfefb0b0&gt;
+planner = &lt;parkweave.service_selection_planner.OfflineSelectionPlanner object at 0x7f5ebfefa1b0&gt;
+
+    def generate(store,token,id,key,data,*,catalog,planner):
+        from .service_selection_planner import OfflineSelectionPlanner
+        if type(planner) is not OfflineSelectionPlanner:raise Conflict('explicit offline-only selection planner required')
+        planner.require();fp=_fingerprint(id,data)
+        with catalog.connection() as c:
+            p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);prior=_prior(c,p,parent,key,fp)
+            if prior is not None:
+                if 'candidate' not in prior:return _attempt(parent,prior)
+                return verify(parent,prior,current(store,c,p,parent,catalog,prior['selection']),now=old.clock(c))
+            value=current(store,c,p,parent,catalog);_exact(data,parent,value)
+            if value['selection_oracle']['state'] not in ('UNIQUE','MULTIPLE'):raise Conflict('current service capabilities unresolved')
+            history=deepcopy(parent.get('planning_previews') or [])
+            if len(history)&gt;=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):raise Conflict('bounded original attempt requires GET recovery')
+            now=old.clock(c).astimezone(timezone.utc);window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
+            saved=deepcopy(value);saved['candidate_validity']=deepcopy(window)
+            record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=data.model_dump(),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
+            history.append(record);c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
+        def authority():
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED':raise Conflict('selection original attempt changed before dispatch')
+                _exact(data,parent,current(store,c,p,parent,catalog));now=old.clock(c)
+                if not old._time(h['validity']['created_at'])&lt;=now&lt;old._time(h['validity']['expires_at']):raise Conflict('selection original attempt expired before dispatch')
+        try:
+            result=planner.propose(value['selection_context'],before_dispatch=authority)
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED' or h['validity']!=record['validity']:raise Conflict('selection original attempt changed')
+                selection=ss.parse_selection(result['selection_raw'],binding(value))
+                if selection!=result['selection']:raise Conflict('selection parsed response changed')
+                latest=current(store,c,p,parent,catalog,selection);_exact(data,parent,latest)
+                saved=deepcopy(latest);saved['candidate_validity']=deepcopy(h['validity'])
+                h.update(document=saved,selection=selection,candidate=document(saved),selection_raw=result['selection_raw'],response_raw=result['response_raw'],producer=deepcopy(result['producer']),budget_record=deepcopy(result['budget_record']),frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+                h['candidate_sha256']=cp._hash(h['candidate']);h['producer'].update(attempt_sha256=cp._hash({k:h[k] for k in ('id','actor_id','request_key','fingerprint','validity')}),budget_sha256=cp._hash(h['budget_record']))
+                h['document']['candidate_producer']=deepcopy(h['producer']);h['planner_attempt'].update(state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(h['producer']))
+                bp._context(store,c,token,id,True);view=verify(parent,h,latest,now=old.clock(c))
+                if view['state'] in ('EXPIRED','CLOCK_UNCERTAIN','STALE','REJECTED'):raise Conflict('selection current source or validity changed')
+                c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(parent['planning_previews']),id));return view
+        except ModelBoundaryError as e:
+&gt;           _failure(store,token,id,key,fp,record['id'],e.code,catalog);raise Conflict('offline selection '+e.code+'; GET original key only') from None
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only
+
+src/parkweave/service_selection_candidates.py:235: Conflict</failure></testcase><testcase classname="tests.test_service_selection_candidates" name="test_v4_rehashed_tampering_cannot_be_consumed[action]" time="0.534"><failure message="parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5ec4292480&gt;, &lt;parkweave.store.Store object at 0x7f5ec4291b80&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+change = 'action'
+
+    @pytest.mark.parametrize('change',['downgrade','producer','selection','mapping','action'])
+    def test_v4_rehashed_tampering_cannot_be_consumed(capability_catalog,change):
+&gt;       a=capability_catalog;f,p,data,_=arrangement(a);v=run(a,f,p,data,uuid4().hex,planner([]))
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_candidates.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_selection_candidates.py:42: in run
+    def run(a,f,parent,data,key,model):return sc.generate(f[0],f[2]['fixture-a'],parent['preparation_id'],key,data,catalog=a['catalog'],planner=model)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = &lt;parkweave.store.Store object at 0x7f5ec4292480&gt;
+token = 'RYHjtVGg_q5hzP3LDcBSKaEyRqClfV11ZPb10ZOv-wY'
+id = '92832180-f3c1-4d8d-ab4a-909e39d00764'
+key = '0cb7758146e042c3808f61b1facfb0c4'
+data = Capture(expected_preparation_revision=2, expected_source_sha256='761926bc987039db9e0d751b943fcfe910cb6b58aa8f7422fef4fad115cbe627', expected_capability_catalog_sha256='d900c8423580f6c8d38b13f1f21381592d62703bb6c8a8fe40aa4afa7a1a8764')
+catalog = &lt;parkweave.service_capability_catalog.IsolatedServiceCapabilityCatalog object at 0x7f5ebfc93890&gt;
+planner = &lt;parkweave.service_selection_planner.OfflineSelectionPlanner object at 0x7f5ec412ac30&gt;
+
+    def generate(store,token,id,key,data,*,catalog,planner):
+        from .service_selection_planner import OfflineSelectionPlanner
+        if type(planner) is not OfflineSelectionPlanner:raise Conflict('explicit offline-only selection planner required')
+        planner.require();fp=_fingerprint(id,data)
+        with catalog.connection() as c:
+            p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);prior=_prior(c,p,parent,key,fp)
+            if prior is not None:
+                if 'candidate' not in prior:return _attempt(parent,prior)
+                return verify(parent,prior,current(store,c,p,parent,catalog,prior['selection']),now=old.clock(c))
+            value=current(store,c,p,parent,catalog);_exact(data,parent,value)
+            if value['selection_oracle']['state'] not in ('UNIQUE','MULTIPLE'):raise Conflict('current service capabilities unresolved')
+            history=deepcopy(parent.get('planning_previews') or [])
+            if len(history)&gt;=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):raise Conflict('bounded original attempt requires GET recovery')
+            now=old.clock(c).astimezone(timezone.utc);window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
+            saved=deepcopy(value);saved['candidate_validity']=deepcopy(window)
+            record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=data.model_dump(),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
+            history.append(record);c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
+        def authority():
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED':raise Conflict('selection original attempt changed before dispatch')
+                _exact(data,parent,current(store,c,p,parent,catalog));now=old.clock(c)
+                if not old._time(h['validity']['created_at'])&lt;=now&lt;old._time(h['validity']['expires_at']):raise Conflict('selection original attempt expired before dispatch')
+        try:
+            result=planner.propose(value['selection_context'],before_dispatch=authority)
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED' or h['validity']!=record['validity']:raise Conflict('selection original attempt changed')
+                selection=ss.parse_selection(result['selection_raw'],binding(value))
+                if selection!=result['selection']:raise Conflict('selection parsed response changed')
+                latest=current(store,c,p,parent,catalog,selection);_exact(data,parent,latest)
+                saved=deepcopy(latest);saved['candidate_validity']=deepcopy(h['validity'])
+                h.update(document=saved,selection=selection,candidate=document(saved),selection_raw=result['selection_raw'],response_raw=result['response_raw'],producer=deepcopy(result['producer']),budget_record=deepcopy(result['budget_record']),frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+                h['candidate_sha256']=cp._hash(h['candidate']);h['producer'].update(attempt_sha256=cp._hash({k:h[k] for k in ('id','actor_id','request_key','fingerprint','validity')}),budget_sha256=cp._hash(h['budget_record']))
+                h['document']['candidate_producer']=deepcopy(h['producer']);h['planner_attempt'].update(state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(h['producer']))
+                bp._context(store,c,token,id,True);view=verify(parent,h,latest,now=old.clock(c))
+                if view['state'] in ('EXPIRED','CLOCK_UNCERTAIN','STALE','REJECTED'):raise Conflict('selection current source or validity changed')
+                c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(parent['planning_previews']),id));return view
+        except ModelBoundaryError as e:
+&gt;           _failure(store,token,id,key,fp,record['id'],e.code,catalog);raise Conflict('offline selection '+e.code+'; GET original key only') from None
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only
+
+src/parkweave/service_selection_candidates.py:235: Conflict</failure></testcase><testcase classname="tests.test_service_selection_candidates" name="test_source_changes_while_model_waits_preserve_original_attempt_and_get_only" time="0.472" /><testcase classname="tests.test_service_selection_candidates" name="test_timeout_outcome_unknown_never_retries_original_key" time="0.393" /><testcase classname="tests.test_service_selection_candidates" name="test_same_key_actual_concurrent_dispatch_once" time="0.412"><failure message="parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5ec4393d40&gt;, &lt;parkweave.store.Store object at 0x7f5ec438f8f0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+
+    def test_same_key_actual_concurrent_dispatch_once(capability_catalog):
+        a=capability_catalog;f,p,data,_=arrangement(a);calls=[];model=planner(calls);key=uuid4().hex
+&gt;       with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(lambda _:run(a,f,p,data,key,model),range(2)))
+                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_candidates.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:619: in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:317: in _result_or_cancel
+    return fut.result(timeout)
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/thread.py:59: in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_service_selection_candidates.py:95: in &lt;lambda&gt;
+    with ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(lambda _:run(a,f,p,data,key,model),range(2)))
+                                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_service_selection_candidates.py:42: in run
+    def run(a,f,parent,data,key,model):return sc.generate(f[0],f[2]['fixture-a'],parent['preparation_id'],key,data,catalog=a['catalog'],planner=model)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = &lt;parkweave.store.Store object at 0x7f5ec4393d40&gt;
+token = '1lrU_-0gouDdJLh2pVe-rL6q0e5zDyq_XQVVIoYl5FU'
+id = 'f40f725a-2acc-48a8-ad1d-5f52ace93cee'
+key = '5d17f3ffb63e47928b6695abcb86ce61'
+data = Capture(expected_preparation_revision=2, expected_source_sha256='35de1b8adb9b7831d4754832a687d7149b5b68e142ce64f356dd8c9e5e838ac3', expected_capability_catalog_sha256='97b92801526a79572f91afb0a7ffdd7a4bec65f8896a300e282b5a563b1c03b7')
+catalog = &lt;parkweave.service_capability_catalog.IsolatedServiceCapabilityCatalog object at 0x7f5ec4eea6f0&gt;
+planner = &lt;parkweave.service_selection_planner.OfflineSelectionPlanner object at 0x7f5ec45f34d0&gt;
+
+    def generate(store,token,id,key,data,*,catalog,planner):
+        from .service_selection_planner import OfflineSelectionPlanner
+        if type(planner) is not OfflineSelectionPlanner:raise Conflict('explicit offline-only selection planner required')
+        planner.require();fp=_fingerprint(id,data)
+        with catalog.connection() as c:
+            p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);prior=_prior(c,p,parent,key,fp)
+            if prior is not None:
+                if 'candidate' not in prior:return _attempt(parent,prior)
+                return verify(parent,prior,current(store,c,p,parent,catalog,prior['selection']),now=old.clock(c))
+            value=current(store,c,p,parent,catalog);_exact(data,parent,value)
+            if value['selection_oracle']['state'] not in ('UNIQUE','MULTIPLE'):raise Conflict('current service capabilities unresolved')
+            history=deepcopy(parent.get('planning_previews') or [])
+            if len(history)&gt;=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):raise Conflict('bounded original attempt requires GET recovery')
+            now=old.clock(c).astimezone(timezone.utc);window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
+            saved=deepcopy(value);saved['candidate_validity']=deepcopy(window)
+            record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=data.model_dump(),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
+            history.append(record);c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
+        def authority():
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED':raise Conflict('selection original attempt changed before dispatch')
+                _exact(data,parent,current(store,c,p,parent,catalog));now=old.clock(c)
+                if not old._time(h['validity']['created_at'])&lt;=now&lt;old._time(h['validity']['expires_at']):raise Conflict('selection original attempt expired before dispatch')
+        try:
+            result=planner.propose(value['selection_context'],before_dispatch=authority)
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED' or h['validity']!=record['validity']:raise Conflict('selection original attempt changed')
+                selection=ss.parse_selection(result['selection_raw'],binding(value))
+                if selection!=result['selection']:raise Conflict('selection parsed response changed')
+                latest=current(store,c,p,parent,catalog,selection);_exact(data,parent,latest)
+                saved=deepcopy(latest);saved['candidate_validity']=deepcopy(h['validity'])
+                h.update(document=saved,selection=selection,candidate=document(saved),selection_raw=result['selection_raw'],response_raw=result['response_raw'],producer=deepcopy(result['producer']),budget_record=deepcopy(result['budget_record']),frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+                h['candidate_sha256']=cp._hash(h['candidate']);h['producer'].update(attempt_sha256=cp._hash({k:h[k] for k in ('id','actor_id','request_key','fingerprint','validity')}),budget_sha256=cp._hash(h['budget_record']))
+                h['document']['candidate_producer']=deepcopy(h['producer']);h['planner_attempt'].update(state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(h['producer']))
+                bp._context(store,c,token,id,True);view=verify(parent,h,latest,now=old.clock(c))
+                if view['state'] in ('EXPIRED','CLOCK_UNCERTAIN','STALE','REJECTED'):raise Conflict('selection current source or validity changed')
+                c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(parent['planning_previews']),id));return view
+        except ModelBoundaryError as e:
+&gt;           _failure(store,token,id,key,fp,record['id'],e.code,catalog);raise Conflict('offline selection '+e.code+'; GET original key only') from None
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only
+
+src/parkweave/service_selection_candidates.py:235: Conflict</failure></testcase><testcase classname="tests.test_service_selection_candidates" name="test_withdrawn_catalog_cold_get_retains_saved_candidate_without_write" time="0.379"><failure message="parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only">capability_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f5ebfe49940&gt;, &lt;parkweave.store.Store object at 0x7f5ec44e99a0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+
+    def test_withdrawn_catalog_cold_get_retains_saved_candidate_without_write(capability_catalog):
+&gt;       a=capability_catalog;f,p,data,_=arrangement(a);key=uuid4().hex;v=run(a,f,p,data,key,planner([]))
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_selection_candidates.py:102: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_selection_candidates.py:42: in run
+    def run(a,f,parent,data,key,model):return sc.generate(f[0],f[2]['fixture-a'],parent['preparation_id'],key,data,catalog=a['catalog'],planner=model)
+                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+store = &lt;parkweave.store.Store object at 0x7f5ebfe49940&gt;
+token = 'USVShl2EWto1DP6wxlvBIC0QNOvhXu2iL7CP4YfS-kI'
+id = '9d94b726-16fd-4667-a77c-e1a91f7a1ba9'
+key = 'cbf74c9e9033474982be98604dbf2502'
+data = Capture(expected_preparation_revision=2, expected_source_sha256='90e17951015c4874cccf02ea7447cc2d1f9ad063f53760a6373d4abb81d272fd', expected_capability_catalog_sha256='709e32a6aaf686d630d5d42b798253f7d5de285abb3dde483e0e519a0cee172d')
+catalog = &lt;parkweave.service_capability_catalog.IsolatedServiceCapabilityCatalog object at 0x7f5ec5c57560&gt;
+planner = &lt;parkweave.service_selection_planner.OfflineSelectionPlanner object at 0x7f5ec5c55310&gt;
+
+    def generate(store,token,id,key,data,*,catalog,planner):
+        from .service_selection_planner import OfflineSelectionPlanner
+        if type(planner) is not OfflineSelectionPlanner:raise Conflict('explicit offline-only selection planner required')
+        planner.require();fp=_fingerprint(id,data)
+        with catalog.connection() as c:
+            p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);prior=_prior(c,p,parent,key,fp)
+            if prior is not None:
+                if 'candidate' not in prior:return _attempt(parent,prior)
+                return verify(parent,prior,current(store,c,p,parent,catalog,prior['selection']),now=old.clock(c))
+            value=current(store,c,p,parent,catalog);_exact(data,parent,value)
+            if value['selection_oracle']['state'] not in ('UNIQUE','MULTIPLE'):raise Conflict('current service capabilities unresolved')
+            history=deepcopy(parent.get('planning_previews') or [])
+            if len(history)&gt;=bp.LIMIT or any(h.get('planner_attempt',{}).get('state')=='STARTED' for h in history):raise Conflict('bounded original attempt requires GET recovery')
+            now=old.clock(c).astimezone(timezone.utc);window=dict(version=2,created_at=now.isoformat(),expires_at=(now+timedelta(seconds=old.VALIDITY_SECONDS)).isoformat(),seconds=old.VALIDITY_SECONDS)
+            saved=deepcopy(value);saved['candidate_validity']=deepcopy(window)
+            record=dict(id=str(uuid4()),profile=PROFILE,revision=len(history)+1,actor_id=p['id'],request_key=key,fingerprint=fp,document=saved,candidate_request=data.model_dump(),validity=window,planner_attempt=dict(version=4,state='STARTED',outcome=None))
+            history.append(record);c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(history),id))
+        def authority():
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED':raise Conflict('selection original attempt changed before dispatch')
+                _exact(data,parent,current(store,c,p,parent,catalog));now=old.clock(c)
+                if not old._time(h['validity']['created_at'])&lt;=now&lt;old._time(h['validity']['expires_at']):raise Conflict('selection original attempt expired before dispatch')
+        try:
+            result=planner.propose(value['selection_context'],before_dispatch=authority)
+            with catalog.connection() as c:
+                p,parent=bp._context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key);h=_prior(c,p,parent,key,fp)
+                if h is None or h['id']!=record['id'] or h['planner_attempt']['state']!='STARTED' or h['validity']!=record['validity']:raise Conflict('selection original attempt changed')
+                selection=ss.parse_selection(result['selection_raw'],binding(value))
+                if selection!=result['selection']:raise Conflict('selection parsed response changed')
+                latest=current(store,c,p,parent,catalog,selection);_exact(data,parent,latest)
+                saved=deepcopy(latest);saved['candidate_validity']=deepcopy(h['validity'])
+                h.update(document=saved,selection=selection,candidate=document(saved),selection_raw=result['selection_raw'],response_raw=result['response_raw'],producer=deepcopy(result['producer']),budget_record=deepcopy(result['budget_record']),frozen_registry=deepcopy(dict(steps=bp.REGISTRY,actions=bp.ACTIONS)))
+                h['candidate_sha256']=cp._hash(h['candidate']);h['producer'].update(attempt_sha256=cp._hash({k:h[k] for k in ('id','actor_id','request_key','fingerprint','validity')}),budget_sha256=cp._hash(h['budget_record']))
+                h['document']['candidate_producer']=deepcopy(h['producer']);h['planner_attempt'].update(state='COMMITTED',outcome='VALIDATED',producer_sha256=cp._hash(h['producer']))
+                bp._context(store,c,token,id,True);view=verify(parent,h,latest,now=old.clock(c))
+                if view['state'] in ('EXPIRED','CLOCK_UNCERTAIN','STALE','REJECTED'):raise Conflict('selection current source or validity changed')
+                c.execute('UPDATE preparations SET planning_previews=%s WHERE id=%s',(Jsonb(parent['planning_previews']),id));return view
+        except ModelBoundaryError as e:
+&gt;           _failure(store,token,id,key,fp,record['id'],e.code,catalog);raise Conflict('offline selection '+e.code+'; GET original key only') from None
+                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           parkweave.store.Conflict: offline selection MODEL_IDENTITY_MISMATCH; GET original key only
+
+src/parkweave/service_selection_candidates.py:235: Conflict</failure></testcase><testcase classname="tests.test_service_selection_candidates" name="test_original_current_authority_rejects_cross_owner[fixture-b]" time="0.427" /><testcase classname="tests.test_service_selection_candidates" name="test_original_current_authority_rejects_cross_owner[fixture-c]" time="0.334" /><testcase classname="tests.test_service_selection_candidates" name="test_original_current_authority_rejects_cross_owner[prep-specialist-fixture-a]" time="0.373" /><testcase classname="tests.test_service_selection_candidates" name="test_unsupported_required_goal_not_dropped" time="0.376" /></testsuite></testsuites>

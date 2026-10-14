@@ -1,0 +1,29 @@
+..........F.                                                             [100%]
+=================================== FAILURES ===================================
+________ test_service_selection_complete_html_nodevm[unknown_recovery] _________
+
+mode = 'unknown_recovery'
+
+    @pytest.mark.parametrize("mode", ["disabled", "unknown_catalog", "multiple", "stale", "happy", "expired", "lost_generate", "bad_recovery", "bad_source", "privacy", "unknown_recovery", "lost_adopt"])
+    def test_service_selection_complete_html_nodevm(mode):
+        assert shutil.which("node"), "Node is required for complete original HTML verification"
+        root = Path(__file__).resolve().parents[1]
+        completed = subprocess.run(["node", "-e", HARNESS, mode], cwd=root, text=True, capture_output=True, timeout=25)
+>       assert completed.returncode == 0, completed.stdout + completed.stderr
+E       AssertionError: Error: 原服务选择结果待GET核对，禁止另一写入
+E             at Element.onclick (evalmachine.<anonymous>:57:129)
+E             at [eval]:36:471
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '-e', '\nconst fs=require(\'fs\'),vm=require(\'vm\'),assert=require(\'assert\');\nconst... stderr='Error: 原服务选择结果待GET核对，禁止另一写入\n    at Element.onclick (evalmachine.<anonymous>:57:129)\n    at [eval]:36:471\n').returncode
+
+tests/test_service_selection_web.py:56: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_service_selection_web.py::test_service_selection_complete_html_nodevm[unknown_recovery]
+1 failed, 11 passed, 1 warning in 0.98s

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="3.755" timestamp="2026-10-14T20:52:23.550511+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_selection_nodevm_actual" name="test_complete_original_html_real_second_park_catalog_candidate_recovery_adopt[normal]" time="2.386" /><testcase classname="tests.test_service_selection_nodevm_actual" name="test_complete_original_html_real_second_park_catalog_candidate_recovery_adopt[historical_lost_response]" time="1.238"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: false == true&#10;      at /workspace/parkweave-service-tests/tests/service_selection_actual_nodevm.js:39:9&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  &#10;assert 1 == 0&#10; +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_selection_actual_nodevm....&gt;.returncode">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7f534d6c7c80&gt;, &lt;parkweave.store.Store object at 0x7f534f30acf0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+mode = 'historical_lost_response'
+
+    @pytest.mark.parametrize('mode',['normal','historical_lost_response'])
+    def test_complete_original_html_real_second_park_catalog_candidate_recovery_adopt(selection_full_chain,mode):
+        a=selection_full_chain;f=a['f'];calls=[]
+        p,_,_=create(f,user='fixture-c',goal='SYNTHETIC B fresh real HTML API flow')
+        p=ok(save(f,p,goals=GOALS,user='fixture-c'))
+        for slot in ('need_summary','material_outline'):
+            p=ok(command(f,p,'ADD_EVIDENCE',user='fixture-c',slot=slot,text='SYNTHETIC B HTML fresh '+slot,source_kind='USER_STATEMENT',source_label='SYNTHETIC B HTML input'))
+        p=ok(command(f,p,'REVIEW',user='prep-specialist-fixture-c',reason='SYNTHETIC B review'))
+        p=ok(command(f,p,'CONFIRM',user='fixture-c',reason='SYNTHETIC B explicit confirmation'))
+        f[1].assign_status('executor-c',UUID(p['run_id']),active=True)
+        authority=authority_snapshot(f[1]);model=planner(calls,mode='all')
+        assert shutil.which('node'),'Node required for actual whole HTML verification'
+        root=Path(__file__).resolve().parents[1]
+        proc=subprocess.Popen(['node','tests/service_selection_actual_nodevm.js',p['preparation_id'],mode],cwd=root,text=True,
+                              stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
+        traffic=[];external_material_changes=[];result=None;selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            with TestClient(create_app(f[0],capability_catalog=a['catalog'],selection_planner=model)) as api:
+                until=time.monotonic()+25
+                while time.monotonic()&lt;until:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if message['type']=='result':result=message;break
+                    assert message['type']=='request'
+                    options=message['options'];auth=options.get('headers',{}).get('Authorization')
+                    assert auth=='Bearer SYNTHETIC_NODE_API_SESSION'
+                    actual_headers={**options.get('headers',{}),'Authorization':'Bearer '+f[2]['fixture-c']}
+                    reply=api.request(options.get('method','GET'),message['path'],headers=actual_headers,content=options.get('body'))
+                    body=reply.json();traffic.append(dict(path=message['path'],method=options.get('method','GET'),status=reply.status_code,body=body))
+                    if mode=='historical_lost_response' and options.get('method')=='POST' and message['path'].endswith('/service-selections'):
+                        assert reply.status_code==201
+                        changed=command(f,p,'ADD_EVIDENCE',user='fixture-c',slot='need_summary',text='SYNTHETIC B explicit later material change after committed generation',source_kind='USER_STATEMENT',source_label='SYNTHETIC later explicit user material')
+                        external_material_changes.append(ok(changed))
+    
+                    proc.stdin.write(json.dumps(dict(id=message['id'],status=reply.status_code,body=body))+'\n');proc.stdin.flush()
+            proc.wait(timeout=5)
+            stderr=proc.stderr.read()
+&gt;           assert proc.returncode==0,stderr
+E           AssertionError: AssertionError [ERR_ASSERTION]: false == true
+E                 at /workspace/parkweave-service-tests/tests/service_selection_actual_nodevm.js:39:9
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = &lt;Popen: returncode: 1 args: ['node', 'tests/service_selection_actual_nodevm....&gt;.returncode
+
+tests/test_service_selection_nodevm_actual.py:65: AssertionError</failure></testcase></testsuite></testsuites>

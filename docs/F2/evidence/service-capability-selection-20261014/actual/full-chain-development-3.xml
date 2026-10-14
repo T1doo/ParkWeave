@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.346" timestamp="2026-10-14T20:19:28.875654+00:00" hostname="754d39e95154"><testcase classname="tests.test_service_selection_full_chain" name="test_three_capability_selection_second_park_original_local_outputs" time="2.180"><failure message="KeyError: 'steps'">selection_full_chain = {'f': (&lt;parkweave.store.Store object at 0x7f5b585215b0&gt;, &lt;parkweave.store.Store object at 0x7f5b58523bf0&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-378/test_three_capability_selectio0')
+
+    def test_three_capability_selection_second_park_original_local_outputs(selection_full_chain,tmp_path):
+        # New interfaces are imported here so a pending integration cannot mask an
+        # otherwise collectable old regression suite with an import-time error.
+        from parkweave import bounded_planning as bp,service_selection_candidates as candidates
+        from parkweave.service_selection_planner import OfflineSelectionPlanner
+        from parkweave.service_instance_consumer import ColdInput,ParkInstanceConsumer
+        from parkweave import case_goal_results
+        a=selection_full_chain;f=a['f'];store,owner,tokens,api=f
+        store._isolated_service_capability_catalog=a['catalog']
+        a_parent,_,_=create(f,goal='SYNTHETIC A historical Case remains unchanged')
+        old_history=case_history(owner,a_parent['preparation_id'])
+        instance=a['configs']['park-b','synthetic-material-preparation']
+        facade=ParkInstanceConsumer(a['catalog'],ConsumerRepository(tmp_path/'full-chain-cold.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+        data=ColdInput(instance_id=instance['instance_id'],expected_config_revision=instance['config_revision'],
+            expected_config_sha256=instance['config_sha256'],expected_release_id=instance['release_id'],
+            expected_release_sha256=instance['release_sha256'],goal='SYNTHETIC B fresh six-goal request',
+            required_goals=GOALS,fields={mapping['input_field']:dict(slot=slot,text='SYNTHETIC B FRESH PRIVATE '+slot,
+            source_kind='USER_STATEMENT',source_label='SYNTHETIC B newly supplied source') for slot,mapping in instance['fields'].items()},
+            reason='SYNTHETIC B explicitly confirms current cold inputs')
+        key=uuid4().hex;initial_authority=authority_snapshot(owner)
+        view=facade.prepare(tokens['fixture-c'],key,data)
+        assert len(view['stages'])==1 and not view['automatic_execution']
+        stage=next(s for s in view['stages'] if s['name']=='CREATE_RUN')
+        run=ok(api.post('/api/runs',headers=headers(tokens,'fixture-c',stage['request_key']),json=stage['body']),202)
+        # Original local Run worker uses actual ordinary processing; no provider.
+        store.finish(store.claim('SYNTHETIC B original local worker'))
+        run_view=ok(api.get('/api/runs/'+run['run_id'],headers=headers(tokens,'fixture-c')))
+        assert run_view['state']=='SUCCEEDED' and run_view['success_scope']=='LOCAL_CASE_CREATED'
+        assert run_view['operation']['state']=='VERIFIED' and run_view['case']['state']=='NEEDS_INPUT'
+        view=facade.prepare_stage(tokens['fixture-c'],key,'CREATE_PREPARATION')
+        stage=next(s for s in view['stages'] if s['name']=='CREATE_PREPARATION')
+        p=ok(api.post('/api/preparations',headers=headers(tokens,'fixture-c',stage['request_key']),json=stage['body']),201)
+        for name in ('SAVE_REQUEST','ADD_need_summary','ADD_material_outline'):
+            view=facade.prepare_stage(tokens['fixture-c'],key,name);stage=next(s for s in view['stages'] if s['name']==name)
+            suffix='/request-intent' if name=='SAVE_REQUEST' else '/commands'
+            p=ok(api.post('/api/preparations/'+p['preparation_id']+suffix,headers=headers(tokens,'fixture-c',stage['request_key']),json=stage['body']))
+        assert authority_snapshot(owner)==initial_authority
+        material_view=ok(api.get('/api/preparations/'+p['preparation_id'],headers=headers(tokens,'fixture-c')))
+        assert {m['text'] for m in material_view['current_materials']}=={m.text for m in data.fields.values()}
+        p=ok(prep_command(f,p,'REVIEW',user='prep-specialist-fixture-c',reason='SYNTHETIC B own reviewer confirms materials'))
+        p=ok(prep_command(f,p,'CONFIRM',user='fixture-c',reason='SYNTHETIC B owner explicitly confirms materials'))
+        # Existing owner-only assignment is an isolated initial permission fixture,
+        # never a planner/consumer operation or claimed new-Run permission feature.
+        owner.assign_status('executor-c',UUID(p['run_id']),active=True)
+        baseline_authority=authority_snapshot(owner)
+        assert len(baseline_authority['run_assignments'])==len(initial_authority['run_assignments'])+1
+        with store.connect() as c:
+            principal,parent=bp._context(store,c,tokens['fixture-c'],UUID(p['preparation_id']))
+            current=candidates.current(store,c,principal,parent,a['catalog'])
+        assert current['selection_oracle']['state']=='UNIQUE'
+        assert current['selection_oracle']['selection_variant_count']==1
+        assert len(current['selection_context']['available_services'])==3
+        calls=[]
+        def model_http(request):
+            prompt=json.loads(json.loads(request.content)['messages'][-1]['content']);calls.append(prompt)
+            assert 'steps' not in prompt and 'B FRESH PRIVATE' not in json.dumps(prompt)
+            selection=dict(schema_version=1,binding=prompt['binding'],selections=[s['ref'] for s in prompt['available_services']])
+            return httpx.Response(200,json=dict(id='synthetic-B-three-capability',model='intern-s2',usage=dict(prompt_tokens=20,completion_tokens=10,total_tokens=30),choices=[dict(index=0,finish_reason='stop',message=dict(role='assistant',content=json.dumps(selection)))]))
+        planner=OfflineSelectionPlanner(transport=httpx.MockTransport(model_http));candidate_key=uuid4().hex
+        capture=candidates.Capture(expected_preparation_revision=p['revision'],expected_source_sha256=current['source_sha256'],expected_capability_catalog_sha256=current['capability_catalog_sha256'])
+        candidate=candidates.generate(store,tokens['fixture-c'],UUID(p['preparation_id']),candidate_key,capture,catalog=a['catalog'],planner=planner)
+        assert candidate['can_adopt'] and candidate['producer']['version']==4 and len(calls)==1
+        recovered=candidates.read(store,tokens['fixture-c'],UUID(p['preparation_id']),key=candidate_key,catalog=a['catalog'])
+        assert recovered['status']=='COMMITTED' and len(calls)==1
+        path='/api/preparations/'+p['preparation_id']
+        adopted=ok(api.post(path+'/service-case-plan',headers=headers(tokens,'fixture-c',uuid4().hex),json=dict(
+            expected_preparation_revision=p['revision'],expected_request_revision=current['request_revision'],expected_plan_revision=0,
+            expected_source_sha256=current['source_sha256'],required_goals=GOALS,reason='SYNTHETIC explicit three-capability candidate adoption',
+            candidate_id=candidate['candidate_id'],expected_candidate_sha256=candidate['candidate_sha256'],expected_verification_sha256=candidate['verification_sha256'])),201)
+        assert [s['adapter_id'] for s in adopted['steps']]==['P1','P2','P3','P4','P5']
+&gt;       verify(f,p,'P1')
+
+tests/test_service_selection_full_chain.py:164: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_selection_full_chain.py:89: in verify
+    reply = plan_command(f,parent,adapter,user='fixture-c')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_service_case_steps.py:60: in command
+    s = step(row, adapter)
+        ^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+row = {'detail': 'record unavailable or authorization denied'}, adapter = 'P1'
+
+    def step(row, adapter):
+&gt;       return next(s for s in row['steps'] if s['adapter_id'] == adapter)
+                               ^^^^^^^^^^^^
+E       KeyError: 'steps'
+
+tests/test_service_case_steps.py:55: KeyError</failure></testcase></testsuite></testsuites>

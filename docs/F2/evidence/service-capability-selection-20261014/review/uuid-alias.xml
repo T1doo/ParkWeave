@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="1.354" timestamp="2026-10-14T20:23:18.126439+00:00" hostname="754d39e95154"><testcase classname="tests.test_independent_catalog_runtime" name="test_config_resource_references_cannot_alias_original_uuid_lock_identity[uppercase]" time="0.835"><failure message="Failed: DID NOT RAISE any of (Denied, Conflict, ValueError)">capability_resource_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f3d9595a8a0&gt;, &lt;parkweave.store.Store object at 0x7f3d9595a960&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+shape = 'uppercase'
+
+    @pytest.mark.parametrize('shape',['uppercase','duplicate-alias'])
+    def test_config_resource_references_cannot_alias_original_uuid_lock_identity(capability_resource_catalog,shape):
+        from parkweave.service_capability_contract import hash_instance
+        a=capability_resource_catalog;release=register(a,service='synthetic-resource-coordination')['release'];instance=coordination_instance(release)
+        if shape=='uppercase':instance['resources']['primary']=instance['resources']['primary'].upper()
+        else:instance['resources']['secondary']=instance['resources']['primary'].upper()
+        instance['config_sha256']=hash_instance(instance)
+&gt;       with pytest.raises((Denied,Conflict,ValueError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (Denied, Conflict, ValueError)
+
+tests/test_independent_catalog_runtime.py:234: Failed</failure></testcase><testcase classname="tests.test_independent_catalog_runtime" name="test_config_resource_references_cannot_alias_original_uuid_lock_identity[duplicate-alias]" time="0.395"><failure message="Failed: DID NOT RAISE any of (Denied, Conflict, ValueError)">capability_resource_catalog = {'f': (&lt;parkweave.store.Store object at 0x7f3d95b2f680&gt;, &lt;parkweave.store.Store object at 0x7f3d952afb00&gt;, {'fixture-a...THETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}, ...}
+shape = 'duplicate-alias'
+
+    @pytest.mark.parametrize('shape',['uppercase','duplicate-alias'])
+    def test_config_resource_references_cannot_alias_original_uuid_lock_identity(capability_resource_catalog,shape):
+        from parkweave.service_capability_contract import hash_instance
+        a=capability_resource_catalog;release=register(a,service='synthetic-resource-coordination')['release'];instance=coordination_instance(release)
+        if shape=='uppercase':instance['resources']['primary']=instance['resources']['primary'].upper()
+        else:instance['resources']['secondary']=instance['resources']['primary'].upper()
+        instance['config_sha256']=hash_instance(instance)
+&gt;       with pytest.raises((Denied,Conflict,ValueError)):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE any of (Denied, Conflict, ValueError)
+
+tests/test_independent_catalog_runtime.py:234: Failed</failure></testcase></testsuite></testsuites>
