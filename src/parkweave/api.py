@@ -537,6 +537,10 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         if instance_consumer is None:raise Denied('isolated park instance cold input disabled')
         return instance_consumer
 
+    @app.get('/api/service-instance-configurations')
+    def service_instance_configurations(authorization: str | None=Header(default=None)):
+        return cold_inputs().configurations(token(authorization))
+
     @app.post('/api/service-instance-cold-inputs',status_code=201)
     def service_instance_prepare(data: ColdInput,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return cold_inputs().prepare(token(authorization),resource_key(idempotency_key),data)

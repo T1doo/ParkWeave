@@ -10,11 +10,12 @@ from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from . import preparation as prep, request_intents as intents
+from . import preparation as prep, request_intents as intents, controlled_plans as cp
+from . import service_capability_contract as contract
 from .domain import Intake
 from .store import Conflict, Denied, digest
 from .template_consumer import ConsumerRepository, Material, canonical, normal
-from .service_capability_catalog import IsolatedServiceCapabilityCatalog, fold, proof, row
+from .service_capability_catalog import IsolatedServiceCapabilityCatalog, fold, proof, row, lock
 from .planning_constraints import Constraints
 
 
@@ -66,6 +67,46 @@ class ParkInstanceConsumer:
             if not c.execute("SELECT 1 FROM action_grants WHERE principal_id=%s AND park_id=%s AND org_id=%s AND action='case.create' AND active", (p['id'], p['park_id'], p['org_id'])).fetchone():
                 raise Denied('current original Case creation grant required')
         return p
+
+    def configurations(self, token):
+        """Discover current own configurations without a Case or a write lease.
+
+        The bounded result contains input names, never existing input values or
+        mapped principal/resource identifiers. Admission rechecks this metadata
+        and original authority under the original prepare transaction.
+        """
+        self.consumer.validate_fixture()
+        with self.catalog.read_connection() as c:
+            p = self._auth(token, c, write=True)
+            lock(c, p['park_id'])
+            value = row(c, p['park_id'])
+            _, instances = fold(proof(value))
+            available = []
+            has_unknown_sources = False
+            for record in sorted(instances.values(), key=lambda item: item['instance']['instance_id']):
+                instance = record['instance']
+                if record['state'] != 'ACTIVE' or instance['roles']['enterprise_operator'] != p['id']:
+                    continue
+                try:
+                    release = self.catalog._current_release(self.catalog._release_record(c, value, instance['release_id']))
+                    instance = contract.validate_instance(instance, release, now=self.catalog.engine.clock())
+                    parent = dict(park_id=p['park_id'], org_id=p['org_id'], owner_id=p['id'], reviewer_id=instance['roles']['park_specialist'])
+                    self.catalog.mapping_states(c, instance, parent)
+                except (ValueError, Conflict, Denied):
+                    has_unknown_sources = True
+                    continue
+                available.append(dict(instance_id=instance['instance_id'], config_revision=instance['config_revision'],
+                    config_sha256=instance['config_sha256'], release_id=release['release_id'],
+                    release_revision=release['revision'], release_sha256=release['release_sha256'],
+                    service_id=release['service_id'], title=release['title'], supported_goals=release['supported_goals'],
+                    fields={slot: mapping['input_field'] for slot, mapping in instance['fields'].items()}))
+                if len(available) > 16:
+                    raise Conflict('bounded current instance directory exceeded')
+            return dict(scope='SYNTHETIC_PARK_INSTANCE_COLD_INPUT_DIRECTORY', actor_ref=cp._hash(dict(actor_id=p['id'])),
+                park_id=p['park_id'], read_only=True, automatically_replayed=False, provider_enabled=False,
+                execution_enabled=False, new_grants=False, automatic_adoption=False, instances=available,
+                allowed_goals=sorted({goal for instance in available for goal in instance['supported_goals']}),
+                has_unknown_sources=has_unknown_sources)
 
     def _current(self, c, p, data):
         _, instances = fold(proof(row(c, p['park_id'])))
@@ -127,7 +168,9 @@ class ParkInstanceConsumer:
                 available = True
             except (Denied, Conflict, ValueError):
                 available = False
-        return dict(cold_input_id=saved['id'], binding=json.loads(saved['binding']), input=json.loads(saved['input']), current_available=available,
+        return dict(scope='SYNTHETIC_PARK_INSTANCE_COLD_INPUT', actor_ref=cp._hash(dict(actor_id=p['id'])),
+                    request_key=key, park_id=p['park_id'], read_only=True, automatically_replayed=False,
+                    provider_enabled=False, execution_enabled=False, cold_input_id=saved['id'], binding=json.loads(saved['binding']), input=json.loads(saved['input']), current_available=available,
                     stages=[dict(stage, body=json.loads(stage['body'])) for stage in stages],
                     product_observations=observations, automatic_execution=False, automatic_adoption=False, new_grants=False,
                     business_publication=False, case_goal_completed=False)
