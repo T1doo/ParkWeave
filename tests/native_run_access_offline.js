@@ -1,24 +1,31 @@
 // Actual ordinary-protocol UI in offline NodeVM, no browser navigation.
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const html=fs.readFileSync('src/parkweave/web.html','utf8');
-const code=html.slice(html.indexOf('let runAccessGeneration='),html.indexOf('const boundedGoals='));
+const code=html.match(/<script[^>]*>([\s\S]*?)<\/script>/)[1];
 const mode=process.argv[2],runId='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 let checks=0;const check=x=>{checks++;assert(x);};
 class Element{
- constructor(){this.hidden=false;this.disabled=false;this.value='';this.textContent='';this.children=[];this.elements=[];this.options=[];this.parentElement={firstChild:{textContent:''}};}
- replaceChildren(...x){this.children=x;this.options=x;}
- append(...x){this.children.push(...x);this.options.push(...x);}
- reset(){} focus(){} addEventListener(){}
+ constructor(tag='div'){this.id='';this.tagName=tag;this.hidden=false;this.disabled=false;this.value='';this.textContent='';this.children=[];this.dataset={};this.style={};this.checked=false;this.listeners={};const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.parentElement={firstChild:{textContent:''}};}
+ replaceChildren(...x){this.children=x;this.textContent='';}
+ append(...x){this.children.push(...x);}prepend(...x){this.children.unshift(...x);}
+ get options(){return this.children.filter(x=>x.tagName==='option');}get selectedOptions(){return this.options.filter(x=>x.value===this.value);}get firstElementChild(){return this.children[0];}
+ reset(){}focus(){}select(){}remove(){}scrollIntoView(){}setAttribute(){}removeAttribute(){}closest(){return null;}querySelectorAll(){return [];}addEventListener(name,fn){this.listeners[name]=fn;}
 }
-const elements=new Map(),$=id=>{if(!elements.has(id))elements.set(id,new Element());return elements.get(id);};
-$('token').value='current';$('run-access-id').value=runId;
-const calls=[];
-const sandbox={$ ,crypto:{randomUUID:()=> 'original-key'},Option:function(text,value){return {text,value};},
- textElement:(tag,text)=>{const el=new Element();el.textContent=text;return el;},
- setTimeout:()=>1,clearTimeout:()=>{},document:{querySelectorAll:()=>[]},receiptView:null,
+const elements=new Map(),$=id=>{if(!elements.has(id)){const e=new Element();e.id=id;elements.set(id,e);}return elements.get(id);};
+const calls=[],events=[],store={};
+const localStorage=new Proxy({getItem:key=>store[key]??null,setItem:(key,value)=>store[key]=value,removeItem:key=>delete store[key]},
+ {ownKeys:()=>Object.keys(store),getOwnPropertyDescriptor:()=>({enumerable:true,configurable:true})});
+const sandbox={console,Date,JSON,Map,Set,WeakMap,Number,String,Error,TextEncoder,Uint8Array,URLSearchParams,encodeURIComponent,structuredClone,Element,
+ crypto:{randomUUID:()=> 'original-key',subtle:require('crypto').webcrypto.subtle},
+ Option:function(text,value){const el=new Element('option');el.textContent=text;el.value=value;return el;},
+ localStorage,location:{search:''},setTimeout:()=>1,clearTimeout:()=>{},
+ document:{getElementById:$,createElement:tag=>new Element(tag),querySelectorAll:()=>[],body:new Element('body'),addEventListener:(...args)=>events.push(args)},
+ window:{addEventListener:(...args)=>events.push(args)},
  fetch:(path,options={})=>new Promise((resolve,reject)=>calls.push({path,method:options.method||'GET',options,
    ok:(data,status=200)=>resolve({ok:status<400,status,json:async()=>data}),fail:()=>reject(Error('lost response'))}))};
 vm.createContext(sandbox);vm.runInContext(code,sandbox);const run=s=>vm.runInContext(s,sandbox);
+check(calls.length===0); // Opening the complete page must not send a request.
+$('token').value='current';$('run-access-id').value=runId;
 const status={namespace:'ORDINARY_PG_RUN_ACCESS_DECISION_V1',enabled:true,read_available:true,
  role:'enterprise_operator',authority_valid_until:new Date(Date.now()+600000).toISOString(),max_validity_hours:1};
 const view={...status,scope:{run_id:runId,park_id:'park-a',org_id:'org-a'},revision:0,run_revision:2,
