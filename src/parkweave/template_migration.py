@@ -271,7 +271,10 @@ def application(checker,context,check,events,t):
     if any(s['state']!='CONFIRMED' for s in stages):blockers.append('UNRESOLVED_CONSUMER_STAGE')
     if plan and plans._binding_issues(context[0],parent,plan,store=checker.consumer.store):blockers.append('CURRENT_PLAN_BINDING_REQUIRED')
     if changed and plan and any(plans._manual_lock(plan,s) for s in plan['steps']):blockers.append('LOCK_CONFLICT')
-    if plan and plan['revision']+1+sum(bool(s.get('manual_lock')) for s in plan['steps'])>plans.LIMIT:blockers.append('PLAN_EVENT_LIMIT')
+    # Adoption must leave room for every affected original VERIFY, as well as
+    # the existing reservation for explicit unlocks of preserved decisions.
+    verification_events=len(ids) if changed else 0
+    if plan and plan['revision']+1+verification_events+sum(bool(s.get('manual_lock')) for s in plan['steps'])>plans.LIMIT:blockers.append('PLAN_EVENT_LIMIT')
     choice=events[-1] if events else None
     if not choice or choice['choice'] not in ('REQUEST_RECHECK','ACK_COMPATIBLE') or choice['check_sha256']!=sha(check):blockers.append('CURRENT_EXPLICIT_CHOICE_REQUIRED')
     return dict(eligible=not blockers,blockers=blockers,effective_release_id=effective['release_id'],plan_id=plan['id'] if plan else None,

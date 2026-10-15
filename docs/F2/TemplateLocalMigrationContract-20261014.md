@@ -17,3 +17,5 @@ GET /api/template-upgrade/{instance_id}/apply-requests/{key}仅核原PG事件与
 仅开发模拟，formal/business publication=false；不扩大正式治理/生产权限。真实模型、付费、Windows、浏览器、CI Forbidden路线、部署、生产迁移均不运行；无凭据/网络权限配置，不改main/F1/原F2受保护引用，不强推。保全部真实FAIL/ERROR与raw；导出仅独立核实的实际fixture session精确替换，独立语义扫漏。最终同SHA相关回归、全部package字节检查和归档独审后正常开发分支push，核远端/clean/未推差异。
 
 实际独审红窗补充：旧goal-results未识别新协调事件而409，以及撤回/到期/未挂载时原plan仍静态VERIFIED，均不得签收。修复应对新事件核完整typed请求/来源/choice链，并仅在响应增加当前性投影，不在GET持久失效或删除旧核验。所有目标结果正例须读取原goal-results并核具体业务输出，不能只把计划状态VERIFIED当成果。页面热恢复必须核原typed请求全部字段及fingerprint，错误回执不解除pending。
+
+实际事件额度边界：新来源采用前必须同时预留本次全部 affected 原步骤所需 VERIFY 事件及原人工锁 UNLOCK 额度，避免采用成功后在64上限内无法完成必需重验；不足时检查不可用、APPLY409且PG零写入。零 affected 说明修订不增加本次重验预算；已全核验63→64可用，原有其他待办仍受既有64事件上限约束。
