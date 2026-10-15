@@ -158,6 +158,11 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         from . import typed_source_impact
         return typed_source_impact.read(store,token(authorization),preparation_id)
 
+    @app.get('/api/preparations/{preparation_id}/employees-fact-impact')
+    def employees_fact_impact(preparation_id: UUID,card_id: UUID|None=Query(default=None),authorization: str|None=Header(default=None)):
+        from . import employees_fact_provenance
+        return employees_fact_provenance.read(store,token(authorization),preparation_id,card_id)
+
     @app.get('/api/preparations/{preparation_id}/shared-source-cases')
     def shared_source_cases(preparation_id: UUID,
             source_kind: Literal['OWNER_RESOURCE_QUERY_SET','SERVICE_CATALOG_REFERENCE']='OWNER_RESOURCE_QUERY_SET',

@@ -109,7 +109,7 @@ def current_card(parent,card_id,value=None):
     return value,card
 
 
-def build(store,c,p,parent,card_id,*,current=None):
+def build(store,c,p,parent,card_id,*,current=None,fact_provenance_scope=None):
     from . import service_case_steps as service
     plan=deepcopy(parent.get('service_case_plan'))
     if not plan:raise Conflict('existing registered plan required')
@@ -176,6 +176,10 @@ def build(store,c,p,parent,card_id,*,current=None):
         directly_changed=change['directly_changed'],affected=change['affected'],preserved=change['preserved'],
         source_impact=typed_graph,remaining_verify_events=remaining_verify,unknown_scope='THIS_CASE' if missing or unknown or typed_graph['unknown_scope'] else None,blocking_reasons=sorted(set(blockers)),can_adopt=not blockers,adoption=adoption,
         new_grants=False,automatic_execution=False,case_goal_completed=False,qualification_decision='NOT_EVALUATED')
+    if fact_provenance_scope is not None:
+        from . import employees_fact_provenance as fact_provenance
+        if fact_provenance_scope!=fact_provenance.SCOPE:raise Conflict("unsupported fact provenance scope")
+        result,change,affected=fact_provenance.enhance(c,parent,result,change,affected)
     return result,change,dependency_basis,affected
 
 
@@ -193,8 +197,13 @@ def read(store,token,id,card_id):
 
 def validate_history(parent,plan,event,previous_dependencies,current_dependencies):
     """Prove the saved source patch against immutable original ledger prefixes."""
+    if isinstance(event.get("local_revision",{}).get("source_change"),dict) and event["local_revision"]["source_change"].get("version")==3:
+        from .employees_fact_provenance import validate_history as validate_fact_history
+        return validate_fact_history(parent,plan,event,previous_dependencies,current_dependencies)
     from .service_case_steps import Adopt
     patch=event['local_revision'];request=Adopt.model_validate(patch['request']);proof=request.opportunity_proof
+    if request.fact_provenance_scope is not None:
+        raise ValueError('fact provenance scope requires source-change version 3')
     change=patch['source_change']
     keys={'version','binding','plan_id','plan_revision','ledger_revision','ledger_sha256','card_id','card_version','basis_sha256','basis','proposal_sha256',
           'source_epochs_sha256','before_sources','current_sources','dependencies_sha256','directly_changed','affected','preserved','sha256'}
