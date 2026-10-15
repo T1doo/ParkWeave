@@ -1,0 +1,187 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence[positive] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'positive'
+
+    @pytest.mark.parametrize('mode', ['positive', 'lost'])
+    def test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence(fresh_chain, mode):
+        u = fresh_chain
+        row = new_case(u, publish(u))
+        enable_approval(u, [row])
+        finish_chain(u, row)
+        f = u['f']
+        assert lock(f, row, 'P1').status_code == 200
+        before = deepcopy(stored(f, row))
+        business_before = original_rows(u, row)
+    
+        def after_adopt():
+            current = stored(f, row)
+            assert current['id'] == before['id']
+            assert [step['id'] for step in current['steps']] == [step['id'] for step in before['steps']]
+            assert current['events'][:-1] == before['events']
+            assert current['history'] == before['history']
+            assert current['steps'][0] == before['steps'][0]
+            assert all(new['verified_sources'] == old['verified_sources'] for new, old in zip(current['steps'], before['steps']))
+            event = current['events'][-1]
+            assert event['action'] == 'ADOPT'
+            assert set(event['local_revision']['affected']) == {step['id'] for step in before['steps'][1:]}
+            assert set(event['local_revision']['preserved']) == {before['steps'][0]['id']}
+            current_rows = original_rows(u, row)
+            for table, rows in business_before.items():
+                if table == 'preparations':
+                    ignored = {'service_case_plan', 'opportunities'}
+                    assert [{key: value for key, value in r.items() if key not in ignored} for r in rows] == [{key: value for key, value in r.items() if key not in ignored} for r in current_rows[table]]
+                else:
+                    assert current_rows[table] == rows
+    
+>       result = run_original_page(u, row, mode, {'change_source': lambda: add_resource(f), 'after_adopt': after_adopt})
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_plan_adoption_independent.py:132: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+row = {'instance_id': 'b96f8fbb-dcd9-4193-840f-ac405798adc7', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': 'd81e6512-7e23-4577-9645-9ecc9ff800ec', ...}
+mode = 'positive'
+controls = {'change_source': <function test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence.<locals>.<lamb...on test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence.<locals>.after_adopt at 0x7f531684c0e0>}
+
+    def run_original_page(u, row, mode, controls):
+        OUT.mkdir(parents=True, exist_ok=True)
+        process = subprocess.Popen(['node', 'tests/opportunity_plan_adoption_real_html.js'], cwd=Path(__file__).resolve().parents[1], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        selector = selectors.DefaultSelector()
+        selector.register(process.stdout, selectors.EVENT_READ)
+        output = []
+        try:
+            process.stdin.write(json.dumps(dict(base=u['base'], token=u['f'][2]['fixture-a'], preparation_id=row['preparation_id'], plan_id=row['plan_id'], mode=mode)) + '\n')
+            process.stdin.flush()
+            result = None
+            while True:
+                assert selector.select(timeout=40), 'Full original HTML made no progress within 40 seconds'
+                line = process.stdout.readline()
+                if not line:
+                    break
+                output.append(line)
+                message = json.loads(line)
+                if 'control' in message:
+                    assert message['control'] in controls, message
+                    controls[message['control']]()
+                    process.stdin.write('{}\n')
+                    process.stdin.flush()
+                else:
+                    result = message
+                    break
+            code = process.wait(timeout=10)
+            error = process.stderr.read()
+            (OUT / (mode + '.stdout.jsonl')).write_text(''.join(output))
+            (OUT / (mode + '.stderr.log')).write_text(error)
+>           assert code == 0, error
+E           AssertionError: AssertionError [ERR_ASSERTION]: preview names affected and preserved steps
+E                 at check (/workspace/ParkWeave/tests/opportunity_plan_adoption_real_html.js:12:47)
+E                 at /workspace/ParkWeave/tests/opportunity_plan_adoption_real_html.js:71:3
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+
+tests/test_opportunity_plan_adoption_independent.py:90: AssertionError
+_ test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence[lost] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'lost'
+
+    def test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence(fresh_chain, mode):
+        u = fresh_chain
+        row = new_case(u, publish(u))
+        enable_approval(u, [row])
+        finish_chain(u, row)
+        f = u['f']
+        assert lock(f, row, 'P1').status_code == 200
+        before = deepcopy(stored(f, row))
+        business_before = original_rows(u, row)
+    
+        def after_adopt():
+            current = stored(f, row)
+            assert current['id'] == before['id']
+            assert [step['id'] for step in current['steps']] == [step['id'] for step in before['steps']]
+            assert current['events'][:-1] == before['events']
+            assert current['history'] == before['history']
+            assert current['steps'][0] == before['steps'][0]
+            assert all(new['verified_sources'] == old['verified_sources'] for new, old in zip(current['steps'], before['steps']))
+            event = current['events'][-1]
+            assert event['action'] == 'ADOPT'
+            assert set(event['local_revision']['affected']) == {step['id'] for step in before['steps'][1:]}
+            assert set(event['local_revision']['preserved']) == {before['steps'][0]['id']}
+            current_rows = original_rows(u, row)
+            for table, rows in business_before.items():
+                if table == 'preparations':
+                    ignored = {'service_case_plan', 'opportunities'}
+                    assert [{key: value for key, value in r.items() if key not in ignored} for r in rows] == [{key: value for key, value in r.items() if key not in ignored} for r in current_rows[table]]
+                else:
+                    assert current_rows[table] == rows
+    
+        result = run_original_page(u, row, mode, {'change_source': lambda: add_resource(f), 'after_adopt': after_adopt})
+>       after = stored(f, row)
+                 ^^^^^^^^^^^^^^
+
+tests/test_opportunity_plan_adoption_independent.py:132: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+row = {'instance_id': 'a67af58f-9a10-415a-adba-142d2ac77ec1', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '19186769-8894-463d-812a-58e6d55d1772', ...}
+mode = 'lost'
+controls = {'change_source': <function test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence.<locals>.<lamb...on test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence.<locals>.after_adopt at 0x7f5315615bc0>}
+
+    OUT.mkdir(parents=True, exist_ok=True)
+    process = subprocess.Popen(['node', 'tests/opportunity_plan_adoption_real_html.js'], cwd=Path(__file__).resolve().parents[1], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    selector = selectors.DefaultSelector()
+    selector.register(process.stdout, selectors.EVENT_READ)
+    output = []
+    try:
+        process.stdin.write(json.dumps(dict(base=u['base'], token=u['f'][2]['fixture-a'], preparation_id=row['preparation_id'], plan_id=row['plan_id'], mode=mode)) + '\n')
+        process.stdin.flush()
+        result = None
+        while True:
+            assert selector.select(timeout=40), 'Full original HTML made no progress within 40 seconds'
+            line = process.stdout.readline()
+            if not line:
+                break
+            output.append(line)
+            message = json.loads(line)
+            if 'control' in message:
+                assert message['control'] in controls, message
+                controls[message['control']]()
+                process.stdin.write('{}\n')
+                process.stdin.flush()
+            else:
+                result = message
+                break
+        code = process.wait(timeout=10)
+        error = process.stderr.read()
+        (OUT / (mode + '.stdout.jsonl')).write_text(''.join(output))
+        (OUT / (mode + '.stderr.log')).write_text(error)
+        assert code == 0, error
+>       assert result and result['checks'] >= 20
+        ^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: AssertionError [ERR_ASSERTION]: preview names affected and preserved steps
+E             at check (/workspace/ParkWeave/tests/opportunity_plan_adoption_real_html.js:12:47)
+E             at /workspace/ParkWeave/tests/opportunity_plan_adoption_real_html.js:71:3
+E             at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E         
+E       assert 1 == 0
+
+tests/test_opportunity_plan_adoption_independent.py:90: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_opportunity_plan_adoption_independent.py::test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence[positive]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence[positive]
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence[lost]
+2 failed, 13 deselected, 2 warnings in 33.18s

@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.944" timestamp="2026-10-15T05:15:57.932298+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_source_change_adoption" name="test_original_opportunity_recovery_key_plan_revision_keeps_its_route" time="1.704"><failure message="AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;uuid_parsing&quot;,&quot;loc&quot;:[&quot;path&quot;,&quot;card_id&quot;],&quot;msg&quot;:&quot;Input should be a valid UUID, invalid character: found `r` at 1&quot;,&quot;input&quot;:&quot;recovery&quot;,&quot;ctx&quot;:{&quot;error&quot;:&quot;invalid character: found `r` at 1&quot;}}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_original_opportunity_recovery_key_plan_revision_keeps_its_route(http_f):
+        f=http_f;p,x,_=imported(f)
+        result=post(f,p,body(x,'REFRESH'),key='plan-revision')
+        assert result.status_code==200,result.text
+        before=snapshot(f)
+        recovered=f[3].get('/api/preparations/'+p['preparation_id']+'/opportunities/recovery/plan-revision',headers=headers(f[2]))
+&gt;       assert recovered.status_code==200,recovered.text
+E       AssertionError: {"detail":[{"type":"uuid_parsing","loc":["path","card_id"],"msg":"Input should be a valid UUID, invalid character: found `r` at 1","input":"recovery","ctx":{"error":"invalid character: found `r` at 1"}}]}
+E       assert 422 == 200
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_source_change_adoption.py:158: AssertionError</failure></testcase></testsuite></testsuites>

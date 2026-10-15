@@ -1,0 +1,294 @@
+FF........FFF..                                                          [100%]
+=================================== FAILURES ===================================
+_ test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence[positive] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'positive'
+
+    @pytest.mark.parametrize('mode', ['positive', 'lost'])
+    def test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence(fresh_chain, mode):
+        u = fresh_chain
+        row = new_case(u, publish(u))
+        enable_approval(u, [row])
+        finish_chain(u, row)
+        f = u['f']
+        assert lock(f, row, 'P1').status_code == 200
+        before = deepcopy(stored(f, row))
+        business_before = original_rows(u, row)
+    
+        def after_adopt():
+            current = stored(f, row)
+            assert current['id'] == before['id']
+            assert [step['id'] for step in current['steps']] == [step['id'] for step in before['steps']]
+            assert current['events'][:-1] == before['events']
+            assert current['history'] == before['history']
+            assert current['steps'][0] == before['steps'][0]
+            assert all(new['verified_sources'] == old['verified_sources'] for new, old in zip(current['steps'], before['steps']))
+            event = current['events'][-1]
+            assert event['action'] == 'ADOPT'
+            assert set(event['local_revision']['affected']) == {step['id'] for step in before['steps'][1:]}
+            assert set(event['local_revision']['preserved']) == {before['steps'][0]['id']}
+            current_rows = original_rows(u, row)
+            for table, rows in business_before.items():
+                if table == 'preparations':
+                    ignored = {'service_case_plan', 'opportunities'}
+                    assert [{key: value for key, value in r.items() if key not in ignored} for r in rows] == [{key: value for key, value in r.items() if key not in ignored} for r in current_rows[table]]
+                else:
+                    assert current_rows[table] == rows
+    
+>       result = run_original_page(u, row, mode, {'change_source': lambda: add_resource(f), 'after_adopt': after_adopt})
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_plan_adoption_independent.py:132: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+row = {'instance_id': '011c2db3-d652-4439-9fbc-f221041faed1', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '34f6b687-7dda-4f59-9f1f-2576e61e3824', ...}
+mode = 'positive'
+controls = {'change_source': <function test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence.<locals>.<lamb...on test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence.<locals>.after_adopt at 0x7f14f6c1bb00>}
+
+    def run_original_page(u, row, mode, controls):
+        OUT.mkdir(parents=True, exist_ok=True)
+        attempt = mode + '-' + uuid4().hex[:8]
+        process = subprocess.Popen(['node', 'tests/opportunity_plan_adoption_real_html.js'], cwd=Path(__file__).resolve().parents[1], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        selector = selectors.DefaultSelector()
+        selector.register(process.stdout, selectors.EVENT_READ)
+        output = []
+        try:
+            process.stdin.write(json.dumps(dict(base=u['base'], token=u['f'][2]['fixture-a'], preparation_id=row['preparation_id'], plan_id=row['plan_id'], mode=mode)) + '\n')
+            process.stdin.flush()
+            result = None
+            while True:
+                assert selector.select(timeout=40), 'Full original HTML made no progress within 40 seconds'
+                line = process.stdout.readline()
+                if not line:
+                    break
+                output.append(line)
+                message = json.loads(line)
+                if 'control' in message:
+                    assert message['control'] in controls, message
+                    controls[message['control']]()
+                    process.stdin.write('{}\n')
+                    process.stdin.flush()
+                else:
+                    result = message
+                    break
+            code = process.wait(timeout=10)
+            error = process.stderr.read()
+            (OUT / (attempt + '.stdout.jsonl')).write_text(''.join(output))
+            (OUT / (attempt + '.stderr.log')).write_text(error)
+>           assert code == 0, error
+E           AssertionError: Error: 请先在原入口核对尚未确定的操作，再切换办理入口。
+E                 at requireOriginalEntriesSettled (evalmachine.<anonymous>:151:214)
+E                 at opportunityAdoptionBody (evalmachine.<anonymous>:1784:2)
+E                 at servicePlanWrite (evalmachine.<anonymous>:1452:878)
+E                 at evalmachine.<anonymous>:66:22
+E                 at opportunityPlanWrite (evalmachine.<anonymous>:1789:108)
+E                 at evalmachine.<anonymous>:1:1
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at run (/workspace/ParkWeave/tests/opportunity_plan_adoption_real_html.js:47:30)
+E                 at /workspace/ParkWeave/tests/opportunity_plan_adoption_real_html.js:77:9
+E             {"calls":[{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/readiness","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/material-corrections","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/material-objections","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/material-reuse","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/fact-clarifications","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/case-cancellation","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/case-cancellation-before-receipt","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/case-cancellation-reconciliation","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/opportunities","status":200},{"method":"POST","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/opportunities/commands","status":200,"body":{"action":"IMPORT","expected_revision":0,"expected_source_sha256":"fddf5ea91cf115494fb7d33afddcfe6474f576c1a06235758bb654f3fbab312e","reason":"SYNTHETIC explicitly import same Case source","entry":{"family_id":"911360cd-48c8-414a-8449-c765acc63abf","generation":1,"kind":"LOCAL_CASE_DATA","catalog_version":1,"title":"SYNTHETIC independent source change","note":"SYNTHETIC unverified hint only"}}},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/opportunities/recovery/dcaa5dde-3cab-4848-928c-893e90815df0","status":200},{"method":"POST","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/opportunities/commands","status":200,"body":{"action":"REFRESH","expected_revision":1,"expected_source_sha256":"fddf5ea91cf115494fb7d33afddcfe6474f576c1a06235758bb654f3fbab312e","reason":"SYNTHETIC explicit manual refresh of actual source"}},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/opportunities/recovery/fa953c63-5732-4529-81c9-6117a187accf","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/service-case-plan/command-recovery","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/service-case-plan","status":200},{"method":"GET","path":"/api/preparations/4d1ae046-8e83-4cde-80e9-cd1b8b4bdbcd/opportunities/8ed43a04-ca9e-45af-bfe3-73994870cd8e/plan-revision","status":200}]}
+E             
+E           assert 1 == 0
+
+tests/test_opportunity_plan_adoption_independent.py:90: AssertionError
+_ test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence[lost] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'lost'
+
+    @pytest.mark.parametrize('mode', ['positive', 'lost'])
+    def test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence(fresh_chain, mode):
+        u = fresh_chain
+        row = new_case(u, publish(u))
+        enable_approval(u, [row])
+        finish_chain(u, row)
+        f = u['f']
+        assert lock(f, row, 'P1').status_code == 200
+        before = deepcopy(stored(f, row))
+        business_before = original_rows(u, row)
+    
+        def after_adopt():
+            current = stored(f, row)
+            assert current['id'] == before['id']
+            assert [step['id'] for step in current['steps']] == [step['id'] for step in before['steps']]
+            assert current['events'][:-1] == before['events']
+            assert current['history'] == before['history']
+            assert current['steps'][0] == before['steps'][0]
+            assert all(new['verified_sources'] == old['verified_sources'] for new, old in zip(current['steps'], before['steps']))
+            event = current['events'][-1]
+            assert event['action'] == 'ADOPT'
+            assert set(event['local_revision']['affected']) == {step['id'] for step in before['steps'][1:]}
+            assert set(event['local_revision']['preserved']) == {before['steps'][0]['id']}
+            current_rows = original_rows(u, row)
+            for table, rows in business_before.items():
+                if table == 'preparations':
+                    ignored = {'service_case_plan', 'opportunities'}
+                    assert [{key: value for key, value in r.items() if key not in ignored} for r in rows] == [{key: value for key, value in r.items() if key not in ignored} for r in current_rows[table]]
+                else:
+                    assert current_rows[table] == rows
+    
+>       result = run_original_page(u, row, mode, {'change_source': lambda: add_resource(f), 'after_adopt': after_adopt})
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_plan_adoption_independent.py:132: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+row = {'instance_id': '52368078-749b-4f30-9ad5-332669917362', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '9a7bd799-8a81-411c-b390-e73688019c6b', ...}
+mode = 'lost'
+controls = {'change_source': <function test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence.<locals>.<lamb...on test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence.<locals>.after_adopt at 0x7f14f4ec11c0>}
+
+    def run_original_page(u, row, mode, controls):
+        OUT.mkdir(parents=True, exist_ok=True)
+        attempt = mode + '-' + uuid4().hex[:8]
+        process = subprocess.Popen(['node', 'tests/opportunity_plan_adoption_real_html.js'], cwd=Path(__file__).resolve().parents[1], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        selector = selectors.DefaultSelector()
+        selector.register(process.stdout, selectors.EVENT_READ)
+        output = []
+        try:
+            process.stdin.write(json.dumps(dict(base=u['base'], token=u['f'][2]['fixture-a'], preparation_id=row['preparation_id'], plan_id=row['plan_id'], mode=mode)) + '\n')
+            process.stdin.flush()
+            result = None
+            while True:
+                assert selector.select(timeout=40), 'Full original HTML made no progress within 40 seconds'
+                line = process.stdout.readline()
+                if not line:
+                    break
+                output.append(line)
+                message = json.loads(line)
+                if 'control' in message:
+                    assert message['control'] in controls, message
+                    controls[message['control']]()
+                    process.stdin.write('{}\n')
+                    process.stdin.flush()
+                else:
+                    result = message
+                    break
+            code = process.wait(timeout=10)
+            error = process.stderr.read()
+            (OUT / (attempt + '.stdout.jsonl')).write_text(''.join(output))
+            (OUT / (attempt + '.stderr.log')).write_text(error)
+>           assert code == 0, error
+E           AssertionError: Error: 请先在原入口核对尚未确定的操作，再切换办理入口。
+E                 at requireOriginalEntriesSettled (evalmachine.<anonymous>:151:214)
+E                 at opportunityAdoptionBody (evalmachine.<anonymous>:1784:2)
+E                 at servicePlanWrite (evalmachine.<anonymous>:1452:878)
+E                 at evalmachine.<anonymous>:66:22
+E                 at opportunityPlanWrite (evalmachine.<anonymous>:1789:108)
+E                 at evalmachine.<anonymous>:1:1
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at run (/workspace/ParkWeave/tests/opportunity_plan_adoption_real_html.js:47:30)
+E                 at /workspace/ParkWeave/tests/opportunity_plan_adoption_real_html.js:77:9
+E             {"calls":[{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/readiness","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/material-corrections","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/material-objections","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/material-reuse","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/fact-clarifications","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/case-cancellation","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/case-cancellation-before-receipt","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/case-cancellation-reconciliation","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/opportunities","status":200},{"method":"POST","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/opportunities/commands","status":200,"body":{"action":"IMPORT","expected_revision":0,"expected_source_sha256":"c63f6d5623f722ef866ef1d0b536caee7349b1fc09bd067512fc93da687bf37e","reason":"SYNTHETIC explicitly import same Case source","entry":{"family_id":"5b14cfdd-2d38-4dd5-a835-cc1e832c88ef","generation":1,"kind":"LOCAL_CASE_DATA","catalog_version":1,"title":"SYNTHETIC independent source change","note":"SYNTHETIC unverified hint only"}}},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/opportunities/recovery/b0e0138c-d2fa-4952-acf3-3066d8f67148","status":200},{"method":"POST","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/opportunities/commands","status":200,"body":{"action":"REFRESH","expected_revision":1,"expected_source_sha256":"c63f6d5623f722ef866ef1d0b536caee7349b1fc09bd067512fc93da687bf37e","reason":"SYNTHETIC explicit manual refresh of actual source"}},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/opportunities/recovery/bb901f7f-929c-4efb-8ed1-8de3acebb7a1","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/service-case-plan/command-recovery","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/service-case-plan","status":200},{"method":"GET","path":"/api/preparations/7da197c9-5d6e-4094-97e3-e598b9751161/opportunities/0e00595d-6917-47c6-ac48-37d059d3297b/plan-revision","status":200}]}
+E             
+E           assert 1 == 0
+
+tests/test_opportunity_plan_adoption_independent.py:90: AssertionError
+_ test_independent_card_invalidation_never_adopts_or_refreshes_back_to_pending[IGNORE] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+action = 'IGNORE'
+
+    @pytest.mark.parametrize('action', ['IGNORE', 'WITHDRAW', 'new-generation'])
+    def test_independent_card_invalidation_never_adopts_or_refreshes_back_to_pending(source_adoption_http, action):
+        f, _ = source_adoption_http
+        p, card, resource, value = bounded_change(f)
+        view = opportunities(f, p).json()
+        data = opportunity_body(view, item={**card['entry'], 'generation': 2}) if action == 'new-generation' else opportunity_body(view, action, card=card)
+        response = opportunity_command(f, p, data)
+        assert response.status_code == 200, response.text
+        before = snapshot(f)
+        assert write_adoption(f, p, value['adoption']).status_code == 409
+        assert snapshot(f) == before
+        current = response.json()['current']
+        refreshed = opportunity_command(f, p, opportunity_body(current, 'REFRESH'))
+        assert refreshed.status_code == 200
+        old = next(c for c in refreshed.json()['current']['cards'] if c['id'] == card['id'])
+        if action != 'new-generation':
+            assert old['state'] == {'IGNORE': 'IGNORED', 'WITHDRAW': 'WITHDRAWN'}[action]
+        else:
+            assert not old['is_latest_generation']
+>       refused = preview(f, p, old)
+                   ^^^^^^^^^^^^^^^^^^
+E       KeyError: 'can_adopt'
+
+tests/test_opportunity_plan_adoption_independent.py:194: KeyError
+_ test_independent_card_invalidation_never_adopts_or_refreshes_back_to_pending[WITHDRAW] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+action = 'WITHDRAW'
+
+    @pytest.mark.parametrize('action', ['IGNORE', 'WITHDRAW', 'new-generation'])
+    def test_independent_card_invalidation_never_adopts_or_refreshes_back_to_pending(source_adoption_http, action):
+        f, _ = source_adoption_http
+        p, card, resource, value = bounded_change(f)
+        view = opportunities(f, p).json()
+        data = opportunity_body(view, item={**card['entry'], 'generation': 2}) if action == 'new-generation' else opportunity_body(view, action, card=card)
+        response = opportunity_command(f, p, data)
+        assert response.status_code == 200, response.text
+        before = snapshot(f)
+        assert write_adoption(f, p, value['adoption']).status_code == 409
+        assert snapshot(f) == before
+        current = response.json()['current']
+        refreshed = opportunity_command(f, p, opportunity_body(current, 'REFRESH'))
+        assert refreshed.status_code == 200
+        old = next(c for c in refreshed.json()['current']['cards'] if c['id'] == card['id'])
+        if action != 'new-generation':
+            assert old['state'] == {'IGNORE': 'IGNORED', 'WITHDRAW': 'WITHDRAWN'}[action]
+        else:
+            assert not old['is_latest_generation']
+>       refused = preview(f, p, old)
+                   ^^^^^^^^^^^^^^^^^^
+E       KeyError: 'can_adopt'
+
+tests/test_opportunity_plan_adoption_independent.py:194: KeyError
+_ test_independent_card_invalidation_never_adopts_or_refreshes_back_to_pending[new-generation] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+action = 'new-generation'
+
+    @pytest.mark.parametrize('action', ['IGNORE', 'WITHDRAW', 'new-generation'])
+    def test_independent_card_invalidation_never_adopts_or_refreshes_back_to_pending(source_adoption_http, action):
+        f, _ = source_adoption_http
+        p, card, resource, value = bounded_change(f)
+        view = opportunities(f, p).json()
+        data = opportunity_body(view, item={**card['entry'], 'generation': 2}) if action == 'new-generation' else opportunity_body(view, action, card=card)
+        response = opportunity_command(f, p, data)
+        assert response.status_code == 200, response.text
+        before = snapshot(f)
+        assert write_adoption(f, p, value['adoption']).status_code == 409
+        assert snapshot(f) == before
+        current = response.json()['current']
+        refreshed = opportunity_command(f, p, opportunity_body(current, 'REFRESH'))
+        assert refreshed.status_code == 200
+        old = next(c for c in refreshed.json()['current']['cards'] if c['id'] == card['id'])
+        if action != 'new-generation':
+            assert old['state'] == {'IGNORE': 'IGNORED', 'WITHDRAW': 'WITHDRAWN'}[action]
+        else:
+            assert not old['is_latest_generation']
+>       refused = preview(f, p, old)
+                   ^^^^^^^^^^^^^^^^^^
+E       KeyError: 'can_adopt'
+
+tests/test_opportunity_plan_adoption_independent.py:194: KeyError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_opportunity_plan_adoption_independent.py::test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence[positive]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence[positive]
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_original_html_explicit_same_case_source_adoption_and_six_goal_evidence[lost]
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_independent_card_invalidation_never_adopts_or_refreshes_back_to_pending[IGNORE]
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_independent_card_invalidation_never_adopts_or_refreshes_back_to_pending[WITHDRAW]
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_independent_card_invalidation_never_adopts_or_refreshes_back_to_pending[new-generation]
+5 failed, 10 passed, 2 warnings in 130.44s (0:02:10)

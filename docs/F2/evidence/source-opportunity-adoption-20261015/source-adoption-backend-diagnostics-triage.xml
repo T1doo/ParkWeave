@@ -1,0 +1,584 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="25" skipped="0" tests="59" time="1.253" timestamp="2026-10-15T05:46:58.047731+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_ci_diagnostics" name="test_failure_ids_use_exact_allowlist_drop_parameters_and_private_xml" time="0.004"><failure message="AssertionError: assert ([] == ['tests/test_...ecret_fields']&#10;  &#10;  Right contains one more item: 'tests/test_lifecycle.py::test_config_write_is_exclusive_and_no_secret_fields'&#10;  Use -v to get more diff)">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_failure_ids_use_exact_all0')
+
+    def test_failure_ids_use_exact_allowlist_drop_parameters_and_private_xml(tmp_path):
+        m=module('diagnostics');path,reference=junit(tmp_path,[('tests.test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields[second]','error'),(POISON,POISON,'failure'),('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields','')])
+        result=m.failure_tests(tmp_path,reference.replace('/','\\'))
+&gt;       assert result['failed_test_ids']==[KNOWN] and result['failed_cases']==3 and result['unknown_failed_cases']==1 and result['test_cases_seen']==4
+E       AssertionError: assert ([] == ['tests/test_...ecret_fields']
+E         
+E         Right contains one more item: 'tests/test_lifecycle.py::test_config_write_is_exclusive_and_no_secret_fields'
+E         Use -v to get more diff)
+
+tests/test_ci_diagnostics.py:30: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_junit_path_reference_refused_without_echo[None]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_junit_path_reference_refused_without_echo[../../SYNTHETIC_PRIVATE_MESSAGE_PATH_TOKEN_MATERIAL]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_junit_path_reference_refused_without_echo[.runtime/../outside.xml]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_junit_path_reference_refused_without_echo[C:\\SYNTHETIC_PRIVATE_MESSAGE_PATH_TOKEN_MATERIAL]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_junit_path_reference_refused_without_echo[/tmp/SYNTHETIC_PRIVATE_MESSAGE_PATH_TOKEN_MATERIAL]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_junit_path_reference_refused_without_echo[.runtime/SYNTHETIC_PRIVATE_MESSAGE_PATH_TOKEN_MATERIAL.xml]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_junit_path_reference_refused_without_echo[123]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_junit_path_reference_refused_without_echo[reference7]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_junit_path_reference_refused_without_echo[.runtime/pytest-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.xmlSYNTHETIC_PRIVATE_MESSAGE_PATH_TOKEN_MATERIAL]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_malformed_xml_entities_or_unknown_root_are_refused[&lt;unclosed&gt;]" time="0.001"><failure message="AssertionError: assert ('ALLOWLIST_UNAVAILABLE' in ('JUNIT_INVALID', 'JUNIT_FORMAT_REFUSED'))">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_malformed_xml_entities_or0')
+payload = b'&lt;unclosed&gt;'
+
+    @pytest.mark.parametrize('payload',[b'&lt;unclosed&gt;',b'&lt;!DOCTYPE testsuite [&lt;!ENTITY x "PRIVATE"&gt;]&gt;&lt;testsuite/&gt;',b'&lt;private/&gt;'])
+    def test_malformed_xml_entities_or_unknown_root_are_refused(tmp_path,payload):
+        m=module('diagnostics');path,reference=junit(tmp_path,[]);path.write_bytes(payload);result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['state'] in ('JUNIT_INVALID','JUNIT_FORMAT_REFUSED') and not result['failed_test_ids'] and POISON not in json.dumps(result)
+E       AssertionError: assert ('ALLOWLIST_UNAVAILABLE' in ('JUNIT_INVALID', 'JUNIT_FORMAT_REFUSED'))
+
+tests/test_ci_diagnostics.py:42: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_malformed_xml_entities_or_unknown_root_are_refused[&lt;!DOCTYPE testsuite [&lt;!ENTITY x &quot;PRIVATE&quot;&gt;]&gt;&lt;testsuite/&gt;]" time="0.001"><failure message="AssertionError: assert ('ALLOWLIST_UNAVAILABLE' in ('JUNIT_INVALID', 'JUNIT_FORMAT_REFUSED'))">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_malformed_xml_entities_or1')
+payload = b'&lt;!DOCTYPE testsuite [&lt;!ENTITY x "PRIVATE"&gt;]&gt;&lt;testsuite/&gt;'
+
+    @pytest.mark.parametrize('payload',[b'&lt;unclosed&gt;',b'&lt;!DOCTYPE testsuite [&lt;!ENTITY x "PRIVATE"&gt;]&gt;&lt;testsuite/&gt;',b'&lt;private/&gt;'])
+    def test_malformed_xml_entities_or_unknown_root_are_refused(tmp_path,payload):
+        m=module('diagnostics');path,reference=junit(tmp_path,[]);path.write_bytes(payload);result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['state'] in ('JUNIT_INVALID','JUNIT_FORMAT_REFUSED') and not result['failed_test_ids'] and POISON not in json.dumps(result)
+E       AssertionError: assert ('ALLOWLIST_UNAVAILABLE' in ('JUNIT_INVALID', 'JUNIT_FORMAT_REFUSED'))
+
+tests/test_ci_diagnostics.py:42: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_malformed_xml_entities_or_unknown_root_are_refused[&lt;private/&gt;]" time="0.001"><failure message="AssertionError: assert ('ALLOWLIST_UNAVAILABLE' in ('JUNIT_INVALID', 'JUNIT_FORMAT_REFUSED'))">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_malformed_xml_entities_or2')
+payload = b'&lt;private/&gt;'
+
+    @pytest.mark.parametrize('payload',[b'&lt;unclosed&gt;',b'&lt;!DOCTYPE testsuite [&lt;!ENTITY x "PRIVATE"&gt;]&gt;&lt;testsuite/&gt;',b'&lt;private/&gt;'])
+    def test_malformed_xml_entities_or_unknown_root_are_refused(tmp_path,payload):
+        m=module('diagnostics');path,reference=junit(tmp_path,[]);path.write_bytes(payload);result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['state'] in ('JUNIT_INVALID','JUNIT_FORMAT_REFUSED') and not result['failed_test_ids'] and POISON not in json.dumps(result)
+E       AssertionError: assert ('ALLOWLIST_UNAVAILABLE' in ('JUNIT_INVALID', 'JUNIT_FORMAT_REFUSED'))
+
+tests/test_ci_diagnostics.py:42: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_missing_oversize_and_case_limits_are_visible" time="0.001"><failure message="AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_MISSING'&#10;  &#10;  - JUNIT_MISSING&#10;  + ALLOWLIST_UNAVAILABLE">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_missing_oversize_and_case0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5285c0dd00&gt;
+
+    def test_missing_oversize_and_case_limits_are_visible(tmp_path,monkeypatch):
+&gt;       m=module('diagnostics');path,reference=junit(tmp_path,[]);path.unlink();assert m.failure_tests(tmp_path,reference)['state']=='JUNIT_MISSING'
+                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_MISSING'
+E         
+E         - JUNIT_MISSING
+E         + ALLOWLIST_UNAVAILABLE
+
+tests/test_ci_diagnostics.py:46: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_truncated_allowlisted_ids_preserve_failure_counts" time="0.001"><failure message="ValueError: diagnostic input too large">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_truncated_allowlisted_ids0')
+
+    def test_truncated_allowlisted_ids_preserve_failure_counts(tmp_path):
+&gt;       m=module('diagnostics');ids=sorted(m._allowed_tests())[:m.MAX_FAILURE_IDS+3]
+                                           ^^^^^^^^^^^^^^^^^^
+
+tests/test_ci_diagnostics.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/windows_ci/diagnostics.py:89: in _allowed_tests
+    value=json.loads(_bounded_bytes(Path(__file__).with_name('diagnostic-test-ids.json'),256*1024))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/workspace/ParkWeave/scripts/windows_ci/diagnostic-test-ids.json')
+limit = 262144
+
+    def _bounded_bytes(path,limit):
+        with path.open('rb') as stream:data=stream.read(limit+1)
+&gt;       if len(data)&gt;limit:raise ValueError('diagnostic input too large')
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: diagnostic input too large
+
+scripts/windows_ci/diagnostics.py:74: ValueError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_exception_categories_phases_and_cleanup_are_allowlisted_bounded" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_counts_refuse_unsafe_types_extra_keys_and_bounds[counts0]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_counts_refuse_unsafe_types_extra_keys_and_bounds[counts1]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_counts_refuse_unsafe_types_extra_keys_and_bounds[counts2]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_counts_refuse_unsafe_types_extra_keys_and_bounds[counts3]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_browser_summary_drops_external_versions_text_and_unknown_fields" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_committed_allowlist_exactly_matches_trusted_test_functions" time="0.793"><failure message="ValueError: diagnostic input too large">def test_committed_allowlist_exactly_matches_trusted_test_functions():
+        m=module('diagnostics');expected=set()
+        for path in (ROOT/'tests').glob('test_*.py'):
+            for node in ast.parse(path.read_text(encoding='utf-8')).body:
+                if isinstance(node,(ast.FunctionDef,ast.AsyncFunctionDef)) and node.name.startswith('test_'):expected.add(str(path.relative_to(ROOT)).replace('\\','/')+'::'+node.name)
+                elif isinstance(node,ast.ClassDef) and node.name[0].isalpha() and node.name.isascii():
+                    for method in node.body:
+                        if isinstance(method,(ast.FunctionDef,ast.AsyncFunctionDef)) and method.name.startswith('test_'):
+                            expected.add(str(path.relative_to(ROOT)).replace('\\','/')+'::'+node.name+'::'+method.name)
+&gt;       assert m._allowed_tests()==expected
+               ^^^^^^^^^^^^^^^^^^
+
+tests/test_ci_diagnostics.py:91: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+scripts/windows_ci/diagnostics.py:89: in _allowed_tests
+    value=json.loads(_bounded_bytes(Path(__file__).with_name('diagnostic-test-ids.json'),256*1024))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+path = PosixPath('/workspace/ParkWeave/scripts/windows_ci/diagnostic-test-ids.json')
+limit = 262144
+
+    def _bounded_bytes(path,limit):
+        with path.open('rb') as stream:data=stream.read(limit+1)
+&gt;       if len(data)&gt;limit:raise ValueError('diagnostic input too large')
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       ValueError: diagnostic input too large
+
+scripts/windows_ci/diagnostics.py:74: ValueError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_actual_unittest_class_junit_exact_identity_and_private_parameter_redaction" time="0.002"><failure message="AssertionError: assert [] == ['tests/test_...ted_as_ready']&#10;  &#10;  Right contains one more item: 'tests/test_demo_preflight.py::DemoPreflightTests::test_wrong_python_not_accepted_as_ready'&#10;  Use -v to get more diff">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_actual_unittest_class_jun0')
+
+    def test_actual_unittest_class_junit_exact_identity_and_private_parameter_redaction(tmp_path):
+        m=module('diagnostics')
+        method='test_wrong_python_not_accepted_as_ready'
+        known='tests/test_demo_preflight.py::DemoPreflightTests::'+method
+        entries=[('test_demo_preflight.DemoPreflightTests',method,'failure'),
+                 ('tests.test_demo_preflight.DemoPreflightTests',method+'['+POISON+']','error'),
+                 ('test_demo_preflight.DemoCardTests',method,'failure'),
+                 ('test_demo_preflight',method,'failure'),
+                 ('test_demo_preflight.DemoPreflightTests.'+POISON,method,'failure'),
+                 ('test_demo_preflight.DemoPreflightTests['+POISON+']',method,'failure'),
+                 ('test_demo_preflight.DemoPreflightTests',POISON+'['+method+']','failure')]
+        _,reference=junit(tmp_path,entries)
+        result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['failed_test_ids']==[known]
+E       AssertionError: assert [] == ['tests/test_...ted_as_ready']
+E         
+E         Right contains one more item: 'tests/test_demo_preflight.py::DemoPreflightTests::test_wrong_python_not_accepted_as_ready'
+E         Use -v to get more diff
+
+tests/test_ci_diagnostics.py:107: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_allowlist_refuses_nested_private_or_parameterized_class_identifiers[Private::Nested::test_method]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_allowlist_refuses_nested_private_or_parameterized_class_identifiers[_Private::test_method]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_allowlist_refuses_nested_private_or_parameterized_class_identifiers[Public[private]::test_method]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_allowlist_refuses_nested_private_or_parameterized_class_identifiers[Public::test_method[private]]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_browser_binding_failure_has_explicit_phase_without_path" time="0.002" /><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[posix-AVAILABLE]" time="0.007"><failure message="AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'AVAILABLE'&#10;  &#10;  - AVAILABLE&#10;  + ALLOWLIST_UNAVAILABLE">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_suite_publishes_allowlist0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5285bbcbc0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7f5285bbc5c0&gt;
+diagnostic_state = 'AVAILABLE', platform = 'posix'
+
+    @pytest.mark.parametrize('diagnostic_state',['AVAILABLE','JUNIT_MISSING','JUNIT_INVALID','JUNIT_UNREADABLE_OR_OVERSIZE','ALLOWLIST_UNAVAILABLE','REPORT_INVALID'])
+    @pytest.mark.parametrize('platform',['posix','nt'])
+    def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state,platform):
+        m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+        monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
+        path,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),(POISON,POISON,'error')])
+        if diagnostic_state=='JUNIT_MISSING':path.unlink()
+        elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'&lt;unclosed&gt;')
+        elif diagnostic_state=='JUNIT_UNREADABLE_OR_OVERSIZE':path.write_bytes(b'x'*(4*1024*1024+1))
+        if diagnostic_state=='ALLOWLIST_UNAVAILABLE':
+            def unavailable():raise ValueError(POISON)
+            monkeypatch.setitem(m.failure_tests.__globals__,'_allowed_tests',unavailable)
+        summary=tmp_path/'job-summary.md'
+        monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'));monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')])
+        monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner','GITHUB_STEP_SUMMARY':str(summary),'GITHUB_TOKEN':POISON})
+        def run(command,**kwargs):
+            assert 'GITHUB_TOKEN' not in kwargs['env'] and 'GITHUB_STEP_SUMMARY' not in kwargs['env']
+            if 'scripts/run_acceptance.py' in command:
+                Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':0,'FAIL':2,'SKIP':0},'whole_AT_EX':'NOT_RUN','private_junit':reference,'private_log':POISON,'arbitrary':POISON}),encoding='utf-8')
+                if diagnostic_state=='REPORT_INVALID':Path(command[-1]).write_bytes(b'[]')
+                return SimpleNamespace(returncode=1,stdout=POISON,stderr=POISON)
+            if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr=POISON)
+            return SimpleNamespace(returncode=1 if any(str(x).endswith('Setup.ps1') for x in command) else 0,stdout=POISON,stderr=POISON)
+        monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
+        monkeypatch.setattr(m.subprocess,'run',run);assert m.main()==1
+        rows=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'];reg=next(x for x in rows if x['case']=='full_engineering_regression')
+        assert reg['status']=='FAIL' and reg['exit_code']==1
+        if diagnostic_state!='REPORT_INVALID':assert reg['counts']['FAIL']==2
+        if diagnostic_state=='REPORT_INVALID':
+            assert any(x['case']=='full_engineering_regression' and x.get('phase')=='regression_report' and x['category']=='ValueError' and x['status']=='FAIL' for x in rows)
+            assert 'failure_diagnostics' not in reg
+&gt;       else:assert reg['failure_diagnostics']['state']==diagnostic_state
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'AVAILABLE'
+E         
+E         - AVAILABLE
+E         + ALLOWLIST_UNAVAILABLE
+
+tests/test_ci_diagnostics.py:162: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[posix-JUNIT_MISSING]" time="0.005"><failure message="AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_MISSING'&#10;  &#10;  - JUNIT_MISSING&#10;  + ALLOWLIST_UNAVAILABLE">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_suite_publishes_allowlist1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5285c14140&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7f5285c15220&gt;
+diagnostic_state = 'JUNIT_MISSING', platform = 'posix'
+
+    @pytest.mark.parametrize('diagnostic_state',['AVAILABLE','JUNIT_MISSING','JUNIT_INVALID','JUNIT_UNREADABLE_OR_OVERSIZE','ALLOWLIST_UNAVAILABLE','REPORT_INVALID'])
+    @pytest.mark.parametrize('platform',['posix','nt'])
+    def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state,platform):
+        m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+        monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
+        path,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),(POISON,POISON,'error')])
+        if diagnostic_state=='JUNIT_MISSING':path.unlink()
+        elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'&lt;unclosed&gt;')
+        elif diagnostic_state=='JUNIT_UNREADABLE_OR_OVERSIZE':path.write_bytes(b'x'*(4*1024*1024+1))
+        if diagnostic_state=='ALLOWLIST_UNAVAILABLE':
+            def unavailable():raise ValueError(POISON)
+            monkeypatch.setitem(m.failure_tests.__globals__,'_allowed_tests',unavailable)
+        summary=tmp_path/'job-summary.md'
+        monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'));monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')])
+        monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner','GITHUB_STEP_SUMMARY':str(summary),'GITHUB_TOKEN':POISON})
+        def run(command,**kwargs):
+            assert 'GITHUB_TOKEN' not in kwargs['env'] and 'GITHUB_STEP_SUMMARY' not in kwargs['env']
+            if 'scripts/run_acceptance.py' in command:
+                Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':0,'FAIL':2,'SKIP':0},'whole_AT_EX':'NOT_RUN','private_junit':reference,'private_log':POISON,'arbitrary':POISON}),encoding='utf-8')
+                if diagnostic_state=='REPORT_INVALID':Path(command[-1]).write_bytes(b'[]')
+                return SimpleNamespace(returncode=1,stdout=POISON,stderr=POISON)
+            if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr=POISON)
+            return SimpleNamespace(returncode=1 if any(str(x).endswith('Setup.ps1') for x in command) else 0,stdout=POISON,stderr=POISON)
+        monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
+        monkeypatch.setattr(m.subprocess,'run',run);assert m.main()==1
+        rows=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'];reg=next(x for x in rows if x['case']=='full_engineering_regression')
+        assert reg['status']=='FAIL' and reg['exit_code']==1
+        if diagnostic_state!='REPORT_INVALID':assert reg['counts']['FAIL']==2
+        if diagnostic_state=='REPORT_INVALID':
+            assert any(x['case']=='full_engineering_regression' and x.get('phase')=='regression_report' and x['category']=='ValueError' and x['status']=='FAIL' for x in rows)
+            assert 'failure_diagnostics' not in reg
+&gt;       else:assert reg['failure_diagnostics']['state']==diagnostic_state
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_MISSING'
+E         
+E         - JUNIT_MISSING
+E         + ALLOWLIST_UNAVAILABLE
+
+tests/test_ci_diagnostics.py:162: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[posix-JUNIT_INVALID]" time="0.005"><failure message="AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_INVALID'&#10;  &#10;  - JUNIT_INVALID&#10;  + ALLOWLIST_UNAVAILABLE">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_suite_publishes_allowlist2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5285aa2bd0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7f5285aa2db0&gt;
+diagnostic_state = 'JUNIT_INVALID', platform = 'posix'
+
+    @pytest.mark.parametrize('diagnostic_state',['AVAILABLE','JUNIT_MISSING','JUNIT_INVALID','JUNIT_UNREADABLE_OR_OVERSIZE','ALLOWLIST_UNAVAILABLE','REPORT_INVALID'])
+    @pytest.mark.parametrize('platform',['posix','nt'])
+    def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state,platform):
+        m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+        monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
+        path,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),(POISON,POISON,'error')])
+        if diagnostic_state=='JUNIT_MISSING':path.unlink()
+        elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'&lt;unclosed&gt;')
+        elif diagnostic_state=='JUNIT_UNREADABLE_OR_OVERSIZE':path.write_bytes(b'x'*(4*1024*1024+1))
+        if diagnostic_state=='ALLOWLIST_UNAVAILABLE':
+            def unavailable():raise ValueError(POISON)
+            monkeypatch.setitem(m.failure_tests.__globals__,'_allowed_tests',unavailable)
+        summary=tmp_path/'job-summary.md'
+        monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'));monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')])
+        monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner','GITHUB_STEP_SUMMARY':str(summary),'GITHUB_TOKEN':POISON})
+        def run(command,**kwargs):
+            assert 'GITHUB_TOKEN' not in kwargs['env'] and 'GITHUB_STEP_SUMMARY' not in kwargs['env']
+            if 'scripts/run_acceptance.py' in command:
+                Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':0,'FAIL':2,'SKIP':0},'whole_AT_EX':'NOT_RUN','private_junit':reference,'private_log':POISON,'arbitrary':POISON}),encoding='utf-8')
+                if diagnostic_state=='REPORT_INVALID':Path(command[-1]).write_bytes(b'[]')
+                return SimpleNamespace(returncode=1,stdout=POISON,stderr=POISON)
+            if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr=POISON)
+            return SimpleNamespace(returncode=1 if any(str(x).endswith('Setup.ps1') for x in command) else 0,stdout=POISON,stderr=POISON)
+        monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
+        monkeypatch.setattr(m.subprocess,'run',run);assert m.main()==1
+        rows=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'];reg=next(x for x in rows if x['case']=='full_engineering_regression')
+        assert reg['status']=='FAIL' and reg['exit_code']==1
+        if diagnostic_state!='REPORT_INVALID':assert reg['counts']['FAIL']==2
+        if diagnostic_state=='REPORT_INVALID':
+            assert any(x['case']=='full_engineering_regression' and x.get('phase')=='regression_report' and x['category']=='ValueError' and x['status']=='FAIL' for x in rows)
+            assert 'failure_diagnostics' not in reg
+&gt;       else:assert reg['failure_diagnostics']['state']==diagnostic_state
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_INVALID'
+E         
+E         - JUNIT_INVALID
+E         + ALLOWLIST_UNAVAILABLE
+
+tests/test_ci_diagnostics.py:162: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[posix-JUNIT_UNREADABLE_OR_OVERSIZE]" time="0.021"><failure message="AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_UNREADABLE_OR_OVERSIZE'&#10;  &#10;  - JUNIT_UNREADABLE_OR_OVERSIZE&#10;  + ALLOWLIST_UNAVAILABLE">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_suite_publishes_allowlist3')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5285bba960&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7f5285c11190&gt;
+diagnostic_state = 'JUNIT_UNREADABLE_OR_OVERSIZE', platform = 'posix'
+
+    @pytest.mark.parametrize('diagnostic_state',['AVAILABLE','JUNIT_MISSING','JUNIT_INVALID','JUNIT_UNREADABLE_OR_OVERSIZE','ALLOWLIST_UNAVAILABLE','REPORT_INVALID'])
+    @pytest.mark.parametrize('platform',['posix','nt'])
+    def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state,platform):
+        m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+        monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
+        path,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),(POISON,POISON,'error')])
+        if diagnostic_state=='JUNIT_MISSING':path.unlink()
+        elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'&lt;unclosed&gt;')
+        elif diagnostic_state=='JUNIT_UNREADABLE_OR_OVERSIZE':path.write_bytes(b'x'*(4*1024*1024+1))
+        if diagnostic_state=='ALLOWLIST_UNAVAILABLE':
+            def unavailable():raise ValueError(POISON)
+            monkeypatch.setitem(m.failure_tests.__globals__,'_allowed_tests',unavailable)
+        summary=tmp_path/'job-summary.md'
+        monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'));monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')])
+        monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner','GITHUB_STEP_SUMMARY':str(summary),'GITHUB_TOKEN':POISON})
+        def run(command,**kwargs):
+            assert 'GITHUB_TOKEN' not in kwargs['env'] and 'GITHUB_STEP_SUMMARY' not in kwargs['env']
+            if 'scripts/run_acceptance.py' in command:
+                Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':0,'FAIL':2,'SKIP':0},'whole_AT_EX':'NOT_RUN','private_junit':reference,'private_log':POISON,'arbitrary':POISON}),encoding='utf-8')
+                if diagnostic_state=='REPORT_INVALID':Path(command[-1]).write_bytes(b'[]')
+                return SimpleNamespace(returncode=1,stdout=POISON,stderr=POISON)
+            if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr=POISON)
+            return SimpleNamespace(returncode=1 if any(str(x).endswith('Setup.ps1') for x in command) else 0,stdout=POISON,stderr=POISON)
+        monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
+        monkeypatch.setattr(m.subprocess,'run',run);assert m.main()==1
+        rows=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'];reg=next(x for x in rows if x['case']=='full_engineering_regression')
+        assert reg['status']=='FAIL' and reg['exit_code']==1
+        if diagnostic_state!='REPORT_INVALID':assert reg['counts']['FAIL']==2
+        if diagnostic_state=='REPORT_INVALID':
+            assert any(x['case']=='full_engineering_regression' and x.get('phase')=='regression_report' and x['category']=='ValueError' and x['status']=='FAIL' for x in rows)
+            assert 'failure_diagnostics' not in reg
+&gt;       else:assert reg['failure_diagnostics']['state']==diagnostic_state
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_UNREADABLE_OR_OVERSIZE'
+E         
+E         - JUNIT_UNREADABLE_OR_OVERSIZE
+E         + ALLOWLIST_UNAVAILABLE
+
+tests/test_ci_diagnostics.py:162: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[posix-ALLOWLIST_UNAVAILABLE]" time="0.003" /><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[posix-REPORT_INVALID]" time="0.003" /><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[nt-AVAILABLE]" time="0.004"><failure message="AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'AVAILABLE'&#10;  &#10;  - AVAILABLE&#10;  + ALLOWLIST_UNAVAILABLE">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_suite_publishes_allowlist6')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5285bbdbe0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7f5285bbef30&gt;
+diagnostic_state = 'AVAILABLE', platform = 'nt'
+
+    @pytest.mark.parametrize('diagnostic_state',['AVAILABLE','JUNIT_MISSING','JUNIT_INVALID','JUNIT_UNREADABLE_OR_OVERSIZE','ALLOWLIST_UNAVAILABLE','REPORT_INVALID'])
+    @pytest.mark.parametrize('platform',['posix','nt'])
+    def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state,platform):
+        m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+        monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
+        path,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),(POISON,POISON,'error')])
+        if diagnostic_state=='JUNIT_MISSING':path.unlink()
+        elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'&lt;unclosed&gt;')
+        elif diagnostic_state=='JUNIT_UNREADABLE_OR_OVERSIZE':path.write_bytes(b'x'*(4*1024*1024+1))
+        if diagnostic_state=='ALLOWLIST_UNAVAILABLE':
+            def unavailable():raise ValueError(POISON)
+            monkeypatch.setitem(m.failure_tests.__globals__,'_allowed_tests',unavailable)
+        summary=tmp_path/'job-summary.md'
+        monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'));monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')])
+        monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner','GITHUB_STEP_SUMMARY':str(summary),'GITHUB_TOKEN':POISON})
+        def run(command,**kwargs):
+            assert 'GITHUB_TOKEN' not in kwargs['env'] and 'GITHUB_STEP_SUMMARY' not in kwargs['env']
+            if 'scripts/run_acceptance.py' in command:
+                Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':0,'FAIL':2,'SKIP':0},'whole_AT_EX':'NOT_RUN','private_junit':reference,'private_log':POISON,'arbitrary':POISON}),encoding='utf-8')
+                if diagnostic_state=='REPORT_INVALID':Path(command[-1]).write_bytes(b'[]')
+                return SimpleNamespace(returncode=1,stdout=POISON,stderr=POISON)
+            if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr=POISON)
+            return SimpleNamespace(returncode=1 if any(str(x).endswith('Setup.ps1') for x in command) else 0,stdout=POISON,stderr=POISON)
+        monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
+        monkeypatch.setattr(m.subprocess,'run',run);assert m.main()==1
+        rows=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'];reg=next(x for x in rows if x['case']=='full_engineering_regression')
+        assert reg['status']=='FAIL' and reg['exit_code']==1
+        if diagnostic_state!='REPORT_INVALID':assert reg['counts']['FAIL']==2
+        if diagnostic_state=='REPORT_INVALID':
+            assert any(x['case']=='full_engineering_regression' and x.get('phase')=='regression_report' and x['category']=='ValueError' and x['status']=='FAIL' for x in rows)
+            assert 'failure_diagnostics' not in reg
+&gt;       else:assert reg['failure_diagnostics']['state']==diagnostic_state
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'AVAILABLE'
+E         
+E         - AVAILABLE
+E         + ALLOWLIST_UNAVAILABLE
+
+tests/test_ci_diagnostics.py:162: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[nt-JUNIT_MISSING]" time="0.004"><failure message="AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_MISSING'&#10;  &#10;  - JUNIT_MISSING&#10;  + ALLOWLIST_UNAVAILABLE">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_suite_publishes_allowlist7')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5285c170b0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7f5285c17d40&gt;
+diagnostic_state = 'JUNIT_MISSING', platform = 'nt'
+
+    @pytest.mark.parametrize('diagnostic_state',['AVAILABLE','JUNIT_MISSING','JUNIT_INVALID','JUNIT_UNREADABLE_OR_OVERSIZE','ALLOWLIST_UNAVAILABLE','REPORT_INVALID'])
+    @pytest.mark.parametrize('platform',['posix','nt'])
+    def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state,platform):
+        m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+        monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
+        path,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),(POISON,POISON,'error')])
+        if diagnostic_state=='JUNIT_MISSING':path.unlink()
+        elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'&lt;unclosed&gt;')
+        elif diagnostic_state=='JUNIT_UNREADABLE_OR_OVERSIZE':path.write_bytes(b'x'*(4*1024*1024+1))
+        if diagnostic_state=='ALLOWLIST_UNAVAILABLE':
+            def unavailable():raise ValueError(POISON)
+            monkeypatch.setitem(m.failure_tests.__globals__,'_allowed_tests',unavailable)
+        summary=tmp_path/'job-summary.md'
+        monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'));monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')])
+        monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner','GITHUB_STEP_SUMMARY':str(summary),'GITHUB_TOKEN':POISON})
+        def run(command,**kwargs):
+            assert 'GITHUB_TOKEN' not in kwargs['env'] and 'GITHUB_STEP_SUMMARY' not in kwargs['env']
+            if 'scripts/run_acceptance.py' in command:
+                Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':0,'FAIL':2,'SKIP':0},'whole_AT_EX':'NOT_RUN','private_junit':reference,'private_log':POISON,'arbitrary':POISON}),encoding='utf-8')
+                if diagnostic_state=='REPORT_INVALID':Path(command[-1]).write_bytes(b'[]')
+                return SimpleNamespace(returncode=1,stdout=POISON,stderr=POISON)
+            if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr=POISON)
+            return SimpleNamespace(returncode=1 if any(str(x).endswith('Setup.ps1') for x in command) else 0,stdout=POISON,stderr=POISON)
+        monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
+        monkeypatch.setattr(m.subprocess,'run',run);assert m.main()==1
+        rows=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'];reg=next(x for x in rows if x['case']=='full_engineering_regression')
+        assert reg['status']=='FAIL' and reg['exit_code']==1
+        if diagnostic_state!='REPORT_INVALID':assert reg['counts']['FAIL']==2
+        if diagnostic_state=='REPORT_INVALID':
+            assert any(x['case']=='full_engineering_regression' and x.get('phase')=='regression_report' and x['category']=='ValueError' and x['status']=='FAIL' for x in rows)
+            assert 'failure_diagnostics' not in reg
+&gt;       else:assert reg['failure_diagnostics']['state']==diagnostic_state
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_MISSING'
+E         
+E         - JUNIT_MISSING
+E         + ALLOWLIST_UNAVAILABLE
+
+tests/test_ci_diagnostics.py:162: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[nt-JUNIT_INVALID]" time="0.004"><failure message="AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_INVALID'&#10;  &#10;  - JUNIT_INVALID&#10;  + ALLOWLIST_UNAVAILABLE">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_suite_publishes_allowlist8')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5285aa19d0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7f5285aa14f0&gt;
+diagnostic_state = 'JUNIT_INVALID', platform = 'nt'
+
+    @pytest.mark.parametrize('diagnostic_state',['AVAILABLE','JUNIT_MISSING','JUNIT_INVALID','JUNIT_UNREADABLE_OR_OVERSIZE','ALLOWLIST_UNAVAILABLE','REPORT_INVALID'])
+    @pytest.mark.parametrize('platform',['posix','nt'])
+    def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state,platform):
+        m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+        monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
+        path,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),(POISON,POISON,'error')])
+        if diagnostic_state=='JUNIT_MISSING':path.unlink()
+        elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'&lt;unclosed&gt;')
+        elif diagnostic_state=='JUNIT_UNREADABLE_OR_OVERSIZE':path.write_bytes(b'x'*(4*1024*1024+1))
+        if diagnostic_state=='ALLOWLIST_UNAVAILABLE':
+            def unavailable():raise ValueError(POISON)
+            monkeypatch.setitem(m.failure_tests.__globals__,'_allowed_tests',unavailable)
+        summary=tmp_path/'job-summary.md'
+        monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'));monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')])
+        monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner','GITHUB_STEP_SUMMARY':str(summary),'GITHUB_TOKEN':POISON})
+        def run(command,**kwargs):
+            assert 'GITHUB_TOKEN' not in kwargs['env'] and 'GITHUB_STEP_SUMMARY' not in kwargs['env']
+            if 'scripts/run_acceptance.py' in command:
+                Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':0,'FAIL':2,'SKIP':0},'whole_AT_EX':'NOT_RUN','private_junit':reference,'private_log':POISON,'arbitrary':POISON}),encoding='utf-8')
+                if diagnostic_state=='REPORT_INVALID':Path(command[-1]).write_bytes(b'[]')
+                return SimpleNamespace(returncode=1,stdout=POISON,stderr=POISON)
+            if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr=POISON)
+            return SimpleNamespace(returncode=1 if any(str(x).endswith('Setup.ps1') for x in command) else 0,stdout=POISON,stderr=POISON)
+        monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
+        monkeypatch.setattr(m.subprocess,'run',run);assert m.main()==1
+        rows=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'];reg=next(x for x in rows if x['case']=='full_engineering_regression')
+        assert reg['status']=='FAIL' and reg['exit_code']==1
+        if diagnostic_state!='REPORT_INVALID':assert reg['counts']['FAIL']==2
+        if diagnostic_state=='REPORT_INVALID':
+            assert any(x['case']=='full_engineering_regression' and x.get('phase')=='regression_report' and x['category']=='ValueError' and x['status']=='FAIL' for x in rows)
+            assert 'failure_diagnostics' not in reg
+&gt;       else:assert reg['failure_diagnostics']['state']==diagnostic_state
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_INVALID'
+E         
+E         - JUNIT_INVALID
+E         + ALLOWLIST_UNAVAILABLE
+
+tests/test_ci_diagnostics.py:162: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[nt-JUNIT_UNREADABLE_OR_OVERSIZE]" time="0.017"><failure message="AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_UNREADABLE_OR_OVERSIZE'&#10;  &#10;  - JUNIT_UNREADABLE_OR_OVERSIZE&#10;  + ALLOWLIST_UNAVAILABLE">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_suite_publishes_allowlist9')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f5285aa75c0&gt;
+capsys = &lt;_pytest.capture.CaptureFixture object at 0x7f5285aa6ba0&gt;
+diagnostic_state = 'JUNIT_UNREADABLE_OR_OVERSIZE', platform = 'nt'
+
+    @pytest.mark.parametrize('diagnostic_state',['AVAILABLE','JUNIT_MISSING','JUNIT_INVALID','JUNIT_UNREADABLE_OR_OVERSIZE','ALLOWLIST_UNAVAILABLE','REPORT_INVALID'])
+    @pytest.mark.parametrize('platform',['posix','nt'])
+    def test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure(tmp_path,monkeypatch,capsys,diagnostic_state,platform):
+        m=module('native_suite');m.REPO=tmp_path;m.require_server=lambda:None
+        monkeypatch.setattr(m,'os',SimpleNamespace(name=platform,environ=m.os.environ))
+        path,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON+']','failure'),(POISON,POISON,'error')])
+        if diagnostic_state=='JUNIT_MISSING':path.unlink()
+        elif diagnostic_state=='JUNIT_INVALID':path.write_bytes(b'&lt;unclosed&gt;')
+        elif diagnostic_state=='JUNIT_UNREADABLE_OR_OVERSIZE':path.write_bytes(b'x'*(4*1024*1024+1))
+        if diagnostic_state=='ALLOWLIST_UNAVAILABLE':
+            def unavailable():raise ValueError(POISON)
+            monkeypatch.setitem(m.failure_tests.__globals__,'_allowed_tests',unavailable)
+        summary=tmp_path/'job-summary.md'
+        monkeypatch.setattr(m.sys,'executable',str(tmp_path/'.venv-windows/Scripts/python.exe'));monkeypatch.setattr(m.sys,'argv',['native_suite','--report',str(tmp_path/'suite.json')])
+        monkeypatch.setattr(m.os,'environ',{'PARKWEAVE_OWNER_DSN':'host=127.0.0.1 dbname=parkweave user=park_ci_owner','PARKWEAVE_DSN':'host=127.0.0.1 dbname=parkweave user=parkweave_app','PARKWEAVE_TEST_OWNER_DSN':'host=127.0.0.1 dbname=postgres user=park_ci_owner','GITHUB_STEP_SUMMARY':str(summary),'GITHUB_TOKEN':POISON})
+        def run(command,**kwargs):
+            assert 'GITHUB_TOKEN' not in kwargs['env'] and 'GITHUB_STEP_SUMMARY' not in kwargs['env']
+            if 'scripts/run_acceptance.py' in command:
+                Path(command[-1]).write_text(json.dumps({'engineering_total_counts':{'PASS':0,'FAIL':2,'SKIP':0},'whole_AT_EX':'NOT_RUN','private_junit':reference,'private_log':POISON,'arbitrary':POISON}),encoding='utf-8')
+                if diagnostic_state=='REPORT_INVALID':Path(command[-1]).write_bytes(b'[]')
+                return SimpleNamespace(returncode=1,stdout=POISON,stderr=POISON)
+            if 'scripts/windows/file_candidate_probe.py' in command:return SimpleNamespace(returncode=1,stdout='NOT_RUN: explicit native Windows11',stderr=POISON)
+            return SimpleNamespace(returncode=1 if any(str(x).endswith('Setup.ps1') for x in command) else 0,stdout=POISON,stderr=POISON)
+        monkeypatch.setattr(m,'run_owned_job',lambda command,**kwargs:run(command,**kwargs))
+        monkeypatch.setattr(m.subprocess,'run',run);assert m.main()==1
+        rows=json.loads((tmp_path/'suite.json').read_text(encoding='utf-8'))['cases'];reg=next(x for x in rows if x['case']=='full_engineering_regression')
+        assert reg['status']=='FAIL' and reg['exit_code']==1
+        if diagnostic_state!='REPORT_INVALID':assert reg['counts']['FAIL']==2
+        if diagnostic_state=='REPORT_INVALID':
+            assert any(x['case']=='full_engineering_regression' and x.get('phase')=='regression_report' and x['category']=='ValueError' and x['status']=='FAIL' for x in rows)
+            assert 'failure_diagnostics' not in reg
+&gt;       else:assert reg['failure_diagnostics']['state']==diagnostic_state
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_UNREADABLE_OR_OVERSIZE'
+E         
+E         - JUNIT_UNREADABLE_OR_OVERSIZE
+E         + ALLOWLIST_UNAVAILABLE
+
+tests/test_ci_diagnostics.py:162: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[nt-ALLOWLIST_UNAVAILABLE]" time="0.005" /><testcase classname="tests.test_ci_diagnostics" name="test_suite_publishes_allowlisted_failures_in_job_summary_and_keeps_exit_failure[nt-REPORT_INVALID]" time="0.005" /><testcase classname="tests.test_ci_diagnostics" name="test_preflight_missing_configuration_emits_safe_phase_instead_of_raw_key" time="0.002" /><testcase classname="tests.test_ci_diagnostics" name="test_non_utf8_xml_is_refused_even_without_bom[False-utf-16]" time="0.002"><failure message="AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'&#10;  &#10;  - JUNIT_FORMAT_REFUSED&#10;  + ALLOWLIST_UNAVAILABLE)">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_non_utf8_xml_is_refused_e0')
+codec = 'utf-16', doctype = False
+
+    @pytest.mark.parametrize('codec',['utf-16','utf-16-le','utf-16-be'])
+    @pytest.mark.parametrize('doctype',[False,True])
+    def test_non_utf8_xml_is_refused_even_without_bom(tmp_path,codec,doctype):
+        m=module('diagnostics');path,reference=junit(tmp_path,[])
+        xml=('&lt;!DOCTYPE testsuite [&lt;!ENTITY x "PRIVATE"&gt;]&gt;' if doctype else '')+'&lt;testsuite/&gt;'
+        path.write_bytes(xml.encode(codec));result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['state']=='JUNIT_FORMAT_REFUSED' and result['failed_test_ids']==[]
+E       AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'
+E         
+E         - JUNIT_FORMAT_REFUSED
+E         + ALLOWLIST_UNAVAILABLE)
+
+tests/test_ci_diagnostics.py:183: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_non_utf8_xml_is_refused_even_without_bom[False-utf-16-le]" time="0.002"><failure message="AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'&#10;  &#10;  - JUNIT_FORMAT_REFUSED&#10;  + ALLOWLIST_UNAVAILABLE)">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_non_utf8_xml_is_refused_e1')
+codec = 'utf-16-le', doctype = False
+
+    @pytest.mark.parametrize('codec',['utf-16','utf-16-le','utf-16-be'])
+    @pytest.mark.parametrize('doctype',[False,True])
+    def test_non_utf8_xml_is_refused_even_without_bom(tmp_path,codec,doctype):
+        m=module('diagnostics');path,reference=junit(tmp_path,[])
+        xml=('&lt;!DOCTYPE testsuite [&lt;!ENTITY x "PRIVATE"&gt;]&gt;' if doctype else '')+'&lt;testsuite/&gt;'
+        path.write_bytes(xml.encode(codec));result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['state']=='JUNIT_FORMAT_REFUSED' and result['failed_test_ids']==[]
+E       AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'
+E         
+E         - JUNIT_FORMAT_REFUSED
+E         + ALLOWLIST_UNAVAILABLE)
+
+tests/test_ci_diagnostics.py:183: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_non_utf8_xml_is_refused_even_without_bom[False-utf-16-be]" time="0.002"><failure message="AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'&#10;  &#10;  - JUNIT_FORMAT_REFUSED&#10;  + ALLOWLIST_UNAVAILABLE)">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_non_utf8_xml_is_refused_e2')
+codec = 'utf-16-be', doctype = False
+
+    @pytest.mark.parametrize('codec',['utf-16','utf-16-le','utf-16-be'])
+    @pytest.mark.parametrize('doctype',[False,True])
+    def test_non_utf8_xml_is_refused_even_without_bom(tmp_path,codec,doctype):
+        m=module('diagnostics');path,reference=junit(tmp_path,[])
+        xml=('&lt;!DOCTYPE testsuite [&lt;!ENTITY x "PRIVATE"&gt;]&gt;' if doctype else '')+'&lt;testsuite/&gt;'
+        path.write_bytes(xml.encode(codec));result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['state']=='JUNIT_FORMAT_REFUSED' and result['failed_test_ids']==[]
+E       AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'
+E         
+E         - JUNIT_FORMAT_REFUSED
+E         + ALLOWLIST_UNAVAILABLE)
+
+tests/test_ci_diagnostics.py:183: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_non_utf8_xml_is_refused_even_without_bom[True-utf-16]" time="0.002"><failure message="AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'&#10;  &#10;  - JUNIT_FORMAT_REFUSED&#10;  + ALLOWLIST_UNAVAILABLE)">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_non_utf8_xml_is_refused_e3')
+codec = 'utf-16', doctype = True
+
+    @pytest.mark.parametrize('codec',['utf-16','utf-16-le','utf-16-be'])
+    @pytest.mark.parametrize('doctype',[False,True])
+    def test_non_utf8_xml_is_refused_even_without_bom(tmp_path,codec,doctype):
+        m=module('diagnostics');path,reference=junit(tmp_path,[])
+        xml=('&lt;!DOCTYPE testsuite [&lt;!ENTITY x "PRIVATE"&gt;]&gt;' if doctype else '')+'&lt;testsuite/&gt;'
+        path.write_bytes(xml.encode(codec));result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['state']=='JUNIT_FORMAT_REFUSED' and result['failed_test_ids']==[]
+E       AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'
+E         
+E         - JUNIT_FORMAT_REFUSED
+E         + ALLOWLIST_UNAVAILABLE)
+
+tests/test_ci_diagnostics.py:183: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_non_utf8_xml_is_refused_even_without_bom[True-utf-16-le]" time="0.002"><failure message="AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'&#10;  &#10;  - JUNIT_FORMAT_REFUSED&#10;  + ALLOWLIST_UNAVAILABLE)">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_non_utf8_xml_is_refused_e4')
+codec = 'utf-16-le', doctype = True
+
+    @pytest.mark.parametrize('codec',['utf-16','utf-16-le','utf-16-be'])
+    @pytest.mark.parametrize('doctype',[False,True])
+    def test_non_utf8_xml_is_refused_even_without_bom(tmp_path,codec,doctype):
+        m=module('diagnostics');path,reference=junit(tmp_path,[])
+        xml=('&lt;!DOCTYPE testsuite [&lt;!ENTITY x "PRIVATE"&gt;]&gt;' if doctype else '')+'&lt;testsuite/&gt;'
+        path.write_bytes(xml.encode(codec));result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['state']=='JUNIT_FORMAT_REFUSED' and result['failed_test_ids']==[]
+E       AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'
+E         
+E         - JUNIT_FORMAT_REFUSED
+E         + ALLOWLIST_UNAVAILABLE)
+
+tests/test_ci_diagnostics.py:183: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_non_utf8_xml_is_refused_even_without_bom[True-utf-16-be]" time="0.001"><failure message="AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'&#10;  &#10;  - JUNIT_FORMAT_REFUSED&#10;  + ALLOWLIST_UNAVAILABLE)">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_non_utf8_xml_is_refused_e5')
+codec = 'utf-16-be', doctype = True
+
+    @pytest.mark.parametrize('codec',['utf-16','utf-16-le','utf-16-be'])
+    @pytest.mark.parametrize('doctype',[False,True])
+    def test_non_utf8_xml_is_refused_even_without_bom(tmp_path,codec,doctype):
+        m=module('diagnostics');path,reference=junit(tmp_path,[])
+        xml=('&lt;!DOCTYPE testsuite [&lt;!ENTITY x "PRIVATE"&gt;]&gt;' if doctype else '')+'&lt;testsuite/&gt;'
+        path.write_bytes(xml.encode(codec));result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['state']=='JUNIT_FORMAT_REFUSED' and result['failed_test_ids']==[]
+E       AssertionError: assert ('ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'
+E         
+E         - JUNIT_FORMAT_REFUSED
+E         + ALLOWLIST_UNAVAILABLE)
+
+tests/test_ci_diagnostics.py:183: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_non_utf8_declared_xml_is_refused" time="0.001"><failure message="AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'&#10;  &#10;  - JUNIT_FORMAT_REFUSED&#10;  + ALLOWLIST_UNAVAILABLE">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_non_utf8_declared_xml_is_0')
+
+    def test_non_utf8_declared_xml_is_refused(tmp_path):
+        m=module('diagnostics');path,reference=junit(tmp_path,[])
+        path.write_bytes(b'&lt;?xml version="1.0" encoding="UTF-16"?&gt;&lt;testsuite/&gt;')
+&gt;       assert m.failure_tests(tmp_path,reference)['state']=='JUNIT_FORMAT_REFUSED'
+E       AssertionError: assert 'ALLOWLIST_UNAVAILABLE' == 'JUNIT_FORMAT_REFUSED'
+E         
+E         - JUNIT_FORMAT_REFUSED
+E         + ALLOWLIST_UNAVAILABLE
+
+tests/test_ci_diagnostics.py:189: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_unavailable_allowlist_is_constant_and_does_not_echo[FileNotFoundError]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_unavailable_allowlist_is_constant_and_does_not_echo[ValueError]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_unavailable_allowlist_is_constant_and_does_not_echo[TypeError]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_unavailable_allowlist_is_constant_and_does_not_echo[KeyError]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_report_malformed_non_mapping_and_size_are_rejected[malformed]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_report_malformed_non_mapping_and_size_are_rejected[array]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_report_malformed_non_mapping_and_size_are_rejected[null]" time="0.001" /><testcase classname="tests.test_ci_diagnostics" name="test_report_malformed_non_mapping_and_size_are_rejected[oversize]" time="0.002" /><testcase classname="tests.test_ci_diagnostics" name="test_overlong_junit_fields_are_unknown_without_echo" time="0.001"><failure message="assert (0 == 2)">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_overlong_junit_fields_are0')
+
+    def test_overlong_junit_fields_are_unknown_without_echo(tmp_path):
+        m=module('diagnostics');path,reference=junit(tmp_path,[(POISON*20,'test_name','failure'),('test_lifecycle',POISON*50,'error')])
+        result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['failed_cases']==2 and result['unknown_failed_cases']==2 and result['failed_test_ids']==[] and POISON not in json.dumps(result)
+E       assert (0 == 2)
+
+tests/test_ci_diagnostics.py:210: AssertionError</failure></testcase><testcase classname="tests.test_ci_diagnostics" name="test_linked_private_junit_is_refused" time="0.002" /><testcase classname="tests.test_ci_diagnostics" name="test_long_parameter_is_mapped_before_length_check_and_all_cases_aggregate" time="0.004"><failure message="KeyError: 'failed_test_counts'">tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_long_parameter_is_mapped_0')
+
+    def test_long_parameter_is_mapped_before_length_check_and_all_cases_aggregate(tmp_path):
+        m=module('diagnostics')
+        _,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields['+POISON*100+']','failure')]*42)
+        result=m.failure_tests(tmp_path,reference)
+&gt;       assert result['failed_test_counts']=={KNOWN:42}
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'failed_test_counts'
+
+tests/test_ci_diagnostics.py:225: KeyError</failure></testcase></testsuite></testsuites>

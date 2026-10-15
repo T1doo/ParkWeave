@@ -1,0 +1,19 @@
+/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_________ test_review_legacy_opportunity_recovery_route_key_preserved __________
+.runtime/source-adoption-review/test_review.py:111: in test_review_legacy_opportunity_recovery_route_key_preserved
+    assert r.status_code==200,r.text
+E   AssertionError: {"detail":[{"type":"uuid_parsing","loc":["path","card_id"],"msg":"Input should be a valid UUID, invalid character: found `r` at 1","input":"recovery","ctx":{"error":"invalid character: found `r` at 1"}}]}
+E   assert 422 == 200
+E    +  where 422 = <Response [422 Unprocessable Entity]>.status_code
+=============================== warnings summary ===============================
+.runtime/source-adoption-review/test_review.py::test_review_legacy_opportunity_recovery_route_key_preserved
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/source-adoption-review/test_review.py::test_review_legacy_opportunity_recovery_route_key_preserved
+1 failed, 1 warning in 2.74s

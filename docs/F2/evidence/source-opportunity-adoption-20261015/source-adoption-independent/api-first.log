@@ -1,0 +1,134 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+_ test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt[fixture-b] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+actor = 'fixture-b'
+
+    @pytest.mark.parametrize('actor', ['fixture-b', 'fixture-c', 'prep-specialist-fixture-a', 'executor-a'])
+    def test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt(source_adoption_http, actor):
+        f, requests = source_adoption_http
+>       p, card, resource, value = bounded_change(f)
+                                   ^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_plan_adoption_independent.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def bounded_change(f):
+        p = setup(f, GOALS[1])
+        assert adopt(f, p).status_code == 201
+        card = imported_source(f, p)
+        resource = add_resource(f)
+        response = preview(f, p, card)
+        assert response.status_code == 200, response.text
+        value = response.json()
+>       assert value['can_adopt'], value
+E       AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': '99642fb9-3e14-4796-be41-54ac822e1bb9', 'case_id': 'ba7c6b02-cc90-4377-ad3a-3fd90a609e6f', ...}
+E       assert False
+
+tests/test_opportunity_plan_adoption_independent.py:53: AssertionError
+_ test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt[fixture-c] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+actor = 'fixture-c'
+
+    @pytest.mark.parametrize('actor', ['fixture-b', 'fixture-c', 'prep-specialist-fixture-a', 'executor-a'])
+    def test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt(source_adoption_http, actor):
+        f, requests = source_adoption_http
+>       p, card, resource, value = bounded_change(f)
+                                   ^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_plan_adoption_independent.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def bounded_change(f):
+        p = setup(f, GOALS[1])
+        assert adopt(f, p).status_code == 201
+        card = imported_source(f, p)
+        resource = add_resource(f)
+        response = preview(f, p, card)
+        assert response.status_code == 200, response.text
+        value = response.json()
+>       assert value['can_adopt'], value
+E       AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': '812729dd-c586-43f4-8a1b-6731c9703370', 'case_id': 'd359fbca-5a36-4ff1-a60b-a52b9292cd4d', ...}
+E       assert False
+
+tests/test_opportunity_plan_adoption_independent.py:53: AssertionError
+_ test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt[prep-specialist-fixture-a] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+actor = 'prep-specialist-fixture-a'
+
+    @pytest.mark.parametrize('actor', ['fixture-b', 'fixture-c', 'prep-specialist-fixture-a', 'executor-a'])
+    def test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt(source_adoption_http, actor):
+        f, requests = source_adoption_http
+>       p, card, resource, value = bounded_change(f)
+                                   ^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_plan_adoption_independent.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def bounded_change(f):
+        p = setup(f, GOALS[1])
+        assert adopt(f, p).status_code == 201
+        card = imported_source(f, p)
+        resource = add_resource(f)
+        response = preview(f, p, card)
+        assert response.status_code == 200, response.text
+        value = response.json()
+>       assert value['can_adopt'], value
+E       AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': '84b8b5f6-ade4-41b6-aca4-74b9b3084f76', 'case_id': '6f488168-98df-4c37-8aa3-89bf485951d2', ...}
+E       assert False
+
+tests/test_opportunity_plan_adoption_independent.py:53: AssertionError
+_ test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt[executor-a] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+actor = 'executor-a'
+
+    @pytest.mark.parametrize('actor', ['fixture-b', 'fixture-c', 'prep-specialist-fixture-a', 'executor-a'])
+    def test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt(source_adoption_http, actor):
+        f, requests = source_adoption_http
+>       p, card, resource, value = bounded_change(f)
+                                   ^^^^^^^^^^^^^^^^^
+
+tests/test_opportunity_plan_adoption_independent.py:145: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def bounded_change(f):
+        p = setup(f, GOALS[1])
+        assert adopt(f, p).status_code == 201
+        card = imported_source(f, p)
+        resource = add_resource(f)
+        response = preview(f, p, card)
+        assert response.status_code == 200, response.text
+        value = response.json()
+>       assert value['can_adopt'], value
+E       AssertionError: {'scope': 'SOURCE_CHANGE_LOCAL_REVISION_PREVIEW', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea0...7db', 'preparation_id': '51a63128-8be7-4a15-8ee7-9bd7f0b60827', 'case_id': '9858b88b-bbd3-45fe-a5c0-c8c2d887b197', ...}
+E       assert False
+
+tests/test_opportunity_plan_adoption_independent.py:53: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_opportunity_plan_adoption_independent.py::test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt[fixture-b]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt[fixture-b]
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt[fixture-c]
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt[prep-specialist-fixture-a]
+FAILED tests/test_opportunity_plan_adoption_independent.py::test_independent_foreign_owner_tenant_or_role_cannot_preview_or_adopt[executor-a]
+4 failed, 11 deselected, 2 warnings in 10.32s

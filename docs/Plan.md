@@ -1,3 +1,11 @@
+## 2026-10-15 已审来源机会到原计划明确采纳
+
+最终源码 `4c163fe23d8a841ece7b796e40e35511d70a0797`（业务源码与 `6b8da028` 相同）：同 Case 手动来源刷新→当前计划/版本影响预览→本人明确原局部 ADOPT→受影响 VERIFY→原六目标证据/工作清单。原 P1–P5、稳定 ID、历史与未受影响锁保持；提示不作事实或授权，失效/撤回/UNKNOWN 不复活，原冷 GET 恢复及跨身份/ABA 拒绝保持。已有机会卡和有限 Release/第二园区/结构增强不重做。
+
+根 52 模块旧窗 1661 PASS / 27 FAIL 原样保留：2 项为证据目录前提，完整 7 项补验通过；25 项为完整诊断名单超原 byte cap 的真实回归，限定修复后新 SHA 根/独审各 297 PASS / 8 原生前提 SKIP，另 6 边界检查通过。新 SHA 独测 20 PASS；旧业务独审 351/8 的执行 SHA 仍为 6b8da028，以逐文件同一性延续，不改签。最终原 52 模块当前 1689 项覆盖来自这些明确分窗，不称单窗/全仓 PASS。214 份成功和失败证据已导出；完整结果、去敏和实际执行范围见[交付与证据](F2/SourceOpportunityAdoption-20261015.md)。
+
+下一片立即推进有限来源节点/类型边、逐有权 Case 影响定位及独立应改/应保留统计，按 10 月 15–22 日一周目标，不沿用月底慢排。一般图/正式 AT、Windows、真实浏览器、真实模型与生产仍未验；模型调用 0，无部署/权限/费用扩展。以下历史保留各自原 SHA 与范围。
+
 ## 已审 P5 原本地记录影子生命周期（有限 Linux 合成范围）
 
 运行源码 `d52cfdbc0cfd98d34f172f72f56027ba861da8aa` 保持367路径零漂移；根29模块8串行窗744PASS、独审相同29模块4串行窗744PASS，分别collect/JUnit节点精确一致；新独立API11/page9通过，不称缺失旧私有探针原件重跑。原REVALIDATE→显式CLOSE_LOCAL_RECORD→REOPEN真实调用，关闭Case仍WAITING_CONFIRMATION、重开cycle2且当前校验false/四复核，正式业务/权限/outbox零写，无真实模型/批准/履约/目标完成。旧全部失败、默认缓存EROFS及新runner54 setupERROR均保全；原旧KeyError本轮不复现但历史成因仍UNKNOWN。仅原发行者持续存活/同进程proof范围LIMITED_PASS；完整issuer重启、AT14、全仓、Windows/Win11/正式履约仍NOT_RUN，旧任务不恢复。见[P5范围与新独立证据](F2/P5LocalCasePreview.md)；普通dev集成实际完整SHA/远端交付另记成功后记录。以下历史保留各自原范围。

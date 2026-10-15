@@ -1,0 +1,23 @@
+# Final bounded diagnostics follow-up review
+
+**LIMITED_PASS** for final frozen source `4c163fe23d8a841ece7b796e40e35511d70a0797`. The confirmed static-list byte-cap regression is fixed within the reviewed Linux synthetic scope. Formal Windows/PowerShell/ACL, actual browser, formal AT, real model, and production remain NOT_RUN. Archive export review remains pending.
+
+## New freeze, actual execution
+
+Eight complete modules ran on this SHA: `test_ci_diagnostics`, `test_summary_publication`, `test_safe_annotations`, `test_regression_shards`, `test_minimal_observations`, `test_lifecycle_diagnostics`, `test_windows_ci_preparation`, `test_ci_cleanup`. Final result: **297 PASS, 0 FAIL, 0 ERROR, 8 SKIP**, 305 nodes total, pytest **14.67 s**, JUnit **14.664 s**. The eight skips explicitly require unavailable portable PowerShell/native PS5/ACL fixtures and are not passes.
+
+The independent physical-file script passed **six checks**: committed 2612 identifiers load (286539 bytes); a literal 524288-byte valid file is accepted; a 524289-byte file is rejected; public failure projection remains the exact constant ALLOWLIST_UNAVAILABLE with no private sentinel; count 3001, duplicate identities, and schema version 2 are refused. No loader or bounds were mocked. Boundary script stdout and its structured observations are retained separately.
+
+The initial console-script collection lacked the project root on PYTHONPATH and produced one `ModuleNotFoundError: scripts`; that log is retained. Adding the repository root only to this invocation's PYTHONPATH collected and executed the complete eight modules without source changes. One inherited summary test creates a fresh UUID for a parametrized invalid cluster_id at module import. Separate collection and execution therefore show two raw symmetric-difference strings for that one corresponding case; normalizing only that generated UUID yields the same 305-node collection/execution multiset. There are no duplicate executed nodes. Raw comparison entries remain in the JSON report.
+
+## Minimal delta and byte identity
+
+The final freeze differs from `6b8da028` in exactly three tracked files: `scripts/windows_ci/diagnostics.py`, `scripts/windows_ci/diagnostic-test-ids.json`, and `tests/test_ci_diagnostics.py`. Only the static identifier file's input cap changes from 256 KiB to a separate bounded 512 KiB constant. All report/JUnit/public output bounds, identifier syntax, 3000 count, 256-character identifier bound, uniqueness, schema, privacy, workflows, permissions, and budgets are unchanged. The new test function was normally added to the AST-exact static registry, now 2612 entries; no prior ID was removed.
+
+The new before/after manifest has **592 unchanged paths**, comprising **587 tracked files** and five existing editable egg-info metadata files. Every tracked path matches final frozen commit bytes, Git status is clean, and diff-check passes. All `src/parkweave` files and the exact prior business modules plus independent HTML/API test sources (168 distinct tracked paths) remain byte-identical to `6b8da028`; the identity map is recorded. The prior 351 business-module PASS and eight independent probes were actually executed on `6b8da028` and were not rerun or relabeled as final-SHA executions. Their product source and tracked test identities remain supported by this comparison.
+
+## Failure accounting and remaining limits
+
+Root's original full window remains **1688 executed = 1661 PASS / 27 FAIL** on `6b8da028`. Two are missing runtime output-directory prerequisites; the separate complete HOLD module passed seven after only creating that output directory. Twenty-five are the real static-list cap regression, independently reproduced in the original complete diagnostics module; the new eight-module window now validates its repair. Keep all original logs and show the follow-up windows separately. This final review does not convert the old root window into an uninterrupted all-PASS run or claim a full 52-module rerun on the new SHA.
+
+The original recovery-route collision was fixed before the earlier `6b8da028` business freeze, and every affected product byte remains unchanged here. No new confirmed product blocker remains within these reviewed scopes. Source-adoption historical proofs, current-source rejection, original ADOPT/VERIFY/UNLOCK behavior, stable IDs/six goals, and source/template ordering evidence retain their separately recorded execution scope. Shared private session-redaction metadata remains a stated limitation of inherited tests; logs, JUnit, before/after manifests and test database roots are separate. No models, deployment, new grant, credential, safety change, or production operation was performed by this reviewer.

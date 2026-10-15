@@ -1,0 +1,94 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="2.887" timestamp="2026-10-15T05:30:26.371805+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_template_hold" name="test_post_check_pre_cas_revocation_must_wait_for_journal_commit" time="2.623"><failure message="FileNotFoundError: [Errno 2] No such file or directory: '.runtime/template-hold-20261014/auth-cas-race.json'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8567195a60&gt;
+
+    def test_post_check_pre_cas_revocation_must_wait_for_journal_commit(template_consumption,monkeypatch):
+        f=template_consumption;row,_,_=unknown(f,monkeypatch);p=recover(f,row,'terminal-original').json();before=journal(f)
+        entered=Event();release=Event();original=f['repository'].connect;waiting=False;revoked_before_cas=False;response=None
+        class Paused:
+            def __init__(self,c):self.c=c
+            def __getattr__(self,n):return getattr(self.c,n)
+            def execute(self,q,*a,**kw):
+                result=self.c.execute(q,*a,**kw)
+                if q.startswith('SELECT * FROM consumer_stages WHERE instance_id='):
+                    entered.set();assert release.wait(8),'CAS pause release deadline'
+                return result
+        @contextmanager
+        def paused(write=False):
+            with original(write=write) as c:yield Paused(c) if write else c
+        monkeypatch.setattr(f['repository'],'connect',paused)
+        try:
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                finishing=pool.submit(finish,f,row,'terminal-original',finish_body(p));assert entered.wait(4)
+                revoke=pool.submit(f['owner'].revoke_capability,ENTERPRISES[0],'EXECUTE')
+                try:
+                    with f['owner'].connect() as monitor:
+                        until=time.monotonic()+2
+                        while time.monotonic()&lt;until:
+                            monitor.execute('SELECT pg_stat_clear_snapshot()')
+                            waiting=monitor.execute("SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query ILIKE '%%pg_advisory_xact_lock%%' AND cardinality(pg_blocking_pids(pid))&gt;0) AS waiting").fetchone()['waiting']
+                            if waiting or revoke.done():break
+                            time.sleep(.01)
+                    revoked_before_cas=revoke.done()
+                finally:release.set()
+                response=finishing.result(8);revoke.result(8)
+            after=journal(f)
+            assert waiting and not revoked_before_cas,'authority lock was released after check but before journal CAS; final GET403 cannot undo a committed journal'
+            stage=next(s for s in after['consumer_stages'] if s['name'].startswith('CONFIRM_PLAN_'))
+            assert stage['state']=='CONFIRMED' and after!=before
+            assert response.status_code in (200,403)
+        finally:
+&gt;           Path('.runtime/template-hold-20261014/auth-cas-race.json').write_text(json.dumps(dict(actual_pg_authority_lock_wait=waiting,revocation_committed_before_cas=revoked_before_cas,response_status=response.status_code if response is not None else None,journal_changed=journal(f)!=before,rule='last GET403 does not imply rollback; shared authority must cover journal commit'),indent=2)+'\n')
+
+tests/test_template_hold.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/template-hold-20261014/auth-cas-race.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/template-hold-20261014/auth-cas-race.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError</failure></testcase><testcase classname="tests.test_template_hold" name="test_original_template_page_first_refusal_and_obsolete_terminal_keep_handle" time="0.062"><failure message="FileNotFoundError: [Errno 2] No such file or directory: '.runtime/template-hold-20261014/ui-guards.json'">def test_original_template_page_first_refusal_and_obsolete_terminal_keep_handle():
+        import subprocess
+        result=subprocess.run(['node','tests/template_hold_guards.js'],capture_output=True,text=True,timeout=15)
+        assert result.returncode==0,result.stdout+result.stderr
+        observed=json.loads(result.stdout);assert observed['result']=='PASS' and observed['checks']==34
+&gt;       Path('.runtime/template-hold-20261014/ui-guards.json').write_text(json.dumps(observed,indent=2)+'\n')
+
+tests/test_template_hold.py:107: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/template-hold-20261014/ui-guards.json'), mode = 'w'
+buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/template-hold-20261014/ui-guards.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError</failure></testcase></testsuite></testsuites>
