@@ -111,6 +111,11 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         from . import source_change_adoption
         return source_change_adoption.read(store,token(authorization),preparation_id,card_id)
 
+    @app.get('/api/preparations/{preparation_id}/source-impact')
+    def case_source_impact(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        from . import typed_source_impact
+        return typed_source_impact.read(store,token(authorization),preparation_id)
+
     @app.middleware("http")
     async def boundary(request: Request, call_next):
         # Count actual bytes as well as declared Content-Length; limit before JSON parsing.

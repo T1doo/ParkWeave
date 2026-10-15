@@ -91,6 +91,16 @@ def epochs(c,parent):
     return cp._hash(values)
 
 
+
+def unavailable_sources():
+    return {'CURRENT_OWNER_AUTHORITY_REQUIRED','CURRENT_REVIEWER_AUTHORITY_REQUIRED','CURRENT_EXECUTOR_AUTHORITY_REQUIRED',
+        'CURRENT_RESOURCE_AUTHORITY_REQUIRED','CURRENT_SERVICE_CATALOG_REQUIRED','CURRENT_SERVICE_CATALOG_SOURCE_REQUIRED',
+        'RECEIPT_PROVENANCE_CHANGED','ACCEPTANCE_EVENT_PROVENANCE_CHANGED','RECEIPT_EVENT_PROVENANCE_CHANGED',
+        'RESOURCE_CANCELLED','RESOURCE_WINDOW_ENDED','RESOURCE_HOLD_EXPIRED','FACT_PURPOSE_LEDGER_INVALID',
+        'FACT_PURPOSE_AUTHORITY_OR_SOURCE_UNAVAILABLE','SELECTED_FACT_NOT_CURRENT','FACT_SOURCE_VALIDITY_CHANGED',
+        'SELECTED_INSTANCE_RESOURCE_BINDING_CHANGED','SELECTED_INSTANCE_ACTOR_BINDING_CHANGED','SELECTED_INSTANCE_EXECUTOR_BINDING_CHANGED'}
+
+
 def current_card(parent,card_id,value=None):
     value=op.ledger(parent) if value is None else value
     cards,heads=op.project(value);card=cards.get(str(card_id))
@@ -116,7 +126,16 @@ def build(store,c,p,parent,card_id,*,current=None):
     direct,affected,missing=source_impact(plan['steps'],before,sources)
     dependency_basis,dependency_affected,unknown=service.dependency_impact(store,c,parent,plan)
     affected|=dependency_affected
+    from . import typed_source_impact
+    typed_graph=typed_source_impact.build(parent,plan,before,sources,plan.get('dependency_manifest'),dependency_basis)
+    expected_ids=[s['id'] for s in plan['steps'] if s['adapter_id'] in affected]
+    expected_preserved=[s['id'] for s in plan['steps'] if s['adapter_id'] not in affected]
+    if not typed_graph['unknown_scope'] and (typed_graph['affected']!=expected_ids or typed_graph['preserved']!=expected_preserved):
+        raise Conflict('typed source graph impact inconsistent with original source proof')
+    if typed_graph['unknown_scope']:affected={s['adapter_id'] for s in plan['steps']}
+    else:affected={s['adapter_id'] for s in plan['steps'] if s['id'] in typed_graph['affected']}
     blockers=list(binding_issues)
+    if typed_graph['unknown_scope']:blockers.append('KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED')
     if missing:blockers.append('CURRENT_VERIFIED_SOURCE_BASE_REQUIRED')
     if unknown or any(not x['known'] for x in dependency_basis['collections'].values()):blockers.append('KNOWN_CURRENT_DEPENDENCIES_REQUIRED')
     if not affected:blockers.append('NO_ACTUAL_SOURCE_CHANGE')
@@ -125,12 +144,7 @@ def build(store,c,p,parent,card_id,*,current=None):
     # These indicate absent authority, corrupt provenance, or expired/withdrawn
     # evidence. Ordinary current-business rechecks (e.g. a material reopen) do
     # not become evidence and still require their original adapter correction.
-    unavailable={'CURRENT_OWNER_AUTHORITY_REQUIRED','CURRENT_REVIEWER_AUTHORITY_REQUIRED','CURRENT_EXECUTOR_AUTHORITY_REQUIRED',
-        'CURRENT_RESOURCE_AUTHORITY_REQUIRED','CURRENT_SERVICE_CATALOG_REQUIRED','CURRENT_SERVICE_CATALOG_SOURCE_REQUIRED',
-        'RECEIPT_PROVENANCE_CHANGED','ACCEPTANCE_EVENT_PROVENANCE_CHANGED','RECEIPT_EVENT_PROVENANCE_CHANGED',
-        'RESOURCE_CANCELLED','RESOURCE_WINDOW_ENDED','RESOURCE_HOLD_EXPIRED','FACT_PURPOSE_LEDGER_INVALID',
-        'FACT_PURPOSE_AUTHORITY_OR_SOURCE_UNAVAILABLE','SELECTED_FACT_NOT_CURRENT','FACT_SOURCE_VALIDITY_CHANGED',
-        'SELECTED_INSTANCE_RESOURCE_BINDING_CHANGED','SELECTED_INSTANCE_ACTOR_BINDING_CHANGED','SELECTED_INSTANCE_EXECUTOR_BINDING_CHANGED'}
+    unavailable=unavailable_sources()
     fact=sources.get('P1',{}).get('fact_clarification')
     if any(unavailable.intersection(reasons) for reasons in issues.values()) or (fact is not None and fact.get('satisfied') is not True):
         blockers.append('CURRENT_KNOWN_SOURCE_REQUIRED')
@@ -142,7 +156,7 @@ def build(store,c,p,parent,card_id,*,current=None):
     if prep.case_write_blocked(c,parent):blockers.append('CASE_WRITE_BLOCKED')
     try:store.check_capability(c,p,'EXECUTE')
     except Denied:blockers.append('CURRENT_EXECUTE_REQUIRED')
-    change=dict(version=1,binding=op.binding(parent),plan_id=plan['id'],plan_revision=plan['revision'],
+    change=dict(version=2,source_impact=typed_graph,binding=op.binding(parent),plan_id=plan['id'],plan_revision=plan['revision'],
         ledger_revision=value['revision'],ledger_sha256=value['events'][-1]['sha256'],card_id=card['id'],card_version=card['version'],
         basis_sha256=card['basis_sha256'],basis=deepcopy(card['basis']),proposal_sha256=current['source_sha256'],
         source_epochs_sha256=epochs(c,parent),before_sources=before,current_sources=sources,dependencies_sha256=dependency_basis['sha256'],
@@ -158,7 +172,7 @@ def build(store,c,p,parent,card_id,*,current=None):
         plan_id=plan['id'],plan_revision=plan['revision'],opportunity_revision=value['revision'],card_id=card['id'],card_version=card['version'],
         basis_sha256=card['basis_sha256'],preview_sha256=change['sha256'],current_preview_source_sha256=current['source_sha256'],current_sources_sha256=cp._hash(sources),
         directly_changed=change['directly_changed'],affected=change['affected'],preserved=change['preserved'],
-        remaining_verify_events=remaining_verify,unknown_scope='THIS_CASE' if missing or unknown else None,blocking_reasons=sorted(set(blockers)),can_adopt=not blockers,adoption=adoption,
+        source_impact=typed_graph,remaining_verify_events=remaining_verify,unknown_scope='THIS_CASE' if missing or unknown or typed_graph['unknown_scope'] else None,blocking_reasons=sorted(set(blockers)),can_adopt=not blockers,adoption=adoption,
         new_grants=False,automatic_execution=False,case_goal_completed=False,qualification_decision='NOT_EVALUATED')
     return result,change,dependency_basis,affected
 
@@ -182,8 +196,10 @@ def validate_history(parent,plan,event,previous_dependencies,current_dependencie
     change=patch['source_change']
     keys={'version','binding','plan_id','plan_revision','ledger_revision','ledger_sha256','card_id','card_version','basis_sha256','basis','proposal_sha256',
           'source_epochs_sha256','before_sources','current_sources','dependencies_sha256','directly_changed','affected','preserved','sha256'}
+    version=change.get('version') if isinstance(change,dict) else None
+    if version==2:keys=keys|{'source_impact'}
     if (proof is None or not isinstance(change,dict) or set(change)!=keys or
-        any(type(change[k]) is not int for k in ('version','plan_revision','ledger_revision','card_version')) or change['version']!=1 or
+        any(type(change[k]) is not int for k in ('version','plan_revision','ledger_revision','card_version')) or version not in (1,2) or
         any(not isinstance(change[k],str) or not re.fullmatch('[a-f0-9]{64}',change[k]) for k in
             ('ledger_sha256','basis_sha256','proposal_sha256','source_epochs_sha256','dependencies_sha256','sha256')) or
         not isinstance(change['before_sources'],dict) or not isinstance(change['current_sources'],dict) or
@@ -206,6 +222,16 @@ def validate_history(parent,plan,event,previous_dependencies,current_dependencie
     dependency_affected,dependency_unknown=deps.impact_between(plan['steps'],previous_dependencies,current_dependencies)
     if unknown or dependency_unknown:raise ValueError('source-change unknown base cannot authorize adoption')
     affected|=dependency_affected
+    if version==2:
+        from . import typed_source_impact
+        graph=change['source_impact']
+        if not isinstance(graph,dict) or type(graph.get('schema')) is not int or graph['schema']!=1:
+            raise ValueError('typed source graph schema unsupported')
+        expected_graph=typed_source_impact.build_v1(parent,plan,before,change['current_sources'],previous_dependencies,current_dependencies)
+        if change['source_impact']!=expected_graph or expected_graph['unknown_scope']:
+            raise ValueError('typed source graph proof invalid')
+        if set(expected_graph['affected'])!={s['id'] for s in plan['steps'] if s['adapter_id'] in affected}:
+            raise ValueError('typed source graph impact changed')
     expected_direct=[s['id'] for s in plan['steps'] if s['adapter_id'] in direct]
     expected_affected=[s['id'] for s in plan['steps'] if s['adapter_id'] in affected]
     expected_preserved=[s['id'] for s in plan['steps'] if s['adapter_id'] not in affected]
