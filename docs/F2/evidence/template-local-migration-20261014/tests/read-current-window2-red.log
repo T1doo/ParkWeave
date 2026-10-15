@@ -1,0 +1,166 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_independent_read_current_validity_separate_from_immutable_history[withdrawn] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f8916121880>, <parkweave.store.Store object at 0x7f8916123f50>, {'fixture-a...bject at 0x7f8916121760>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f89159abb60>, ...}
+invalid = 'withdrawn'
+
+    @pytest.mark.parametrize('invalid',['withdrawn','expired','guard_unmounted'])
+    def test_independent_read_current_validity_separate_from_immutable_history(upgrade_case,invalid):
+        from fastapi.testclient import TestClient
+        from parkweave.api import create_app
+        from parkweave.store import Store
+        u=upgrade_case;row,_,p=full(u)
+        target=publication(u,[GOALS[-1]],'1','Independent description-only current validity')
+        _,data=admit(u,row,target);r=apply(u,row,data,'independent-read-validity')
+        assert r.status_code in (200,201),r.text
+        old=deepcopy(stored(u,row));assert all(s.get('verified_sha256') for s in old['steps'])
+        if invalid=='expired':u['engine'].clock=lambda:datetime(2100,1,1,tzinfo=timezone.utc)
+        elif invalid=='withdrawn':
+            from parkweave.template_candidate import Command
+            v=u['engine'].read('template-publisher',u['scope'])
+            u['engine'].command('template-publisher',u['scope'],uuid4().hex,Command.model_validate(dict(action='WITHDRAW',expected_revision=v['revision'],expected_definition_sha256=v['definition_sha256'],reason='SYNTHETIC independent current validity withdrawal')))
+        before=snapshot(u)
+        def inspect(client):
+            plan=client.get('/api/preparations/'+row['preparation_id']+'/service-case-plan',headers=headers(u['f'][2]))
+            goals=client.get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+            assert plan.status_code==200,plan.text
+            assert goals.status_code==200,goals.text
+            assert plan.json()['state']!='VERIFIED',plan.text
+            assert goals.json()['state']!='LOCAL_OUTPUTS_VERIFIED',goals.text
+            assert all('VERIFY' not in s['allowed_actions'] for s in plan.json()['steps'])
+            assert all(s.get('verified_sha256') for s in plan.json()['steps'])
+        if invalid=='guard_unmounted':
+            with TestClient(create_app(Store(u['f'][0].dsn))) as client:inspect(client)
+>       else:inspect(u['client'])
+             ^^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_migration_independent.py:394: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x7f8915cbc800>
+
+    def inspect(client):
+        plan=client.get('/api/preparations/'+row['preparation_id']+'/service-case-plan',headers=headers(u['f'][2]))
+        goals=client.get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+        assert plan.status_code==200,plan.text
+>       assert goals.status_code==200,goals.text
+E       AssertionError: {"detail":"adopted goal result plan proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_template_migration_independent.py:387: AssertionError
+_ test_independent_read_current_validity_separate_from_immutable_history[expired] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f89159a9880>, <parkweave.store.Store object at 0x7f89159a9940>, {'fixture-a...bject at 0x7f8914e96810>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f8915a4bfb0>, ...}
+invalid = 'expired'
+
+    @pytest.mark.parametrize('invalid',['withdrawn','expired','guard_unmounted'])
+    def test_independent_read_current_validity_separate_from_immutable_history(upgrade_case,invalid):
+        from fastapi.testclient import TestClient
+        from parkweave.api import create_app
+        from parkweave.store import Store
+        u=upgrade_case;row,_,p=full(u)
+        target=publication(u,[GOALS[-1]],'1','Independent description-only current validity')
+        _,data=admit(u,row,target);r=apply(u,row,data,'independent-read-validity')
+        assert r.status_code in (200,201),r.text
+        old=deepcopy(stored(u,row));assert all(s.get('verified_sha256') for s in old['steps'])
+        if invalid=='expired':u['engine'].clock=lambda:datetime(2100,1,1,tzinfo=timezone.utc)
+        elif invalid=='withdrawn':
+            from parkweave.template_candidate import Command
+            v=u['engine'].read('template-publisher',u['scope'])
+            u['engine'].command('template-publisher',u['scope'],uuid4().hex,Command.model_validate(dict(action='WITHDRAW',expected_revision=v['revision'],expected_definition_sha256=v['definition_sha256'],reason='SYNTHETIC independent current validity withdrawal')))
+        before=snapshot(u)
+        def inspect(client):
+            plan=client.get('/api/preparations/'+row['preparation_id']+'/service-case-plan',headers=headers(u['f'][2]))
+            goals=client.get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+            assert plan.status_code==200,plan.text
+            assert goals.status_code==200,goals.text
+            assert plan.json()['state']!='VERIFIED',plan.text
+            assert goals.json()['state']!='LOCAL_OUTPUTS_VERIFIED',goals.text
+            assert all('VERIFY' not in s['allowed_actions'] for s in plan.json()['steps'])
+            assert all(s.get('verified_sha256') for s in plan.json()['steps'])
+        if invalid=='guard_unmounted':
+            with TestClient(create_app(Store(u['f'][0].dsn))) as client:inspect(client)
+>       else:inspect(u['client'])
+             ^^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_migration_independent.py:394: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x7f891412e720>
+
+    def inspect(client):
+        plan=client.get('/api/preparations/'+row['preparation_id']+'/service-case-plan',headers=headers(u['f'][2]))
+        goals=client.get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+        assert plan.status_code==200,plan.text
+>       assert goals.status_code==200,goals.text
+E       AssertionError: {"detail":"adopted goal result plan proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_template_migration_independent.py:387: AssertionError
+_ test_independent_read_current_validity_separate_from_immutable_history[guard_unmounted] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f8914472ed0>, <parkweave.store.Store object at 0x7f891429a5a0>, {'fixture-a...bject at 0x7f89142b27b0>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f89142fbfb0>, ...}
+invalid = 'guard_unmounted'
+
+    @pytest.mark.parametrize('invalid',['withdrawn','expired','guard_unmounted'])
+    def test_independent_read_current_validity_separate_from_immutable_history(upgrade_case,invalid):
+        from fastapi.testclient import TestClient
+        from parkweave.api import create_app
+        from parkweave.store import Store
+        u=upgrade_case;row,_,p=full(u)
+        target=publication(u,[GOALS[-1]],'1','Independent description-only current validity')
+        _,data=admit(u,row,target);r=apply(u,row,data,'independent-read-validity')
+        assert r.status_code in (200,201),r.text
+        old=deepcopy(stored(u,row));assert all(s.get('verified_sha256') for s in old['steps'])
+        if invalid=='expired':u['engine'].clock=lambda:datetime(2100,1,1,tzinfo=timezone.utc)
+        elif invalid=='withdrawn':
+            from parkweave.template_candidate import Command
+            v=u['engine'].read('template-publisher',u['scope'])
+            u['engine'].command('template-publisher',u['scope'],uuid4().hex,Command.model_validate(dict(action='WITHDRAW',expected_revision=v['revision'],expected_definition_sha256=v['definition_sha256'],reason='SYNTHETIC independent current validity withdrawal')))
+        before=snapshot(u)
+        def inspect(client):
+            plan=client.get('/api/preparations/'+row['preparation_id']+'/service-case-plan',headers=headers(u['f'][2]))
+            goals=client.get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+            assert plan.status_code==200,plan.text
+            assert goals.status_code==200,goals.text
+            assert plan.json()['state']!='VERIFIED',plan.text
+            assert goals.json()['state']!='LOCAL_OUTPUTS_VERIFIED',goals.text
+            assert all('VERIFY' not in s['allowed_actions'] for s in plan.json()['steps'])
+            assert all(s.get('verified_sha256') for s in plan.json()['steps'])
+        if invalid=='guard_unmounted':
+>           with TestClient(create_app(Store(u['f'][0].dsn))) as client:inspect(client)
+                                                                        ^^^^^^^^^^^^^^^
+
+tests/test_template_migration_independent.py:393: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+client = <starlette.testclient.TestClient object at 0x7f8915adb1d0>
+
+    def inspect(client):
+        plan=client.get('/api/preparations/'+row['preparation_id']+'/service-case-plan',headers=headers(u['f'][2]))
+        goals=client.get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+        assert plan.status_code==200,plan.text
+>       assert goals.status_code==200,goals.text
+E       AssertionError: {"detail":"adopted goal result plan proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_template_migration_independent.py:387: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_template_migration_independent.py::test_independent_read_current_validity_separate_from_immutable_history[withdrawn]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_template_migration_independent.py::test_independent_read_current_validity_separate_from_immutable_history[withdrawn]
+FAILED tests/test_template_migration_independent.py::test_independent_read_current_validity_separate_from_immutable_history[expired]
+FAILED tests/test_template_migration_independent.py::test_independent_read_current_validity_separate_from_immutable_history[guard_unmounted]
+3 failed, 31 deselected, 2 warnings in 8.70s

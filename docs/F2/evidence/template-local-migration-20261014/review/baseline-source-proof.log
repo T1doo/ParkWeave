@@ -1,0 +1,40 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_rehashed_target_description_must_match_original_review_publish_anchors __
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f6acc085eb0>, <parkweave.store.Store object at 0x7f6acc085e20>, {'fixture-a...bject at 0x7f6acb66af60>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f6acb893e00>, ...}
+
+    def test_rehashed_target_description_must_match_original_review_publish_anchors(upgrade_case):
+        u=upgrade_case
+        row,_=instance(u)
+        target=publication(u,name='Original independently reviewed description')
+        with sqlite3.connect(u['engine'].repository.path) as c:
+            original=c.execute('SELECT payload FROM template_releases WHERE id=?',(target['release_id'],)).fetchone()[0]
+            document=json.loads(original)
+            document['definition']['name']='SYNTHETIC unreviewed injected description'
+            document['definition_sha256']=sha(document['definition'])
+            document['review']['definition_sha256']=document['definition_sha256']
+            c.execute('DROP TRIGGER immutable_template_release_payload')
+            c.execute('UPDATE template_releases SET payload=?,payload_sha=? WHERE id=?',(canonical(document),sha(document),target['release_id']))
+            c.execute(u['engine'].repository.TRIGGERS['immutable_template_release_payload'])
+        changed={**target,'release_sha256':sha(document)}
+        response=check(u,row,changed)
+>       assert response.status_code in (403,409), response.text
+E       AssertionError: {"check":{"namespace":"ISOLATED_TEMPLATE_UPGRADE_INSPECTION","migration_performed":false,"automatic_execution":false,"new_grants":false,"business_publication":false,"case_goal_completed":false,"scope":{"actor_id":"fixture-a","park_id":"park-a","org_id":"org-a","database_name":"fixture_fa4b282329a94417ba3cddaf82f419c4","instance_id":"89baf03a-4584-4fce-865d-8203fd77a422","case_id":"0cf1ebf9-df04-4b50-9fe3-2df2e953be36","preparation_id":"0b6cca89-1008-4970-856d-3a37d84b8a84"},"original_release_id":"2acb1a79-ae14-4ce1-b537-9d686f0f615d","original_release_sha256":"089c2a982c24fd253b9949a1d7a7be87c599b3cf0a9a90238bc4d6d90e23d3e0","target_release_id":"780b0e1e-e4bb-4e49-a788-e5ddb0107ac4","target_release_sha256":"1c908abfa2a61ae1f6404a57b3d94b4985a587a8cd0c3a983f87589566026418","original_definition_sha256":"410149ff105289ad3ffccba3479294be822b8737443f181556cad89582ad1f68","target_definition_sha256":"8d786aca568995ec4b055ca87c9a91e467e6f8a17cef7d4fa353b8063c97355c","original_content_version":1,"target_content_version":2,"original_source_revision":"1","target_source_revision":"1","changes":[],"case_state_sha256":"c3286b060edc1ac69f1f6014fb749eb91ab7beb3bd58a57fee36016637927126","classification":"COMPATIBLE","allowed_choices":["KEEP_CURRENT","REQUEST_RECHECK","ACK_COMPATIBLE"],"locked_steps":[],"unresolved_stages":[],"observed_step_states":{"P1":"PENDING"},"future_validity_guaranteed":false},"check_sha256":"1612061d287661bc7538de0123ec2267255bc39b1b254487f7026d53df5c51c2","revision":0,"history":[]}
+E       assert 200 in (403, 409)
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_independent_template_migration_probes.py:22: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_independent_template_migration_probes.py::test_rehashed_target_description_must_match_original_review_publish_anchors
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_independent_template_migration_probes.py::test_rehashed_target_description_must_match_original_review_publish_anchors
+1 failed, 33 deselected, 2 warnings in 2.58s

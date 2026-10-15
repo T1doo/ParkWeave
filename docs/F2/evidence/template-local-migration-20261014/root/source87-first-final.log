@@ -1,0 +1,631 @@
+........................................................................ [  5%]
+........................................................................ [ 10%]
+........................................................................ [ 16%]
+........................................................................ [ 21%]
+........................................................................ [ 26%]
+........................................................................ [ 32%]
+........................................................................ [ 37%]
+........................................................................ [ 42%]
+........................................................................ [ 48%]
+........................................................................ [ 53%]
+........................................................................ [ 58%]
+........................................................................ [ 64%]
+.....................................................FFFFFFFFFFFF....... [ 69%]
+........................................................................ [ 74%]
+........................................................................ [ 80%]
+........................................................................ [ 85%]
+........................................................................ [ 90%]
+........................................................................ [ 96%]
+......................................................                   [100%]
+=================================== FAILURES ===================================
+_________________ test_native_run_access_ui[disabled_pending] __________________
+
+mode = 'disabled_pending'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:49:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:49:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+___________________ test_native_run_access_ui[lost_response] ___________________
+
+mode = 'lost_response'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+___________________ test_native_run_access_ui[not_observed] ____________________
+
+mode = 'not_observed'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+______________________ test_native_run_access_ui[revoked] ______________________
+
+mode = 'revoked'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+_____________________ test_native_run_access_ui[late_read] _____________________
+
+mode = 'late_read'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:52:95
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:52:11
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+___________________ test_native_run_access_ui[late_recovery] ___________________
+
+mode = 'late_recovery'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+_________________ test_native_run_access_ui[authority_expiry] __________________
+
+mode = 'authority_expiry'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+_________________ test_native_run_access_ui[effective_fixture] _________________
+
+mode = 'effective_fixture'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:43:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:43:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+________________ test_native_run_access_ui[writer_confirmation] ________________
+
+mode = 'writer_confirmation'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:33:62
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:33:62
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+____________ test_native_run_access_ui[writer_unverified_recovery] _____________
+
+mode = 'writer_unverified_recovery'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+_____________ test_native_run_access_ui[writer_verified_recovery] ______________
+
+mode = 'writer_verified_recovery'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+____________ test_native_run_access_ui[writer_wrong_body_recovery] _____________
+
+mode = 'writer_wrong_body_recovery'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:66)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.<anonymous>:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.<anonymous>:18:24)
+E             at loadRunAccess (evalmachine.<anonymous>:79:25)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/ParkWeave/tests/native_run_access_offline.js:30:31)
+E             at /workspace/ParkWeave/tests/native_run_access_offline.js:55:9
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_template_migration_legacy.py::test_migrated_original_legacy_adoption_goal_history
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[disabled_pending]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[lost_response]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[not_observed]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[revoked]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[late_read]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[late_recovery]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[authority_expiry]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[effective_fixture]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[writer_confirmation]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[writer_unverified_recovery]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[writer_verified_recovery]
+FAILED tests/test_native_run_access_offline.py::test_native_run_access_ui[writer_wrong_body_recovery]
+12 failed, 1338 passed, 2 warnings in 989.69s (0:16:29)

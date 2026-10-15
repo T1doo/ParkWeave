@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="5.421" timestamp="2026-10-14T23:47:47.306934+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_migration_legacy_independent" name="test_independent_genuine_legacy_key_full_five_goal_results" time="2.927"><failure message="AssertionError: {&quot;detail&quot;:&quot;adopted goal result plan proof invalid&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f53d9526270&gt;, &lt;parkweave.store.Store object at 0x7f53d95261e0&gt;, {'fixture-a...bject at 0x7f53d920a090&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f53d8eb6600&gt;, ...}
+
+    def test_independent_genuine_legacy_key_full_five_goal_results(upgrade_case):
+        u=upgrade_case;row,p,group,dispatch,receipt=migrate(u)
+        before=all_pg_rows(u)
+        r=u['client'].get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+&gt;       assert r.status_code==200,r.text
+E       AssertionError: {"detail":"adopted goal result plan proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_template_migration_legacy_independent.py:43: AssertionError</failure></testcase><testcase classname="tests.test_template_migration_legacy_independent" name="test_independent_arbitrary_legacy_like_key_is_refused_without_repair" time="2.377" /></testsuite></testsuites>

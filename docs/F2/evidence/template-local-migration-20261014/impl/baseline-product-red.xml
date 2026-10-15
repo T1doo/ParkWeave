@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.909" timestamp="2026-10-14T23:30:10.256771+00:00" hostname="754d39e95154"><testcase classname=".runtime.template-migration-20261014.test_before_contract" name="test_original_recheck_intent_does_not_apply_current_template" time="1.824"><failure message="AssertionError: PRODUCT GAP: original recheck intent leaves old immutable binding and unavailable original release&#10;assert 'fb590ad8-852...-d99e186e5ec2' == '4ad66aa1-f9e...-1d223de68772'&#10;  &#10;  - 4ad66aa1-f9e1-4538-9b9e-1d223de68772&#10;  + fb590ad8-852e-4691-936e-d99e186e5ec2">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f43e63a7e90&gt;, &lt;parkweave.store.Store object at 0x7f43e63a7fb0&gt;, {'fixture-a...bject at 0x7f43e5dca030&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f43e5f60d40&gt;, ...}
+
+    def test_original_recheck_intent_does_not_apply_current_template(upgrade_case):
+        u=upgrade_case
+        row,old=instance(u)
+        target=publication(u,source='2')
+        from test_template_upgrade import choose
+        before=snapshot(u)
+        inspection=check(u,row,target).json()
+        decision=choose(u,row,inspection,'REQUEST_RECHECK')
+        assert decision.status_code==200,decision.text
+        assert snapshot(u)==before
+        current=u['consumer'].read(u['f'][2]['fixture-a'],row['instance_id'])
+&gt;       assert current['binding']['release_id']==target['release_id'], 'PRODUCT GAP: original recheck intent leaves old immutable binding and unavailable original release'
+E       AssertionError: PRODUCT GAP: original recheck intent leaves old immutable binding and unavailable original release
+E       assert 'fb590ad8-852...-d99e186e5ec2' == '4ad66aa1-f9e...-1d223de68772'
+E         
+E         - 4ad66aa1-f9e1-4538-9b9e-1d223de68772
+E         + fb590ad8-852e-4691-936e-d99e186e5ec2
+
+.runtime/template-migration-20261014/test_before_contract.py:18: AssertionError</failure></testcase></testsuite></testsuites>

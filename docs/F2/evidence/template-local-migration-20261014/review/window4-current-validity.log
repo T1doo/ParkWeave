@@ -1,0 +1,122 @@
+...FF                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_independent_read_currentness_rechecked_after_last_owned_pg_source_wait[plan] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f1d61a202c0>, <parkweave.store.Store object at 0x7f1d645fae70>, {'fixture-a...bject at 0x7f1d6188ea20>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f1d626bb2f0>, ...}
+endpoint = 'plan'
+
+    @pytest.mark.parametrize('endpoint',['plan','goals'])
+    def test_independent_read_currentness_rechecked_after_last_owned_pg_source_wait(upgrade_case,endpoint):
+        from template_migration_test_helpers import full
+        from test_template_upgrade import plan_read
+        from test_case_goal_results import get as goal_results
+        u=upgrade_case;row,_,p=full(u);target=publication(u,[__import__('test_template_upgrade').GOALS[-1]],source='1',name='SYNTHETIC description with timed currentness')
+        _,data=admit(u,row,target,'ACK_COMPATIBLE');assert apply(u,row,data,'timed-read-base').status_code==200
+        original=stored(u,row);clock=u['engine'].clock
+        with u['f'][1].connect() as blocker,ThreadPoolExecutor(max_workers=1) as pool:
+>           blocker.execute('SELECT id FROM case_local_lifecycles WHERE preparation_id=%s FOR UPDATE',(row['preparation_id'],))
+
+tests/test_independent_template_migration_runtime.py:251: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f1d6196fa70>
+query = 'SELECT id FROM case_local_lifecycles WHERE preparation_id=%s FOR UPDATE'
+params = ('355a5da3-48b0-42dc-8f5a-3c8e5315d8e9',), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedColumn: column "id" does not exist
+E           LINE 1: SELECT id FROM case_local_lifecycles WHERE preparation_id=$1...
+E                          ^
+
+../ParkWeave/.venv/lib/python3.12/site-packages/psycopg/connection.py:304: UndefinedColumn
+_ test_independent_read_currentness_rechecked_after_last_owned_pg_source_wait[goals] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f1d61a20dd0>, <parkweave.store.Store object at 0x7f1d64290bf0>, {'fixture-a...bject at 0x7f1d6196fbf0>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f1d619a78c0>, ...}
+endpoint = 'goals'
+
+    @pytest.mark.parametrize('endpoint',['plan','goals'])
+    def test_independent_read_currentness_rechecked_after_last_owned_pg_source_wait(upgrade_case,endpoint):
+        from template_migration_test_helpers import full
+        from test_template_upgrade import plan_read
+        from test_case_goal_results import get as goal_results
+        u=upgrade_case;row,_,p=full(u);target=publication(u,[__import__('test_template_upgrade').GOALS[-1]],source='1',name='SYNTHETIC description with timed currentness')
+        _,data=admit(u,row,target,'ACK_COMPATIBLE');assert apply(u,row,data,'timed-read-base').status_code==200
+        original=stored(u,row);clock=u['engine'].clock
+        with u['f'][1].connect() as blocker,ThreadPoolExecutor(max_workers=1) as pool:
+>           blocker.execute('SELECT id FROM case_local_lifecycles WHERE preparation_id=%s FOR UPDATE',(row['preparation_id'],))
+
+tests/test_independent_template_migration_runtime.py:251: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f1d6395f050>
+query = 'SELECT id FROM case_local_lifecycles WHERE preparation_id=%s FOR UPDATE'
+params = ('4579d323-0a94-48ba-a674-f02f6a57681c',), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedColumn: column "id" does not exist
+E           LINE 1: SELECT id FROM case_local_lifecycles WHERE preparation_id=$1...
+E                          ^
+
+../ParkWeave/.venv/lib/python3.12/site-packages/psycopg/connection.py:304: UndefinedColumn
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_independent_template_migration_runtime.py::test_independent_unavailable_effective_target_is_history_not_current_verification[withdraw]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_independent_template_migration_runtime.py::test_independent_read_currentness_rechecked_after_last_owned_pg_source_wait[plan]
+FAILED tests/test_independent_template_migration_runtime.py::test_independent_read_currentness_rechecked_after_last_owned_pg_source_wait[goals]
+2 failed, 3 passed, 13 deselected, 2 warnings in 15.00s

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="19" time="28.297" timestamp="2026-10-14T23:33:23.043767+00:00" hostname="754d39e95154"><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_actual_effects_stable_ids_and_exact_reverify[1-affected0]" time="3.055" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_actual_effects_stable_ids_and_exact_reverify[2-affected1]" time="3.603" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_current_owner_and_tenant_gate[fixture-b]" time="1.154" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_current_owner_and_tenant_gate[fixture-c]" time="0.988" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_current_owner_and_tenant_gate[prep-specialist-fixture-a]" time="1.097" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_current_owner_and_tenant_gate[executor-a]" time="0.992" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_revocation_before_send_and_recovery[READ]" time="1.205" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_revocation_before_send_and_recovery[PREPARE]" time="1.031" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_revocation_before_send_and_recovery[EXECUTE]" time="1.155" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_real_concurrent_cas_and_fingerprint[True]" time="1.019" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_real_concurrent_cas_and_fingerprint[False]" time="1.288"><failure message="AssertionError: assert 'NOT_OBSERVED' == 'COMMITTED'&#10;  &#10;  - COMMITTED&#10;  + NOT_OBSERVED">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f5aa4f23860&gt;, &lt;parkweave.store.Store object at 0x7f5aa4a39700&gt;, {'fixture-a...bject at 0x7f5aa43d1bb0&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f5aa47ec9b0&gt;, ...}
+same_key = False
+
+    @pytest.mark.parametrize('same_key',[True,False])
+    def test_independent_real_concurrent_cas_and_fingerprint(upgrade_case,same_key):
+        u=upgrade_case;row,_=instance(u);confirmed(u,row);target=publication(u,source='2');_,data=admit(u,row,target)
+        old=deepcopy(stored(u,row));before=facts(u)
+        keys=['independent-same','independent-same' if same_key else 'independent-other']
+        with ThreadPoolExecutor(2) as pool:rs=list(pool.map(lambda k:apply(u,row,data,k),keys))
+        codes=sorted(r.status_code for r in rs)
+        assert codes in ([200,200],[201,201]) if same_key else codes in ([200,409],[201,409]),[r.text for r in rs]
+        new=stored(u,row);assert new['revision']==old['revision']+1
+        assert_preserved(old,new,before,facts(u))
+        assert apply(u,row,{**data,'reason':'SYNTHETIC changed body'},keys[0]).status_code==409
+&gt;       assert recovery(u,row,keys[0]).json()['status']=='COMMITTED'
+E       AssertionError: assert 'NOT_OBSERVED' == 'COMMITTED'
+E         
+E         - COMMITTED
+E         + NOT_OBSERVED
+
+.runtime/template-migration-20261014/test_migration_developer_replay.py:158: AssertionError</failure></testcase><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_lock_conflict_then_original_unlock" time="1.264" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_target_invalid_after_confirm_refuses_atomically[withdraw]" time="1.124" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_target_invalid_after_confirm_refuses_atomically[expire]" time="0.963" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_target_invalid_after_confirm_refuses_atomically[supersede]" time="1.180" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_added_goal_refuses_execution_preserving_old_plan" time="0.972" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_pg_event_failure_rolls_back_entire_application" time="1.183" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_committed_lost_reply_only_get_and_cold_original_key" time="0.969" /><testcase classname=".runtime.template-migration-20261014.test_migration_developer_replay" name="test_independent_multihop_uses_effective_release_and_preserves_locked_decision" time="3.892"><failure message="AssertionError: assert ('COMMITTED' == 'COMMITTED'&#10;  &#10;    COMMITTED and '459ee20f-5b5...-d92dd4f68826' == '6e8c8391-24c...-d1dbb960129b'&#10;  &#10;  - 6e8c8391-24c7-49bc-88f9-d1dbb960129b&#10;  + 459ee20f-5b5e-4ebb-b0ea-d92dd4f68826)">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f5aa47867e0&gt;, &lt;parkweave.store.Store object at 0x7f5aa45d8350&gt;, {'fixture-a...bject at 0x7f5aa470fe30&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f5aa421f2f0&gt;, ...}
+
+    def test_independent_multihop_uses_effective_release_and_preserves_locked_decision(upgrade_case):
+        u=upgrade_case;row,v1,p=full(u)
+        v2=publication(u,[GOALS[-1]],'2','Independent v2 source revision')
+        _,data2=admit(u,row,v2);r2=apply(u,row,data2,'independent-v2');assert r2.status_code in (200,201),r2.text
+        for adapter in ALL:verified(u['f'],p,adapter)
+        view=plan_read(u['f'],p).json();s=next(s for s in view['steps'] if s['adapter_id']=='P1')
+        assert plan_command(u['f'],p,'P1','LOCK',row=view,expected_source_sha256=s['source_sha256']).status_code==200
+        old=deepcopy(stored(u,row));before=facts(u)
+        v3=publication(u,[GOALS[-1]],'2','Independent v3 description only')
+        x=check(u,row,v3);assert x.status_code==200,x.text
+        assert x.json()['check']['classification']=='COMPATIBLE'
+        v,data3=admit(u,row,v3,'ACK_COMPATIBLE')
+        assert v['application']['affected']==[]
+        assert set(v['application']['preserved'])=={s['id'] for s in old['steps']}
+        r3=apply(u,row,data3,'independent-v3');assert r3.status_code in (200,201),r3.text
+        new=stored(u,row);assert_preserved(old,new,before,facts(u));assert new['steps']==old['steps']
+        previous=recovery(u,row,'independent-v2');assert previous.status_code==200,previous.text
+&gt;       assert previous.json()['status']=='COMMITTED' and previous.json()['effective_release_id']==v2['release_id']
+E       AssertionError: assert ('COMMITTED' == 'COMMITTED'
+E         
+E           COMMITTED and '459ee20f-5b5...-d92dd4f68826' == '6e8c8391-24c...-d1dbb960129b'
+E         
+E         - 6e8c8391-24c7-49bc-88f9-d1dbb960129b
+E         + 459ee20f-5b5e-4ebb-b0ea-d92dd4f68826)
+
+.runtime/template-migration-20261014/test_migration_developer_replay.py:252: AssertionError</failure></testcase></testsuite></testsuites>

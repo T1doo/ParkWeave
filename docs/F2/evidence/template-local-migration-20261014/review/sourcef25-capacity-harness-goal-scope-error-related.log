@@ -1,0 +1,123 @@
+........................................................................ [ 25%]
+........................................................................ [ 50%]
+........................................................................ [ 76%]
+................................................................FFF      [100%]
+=================================== FAILURES ===================================
+__________ test_source_upgrade_reserves_all_affected_verify_slots[58] __________
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7fcfec372600>, <parkweave.store.Store object at 0x7fcfec372750>, {'fixture-a...bject at 0x7fcfee75c620>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fcfed578c20>, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fcfec687a10>
+pre_revision = 58
+
+    @pytest.mark.parametrize('pre_revision',[58,62])
+    def test_source_upgrade_reserves_all_affected_verify_slots(upgrade_case,monkeypatch,pre_revision):
+        u=upgrade_case;real_verified=helper.verified
+        # Genuine original in-flight business output. Only the owner's first P5
+        # VERIFY is left pending; no plan/events/locks are rewritten through SQL.
+        with monkeypatch.context() as m:
+            m.setattr(helper,'verified',lambda f,p,a:plan_read(f,p).json() if a=='P5' else real_verified(f,p,a))
+            row,_,p=helper.full(u)
+        assert stored(u,row)['revision']==6
+        fill_with_original_lock_unlock(u,p,pre_revision)
+        target=publication(u,[GOALS[-1]],source='2')
+>       view,data=admit(u,row,target)
+                  ^^^^^^^^^^^^^^^^^^^
+
+tests/test_independent_template_migration_capacity_final.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+u = {'f': (<parkweave.store.Store object at 0x7fcfec372600>, <parkweave.store.Store object at 0x7fcfec372750>, {'fixture-a...bject at 0x7fcfee75c620>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fcfed578c20>, ...}
+row = {'instance_id': '5cb87697-5f38-451f-847a-e7a668086b90', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '446ccea2-5f28-400d-ac33-66d23c3dede0', ...}
+target = {'namespace': 'ISOLATED_SYNTHETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}
+choice = 'REQUEST_RECHECK'
+
+    def admit(u,row,target,choice='REQUEST_RECHECK'):
+        x=check(u,row,target);assert x.status_code==200,x.text
+>       x=x.json();r=choose(u,row,x,choice);assert r.status_code==200,r.text
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"upgrade choice refused for this classification"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_template_migration_independent.py:74: AssertionError
+__________ test_source_upgrade_reserves_all_affected_verify_slots[62] __________
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7fcfee719700>, <parkweave.store.Store object at 0x7fcfed578a10>, {'fixture-a...bject at 0x7fcfef474530>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fcfec1571d0>, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fcfef190350>
+pre_revision = 62
+
+    @pytest.mark.parametrize('pre_revision',[58,62])
+    def test_source_upgrade_reserves_all_affected_verify_slots(upgrade_case,monkeypatch,pre_revision):
+        u=upgrade_case;real_verified=helper.verified
+        # Genuine original in-flight business output. Only the owner's first P5
+        # VERIFY is left pending; no plan/events/locks are rewritten through SQL.
+        with monkeypatch.context() as m:
+            m.setattr(helper,'verified',lambda f,p,a:plan_read(f,p).json() if a=='P5' else real_verified(f,p,a))
+            row,_,p=helper.full(u)
+        assert stored(u,row)['revision']==6
+        fill_with_original_lock_unlock(u,p,pre_revision)
+        target=publication(u,[GOALS[-1]],source='2')
+>       view,data=admit(u,row,target)
+                  ^^^^^^^^^^^^^^^^^^^
+
+tests/test_independent_template_migration_capacity_final.py:54: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+u = {'f': (<parkweave.store.Store object at 0x7fcfee719700>, <parkweave.store.Store object at 0x7fcfed578a10>, {'fixture-a...bject at 0x7fcfef474530>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fcfec1571d0>, ...}
+row = {'instance_id': 'fb32f6c6-b0b5-4e50-ac1a-ef809d256582', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': 'c1cdca16-4cad-4d79-803d-4aadd6df3043', ...}
+target = {'namespace': 'ISOLATED_SYNTHETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}
+choice = 'REQUEST_RECHECK'
+
+    def admit(u,row,target,choice='REQUEST_RECHECK'):
+        x=check(u,row,target);assert x.status_code==200,x.text
+>       x=x.json();r=choose(u,row,x,choice);assert r.status_code==200,r.text
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"upgrade choice refused for this classification"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_template_migration_independent.py:74: AssertionError
+______ test_verified_description_upgrade_uses_last_slot_without_reverify _______
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7fcfdfaebf20>, <parkweave.store.Store object at 0x7fcfec155190>, {'fixture-a...bject at 0x7fcfdfce6000>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fcfdff15d00>, ...}
+
+    def test_verified_description_upgrade_uses_last_slot_without_reverify(upgrade_case):
+        u=upgrade_case;row,_,p=helper.full(u)
+        assert stored(u,row)['revision']==7
+        fill_with_original_lock_unlock(u,p,63)
+        target=publication(u,[GOALS[-1]],source='1',name='SYNTHETIC description only at final event slot')
+>       view,data=admit(u,row,target,'ACK_COMPATIBLE')
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_independent_template_migration_capacity_final.py:84: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+u = {'f': (<parkweave.store.Store object at 0x7fcfdfaebf20>, <parkweave.store.Store object at 0x7fcfec155190>, {'fixture-a...bject at 0x7fcfdfce6000>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fcfdff15d00>, ...}
+row = {'instance_id': '1c29d0e5-e5b7-477d-b3f0-7b7b2b0ba90f', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '08b750d7-4a1a-4069-8cab-e096def4267b', ...}
+target = {'namespace': 'ISOLATED_SYNTHETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}
+choice = 'ACK_COMPATIBLE'
+
+    def admit(u,row,target,choice='REQUEST_RECHECK'):
+        x=check(u,row,target);assert x.status_code==200,x.text
+>       x=x.json();r=choose(u,row,x,choice);assert r.status_code==200,r.text
+                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"upgrade choice refused for this classification"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_template_migration_independent.py:74: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_independent_template_migration_runtime.py::test_independent_new_apply_rejects_rehashed_target_review
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_independent_template_migration_capacity_final.py::test_source_upgrade_reserves_all_affected_verify_slots[58]
+FAILED tests/test_independent_template_migration_capacity_final.py::test_source_upgrade_reserves_all_affected_verify_slots[62]
+FAILED tests/test_independent_template_migration_capacity_final.py::test_verified_description_upgrade_uses_last_slot_without_reverify
+3 failed, 280 passed, 2 warnings in 455.10s (0:07:35)

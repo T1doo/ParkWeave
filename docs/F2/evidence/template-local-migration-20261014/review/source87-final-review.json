@@ -1,0 +1,111 @@
+{
+  "status": "LIMITED_PASS",
+  "source_sha": "87aafee2fd634e76cfe87e167a404885aff4ed68",
+  "scope": "explicit development simulation only: same-template/same-service/same-registered-step structure source or description revision; no formal migration governance or undoing business effects",
+  "runtime": {
+    "pass": 268,
+    "fail": 0,
+    "error": 0,
+    "skip": 0,
+    "warnings": 2,
+    "seconds": 406.4,
+    "exit": 0,
+    "independent_specific_probes": 21,
+    "related_tests": 247,
+    "modules": {
+      "tests.test_case_goal_results": 44,
+      "tests.test_independent_template_migration_runtime": 21,
+      "tests.test_registered_local_revision": 38,
+      "tests.test_service_case_steps": 68,
+      "tests.test_template_migration_independent": 34,
+      "tests.test_template_migration_legacy": 3,
+      "tests.test_template_migration_legacy_independent": 2,
+      "tests.test_template_migration_nodevm_actual": 6,
+      "tests.test_template_migration_ui_offline": 19,
+      "tests.test_template_upgrade": 33
+    },
+    "log": "source87-final-related.log",
+    "junit": "source87-final-related.xml",
+    "exit_file": "source87-final-related.exit"
+  },
+  "source_verification": {
+    "tracked_files": 575,
+    "changed": [],
+    "before": "source87-before.json",
+    "after": "source87-after.json",
+    "git_diff_check_exit": 0,
+    "loaded_paths": {
+      "parkweave.store": "/workspace/parkweave-template-migration-review-20261014/src/parkweave/store.py",
+      "parkweave.template_migration": "/workspace/parkweave-template-migration-review-20261014/src/parkweave/template_migration.py",
+      "parkweave.template_upgrade": "/workspace/parkweave-template-migration-review-20261014/src/parkweave/template_upgrade.py",
+      "parkweave.service_case_steps": "/workspace/parkweave-template-migration-review-20261014/src/parkweave/service_case_steps.py",
+      "parkweave.case_goal_results": "/workspace/parkweave-template-migration-review-20261014/src/parkweave/case_goal_results.py"
+    }
+  },
+  "package": {
+    "source_sha": "87aafee2fd634e76cfe87e167a404885aff4ed68",
+    "wheel": ".runtime/template-migration-review-20261014/wheel/parkweave-0.1.0-py3-none-any.whl",
+    "wheel_sha256": "cf0cbc9711cfc6c1392052ef6020382f0c8531204afda416d141df92506e0b3c",
+    "expected_count": 155,
+    "actual_count": 155,
+    "missing": [],
+    "extra": [],
+    "changed": [],
+    "status": "PASS"
+  },
+  "resolved_findings": [
+    "original release rehash cannot bypass immutable SAVE/REVIEW/PUBLISH anchors in Apply",
+    "UI hot recovery wrong exact request stays pending; cold recovery only validates internal original receipt chain",
+    "migrated current target withdrawn/expired/unmounted remains readable history without verified-current claim or implicit PG invalidation write",
+    "late PG source lock waits across expiry rechecked before currentness projection",
+    "new TEMPLATE_UPGRADE goals read accepted only via strict full history proof",
+    "genuine canonical legacy initial ADOPT key kept exact and tied to migration instance; other canonical UUID/arbitrary/noninitial colon refused"
+  ],
+  "verified_race_and_effects": [
+    "actual PG parent lock wait across target expiry and withdrawal",
+    "actual PG principal lock wait across EXECUTE revocation",
+    "Apply source and choice leases held through actual PG commit",
+    "original BEGIN event save then commit-time expiry rolls back completely",
+    "original business CLOSE PG commit precedes competing publisher withdrawal",
+    "stable IDs and old materials/resource holds/ACCEPT/receipts preserved; old code reader safely refuses unknown event",
+    "original-key recovery only; NOT_OBSERVED never final no-effect claim"
+  ],
+  "blockers": [],
+  "failure_qualifications": "failure-qualifications.json",
+  "failure_history_raw_prefixes": [
+    "baseline-source-proof",
+    "phase-runtime",
+    "phase-runtime-corrected",
+    "window1-business-lease",
+    "window1-business-lease-corrected",
+    "window2-current-validity",
+    "window2-stale-plan-current",
+    "window4-current-validity",
+    "source229-interrupted-final-related",
+    "source87-path-error-source87-final-related"
+  ],
+  "not_run": [
+    "formal AT25–27 acceptance",
+    "formal governance or production migration",
+    "real model/paid external calls",
+    "Windows",
+    "browser",
+    "CI Forbidden route"
+  ],
+  "archive_audit": "PENDING separate index-external audit after root export frozen",
+  "independent_probe_sources": {
+    "independent-runtime-probes.py": {
+      "original": "tests/test_independent_template_migration_runtime.py",
+      "sha256": "1497c38522df52613601f75c3a124ff2ba080d2c04ba3e0f5347ad0c123be5c4"
+    },
+    "template_migration_test_helpers.py": {
+      "original": "tests/template_migration_test_helpers.py",
+      "sha256": "d7ac5b0fab4819560aa21ec84dddd5defe77b88e2948a923e519e59309e5d9f6"
+    },
+    "baseline-source-proof-probe.py": {
+      "original": "tests/test_independent_template_migration_probes.py",
+      "sha256": "f1e76a5df5e5d08e5e52104ec82b996fc91a48642814a9f097fc70737f5c56af"
+    }
+  },
+  "independent_reproduction": "Check out source87. Materialize archived old-service-case-steps.py at .runtime/template-migration-review-20261014/old-service-case-steps.py; add repository src, tests and exported review directory to PYTHONPATH; run pytest on independent-runtime-probes.py using original default pytest temp ownership guards. Baseline-source-proof-probe.py intentionally characterizes the earlier inspection failure and is not part of the final passing suite."
+}

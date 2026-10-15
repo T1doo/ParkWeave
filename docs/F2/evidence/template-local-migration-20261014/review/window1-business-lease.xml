@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="4.252" timestamp="2026-10-14T23:36:48.926244+00:00" hostname="754d39e95154"><testcase classname="tests.test_independent_template_migration_runtime" name="test_independent_original_business_gate_holds_source_until_actual_pg_commit" time="4.122"><failure message="AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;literal_error&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;action&quot;],&quot;msg&quot;:&quot;Input should be 'REVALIDATE', 'CLOSE_LOCAL_RECORD' or 'REOPEN'&quot;,&quot;input&quot;:&quot;CLOSE&quot;,&quot;ctx&quot;:{&quot;expected&quot;:&quot;'REVALIDATE', 'CLOSE_LOCAL_RECORD' or 'REOPEN'&quot;}}]}&#10;assert 422 == 200&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7efe476373e0&gt;, &lt;parkweave.store.Store object at 0x7efe476f3fe0&gt;, {'fixture-a...bject at 0x7efe47637ec0&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7efe476372f0&gt;, ...}
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7efe46fb5280&gt;
+
+    def test_independent_original_business_gate_holds_source_until_actual_pg_commit(upgrade_case,monkeypatch):
+        from template_migration_test_helpers import full, verified, ALL
+        from test_case_lifecycle import read as lifecycle_read, act as lifecycle_act
+        from parkweave.template_candidate import Command
+        u=upgrade_case;row,_,p=full(u);target=publication(u,[__import__('test_template_upgrade').GOALS[-1]],source='2')
+        _,data=admit(u,row,target);assert apply(u,row,data,'business-base').status_code==200
+        for adapter in ALL:verified(u['f'],p,adapter)
+        current=lifecycle_read(u['f'],p).json();head=u['engine'].read('template-publisher',u['scope'])
+        original=psycopg.Connection.commit;started=Event();finished=Event();pg_committed=Event();observation=[];futures=[]
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            def withdraw():
+                started.set()
+                result=u['engine'].command('template-publisher',u['scope'],uuid4().hex,Command(action='WITHDRAW',expected_revision=head['revision'],expected_definition_sha256=head['definition_sha256'],reason='SYNTHETIC publisher waiting for original business PG commit'))
+                assert pg_committed.is_set(),'publisher proceeded before original business PG COMMIT'
+                finished.set();return result
+            def commit(c):
+                if c.info.user=='parkweave_app' and not observation:
+                    found=c.execute("SELECT 1 FROM case_local_lifecycles WHERE preparation_id=%s AND state='LOCAL_RECORD_CLOSED'",(row['preparation_id'],)).fetchone()
+                    if found:
+                        assert getattr(c,'_template_source_leases',{}),'original business gate missing source lease'
+                        futures.append(pool.submit(withdraw))
+                        assert started.wait(2)
+                        assert not finished.wait(.1),'withdraw did not wait for actual PG COMMIT'
+                        observation.append('SOURCE_HELD_BEFORE_ACTUAL_PG_COMMIT')
+                        result=original(c);pg_committed.set();return result
+                return original(c)
+            monkeypatch.setattr(psycopg.Connection,'commit',commit)
+            response=lifecycle_act(u['f'],p,current,'CLOSE')
+&gt;           assert response.status_code==200,response.text
+E           AssertionError: {"detail":[{"type":"literal_error","loc":["body","action"],"msg":"Input should be 'REVALIDATE', 'CLOSE_LOCAL_RECORD' or 'REOPEN'","input":"CLOSE","ctx":{"expected":"'REVALIDATE', 'CLOSE_LOCAL_RECORD' or 'REOPEN'"}}]}
+E           assert 422 == 200
+E            +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_independent_template_migration_runtime.py:176: AssertionError</failure></testcase></testsuite></testsuites>

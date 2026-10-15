@@ -1,0 +1,552 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="12" skipped="0" tests="12" time="0.509" timestamp="2026-10-15T00:05:26.754897+00:00" hostname="754d39e95154"><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[disabled_pending]" time="0.036"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:49:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:49:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'disabled_pending'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:49:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:49:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[lost_response]" time="0.033"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'lost_response'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[not_observed]" time="0.036"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'not_observed'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[revoked]" time="0.048"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'revoked'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[late_read]" time="0.053"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:52:95&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:52:11&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'late_read'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:52:95
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:52:11
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[late_recovery]" time="0.037"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'late_recovery'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[authority_expiry]" time="0.036"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'authority_expiry'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[effective_fixture]" time="0.034"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:43:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:43:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'effective_fixture'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:43:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:43:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[writer_confirmation]" time="0.033"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:33:62&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:33:62&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'writer_confirmation'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:33:62
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:33:62
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[writer_unverified_recovery]" time="0.034"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'writer_unverified_recovery'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[writer_verified_recovery]" time="0.035"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'writer_verified_recovery'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase><testcase classname="tests.test_native_run_access_offline" name="test_native_run_access_ui[writer_wrong_body_recovery]" time="0.035"><failure message="AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47&#10;  evalmachine.&lt;anonymous&gt;:18&#10;   let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}&#10;                         ^&#10;  &#10;  ReferenceError: entryFetch is not defined&#10;      at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)&#10;      at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)&#10;      at evalmachine.&lt;anonymous&gt;:1:1&#10;      at Script.runInContext (node:vm:149:12)&#10;      at Object.runInContext (node:vm:301:6)&#10;      at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)&#10;      at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)&#10;      at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9&#10;      at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14) {&#10;    runAccessContext: {&#10;      generation: 2,&#10;      token: 'current',&#10;      runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'&#10;    }&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'writer_wrong_body_recovery'
+
+    @pytest.mark.parametrize('mode',['disabled_pending','lost_response','not_observed','revoked','late_read','late_recovery','authority_expiry','effective_fixture','writer_confirmation','writer_unverified_recovery','writer_verified_recovery','writer_wrong_body_recovery'])
+    def test_native_run_access_ui(mode):
+        node=shutil.which('node')
+        assert node,'offline Node is required'
+        result=subprocess.run([node,'tests/native_run_access_offline.js',mode],capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'ok')
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:66)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         evalmachine.&lt;anonymous&gt;:18
+E          let response,data;try{response=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});data=await response.json();}catch(e){requireRunAccess(c);e.runAccessContext=c;throw e;}
+E                                ^
+E         
+E         ReferenceError: entryFetch is not defined
+E             at runAccessCall (evalmachine.&lt;anonymous&gt;:18:24)
+E             at loadRunAccess (evalmachine.&lt;anonymous&gt;:79:25)
+E             at evalmachine.&lt;anonymous&gt;:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:21:73)
+E             at read (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:30:31)
+E             at /workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:55:9
+E             at Object.&lt;anonymous&gt; (/workspace/parkweave-native-access-harness-20261015/tests/native_run_access_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E           runAccessContext: {
+E             generation: 2,
+E             token: 'current',
+E             runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+E           }
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/native_run_acces...eneration: 2,\n    token: 'current',\n    runId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_native_run_access_offline.py:13: AssertionError</failure></testcase></testsuite></testsuites>

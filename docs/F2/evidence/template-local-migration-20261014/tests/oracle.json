@@ -1,0 +1,98 @@
+{
+  "baseline": "adf867156fcf0b22d15a18007cf8fa3fc65f34a2",
+  "scope": "OWNED_SYNTHETIC_TEMPLATE_UPGRADE_ONLY",
+  "original_oracles": {
+    "AT-25": "确定依赖更新；未知扩大重验而非乱改；分别报告漏更新与误改",
+    "AT-26": "LOCK_CONFLICT保留原内容；未解冲突不自动发布；历史不删除，当前有效性单列",
+    "AT-27": "阻止不兼容操作；版本回退不回滚业务事实，预检有证据"
+  },
+  "independent_expected": [
+    {
+      "change": "description_only_same_contract_source",
+      "should_update": [],
+      "should_preserve": [
+        "plan_id",
+        "all_existing_step_ids",
+        "all_verified_evidence",
+        "business_records",
+        "original_instance_release_binding",
+        "old_events"
+      ]
+    },
+    {
+      "change": "template_source_revision_same_registered_structure",
+      "should_update": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "should_preserve": [
+        "plan_id",
+        "all_existing_step_ids",
+        "all_step_contract_bodies",
+        "original_instance_release_binding",
+        "old_events",
+        "business_records"
+      ]
+    },
+    {
+      "change": "resource_collection_revision_alone",
+      "should_update": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "should_preserve": [
+        "P1",
+        "all_ids",
+        "old_events",
+        "business_records"
+      ]
+    },
+    {
+      "change": "new_supported_goal_p5",
+      "should_update": [
+        "new_P5"
+      ],
+      "should_preserve": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "old_step_ids",
+        "old_events",
+        "business_records"
+      ]
+    },
+    {
+      "change": "unknown_change",
+      "should_update": [
+        "THIS_CASE_ALL_REGISTERED"
+      ],
+      "should_preserve": [
+        "all_ids",
+        "old_events",
+        "business_records"
+      ]
+    }
+  ],
+  "negative_cases": [
+    "affected_manual_lock_blocks_apply_until_original_UNLOCK",
+    "unaffected_manual_lock_kept",
+    "breaking_step_contract_or_goal_removal_refused",
+    "old_target_rollback_refused",
+    "target_expired_refused",
+    "target_withdrawn_refused",
+    "current_permission_revocation_precedes_key_replay",
+    "cross_tenant_nonowner_refused",
+    "same_key_different_body_conflict",
+    "different_keys_concurrent_expected_revision_one_winner",
+    "event_failure_rolls_back_pg_and_never_clears_business",
+    "lost_reply_original_key_GET_only_no_resend",
+    "code_rollback_preserves_business_facts"
+  ],
+  "counting": "Do not derive expected sets from implementation output. Every window reports actual PASS/FAIL/ERROR/SKIP and source hashes; no summed windows."
+}

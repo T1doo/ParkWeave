@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="5.692" timestamp="2026-10-14T23:31:51.435842+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_migration_independent" name="test_independent_actual_effects_stable_ids_and_exact_reverify[1-affected0]" time="3.073"><failure message="KeyError: 'application'">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f1da8c416d0&gt;, &lt;parkweave.store.Store object at 0x7f1da8c43da0&gt;, {'fixture-a...bject at 0x7f1da8c41340&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f1da858f560&gt;, ...}
+source = '1', affected = ()
+
+    @pytest.mark.parametrize('source,affected', [('1',()),('2',ALL)])
+    def test_independent_actual_effects_stable_ids_and_exact_reverify(upgrade_case,source,affected):
+        u=upgrade_case;row,old_release,p=full(u);old=deepcopy(stored(u,row));before=facts(u)
+        binding=deepcopy(u['consumer'].read(u['f'][2]['fixture-a'],row['instance_id'])['binding']) if 'binding' in row else None
+        target=publication(u,[GOALS[-1]],source,'Independent compatible version')
+&gt;       v,data=admit(u,row,target)
+               ^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_migration_independent.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+u = {'f': (&lt;parkweave.store.Store object at 0x7f1da8c416d0&gt;, &lt;parkweave.store.Store object at 0x7f1da8c43da0&gt;, {'fixture-a...bject at 0x7f1da8c41340&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f1da858f560&gt;, ...}
+row = {'instance_id': '2f7bb5a8-7848-49af-8e0d-eba08d7f53e1', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '401acbcd-10ff-45ee-9406-83de363154c5', ...}
+target = {'namespace': 'ISOLATED_SYNTHETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}
+choice = 'REQUEST_RECHECK'
+
+    def admit(u,row,target,choice='REQUEST_RECHECK'):
+        x=check(u,row,target);assert x.status_code==200,x.text
+        x=x.json();r=choose(u,row,x,choice);assert r.status_code==200,r.text
+        # A second pure read supplies current application CAS, not a new decision.
+        view=check(u,row,target);assert view.status_code==200,view.text
+&gt;       v=view.json();a=v['application'];event=r.json()['event']
+                        ^^^^^^^^^^^^^^^^
+E       KeyError: 'application'
+
+tests/test_template_migration_independent.py:58: KeyError</failure></testcase><testcase classname="tests.test_template_migration_independent" name="test_independent_actual_effects_stable_ids_and_exact_reverify[2-affected1]" time="2.477"><failure message="KeyError: 'application'">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f1da858da00&gt;, &lt;parkweave.store.Store object at 0x7f1da858d760&gt;, {'fixture-a...bject at 0x7f1da6120770&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f1da6028e90&gt;, ...}
+source = '2', affected = ('P1', 'P2', 'P3', 'P4', 'P5')
+
+    @pytest.mark.parametrize('source,affected', [('1',()),('2',ALL)])
+    def test_independent_actual_effects_stable_ids_and_exact_reverify(upgrade_case,source,affected):
+        u=upgrade_case;row,old_release,p=full(u);old=deepcopy(stored(u,row));before=facts(u)
+        binding=deepcopy(u['consumer'].read(u['f'][2]['fixture-a'],row['instance_id'])['binding']) if 'binding' in row else None
+        target=publication(u,[GOALS[-1]],source,'Independent compatible version')
+&gt;       v,data=admit(u,row,target)
+               ^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_migration_independent.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+u = {'f': (&lt;parkweave.store.Store object at 0x7f1da858da00&gt;, &lt;parkweave.store.Store object at 0x7f1da858d760&gt;, {'fixture-a...bject at 0x7f1da6120770&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f1da6028e90&gt;, ...}
+row = {'instance_id': '3557aed9-be22-4330-aa68-807248ac321a', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '25ae75a5-c202-4a4f-82ed-910fa1221597', ...}
+target = {'namespace': 'ISOLATED_SYNTHETIC_TEMPLATE_CANDIDATE', 'business_publication': False, 'deployment_enabled': False, 'new_grants': False, ...}
+choice = 'REQUEST_RECHECK'
+
+    def admit(u,row,target,choice='REQUEST_RECHECK'):
+        x=check(u,row,target);assert x.status_code==200,x.text
+        x=x.json();r=choose(u,row,x,choice);assert r.status_code==200,r.text
+        # A second pure read supplies current application CAS, not a new decision.
+        view=check(u,row,target);assert view.status_code==200,view.text
+&gt;       v=view.json();a=v['application'];event=r.json()['event']
+                        ^^^^^^^^^^^^^^^^
+E       KeyError: 'application'
+
+tests/test_template_migration_independent.py:58: KeyError</failure></testcase></testsuite></testsuites>

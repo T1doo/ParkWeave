@@ -1,0 +1,98 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_independent_unavailable_effective_target_is_history_not_current_verification[withdraw] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f8a2cb4b3b0>, <parkweave.store.Store object at 0x7f8a2cb4b4a0>, {'fixture-a...bject at 0x7f8a2cb4b1a0>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f8a2c4bfa10>, ...}
+unavailable = 'withdraw'
+
+    @pytest.mark.parametrize('unavailable',['withdraw','expiry','unmounted'])
+    def test_independent_unavailable_effective_target_is_history_not_current_verification(upgrade_case,unavailable):
+        from template_migration_test_helpers import full
+        from test_template_upgrade import plan_read
+        from test_case_goal_results import get as goal_results
+        from parkweave.template_candidate import Command
+        u=upgrade_case;row,_,p=full(u);target=publication(u,[__import__('test_template_upgrade').GOALS[-1]],source='1',name='SYNTHETIC new description same source')
+        _,data=admit(u,row,target,'ACK_COMPATIBLE');assert apply(u,row,data,'current-target-base').status_code==200
+        original=stored(u,row);clock=u['engine'].clock
+        if unavailable=='withdraw':
+            head=u['engine'].read('template-publisher',u['scope'])
+            u['engine'].command('template-publisher',u['scope'],uuid4().hex,Command(action='WITHDRAW',expected_revision=head['revision'],expected_definition_sha256=head['definition_sha256'],reason='SYNTHETIC current target no longer available'))
+        elif unavailable=='expiry':u['engine'].clock=lambda:datetime(2100,1,1,tzinfo=timezone.utc)
+        else:delattr(u['f'][0],'_isolated_template_migration_checker')
+        page=plan_read(u['f'],p);assert page.status_code==200,page.text
+>       goals=goal_results(u['f'],p);assert goals.status_code==200,goals.text
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"adopted goal result plan proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_independent_template_migration_runtime.py:234: AssertionError
+_ test_independent_unavailable_effective_target_is_history_not_current_verification[expiry] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f8a2c4bf950>, <parkweave.store.Store object at 0x7f8a2c4bed50>, {'fixture-a...bject at 0x7f8a2b064620>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f8a2b9e3c20>, ...}
+unavailable = 'expiry'
+
+    @pytest.mark.parametrize('unavailable',['withdraw','expiry','unmounted'])
+    def test_independent_unavailable_effective_target_is_history_not_current_verification(upgrade_case,unavailable):
+        from template_migration_test_helpers import full
+        from test_template_upgrade import plan_read
+        from test_case_goal_results import get as goal_results
+        from parkweave.template_candidate import Command
+        u=upgrade_case;row,_,p=full(u);target=publication(u,[__import__('test_template_upgrade').GOALS[-1]],source='1',name='SYNTHETIC new description same source')
+        _,data=admit(u,row,target,'ACK_COMPATIBLE');assert apply(u,row,data,'current-target-base').status_code==200
+        original=stored(u,row);clock=u['engine'].clock
+        if unavailable=='withdraw':
+            head=u['engine'].read('template-publisher',u['scope'])
+            u['engine'].command('template-publisher',u['scope'],uuid4().hex,Command(action='WITHDRAW',expected_revision=head['revision'],expected_definition_sha256=head['definition_sha256'],reason='SYNTHETIC current target no longer available'))
+        elif unavailable=='expiry':u['engine'].clock=lambda:datetime(2100,1,1,tzinfo=timezone.utc)
+        else:delattr(u['f'][0],'_isolated_template_migration_checker')
+        page=plan_read(u['f'],p);assert page.status_code==200,page.text
+>       goals=goal_results(u['f'],p);assert goals.status_code==200,goals.text
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"adopted goal result plan proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_independent_template_migration_runtime.py:234: AssertionError
+_ test_independent_unavailable_effective_target_is_history_not_current_verification[unmounted] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f8a29de9280>, <parkweave.store.Store object at 0x7f8a29de8a10>, {'fixture-a...bject at 0x7f8a2989fd40>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f8a298e2510>, ...}
+unavailable = 'unmounted'
+
+    @pytest.mark.parametrize('unavailable',['withdraw','expiry','unmounted'])
+    def test_independent_unavailable_effective_target_is_history_not_current_verification(upgrade_case,unavailable):
+        from template_migration_test_helpers import full
+        from test_template_upgrade import plan_read
+        from test_case_goal_results import get as goal_results
+        from parkweave.template_candidate import Command
+        u=upgrade_case;row,_,p=full(u);target=publication(u,[__import__('test_template_upgrade').GOALS[-1]],source='1',name='SYNTHETIC new description same source')
+        _,data=admit(u,row,target,'ACK_COMPATIBLE');assert apply(u,row,data,'current-target-base').status_code==200
+        original=stored(u,row);clock=u['engine'].clock
+        if unavailable=='withdraw':
+            head=u['engine'].read('template-publisher',u['scope'])
+            u['engine'].command('template-publisher',u['scope'],uuid4().hex,Command(action='WITHDRAW',expected_revision=head['revision'],expected_definition_sha256=head['definition_sha256'],reason='SYNTHETIC current target no longer available'))
+        elif unavailable=='expiry':u['engine'].clock=lambda:datetime(2100,1,1,tzinfo=timezone.utc)
+        else:delattr(u['f'][0],'_isolated_template_migration_checker')
+        page=plan_read(u['f'],p);assert page.status_code==200,page.text
+>       goals=goal_results(u['f'],p);assert goals.status_code==200,goals.text
+                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"adopted goal result plan proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_independent_template_migration_runtime.py:234: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_independent_template_migration_runtime.py::test_independent_unavailable_effective_target_is_history_not_current_verification[withdraw]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_independent_template_migration_runtime.py::test_independent_unavailable_effective_target_is_history_not_current_verification[withdraw]
+FAILED tests/test_independent_template_migration_runtime.py::test_independent_unavailable_effective_target_is_history_not_current_verification[expiry]
+FAILED tests/test_independent_template_migration_runtime.py::test_independent_unavailable_effective_target_is_history_not_current_verification[unmounted]
+3 failed, 13 deselected, 2 warnings in 7.43s
