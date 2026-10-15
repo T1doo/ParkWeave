@@ -34,6 +34,18 @@ class Apply(BaseModel):
     reason: str = Field(min_length=1, max_length=1000)
 
 
+class NoteCarryApply(Apply):
+    expected_note_carry_sha256: str = Field(pattern='^[a-f0-9]{64}$')
+    confirm_note_carry: Literal[True]
+
+    @field_validator('confirm_note_carry', mode='before')
+    @classmethod
+    def explicit_note_confirmation(cls, value):
+        if type(value) is not bool or value is not True:
+            raise ValueError('explicit true manual note carry confirmation required')
+        return value
+
+
 class StructureApply(Apply):
     expected_structure_sha256: str = Field(pattern='^[a-f0-9]{64}$')
     confirm_structure_change: Literal[True]
@@ -48,7 +60,7 @@ class StructureApply(Apply):
 
 def parse_apply_request(patch):
     """Historical nine-key requests and explicitly confirmed structure requests differ."""
-    model = StructureApply if 'structure_change' in patch else Apply
+    model = NoteCarryApply if 'note_carry' in patch else StructureApply if 'structure_change' in patch else Apply
     return model.model_validate(patch['request'])
 
 
@@ -210,8 +222,10 @@ def validate_plan(parent,plan):
             patch=event['template_upgrade'];request=parse_apply_request(patch)
             before=patch['previous_release'];target=patch['target_release'];origin=patch['origin_binding']
             structural='structure_change' in patch
+            carried='note_carry' in patch
+            if structural and carried:raise ValueError()
             keys={'request','origin_binding','previous_release','target_release','check','choice','affected','preserved','source_changed'}
-            if set(patch)!=(keys|{'structure_change'} if structural else keys):raise ValueError()
+            if set(patch)!=(keys|{'note_carry'} if carried else keys|{'structure_change'} if structural else keys):raise ValueError()
             scope=patch['check']['scope'];choice=patch['choice'];choice_body={k:v for k,v in choice.items() if k!='event_sha256'}
             initial_key=plan['events'][0]['request_key']
             if initial_key.startswith('tc:') and initial_key!='tc:'+scope['instance_id']+':ADOPT_PLAN':raise ValueError()
@@ -255,6 +269,12 @@ def validate_plan(parent,plan):
             from .template_upgrade import Selection
             selection=Selection(target_release_id=choice['check']['target_release_id'],expected_target_sha256=choice['check']['target_release_sha256'],expected_check_sha256=choice['check_sha256'],expected_revision=choice['revision']-1,choice=choice['choice'],reason=choice['reason'])
             if choice['request_sha256']!=sha(dict(instance_id=scope['instance_id'],**selection.model_dump(mode='json'))):raise ValueError()
+            from . import note_template_carry
+            prior_notes=note_template_carry.notes_before_v1(plan,event['revision'])
+            if carried:
+                if not isinstance(request,NoteCarryApply) or structural:raise ValueError()
+                note_template_carry.validate(parent,plan,event,before,target,patch['check'],choice,affected,preserved)
+            elif prior_notes:raise ValueError('historical annotation requires explicit carry proof')
             if effective and origin!=effective['origin_binding']:raise ValueError()
             effective=dict(instance_id=scope['instance_id'],origin_binding=origin,release=target,last_event_id=event['id'])
             prior=target
@@ -380,12 +400,17 @@ def application(checker,context,check,events,t):
     if plan and plan['revision']+1+verification_events+sum(bool(s.get('manual_lock')) for s in plan['steps'])>plans.LIMIT:blockers.append('PLAN_EVENT_LIMIT')
     choice=events[-1] if events else None
     if not choice or choice['choice'] not in ('REQUEST_RECHECK','ACK_COMPATIBLE') or choice['check_sha256']!=sha(check):blockers.append('CURRENT_EXPLICIT_CHOICE_REQUIRED')
-    return dict(eligible=not blockers,blockers=blockers,effective_release_id=effective['release_id'],plan_id=plan['id'] if plan else None,
+    result=dict(eligible=not blockers,blockers=blockers,effective_release_id=effective['release_id'],plan_id=plan['id'] if plan else None,
         plan_revision=plan['revision'] if plan else 0,preparation_revision=parent['revision'],source_sha256=check['case_state_sha256'],
         affected=affected,preserved=[id for id in ids if id not in affected],
         structure_change=proof,structure_sha256=sha(proof) if proof else None,requires_structure_confirmation=proof is not None,
         choice_revision=choice['revision'] if choice else 0,
         choice_event_sha256=choice['event_sha256'] if choice else None)
+    if plan and plan.get('owner_amendments'):
+        from .note_template_carry import projection
+        carried=projection(checker,context,check,events,t,result,effective,target)
+        result.update(note_carry=carried,note_carry_sha256=carried['preview_sha256'],requires_note_carry_confirmation=True)
+    return result
 
 
 def apply(checker,token,instance_id,key,data):
@@ -407,19 +432,23 @@ def apply(checker,token,instance_id,key,data):
         adoption_guard(c,parent,plan)
         # Note history binds the original complete step contracts. A migration
         # must not silently reinterpret that history or discard the owner body.
-        if plan.get('owner_amendments'):
+        if plan.get('owner_amendments') and not isinstance(data,NoteCarryApply):
             raise Conflict('owner coordination note requires controlled carry before template application')
+        if isinstance(data,NoteCarryApply) and not plan.get('owner_amendments'):raise Conflict('current manual owner note required for carry')
         local=c.execute('SELECT state FROM case_local_lifecycles WHERE preparation_id=%s',(parent['id'],)).fetchone()
         if local and local['state']=='LOCAL_RECORD_CLOSED':raise Conflict('closed local Case cannot adopt template revision')
         with checker.engine.lock,source_connection(checker.engine) as t,checker.repository.connect() as journal:
             check=checker._check(context,data.target_release_id,data.expected_target_sha256,t)
             events=checker._history(journal,scope)
             projection=application(checker,context,check,events,t)
-            if (not projection['eligible'] or sha(check)!=data.expected_check_sha256 or
+            carry=projection.get('note_carry') if isinstance(data,NoteCarryApply) else None
+            eligible=carry['eligible'] if carry is not None else projection['eligible']
+            if (not eligible or sha(check)!=data.expected_check_sha256 or
                 projection['choice_revision']!=data.expected_choice_revision or projection['choice_event_sha256']!=data.expected_choice_event_sha256 or
                 plan['id']!=str(data.expected_plan_id) or plan['revision']!=data.expected_plan_revision or
                 parent['revision']!=data.expected_preparation_revision or check['case_state_sha256']!=data.expected_source_sha256):
                 raise Conflict('template application check, choice, plan or source changed: '+','.join(projection['blockers']))
+            if isinstance(data,NoteCarryApply) and (carry is None or not carry['proof'] or data.expected_note_carry_sha256!=carry['preview_sha256']):raise Conflict('fresh explicit manual note carry proof required')
             before=_effective(instance,plan)
             target=release_proof(checker.engine,t,data.target_release_id,data.expected_target_sha256,current=True)
             release_proof(checker.engine,t,before['release_id'],before['release_sha256'])
@@ -428,6 +457,13 @@ def apply(checker,token,instance_id,key,data):
                 if not isinstance(data,StructureApply):raise Conflict('explicit structure confirmation required; use apply-structure')
                 if data.expected_structure_sha256!=sha(proof) or data.confirm_structure_change is not True:raise Conflict('structure confirmation proof changed')
             elif isinstance(data,StructureApply):raise Conflict('current structural change required')
+            if isinstance(data,NoteCarryApply):
+                if proof is not None:raise Conflict('manual annotation structure migration unsupported')
+                final_check=checker._check(context,data.target_release_id,data.expected_target_sha256,t)
+                final_projection=application(checker,context,final_check,events,t)
+                final_carry=final_projection.get('note_carry')
+                if (not final_carry or not final_carry['eligible'] or final_carry['proof']!=carry['proof'] or
+                    final_carry['preview_sha256']!=data.expected_note_carry_sha256):raise Conflict('manual note carry source or authority changed before application')
             origin=deepcopy(instance['binding'])
             plan['revision']+=1
             event=plans._event(plan,p,key,fp,ACTION,data.reason)
@@ -435,6 +471,7 @@ def apply(checker,token,instance_id,key,data):
                 check=check,choice=events[-1],affected=projection['affected'],preserved=projection['preserved'],
                 source_changed=before['snapshot']['definition']['source']!=target['snapshot']['definition']['source'])
             if proof is not None:event['template_upgrade']['structure_change']=proof
+            if isinstance(data,NoteCarryApply):event['template_upgrade']['note_carry']=deepcopy(carry['proof'])
             plan['template_migration']=dict(instance_id=scope['instance_id'],origin_binding=origin,release=target,last_event_id=event['id'])
             for step in plan['steps']:
                 if step['id'] in projection['affected'] and step.get('verified_sha256'):step['invalidated']=True

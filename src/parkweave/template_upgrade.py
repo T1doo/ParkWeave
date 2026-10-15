@@ -276,6 +276,10 @@ def install_routes(app, checker):
     def apply_revision(instance_id: UUID, data: template_migration.Apply, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
         return checker.apply(token(authorization), instance_id, idempotency_key, data)
 
+    @app.post('/api/template-upgrade/{instance_id}/apply-note-carry')
+    def apply_note_carry(instance_id: UUID, data: template_migration.NoteCarryApply, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
+        return checker.apply(token(authorization), instance_id, idempotency_key, data)
+
     @app.post('/api/template-upgrade/{instance_id}/apply-structure')
     def apply_structure(instance_id: UUID, data: template_migration.StructureApply, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
         return checker.apply(token(authorization), instance_id, idempotency_key, data)
