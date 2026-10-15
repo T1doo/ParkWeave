@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.700" timestamp="2026-10-15T02:08:57.856575+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_structure_independent" name="test_literal_registered_p5_addition_is_an_actual_structure_difference" time="1.815"><failure message="KeyError: 'definition'">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7fafa6da22d0&gt;, &lt;parkweave.store.Store object at 0x7fafa6da2240&gt;, {'fixture-a...bject at 0x7fafa6ffc7d0&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fafa6bb5790&gt;, ...}
+
+    def test_literal_registered_p5_addition_is_an_actual_structure_difference(upgrade_case):
+        u=upgrade_case
+        row,old=instance(u,OLD_GOALS)
+        p=confirmed(u,row)
+        target=publication(u,NEW_GOALS,source='1',name='Synthetic explicitly proposed P5 extension')
+&gt;       assert [s['id'] for s in old['definition']['steps']]==['P1','P2','P3','P4']
+                                 ^^^^^^^^^^^^^^^^^
+E       KeyError: 'definition'
+
+tests/test_template_structure_independent.py:32: KeyError</failure></testcase></testsuite></testsuites>

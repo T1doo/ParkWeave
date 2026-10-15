@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.062" timestamp="2026-10-15T02:09:11.606874+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_structure_independent" name="test_literal_registered_p5_addition_is_an_actual_structure_difference" time="1.951"><failure message="AssertionError: {'eligible': False, 'blockers': ['UPGRADE_SCOPE_UNSUPPORTED', 'CURRENT_EXPLICIT_CHOICE_REQUIRED'], 'effective_release_id': '31f595e1-b555-44ca-b431-b8e458dbcf3f', 'plan_id': 'c544feba-1adc-4a7a-88e8-cca32d0f9cee', ...}&#10;assert 'UPGRADE_SCOPE_UNSUPPORTED' not in ['UPGRADE_SCOPE_UNSUPPORTED', 'CURRENT_EXPLICIT_CHOICE_REQUIRED']">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7ff69a242450&gt;, &lt;parkweave.store.Store object at 0x7ff69a242510&gt;, {'fixture-a...bject at 0x7ff69a243260&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7ff69a6519a0&gt;, ...}
+
+    def test_literal_registered_p5_addition_is_an_actual_structure_difference(upgrade_case):
+        u=upgrade_case
+        row,old=instance(u,OLD_GOALS)
+        p=confirmed(u,row)
+        target=publication(u,NEW_GOALS,source='1',name='Synthetic explicitly proposed P5 extension')
+        assert [s['id'] for s in old['snapshot']['definition']['steps']]==['P1','P2','P3','P4']
+        assert [s['id'] for s in target['snapshot']['definition']['steps']]==['P1','P2','P3','P4','P5']
+        before=all_pg_rows(u)
+        view=check(u,row,target)
+        assert view.status_code==200,view.text
+        assert all_pg_rows(u)==before, 'structural inspection wrote existing facts'
+        body=view.json()
+        assert body['check']['classification']=='NEEDS_RECHECK'
+&gt;       assert 'UPGRADE_SCOPE_UNSUPPORTED' not in body['application']['blockers'],body['application']
+E       AssertionError: {'eligible': False, 'blockers': ['UPGRADE_SCOPE_UNSUPPORTED', 'CURRENT_EXPLICIT_CHOICE_REQUIRED'], 'effective_release_id': '31f595e1-b555-44ca-b431-b8e458dbcf3f', 'plan_id': 'c544feba-1adc-4a7a-88e8-cca32d0f9cee', ...}
+E       assert 'UPGRADE_SCOPE_UNSUPPORTED' not in ['UPGRADE_SCOPE_UNSUPPORTED', 'CURRENT_EXPLICIT_CHOICE_REQUIRED']
+
+tests/test_template_structure_independent.py:40: AssertionError</failure></testcase></testsuite></testsuites>

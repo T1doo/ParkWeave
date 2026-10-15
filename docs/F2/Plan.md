@@ -557,3 +557,11 @@ ENG100 最终完整 Linux：**2174 PASS / 0 FAIL / 0 ERROR / 9 既有 native SKI
 A普通新Run无执行者assignment且默认批准入口关闭，实际分派403、业务与权限不变，原生产合法批准/分派授权合同仍BLOCKED。B把原owner-only合成assign_status单列为业务链之外前提，随后仅原API/worker办理；不签零setup正式AT35。成功再次输入为同fixture-a，跨企业/园区仅拒绝矩阵。真实模型、正式服务发布、真实工作台/原生Windows/园区效果、正式AT01–35/F2/PR0-alpha仍NOT_RUN；历史Case_count0仍UNCONFIRMED，不通过新建单成功消除历史未知。无生产迁移/部署、新Grant/信任登记、凭据或网络配置、权限扩大、强推或保护分支修改。
 
 详见 [实施前合同](T07FullChainContract.md)、[整链有限报告](T07FullChain.md)、[167项可读证据索引](evidence/f2-t07-full-chain-20261011/README.md)。原三段取消归档428文件集合/字节保持。下一步须明确原产品普通新Run的合法批准/分派授权生产合同并另验模型/发布/工作台；本片不新增取消微状态或放宽前提。
+
+## 在途模板的有限结构增强（2026-10-15）
+
+从同结构修订采用交付 `aceb01d2351a695fa1358d91ea944615ba4a468c` 继续原 F2-T06/F3-T03：仅支持前向模板追加既有注册必需目标与闭包，新增义务已在原 Case 初始请求/采用计划内、底层全部当前 VERIFIED。原六目标、步骤 ID、历史、人工决策、实际预约/资源/接单/回执/Run 保留；原图精确下游重验，保留锁不误冲突，64 事件预留采用、影响 VERIFY 与所有锁 UNLOCK。新增 Case 目标/节点及任意合同变化继续拒绝。
+
+源码与测试 `60ed07b10c854c25ec575c5769c5ad539f7a6ba9`。结构采用须额外独立确认与精确证明 hash；旧入口不放宽，未知结果仅 GET 原键。严格存储/重算/请求三方证明 hash，累计每步结构来源不被后续说明修订抹除；目标租约在真实 PG commit 重核，实际 UPDATE 后跨到期点三分支全回滚。根 44 模块单窗 1430 PASS，独测单窗 81 PASS，独审单窗 302 PASS（LIMITED_PASS），均同 SHA、0 FAIL/ERROR/SKIP，583 tracked 文件零漂移；原 1355 项完整保留，新增 75 项。失败、被替代/中断窗口及工具拒绝原件分列，不合并为全通过；实施者额外私有调试失败不计签收通过。
+
+详见[有限合同](TemplateStructureMigrationContract-20261015.md)与[交付报告](TemplateStructureMigrationDelivery-20261015.md)。正式 AT、浏览器、Windows、真实模型、正式治理和生产操作 NOT RUN；原正式规格 hash 不改。更广结构差异仍须独立兼容证明，不以本片替代原生与正式发布门。

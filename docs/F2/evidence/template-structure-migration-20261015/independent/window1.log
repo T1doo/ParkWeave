@@ -1,0 +1,204 @@
+..................FFFFFFF..........                                      [100%]
+=================================== FAILURES ===================================
+_____ test_structural_apply_and_recovery_reject_other_identity[fixture-b] ______
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f64f7f41010>, <parkweave.store.Store object at 0x7f64f7f40920>, {'fixture-a...bject at 0x7f64f5d60530>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f5d62360>, ...}
+user = 'fixture-b'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_structural_apply_and_recovery_reject_other_identity(upgrade_case,user):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic owner-only structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        before=all_pg_rows(u)
+        result=apply(u,row,data,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+        result=recovery(u,row,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+>       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('5c40e649-e350-4271-b721-db94a61fd938'), 'principal_id': 'fixture-b', 'category':...a8b-4d28-93d7-e1adcc6cf082'), 'principal_id': 'fixture-b', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:394: AssertionError
+_____ test_structural_apply_and_recovery_reject_other_identity[fixture-c] ______
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f64f5e42c60>, <parkweave.store.Store object at 0x7f64f7e4e360>, {'fixture-a...bject at 0x7f64f588f680>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f63a6f90>, ...}
+user = 'fixture-c'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_structural_apply_and_recovery_reject_other_identity(upgrade_case,user):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic owner-only structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        before=all_pg_rows(u)
+        result=apply(u,row,data,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+        result=recovery(u,row,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+>       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('1ccf3f40-9a52-4d22-bf4e-6183a9d18fbb'), 'principal_id': 'fixture-c', 'category':...72a-497c-b927-e76b32cc5c4c'), 'principal_id': 'fixture-c', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:394: AssertionError
+_ test_structural_apply_and_recovery_reject_other_identity[prep-specialist-fixture-a] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f64f5ea9d00>, <parkweave.store.Store object at 0x7f64f5ae29f0>, {'fixture-a...bject at 0x7f64f6e0c440>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f59098e0>, ...}
+user = 'prep-specialist-fixture-a'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_structural_apply_and_recovery_reject_other_identity(upgrade_case,user):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic owner-only structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        before=all_pg_rows(u)
+        result=apply(u,row,data,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+        result=recovery(u,row,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+>       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('3d013f6a-863d-421d-a0f1-cb2f853fe98e'), 'principal_id': 'prep-specialist-fixture...9d31e4a41d'), 'principal_id': 'prep-specialist-fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:394: AssertionError
+_____ test_structural_apply_and_recovery_reject_other_identity[executor-a] _____
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f64fd327d10>, <parkweave.store.Store object at 0x7f64f6088710>, {'fixture-a...bject at 0x7f64fc99c440>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f59881a0>, ...}
+user = 'executor-a'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_structural_apply_and_recovery_reject_other_identity(upgrade_case,user):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic owner-only structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        before=all_pg_rows(u)
+        result=apply(u,row,data,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+        result=recovery(u,row,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+>       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('2a5bd3d7-d362-4a73-a910-c01176448cf0'), 'principal_id': 'executor-a', 'category'...c0-4621-a5fa-1eef3c8a19d9'), 'principal_id': 'executor-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:394: AssertionError
+_ test_structural_current_revocation_blocks_apply_and_original_recovery[EXECUTE] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f64fc0aae10>, <parkweave.store.Store object at 0x7f64f6e0ffe0>, {'fixture-a...bject at 0x7f64f59b96d0>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64fc93f800>, ...}
+permission = 'EXECUTE'
+
+    @pytest.mark.parametrize('permission',['EXECUTE','PREPARE','READ'])
+    def test_structural_current_revocation_blocks_apply_and_original_recovery(upgrade_case,permission):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic current revoked structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        with u['f'][1].connect() as c:
+            u['f'][1].lock_principal(c,'fixture-a',exclusive=True)
+            if permission=='PREPARE':c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            else:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability=%s",(permission,))
+        before=all_pg_rows(u)
+        response=apply(u,row,data,'structural-revoked')
+        assert response.status_code==403,response.text
+        if permission in ('READ','PREPARE'):
+            response=recovery(u,row,'structural-revoked')
+            assert response.status_code==403,response.text
+>       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('bb6b365d-b80b-4826-8577-c0a7968f6b0d'), 'principal_id': 'fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:412: AssertionError
+_ test_structural_current_revocation_blocks_apply_and_original_recovery[PREPARE] _
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f64fc5da9f0>, <parkweave.store.Store object at 0x7f64fc93e9f0>, {'fixture-a...bject at 0x7f64fc094440>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f6260ef0>, ...}
+permission = 'PREPARE'
+
+    @pytest.mark.parametrize('permission',['EXECUTE','PREPARE','READ'])
+    def test_structural_current_revocation_blocks_apply_and_original_recovery(upgrade_case,permission):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic current revoked structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        with u['f'][1].connect() as c:
+            u['f'][1].lock_principal(c,'fixture-a',exclusive=True)
+            if permission=='PREPARE':c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            else:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability=%s",(permission,))
+        before=all_pg_rows(u)
+        response=apply(u,row,data,'structural-revoked')
+        assert response.status_code==403,response.text
+        if permission in ('READ','PREPARE'):
+            response=recovery(u,row,'structural-revoked')
+            assert response.status_code==403,response.text
+>       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('2789fea2-0021-44f3-ba01-d4ff9f1db3ae'), 'principal_id': 'fixture-a', 'category':...c57-4da5-94a5-22022ad438cf'), 'principal_id': 'fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:412: AssertionError
+_ test_structural_current_revocation_blocks_apply_and_original_recovery[READ] __
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f64f64c9940>, <parkweave.store.Store object at 0x7f64fc5a32f0>, {'fixture-a...bject at 0x7f64f583a9f0>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f5839a00>, ...}
+permission = 'READ'
+
+    @pytest.mark.parametrize('permission',['EXECUTE','PREPARE','READ'])
+    def test_structural_current_revocation_blocks_apply_and_original_recovery(upgrade_case,permission):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic current revoked structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        with u['f'][1].connect() as c:
+            u['f'][1].lock_principal(c,'fixture-a',exclusive=True)
+            if permission=='PREPARE':c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            else:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability=%s",(permission,))
+        before=all_pg_rows(u)
+        response=apply(u,row,data,'structural-revoked')
+        assert response.status_code==403,response.text
+        if permission in ('READ','PREPARE'):
+            response=recovery(u,row,'structural-revoked')
+            assert response.status_code==403,response.text
+>       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('060e551c-f1d4-4996-8187-da2713d573d8'), 'principal_id': 'fixture-a', 'category':...013-4a1f-86d7-36c12cd55484'), 'principal_id': 'fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:412: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_template_structure_independent.py::test_new_case_goal_not_predeclared_is_explicitly_rejected
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_template_structure_independent.py::test_structural_apply_and_recovery_reject_other_identity[fixture-b]
+FAILED tests/test_template_structure_independent.py::test_structural_apply_and_recovery_reject_other_identity[fixture-c]
+FAILED tests/test_template_structure_independent.py::test_structural_apply_and_recovery_reject_other_identity[prep-specialist-fixture-a]
+FAILED tests/test_template_structure_independent.py::test_structural_apply_and_recovery_reject_other_identity[executor-a]
+FAILED tests/test_template_structure_independent.py::test_structural_current_revocation_blocks_apply_and_original_recovery[EXECUTE]
+FAILED tests/test_template_structure_independent.py::test_structural_current_revocation_blocks_apply_and_original_recovery[PREPARE]
+FAILED tests/test_template_structure_independent.py::test_structural_current_revocation_blocks_apply_and_original_recovery[READ]
+7 failed, 28 passed, 2 warnings in 132.08s (0:02:12)

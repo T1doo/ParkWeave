@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="35" time="132.077" timestamp="2026-10-15T02:18:26.625864+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_structure_independent" name="test_new_case_goal_not_predeclared_is_explicitly_rejected" time="1.440" /><testcase classname="tests.test_template_structure_independent" name="test_literal_template_structure_addition_with_unchanged_original_six_goals" time="2.391" /><testcase classname="tests.test_template_structure_independent" name="test_actual_structural_adoption_preserves_six_goals_and_every_actual_effect[target_goals0-affected_adapters0]" time="4.164" /><testcase classname="tests.test_template_structure_independent" name="test_actual_structural_adoption_preserves_six_goals_and_every_actual_effect[target_goals1-affected_adapters1]" time="4.308" /><testcase classname="tests.test_template_structure_independent" name="test_structural_change_respects_precise_existing_manual_lock[P1-True]" time="3.934" /><testcase classname="tests.test_template_structure_independent" name="test_structural_change_respects_precise_existing_manual_lock[P5-False]" time="3.873" /><testcase classname="tests.test_template_structure_independent" name="test_structural_new_p5_budget_reserves_exact_owner_verify_capacity[62]" time="11.606" /><testcase classname="tests.test_template_structure_independent" name="test_structural_new_p5_budget_reserves_exact_owner_verify_capacity[63]" time="11.803" /><testcase classname="tests.test_template_structure_independent" name="test_structural_registered_requirement_propagates_to_literal_downstream[old_goals0-target_goals0-affected0]" time="3.657" /><testcase classname="tests.test_template_structure_independent" name="test_structural_registered_requirement_propagates_to_literal_downstream[old_goals1-target_goals1-affected1]" time="3.265" /><testcase classname="tests.test_template_structure_independent" name="test_mixed_source_and_structural_change_conservatively_reverifies_all" time="3.550" /><testcase classname="tests.test_template_structure_independent" name="test_structural_multihop_compares_effective_template_and_keeps_old_key" time="4.950" /><testcase classname="tests.test_template_structure_independent" name="test_structural_apply_concurrency_has_exactly_one_immutable_event[same_key_same_body]" time="2.818" /><testcase classname="tests.test_template_structure_independent" name="test_structural_apply_concurrency_has_exactly_one_immutable_event[same_key_different_body]" time="3.120" /><testcase classname="tests.test_template_structure_independent" name="test_structural_apply_concurrency_has_exactly_one_immutable_event[different_key_same_body]" time="3.327" /><testcase classname="tests.test_template_structure_independent" name="test_structural_event_save_failure_rolls_back_actual_pg_update" time="3.317" /><testcase classname="tests.test_template_structure_independent" name="test_structural_lost_committed_response_gets_original_key_without_repost" time="3.187" /><testcase classname="tests.test_template_structure_independent" name="test_structural_adoption_never_changes_other_case_plan_or_current_request" time="4.798" /><testcase classname="tests.test_template_structure_independent" name="test_structural_apply_and_recovery_reject_other_identity[fixture-b]" time="3.126"><failure message="AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}&#10;  &#10;  Omitting 45 identical items, use -vv to show&#10;  Differing items:&#10;  {'authorization_audit': [{'id': UUID('5c40e649-e350-4271-b721-db94a61fd938'), 'principal_id': 'fixture-b', 'category':...a8b-4d28-93d7-e1adcc6cf082'), 'principal_id': 'fixture-b', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}&#10;  Use -v to get more diff">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f64f7f41010&gt;, &lt;parkweave.store.Store object at 0x7f64f7f40920&gt;, {'fixture-a...bject at 0x7f64f5d60530&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f5d62360&gt;, ...}
+user = 'fixture-b'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_structural_apply_and_recovery_reject_other_identity(upgrade_case,user):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic owner-only structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        before=all_pg_rows(u)
+        result=apply(u,row,data,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+        result=recovery(u,row,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+&gt;       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('5c40e649-e350-4271-b721-db94a61fd938'), 'principal_id': 'fixture-b', 'category':...a8b-4d28-93d7-e1adcc6cf082'), 'principal_id': 'fixture-b', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:394: AssertionError</failure></testcase><testcase classname="tests.test_template_structure_independent" name="test_structural_apply_and_recovery_reject_other_identity[fixture-c]" time="3.276"><failure message="AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}&#10;  &#10;  Omitting 45 identical items, use -vv to show&#10;  Differing items:&#10;  {'authorization_audit': [{'id': UUID('1ccf3f40-9a52-4d22-bf4e-6183a9d18fbb'), 'principal_id': 'fixture-c', 'category':...72a-497c-b927-e76b32cc5c4c'), 'principal_id': 'fixture-c', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}&#10;  Use -v to get more diff">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f64f5e42c60&gt;, &lt;parkweave.store.Store object at 0x7f64f7e4e360&gt;, {'fixture-a...bject at 0x7f64f588f680&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f63a6f90&gt;, ...}
+user = 'fixture-c'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_structural_apply_and_recovery_reject_other_identity(upgrade_case,user):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic owner-only structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        before=all_pg_rows(u)
+        result=apply(u,row,data,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+        result=recovery(u,row,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+&gt;       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('1ccf3f40-9a52-4d22-bf4e-6183a9d18fbb'), 'principal_id': 'fixture-c', 'category':...72a-497c-b927-e76b32cc5c4c'), 'principal_id': 'fixture-c', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:394: AssertionError</failure></testcase><testcase classname="tests.test_template_structure_independent" name="test_structural_apply_and_recovery_reject_other_identity[prep-specialist-fixture-a]" time="3.493"><failure message="AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}&#10;  &#10;  Omitting 45 identical items, use -vv to show&#10;  Differing items:&#10;  {'authorization_audit': [{'id': UUID('3d013f6a-863d-421d-a0f1-cb2f853fe98e'), 'principal_id': 'prep-specialist-fixture...9d31e4a41d'), 'principal_id': 'prep-specialist-fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}&#10;  Use -v to get more diff">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f64f5ea9d00&gt;, &lt;parkweave.store.Store object at 0x7f64f5ae29f0&gt;, {'fixture-a...bject at 0x7f64f6e0c440&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f59098e0&gt;, ...}
+user = 'prep-specialist-fixture-a'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_structural_apply_and_recovery_reject_other_identity(upgrade_case,user):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic owner-only structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        before=all_pg_rows(u)
+        result=apply(u,row,data,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+        result=recovery(u,row,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+&gt;       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('3d013f6a-863d-421d-a0f1-cb2f853fe98e'), 'principal_id': 'prep-specialist-fixture...9d31e4a41d'), 'principal_id': 'prep-specialist-fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:394: AssertionError</failure></testcase><testcase classname="tests.test_template_structure_independent" name="test_structural_apply_and_recovery_reject_other_identity[executor-a]" time="3.361"><failure message="AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}&#10;  &#10;  Omitting 45 identical items, use -vv to show&#10;  Differing items:&#10;  {'authorization_audit': [{'id': UUID('2a5bd3d7-d362-4a73-a910-c01176448cf0'), 'principal_id': 'executor-a', 'category'...c0-4621-a5fa-1eef3c8a19d9'), 'principal_id': 'executor-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}&#10;  Use -v to get more diff">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f64fd327d10&gt;, &lt;parkweave.store.Store object at 0x7f64f6088710&gt;, {'fixture-a...bject at 0x7f64fc99c440&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f59881a0&gt;, ...}
+user = 'executor-a'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_structural_apply_and_recovery_reject_other_identity(upgrade_case,user):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic owner-only structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        before=all_pg_rows(u)
+        result=apply(u,row,data,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+        result=recovery(u,row,'structural-owner-key',user=user)
+        assert result.status_code==403,result.text
+&gt;       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('2a5bd3d7-d362-4a73-a910-c01176448cf0'), 'principal_id': 'executor-a', 'category'...c0-4621-a5fa-1eef3c8a19d9'), 'principal_id': 'executor-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:394: AssertionError</failure></testcase><testcase classname="tests.test_template_structure_independent" name="test_structural_current_revocation_blocks_apply_and_original_recovery[EXECUTE]" time="3.237"><failure message="AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}&#10;  &#10;  Omitting 45 identical items, use -vv to show&#10;  Differing items:&#10;  {'authorization_audit': [{'id': UUID('bb6b365d-b80b-4826-8577-c0a7968f6b0d'), 'principal_id': 'fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}&#10;  Use -v to get more diff">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f64fc0aae10&gt;, &lt;parkweave.store.Store object at 0x7f64f6e0ffe0&gt;, {'fixture-a...bject at 0x7f64f59b96d0&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64fc93f800&gt;, ...}
+permission = 'EXECUTE'
+
+    @pytest.mark.parametrize('permission',['EXECUTE','PREPARE','READ'])
+    def test_structural_current_revocation_blocks_apply_and_original_recovery(upgrade_case,permission):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic current revoked structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        with u['f'][1].connect() as c:
+            u['f'][1].lock_principal(c,'fixture-a',exclusive=True)
+            if permission=='PREPARE':c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            else:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability=%s",(permission,))
+        before=all_pg_rows(u)
+        response=apply(u,row,data,'structural-revoked')
+        assert response.status_code==403,response.text
+        if permission in ('READ','PREPARE'):
+            response=recovery(u,row,'structural-revoked')
+            assert response.status_code==403,response.text
+&gt;       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('bb6b365d-b80b-4826-8577-c0a7968f6b0d'), 'principal_id': 'fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:412: AssertionError</failure></testcase><testcase classname="tests.test_template_structure_independent" name="test_structural_current_revocation_blocks_apply_and_original_recovery[PREPARE]" time="3.122"><failure message="AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}&#10;  &#10;  Omitting 45 identical items, use -vv to show&#10;  Differing items:&#10;  {'authorization_audit': [{'id': UUID('2789fea2-0021-44f3-ba01-d4ff9f1db3ae'), 'principal_id': 'fixture-a', 'category':...c57-4da5-94a5-22022ad438cf'), 'principal_id': 'fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}&#10;  Use -v to get more diff">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f64fc5da9f0&gt;, &lt;parkweave.store.Store object at 0x7f64fc93e9f0&gt;, {'fixture-a...bject at 0x7f64fc094440&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f6260ef0&gt;, ...}
+permission = 'PREPARE'
+
+    @pytest.mark.parametrize('permission',['EXECUTE','PREPARE','READ'])
+    def test_structural_current_revocation_blocks_apply_and_original_recovery(upgrade_case,permission):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic current revoked structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        with u['f'][1].connect() as c:
+            u['f'][1].lock_principal(c,'fixture-a',exclusive=True)
+            if permission=='PREPARE':c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            else:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability=%s",(permission,))
+        before=all_pg_rows(u)
+        response=apply(u,row,data,'structural-revoked')
+        assert response.status_code==403,response.text
+        if permission in ('READ','PREPARE'):
+            response=recovery(u,row,'structural-revoked')
+            assert response.status_code==403,response.text
+&gt;       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('2789fea2-0021-44f3-ba01-d4ff9f1db3ae'), 'principal_id': 'fixture-a', 'category':...c57-4da5-94a5-22022ad438cf'), 'principal_id': 'fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:412: AssertionError</failure></testcase><testcase classname="tests.test_template_structure_independent" name="test_structural_current_revocation_blocks_apply_and_original_recovery[READ]" time="3.342"><failure message="AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}&#10;  &#10;  Omitting 45 identical items, use -vv to show&#10;  Differing items:&#10;  {'authorization_audit': [{'id': UUID('060e551c-f1d4-4996-8187-da2713d573d8'), 'principal_id': 'fixture-a', 'category':...013-4a1f-86d7-36c12cd55484'), 'principal_id': 'fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}&#10;  Use -v to get more diff">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f64f64c9940&gt;, &lt;parkweave.store.Store object at 0x7f64fc5a32f0&gt;, {'fixture-a...bject at 0x7f64f583a9f0&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f64f5839a00&gt;, ...}
+permission = 'READ'
+
+    @pytest.mark.parametrize('permission',['EXECUTE','PREPARE','READ'])
+    def test_structural_current_revocation_blocks_apply_and_original_recovery(upgrade_case,permission):
+        u=upgrade_case;row,old,p=complete_declared(u)
+        target=publication(u,GOALS,source='1',name='Synthetic current revoked structural choice')
+        view,data=admit(u,row,target);assert view['application']['eligible'],view['application']
+        with u['f'][1].connect() as c:
+            u['f'][1].lock_principal(c,'fixture-a',exclusive=True)
+            if permission=='PREPARE':c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            else:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability=%s",(permission,))
+        before=all_pg_rows(u)
+        response=apply(u,row,data,'structural-revoked')
+        assert response.status_code==403,response.text
+        if permission in ('READ','PREPARE'):
+            response=recovery(u,row,'structural-revoked')
+            assert response.status_code==403,response.text
+&gt;       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('060e551c-f1d4-4996-8187-da2713d573d8'), 'principal_id': 'fixture-a', 'category':...013-4a1f-86d7-36c12cd55484'), 'principal_id': 'fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_template_structure_independent.py:412: AssertionError</failure></testcase><testcase classname="tests.test_template_structure_independent" name="test_original_six_goal_fixture_has_a_legal_even_verified_revision" time="3.146" /><testcase classname="tests.test_template_structure_independent" name="test_old_apply_never_accepts_structural_revision_without_new_confirmation" time="3.288" /><testcase classname="tests.test_template_structure_independent" name="test_structure_confirmation_is_literal_boolean_true[False]" time="3.232" /><testcase classname="tests.test_template_structure_independent" name="test_structure_confirmation_is_literal_boolean_true[1]" time="3.026" /><testcase classname="tests.test_template_structure_independent" name="test_structure_confirmation_is_literal_boolean_true[0]" time="2.711" /><testcase classname="tests.test_template_structure_independent" name="test_structure_confirmation_is_literal_boolean_true[true]" time="3.146" /><testcase classname="tests.test_template_structure_independent" name="test_structure_confirmation_is_literal_boolean_true[None]" time="3.115" /><testcase classname="tests.test_template_structure_independent" name="test_structure_digest_cas_refuses_changed_proof" time="3.080" /><testcase classname="tests.test_template_structure_independent" name="test_structural_adoption_requires_every_original_step_current_verified[True]" time="1.543" /><testcase classname="tests.test_template_structure_independent" name="test_structural_adoption_requires_every_original_step_current_verified[False]" time="3.005" /></testsuite></testsuites>

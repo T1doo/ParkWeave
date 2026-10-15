@@ -1,0 +1,58 @@
+{
+  "source_baseline": "aceb01d2351a695fa1358d91ea944615ba4a468c",
+  "authority": [
+    "original V1 section 7.5",
+    "original V1 section 8",
+    "F3-T03",
+    "F2-T06",
+    "AT-25",
+    "AT-26",
+    "AT-27"
+  ],
+  "proposed_safe_shape": "At original Consume, Case explicitly declares all six registered goals and original plan already has exact P1-P5. Original template P1-P4 closure adopts a monotonically expanded template including P5, unchanged Case required_goals/request/initial ADOPT, same registry/contracts/service/schema.",
+  "should_update_adapters": [
+    "P5"
+  ],
+  "should_preserve_adapters": [
+    "P1",
+    "P2",
+    "P3",
+    "P4"
+  ],
+  "should_preserve": [
+    "original request and request history",
+    "existing plan ID",
+    "existing P1-P4 UUIDs and adapter contract",
+    "original ADOPT request and fingerprint",
+    "prior event list prefix",
+    "history",
+    "existing manual locks",
+    "old verified sources and hashes",
+    "business resources, holds, dispatches, acceptances, receipts and local lifecycle facts",
+    "all permission tables",
+    "all other Case rows",
+    "immutable consumer binding and original release snapshot",
+    "all six registered goal mappings",
+    "all original plan nodes: no actual plan append or deletion in this slice"
+  ],
+  "must_reject": [
+    "goal removal",
+    "node removal",
+    "unknown goal",
+    "service or schema change",
+    "changed adapter/revision",
+    "changed old edge",
+    "unsupported shape not equal registered closure",
+    "implicit request/goals rewrite",
+    "missing or stale explicit choice and Case source CAS",
+    "unproved source or current authority",
+    "event budget cannot finish required reverify and preserved lock unlock",
+    "target adds goal absent from original Case declaration"
+  ],
+  "event_budget": "Original revision + one structural Apply + every affected adapter owner VERIFY + each preserved manual lock UNLOCK <=64. Fully verified premise ensures preserved unfinished steps do not silently consume the remaining budget. Legal even revision uses original P5 BEGIN before its first VERIFY.",
+  "read_only": "Check, goal results and original-key recovery preserve every public PG table including audit/preparations exactly. Pure current availability projection only.",
+  "unknown": "Lost committed Apply response may only be recovered with GET exact original key; no automatic POST replay. Wrong target/plan/source/choice reply leaves pending.",
+  "alternate_shape": "Adding previously absent coordination-records goal maps to P4 and requires P4/P5 reverify; adding P2 goal from P1 template requires P2-P5 reverify.",
+  "eligibility_premise": "All original P1-P5 current states VERIFIED with actual original adapter outputs; any incomplete/unverified original plan explicitly rejected, no implicit completing or alternative capacity workaround.",
+  "typed_confirmation": "POST /api/template-upgrade/{instance_id}/apply-structure; original 11 typed fields plus exact expected_structure_sha256 and confirm_structure_change literal boolean true. Legacy /apply rejects structural adoption."
+}

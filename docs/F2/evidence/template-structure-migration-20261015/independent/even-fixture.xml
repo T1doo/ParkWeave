@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="1.990" timestamp="2026-10-15T02:15:44.678727+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_structure_independent" name="test_original_six_goal_fixture_has_a_legal_even_verified_revision" time="1.820"><failure message="AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f3947196360&gt;, &lt;parkweave.store.Store object at 0x7f3946eba630&gt;, {'fixture-a...bject at 0x7f3947502c60&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f3946aaae10&gt;, ...}
+
+    def test_original_six_goal_fixture_has_a_legal_even_verified_revision(upgrade_case):
+&gt;       u=upgrade_case;row,old,p=complete_declared(u,initial_local_revision=False)
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_template_structure_independent.py:415: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_template_structure_independent.py:120: in complete_declared
+    _,dispatch=accepted(u['f'],p);verified(u['f'],p,'P3')
+                                  ^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7f3947196360&gt;, &lt;parkweave.store.Store object at 0x7f3946eba630&gt;, {'fixture-a': 'ZT...re-a': '[REDACTED_SYNTHETIC_FIXTURE_SESSION]', ...}, &lt;starlette.testclient.TestClient object at 0x7f3946bee510&gt;)
+p = {'preparation_id': '33c5bdcf-34d5-467e-b339-c35f99f1ff13', 'case_id': 'f57c49f6-3b37-4a25-8cee-90ae6cd27072', 'run_id': '433ec532-7cd9-4aa3-b1d1-9c89580153c5', 'revision': 6, ...}
+adapter = 'P3'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</failure></testcase></testsuite></testsuites>

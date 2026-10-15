@@ -1,0 +1,34 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__ test_literal_template_structure_addition_with_unchanged_original_six_goals __
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7f161899ff80>, <parkweave.store.Store object at 0x7f1618336a80>, {'fixture-a...bject at 0x7f1618336750>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f1617ccb920>, ...}
+
+    def test_literal_template_structure_addition_with_unchanged_original_six_goals(upgrade_case):
+        u=upgrade_case;row,old,p=declared_instance(u)
+        target=publication(u,SIX_GOALS,source='1',name='Synthetic template adds already declared P5 requirement')
+        assert [s['id'] for s in old['snapshot']['definition']['steps']]==['P1','P2','P3','P4']
+        assert [s['id'] for s in target['snapshot']['definition']['steps']]==['P1','P2','P3','P4','P5']
+        old_plan=deepcopy(stored(u,row));before=all_pg_rows(u)
+        view=check(u,row,target)
+        assert view.status_code==200,view.text
+        assert all_pg_rows(u)==before
+        body=view.json();assert body['check']['classification']=='NEEDS_RECHECK'
+>       assert 'UPGRADE_SCOPE_UNSUPPORTED' not in body['application']['blockers'],body['application']
+E       AssertionError: {'eligible': False, 'blockers': ['UPGRADE_SCOPE_UNSUPPORTED', 'CURRENT_EXPLICIT_CHOICE_REQUIRED'], 'effective_release_id': 'bafc1088-8455-4d24-8581-5ea223a43523', 'plan_id': '9f365616-f655-46a7-a56d-30d3d511f045', ...}
+E       assert 'UPGRADE_SCOPE_UNSUPPORTED' not in ['UPGRADE_SCOPE_UNSUPPORTED', 'CURRENT_EXPLICIT_CHOICE_REQUIRED']
+
+tests/test_template_structure_independent.py:89: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_template_structure_independent.py::test_literal_template_structure_addition_with_unchanged_original_six_goals
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_template_structure_independent.py::test_literal_template_structure_addition_with_unchanged_original_six_goals
+1 failed, 2 warnings in 1.66s

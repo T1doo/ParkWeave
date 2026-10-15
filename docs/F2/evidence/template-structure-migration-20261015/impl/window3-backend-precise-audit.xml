@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="86" time="218.364" timestamp="2026-10-15T02:30:49.380611+00:00" hostname="754d39e95154"><testcase classname="tests.test_structure_impl" name="test_smoke_real_structure[start0-target_goals0-affected0]" time="4.627" /><testcase classname="tests.test_structure_impl" name="test_smoke_real_structure[start1-target_goals1-affected1]" time="4.586" /><testcase classname="tests.test_structure_impl" name="test_smoke_real_structure[start2-target_goals2-affected2]" time="5.310" /><testcase classname="tests.test_structure_impl" name="test_smoke_preserved_lock_and_strict_true" time="3.984" /><testcase classname="tests.test_structure_impl" name="test_structure_version_bool_tamper_is_not_integer_one" time="3.414" /><testcase classname="tests.test_structure_impl" name="test_actual_update_before_commit_expiry_rolls_back[structure]" time="3.384"><failure message="AssertionError: assert ({'category', ...'recorded_at'} == {'category', ...principal_id'}&#10;  &#10;  Extra items in the left set:&#10;  'recorded_at'&#10;  Use -v to get more diff)">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7fab5405fc20&gt;, &lt;parkweave.store.Store object at 0x7fab50f320c0&gt;, {'fixture-a...bject at 0x7fab50ead9d0&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fab50bf5f40&gt;, ...}
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fab50fac0b0&gt;
+kind = 'structure'
+
+    @pytest.mark.parametrize('kind',['structure','source','description'])
+    def test_actual_update_before_commit_expiry_rolls_back(upgrade_case,monkeypatch,kind):
+        from parkweave import service_case_steps as plans
+        from datetime import datetime,timezone
+        import json
+        u=upgrade_case;row,_,p=complete_declared(u)
+        target=publication(u,GOALS if kind=='structure' else GOALS[:4],source='2' if kind=='source' else '1',name='Synthetic after-update commit expiry')
+        if kind=='structure':view,data=body(u,row,target)
+        else:view,data=admit(u,row,target,'ACK_COMPATIBLE' if kind=='description' else 'REQUEST_RECHECK')
+        assert view['application']['eligible'],view
+        before=all_pg_rows(u);save=plans._save;observed=[]
+        def expiry_after_actual_update(c,parent,plan):
+            save(c,parent,plan)
+            stored_row=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(parent['id'],)).fetchone()['service_case_plan']
+            assert stored_row['events'][-1]['action']=='TEMPLATE_UPGRADE'
+            observed.append(stored_row['events'][-1]['id'])
+            u['engine'].clock=lambda:datetime(2100,1,1,tzinfo=timezone.utc)
+        monkeypatch.setattr(plans,'_save',expiry_after_actual_update)
+        if kind=='structure':response=send(u,row,data,'expire-before-commit')
+        else:response=u['client'].post('/api/template-upgrade/'+row['instance_id']+'/apply',headers=headers(u['f'][2],key='expire-before-commit'),json=data)
+        assert observed
+        assert response.status_code in (403,409),response.text
+        after=all_pg_rows(u)
+        assert {k:v for k,v in after.items() if k!='authorization_audit'}=={k:v for k,v in before.items() if k!='authorization_audit'}
+        old_audit={r['id']:r for r in before['authorization_audit']}
+        assert {r['id']:r for r in after['authorization_audit'] if r['id'] in old_audit}==old_audit
+        denied=[r for r in after['authorization_audit'] if r['id'] not in old_audit]
+        assert len(denied)==int(response.status_code==403)
+        for r in denied:
+            from uuid import UUID
+&gt;           assert set(r)=={'id','principal_id','category','outcome'} and isinstance(r['id'],UUID)
+E           AssertionError: assert ({'category', ...'recorded_at'} == {'category', ...principal_id'}
+E             
+E             Extra items in the left set:
+E             'recorded_at'
+E             Use -v to get more diff)
+
+tests/test_structure_impl.py:102: AssertionError</failure></testcase><testcase classname="tests.test_structure_impl" name="test_actual_update_before_commit_expiry_rolls_back[source]" time="3.207"><failure message="AssertionError: assert ({'category', ...'recorded_at'} == {'category', ...principal_id'}&#10;  &#10;  Extra items in the left set:&#10;  'recorded_at'&#10;  Use -v to get more diff)">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7fab50bf4950&gt;, &lt;parkweave.store.Store object at 0x7fab50bf4860&gt;, {'fixture-a...bject at 0x7fab50e056d0&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fab50a1f320&gt;, ...}
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fab50883380&gt;
+kind = 'source'
+
+    @pytest.mark.parametrize('kind',['structure','source','description'])
+    def test_actual_update_before_commit_expiry_rolls_back(upgrade_case,monkeypatch,kind):
+        from parkweave import service_case_steps as plans
+        from datetime import datetime,timezone
+        import json
+        u=upgrade_case;row,_,p=complete_declared(u)
+        target=publication(u,GOALS if kind=='structure' else GOALS[:4],source='2' if kind=='source' else '1',name='Synthetic after-update commit expiry')
+        if kind=='structure':view,data=body(u,row,target)
+        else:view,data=admit(u,row,target,'ACK_COMPATIBLE' if kind=='description' else 'REQUEST_RECHECK')
+        assert view['application']['eligible'],view
+        before=all_pg_rows(u);save=plans._save;observed=[]
+        def expiry_after_actual_update(c,parent,plan):
+            save(c,parent,plan)
+            stored_row=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(parent['id'],)).fetchone()['service_case_plan']
+            assert stored_row['events'][-1]['action']=='TEMPLATE_UPGRADE'
+            observed.append(stored_row['events'][-1]['id'])
+            u['engine'].clock=lambda:datetime(2100,1,1,tzinfo=timezone.utc)
+        monkeypatch.setattr(plans,'_save',expiry_after_actual_update)
+        if kind=='structure':response=send(u,row,data,'expire-before-commit')
+        else:response=u['client'].post('/api/template-upgrade/'+row['instance_id']+'/apply',headers=headers(u['f'][2],key='expire-before-commit'),json=data)
+        assert observed
+        assert response.status_code in (403,409),response.text
+        after=all_pg_rows(u)
+        assert {k:v for k,v in after.items() if k!='authorization_audit'}=={k:v for k,v in before.items() if k!='authorization_audit'}
+        old_audit={r['id']:r for r in before['authorization_audit']}
+        assert {r['id']:r for r in after['authorization_audit'] if r['id'] in old_audit}==old_audit
+        denied=[r for r in after['authorization_audit'] if r['id'] not in old_audit]
+        assert len(denied)==int(response.status_code==403)
+        for r in denied:
+            from uuid import UUID
+&gt;           assert set(r)=={'id','principal_id','category','outcome'} and isinstance(r['id'],UUID)
+E           AssertionError: assert ({'category', ...'recorded_at'} == {'category', ...principal_id'}
+E             
+E             Extra items in the left set:
+E             'recorded_at'
+E             Use -v to get more diff)
+
+tests/test_structure_impl.py:102: AssertionError</failure></testcase><testcase classname="tests.test_structure_impl" name="test_actual_update_before_commit_expiry_rolls_back[description]" time="3.072"><failure message="AssertionError: assert ({'category', ...'recorded_at'} == {'category', ...principal_id'}&#10;  &#10;  Extra items in the left set:&#10;  'recorded_at'&#10;  Use -v to get more diff)">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7fab50e6eed0&gt;, &lt;parkweave.store.Store object at 0x7fab50a1f440&gt;, {'fixture-a...bject at 0x7fab52c256d0&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fab536bbd10&gt;, ...}
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fab5074c0b0&gt;
+kind = 'description'
+
+    @pytest.mark.parametrize('kind',['structure','source','description'])
+    def test_actual_update_before_commit_expiry_rolls_back(upgrade_case,monkeypatch,kind):
+        from parkweave import service_case_steps as plans
+        from datetime import datetime,timezone
+        import json
+        u=upgrade_case;row,_,p=complete_declared(u)
+        target=publication(u,GOALS if kind=='structure' else GOALS[:4],source='2' if kind=='source' else '1',name='Synthetic after-update commit expiry')
+        if kind=='structure':view,data=body(u,row,target)
+        else:view,data=admit(u,row,target,'ACK_COMPATIBLE' if kind=='description' else 'REQUEST_RECHECK')
+        assert view['application']['eligible'],view
+        before=all_pg_rows(u);save=plans._save;observed=[]
+        def expiry_after_actual_update(c,parent,plan):
+            save(c,parent,plan)
+            stored_row=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(parent['id'],)).fetchone()['service_case_plan']
+            assert stored_row['events'][-1]['action']=='TEMPLATE_UPGRADE'
+            observed.append(stored_row['events'][-1]['id'])
+            u['engine'].clock=lambda:datetime(2100,1,1,tzinfo=timezone.utc)
+        monkeypatch.setattr(plans,'_save',expiry_after_actual_update)
+        if kind=='structure':response=send(u,row,data,'expire-before-commit')
+        else:response=u['client'].post('/api/template-upgrade/'+row['instance_id']+'/apply',headers=headers(u['f'][2],key='expire-before-commit'),json=data)
+        assert observed
+        assert response.status_code in (403,409),response.text
+        after=all_pg_rows(u)
+        assert {k:v for k,v in after.items() if k!='authorization_audit'}=={k:v for k,v in before.items() if k!='authorization_audit'}
+        old_audit={r['id']:r for r in before['authorization_audit']}
+        assert {r['id']:r for r in after['authorization_audit'] if r['id'] in old_audit}==old_audit
+        denied=[r for r in after['authorization_audit'] if r['id'] not in old_audit]
+        assert len(denied)==int(response.status_code==403)
+        for r in denied:
+            from uuid import UUID
+&gt;           assert set(r)=={'id','principal_id','category','outcome'} and isinstance(r['id'],UUID)
+E           AssertionError: assert ({'category', ...'recorded_at'} == {'category', ...principal_id'}
+E             
+E             Extra items in the left set:
+E             'recorded_at'
+E             Use -v to get more diff)
+
+tests/test_structure_impl.py:102: AssertionError</failure></testcase><testcase classname="tests.test_structure_original_coverage_probe" name="test_original_six_goal_coverage_cannot_be_erased_before_structure_application" time="3.029" /><testcase classname="tests.test_template_upgrade" name="test_classification_and_explicit_choices_never_change_old_binding_or_product[None-1-COMPATIBLE]" time="1.435" /><testcase classname="tests.test_template_upgrade" name="test_classification_and_explicit_choices_never_change_old_binding_or_product[goals1-1-NEEDS_RECHECK]" time="1.181" /><testcase classname="tests.test_template_upgrade" name="test_classification_and_explicit_choices_never_change_old_binding_or_product[None-2-NEEDS_RECHECK]" time="1.396" /><testcase classname="tests.test_template_upgrade" name="test_breaking_goal_removal_and_definition_rollback_are_refused" time="1.127" /><testcase classname="tests.test_template_upgrade" name="test_manual_lock_requires_original_unlock_and_never_overwrites_decision" time="1.618" /><testcase classname="tests.test_template_upgrade" name="test_real_holds_acceptance_receipt_and_entire_history_survive_check_and_choice" time="2.324" /><testcase classname="tests.test_template_upgrade" name="test_concurrent_cas_and_same_request_idempotency[True]" time="1.361" /><testcase classname="tests.test_template_upgrade" name="test_concurrent_cas_and_same_request_idempotency[False]" time="1.168" /><testcase classname="tests.test_template_upgrade" name="test_stale_check_denied_without_partial_event_and_historical_recovery_retained[material]" time="1.361" /><testcase classname="tests.test_template_upgrade" name="test_stale_check_denied_without_partial_event_and_historical_recovery_retained[target-withdraw]" time="1.484" /><testcase classname="tests.test_template_upgrade" name="test_stale_check_denied_without_partial_event_and_historical_recovery_retained[source-head]" time="1.227" /><testcase classname="tests.test_template_upgrade" name="test_revocation_before_check_write_replay_and_recovery[READ]" time="1.383" /><testcase classname="tests.test_template_upgrade" name="test_revocation_before_check_write_replay_and_recovery[EXECUTE]" time="1.109" /><testcase classname="tests.test_template_upgrade" name="test_revocation_before_check_write_replay_and_recovery[PREPARE]" time="1.482" /><testcase classname="tests.test_template_upgrade" name="test_revocation_before_check_write_replay_and_recovery[case.create]" time="1.227" /><testcase classname="tests.test_template_upgrade" name="test_revocation_before_check_write_replay_and_recovery[inactive]" time="1.126" /><testcase classname="tests.test_template_upgrade" name="test_cross_enterprise_park_role_privacy_denied[fixture-b]" time="1.496" /><testcase classname="tests.test_template_upgrade" name="test_cross_enterprise_park_role_privacy_denied[fixture-c]" time="1.323" /><testcase classname="tests.test_template_upgrade" name="test_cross_enterprise_park_role_privacy_denied[prep-specialist-fixture-a]" time="1.491" /><testcase classname="tests.test_template_upgrade" name="test_cross_enterprise_park_role_privacy_denied[executor-a]" time="1.211" /><testcase classname="tests.test_template_upgrade" name="test_exact_key_read_recovery_and_new_objects_preserve_immutable_journal" time="1.522" /><testcase classname="tests.test_template_upgrade" name="test_default_factory_and_wrong_composition_never_expose_upgrade_routes" time="0.597" /><testcase classname="tests.test_template_upgrade" name="test_legacy_original_key_remains_byte_identical_and_original_lock_works" time="1.581" /><testcase classname="tests.test_template_upgrade" name="test_actual_64_event_bound_and_original_replay_remains_readonly" time="3.932" /><testcase classname="tests.test_template_upgrade" name="test_corrupted_event_or_foreign_schema_fails_closed[hash]" time="1.507" /><testcase classname="tests.test_template_upgrade" name="test_corrupted_event_or_foreign_schema_fails_closed[payload]" time="1.233" /><testcase classname="tests.test_template_upgrade" name="test_corrupted_event_or_foreign_schema_fails_closed[schema]" time="1.421" /><testcase classname="tests.test_template_upgrade" name="test_target_hash_extra_action_and_cross_instance_key_refused" time="1.930" /><testcase classname="tests.test_template_upgrade" name="test_actual_case_lock_wait_crossing_target_expiry_refuses_choice" time="1.526" /><testcase classname="tests.test_template_upgrade" name="test_original_request_anchor_rejects_rehashed_last_event_without_rewriting_history[reason]" time="1.203" /><testcase classname="tests.test_template_upgrade" name="test_original_request_anchor_rejects_rehashed_last_event_without_rewriting_history[choice]" time="1.238" /><testcase classname="tests.test_template_upgrade" name="test_original_request_anchor_rejects_rehashed_last_event_without_rewriting_history[flags]" time="1.441" /><testcase classname="tests.test_template_upgrade" name="test_original_request_anchor_rejects_rehashed_last_event_without_rewriting_history[revision-type]" time="1.206" /><testcase classname="tests.test_template_migration_independent" name="test_independent_actual_effects_stable_ids_and_exact_reverify[1-affected0]" time="3.731" /><testcase classname="tests.test_template_migration_independent" name="test_independent_actual_effects_stable_ids_and_exact_reverify[2-affected1]" time="5.969" /><testcase classname="tests.test_template_migration_independent" name="test_independent_current_owner_and_tenant_gate[fixture-b]" time="1.327" /><testcase classname="tests.test_template_migration_independent" name="test_independent_current_owner_and_tenant_gate[fixture-c]" time="1.389" /><testcase classname="tests.test_template_migration_independent" name="test_independent_current_owner_and_tenant_gate[prep-specialist-fixture-a]" time="1.281" /><testcase classname="tests.test_template_migration_independent" name="test_independent_current_owner_and_tenant_gate[executor-a]" time="1.553" /><testcase classname="tests.test_template_migration_independent" name="test_independent_revocation_before_send_and_recovery[READ]" time="1.416" /><testcase classname="tests.test_template_migration_independent" name="test_independent_revocation_before_send_and_recovery[PREPARE]" time="1.692" /><testcase classname="tests.test_template_migration_independent" name="test_independent_revocation_before_send_and_recovery[EXECUTE]" time="1.422" /><testcase classname="tests.test_template_migration_independent" name="test_independent_real_concurrent_cas_and_fingerprint[True]" time="1.578" /><testcase classname="tests.test_template_migration_independent" name="test_independent_real_concurrent_cas_and_fingerprint[False]" time="1.451" /><testcase classname="tests.test_template_migration_independent" name="test_independent_lock_conflict_then_original_unlock" time="1.772" /><testcase classname="tests.test_template_migration_independent" name="test_independent_target_invalid_after_confirm_refuses_atomically[withdraw]" time="1.634" /><testcase classname="tests.test_template_migration_independent" name="test_independent_target_invalid_after_confirm_refuses_atomically[expire]" time="1.364" /><testcase classname="tests.test_template_migration_independent" name="test_independent_target_invalid_after_confirm_refuses_atomically[supersede]" time="1.698" /><testcase classname="tests.test_template_migration_independent" name="test_independent_added_goal_refuses_execution_preserving_old_plan" time="1.336" /><testcase classname="tests.test_template_migration_independent" name="test_independent_pg_event_failure_rolls_back_entire_application" time="1.524" /><testcase classname="tests.test_template_migration_independent" name="test_independent_committed_lost_reply_only_get_and_cold_original_key" time="1.368" /><testcase classname="tests.test_template_migration_independent" name="test_independent_multihop_uses_effective_release_and_preserves_locked_decision" time="5.580" /><testcase classname="tests.test_template_migration_independent" name="test_independent_old_code_read_never_reverses_already_happened_business" time="3.366" /><testcase classname="tests.test_template_migration_independent" name="test_independent_exact_explicit_choice_and_scope_required[keep_current]" time="1.259" /><testcase classname="tests.test_template_migration_independent" name="test_independent_exact_explicit_choice_and_scope_required[stale_choice]" time="1.519" /><testcase classname="tests.test_template_migration_independent" name="test_independent_exact_explicit_choice_and_scope_required[wrong_instance]" time="1.355" /><testcase classname="tests.test_template_migration_independent" name="test_independent_exact_explicit_choice_and_scope_required[wrong_check]" time="1.637" /><testcase classname="tests.test_template_migration_independent" name="test_independent_exact_explicit_choice_and_scope_required[wrong_plan]" time="1.277" /><testcase classname="tests.test_template_migration_independent" name="test_independent_case_cancelled_after_choice_blocks_application" time="1.272" /><testcase classname="tests.test_template_migration_independent" name="test_independent_post_apply_verify_rechecks_live_template_and_retains_history[withdrawn]" time="1.899" /><testcase classname="tests.test_template_migration_independent" name="test_independent_post_apply_verify_rechecks_live_template_and_retains_history[expired]" time="1.972" /><testcase classname="tests.test_template_migration_independent" name="test_independent_post_apply_verify_rechecks_live_template_and_retains_history[guard_unmounted]" time="2.143" /><testcase classname="tests.test_template_migration_independent" name="test_independent_actor_key_global_across_two_cases[False]" time="2.469" /><testcase classname="tests.test_template_migration_independent" name="test_independent_actor_key_global_across_two_cases[True]" time="2.083" /><testcase classname="tests.test_template_migration_independent" name="test_independent_read_current_validity_separate_from_immutable_history[withdrawn]" time="3.446" /><testcase classname="tests.test_template_migration_independent" name="test_independent_read_current_validity_separate_from_immutable_history[expired]" time="3.395" /><testcase classname="tests.test_template_migration_independent" name="test_independent_read_current_validity_separate_from_immutable_history[guard_unmounted]" time="3.823" /><testcase classname="tests.test_template_migration_event_capacity" name="test_source_upgrade_reserves_every_affected_verify_before_adoption[58]" time="12.511" /><testcase classname="tests.test_template_migration_event_capacity" name="test_source_upgrade_reserves_every_affected_verify_before_adoption[60]" time="10.418" /><testcase classname="tests.test_template_migration_event_capacity" name="test_source_upgrade_reserves_every_affected_verify_before_adoption[62]" time="10.927" /><testcase classname="tests.test_template_migration_event_capacity" name="test_description_upgrade_can_use_last_event_when_outputs_already_verified" time="11.156" /><testcase classname="tests.test_template_migration_event_capacity" name="test_description_upgrade_still_reserves_original_unlock_capacity" time="9.994" /><testcase classname="tests.test_template_migration_legacy" name="test_migrated_original_legacy_adoption_goal_history" time="1.045" /><testcase classname="tests.test_template_migration_legacy" name="test_migrated_legacy_key_does_not_allow_other_colon_or_instance[arbitrary-colon]" time="1.093" /><testcase classname="tests.test_template_migration_legacy" name="test_migrated_legacy_key_does_not_allow_other_colon_or_instance[other-instance]" time="0.960" /><testcase classname="tests.test_template_migration_legacy_independent" name="test_independent_genuine_legacy_key_full_five_goal_results" time="2.741" /><testcase classname="tests.test_template_migration_legacy_independent" name="test_independent_arbitrary_legacy_like_key_is_refused_without_repair" time="2.592" /></testsuite></testsuites>

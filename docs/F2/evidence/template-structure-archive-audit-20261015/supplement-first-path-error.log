@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/workspace/parkweave-structure-archive-audit-20261015/supplement.py", line 32, in <module>
+    impl=window('impl/window3-backend-precise-audit.xml','impl/window3-backend-precise-audit.exit');assert impl['tests']==86 and impl['failures']==3 and impl['passed']==83 and impl['exit']==1
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/parkweave-structure-archive-audit-20261015/supplement.py", line 7, in window
+    p=base/rel;s=E.parse(p).getroot().find('testsuite');stats={k:int(s.get(k,'0')) for k in ['tests','failures','errors','skipped']};stats['passed']=stats['tests']-sum(stats[k] for k in ['failures','errors','skipped']);stats['xml_seconds']=float(s.get('time'));stats['exit']=int((base/exitrel).read_text());stats['xml']=rel;return stats
+                                                                                                                                                                                                                                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/docs/F2/evidence/template-structure-migration-20261015/impl/window3-backend-precise-audit.exit'

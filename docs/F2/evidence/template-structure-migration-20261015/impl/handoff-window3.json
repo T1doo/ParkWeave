@@ -1,0 +1,83 @@
+{
+  "baseline": "aceb01d2351a695fa1358d91ea944615ba4a468c",
+  "private_root": "/workspace/parkweave-structure-impl-20261015",
+  "source_manifest": ".runtime/structure-impl-20261015/source-window3.sha256",
+  "shared_writes": false,
+  "git_writes": false,
+  "source_files": [
+    "src/parkweave/template_migration.py",
+    "src/parkweave/template_upgrade.py",
+    "src/parkweave/service_case_steps.py"
+  ],
+  "private_redaction_pools": [
+    ".runtime/template-migration-tests-20261014/redaction-values.private.json",
+    ".runtime/template-structure-tests-20261015/redaction-values.private.json"
+  ],
+  "windows": [
+    {
+      "name": "baseline",
+      "passed": 38,
+      "failed": 0,
+      "exit_code": 0
+    },
+    {
+      "name": "window1-smoke",
+      "passed": 4,
+      "failed": 0,
+      "exit_code": 0
+    },
+    {
+      "name": "window1-version-bool-red",
+      "passed": 0,
+      "failed": 1,
+      "exit_code": 1,
+      "reason": "actual corrupted structure proof version bool accepted by dictionary equality; fixed by strict SHA equality"
+    },
+    {
+      "name": "window2-backend",
+      "passed": 81,
+      "failed": 1,
+      "exit_code": 1,
+      "reason": "isolated archive tree has no .git; original old-code test git archive exited128; native stderr preserved separately"
+    },
+    {
+      "name": "window2-backend-readonly-git",
+      "passed": 82,
+      "failed": 0,
+      "exit_code": 0
+    },
+    {
+      "name": "window2-apply-commit-expiry-red",
+      "passed": 0,
+      "failed": 3,
+      "exit_code": 1,
+      "reason": "structure/source/description all committed after actual UPDATE then expiry; fixed by original target SourceLease actual PG commit recheck"
+    },
+    {
+      "name": "window3-backend",
+      "passed": 82,
+      "failed": 3,
+      "exit_code": 1,
+      "reason": "own test oracle wrongly required no legitimate original API_AUTHORIZATION DENIED audit on403; 45 business/coordination/authority tables unchanged"
+    },
+    {
+      "name": "window3-commit-targeted",
+      "passed": 0,
+      "failed": 1,
+      "exit_code": 1,
+      "reason": "same own audit oracle error; exact diff preserved"
+    },
+    {
+      "name": "window3-original-coverage-probe",
+      "passed": 1,
+      "failed": 0,
+      "exit_code": 0
+    },
+    {
+      "name": "window3-backend-precise-audit",
+      "status": "RUNNING",
+      "source_change": false,
+      "oracle_change": "strict45table rollback; original audit rows preserved; exact single original four-column UUID DENIED row iff403"
+    }
+  ]
+}

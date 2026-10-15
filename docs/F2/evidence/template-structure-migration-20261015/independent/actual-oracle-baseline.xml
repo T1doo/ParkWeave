@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="4" time="6.473" timestamp="2026-10-15T02:12:00.052966+00:00" hostname="754d39e95154"><testcase classname="tests.test_template_structure_independent" name="test_new_case_goal_not_predeclared_is_explicitly_rejected" time="1.514" /><testcase classname="tests.test_template_structure_independent" name="test_literal_template_structure_addition_with_unchanged_original_six_goals" time="0.806"><failure message="AssertionError: {'eligible': False, 'blockers': ['UPGRADE_SCOPE_UNSUPPORTED', 'CURRENT_EXPLICIT_CHOICE_REQUIRED'], 'effective_release_id': 'edc035f5-1581-4108-abb7-884962b783b5', 'plan_id': '8a1b3de1-2af1-43cc-b4d5-2c84673792af', ...}&#10;assert 'UPGRADE_SCOPE_UNSUPPORTED' not in ['UPGRADE_SCOPE_UNSUPPORTED', 'CURRENT_EXPLICIT_CHOICE_REQUIRED']">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f1f2beef4a0&gt;, &lt;parkweave.store.Store object at 0x7f1f2c8e00b0&gt;, {'fixture-a...bject at 0x7f1f2bdce360&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f1f2a2c2840&gt;, ...}
+
+    def test_literal_template_structure_addition_with_unchanged_original_six_goals(upgrade_case):
+        u=upgrade_case;row,old,p=declared_instance(u)
+        target=publication(u,SIX_GOALS,source='1',name='Synthetic template adds already declared P5 requirement')
+        assert [s['id'] for s in old['snapshot']['definition']['steps']]==['P1','P2','P3','P4']
+        assert [s['id'] for s in target['snapshot']['definition']['steps']]==['P1','P2','P3','P4','P5']
+        old_plan=deepcopy(stored(u,row));before=all_pg_rows(u)
+        view=check(u,row,target)
+        assert view.status_code==200,view.text
+        assert all_pg_rows(u)==before
+        body=view.json();assert body['check']['classification']=='NEEDS_RECHECK'
+&gt;       assert 'UPGRADE_SCOPE_UNSUPPORTED' not in body['application']['blockers'],body['application']
+E       AssertionError: {'eligible': False, 'blockers': ['UPGRADE_SCOPE_UNSUPPORTED', 'CURRENT_EXPLICIT_CHOICE_REQUIRED'], 'effective_release_id': 'edc035f5-1581-4108-abb7-884962b783b5', 'plan_id': '8a1b3de1-2af1-43cc-b4d5-2c84673792af', ...}
+E       assert 'UPGRADE_SCOPE_UNSUPPORTED' not in ['UPGRADE_SCOPE_UNSUPPORTED', 'CURRENT_EXPLICIT_CHOICE_REQUIRED']
+
+tests/test_template_structure_independent.py:89: AssertionError</failure></testcase><testcase classname="tests.test_template_structure_independent" name="test_actual_structural_adoption_preserves_six_goals_and_every_actual_effect[target_goals0-affected_adapters0]" time="1.988"><failure message="AssertionError: {'eligible': False, 'blockers': ['UPGRADE_SCOPE_UNSUPPORTED'], 'effective_release_id': 'b885c46c-9ac5-49ad-b930-27dcba2b040b', 'plan_id': 'c0dd38c6-d473-4c98-aeec-d412b82257d9', ...}&#10;assert False">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f1f2ac98cb0&gt;, &lt;parkweave.store.Store object at 0x7f1f2a0905c0&gt;, {'fixture-a...bject at 0x7f1f2be09af0&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f1f2c05a7e0&gt;, ...}
+target_goals = ['LOCAL_MATERIAL_PREPARATION', 'LOCAL_CASE_RESOURCE_ASSOCIATION', 'LOCAL_INTERNAL_ACCEPTANCE', 'LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT', 'LOCAL_CASE_RECORD_RECHECK']
+affected_adapters = ('P5',)
+
+    @pytest.mark.parametrize('target_goals,affected_adapters',[(GOALS,('P5',)),(SIX_GOALS,('P4','P5'))])
+    def test_actual_structural_adoption_preserves_six_goals_and_every_actual_effect(upgrade_case,target_goals,affected_adapters):
+        from test_template_migration_independent import verified
+        u=upgrade_case;row,old,p=complete_declared(u)
+        initial_results=goal_results(u,row)
+        assert initial_results['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert [r['goal'] for r in initial_results['results']]==SIX_GOALS
+        outputs={r['goal']:r['actual_output'] for r in initial_results['results']}
+        target=publication(u,target_goals,source='1',name='Synthetic structural expansion with original Case goals')
+        before=deepcopy(stored(u,row));business=facts(u)
+        view,data=admit(u,row,target)
+        ids={s['adapter_id']:s['id'] for s in before['steps']}
+&gt;       assert view['application']['eligible'],view['application']
+E       AssertionError: {'eligible': False, 'blockers': ['UPGRADE_SCOPE_UNSUPPORTED'], 'effective_release_id': 'b885c46c-9ac5-49ad-b930-27dcba2b040b', 'plan_id': 'c0dd38c6-d473-4c98-aeec-d412b82257d9', ...}
+E       assert False
+
+tests/test_template_structure_independent.py:134: AssertionError</failure></testcase><testcase classname="tests.test_template_structure_independent" name="test_actual_structural_adoption_preserves_six_goals_and_every_actual_effect[target_goals1-affected_adapters1]" time="2.016"><failure message="AssertionError: {'eligible': False, 'blockers': ['UPGRADE_SCOPE_UNSUPPORTED'], 'effective_release_id': 'f62f5a90-7980-4ec1-baf6-62ce151c01f2', 'plan_id': 'cf5bbff0-acda-4bf3-aea5-466bf64c7440', ...}&#10;assert False">upgrade_case = {'f': (&lt;parkweave.store.Store object at 0x7f1f2a1f8920&gt;, &lt;parkweave.store.Store object at 0x7f1f2c058290&gt;, {'fixture-a...bject at 0x7f1f29b86ed0&gt;, 'checker': &lt;parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7f1f29be13d0&gt;, ...}
+target_goals = ['LOCAL_MATERIAL_PREPARATION', 'LOCAL_CASE_RESOURCE_ASSOCIATION', 'LOCAL_INTERNAL_ACCEPTANCE', 'LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT', 'LOCAL_SYNTHETIC_COORDINATION_RECORDS', 'LOCAL_CASE_RECORD_RECHECK']
+affected_adapters = ('P4', 'P5')
+
+    @pytest.mark.parametrize('target_goals,affected_adapters',[(GOALS,('P5',)),(SIX_GOALS,('P4','P5'))])
+    def test_actual_structural_adoption_preserves_six_goals_and_every_actual_effect(upgrade_case,target_goals,affected_adapters):
+        from test_template_migration_independent import verified
+        u=upgrade_case;row,old,p=complete_declared(u)
+        initial_results=goal_results(u,row)
+        assert initial_results['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert [r['goal'] for r in initial_results['results']]==SIX_GOALS
+        outputs={r['goal']:r['actual_output'] for r in initial_results['results']}
+        target=publication(u,target_goals,source='1',name='Synthetic structural expansion with original Case goals')
+        before=deepcopy(stored(u,row));business=facts(u)
+        view,data=admit(u,row,target)
+        ids={s['adapter_id']:s['id'] for s in before['steps']}
+&gt;       assert view['application']['eligible'],view['application']
+E       AssertionError: {'eligible': False, 'blockers': ['UPGRADE_SCOPE_UNSUPPORTED'], 'effective_release_id': 'f62f5a90-7980-4ec1-baf6-62ce151c01f2', 'plan_id': 'cf5bbff0-acda-4bf3-aea5-466bf64c7440', ...}
+E       assert False
+
+tests/test_template_structure_independent.py:134: AssertionError</failure></testcase></testsuite></testsuites>

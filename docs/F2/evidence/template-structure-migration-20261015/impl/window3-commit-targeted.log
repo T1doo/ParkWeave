@@ -1,0 +1,53 @@
+F
+=================================== FAILURES ===================================
+________ test_actual_update_before_commit_expiry_rolls_back[structure] _________
+
+upgrade_case = {'f': (<parkweave.store.Store object at 0x7fbfb20427b0>, <parkweave.store.Store object at 0x7fbfb20428d0>, {'fixture-a...bject at 0x7fbfb1c5b680>, 'checker': <parkweave.template_upgrade.TemplateUpgradeChecker object at 0x7fbfb1cd1f70>, ...}
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fbfb1a6f6e0>
+kind = 'structure'
+
+    @pytest.mark.parametrize('kind',['structure','source','description'])
+    def test_actual_update_before_commit_expiry_rolls_back(upgrade_case,monkeypatch,kind):
+        from parkweave import service_case_steps as plans
+        from datetime import datetime,timezone
+        import json
+        u=upgrade_case;row,_,p=complete_declared(u)
+        target=publication(u,GOALS if kind=='structure' else GOALS[:4],source='2' if kind=='source' else '1',name='Synthetic after-update commit expiry')
+        if kind=='structure':view,data=body(u,row,target)
+        else:view,data=admit(u,row,target,'ACK_COMPATIBLE' if kind=='description' else 'REQUEST_RECHECK')
+        assert view['application']['eligible'],view
+        before=all_pg_rows(u);save=plans._save;observed=[]
+        def expiry_after_actual_update(c,parent,plan):
+            save(c,parent,plan)
+            stored_row=c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(parent['id'],)).fetchone()['service_case_plan']
+            assert stored_row['events'][-1]['action']=='TEMPLATE_UPGRADE'
+            observed.append(stored_row['events'][-1]['id'])
+            u['engine'].clock=lambda:datetime(2100,1,1,tzinfo=timezone.utc)
+        monkeypatch.setattr(plans,'_save',expiry_after_actual_update)
+        if kind=='structure':response=send(u,row,data,'expire-before-commit')
+        else:response=u['client'].post('/api/template-upgrade/'+row['instance_id']+'/apply',headers=headers(u['f'][2],key='expire-before-commit'),json=data)
+        assert observed
+        assert response.status_code in (403,409),response.text
+>       assert all_pg_rows(u)==before
+E       AssertionError: assert {'action_gran...', ...}], ...} == {'action_gran...', ...}], ...}
+E         
+E         Omitting 45 identical items, use -vv to show
+E         Differing items:
+E         {'authorization_audit': [{'id': UUID('c14736f4-518e-4b85-a3f3-4fd6f8dabf44'), 'principal_id': 'fixture-a', 'category': 'API_AUTHORIZATION', 'outcome': 'DENIED', ...}]} != {'authorization_audit': []}
+E         Use -v to get more diff
+
+tests/test_structure_impl.py:94: AssertionError
+=============================== warnings summary ===============================
+../ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_structure_impl.py::test_actual_update_before_commit_expiry_rolls_back[structure]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_structure_impl.py::test_actual_update_before_commit_expiry_rolls_back[structure]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 2 warnings in 3.80s
