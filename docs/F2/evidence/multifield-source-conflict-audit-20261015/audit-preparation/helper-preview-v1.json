@@ -1,0 +1,54 @@
+{
+  "status": "STATIC_HELPER_PREVIEW_REPORT_GATE_FIX_RECOMMENDED_NOT_FINAL_AUDIT",
+  "source_sha": "30e8a60f8bffeb5f0b41bd3abb222526127c5433",
+  "files": {
+    ".runtime/multifield-source-root/render_report.py": {
+      "sha256": "ee1f8ec885e397f27d4039463d728e280d04db3177688fca5296ff9f0f045fbb",
+      "bytes": 5724
+    },
+    ".runtime/multifield-source-root/verify_regression.py": {
+      "sha256": "8cfb6422dc2ba09634fc3a8eda9afcb5424aa843e7cbd8c862be6e40c9ac4153",
+      "bytes": 3937
+    },
+    ".runtime/multifield-source-final/independent-new-v2-analysis/validate_window.py": {
+      "sha256": "2ee6cc6c758b7a5f359bf34e18a662d77873a313e219939a6d1ecc715fd0cd6f",
+      "bytes": 17688
+    }
+  },
+  "helpers_executed": false,
+  "pytest_started": false,
+  "findings": [
+    {
+      "id": "REPORT_ANALYSIS_SUCCESS_REQUIRED",
+      "classification": "REPORT_GATE_BLOCKER_IF_UNFIXED",
+      "product_defect": false,
+      "path": ".runtime/multifield-source-root/render_report.py",
+      "line": 16,
+      "dependent_path": ".runtime/multifield-source-final/independent-new-v2-analysis/validate_window.py",
+      "issue": "Renderer accepts analysis count52/SHA without proof that all independent-analysis assertions completed; analysis validation.json is written before trailing privacy/precision/ADOPT assertions.",
+      "counterexample": "A late analysis assertion can fail after validation.json exists, while counts and source_sha still satisfy renderer.",
+      "recommendation": "Publish success status/receipt only after all validator assertions; renderer must require exact success status and current hashes."
+    }
+  ],
+  "verified_static_points": {
+    "runner_drift_explicitly_empty": true,
+    "current_four_runner_helper_hashes_checked": true,
+    "whole_module_unique_selection": true,
+    "new_HTML_opportunity_local_ADOPT_route": "/api/preparations/{id}/service-case-plan",
+    "new_HTML_local_ADOPT_requires_local_revision_true_and_opportunity_proof": true,
+    "new_HTML_legacy_commands_ADOPT_counter_retained_separately": true,
+    "positive_HTML_requires_one_original_ADOPT_request_and_five_VERIFY_requests": true,
+    "authorization_HTML_requires_zero_ADOPT_requests": true,
+    "request_counters_do_not_alone_claim_success": true,
+    "new_and_prior_HTML_samples_separated": true,
+    "known_and_UNKNOWN_precision_separated": true,
+    "design40_not_equal_pytest24": true,
+    "full97_and_CI12_and_reviewer_supplement_separated": true,
+    "real_browser_scope_remains_NOT_RUN": true
+  },
+  "optional_hardening": [
+    "Assert flattened plan length equals distinct plan length equals plan.complete_modules97 in root verifier; independent final audit already checks this.",
+    "If reporting successful ADOPT rather than request counts, additionally classify status200; current new fields explicitly count POST requests."
+  ],
+  "final_archive_gate_run": false
+}

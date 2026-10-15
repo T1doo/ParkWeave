@@ -1,0 +1,1 @@
+function materialPackageError(e){if(e.staleMaterialPackage||e.materialPackageContext&&!materialPackageCurrent(e.materialPackageContext))return;if(e.status===403){clearDeniedPrivateViews();return;}$('material-package-status').textContent=e.message;}

@@ -1,0 +1,47 @@
+{
+  "utc": "2026-10-15T17:08:28.208207+00:00",
+  "baseline_sha": "40092be0334a9891afcd478a9c0b1a1cfa54fe10",
+  "mode": "OPT_IN_V3_CONFIRMED_BY_ROOT",
+  "scope": "Exactly one current P1 MANUAL note and two actual preparation slots",
+  "endpoints": {
+    "read": "GET /api/preparations/{id}/plan-material-package?card_id=UUID",
+    "command": "POST /api/preparations/{id}/plan-material-package/commands",
+    "recovery": "GET /api/preparations/{id}/plan-material-package/recovery/{key}"
+  },
+  "request": {
+    "schema": 2,
+    "action": [
+      "KEEP_AND_CONTINUE",
+      "MERGE_NOTE"
+    ],
+    "confirm_package": "strict literal boolean true",
+    "fields": "same bounded expected_plan_id/revision/note_revision/ledger_revision/preview_sha256/card_id/text/reason; card required; separate model and exact whole-body fingerprint"
+  },
+  "proof": {
+    "version": 3,
+    "old_parsers_unchanged": true,
+    "basis_schema": 3,
+    "policies": {
+      "need_summary": "CONTEXT_ACK_ONLY",
+      "material_outline": "EXACT_LINE_CARRIAGE_WHEN_REQUIRED_V1"
+    },
+    "persistent_guard": "latest v3 note/event plus complete material values/refs/row epochs; no permanent whole-business-epochs equality",
+    "outline_required_monotonic": true,
+    "current_full_source_epochs": "short-lived command CAS/final reread only"
+  },
+  "findings": {
+    "summary_only_legacy": "no note conflict; ordinary aggregate material invalidation still P1-P5",
+    "dual_legacy": "outline conflict and outline-only coverage; complete package captured/rebased",
+    "propagation": "typed graph schema1 already aggregates both slots and unions roots/dependency closure; keep frozen",
+    "baseline": "old v2 already verifies both captured historical material rows"
+  },
+  "legacy_compatibility_test": "tests/test_note_template_carry_epoch_types.py:58 summary-only existing local ADOPT stays valid before opt-in",
+  "environment_failure": {
+    "action": "attempted analysis.json/.md creation",
+    "error": "exec-server transport disconnected / CreateProcess rejected",
+    "retry": "one harmless pwd succeeded; directory inspection confirmed initial write did not run",
+    "source_or_old_evidence_touched": false
+  },
+  "private_tree": "/workspace/ParkWeave/.runtime/multifield-source-backend/private-worktree",
+  "implementation_authorization": "root confirmed DTO and private implementation; shared integration awaits independent oracle freeze"
+}

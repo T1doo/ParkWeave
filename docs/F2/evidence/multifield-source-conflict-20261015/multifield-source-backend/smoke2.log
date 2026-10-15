@@ -1,0 +1,45 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_summary_only_requires_fresh_context_ack_without_copying_summary_into_manual _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_summary_only_requires_fresh_context_ack_without_copying_summary_into_manual(http_f):
+        f=http_f;p,c,_=setup(f);v=read(f,p,c).json();r=send(f,p,v);assert r.status_code==200,r.text;note=r.json()['current']['note']
+        changed=add(f,p,slot='need_summary',text='SYNTHETIC new context never required as owner note prose');assert changed.status_code==200,changed.text;p=changed.json();c=refresh(f,p)
+        preview=source_preview(f,p,c);assert preview.status_code==200,preview.text
+        assert not preview.json()['can_adopt'] and 'OWNER_NOTE_SOURCE_PACKAGE_CONFIRMATION_REQUIRED' in preview.json()['blocking_reasons']
+>       before=snapshot(f);assert adopt(f,p,patch_body(f,p)).status_code==409 and snapshot(f)==before
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert (409 == 409 and {'preparation...ons': [], ...} == {'preparation...ons': [], ...}
+E        +  where 409 = <Response [409 Conflict]>.status_code
+E        +    where <Response [409 Conflict]> = adopt((<parkweave.store.Store object at 0x7f1d5ca0e030>, <parkweave.store.Store object at 0x7f1d5c916180>, {'fixture-a': 'LP...ep-specialist-fixture-a': '[REDACTED_SYNTHETIC_SESSION]', ...}, <httpx.Client object at 0x7f1d5a2a9910>), {'preparation_id': 'd099ddd5-87e9-4db4-9f2a-3f68a7df3c81', 'case_id': '64c0296f-a1b9-42c8-b286-2fa39e945885', 'run_id': 'adb8b331-9f8c-4d61-a8a8-fc6a448f3ce3', 'revision': 12, ...}, {'expected_preparation_revision': 12, 'expected_request_revision': 9, 'expected_source_sha256': 'f92de070d85bc01453a22257840358b63fe3e8b52477328bb58c5e2f25bdd3ed', 'expected_plan_revision': 8, ...})
+E        +      where {'expected_preparation_revision': 12, 'expected_request_revision': 9, 'expected_source_sha256': 'f92de070d85bc01453a22257840358b63fe3e8b52477328bb58c5e2f25bdd3ed', 'expected_plan_revision': 8, ...} = patch_body((<parkweave.store.Store object at 0x7f1d5ca0e030>, <parkweave.store.Store object at 0x7f1d5c916180>, {'fixture-a': 'LP...ep-specialist-fixture-a': '[REDACTED_SYNTHETIC_SESSION]', ...}, <httpx.Client object at 0x7f1d5a2a9910>), {'preparation_id': 'd099ddd5-87e9-4db4-9f2a-3f68a7df3c81', 'case_id': '64c0296f-a1b9-42c8-b286-2fa39e945885', 'run_id': 'adb8b331-9f8c-4d61-a8a8-fc6a448f3ce3', 'revision': 12, ...})
+E         
+E         Omitting 29 identical items, use -vv to show
+E         Differing items:
+E         {'preparations': [{'id': UUID('d099ddd5-87e9-4db4-9f2a-3f68a7df3c81'), 'run_id': UUID('adb8b331-9f8c-4d61-a8a8-fc6a448f3ce3'), 'case_id': UUID('64c0296f-a1b9-42c8-b286-2fa39e945885'), 'owner_id': 'fixture-a', ...}]} != {'preparations': [{'id': UUID('d099ddd5-87e9-4db4-9f2a-3f68a7df3c81'), 'run_id': UUID('adb8b331-9f8c-4d61-a8a8-fc6a448f3ce3'), 'case_id': UUID('64c0296f-a1b9-42c8-b286-2fa39e945885'), 'owner_id': 'fixture-a', ...}]}
+E         Use -v to get more diff)
+
+tests/test_material_package_continuation.py:54: AssertionError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/parkweave/plan_source_conflicts.py:42
+  /workspace/ParkWeave/.runtime/multifield-source-backend/private-worktree/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+src/parkweave/material_package_continuation.py:26
+  /workspace/ParkWeave/.runtime/multifield-source-backend/private-worktree/src/parkweave/material_package_continuation.py:26: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_package_continuation.py::test_first_get_is_readonly_and_explicit_post_enables_without_outline_obligation
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_package_continuation.py::test_summary_only_requires_fresh_context_ack_without_copying_summary_into_manual
+1 failed, 1 passed, 4 warnings in 12.46s

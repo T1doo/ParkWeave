@@ -1,0 +1,62 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_final_unknown_same_basis_refuses_without_plan_or_ledger_write ______
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7812d5ab40>
+
+    def test_final_unknown_same_basis_refuses_without_plan_or_ledger_write(http_f,monkeypatch):
+        f=http_f;p,_,_,_=complete(f,local=True);edit(f,p,'SYNTHETIC manual retained')
+        _,cards,_=imported(f,p);card=cards['cards'][0]
+        base='/api/preparations/'+p['preparation_id']+'/plan-material-package'
+        view=f[3].get(base,params={'card_id':card['id']},headers=headers(f[2]));assert view.status_code==200,view.text
+        body=deepcopy(view.json()['action_requests']['KEEP_AND_CONTINUE']);body['reason']='SYNTHETIC final UNKNOWN independent seam'
+        key=uuid4().hex
+        def saved():
+            with f[1].connect() as c:
+                row=c.execute('SELECT opportunities,service_case_plan FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+            return row
+        before=saved();original=package._view;calls=[]
+        def final_unknown(*args,**kwargs):
+            result,basis=original(*args,**kwargs);calls.append(result['state'])
+            if len(calls)==2:
+                result=deepcopy(result);result.update(state='UNKNOWN',can_resolve=False,action_requests={},unknown_scope='THIS_CASE',
+                    affected=[s['id'] for s in args[3]['service_case_plan']['steps']],preserved=[],blocking_reasons=['SYNTHETIC_FINAL_AVAILABILITY_UNKNOWN'])
+                result['package_confirmation'].update(can_keep_and_continue=False,can_merge=False)
+            return result,basis
+        with monkeypatch.context() as patch:
+            patch.setattr(package,'_view',final_unknown)
+            response=f[3].post(base+'/commands',headers=headers(f[2],key=key),json=body)
+        after=saved();cold=f[3].get(base+'/recovery/'+key,headers=headers(f[2]))
+        observed=dict(scope='WIP actual PG/API + controlled final availability projection seam; not real expiry',
+          final_basis_deliberately_unchanged=True,post_status=response.status_code,cold_status=cold.status_code,
+          cold_outcome=cold.json().get('status'),plan_and_ledger_unchanged=after==before,view_calls=len(calls),
+          expected_post_status=409,expected_cold_outcome='NOT_OBSERVED',expected_no_plan_or_ledger_write=True)
+        (Path(__file__).parent/'result.json').write_text(json.dumps(observed,indent=2)+'\n')
+>       assert response.status_code==409,observed
+E       AssertionError: {'scope': 'WIP actual PG/API + controlled final availability projection seam; not real expiry', 'final_basis_deliberately_unchanged': True, 'post_status': 200, 'cold_status': 200, ...}
+E       assert 200 == 409
+E        +  where 200 = <Response [200 OK]>.status_code
+
+.runtime/multifield-source-review/final-unknown-wip-v1/test_final_unknown.py:46: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/parkweave/plan_source_conflicts.py:42
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+src/parkweave/material_package_continuation.py:29
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+.runtime/multifield-source-review/final-unknown-wip-v1/test_final_unknown.py::test_final_unknown_same_basis_refuses_without_plan_or_ledger_write
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/multifield-source-review/final-unknown-wip-v1/test_final_unknown.py::test_final_unknown_same_basis_refuses_without_plan_or_ledger_write
+1 failed, 4 warnings in 8.00s

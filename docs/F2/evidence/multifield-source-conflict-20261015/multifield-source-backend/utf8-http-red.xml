@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="8.141" timestamp="2026-10-15T17:24:24.064374+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_material_package_continuation" name="test_actual_http_lone_surrogate_reason_is_structural_422_without_writes" time="7.814"><failure message="assert (500 == 422)&#10; +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_actual_http_lone_surrogate_reason_is_structural_422_without_writes(http_f):
+        f=http_f;p,c,_=setup(f);value=read(f,p,c).json();body=deepcopy(value['action_requests']['KEEP_AND_CONTINUE'])
+        body['reason']='\ud800';before=snapshot(f)
+        h=headers(f[2],key=uuid4().hex);h['content-type']='application/json'
+        r=f[3].post(path(p)+'/commands',headers=h,content=json.dumps(body,ensure_ascii=True).encode('utf-8'))
+&gt;       assert r.status_code==422 and snapshot(f)==before
+E       assert (500 == 422)
+E        +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code
+
+tests/test_material_package_continuation.py:143: AssertionError</failure></testcase></testsuite></testsuites>

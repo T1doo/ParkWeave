@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="16" time="100.669" timestamp="2026-10-15T17:28:46.871709+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_material_package_continuation" name="test_first_get_is_readonly_and_explicit_post_enables_without_outline_obligation" time="9.838" /><testcase classname="tests.test_material_package_continuation" name="test_summary_only_requires_fresh_context_ack_without_copying_summary_into_manual" time="11.410" /><testcase classname="tests.test_material_package_continuation" name="test_outline_obligation_stays_required_after_summary_change_and_edit" time="20.438" /><testcase classname="tests.test_material_package_continuation" name="test_active_mode_rejects_legacy_source_rebase_without_note_or_ledger_writes[ACCEPT_SOURCE]" time="9.825"><failure message="assert (422 == 409)&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+action = 'ACCEPT_SOURCE'
+
+    @pytest.mark.parametrize('action',['ACCEPT_SOURCE','KEEP_AND_CONTINUE','MERGE_NOTE'])
+    def test_active_mode_rejects_legacy_source_rebase_without_note_or_ledger_writes(http_f,action):
+        f=http_f;p,c,_=setup(f);assert send(f,p,read(f,p,c).json()).status_code==200
+        p=add(f,p,slot='material_outline',text='SYNTHETIC later outline').json();c=refresh(f,p)
+        old=old_read(f,p,c).json();assert action not in old['action_requests']
+        value=deepcopy(read(f,p,c).json()['action_requests']['MERGE_NOTE'])
+        value.pop('confirm_package');value.update(schema=1,action=action,text=old['note']['text']+'\n'+old['source']['text'] if action=='MERGE_NOTE' else None)
+        before=snapshot(f);r=f[3].post('/api/preparations/'+p['preparation_id']+'/plan-source-conflicts/commands',headers=headers(f[2],key=uuid4().hex),json=value)
+&gt;       assert r.status_code==409 and snapshot(f)==before
+E       assert (422 == 409)
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_material_package_continuation.py:87: AssertionError</failure></testcase><testcase classname="tests.test_material_package_continuation" name="test_active_mode_rejects_legacy_source_rebase_without_note_or_ledger_writes[KEEP_AND_CONTINUE]" time="7.914"><failure message="assert (422 == 409)&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+action = 'KEEP_AND_CONTINUE'
+
+    @pytest.mark.parametrize('action',['ACCEPT_SOURCE','KEEP_AND_CONTINUE','MERGE_NOTE'])
+    def test_active_mode_rejects_legacy_source_rebase_without_note_or_ledger_writes(http_f,action):
+        f=http_f;p,c,_=setup(f);assert send(f,p,read(f,p,c).json()).status_code==200
+        p=add(f,p,slot='material_outline',text='SYNTHETIC later outline').json();c=refresh(f,p)
+        old=old_read(f,p,c).json();assert action not in old['action_requests']
+        value=deepcopy(read(f,p,c).json()['action_requests']['MERGE_NOTE'])
+        value.pop('confirm_package');value.update(schema=1,action=action,text=old['note']['text']+'\n'+old['source']['text'] if action=='MERGE_NOTE' else None)
+        before=snapshot(f);r=f[3].post('/api/preparations/'+p['preparation_id']+'/plan-source-conflicts/commands',headers=headers(f[2],key=uuid4().hex),json=value)
+&gt;       assert r.status_code==409 and snapshot(f)==before
+E       assert (422 == 409)
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_material_package_continuation.py:87: AssertionError</failure></testcase><testcase classname="tests.test_material_package_continuation" name="test_active_mode_rejects_legacy_source_rebase_without_note_or_ledger_writes[MERGE_NOTE]" time="7.078"><failure message="assert (422 == 409)&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+action = 'MERGE_NOTE'
+
+    @pytest.mark.parametrize('action',['ACCEPT_SOURCE','KEEP_AND_CONTINUE','MERGE_NOTE'])
+    def test_active_mode_rejects_legacy_source_rebase_without_note_or_ledger_writes(http_f,action):
+        f=http_f;p,c,_=setup(f);assert send(f,p,read(f,p,c).json()).status_code==200
+        p=add(f,p,slot='material_outline',text='SYNTHETIC later outline').json();c=refresh(f,p)
+        old=old_read(f,p,c).json();assert action not in old['action_requests']
+        value=deepcopy(read(f,p,c).json()['action_requests']['MERGE_NOTE'])
+        value.pop('confirm_package');value.update(schema=1,action=action,text=old['note']['text']+'\n'+old['source']['text'] if action=='MERGE_NOTE' else None)
+        before=snapshot(f);r=f[3].post('/api/preparations/'+p['preparation_id']+'/plan-source-conflicts/commands',headers=headers(f[2],key=uuid4().hex),json=value)
+&gt;       assert r.status_code==409 and snapshot(f)==before
+E       assert (422 == 409)
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_material_package_continuation.py:87: AssertionError</failure></testcase><testcase classname="tests.test_material_package_continuation" name="test_current_material_row_aba_invalidates_preview_and_persistent_confirmation" time="10.778" /><testcase classname="tests.test_material_package_continuation" name="test_execute_revoke_denies_new_post_but_original_package_history_stays_readable" time="8.115" /><testcase classname="tests.test_material_package_continuation" name="test_unknown_historical_summary_expands_package_scope_after_legacy_adopt_p1_verify" time="8.298" /><testcase classname="tests.test_material_package_continuation" name="test_new_request_strict_types_and_utf8_fail_before_any_execution[schema-True]" time="0.001" /><testcase classname="tests.test_material_package_continuation" name="test_new_request_strict_types_and_utf8_fail_before_any_execution[schema-2.0]" time="0.000" /><testcase classname="tests.test_material_package_continuation" name="test_new_request_strict_types_and_utf8_fail_before_any_execution[confirm_package-1]" time="0.000" /><testcase classname="tests.test_material_package_continuation" name="test_new_request_strict_types_and_utf8_fail_before_any_execution[confirm_package-1.0]" time="0.000" /><testcase classname="tests.test_material_package_continuation" name="test_new_request_strict_types_and_utf8_fail_before_any_execution[confirm_package-true]" time="0.000" /><testcase classname="tests.test_material_package_continuation" name="test_new_request_strict_types_and_utf8_fail_before_any_execution[reason-\ud800]" time="0.001" /><testcase classname="tests.test_material_package_continuation" name="test_actual_http_lone_surrogate_reason_is_structural_422_without_writes" time="6.574" /></testsuite></testsuites>

@@ -1,0 +1,3 @@
+基线40092，静态调查：note冲突锚/目录原文承载只检查outline；need_summary-only仍会通过完整材料SHA使原P1–P5失效，但不新增旧模式正文冲突。双槽同时变由outline触冲突，旧v2只核对outline行并整包重绑；两槽实际历史基线完整性已实现。typed schema1多根闭包并集已有，不重做。证据：plan_source_conflicts.py:96,103,330,524；preparation.py:151；typed_source_impact.py:179；test_note_template_carry_epoch_types.py:58。
+
+根已选显式opt-in的v3：独立schema2请求，首次明确POST启用，不追溯旧v1/v2。摘要仅上下文确认；目录实际变或继承原v2义务时启用不可降级的精确行承载。新模式任何材料/人工EDIT需重新确认；旧ACCEPT及schema1继续禁止隐式降级。短期完整源epochs用于最终CAS，长期仅材料双槽和当前注记绑定，不能因合法后续业务VERIFY使证明永久失效。独立请求/历史纯解析及DTO见design-v1.json，源码仅private-worktree；根唯一共享/Git集成者。

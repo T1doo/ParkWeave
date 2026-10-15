@@ -1,0 +1,98 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_actual_v3_pure_history_matrix_and_later_current_epoch_change _______
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_actual_v3_pure_history_matrix_and_later_current_epoch_change(http_f):
+        f=http_f;p,_,_,_=complete(f,local=True)
+        original=edit(f,p,'  SYNTHETIC original manual text  ')
+        _,cards,_=imported(f,p);card=cards['cards'][0]
+        v=get(f,p,card);assert v.status_code==200,v.text
+        key=uuid4().hex;posted=send(f,p,v.json(),key);assert posted.status_code==200,posted.text
+        receipt=posted.json()['receipt']
+        with f[1].connect() as c:parent=c.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+        service._recovery_proofs(parent)
+        results=[]
+        def damage(name,change,expected_rejected=True):
+            value=deepcopy(parent);e=value['service_case_plan']['events'][-1];proof=e['plan_note'];basis=proof['preview_basis'];q=basis['package_confirmation']
+            change(value,e,proof,basis,q);reseal(value)
+            try:service._recovery_proofs(value);rejected=False
+            except Exception as error:
+                from parkweave.store import Conflict
+                if not isinstance(error,(Conflict,ValueError)):raise
+                rejected=True
+            results.append(dict(name=name,expected_rejected=expected_rejected,actual_rejected=rejected,
+                                result='PASS' if rejected==expected_rejected else 'UNEXPECTED_ACCEPTANCE'))
+        for value in (True,3.0,4):damage('proof_version_'+repr(value),lambda p,e,x,b,q,v=value:x.update(version=v))
+        for value in (True,2.0,1):damage('request_schema_'+repr(value),lambda p,e,x,b,q,v=value:x['request'].update(schema=v))
+        for value in (1,1.0,'true',False):damage('request_confirmation_'+repr(value),lambda p,e,x,b,q,v=value:x['request'].update(confirm_package=v))
+        for field in ('baseline','current'):
+            for value in (True,1.0):damage('epoch_'+field+'_version_'+repr(value),lambda p,e,x,b,q,f=field,v=value:q['epochs'][f][0].update(version=v))
+        for value in (True,3.0,2):damage('basis_schema_'+repr(value),lambda p,e,x,b,q,v=value:b.update(schema=v))
+        damage('core_schema_bool',lambda p,e,x,b,q:q.update(schema=True))
+        damage('core_policy_claim_summary_carriage',lambda p,e,x,b,q:q['policy'].update(need_summary='COPY_INTO_NOTE'))
+        damage('core_first_confirmation_claims_active',lambda p,e,x,b,q:q.update(active=True,mode='PACKAGE_V3'))
+        damage('core_changes_sticky_required',lambda p,e,x,b,q:q.update(outline_carriage_required=True))
+        damage('core_manual_text',lambda p,e,x,b,q:q['manual'].update(text='SYNTHETIC forged manual'))
+        damage('core_baseline_full_object',lambda p,e,x,b,q:q['baseline_package'][0].update(source_label='SYNTHETIC changed capture'))
+        damage('epoch_current_nondecimal',lambda p,e,x,b,q:q['epochs']['current'][0].update(row_epoch='1e3'))
+        damage('epoch_case_extra_field',lambda p,e,x,b,q:q['epochs']['case_versions'].update(unexpected=True))
+        damage('epoch_grant_not_bool',lambda p,e,x,b,q:q['epochs']['case_versions']['action_grant_epochs'][0].update(active=1))
+        damage('epoch_source_hash_differs_outer',lambda p,e,x,b,q:q['epochs']['case_versions'].update(source_epochs_sha256='f'*64))
+        damage('current_package_missing_slot',lambda p,e,x,b,q:b['materials'].pop())
+        damage('current_package_duplicate_slot',lambda p,e,x,b,q:b['materials'].__setitem__(0,deepcopy(b['materials'][1])))
+        damage('keep_changes_after_manual',lambda p,e,x,b,q:x['after_note'].update(text='SYNTHETIC not kept',text_sha256=notes.digest('SYNTHETIC not kept')))
+        # This preview is a record, not ADOPT authority. Redundant saved metadata
+        # still must be closed and agree with its outer immutable ledger binding.
+        damage('source_change_extra_key',lambda p,e,x,b,q:b['source_change'].update(unexpected=True))
+        damage('source_change_binding_foreign',lambda p,e,x,b,q:b['source_change']['binding'].update(org_id='SYNTHETIC foreign org'))
+        damage('source_change_ledger_revision_bool',lambda p,e,x,b,q:b['source_change'].update(ledger_revision=True))
+        damage('source_change_ledger_prefix_wrong',lambda p,e,x,b,q:b['source_change'].update(ledger_sha256='f'*64))
+        damage('source_change_epoch_hash_wrong',lambda p,e,x,b,q:b['source_change'].update(source_epochs_sha256='f'*64))
+        damage('source_change_typed_schema_bool',lambda p,e,x,b,q:b['source_change']['source_impact'].update(schema=True))
+        damage('source_change_typed_schema_unknown',lambda p,e,x,b,q:b['source_change']['source_impact'].update(schema=9))
+        path=OUT/'history-matrix-result.json'
+        path.write_text(json.dumps(dict(scope='WIP owned-PG/HTTP origin plus pure history mutation matrix; old five-goal fixture, not six-goal acceptance',
+             units=len(results),results=results,real_origin_HTTP=True,owned_PG=True,pure_mutations_persisted=False),indent=2)+'\n')
+        # Legitimate later current epochs may alter availability, not the old receipt.
+        changed=add(f,p,slot='need_summary',text='SYNTHETIC later real summary').json()
+        changed=prepare(f,changed,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC real later review').json()
+        changed=prepare(f,changed,'CONFIRM',reason='SYNTHETIC real later confirmation').json()
+        recovered=cold(f,p,key);assert recovered.status_code==200,recovered.text
+        assert recovered.json()['status']=='COMMITTED' and recovered.json()['receipt']==receipt
+        assert recovered.json()['current']['action_requests']=={}
+        with f[1].connect() as c:current=c.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+        assert current['service_case_plan']['events'][:len(parent['service_case_plan']['events'])]==parent['service_case_plan']['events']
+        service._recovery_proofs(current)
+        (OUT/'historical-cold-result.json').write_text(json.dumps(dict(status='PASS',old_event_byte_equal=True,
+          legitimate_later_actions=['ADD_need_summary','REVIEW','CONFIRM'],actual_HTTP=True,owned_PG=True,
+          original_old_note_event_preserved=original['receipt'] in recovered.json()['current'].get('history',[]),
+          note='Package history intentionally lists v3 only; old v1 remains in original endpoint and ledger.'),indent=2)+'\n')
+>       assert all(r['result']=='PASS' for r in results),[r['name'] for r in results if r['result']!='PASS']
+E       AssertionError: ['source_change_extra_key', 'source_change_ledger_revision_bool', 'source_change_ledger_prefix_wrong', 'source_change_epoch_hash_wrong', 'source_change_typed_schema_bool', 'source_change_typed_schema_unknown']
+E       assert False
+E        +  where False = all(<generator object test_actual_v3_pure_history_matrix_and_later_current_epoch_change.<locals>.<genexpr> at 0x7f00d041af60>)
+
+.runtime/multifield-source-review/backend-wip-v1/test_v3_history_review.py:120: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/parkweave/plan_source_conflicts.py:42
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+src/parkweave/material_package_continuation.py:26
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:26: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+.runtime/multifield-source-review/backend-wip-v1/test_v3_history_review.py::test_actual_v3_pure_history_matrix_and_later_current_epoch_change
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/multifield-source-review/backend-wip-v1/test_v3_history_review.py::test_actual_v3_pure_history_matrix_and_later_current_epoch_change
+1 failed, 4 warnings in 14.31s

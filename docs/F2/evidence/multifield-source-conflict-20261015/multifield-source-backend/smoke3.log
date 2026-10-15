@@ -1,0 +1,42 @@
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_summary_only_requires_fresh_context_ack_without_copying_summary_into_manual _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_summary_only_requires_fresh_context_ack_without_copying_summary_into_manual(http_f):
+        f=http_f;p,c,_=setup(f);v=read(f,p,c).json();r=send(f,p,v);assert r.status_code==200,r.text;note=r.json()['current']['note']
+        changed=add(f,p,slot='need_summary',text='SYNTHETIC new context never required as owner note prose');assert changed.status_code==200,changed.text;p=changed.json();c=refresh(f,p)
+        preview=source_preview(f,p,c);assert preview.status_code==200,preview.text
+        assert not preview.json()['can_adopt'] and 'OWNER_NOTE_SOURCE_PACKAGE_CONFIRMATION_REQUIRED' in preview.json()['blocking_reasons']
+        body=patch_body(f,p);before=snapshot(f);assert adopt(f,p,body).status_code==409 and snapshot(f)==before
+        v=read(f,p,c).json();q=v['package_confirmation'];assert not q['outline_carriage_required'] and q['can_keep_and_continue']
+        assert q['policy']['need_summary']=='CONTEXT_ACK_ONLY' and q['manual']['text']==note['text']
+>       r=send(f,p,v);assert r.status_code==200,r.text
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"opportunity history proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_material_package_continuation.py:57: AssertionError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/parkweave/plan_source_conflicts.py:42
+  /workspace/ParkWeave/.runtime/multifield-source-backend/private-worktree/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+src/parkweave/material_package_continuation.py:26
+  /workspace/ParkWeave/.runtime/multifield-source-backend/private-worktree/src/parkweave/material_package_continuation.py:26: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_package_continuation.py::test_first_get_is_readonly_and_explicit_post_enables_without_outline_obligation
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_package_continuation.py::test_summary_only_requires_fresh_context_ack_without_copying_summary_into_manual
+1 failed, 2 passed, 4 warnings in 18.08s

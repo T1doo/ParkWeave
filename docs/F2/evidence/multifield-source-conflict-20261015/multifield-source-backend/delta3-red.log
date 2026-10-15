@@ -1,0 +1,116 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_full_history_rejects_rehashed_source_context_detached_from_actual_plan[invented_step_endpoint] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+damage = 'invented_step_endpoint'
+
+    @pytest.mark.parametrize('damage',['invented_step_endpoint','changed_original_before_sources'])
+    def test_full_history_rejects_rehashed_source_context_detached_from_actual_plan(http_f,damage):
+        f=http_f;p,c,_=setup(f);r=send(f,p,read(f,p,c).json());assert r.status_code==200,r.text
+        with f[1].connect() as connection:parent=connection.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+        parent=deepcopy(parent);plan=parent['service_case_plan'];event=plan['events'][-1];proof=event['plan_note'];basis=proof['preview_basis'];change=basis['source_change']
+        if damage=='invented_step_endpoint':
+            graph=change['source_impact'];old=next(e['id'] for e in graph['step_endpoints'] if e['adapter_id']=='P2');new=str(uuid4())
+            for endpoint in graph['step_endpoints']:
+                if endpoint['id']==old:endpoint['id']=new
+            for node in graph['nodes']:
+                if node['step_id']==old:node['step_id']=new
+            for edge in graph['edges']:
+                for key in ('upstream','downstream'):
+                    if edge[key]==old:edge[key]=new
+            for part in ('affected','preserved'):
+                graph[part]=[new if id==old else id for id in graph[part]];change[part]=[new if id==old else id for id in change[part]]
+            change['directly_changed']=[new if id==old else id for id in change['directly_changed']]
+            graph['sha256']=op.sha({k:v for k,v in graph.items() if k!='sha256'})
+        else:change['before_sources']['P2']['preparation_revision']+=1
+        change['sha256']=op.sha({k:v for k,v in change.items() if k!='sha256'})
+        proof['preview_sha256']=op.sha(basis);proof['request']['expected_preview_sha256']=proof['preview_sha256']
+        event['fingerprint']=package.fingerprint(p['preparation_id'],package.Command.model_validate(proof['request']))
+        proof['sha256']=op.sha({k:v for k,v in proof.items() if k!='sha256'})
+        linked=parent['opportunities']['events'][-1];linked['fingerprint']=event['fingerprint'];linked['payload']['plan_event']=deepcopy(event)
+        linked['sha256']=op.sha({k:v for k,v in linked.items() if k!='sha256'})
+>       with pytest.raises(Conflict):service._recovery_proofs(parent)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_material_package_continuation.py:173: Failed
+_ test_full_history_rejects_rehashed_source_context_detached_from_actual_plan[changed_original_before_sources] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+damage = 'changed_original_before_sources'
+
+    @pytest.mark.parametrize('damage',['invented_step_endpoint','changed_original_before_sources'])
+    def test_full_history_rejects_rehashed_source_context_detached_from_actual_plan(http_f,damage):
+        f=http_f;p,c,_=setup(f);r=send(f,p,read(f,p,c).json());assert r.status_code==200,r.text
+        with f[1].connect() as connection:parent=connection.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+        parent=deepcopy(parent);plan=parent['service_case_plan'];event=plan['events'][-1];proof=event['plan_note'];basis=proof['preview_basis'];change=basis['source_change']
+        if damage=='invented_step_endpoint':
+            graph=change['source_impact'];old=next(e['id'] for e in graph['step_endpoints'] if e['adapter_id']=='P2');new=str(uuid4())
+            for endpoint in graph['step_endpoints']:
+                if endpoint['id']==old:endpoint['id']=new
+            for node in graph['nodes']:
+                if node['step_id']==old:node['step_id']=new
+            for edge in graph['edges']:
+                for key in ('upstream','downstream'):
+                    if edge[key]==old:edge[key]=new
+            for part in ('affected','preserved'):
+                graph[part]=[new if id==old else id for id in graph[part]];change[part]=[new if id==old else id for id in change[part]]
+            change['directly_changed']=[new if id==old else id for id in change['directly_changed']]
+            graph['sha256']=op.sha({k:v for k,v in graph.items() if k!='sha256'})
+        else:change['before_sources']['P2']['preparation_revision']+=1
+        change['sha256']=op.sha({k:v for k,v in change.items() if k!='sha256'})
+        proof['preview_sha256']=op.sha(basis);proof['request']['expected_preview_sha256']=proof['preview_sha256']
+        event['fingerprint']=package.fingerprint(p['preparation_id'],package.Command.model_validate(proof['request']))
+        proof['sha256']=op.sha({k:v for k,v in proof.items() if k!='sha256'})
+        linked=parent['opportunities']['events'][-1];linked['fingerprint']=event['fingerprint'];linked['payload']['plan_event']=deepcopy(event)
+        linked['sha256']=op.sha({k:v for k,v in linked.items() if k!='sha256'})
+>       with pytest.raises(Conflict):service._recovery_proofs(parent)
+             ^^^^^^^^^^^^^^^^^^^^^^^
+E       Failed: DID NOT RAISE Conflict
+
+tests/test_material_package_continuation.py:173: Failed
+__ test_final_current_availability_refusal_rolls_back_when_basis_is_unchanged __
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f0cc4583aa0>
+
+    def test_final_current_availability_refusal_rolls_back_when_basis_is_unchanged(http_f,monkeypatch):
+        f=http_f;p,c,_=setup(f);v=read(f,p,c).json();original=package._view;calls=0
+        def final_unavailable(*args,**kwargs):
+            nonlocal calls
+            calls+=1;value,basis=original(*args,**kwargs)
+            if calls==2:
+                value=dict(value,state='UNKNOWN',action_requests={},can_edit=False,can_resolve=False,unknown_scope='THIS_CASE')
+                value['package_confirmation']=dict(value['package_confirmation'],can_keep_and_continue=False,can_merge=False)
+            return value,basis
+        monkeypatch.setattr(package,'_view',final_unavailable);before=snapshot(f);key=uuid4().hex
+        r=send(f,p,v,key=key)
+>       assert r.status_code==409 and r.json().get('status')!='DEFINITIVELY_REJECTED' and snapshot(f)==before
+E       assert (200 == 409)
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_material_package_continuation.py:187: AssertionError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/parkweave/plan_source_conflicts.py:42
+  /workspace/ParkWeave/.runtime/multifield-source-backend/private-worktree/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+src/parkweave/material_package_continuation.py:29
+  /workspace/ParkWeave/.runtime/multifield-source-backend/private-worktree/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_package_continuation.py::test_full_history_rejects_rehashed_source_context_detached_from_actual_plan[invented_step_endpoint]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_package_continuation.py::test_full_history_rejects_rehashed_source_context_detached_from_actual_plan[invented_step_endpoint]
+FAILED tests/test_material_package_continuation.py::test_full_history_rejects_rehashed_source_context_detached_from_actual_plan[changed_original_before_sources]
+FAILED tests/test_material_package_continuation.py::test_final_current_availability_refusal_rolls_back_when_basis_is_unchanged
+3 failed, 4 warnings in 19.86s

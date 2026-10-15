@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="18.084" timestamp="2026-10-15T17:19:17.517328+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_material_package_continuation" name="test_first_get_is_readonly_and_explicit_post_enables_without_outline_obligation" time="6.274" /><testcase classname="tests.test_material_package_continuation" name="test_summary_only_requires_fresh_context_ack_without_copying_summary_into_manual" time="6.327"><failure message="AssertionError: {&quot;detail&quot;:&quot;opportunity history proof invalid&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_summary_only_requires_fresh_context_ack_without_copying_summary_into_manual(http_f):
+        f=http_f;p,c,_=setup(f);v=read(f,p,c).json();r=send(f,p,v);assert r.status_code==200,r.text;note=r.json()['current']['note']
+        changed=add(f,p,slot='need_summary',text='SYNTHETIC new context never required as owner note prose');assert changed.status_code==200,changed.text;p=changed.json();c=refresh(f,p)
+        preview=source_preview(f,p,c);assert preview.status_code==200,preview.text
+        assert not preview.json()['can_adopt'] and 'OWNER_NOTE_SOURCE_PACKAGE_CONFIRMATION_REQUIRED' in preview.json()['blocking_reasons']
+        body=patch_body(f,p);before=snapshot(f);assert adopt(f,p,body).status_code==409 and snapshot(f)==before
+        v=read(f,p,c).json();q=v['package_confirmation'];assert not q['outline_carriage_required'] and q['can_keep_and_continue']
+        assert q['policy']['need_summary']=='CONTEXT_ACK_ONLY' and q['manual']['text']==note['text']
+&gt;       r=send(f,p,v);assert r.status_code==200,r.text
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"opportunity history proof invalid"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_material_package_continuation.py:57: AssertionError</failure></testcase><testcase classname="tests.test_material_package_continuation" name="test_unknown_historical_summary_expands_package_scope_after_legacy_adopt_p1_verify" time="5.234" /></testsuite></testsuites>

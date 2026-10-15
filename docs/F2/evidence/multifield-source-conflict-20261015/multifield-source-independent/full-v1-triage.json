@@ -1,0 +1,32 @@
+{
+  "kind": "INDEPENDENT_WIP_FAILURE_TRIAGE",
+  "window": "full-v1",
+  "source_HEAD": "02da45d0ff2fe0d3f2e1d2915885df1bd2902bd6",
+  "implementation_frozen": false,
+  "raw_log": "full-v1.log",
+  "raw_junit": "full-v1.xml",
+  "result": "full-v1.json",
+  "validation": "full-v1-validation.json",
+  "counts": {
+    "PASS": 23,
+    "FAIL": 1,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "full_named_collection": 24,
+  "elapsed_seconds": 764.2381097449979,
+  "source_private_manifest_paths": 623,
+  "drift": [],
+  "failing_node": "tests/test_multifield_source_package_independent.py::test_bounded_resource_unknown_does_not_allow_partial_known_receipt_adoption",
+  "actual": "409 bounded current source row-version proof unavailable from original /source-impact",
+  "incorrect_expectation": "new test partition helper required200 from original typed reader beyond original epoch bound",
+  "classification": "TEST_FIXTURE_PROJECTION_SURFACE_MISMATCH_NO_PRODUCT_GUARD_RELAXATION",
+  "product_evidence": [
+    "src/parkweave/typed_source_impact.py:223 calls bounded adoption.epochs",
+    "src/parkweave/source_change_adoption.py:87 original row bound rejects overflow",
+    "tests/test_at24_27_change_batch_independent.py:721 original C25 conservative impact uses plan_read.change_impact"
+  ],
+  "correction": "private immutable-candidate-v2: retain typed409/no-write; compare original plan.change_impact all5; require newpackage all5; save full proofless before overflow; prove3 POST409/no-write",
+  "corrected_target_run": "NOT_RUN_AWAIT_ROOT_INTEGRATION",
+  "score_policy": "23PASS historical WIP only; do not transfer into future frozen full24"
+}
