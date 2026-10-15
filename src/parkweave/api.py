@@ -12,7 +12,7 @@ from .run_access_candidate import RunCommand
 from .native_run_access import RunCommand as NativeRunCommand
 
 
-def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None) -> FastAPI:
     if synthetic_rule_readiness is not None:
         from .synthetic_rule_readiness import SyntheticRuleReadiness
         if type(synthetic_rule_readiness) is not SyntheticRuleReadiness or synthetic_rule_readiness.store is not store:
@@ -33,6 +33,10 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         from .service_instance_consumer import ParkInstanceConsumer
         if type(instance_consumer) is not ParkInstanceConsumer or instance_consumer.catalog is not capability_catalog:
             raise Denied('explicit matching owned park instance consumer required')
+    if service_release_preflight is not None:
+        from .service_release_preflight import ServiceReleasePreflight
+        if type(service_release_preflight) is not ServiceReleasePreflight or service_release_preflight.catalog is not capability_catalog or service_release_preflight.store is not store or (instance_consumer is not None and service_release_preflight.repository.path==instance_consumer.repository.path):
+            raise Denied('explicit matching owned service release preflight required')
     if proposal_planner is not None:
         from .service_plan_planner import OfflineProposalPlanner
         if type(proposal_planner) is not OfflineProposalPlanner:raise Denied('explicit offline-only proposal planner required')
@@ -556,6 +560,28 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     @app.get('/api/preparations/{preparation_id}/service-selections/{candidate_id}/preview')
     def service_selection_preview(preparation_id: UUID,candidate_id: UUID,authorization: str | None=Header(default=None)):
         return selections.read(store,token(authorization),preparation_id,candidate_id,catalog=selected_catalog())
+
+    from .service_release_preflight import Record as ServiceReleasePreflightRecord
+
+    def release_preflight():
+        if service_release_preflight is None:raise Denied('isolated service release preflight disabled')
+        return service_release_preflight
+
+    @app.get('/api/preparations/{preparation_id}/service-release-preflight')
+    def service_release_preflight_directory(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return release_preflight().directory(token(authorization),preparation_id)
+
+    @app.get('/api/preparations/{preparation_id}/service-release-preflight/preview')
+    def service_release_preflight_preview(preparation_id: UUID,original_release_id: str=Query(min_length=1,max_length=120),original_instance_id: str=Query(min_length=1,max_length=120),target_instance_id: str=Query(min_length=1,max_length=120),authorization: str | None=Header(default=None)):
+        return release_preflight().preview(token(authorization),preparation_id,original_release_id=original_release_id,original_instance_id=original_instance_id,target_instance_id=target_instance_id)
+
+    @app.post('/api/preparations/{preparation_id}/service-release-preflight',status_code=201)
+    def service_release_preflight_record(preparation_id: UUID,data: ServiceReleasePreflightRecord,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        return release_preflight().save(token(authorization),preparation_id,resource_key(idempotency_key),data)
+
+    @app.get('/api/preparations/{preparation_id}/service-release-preflight/recovery/{request_key}')
+    def service_release_preflight_recovery(preparation_id: UUID,request_key: str,authorization: str | None=Header(default=None)):
+        return release_preflight().recover(token(authorization),preparation_id,resource_key(request_key))
 
     def cold_inputs():
         if instance_consumer is None:raise Denied('isolated park instance cold input disabled')
