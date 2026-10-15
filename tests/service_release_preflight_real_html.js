@@ -171,4 +171,3 @@ function page(config, storage, calls, transport) {
   }
   console.log(JSON.stringify({scope:'FULL_ORIGINAL_HTML_SERVICE_RELEASE_PREFLIGHT_REAL_HTTP_ASGI_OWNED_PG',mode:config.mode,checks,calls,storage_keys:Object.keys(storage),negative_transport_fixture:['unknown_dto','pending'].includes(config.mode)}));process.exit(0);
 })().catch(error=>{console.error(error.stack);if(diagnostics)console.error(JSON.stringify(diagnostics));process.exit(1);});
-
