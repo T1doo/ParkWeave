@@ -11,6 +11,7 @@ import subprocess
 from uuid import uuid4
 
 import pytest
+from psycopg.types.json import Jsonb
 
 import test_at24_27_change_batch_independent as previous
 import test_new_enterprise_local_chain as chain
@@ -250,18 +251,44 @@ def test_original_p1_unlock_is_required_for_new_continuation(cases,action):
 def test_new_continuation_proof_rejects_source_note_card_and_plan_aba(cases,mutation):
     t=cases;card,v=conflict(t,text=MANUAL+'\n'+INCOMING);data=body(v,'KEEP_AND_CONTINUE')
     if mutation=='source':
+        # Owned-PG fault injection: the temporary row need not form a coherent
+        # material package. Verify actual storage rather than claiming an
+        # old-card UNKNOWN projection must expose an authoritative source.
+        with t['f'][1].connect() as c:
+            before=c.execute('SELECT *,xmin::text AS fixture_epoch FROM preparation_evidence WHERE id=%s',(v['source']['id'],)).fetchone()
         for text in (THIRD,INCOMING):
+            digest=hashlib.sha256(text.encode()).hexdigest()
             with t['f'][1].connect() as c:
-                c.execute('UPDATE preparation_evidence SET text=%s,source_sha256=%s WHERE id=%s',(text,hashlib.sha256(text.encode()).hexdigest(),v['source']['id']))
-            assert note_read(t,card)['source']['text']==text
+                c.execute('UPDATE preparation_evidence SET text=%s,source_sha256=%s WHERE id=%s',(text,digest,v['source']['id']))
+                current=c.execute('SELECT text,source_sha256 FROM preparation_evidence WHERE id=%s',(v['source']['id'],)).fetchone()
+                assert current['text']==text and current['source_sha256']==digest
+        with t['f'][1].connect() as c:
+            after=c.execute('SELECT *,xmin::text AS fixture_epoch FROM preparation_evidence WHERE id=%s',(v['source']['id'],)).fetchone()
+        assert {k:value for k,value in before.items() if k!='fixture_epoch'}=={k:value for k,value in after.items() if k!='fixture_epoch'}
+        assert before['fixture_epoch']!=after['fixture_epoch']
+        record('aba-fault-injections',dict(kind='OWNED_PG_SOURCE_ROW_ABA',business_command=False,entire_row_restored=True,epoch_changed=True))
     elif mutation=='manual':
         r=write(t,body(v,'EDIT_NOTE',MANUAL+'\n'+INCOMING+'\nextra'));assert r.status_code==200,r.text
         v=note_read(t,card);r=write(t,body(v,'EDIT_NOTE',MANUAL+'\n'+INCOMING));assert r.status_code==200,r.text
     elif mutation=='card':
         value=opportunities(t['f'],t['rows']['A']).json();r=opportunity_post(t['f'],t['rows']['A'],opportunity_body(value,item=entry(family_id=card['entry']['family_id'],generation=card['entry']['generation']+1)));assert r.status_code==200,r.text
     else:
-        assert lock(t['f'],t['rows']['A'],'P1').status_code==200
-        assert plan_command(t['f'],t['rows']['A'],'P1','UNLOCK').status_code==200
+        # Fault injection, not a legal LOCK on an already invalidated P1.
+        # Two committed transactions restore the entire original plan, with no
+        # business read or command between them; only the row epoch advances.
+        preparation_id=t['rows']['A']['preparation_id']
+        with t['f'][1].connect() as c:
+            before=c.execute('SELECT service_case_plan,service_case_plan::text AS plan_bytes,xmin::text AS fixture_epoch FROM preparations WHERE id=%s',(preparation_id,)).fetchone()
+        temporary=deepcopy(before['service_case_plan']);temporary['revision']+=1
+        with t['f'][1].connect() as c:
+            c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(temporary),preparation_id))
+        with t['f'][1].connect() as c:
+            c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(before['service_case_plan']),preparation_id))
+        with t['f'][1].connect() as c:
+            after=c.execute('SELECT service_case_plan,service_case_plan::text AS plan_bytes,xmin::text AS fixture_epoch FROM preparations WHERE id=%s',(preparation_id,)).fetchone()
+        assert after['service_case_plan']==before['service_case_plan'] and after['plan_bytes']==before['plan_bytes']
+        assert after['fixture_epoch']!=before['fixture_epoch']
+        record('aba-fault-injections',dict(kind='OWNED_PG_PLAN_ROW_ABA',business_command=False,entire_plan_restored=True,epoch_changed=True))
     refuse(t,data)
 
 
@@ -285,11 +312,31 @@ def test_new_continuation_does_not_authorize_other_owner_or_tenant(cases,actor):
 @pytest.mark.parametrize('kind',['missing_baseline','source_unknown'])
 def test_unknown_actual_baseline_or_current_source_cannot_continue(cases,kind):
     t=cases;card,v=conflict(t,text=MANUAL+'\n'+INCOMING)
+    # Capture complete, originally valid requests before the actual source is
+    # made unavailable. UNKNOWN must not manufacture a new writable template.
+    original=preview(t['f'],t['rows']['A'],card);assert original.status_code==200,original.text
+    original_adoption=deepcopy(original.json()['adoption'])
+    original_patch=patch_body(t['f'],t['rows']['A'])
+    v=note_read(t,card);assert v['continuation']['can_keep_and_continue']
+    original_continue=body(v,'KEEP_AND_CONTINUE')
     with t['f'][1].connect() as c:
         if kind=='missing_baseline':c.execute('DELETE FROM preparation_evidence WHERE id=%s',(t['baseline_source']['id'],))
         else:c.execute("UPDATE preparation_catalog SET source=jsonb_set(source,'{kind}','\"UNKNOWN\"') WHERE park_id='park-a' AND service_id='synthetic-material-preparation' AND version=1")
-    v=note_read(t,card);assert not v['continuation']['can_keep_and_continue'] and not v['continuation']['can_merge']
-    refuse(t,body(v,'KEEP_AND_CONTINUE'));adopt_rejection(t,card)
+    v=note_read(t,card);continuation=v.get('continuation')
+    assert not (continuation or {}).get('can_keep_and_continue',False)
+    assert not (continuation or {}).get('can_merge',False)
+    assert not set(NEW).intersection(v['action_requests'])
+    if kind=='source_unknown':assert v['state']=='UNKNOWN'
+    refuse(t,original_continue)
+    current=preview(t['f'],t['rows']['A'],card)
+    assert current.status_code in (200,409),current.text
+    if current.status_code==200:assert not current.json()['can_adopt']
+    for entry_name,request in [('ORIGINAL_OPPORTUNITY_ADOPT',original_adoption),('ORIGINAL_PROOFLESS_LOCAL_ADOPT',original_patch)]:
+        before=previous.full_business(t)
+        response=adopt(t['f'],t['rows']['A'],request) if entry_name=='ORIGINAL_OPPORTUNITY_ADOPT' else patch(t['f'],t['rows']['A'],body=request)
+        assert response.status_code==409,response.text
+        assert previous.full_business(t)==before
+        record('refusals',dict(scenario=entry_name,status=response.status_code,no_business_write=True,request_captured_before_unknown=True))
 
 
 def test_continuation_idempotency_parameter_conflict_and_cold_get(cases):
@@ -358,16 +405,25 @@ def html_controls(t):
         assert next(iter(stored(f,p)['owner_amendments'].values()))==state['note']
         record('closures',dict(six_goals_current=True,original_ids_contract_history=True,unaffected_B_exact=True,manual_or_explicit_source=state['note']['origin']))
     def unresolved():
-        # The first preview can itself refuse an actual UNKNOWN source. The
-        # known-source post-edit bypass tests above exercise both POST entries.
         card=next(c for c in opportunities(f,p).json()['cards'] if c['is_latest_generation'])
         response=preview(f,p,card);assert response.status_code in (200,409),response.text
-        if response.status_code==200:
-            before=previous.full_business(t);r=adopt(f,p,response.json()['adoption'])
-            assert r.status_code==409 and previous.full_business(t)==before
-        data=patch_body(f,p);before=previous.full_business(t);r=patch(f,p,body=data)
-        assert r.status_code==409 and previous.full_business(t)==before
+        if 'before_unknown_adoption' in state:
+            if response.status_code==200:assert not response.json()['can_adopt']
+            requests=[('ORIGINAL_OPPORTUNITY_ADOPT_AFTER_UNKNOWN',state['before_unknown_adoption']),('ORIGINAL_PROOFLESS_LOCAL_ADOPT_AFTER_UNKNOWN',state['before_unknown_patch'])]
+        else:
+            assert response.status_code==200,response.text
+            requests=[('ORIGINAL_OPPORTUNITY_ADOPT_UNRESOLVED_NOTE',response.json()['adoption']),('ORIGINAL_PROOFLESS_LOCAL_ADOPT_UNRESOLVED_NOTE',patch_body(f,p))]
+        for entry_name,data in requests:
+            before=previous.full_business(t)
+            r=adopt(f,p,data) if 'OPPORTUNITY' in entry_name else patch(f,p,body=data)
+            assert r.status_code==409,r.text
+            assert previous.full_business(t)==before
+            record('refusals',dict(scenario=entry_name,status=r.status_code,no_business_write=True,request_captured_before_unknown='before_unknown_adoption' in state))
     def unknown():
+        card=next(c for c in opportunities(f,p).json()['cards'] if c['is_latest_generation'])
+        response=preview(f,p,card);assert response.status_code==200,response.text
+        state['before_unknown_adoption']=deepcopy(response.json()['adoption'])
+        state['before_unknown_patch']=patch_body(f,p)
         with f[1].connect() as c:c.execute("UPDATE preparation_catalog SET source=jsonb_set(source,'{kind}','\"UNKNOWN\"') WHERE park_id='park-a' AND service_id='synthetic-material-preparation' AND version=1")
     def authority(active):
         with f[1].connect() as c:
@@ -384,8 +440,8 @@ def html_controls(t):
 
 def run_html(t,mode):
     attempt=mode+'-'+uuid4().hex[:8];controls=html_controls(t)
-    driver=ROOT/'tests/manual_content_continuation_real_html.js'
-    if not driver.exists():driver=Path(__file__).with_name('manual_content_continuation_real_html.js')
+    driver=Path(__file__).with_name('manual_content_continuation_real_html.js')
+    if not driver.exists():driver=ROOT/'tests/manual_content_continuation_real_html.js'
     process=subprocess.Popen(['node',str(driver)],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     selector=selectors.DefaultSelector();selector.register(process.stdout,selectors.EVENT_READ);lines=[];error='';result=None
     try:

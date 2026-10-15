@@ -161,9 +161,12 @@ function page(config, storage, calls, transport) {
     await $('plan-source-conflict-defer').onclick();
     check(run('planSourceConflictView.state')==='DEFERRED','old defer stays pending');await control('assert_unresolved');
     await control('make_unknown');await read(card);
-    check(!run('planSourceConflictView.continuation.can_keep_and_continue')&&!run('planSourceConflictView.continuation.can_merge'),'actual UNKNOWN refuses both new actions');
+    const unknown=run('planSourceConflictView');
+    check(unknown.state==='UNKNOWN'&&!unknown.action_requests.KEEP_AND_CONTINUE&&!unknown.action_requests.MERGE_NOTE,'actual UNKNOWN supplies no new writable action templates');
+    check(!(unknown.continuation||{}).can_keep_and_continue&&!(unknown.continuation||{}).can_merge,'actual UNKNOWN grants neither continuation action');
+    check($('plan-source-conflict-continue').disabled&&$('plan-source-conflict-merge').disabled,'original page disables both new actions for actual UNKNOWN');
     const count=calls.filter(c=>c.method==='POST').length;
-    $('plan-source-conflict-confirm').checked=true;await $('plan-source-conflict-continue').onclick();
+    $('plan-source-conflict-confirm').checked=true;await $('plan-source-conflict-continue').onclick();await $('plan-source-conflict-merge').onclick();
     check(calls.filter(c=>c.method==='POST').length===count,'unknown continuation cannot POST');
     await control('assert_unresolved');output({unknown_actual_source:true});process.exit(0);
   }
