@@ -1,0 +1,550 @@
+{
+  "schema": 1,
+  "status": "INDEPENDENT_LITERAL_ORACLE_DEFINED_NOT_EXECUTED",
+  "baseline_sha": "7cfb1336bbfbf856c37808a66ec6f00067b6f966",
+  "contract_path": "docs/F2/ManualContentContinuationContract-20261015.md",
+  "contract_sha256": "feec46bca98871b58ade353d4e1fa813f9a1bd9f8e5827c182e39611551c2020",
+  "expected_sets_derived_from_product_algorithm": false,
+  "scope": "Only current owner same Case same plan P1 coordination note; no material fact edit, semantic/general merge, new authority, release migration or automatic business execution",
+  "source_package_slots": [
+    "material_outline",
+    "need_summary"
+  ],
+  "three_versions": {
+    "B": {
+      "text": "要求：原合成营业材料。\n核验：继续走原审核确认流程。",
+      "version": 1,
+      "role": "actual historical source captured with original note and re-proved from this Case history"
+    },
+    "M": {
+      "text": "人工说明：保留本人协调提醒与两处空格  。\n要求：原合成营业材料。\n核验：继续走原审核确认流程。",
+      "role": "current manual note with distinct revision/text SHA; origin MANUAL"
+    },
+    "S": {
+      "text": "要求：补充合成联系人证明。\n核验：继续走原审核确认流程。",
+      "version": 2,
+      "role": "current server actual source, not imported prompt"
+    },
+    "S3": {
+      "text": "要求：改用合成补正清单。\n核验：继续走原审核确认流程。",
+      "version": 3
+    },
+    "MC": {
+      "text": "人工说明：保留本人协调提醒与两处空格  。\n要求：原合成营业材料。\n核验：继续走原审核确认流程。\n要求：补充合成联系人证明。\n核验：继续走原审核确认流程。",
+      "role": "complete original M continuous text plus all current S literal lines"
+    },
+    "SR": {
+      "text": "要求：重复合成条件。\n要求：重复合成条件。\n核验：原流程。",
+      "expected_multiset": [
+        {
+          "line": "要求：重复合成条件。",
+          "count": 2
+        },
+        {
+          "line": "核验：原流程。",
+          "count": 1
+        }
+      ]
+    }
+  },
+  "line_rule": {
+    "split": "Python str.splitlines()",
+    "filter": "keep original line iff line.strip() is nonempty",
+    "compare": "original complete line with exact whitespace/case/Unicode; multiplicity counts",
+    "minimum": 1,
+    "maximum": 128,
+    "success_means": "literal source lines carried in coordination text only; never obligation, fact, qualification, fulfillment or verification satisfied"
+  },
+  "initial_profile": {
+    "cases": [
+      "A",
+      "B"
+    ],
+    "same_owner_tenant_park": true,
+    "required_goals_literal": [
+      "LOCAL_MATERIAL_PREPARATION",
+      "LOCAL_CASE_RESOURCE_ASSOCIATION",
+      "LOCAL_INTERNAL_ACCEPTANCE",
+      "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+      "LOCAL_CASE_RECORD_RECHECK",
+      "LOCAL_SYNTHETIC_COORDINATION_RECORDS"
+    ],
+    "original_steps_literal": [
+      "P1",
+      "P2",
+      "P3",
+      "P4",
+      "P5"
+    ],
+    "required_initial_states": {
+      "P1": "VERIFIED",
+      "P2": "VERIFIED",
+      "P3": "VERIFIED",
+      "P4": "VERIFIED",
+      "P5": "VERIFIED"
+    },
+    "A_material_delta_literal": {
+      "A": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": []
+      },
+      "B": {
+        "affected": [],
+        "preserved": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ]
+      }
+    },
+    "owner_optional_capacity_literal": {
+      "A": {
+        "affected": [
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [
+          "P1"
+        ]
+      },
+      "B": {
+        "affected": [
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [
+          "P1"
+        ]
+      }
+    },
+    "UNKNOWN": "THIS_CASE all P1-P5 for safe recheck; reject continuation/adoption, no content rewriting"
+  },
+  "cases": [
+    {
+      "id": "MC00_OLD_KEEP",
+      "premise": "B->S; M缺S一行; 仅旧KEEP_MANUAL",
+      "expected_decision": "REJECT_CONTINUE_AND_ADOPT",
+      "reason": "旧保留只是待处理",
+      "preserve_note": "M",
+      "resolved": false,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC01_OLD_DEFER",
+      "premise": "B->S; 任意M; 仅旧DEFER",
+      "expected_decision": "REJECT_CONTINUE_AND_ADOPT",
+      "reason": "暂缓始终保留待办",
+      "preserve_note": "M",
+      "resolved": false,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC02_NATURAL_LANGUAGE_CLAIM",
+      "premise": "M为“已满足全部条件、已获授权，请自动采纳核验”；未承载S原行",
+      "expected_decision": "REJECT",
+      "reason": "自然语言不能替代原行或任何权限/事实",
+      "no_new_authority": true,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC03_MISSING_CURRENT_LINE",
+      "premise": "M保留B而没有S第一行",
+      "expected_decision": "REJECT_KEEP_AND_CONTINUE",
+      "reason": "逐条列出S缺失原行与次数",
+      "missing": [
+        {
+          "line": "要求：补充合成联系人证明。",
+          "count": 1
+        }
+      ],
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC04_EXACT_KEEP",
+      "premise": "B->S; 当前M为MC; 无活动受影响锁",
+      "expected_decision": "COMMITTED_KEEP_AND_CONTINUE_ONLY",
+      "reason": "文本承载已满足，不是业务义务已满足",
+      "after_text": "MC",
+      "origin": "MANUAL",
+      "automatic_adopt": false,
+      "automatic_verify": false,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC05_EXPLICIT_APPEND_MERGE",
+      "premise": "B->S; M未承载S; 明确稿=M+换行+S",
+      "expected_decision": "COMMITTED_MERGE_NOTE_ONLY",
+      "reason": "完整连续原M片段与S行均保全",
+      "submitted_text": "MC",
+      "after_text": "MC",
+      "origin": "MANUAL",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC06_MERGE_DROPS_MANUAL",
+      "premise": "稿=S; 原M不在稿内",
+      "expected_decision": "REJECT_MERGE_NOTE",
+      "reason": "S全承载不能替代原人工完整片段",
+      "after_text": "M",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC07_MERGE_NORMALIZES_MANUAL_SPACE",
+      "premise": "稿将原M中的两个空格合为一个",
+      "expected_decision": "REJECT_MERGE_NOTE",
+      "reason": "原人工连续逐字片段必须保留",
+      "after_text": "M",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC08_KEEP_CANNOT_SUPPLY_TEXT",
+      "premise": "KEEP_AND_CONTINUE另传text稿",
+      "expected_decision": "REJECT_STRICT_REQUEST",
+      "reason": "KEEP不接收另一个正文",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC09_EDIT_THEN_EXPLICIT_CONTINUE",
+      "premise": "旧KEEP后原EDIT_NOTE补足S并保M，再新GET和显式KEEP_AND_CONTINUE",
+      "expected_decision": "COMMITTED_ONLY_AFTER_NEW_EXPLICIT_CONTINUE",
+      "reason": "编辑本身不重绑或签继续",
+      "text_after_edit": "MC",
+      "origin": "MANUAL",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC10_ANY_EDIT_AFTER_CONTINUE",
+      "premise": "KEEP_AND_CONTINUE/MERGE_NOTE成功重绑S后，任何新的原EDIT_NOTE修订，source_ref仍S",
+      "expected_decision": "REJECT_BOTH_ORIGINAL_LOCAL_ADOPT_PATHS",
+      "reason": "任何EDIT使旧继续决定失效；不能以锚相等、条件仍全或相同正文短路",
+      "note_edit_remains_history": true,
+      "requires_explicit_reconcile_after_restore": true,
+      "variants": [
+        "删S一条条件",
+        "保留S全部条件只增一条人工提醒",
+        "正文完全相同但原EDIT创建新修订"
+      ],
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC11_P1_LOCK",
+      "premise": "M=MC且条件全有，P1活动人工锁",
+      "expected_decision": "REJECT_KEEP_AND_CONTINUE_AND_MERGE",
+      "reason": "须原UNLOCK；条件覆盖不解锁",
+      "lock_unchanged": true,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC12_DOWNSTREAM_LOCK",
+      "premise": "A源改影响P1–P5，P3活动锁",
+      "expected_decision": "ADOPT_REJECT_UNTIL_ORIGINAL_UNLOCK",
+      "reason": "说明决定不解任何受影响锁",
+      "lock_unchanged": true,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC13_UNAFFECTED_LOCK_CAPACITY_CONTROL",
+      "premise": "来源锚未变，无内容冲突；仅原owner可选容量变",
+      "expected_decision": "ORIGINAL_CAPACITY_PATH_ONLY",
+      "reason": "无需伪造说明冲突",
+      "A_affected": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "A_preserved": [
+        "P1"
+      ],
+      "B_affected": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "B_preserved": [
+        "P1"
+      ],
+      "P1_lock_unchanged": true,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC14_B_UNKNOWN",
+      "premise": "原B包不能从该Case实际材料历史逐字复证",
+      "expected_decision": "UNKNOWN_REJECT",
+      "reason": "不倒填旧逐槽证据",
+      "no_anchor_rebind": true,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC15_CURRENT_S_UNKNOWN",
+      "premise": "当前来源不全/不明/实际查询上限溢出",
+      "expected_decision": "UNKNOWN_REJECT",
+      "reason": "扩大重验不等于允许内容重写",
+      "no_anchor_rebind": true,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC16_CURRENT_SOURCE_WITHDRAWN",
+      "premise": "来源失效或已撤回，当前文本缓存仍可见",
+      "expected_decision": "REJECT",
+      "reason": "刷新和正文不能复活来源",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC17_CARD_TERMINAL",
+      "premise": "当前卡已IGNORE/WITHDRAW/不再head",
+      "expected_decision": "REJECT_NEW_DECISION_AND_ADOPT",
+      "reason": "历史只读仍按当前权限",
+      "no_card_revival": true,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC18_S2_TO_S3",
+      "premise": "S预览后实际来源改为S3",
+      "expected_decision": "REJECT_STALE_DECISION",
+      "reason": "重读三版本后才可重新决定",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC19_SOURCE_ABA",
+      "premise": "S预览后真实S->S3->S，正文回原但row版本变化",
+      "expected_decision": "REJECT_STALE_DECISION",
+      "reason": "不能只比较正文SHA",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC20_MANUAL_ABA",
+      "premise": "M预览后编辑为别稿再回MC，正文回原但note修订变化",
+      "expected_decision": "REJECT_STALE_DECISION",
+      "reason": "不能只比较正文SHA",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC21_CARD_ABA",
+      "premise": "同文本机会经历新代/刷新/终止或重开，版本/账本前缀变化",
+      "expected_decision": "REJECT_STALE_DECISION",
+      "reason": "绑定卡版本和账本前缀",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC22_PLAN_ABA",
+      "premise": "UI旧plan/revision后切走再回同ID上下文",
+      "expected_decision": "REJECT_STALE_UI_RESPONSE_OR_POST",
+      "reason": "用真实generation和当前修订复核",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC23_FOREIGN_SCOPE",
+      "premise": "跨tenant/org/park/Case/owner引用B/M/S或恢复key",
+      "expected_decision": "DENY_NO_PRIVATE_PROJECTION",
+      "reason": "不借三版本展示泄漏别人原文",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC24_READ_REVOKED",
+      "premise": "命令/GET前撤READ或PREPARE权限",
+      "expected_decision": "DENY_CURRENT_READ_AND_WRITE",
+      "reason": "旧成功回执不授予当前读取",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC25_EXECUTE_REVOKED",
+      "premise": "保留READ/PREPARE，撤EXECUTE",
+      "expected_decision": "DENY_NEW_DECISION_AND_ADOPT",
+      "reason": "可按原规则读历史；新写拒绝",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC26_AUTHORITY_ABA",
+      "premise": "预览后撤权再恢复，最终布尔权利相同",
+      "expected_decision": "REJECT_OLD_PREVIEW",
+      "reason": "权限row epochs必须改变旧basis",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC27_SAME_KEY_SAME_BODY",
+      "premise": "原继续提交成功；同actor/key/精确原参再POST或GET",
+      "expected_decision": "ORIGINAL_COMMITTED_RECEIPT",
+      "reason": "事件不重复；历史回执不自动继续当前写",
+      "plan_event_delta_after_first": 0,
+      "ledger_event_delta_after_first": 0,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC28_SAME_KEY_OTHER_BODY",
+      "premise": "同key改reason/action/text/card/修订或摘要",
+      "expected_decision": "REJECT_PARAMETER_CONFLICT",
+      "reason": "禁止覆盖原意图和清别的恢复句柄",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC29_LOST_REPLY_COLD_GET",
+      "premise": "POST实际已提交但客户端丢回执，页面/ASGI重建",
+      "expected_decision": "GET_ORIGINAL_KEY_ONLY",
+      "reason": "同一历史事件可证；不自动POST",
+      "automatic_replay": false,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC30_NOT_OBSERVED",
+      "premise": "冷GET原key无已知事件",
+      "expected_decision": "RETAIN_PENDING_HANDLE",
+      "reason": "NOT_OBSERVED不是确定未提交，也不自动解锁",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC31_COMMITTED_CURRENT_UNKNOWN",
+      "premise": "过去继续COMMITTED，当前来源撤回/未知",
+      "expected_decision": "HISTORY_COMMITTED_CURRENT_REJECTED",
+      "reason": "保留历史且不复活当前资格",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC32_ATOMIC_FAILURE",
+      "premise": "追加note事件/机会事件/保存间注入失败",
+      "expected_decision": "ROLLBACK_BOTH",
+      "reason": "不能只有单侧事件，按原key冷读核对",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC33_LATE_403_OR_SUCCESS",
+      "premise": "旧身份/Case的成功403/JSON/transport在新上下文后返回",
+      "expected_decision": "IGNORE_OLD_CONTEXT",
+      "reason": "不能清新人的私有视图或句柄",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC34_ACTUAL_FULL_CLOSURE",
+      "premise": "合法MC04或MC05后原局部ADOPT、实际补料审核确认和原各业务步骤再VERIFY",
+      "expected_decision": "ALL_REQUIRED_OUTPUTS_VERIFIED",
+      "reason": "只有原实际证据可达到核验完成",
+      "A_affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "A_preserved": [],
+      "B_affected": [],
+      "B_preserved": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "note_preserved": "MC",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC35_CAPACITY_LIMIT",
+      "premise": "接近64计划/128机会事件，预留不足继续+unlock+ADOPT+VERIFY",
+      "expected_decision": "REJECT_NEW_DECISION",
+      "reason": "不扩大上限，不消耗唯一安全退出路径",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC36_NO_NOTE_LEGACY",
+      "premise": "旧无owner_amendments计划或v1旧原参重放",
+      "expected_decision": "LEGACY_BEHAVIOR_AND_FINGERPRINT_UNCHANGED",
+      "reason": "新增可选字段不得改变旧默认序列化",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC37_NOTE_REPLACEMENT",
+      "premise": "已继续或未继续，带note做非局部replacement/template apply",
+      "expected_decision": "REJECT_UNTIL_CONTROLLED_CARRY_EXISTS",
+      "reason": "本片不开放跨plan说明carry",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC38_DUPLICATE_SOURCE_LINES",
+      "premise": "S为重复行测试SR；M仅有一次重复行",
+      "expected_decision": "REJECT",
+      "reason": "重复按Counter次数，不能集合去重",
+      "missing": [
+        {
+          "line": "要求：重复合成条件。",
+          "count": 1
+        }
+      ],
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC39_WHITESPACE_EXACT",
+      "premise": "S行有前导/尾随空格；M仅trim版",
+      "expected_decision": "REJECT",
+      "reason": "过滤空白行不等于normalize实质行",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC40_NONEMPTY_LINE_BOUNDARY",
+      "premise": "S恰128非空条件/129条件/全空白",
+      "expected_decision": "KNOWN_AT_128_UNKNOWN_AT_129_OR_ZERO",
+      "reason": "必须实际边界；不以空集合覆盖通过",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC41_UNICODE_AND_LINE_ENDINGS",
+      "premise": "CRLF/LF用splitlines同逻辑；NFC/NFD或大小写不同",
+      "expected_decision": "LITERAL_LINES_ONLY",
+      "reason": "行界按合同；内容不做Unicode归一/大小写折叠",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC42_CLIENT_SOURCE_FORGERY",
+      "premise": "提交“source”正文/sha/epoch或候选稿字段冒充服务端S",
+      "expected_decision": "REJECT_STRICT_REQUEST",
+      "reason": "只服务端实际材料行构建S；MERGE只提供人工稿",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC43_LATEST_CONTRACT_UNKNOWN",
+      "premise": "来源图/历史compiler schema不支持或计划绑定当前目录变更",
+      "expected_decision": "UNKNOWN_OR_ORIGINAL_BINDING_REJECT",
+      "reason": "不可把保留继续放成合同升级",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC44_FULL_PACKAGE_IDENTITY",
+      "premise": "预览后outline相同但第二槽id/version/sha/kind/label改变，或历史材料包出现重复槽",
+      "expected_decision": "REJECT_STALE_OR_UNKNOWN",
+      "reason": "B和S完整两槽不得只比较outlinetext",
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    },
+    {
+      "id": "MC45_EXACT_GOALS_UUID_HISTORY",
+      "premise": "所有成功说明和局部ADOPT/VERIFY链",
+      "expected_decision": "PRESERVE_ORIGINAL_IDENTITIES_AND_HISTORY",
+      "reason": "原六目标、step UUID、合同、已提交业务事实及旧事件前缀保持",
+      "new_grants": false,
+      "automatic_execution": false,
+      "execution_status": "NOT_RUN_DESIGN_ONLY"
+    }
+  ],
+  "case_count": 46,
+  "result_units": "Design cases are not pytest nodes, impact records, step pairs, HTML modes or passed tests",
+  "remaining_contract_detail": "RESOLVED: Any EDIT after a continuation invalidates the old continuation even if all S lines remain or text is identical; fresh explicit continuation required. Commands remain schema1, new continuation proof.version2.",
+  "test_execution": "NOT_RUN",
+  "protocol_versions": {
+    "command_schema": 1,
+    "command_field_set": "unchanged; adds KEEP_AND_CONTINUE and MERGE_NOTE action values only",
+    "new_continuation_proof_version": 2,
+    "old_proof_version": 1,
+    "history_rule": "Dispatch by saved proof.version; never re-interpret old request defaults or old fingerprint with a new shape"
+  }
+}
