@@ -432,6 +432,9 @@ def apply(checker,token,instance_id,key,data):
             for step in plan['steps']:
                 if step['id'] in projection['affected'] and step.get('verified_sha256'):step['invalidated']=True
             plans._recovery_proofs({**parent,'service_case_plan':plan})
+            # Register the adopted target on the original guarded PG connection.
+            # Its lease is rechecked by actual commit, including expiry after UPDATE.
+            live_guard(checker.consumer.store,c,parent,plan)
             # Recheck after all PG/source waits, and keep SQLite source lease through PG commit.
             checker.engine._enabled(t)
             release_proof(checker.engine,t,data.target_release_id,data.expected_target_sha256,current=True)
