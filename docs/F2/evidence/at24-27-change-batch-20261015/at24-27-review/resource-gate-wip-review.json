@@ -1,0 +1,165 @@
+{
+  "status": "UNFROZEN_BOUNDED_RESOURCE_GATE_STATIC_ACCEPTABLE_NO_BLOCKER_FOUND",
+  "utc": "2026-10-15T10:01:33.272811+00:00",
+  "reviewed_head": "abea250abb68273bd192f300482ce8a281002575",
+  "baseline": "f9834d44e5ec7600848784bfaf07f88ff4cf8691",
+  "resource_binding_sha256": "08ece2ea37b8ba0833abed1d34aa20976e762624e40d18cbc5a6b6ad7dd42254",
+  "entire_module_AST_equal_to_baseline_after_reverting_only_predicate": true,
+  "original_confirmation_and_resource_modules": {
+    "src/parkweave/case_resources.py": {
+      "baseline_byte_identical": true,
+      "sha256": "b182841382aa1111a80f69b23344b6d20fb7de9e9dc380f1c4817cbf8ea44bef"
+    },
+    "src/parkweave/controlled_plans.py": {
+      "baseline_byte_identical": true,
+      "sha256": "972eb3ab96c3bbddc62b537b867fa46cfc683839668f0f0c641e041ef0332937"
+    },
+    "src/parkweave/resource_holds.py": {
+      "baseline_byte_identical": true,
+      "sha256": "5c1cf1ce89298150b9ac32c962ccf1e6a14736a9cc32379c48bca2c611966f72"
+    },
+    "src/parkweave/resource_combinations.py": {
+      "baseline_byte_identical": true,
+      "sha256": "acb909de69aa4a4cbced140adb5df4ec203b797a8fc4dda36a773d94fe35d496"
+    }
+  },
+  "windows": [
+    {
+      "prefix": "resource-gate-wip-01",
+      "head_before": "abea250abb68273bd192f300482ce8a281002575",
+      "head_after": "abea250abb68273bd192f300482ce8a281002575",
+      "source_paths": 601,
+      "source_hash_drift": [],
+      "source_resource_binding_sha256": "08ece2ea37b8ba0833abed1d34aa20976e762624e40d18cbc5a6b6ad7dd42254",
+      "exit_code": 1,
+      "executed": 8,
+      "passed": 5,
+      "failed": 3,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 26.572,
+      "runner_seconds": 28.23772848199951
+    },
+    {
+      "prefix": "resource-gate-wip-02",
+      "head_before": "abea250abb68273bd192f300482ce8a281002575",
+      "head_after": "abea250abb68273bd192f300482ce8a281002575",
+      "source_paths": 601,
+      "source_hash_drift": [],
+      "source_resource_binding_sha256": "08ece2ea37b8ba0833abed1d34aa20976e762624e40d18cbc5a6b6ad7dd42254",
+      "exit_code": 0,
+      "executed": 4,
+      "passed": 4,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "junit_seconds": 13.224,
+      "runner_seconds": 14.917485381000006
+    }
+  ],
+  "successful_unique_scenarios": 9,
+  "first_window_failures": {
+    "count": 3,
+    "cause": "Independent oracle incorrectly demanded unchanged authorization_audit after correctly refused 403 requests",
+    "product_oracle": "Retain original denial audit; require all business and authority table hashes unchanged",
+    "preserved": true
+  },
+  "successful_scenarios": [
+    "real original P1 not verified",
+    "damaged initial fingerprint",
+    "forged partial flag",
+    "unsupported current goal",
+    "damaged verified P1 snapshot",
+    "PREPARE revoked",
+    "EXECUTE revoked",
+    "HOLD revoked",
+    "actual catalogue source UNKNOWN"
+  ],
+  "notes": [
+    "Change is limited to allowing an adopted nonpartial currently compiler-supported registered plan through the pre-existing exact P1 proof branch; no new business write or Grant is introduced.",
+    "The existing V4 branch and legitimate existing current_partial delivery contract are preserved. The new non-V4 branch excludes partial_adoption=True; this is not a claim that all product partial deliveries are forbidden.",
+    "Original resource confirmation retains current role/PREPARE/EXECUTE/HOLD scope, Case/Run/key/resource locks, fingerprint/revision comparison, controlled_plans.gate, final full proposal reread and after-insert source status refusal.",
+    "Existing Read Committed catalogue boundary remains: a trusted uncoordinated administrator may change the SELECT-only catalogue after the final observation and before commit. This change does not add publication locking or atomicity.",
+    "Corruption probes prove conservative refusal, not resilience against every arbitrary trusted-database administrator rewrite.",
+    "All runs are WIP development evidence on Linux synthetic owned PostgreSQL over actual HTTP/ASGI. A commit HEAD plus source manifest is recorded because this branch condition remains an uncommitted product delta; final frozen validation and archive are pending."
+  ],
+  "private_redaction_registries": [
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-02daf52fbfc4487797e9207e9fcf2941.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-02daf52fbfc4487797e9207e9fcf2941.private.json",
+      "sha256": "7a6b15acf2d5f6d3f6215ed32d37a7dc6314f8049edeb0e19d21d235d94a250b"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-0ccc9008afc848e3b27b7d8714d5a467.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-0ccc9008afc848e3b27b7d8714d5a467.private.json",
+      "sha256": "a13bf3f83de7c29da568024c542d3cbf8b924c930e979ba7b91ee45534b0b9eb"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-1db3669eb7cb44bca78c50b155357650.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-1db3669eb7cb44bca78c50b155357650.private.json",
+      "sha256": "4e0821069db88ccaec8909a6ec5614a450ee400f165b856739e373d95d3b5a19"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-2065e102827842dfa5f6c88a2307a02a.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-2065e102827842dfa5f6c88a2307a02a.private.json",
+      "sha256": "dca98157a42766969922723a768311bcc3f94b297ff1eef80e3eb16f799b4476"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-26f1343b40d942daa2fd3d4413864f12.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-26f1343b40d942daa2fd3d4413864f12.private.json",
+      "sha256": "ecaeba82ca704c4462bbbd2f3b05b8a8007518d152553b6bcfe9363d278b59fb"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-2c5bd0f4b81c42beb288fe4147581187.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-2c5bd0f4b81c42beb288fe4147581187.private.json",
+      "sha256": "779bdbb824096cf3c97421e9068d51450631c003ccc84e3d4bebdb99c8090614"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-42d845a4c4fc4632b64df42978f84810.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-42d845a4c4fc4632b64df42978f84810.private.json",
+      "sha256": "cdde32296a4da1b2db2148252690ec89d839490bc0b6e63c33c610c6188a545e"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-4a0ce6a604b64ab3b790d651fa37b0d8.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-4a0ce6a604b64ab3b790d651fa37b0d8.private.json",
+      "sha256": "0f146fdc8edb3350fdf058a7867ce4268ccd80cdb6aaaaeeebd80098df67f3e6"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-6b8cadfb0cf6400a8af2487f93a64134.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-6b8cadfb0cf6400a8af2487f93a64134.private.json",
+      "sha256": "54bc83b0932a40c82556716f8eb415fdf19943aef9cdd4bc2bf8492e3e12eb49"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-7dcb5e6c4a724061b1e6aff3edaeb5f7.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-7dcb5e6c4a724061b1e6aff3edaeb5f7.private.json",
+      "sha256": "3969d8a5e0386fb52f76b667d2108bb14a354ac60f6458dd292b3c33d141119b"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-9a73378cbbac4b119615b4405081d742.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-9a73378cbbac4b119615b4405081d742.private.json",
+      "sha256": "7896e34c4819f83a0efbba93411581df9146d0812adf2f6057ee02f5a3363c92"
+    },
+    {
+      "path": ".runtime/at24-27-review/resource-gate-redaction-c3f1a8fcc89c48b69d1a0924f074b1a0.private.json",
+      "count": 10,
+      "original_path": ".runtime/at24-27-review/resource-gate-c3f1a8fcc89c48b69d1a0924f074b1a0.private.json",
+      "sha256": "74ae90c7c23cb9bce8bb83395f40d1b51ce642238a9f12b9da8faa5aa404f25b"
+    }
+  ],
+  "formal_followup": [
+    "Freeze all product/test source and independently re-review exact SHA",
+    "Run all selected complete modules including resource_plan_binding, original resource binding impact, resource delivery, V4 resource replay, resource/permission/recovery and full fixed AT24-27 double Case chain",
+    "Retain initial failed oracle window plus bounded corrected window in final evidence; do not report a single 9 PASS window"
+  ]
+}

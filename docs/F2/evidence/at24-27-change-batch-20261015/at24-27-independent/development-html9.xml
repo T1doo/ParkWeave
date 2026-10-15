@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="9" time="260.447" timestamp="2026-10-15T09:45:40.173650+00:00" hostname="87a5e83cf057"><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_at24_26_original_html_fixed_two_case_explicit_change_loop[lost_note]" time="50.763" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_at24_26_original_html_fixed_two_case_explicit_change_loop[capacity_lost_adopt]" time="31.026" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_at24_26_original_html_fixed_two_case_explicit_change_loop[lost_note_unknown]" time="36.430" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_at24_26_original_html_fixed_two_case_explicit_change_loop[lost_note_bad_unknown]" time="38.774" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_original_html_current_note_denial_and_late_identity_case_aba[current_403]" time="19.393" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_original_html_current_note_denial_and_late_identity_case_aba[late_aba]" time="21.899" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_original_html_current_note_denial_and_late_identity_case_aba[late_403]" time="21.065"><failure message="AssertionError: assert {'pg': {'acti..., ...), ...]}} == {'pg': {'acti..., ...), ...]}}&#10;  &#10;  Omitting 1 identical items, use -vv to show&#10;  Differing items:&#10;  {'pg': {'action_grants': [{'principal_id': 'fixture-a', 'action': 'case.create', 'active': True, 'park_id': 'park-a', ...id': UUID('f5a82881-6e71-4a6f-8a98-01b5c4daf6f6'), 'run_id': UUID('34da5ebc-17e9-4a56-a1e6-58fb09cac45c'), ...}], ...}} != {'pg': {'action_grants': [{'principal_id': 'fixture-a', 'action': 'case.create', 'active': True, 'park_id': 'park-a', ...id': UUID('f5a82881-6e71-4a6f-8a98-01b5c4daf6f6'), 'run_id': UUID('34da5ebc-17e9-4a56-a1e6-58fb09cac45c'), ...}], ...}}&#10;  Use -v to get more diff">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'late_403'
+
+            'new_report_ack': new_report_ack, 'revalidate_local': revalidate_local, 'final_evidence': final,
+            'make_unknown': lambda: change_source(t, 'shared_catalog_unavailable_unknown'), 'assert_unknown_history': unknown_history}
+    
+    
+    @pytest.mark.parametrize('mode', ['accept', 'lost_note', 'capacity', 'capacity_lost_adopt', 'lost_note_unknown', 'lost_note_bad_unknown'])
+    def test_at24_26_original_html_fixed_two_case_explicit_change_loop(two_cases, mode):
+        t = two_cases; run_html(t, mode, material_controls(t))
+    
+    
+    @pytest.mark.parametrize('mode', ['current_403', 'late_aba', 'late_403', 'late_json_reject', 'late_transport_reject'])
+    def test_original_html_current_note_denial_and_late_identity_case_aba(two_cases, mode):
+        t = two_cases; f = t['f']; before = full_business(t)
+        def authority(active):
+&gt;           with f[1].connect() as c:
+        ^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: assert {'pg': {'acti..., ...), ...]}} == {'pg': {'acti..., ...), ...]}}
+E             
+E             Omitting 1 identical items, use -vv to show
+E             Differing items:
+E             {'pg': {'action_grants': [{'principal_id': 'fixture-a', 'action': 'case.create', 'active': True, 'park_id': 'park-a', ...id': UUID('f5a82881-6e71-4a6f-8a98-01b5c4daf6f6'), 'run_id': UUID('34da5ebc-17e9-4a56-a1e6-58fb09cac45c'), ...}], ...}} != {'pg': {'action_grants': [{'principal_id': 'fixture-a', 'action': 'case.create', 'active': True, 'park_id': 'park-a', ...id': UUID('f5a82881-6e71-4a6f-8a98-01b5c4daf6f6'), 'run_id': UUID('34da5ebc-17e9-4a56-a1e6-58fb09cac45c'), ...}], ...}}
+E             Use -v to get more diff
+
+.runtime/at24-27-independent/test_at24_27_independent.py:458: AssertionError</failure></testcase><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_original_html_current_note_denial_and_late_identity_case_aba[late_json_reject]" time="21.752" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_original_html_current_note_denial_and_late_identity_case_aba[late_transport_reject]" time="19.037" /></testsuite></testsuites>

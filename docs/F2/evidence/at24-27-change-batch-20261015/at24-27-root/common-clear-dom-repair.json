@@ -1,0 +1,28 @@
+{
+  "utc": "2026-10-15T10:33:26.120821+00:00",
+  "base_source_sha": "77059b467f3c0bfe1a74023e58823b14c9ac9a38",
+  "file": "src/parkweave/web.html",
+  "before_sha256": "61a573126791cd339ba8166ec240dec381d481c6b6f7bc4c341232565d6b94dc",
+  "after_sha256": "4c8f16686e22c0547d462c8ecfe03d08a32e70104c2a87c3b39a4a49ae9ce48f",
+  "old": "function clearOpportunities(){clearPlanSourceConflict();$('plan-source-conflict-card').replaceChildren(textElement('option','只读取与编辑人工说明'));$('plan-source-conflict-card').firstChild.value='';clearOpportunityPlan();",
+  "new": "function clearOpportunities(){clearPlanSourceConflict();const option=textElement('option','只读取与编辑人工说明');option.value='';$('plan-source-conflict-card').replaceChildren(option);clearOpportunityPlan();",
+  "scope": "Set new option value before insertion; identical real DOM behavior, no firstChild dependency in common clear path. Original tests, assertions, business and security gates unchanged.",
+  "old_formal": {
+    "root1": {
+      "PASS": 896,
+      "FAIL": 4
+    },
+    "root2": {
+      "PASS": 767,
+      "FAIL": 22
+    },
+    "review": {
+      "PASS": 388
+    },
+    "independent": {
+      "completed_PASS": 208,
+      "uncompleted": 27,
+      "status": "INTERRUPTED_HISTORICAL_PARTIAL_NOT_PASS"
+    }
+  }
+}

@@ -1,0 +1,41 @@
+.F.                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_keep_defer_unlock_accept_changes_only_note_and_real_source_adopt_still_required _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_keep_defer_unlock_accept_changes_only_note_and_real_source_adopt_still_required(http_f):
+        f=http_f;p,_,_,_=complete(f,local=True);first=edit(f,p);assert lock(f,p,'P1').status_code==200
+        p,card=changed(f,p,mixed=True);baseline=stored(f,p);old_note=first['current']['note'];old_lock=baseline['steps'][0]['manual_lock']
+        v=read(f,p,card);assert v.status_code==200,v.text;v=v.json()
+        assert v['state']=='CONFLICT' and v['allowed_choices']==['KEEP_MANUAL','DEFER'] and not v['can_edit']
+        assert v['source']['text']=='SYNTHETIC actual outline source\n  exact content'
+        assert next(d for d in v['material_diffs'] if d['slot']=='material_outline')['before']['text']!=v['source']['text']
+        r=send(f,p,v,'KEEP_MANUAL');assert r.status_code==200,r.text;v=r.json()['current']
+        assert v['state']=='KEPT_MANUAL' and v['note']==old_note and stored(f,p)['steps'][0]['manual_lock']==old_lock
+        x=plan_read(f,p).json();plain=adopt_body(f,p,local_revision=True);plain['expected_plan_revision']=x['revision']
+        assert adopt(f,p,plain).status_code==409
+>       r=send(f,p,v,'DEFER');assert r.status_code==200,r.text;v=r.json()['current']
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"scope":"OWNER_PLAN_SOURCE_CONFLICT","schema":1,"status":"DEFINITIVELY_REJECTED","preparation_id":"e0cd2682-9810-4edb-afc8-97d145884c4b","case_id":"ee3817c3-df45-46be-8215-b907a7e5d449","run_id":"e38ed531-2455-456d-b37b-4e00d4d743d0","actor_ref":"27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db","request_key":"e62b395b8fdc4918a77014c44d0c64cc","fingerprint":"14ba91cae4d04d4b0153a3bf5393c985b20b433284b3818a2486d27f0ab8d0a1","action":"DEFER","plan_id":"00b0922a-a463-4676-9ef6-e12312aa8177","definitively_rejected":true,"business_writes":false,"automatically_replayed":false}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_plan_source_conflicts.py:62: AssertionError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/parkweave/plan_source_conflicts.py:37
+  /workspace/ParkWeave/.runtime/at24-27-backend/worktree/src/parkweave/plan_source_conflicts.py:37: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_plan_source_conflicts.py::test_original_edit_note_is_real_exact_text_and_old_source_events_unchanged
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_plan_source_conflicts.py::test_keep_defer_unlock_accept_changes_only_note_and_real_source_adopt_still_required
+1 failed, 2 passed, 3 warnings in 20.44s

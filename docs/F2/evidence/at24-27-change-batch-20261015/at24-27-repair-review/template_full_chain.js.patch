@@ -1,0 +1,11 @@
+--- tests/template_full_chain.js
++++ .runtime/at24-27-repair-review/candidates/template_full_chain.js
+@@ -7,7 +7,7 @@
+  append(...x){this.children.push(...x);}replaceChildren(...x){this.children=x;this.textContent='';}
+  prepend(...x){this.children.unshift(...x);}reset(){}addEventListener(n,f){this.listeners[n]=f;}setAttribute(){}removeAttribute(name){delete this[name];}
+  closest(){return null;}querySelectorAll(){return [];}scrollIntoView(){this.scrolled=true;}
+- get options(){return this.children.filter(x=>x.tagName==='option');}get selectedOptions(){return this.options.filter(x=>x.value===this.value);}get firstElementChild(){return this.children[0];}focus(){}select(){}remove(){}click(){return this.onclick?.();}
++ get options(){return this.children.filter(x=>x.tagName==='option');}get selectedOptions(){return this.options.filter(x=>x.value===this.value);}get firstChild(){return this.children[0]??null;}get firstElementChild(){return this.children[0];}focus(){}select(){}remove(){}click(){return this.onclick?.();}
+ }
+ const lines=require('readline').createInterface({input:process.stdin}),replies=[],calls=[];
+ lines.on('line',line=>{replies.shift()?.(JSON.parse(line));});

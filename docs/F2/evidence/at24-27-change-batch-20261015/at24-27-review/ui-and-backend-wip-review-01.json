@@ -1,0 +1,131 @@
+{
+  "status": "READONLY_UNFROZEN_STATIC_REVIEW_NOT_FINAL_ACCEPTANCE",
+  "utc": "2026-10-15T09:43:27.615261+00:00",
+  "baseline_sha": "abea250abb68273bd192f300482ce8a281002575",
+  "reviewed_WIP_file_snapshots": {
+    "src/parkweave/web.html": {
+      "bytes": 728219,
+      "sha256": "a4056a3007d29f99a1b245272a98569b126b7a0fd5aa0adac78a8746ad829ddf"
+    },
+    "src/parkweave/plan_source_conflicts.py": {
+      "bytes": 28353,
+      "sha256": "1ba25f377b0085adeeb072753dc92ae2fb00b59db3587d6dac3036ff7a410c72"
+    },
+    "src/parkweave/api.py": {
+      "bytes": 69144,
+      "sha256": "9afe3d3e8294f272d2ab208ed2bb57b2b82c690cb2e4503811401eb7821bebfd"
+    },
+    "src/parkweave/service_case_steps.py": {
+      "bytes": 59890,
+      "sha256": "6c62f03e7dbf5574046b7672f5c4c902c808efe0f1238dbf36a3d4eb11fbf19a"
+    },
+    "src/parkweave/registered_dependencies.py": {
+      "bytes": 12826,
+      "sha256": "01322dc3dae485fe7244577635e3fa23a3e0affa83786b7cd4589fe94204c698"
+    },
+    "src/parkweave/case_opportunities.py": {
+      "bytes": 16743,
+      "sha256": "8251b8b73033544822c820e6dc36d45c3d471d95f6e30b7dd669991ca4d0ccbf"
+    },
+    "src/parkweave/case_goal_results.py": {
+      "bytes": 19284,
+      "sha256": "3af8966cbd49d32b8691fbf01bc4c3cd14bc4686a19c68aaadd67d86a295e64e"
+    },
+    "src/parkweave/source_change_adoption.py": {
+      "bytes": 20615,
+      "sha256": "e074ae701a1e7ea1c2484c67ab2e3f3ba6a88247d7f040d3607d53a1b9029e37"
+    },
+    "src/parkweave/template_migration.py": {
+      "bytes": 32363,
+      "sha256": "3f57727a63637e0a5858457d89ca96156c282bee115308e1660d6925e1f88b3e"
+    }
+  },
+  "findings": [
+    {
+      "id": "WIP01",
+      "finding": "New context generation overwrote original prep generation, so normal current check required two unrelated counters equal.",
+      "status": "FIX_READ_BACK",
+      "repair": "Dedicated conflictGeneration preserving original prep generation"
+    },
+    {
+      "id": "WIP02",
+      "finding": "Fetch/JSON promise rejection bypassed post-await stale checks; late malformed403 could clear new identity view.",
+      "status": "FIX_READ_BACK",
+      "repair": "Catch attaches original PSC context and stale flag, Error filters original servicePlan/opportunity contexts too"
+    },
+    {
+      "id": "WIP03",
+      "finding": "Only plan UUID/actor bound, allowing service-plan A->B->A or same-plan reload to accept old context.",
+      "status": "FIX_READ_BACK",
+      "repair": "servicePlanGeneration+planRevision guard, clearServiceCasePlan clears PSC"
+    },
+    {
+      "id": "WIP04",
+      "finding": "Normal editable/no-card and legitimate nonactionableUNKNOWN backend DTOs failed UI action/partition/hash checks.",
+      "status": "FIX_READ_BACK_WITH_SUBSEQUENT_BACKEND_TYPED_GRAPH",
+      "repair": "Allow normal EDIT action and explicit unknown nullhash shape; no empty partition as noimpact claim; backend no-card now computes original typed source graph"
+    },
+    {
+      "id": "WIP05",
+      "finding": "Cold recovery default empty selector could reject original committed nonempty-card proof.",
+      "status": "FIX_READ_BACK",
+      "repair": "Opaque handle contains exact card and request card checked; reload all card descriptors and restore current requested card before validating"
+    },
+    {
+      "id": "WIP06",
+      "finding": "Blanket409/422 handle release would treat uncertain busy/key/transport failures as definitely uncommitted.",
+      "status": "BOUNDED_STRUCTURED_PROOF_IMPLEMENTED_READ_BACK",
+      "repair": "Only API409 special DefinitiveConflict proof after absent originalkey/known basis/monotonic exact gate under original actor/key lock, rollback then route returns; UI exact14fields/fullhandle matching. Other errors retainkey."
+    },
+    {
+      "id": "WIP07",
+      "finding": "Deleting opaque handle after definitive rejection left failed UNCERTAIN op in original entry registry, blocking all new reads/writes.",
+      "status": "FIX_READ_BACK",
+      "repair": "After full proof+storedhandle check, locate exact path/token/key/body signature and active flow-owned operation; markREJECTED/verified and remove only that operation"
+    },
+    {
+      "id": "WIP08",
+      "finding": "Manual note without outline conflict could disappear from current plan during original explicit replacement caused by catalog/request binding change; note survives only in old history.",
+      "status": "PARENT_ACKNOWLEDGED_BACKEND_REPAIR_PENDING_AT_LAST_REVIEW",
+      "required_boundary": "Preserve current manual body via explicit controlled contract or fail closed while any owner note would be dropped; oldhistory alone is not current body preservation"
+    },
+    {
+      "id": "WIP09",
+      "finding": "UNKNOWN with apparently validhash/actions and need_summary masquerading as main outline candidate could pass initial parser.",
+      "status": "FIX_READ_BACK",
+      "repair": "UNKNOWN always no actions/edit/resolve; main source mustmaterial_outline while material_diffs can contain bothslots"
+    }
+  ],
+  "source_may_change_after_snapshot": true,
+  "parent_disclosed_additional_recovery_fix": "Original plan GET can persist invalidation observation and advance prep xmin; parent added third fresh noteGET after plan/opps reload, with exact oldreceipt in currenthistory before handleclear. Needs full integrated execution.",
+  "current_pure_VM_probe": {
+    "path": "ui-wip-02-probe-result.json",
+    "pass": 13,
+    "source_snapshot": "ui-wip-02-source.json",
+    "meaning": "Extracted actual WIP functions and synthetic stubs only; source precedes latest definitive/recovery patches, not an integrated current-source test or reused final score"
+  },
+  "strict_history_static_observations": [
+    "New command model strict/extraforbid, preserved manual text bytes, current source fulltext/digest/provenance validated, source is coordination annotation not fact",
+    "Plan and opportunity counterparts in one PG row transaction; two-way exact link validation and no recursive fullreader call from embedded ledger validator",
+    "Missing new optional fields keep legacyrequest/fingerprint unaffected; new action whitelists and per-action fingerprint branches extend original plan/goal/recovery validation",
+    "Original adopt guard before all new local/replacement/candidate adoption, plus template migration guard; completed old samekey replay remains historical after current authorization",
+    "KEEP/DEFER do not rewrite note or unlock, ACCEPT requires current unlockedP1 and actual source candidate; original affectedVERIFY and underlying business corrections still required",
+    "History READ/PREPARE separate from EXECUTE newwriting, current scoped owner required",
+    "Original64 event and unlock/accept/adopt/VERIFY reserve retained, new opportunity128 event limit retained"
+  ],
+  "definitive_proof_assurance_limits": [
+    "No cryptographic server signature claim: trusted current authorized API response plus exact requestfingerprint and current UI/handlematch",
+    "Only specific rejection path, not generic busy/Conflict/403/5xx/malformedresponse or NOT_OBSERVED",
+    "Monotonicity relies on supported state transitions and actual rowepochs, not trusted DB administrator rewriting all independent anchors"
+  ],
+  "pending_gates": [
+    "Backend replacement/body preservation repair and focused negative test",
+    "Actual complete originalHTML handler installation and original pending writeflow gate",
+    "Definitive rejection->freshGET->newkey success with both opaque and original registry clear; lost/bad/late failures retainexactkey",
+    "Cold nonemptycard/currentUNKNOWN_COMMITTED handling, malformedcurrent:null retains handle",
+    "TwoCase literal initialstate and changes with actual HTTP/ASGI/ownedPG",
+    "Exact frozenSHA source and full related-module collection/JUnit/source manifests",
+    "Independent archive reconstruction after explicit ready"
+  ],
+  "writes": "Only new .runtime/at24-27-review artifacts; no product/tests/Git edits"
+}

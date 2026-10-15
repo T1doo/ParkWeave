@@ -1,0 +1,5 @@
+私树最终后端15项完整焦点测试通过（95.10秒）。原页可经API编辑真实P1人工协调说明；真实材料目录换版后KEEP/DEFER保持正文、旧锁和待办，原UNLOCK后ACCEPT只复制服务端当前材料全文，再由原ADOPT与VERIFY闭环。事件/机会账本同PG事务双向验证，来源与xmin绑定、幂等冲突及丢回执冷GET有覆盖。真实命令预算54→55→57→58→59→64已通过；没有伪造修订或绕过原重绑/受理规则。引用：docs/F2/AT24-27ChangeBatchContract-20261015.md；tests/test_plan_source_conflicts.py。
+
+交付是不可变candidate-v2→v3→v4→v5四份manifest及对应snapshot，8个产品模块和1个新测试文件；私树已停写，shared源码/Git始终由root集成。smoke失败为观察GET推进xmin后旧预览正确过期；预算首窗失败为材料变化后原资源关联须显式重绑，均保留原始日志/XML，修正测试操作后最终全绿。各窗口与实际文件hash见final-handoff.json。
+
+本片是人工协调说明而非一般资料/合同合并；携说明的跨计划替换与模板apply在受控carry实现前明确拒绝。旧VERIFY聚合摘要不倒造逐槽证据；未知旧正文展示UNKNOWN_BASELINE。父负责冻结SHA全回归、独审及正式AT24–27固定批判断；Windows、真实浏览器、真实模型、生产/部署及真实治理均未执行。独测发现的六目标registered资源比较旧coverage门已只读报告root，本8文件没有修改该范围。引用：src/parkweave/plan_source_conflicts.py；src/parkweave/service_case_steps.py；src/parkweave/template_migration.py。

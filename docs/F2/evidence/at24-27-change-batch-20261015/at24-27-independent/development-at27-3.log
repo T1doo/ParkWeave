@@ -1,0 +1,46 @@
+/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_at27_same_two_cases_real_publication_guards_breaking_apply_and_rollback_denial _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_at27_same_two_cases_real_publication_guards_breaking_apply_and_rollback_denial(two_cases):
+>       t = two_cases; f = t['f']; target = breaking_target(t); before = full_business(t)
+                                            ^^^^^^^^^^^^^^^^^^
+
+.runtime/at24-27-independent/test_at24_27_independent.py:265: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.runtime/at24-27-independent/test_at24_27_independent.py:248: in breaking_target
+    assert template_action(t, 'SAVE_DRAFT', 'template-author', draft=definition(ALL_GOALS[:-1], 'AT27-v2').model_dump(mode='json')).status_code == 200
+                                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_template_candidate.py:42: in definition
+    return draft_for_goals(name='New enterprise material template',
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+name = 'New enterprise material template'
+description = 'Synthetic registered local preparation, no prior enterprise data.'
+goals = ['LOCAL_MATERIAL_PREPARATION', 'LOCAL_CASE_RESOURCE_ASSOCIATION', 'LOCAL_INTERNAL_ACCEPTANCE', 'LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT', 'LOCAL_CASE_RECORD_RECHECK']
+source = {'kind': 'SYNTHETIC', 'id': 'ENG098-template-source', 'revision': 'AT27-v2', 'statement': 'Synthetic reusable steps, no identities or filled materials.', ...}
+
+    def draft_for_goals(name,description,goals,source):
+        _,nodes=planning.compile(goals)
+>       return TemplateDraft(name=name,description=description,required_goals=goals,source=source,
+                             steps=[RegisteredStep(id=s['id'],adapter_revision=s['revision'],depends_on=s['depends_on']) for s in nodes],
+                             parameter_schema=deepcopy(PARAMETER_SCHEMA))
+E       pydantic_core._pydantic_core.ValidationError: 1 validation error for TemplateDraft
+E       source.revision
+E         String should match pattern '^[1-9][0-9]{0,5}$' [type=string_pattern_mismatch, input_value='AT27-v2', input_type=str]
+E           For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+src/parkweave/template_candidate.py:112: ValidationError
+=============================== warnings summary ===============================
+.runtime/at24-27-independent/test_at24_27_independent.py::test_at27_same_two_cases_real_publication_guards_breaking_apply_and_rollback_denial
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/at24-27-independent/test_at24_27_independent.py::test_at27_same_two_cases_real_publication_guards_breaking_apply_and_rollback_denial
+1 failed, 10 deselected, 1 warning in 19.86s

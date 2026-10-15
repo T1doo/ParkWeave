@@ -1,0 +1,58 @@
+/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_at25_selected_capacity_two_case_old_reservations_preserved_and_explicit_rebind _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_at25_selected_capacity_two_case_old_reservations_preserved_and_explicit_rebind(two_cases):
+        t = two_cases; f = t['f']; u = t['u']
+        for row in t['rows'].values():
+            assert lock(f, row, 'P1').status_code == 200
+        locked = {label: deepcopy(stored(f, row)['steps'][0]) for label, row in t['rows'].items()}
+        with f[1].connect() as c:
+            old_reservations = {table: c.execute('SELECT * FROM ' + table + ' ORDER BY to_jsonb(' + table + ')::text').fetchall() for table in (
+                'synthetic_resource_holds', 'synthetic_resource_combinations', 'synthetic_resource_combination_members',
+                'synthetic_resource_combination_receipts', 'resource_case_claims', 'case_resource_links')}
+            c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))', ('synthetic-resource:' + str(resource_holds.RESOURCE_ID),))
+            c.execute('UPDATE synthetic_resources SET capacity=capacity+1,revision=revision+1 WHERE id=%s', (resource_holds.RESOURCE_ID,))
+        for label, row in t['rows'].items():
+            assert_literal_partition(source_graph(f, row), t['initial'][label], 'selected_resource_capacity_and_revision', label)
+            view = plan_read(f, row).json(); before = full_business(t)
+            refused = plan_command(f, row, 'P2', row=view)
+            assert refused.status_code == 409 and full_business(t) == before
+            data = patch_body(f, row); adoption = patch(f, row, body=data)
+            assert adoption.status_code == 201, adoption.text
+            assert stored(f, row)['steps'][0] == locked[label]
+            assert set(stored(f, row)['events'][-1]['local_revision']['affected']) == {s['id'] for s in t['initial'][label]['steps'] if s['adapter_id'] != 'P1'}
+        # Existing first-delivery Approval is immutable historical evidence. Original
+        # repeat delivery is deliberately closed; use its documented rebind path.
+        for number, (label, row) in enumerate(t['rows'].items()):
+            resources = call(u, '/api/synthetic-resources')['items']; revisions = {x['id']: x['revision'] for x in resources}
+            base = hold_body(f, ttl=300); start = datetime.fromisoformat(base['starts_at']) + timedelta(hours=48 + number * 24)
+            hs = []
+            for index, resource in enumerate((resource_holds.RESOURCE_ID, resource_combinations.SECOND_RESOURCE_ID, resource_holds.RESOURCE_ID)):
+                body = dict(base, starts_at=(start + timedelta(hours=index * 3)).isoformat(), ends_at=(start + timedelta(hours=index * 3 + 1)).isoformat(),
+                    expected_revision=revisions[str(resource)], purpose='SYNTHETIC explicit current replacement resource for fixed Case ' + label)
+                hs.append(call(u, '/api/synthetic-resources/' + str(resource) + '/holds', data=body, expected=201)['hold'])
+            bundle = call(u, '/api/resource-bundles', data=dict(members=[dict(hold_id=h['id'], expected_revision=h['resource_revision']) for h in hs]), expected=201)
+            path = '/api/preparations/' + row['preparation_id']
+            comparison = call(u, path + '/resource-plan-binding?candidate_combination_id=' + bundle['combination']['id'])
+>           assert comparison['candidate']['explicit_association_required'] is True and comparison['comparison']['can_confirm']
+E           assert (True is True and False)
+
+.runtime/at24-27-independent/test_at24_27_independent.py:647: AssertionError
+=============================== warnings summary ===============================
+.runtime/at24-27-independent/test_at24_27_independent.py::test_at25_selected_capacity_two_case_old_reservations_preserved_and_explicit_rebind
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+.runtime/at24-27-independent/test_at24_27_independent.py::test_at25_selected_capacity_two_case_old_reservations_preserved_and_explicit_rebind
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:37: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/at24-27-independent/test_at24_27_independent.py::test_at25_selected_capacity_two_case_old_reservations_preserved_and_explicit_rebind
+1 failed, 2 warnings in 20.73s

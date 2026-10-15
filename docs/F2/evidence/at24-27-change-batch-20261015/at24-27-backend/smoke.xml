@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="20.439" timestamp="2026-10-15T09:37:35.022894+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_plan_source_conflicts" name="test_original_edit_note_is_real_exact_text_and_old_source_events_unchanged" time="6.053" /><testcase classname="tests.test_plan_source_conflicts" name="test_keep_defer_unlock_accept_changes_only_note_and_real_source_adopt_still_required" time="6.954"><failure message="AssertionError: {&quot;scope&quot;:&quot;OWNER_PLAN_SOURCE_CONFLICT&quot;,&quot;schema&quot;:1,&quot;status&quot;:&quot;DEFINITIVELY_REJECTED&quot;,&quot;preparation_id&quot;:&quot;e0cd2682-9810-4edb-afc8-97d145884c4b&quot;,&quot;case_id&quot;:&quot;ee3817c3-df45-46be-8215-b907a7e5d449&quot;,&quot;run_id&quot;:&quot;e38ed531-2455-456d-b37b-4e00d4d743d0&quot;,&quot;actor_ref&quot;:&quot;27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db&quot;,&quot;request_key&quot;:&quot;e62b395b8fdc4918a77014c44d0c64cc&quot;,&quot;fingerprint&quot;:&quot;14ba91cae4d04d4b0153a3bf5393c985b20b433284b3818a2486d27f0ab8d0a1&quot;,&quot;action&quot;:&quot;DEFER&quot;,&quot;plan_id&quot;:&quot;00b0922a-a463-4676-9ef6-e12312aa8177&quot;,&quot;definitively_rejected&quot;:true,&quot;business_writes&quot;:false,&quot;automatically_replayed&quot;:false}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_keep_defer_unlock_accept_changes_only_note_and_real_source_adopt_still_required(http_f):
+        f=http_f;p,_,_,_=complete(f,local=True);first=edit(f,p);assert lock(f,p,'P1').status_code==200
+        p,card=changed(f,p,mixed=True);baseline=stored(f,p);old_note=first['current']['note'];old_lock=baseline['steps'][0]['manual_lock']
+        v=read(f,p,card);assert v.status_code==200,v.text;v=v.json()
+        assert v['state']=='CONFLICT' and v['allowed_choices']==['KEEP_MANUAL','DEFER'] and not v['can_edit']
+        assert v['source']['text']=='SYNTHETIC actual outline source\n  exact content'
+        assert next(d for d in v['material_diffs'] if d['slot']=='material_outline')['before']['text']!=v['source']['text']
+        r=send(f,p,v,'KEEP_MANUAL');assert r.status_code==200,r.text;v=r.json()['current']
+        assert v['state']=='KEPT_MANUAL' and v['note']==old_note and stored(f,p)['steps'][0]['manual_lock']==old_lock
+        x=plan_read(f,p).json();plain=adopt_body(f,p,local_revision=True);plain['expected_plan_revision']=x['revision']
+        assert adopt(f,p,plain).status_code==409
+&gt;       r=send(f,p,v,'DEFER');assert r.status_code==200,r.text;v=r.json()['current']
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"scope":"OWNER_PLAN_SOURCE_CONFLICT","schema":1,"status":"DEFINITIVELY_REJECTED","preparation_id":"e0cd2682-9810-4edb-afc8-97d145884c4b","case_id":"ee3817c3-df45-46be-8215-b907a7e5d449","run_id":"e38ed531-2455-456d-b37b-4e00d4d743d0","actor_ref":"27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db","request_key":"e62b395b8fdc4918a77014c44d0c64cc","fingerprint":"14ba91cae4d04d4b0153a3bf5393c985b20b433284b3818a2486d27f0ab8d0a1","action":"DEFER","plan_id":"00b0922a-a463-4676-9ef6-e12312aa8177","definitively_rejected":true,"business_writes":false,"automatically_replayed":false}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_plan_source_conflicts.py:62: AssertionError</failure></testcase><testcase classname="tests.test_plan_source_conflicts" name="test_unchanged_source_manual_text_difference_does_not_block_capacity_patch" time="5.296" /></testsuite></testsuites>

@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="5" failures="0" skipped="0" tests="5" time="45.484" timestamp="2026-10-15T09:59:04.588954+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_registered_rebind_proof" name="test_registered_comparison_preserves_strict_original_proof_and_authority[bad_initial_adopt_fingerprint]" time="9.160"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;too_long&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;members&quot;],&quot;msg&quot;:&quot;List should have at most 2 items after validation, not 3&quot;,&quot;input&quot;:[{&quot;hold_id&quot;:&quot;10c691e6-2ad4-4a85-8d2f-315f3799283f&quot;,&quot;expected_revision&quot;:1},{&quot;hold_id&quot;:&quot;715e478a-4967-4390-802e-dc62cdcf358f&quot;,&quot;expected_revision&quot;:1},{&quot;hold_id&quot;:&quot;6587cacd-507f-4cfd-b855-e696d193ec19&quot;,&quot;expected_revision&quot;:1}],&quot;ctx&quot;:{&quot;field_type&quot;:&quot;List&quot;,&quot;max_length&quot;:2,&quot;actual_length&quot;:3}}]}&#10;assert 422 == 201&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    @pytest.fixture
+    def registered_case(fresh_chain):
+        u=fresh_chain;release=publish(u);row=new_case(u,release)
+        enable_approval(u,[row]);done=finish_chain(u,row)
+        assert done['results']['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert len(done['results']['results'])==6 and set(r['goal'] for r in done['results']['results'])==set(ALL_GOALS)
+        # A distinct original confirmed combination is a legitimate candidate. Its
+        # three holds use a separate time window; no old occupancy is canceled.
+        _,data=holds(u,offset=24);response=confirm_combination(u['f'],data)
+&gt;       assert response.status_code==201,response.text;candidate=response.json()['combination']
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"too_long","loc":["body","members"],"msg":"List should have at most 2 items after validation, not 3","input":[{"hold_id":"10c691e6-2ad4-4a85-8d2f-315f3799283f","expected_revision":1},{"hold_id":"715e478a-4967-4390-802e-dc62cdcf358f","expected_revision":1},{"hold_id":"6587cacd-507f-4cfd-b855-e696d193ec19","expected_revision":1}],"ctx":{"field_type":"List","max_length":2,"actual_length":3}}]}
+E       assert 422 == 201
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_registered_rebind_proof.py:70: AssertionError</error></testcase><testcase classname="tests.test_registered_rebind_proof" name="test_registered_comparison_preserves_strict_original_proof_and_authority[missing_p1_verification]" time="8.081"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;too_long&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;members&quot;],&quot;msg&quot;:&quot;List should have at most 2 items after validation, not 3&quot;,&quot;input&quot;:[{&quot;hold_id&quot;:&quot;743ea57a-b9ce-4020-91fa-5e5022a677e4&quot;,&quot;expected_revision&quot;:1},{&quot;hold_id&quot;:&quot;d06f279c-b1c6-4c22-9817-5066434c3f4c&quot;,&quot;expected_revision&quot;:1},{&quot;hold_id&quot;:&quot;08763ac7-bbb4-4d3a-af78-eb2274e4abf9&quot;,&quot;expected_revision&quot;:1}],&quot;ctx&quot;:{&quot;field_type&quot;:&quot;List&quot;,&quot;max_length&quot;:2,&quot;actual_length&quot;:3}}]}&#10;assert 422 == 201&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    @pytest.fixture
+    def registered_case(fresh_chain):
+        u=fresh_chain;release=publish(u);row=new_case(u,release)
+        enable_approval(u,[row]);done=finish_chain(u,row)
+        assert done['results']['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert len(done['results']['results'])==6 and set(r['goal'] for r in done['results']['results'])==set(ALL_GOALS)
+        # A distinct original confirmed combination is a legitimate candidate. Its
+        # three holds use a separate time window; no old occupancy is canceled.
+        _,data=holds(u,offset=24);response=confirm_combination(u['f'],data)
+&gt;       assert response.status_code==201,response.text;candidate=response.json()['combination']
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"too_long","loc":["body","members"],"msg":"List should have at most 2 items after validation, not 3","input":[{"hold_id":"743ea57a-b9ce-4020-91fa-5e5022a677e4","expected_revision":1},{"hold_id":"d06f279c-b1c6-4c22-9817-5066434c3f4c","expected_revision":1},{"hold_id":"08763ac7-bbb4-4d3a-af78-eb2274e4abf9","expected_revision":1}],"ctx":{"field_type":"List","max_length":2,"actual_length":3}}]}
+E       assert 422 == 201
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_registered_rebind_proof.py:70: AssertionError</error></testcase><testcase classname="tests.test_registered_rebind_proof" name="test_registered_comparison_preserves_strict_original_proof_and_authority[damaged_p1_source_proof]" time="8.849"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;too_long&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;members&quot;],&quot;msg&quot;:&quot;List should have at most 2 items after validation, not 3&quot;,&quot;input&quot;:[{&quot;hold_id&quot;:&quot;a0f520e6-e4b9-4908-ac9c-1f3437c0e923&quot;,&quot;expected_revision&quot;:1},{&quot;hold_id&quot;:&quot;8c9c7172-c597-4701-931c-2f44ddb54828&quot;,&quot;expected_revision&quot;:1},{&quot;hold_id&quot;:&quot;599663df-c5dc-41fd-a02e-173583b7475b&quot;,&quot;expected_revision&quot;:1}],&quot;ctx&quot;:{&quot;field_type&quot;:&quot;List&quot;,&quot;max_length&quot;:2,&quot;actual_length&quot;:3}}]}&#10;assert 422 == 201&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    @pytest.fixture
+    def registered_case(fresh_chain):
+        u=fresh_chain;release=publish(u);row=new_case(u,release)
+        enable_approval(u,[row]);done=finish_chain(u,row)
+        assert done['results']['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert len(done['results']['results'])==6 and set(r['goal'] for r in done['results']['results'])==set(ALL_GOALS)
+        # A distinct original confirmed combination is a legitimate candidate. Its
+        # three holds use a separate time window; no old occupancy is canceled.
+        _,data=holds(u,offset=24);response=confirm_combination(u['f'],data)
+&gt;       assert response.status_code==201,response.text;candidate=response.json()['combination']
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"too_long","loc":["body","members"],"msg":"List should have at most 2 items after validation, not 3","input":[{"hold_id":"a0f520e6-e4b9-4908-ac9c-1f3437c0e923","expected_revision":1},{"hold_id":"8c9c7172-c597-4701-931c-2f44ddb54828","expected_revision":1},{"hold_id":"599663df-c5dc-41fd-a02e-173583b7475b","expected_revision":1}],"ctx":{"field_type":"List","max_length":2,"actual_length":3}}]}
+E       assert 422 == 201
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_registered_rebind_proof.py:70: AssertionError</error></testcase><testcase classname="tests.test_registered_rebind_proof" name="test_registered_comparison_preserves_strict_original_proof_and_authority[changed_catalog_binding]" time="8.629"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;too_long&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;members&quot;],&quot;msg&quot;:&quot;List should have at most 2 items after validation, not 3&quot;,&quot;input&quot;:[{&quot;hold_id&quot;:&quot;9016ddab-4ddf-4279-9958-8436989b1f94&quot;,&quot;expected_revision&quot;:1},{&quot;hold_id&quot;:&quot;9c60c9c3-de5a-4925-91aa-80d037f6f63a&quot;,&quot;expected_revision&quot;:1},{&quot;hold_id&quot;:&quot;c91af790-6928-4e16-886d-f18730254286&quot;,&quot;expected_revision&quot;:1}],&quot;ctx&quot;:{&quot;field_type&quot;:&quot;List&quot;,&quot;max_length&quot;:2,&quot;actual_length&quot;:3}}]}&#10;assert 422 == 201&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    @pytest.fixture
+    def registered_case(fresh_chain):
+        u=fresh_chain;release=publish(u);row=new_case(u,release)
+        enable_approval(u,[row]);done=finish_chain(u,row)
+        assert done['results']['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert len(done['results']['results'])==6 and set(r['goal'] for r in done['results']['results'])==set(ALL_GOALS)
+        # A distinct original confirmed combination is a legitimate candidate. Its
+        # three holds use a separate time window; no old occupancy is canceled.
+        _,data=holds(u,offset=24);response=confirm_combination(u['f'],data)
+&gt;       assert response.status_code==201,response.text;candidate=response.json()['combination']
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"too_long","loc":["body","members"],"msg":"List should have at most 2 items after validation, not 3","input":[{"hold_id":"9016ddab-4ddf-4279-9958-8436989b1f94","expected_revision":1},{"hold_id":"9c60c9c3-de5a-4925-91aa-80d037f6f63a","expected_revision":1},{"hold_id":"c91af790-6928-4e16-886d-f18730254286","expected_revision":1}],"ctx":{"field_type":"List","max_length":2,"actual_length":3}}]}
+E       assert 422 == 201
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_registered_rebind_proof.py:70: AssertionError</error></testcase><testcase classname="tests.test_registered_rebind_proof" name="test_registered_comparison_preserves_strict_original_proof_and_authority[execute_revoked]" time="9.621"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:[{&quot;type&quot;:&quot;too_long&quot;,&quot;loc&quot;:[&quot;body&quot;,&quot;members&quot;],&quot;msg&quot;:&quot;List should have at most 2 items after validation, not 3&quot;,&quot;input&quot;:[{&quot;hold_id&quot;:&quot;63977351-a77c-44fa-9ffe-6338e714dfba&quot;,&quot;expected_revision&quot;:1},{&quot;hold_id&quot;:&quot;125f9ddd-28b6-4153-b849-9888fb29bdbc&quot;,&quot;expected_revision&quot;:1},{&quot;hold_id&quot;:&quot;3c161ad5-01d6-40b4-904c-9e077fc18c40&quot;,&quot;expected_revision&quot;:1}],&quot;ctx&quot;:{&quot;field_type&quot;:&quot;List&quot;,&quot;max_length&quot;:2,&quot;actual_length&quot;:3}}]}&#10;assert 422 == 201&#10; +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    @pytest.fixture
+    def registered_case(fresh_chain):
+        u=fresh_chain;release=publish(u);row=new_case(u,release)
+        enable_approval(u,[row]);done=finish_chain(u,row)
+        assert done['results']['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert len(done['results']['results'])==6 and set(r['goal'] for r in done['results']['results'])==set(ALL_GOALS)
+        # A distinct original confirmed combination is a legitimate candidate. Its
+        # three holds use a separate time window; no old occupancy is canceled.
+        _,data=holds(u,offset=24);response=confirm_combination(u['f'],data)
+&gt;       assert response.status_code==201,response.text;candidate=response.json()['combination']
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":[{"type":"too_long","loc":["body","members"],"msg":"List should have at most 2 items after validation, not 3","input":[{"hold_id":"63977351-a77c-44fa-9ffe-6338e714dfba","expected_revision":1},{"hold_id":"125f9ddd-28b6-4153-b849-9888fb29bdbc","expected_revision":1},{"hold_id":"3c161ad5-01d6-40b4-904c-9e077fc18c40","expected_revision":1}],"ctx":{"field_type":"List","max_length":2,"actual_length":3}}]}
+E       assert 422 == 201
+E        +  where 422 = &lt;Response [422 Unprocessable Entity]&gt;.status_code
+
+tests/test_registered_rebind_proof.py:70: AssertionError</error></testcase></testsuite></testsuites>

@@ -1,0 +1,18 @@
+--- immutable-snapshot-v3
++++ current-shared-WIP
+@@ -93,6 +93,7 @@
+         not isinstance(value['source_package'],list) or len(value['source_package'])!=2):raise ValueError('owner annotation proof invalid')
+     UUID(value['event_id'])
+     for material in value['source_package']:_material(material)
++    if {m['slot'] for m in value['source_package']}!=set(prep.SLOTS):raise ValueError('complete original source package required')
+     outline=next(m for m in value['source_package'] if m['slot']=='material_outline')
+     if not same(value['source_ref'],source_ref(outline)):raise ValueError('owner annotation source anchor invalid')
+     if value['verified_package_sha256'] is not None and not re.fullmatch('[a-f0-9]{64}',value['verified_package_sha256']):raise ValueError()
+@@ -136,6 +137,7 @@
+         _material(basis['source'])
+         if not isinstance(basis['materials'],list) or len(basis['materials'])!=2:raise ValueError()
+         for material in basis['materials']:_material(material)
++        if {m['slot'] for m in basis['materials']}!=set(prep.SLOTS) or basis['source']['slot']!='material_outline':raise ValueError('complete source preview required')
+         if not same(next(m for m in basis['materials'] if m['slot']=='material_outline'),basis['source']):raise ValueError()
+         for key in ('source_epochs_sha256','case_versions_sha256'):
+             if not isinstance(basis[key],str) or not re.fullmatch('[a-f0-9]{64}',basis[key]):raise ValueError()

@@ -1,0 +1,110 @@
+{
+  "status": "V3_PLUS_SHAPE_UNFROZEN_STATIC_NO_REMAINING_MANDATORY_BLOCKER",
+  "utc": "2026-10-15T09:51:32.854891+00:00",
+  "baseline_sha": "f9834d44e5ec7600848784bfaf07f88ff4cf8691",
+  "read_snapshot": {
+    "src/parkweave/plan_source_conflicts.py": {
+      "bytes": 29734,
+      "sha256": "90b075bc3cb336b3223c5bf329499846f8aaf3dc810b77ad185193d303368227"
+    },
+    "src/parkweave/service_case_steps.py": {
+      "bytes": 60706,
+      "sha256": "71c5b74e08c4e7957a594724dfde5a597b95f3cd78e969bf47ea8f552054bfa5"
+    },
+    "src/parkweave/template_migration.py": {
+      "bytes": 32671,
+      "sha256": "bb0259116b43899de37bff59a7b94dcf71a3f396d18b02c1ce84e1d090f46383"
+    },
+    "src/parkweave/api.py": {
+      "bytes": 69144,
+      "sha256": "9afe3d3e8294f272d2ab208ed2bb57b2b82c690cb2e4503811401eb7821bebfd"
+    },
+    "src/parkweave/case_opportunities.py": {
+      "bytes": 16743,
+      "sha256": "8251b8b73033544822c820e6dc36d45c3d471d95f6e30b7dd669991ca4d0ccbf"
+    },
+    "src/parkweave/registered_dependencies.py": {
+      "bytes": 12826,
+      "sha256": "01322dc3dae485fe7244577635e3fa23a3e0affa83786b7cd4589fe94204c698"
+    },
+    "src/parkweave/case_goal_results.py": {
+      "bytes": 19284,
+      "sha256": "3af8966cbd49d32b8691fbf01bc4c3cd14bc4686a19c68aaadd67d86a295e64e"
+    },
+    "src/parkweave/source_change_adoption.py": {
+      "bytes": 20615,
+      "sha256": "e074ae701a1e7ea1c2484c67ab2e3f3ba6a88247d7f040d3607d53a1b9029e37"
+    },
+    "src/parkweave/web.html": {
+      "bytes": 729889,
+      "sha256": "423495c40595f3785cd02692c379058b4f930629771e87f86140fee56ac20400"
+    }
+  },
+  "immutable_v3_comparison": {
+    "src/parkweave/plan_source_conflicts.py": {
+      "expected": "1f6f80612b0e1fecd69c474f0dd05e5ca6d0ee0c032aeb30ac81ca934d923ab6",
+      "actual": "90b075bc3cb336b3223c5bf329499846f8aaf3dc810b77ad185193d303368227"
+    },
+    "src/parkweave/service_case_steps.py": {
+      "expected": "71c5b74e08c4e7957a594724dfde5a597b95f3cd78e969bf47ea8f552054bfa5",
+      "actual": "71c5b74e08c4e7957a594724dfde5a597b95f3cd78e969bf47ea8f552054bfa5"
+    },
+    "src/parkweave/template_migration.py": {
+      "expected": "bb0259116b43899de37bff59a7b94dcf71a3f396d18b02c1ce84e1d090f46383",
+      "actual": "bb0259116b43899de37bff59a7b94dcf71a3f396d18b02c1ce84e1d090f46383"
+    }
+  },
+  "extra_WIP_source_shape_patch": "v3-plus-package-shape.patch",
+  "first_self_check_stop_preserved": "v3-first-manifest-stop.json",
+  "prior_WIP08": "FIX_READ_BACK: Current manualnote cannot silently leave current plan; nonlocalreplacement and all newtemplateapply refused until controlledcarry exists",
+  "guard_order": {
+    "current_auth_and_key_before_replay": true,
+    "exact_oldkey_replay_before_new_guards": true,
+    "any_owner_note_nonlocal_replacement_refused": true,
+    "any_owner_note_template_apply_refused": true,
+    "sameplan_local_adopt_preserves_stepUUID_contract_and_note": true,
+    "no_note_oldpath_early_noop": true
+  },
+  "old_request_event_helpers_byte_identical": {
+    "_adopt_request": true,
+    "_initial_adoption_proof": true,
+    "_adoption_connection": true,
+    "_save": true,
+    "_event": true
+  },
+  "entry_inventory": [
+    "api.service_steps.adopt -> unified service_case_steps.adopt",
+    "template_consumer -> same case_steps.adopt(unadopted_only=True)",
+    "template_migration.apply -> guarded after oldsuccessreplay",
+    "Original _save/observation writes retain full plan/note; no stepcontract replacement",
+    "New notecommand updates plan+opportunities in samePG rowtransaction"
+  ],
+  "history_review": [
+    "Strict original action/fingerprint branches and original event proof retained",
+    "Canonical hash comparisons reject bool/float aliases in original note/currentnote/link",
+    "Card original ledgerprefix reconstructed at event before revision; exact pending/latest card and savedcard compared",
+    "Embedded validator never calls full ledger/recovery; no recursive cycle introduced",
+    "New complete sourcepackage slot and exactoutline guards avoid missing/duplicate slot downgrade",
+    "Note steps_sha computed at original note event remains stable because any later step/contract mutation via templateapply blocked; controlled carry still NOT_IMPLEMENTED"
+  ],
+  "UI_static_review": [
+    "Separate prep/opp/conflict/plan generation and planrevision guards",
+    "Context attached to transport/JSON errors; current403 and late403/ABA separated",
+    "Legal noactionUNKNOWN/currentCOMMITTED split; malformed/null current keepshandle",
+    "ExactspecialDefinitiveConflict proof plus exactstoredhandle and activeflow-owned path/token/key/body lease; no generic409/422 release",
+    "Plan/opps reload plus freshnoteGET and exactreceipt in currenthistory before opaquehandle release; guardedbusy finally"
+  ],
+  "nonblocking_projection_limit": {
+    "path": "template_migration.application",
+    "issue": "At this read, eligible/blockers does not yet show notecontrolledcarry refusal though apply rejects; root/backend advised either mirror readonlyblocker or disclose UI limitation",
+    "server_write_bypass": false
+  },
+  "new_actual_tests_executed_by_reviewer": false,
+  "earlier_VM13": "Only separately hashed earlierWIP extractedfunctions/stubs; not current frozen/product/fullHTML/HTTP/PG scores",
+  "pending_gates": [
+    "Actual integrated complete HTML handler/HTTP/ownedPG newpositive/refusal/cold recovery",
+    "Exact finalSHA source and freshcomplete related-module windows",
+    "Independent archive reconstruction after explicitarchive-ready"
+  ],
+  "no_product_test_Git_or_old_evidence_writes": true
+}

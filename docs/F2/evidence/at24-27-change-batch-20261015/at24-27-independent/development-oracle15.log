@@ -1,0 +1,46 @@
+/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+....F                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_at26_current_catalog_replacement_cannot_drop_unresolved_manual_annotation _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_at26_current_catalog_replacement_cannot_drop_unresolved_manual_annotation(two_cases):
+        t = two_cases; f = t['f']; row = t['rows']['A']; card, value = create_manual_conflict(t, locked=False)
+        kept = conflict_write(t, conflict_body(value, 'KEEP_MANUAL')); assert kept.status_code == 200, kept.text
+        change_source(t, 'shared_catalog_source_contract')
+>       data = original_adopt_body(f, row)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/at24-27-independent/test_at24_27_independent.py:757: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'instance_id': '5c1011fb-41b7-4afc-b73e-0c026efcbbe8', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '7d6bf766-e4ca-494f-8722-398fff8864fc', ...}
+extra = {}
+
+    def adopt_body(f, p, **extra):
+        preview = f[3].get('/api/preparations/' + p['preparation_id'] + '/planning-preview', headers=headers(f[2])).json()['current']
+        with f[1].connect() as c:
+            intent = c.execute('SELECT request_intent FROM preparations WHERE id=%s', (p['preparation_id'],)).fetchone()['request_intent']
+>       return dict(expected_preparation_revision=p['revision'], expected_request_revision=intent['revision'] if intent else 0,
+                                                  ^^^^^^^^^^^^^
+                    expected_source_sha256=preview['source_sha256'], expected_plan_revision=0,
+                    required_goals=preview['required_goals'], reason='SYNTHETIC explicit plan adoption', **extra)
+E       KeyError: 'revision'
+
+tests/test_service_case_steps.py:44: KeyError
+=============================== warnings summary ===============================
+.runtime/at24-27-independent/test_at24_27_independent.py::test_fixed_two_case_initial_state_is_current_read_only_six_goals
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+.runtime/at24-27-independent/test_at24_27_independent.py::test_fixed_two_case_initial_state_is_current_read_only_six_goals
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:37: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/at24-27-independent/test_at24_27_independent.py::test_at26_current_catalog_replacement_cannot_drop_unresolved_manual_annotation
+1 failed, 4 passed, 32 deselected, 2 warnings in 108.11s (0:01:48)

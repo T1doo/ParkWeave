@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="22.012" timestamp="2026-10-15T09:50:29.573966+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_plan_source_conflicts" name="test_real_keep_unlock_accept_adopt_and_verify_path_exactly_uses_revision_64" time="21.710"><failure message="AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_real_keep_unlock_accept_adopt_and_verify_path_exactly_uses_revision_64(http_f):
+        from test_service_dispatches import offer,command as dispatch_command
+        from test_executor_receipts import act as receipt_command
+        from test_case_lifecycle import read as lifecycle_read,act as lifecycle_command
+        f=http_f;p,_,old_dispatch,_=complete(f,local=True);edit(f,p);edit(f,p,'SYNTHETIC explicit second annotation')
+        # Only original HTTP LOCK/UNLOCK commands fill the budget. No fabricated
+        # revision, history, source or permission ever enters the fixture.
+        assert stored(f,p)['revision']==8
+        for _ in range(22):
+            assert lock(f,p,'P5').status_code==200
+            assert plan_command(f,p,'P5','UNLOCK').status_code==200
+        assert stored(f,p)['revision']==52
+        assert lock(f,p,'P1').status_code==200 and lock(f,p,'P3').status_code==200
+        initial=stored(f,p);assert initial['revision']==54
+        p,card=changed(f,p,mixed=True);v=read(f,p,card).json()
+        r=send(f,p,v,'KEEP_MANUAL');assert r.status_code==200,r.text;assert stored(f,p)['revision']==55
+        assert plan_command(f,p,'P1','UNLOCK').status_code==200 and plan_command(f,p,'P3','UNLOCK').status_code==200
+        assert stored(f,p)['revision']==57
+        v=read(f,p,card).json();assert v['can_resolve'] and v['allowed_choices']==['ACCEPT_SOURCE'] and not v['can_edit']
+        r=send(f,p,v,'ACCEPT_SOURCE');assert r.status_code==200,r.text;assert stored(f,p)['revision']==58
+        v=source_preview(f,p,card);assert v.status_code==200 and v.json()['can_adopt'],v.text
+        r=adopt(f,p,v.json()['adoption']);assert r.status_code==201,r.text;assert stored(f,p)['revision']==59
+        p=prepare(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC original review after actual replacement').json()
+        p=prepare(f,p,'CONFIRM',reason='SYNTHETIC original confirmation after actual replacement').json()
+&gt;       verified(f,p,'P1');verified(f,p,'P2');assert stored(f,p)['revision']==61
+                           ^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_conflicts.py:207: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'fdf30ac3-aacf-42b0-a91e-e95e4e2060f6', 'case_id': '93c908ac-b3fb-401e-8197-7d11abd14c86', 'run_id': '75e421e3-d94b-4c7a-bbd4-ff218d7e4484', 'revision': 14, ...}
+adapter = 'P2'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</failure></testcase></testsuite></testsuites>

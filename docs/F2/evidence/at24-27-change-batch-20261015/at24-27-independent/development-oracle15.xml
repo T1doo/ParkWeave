@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="5" time="108.101" timestamp="2026-10-15T09:55:48.645256+00:00" hostname="87a5e83cf057"><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_fixed_two_case_initial_state_is_current_read_only_six_goals" time="22.653" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_at24_fixed_two_case_duplicate_and_out_of_order_events" time="20.638" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_at25_real_row_bound_unknown_expands_both_cases_and_refuses_source_adoption" time="24.167" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_at26_mixed_material_and_optional_capacity_cannot_bypass_kept_manual_note" time="19.902" /><testcase classname=".runtime.at24-27-independent.test_at24_27_independent" name="test_at26_current_catalog_replacement_cannot_drop_unresolved_manual_annotation" time="20.357"><failure message="KeyError: 'revision'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_at26_current_catalog_replacement_cannot_drop_unresolved_manual_annotation(two_cases):
+        t = two_cases; f = t['f']; row = t['rows']['A']; card, value = create_manual_conflict(t, locked=False)
+        kept = conflict_write(t, conflict_body(value, 'KEEP_MANUAL')); assert kept.status_code == 200, kept.text
+        change_source(t, 'shared_catalog_source_contract')
+&gt;       data = original_adopt_body(f, row)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/at24-27-independent/test_at24_27_independent.py:757: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'instance_id': '5c1011fb-41b7-4afc-b73e-0c026efcbbe8', 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', 'state': 'PLAN_ADOPTED', 'run_id': '7d6bf766-e4ca-494f-8722-398fff8864fc', ...}
+extra = {}
+
+    def adopt_body(f, p, **extra):
+        preview = f[3].get('/api/preparations/' + p['preparation_id'] + '/planning-preview', headers=headers(f[2])).json()['current']
+        with f[1].connect() as c:
+            intent = c.execute('SELECT request_intent FROM preparations WHERE id=%s', (p['preparation_id'],)).fetchone()['request_intent']
+&gt;       return dict(expected_preparation_revision=p['revision'], expected_request_revision=intent['revision'] if intent else 0,
+                                                  ^^^^^^^^^^^^^
+                    expected_source_sha256=preview['source_sha256'], expected_plan_revision=0,
+                    required_goals=preview['required_goals'], reason='SYNTHETIC explicit plan adoption', **extra)
+E       KeyError: 'revision'
+
+tests/test_service_case_steps.py:44: KeyError</failure></testcase></testsuite></testsuites>
