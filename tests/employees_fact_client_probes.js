@@ -68,9 +68,30 @@ async function flagScenario(flag){
  assert(error&&error.message==='员工来源变化标志与原节点不一致','rehashing contradictory flag should fail specifically on independent consistency check');
  return {scenario:'rehashed_'+flag+'_mismatch',status:'PASS'};
 }
+function current403Scenario(){
+ const actualServiceHandler=html.match(/function servicePlanError\(e\)\{[^\n]+/)[0];
+ let sequence=0,preparationClears=0;
+ const elements=new Map();
+ const state={Error,oppCurrent:()=>true,
+  servicePlanCurrent:c=>!c.callerCurrent||c.callerCurrent(),
+  clearOpportunityPlan(){sequence++},
+  failCurrentEntryRead(){},clearEntryWriteRequests(){},clearReceiptHistory(){},
+  clearPreparation(){preparationClears++},clearReceipts(){},clearResources(){},
+  oppError(){throw Error('original service-plan error dispatch was bypassed')},
+  $:id=>{if(!elements.has(id))elements.set(id,{textContent:''});return elements.get(id)}
+ };
+ vm.createContext(state);vm.runInContext(actualServiceHandler+'\n'+handler,state);
+ const context={callerCurrent:()=>sequence===0};
+ assert(state.servicePlanCurrent(context),'current403 must begin with an actually current original context');
+ const error=Object.assign(Error('controlled current403'),{status:403,servicePlanContext:context});
+ state.opportunityPlanError(error);
+ assert(preparationClears===1,'current403 original clearPreparation must run once before preview generation invalidation');
+ return {scenario:'current403_dispatch_clears_original_private_preparation',status:'PASS',original_preparation_clear_calls:preparationClears};
+}
 (async()=>{
  const results=[];
  for(const kind of ['late_reject_after_case_switch','late_success_after_sequence_switch','draft_changed_current_sequence'])results.push(await clientScenario(kind));
  for(const flag of ['selected_changed','aggregate_changed'])results.push(await flagScenario(flag));
+ results.push(current403Scenario());
  process.stdout.write(JSON.stringify({evidence_kind:'CONTROLLED_CLIENT_FUNCTION_PROBES_NO_HTTP_BROWSER_PG',results})+'\n');
 })().catch(e=>{process.stderr.write(String(e.stack)+'\n');process.exitCode=1});

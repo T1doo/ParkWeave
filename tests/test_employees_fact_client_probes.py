@@ -13,5 +13,6 @@ def test_employees_client_late_crypto_and_rehashed_flags():
     assert result['evidence_kind']=='CONTROLLED_CLIENT_FUNCTION_PROBES_NO_HTTP_BROWSER_PG'
     assert [r['scenario'] for r in result['results']]==[
         'late_reject_after_case_switch','late_success_after_sequence_switch','draft_changed_current_sequence',
-        'rehashed_selected_changed_mismatch','rehashed_aggregate_changed_mismatch']
+        'rehashed_selected_changed_mismatch','rehashed_aggregate_changed_mismatch',
+        'current403_dispatch_clears_original_private_preparation']
     assert all(r['status']=='PASS' for r in result['results'])

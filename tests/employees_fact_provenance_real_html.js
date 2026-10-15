@@ -57,7 +57,7 @@ function page(config, storage, calls, transport) {
       const response = await fetch(config.base + path, options), body = await response.json();
       const call = {method: options.method || 'GET', path, status: response.status};
       if (options.body) call.body = JSON.parse(options.body);
-      if (call.method === 'POST') call.request_key = options.headers['Idempotency-Key'];
+      if (options.headers?.['Idempotency-Key']) call.request_key = options.headers['Idempotency-Key'];
       if (body.source_impact) call.graph_sha256 = body.source_impact.sha256;
       call.response_scope = body.scope; call.response_schema = body.schema;
       if (body.fact_provenance) call.fact_provenance_sha256=body.fact_provenance.sha256;
@@ -94,18 +94,19 @@ function page(config, storage, calls, transport) {
  const config=await initialized,storage={},calls=[],transport={};diagnostics={calls};
  let p=page(config,storage,calls,transport),{$,run}=p;
  const load=async row=>{await run(`loadPreparation(${JSON.stringify(row.preparation_id)},{role:'enterprise_operator'})`);await $('opp-read').onclick();};
- const preview=async id=>{await run(`previewOpportunityPlan(${JSON.stringify(id)},true)`);check(!!run('opportunityPlanView'),$('opp-plan-status').textContent);};
+ const factButton=id=>{const button=run("document.querySelectorAll('[data-opp-fact-preview]')").find(e=>e.dataset?.oppFactPreview===id);check(!!button&&typeof button.onclick==='function','shipped explicit employees preview button');return button;};
+ const preview=async id=>{await factButton(id).onclick();check(!!run('opportunityPlanView'),$('opp-plan-status').textContent);};
  const output=()=>console.log(JSON.stringify({scope:'FULL_ORIGINAL_HTML_EMPLOYEES_PROVENANCE_ACTUAL_HTTP_ASGI_OWNED_PG',mode:config.mode,checks,calls,real_browser:'NOT_RUN',fake_dto:false}));
  await load(config.A);
  if(['current_403','late_403'].includes(config.mode)){
   await preview(config.card);
   if(config.mode==='current_403'){
-   transport.revokeBeforeRead=true;await preview(config.card).catch(()=>{});
+   transport.revokeBeforeRead=true;await factButton(config.card).onclick();
    check(calls.at(-1).status===403,'actual current employees GET403');
    check(run('opportunityPlanView')===null&&run('servicePlanView')===null,'current denial clears original private plan and preview');
   }else{
    transport.revokeBeforeRead=true;transport.ready=new Promise(resolve=>transport.held=resolve);transport.release=new Promise(resolve=>transport.resume=resolve);transport.hold=c=>c.path.includes('/employees-fact-impact');
-   const old=run(`previewOpportunityPlan(${JSON.stringify(config.card)},true)`);check((await transport.ready).status===403,'held original actual403');
+   const old=factButton(config.card).onclick();check((await transport.ready).status===403,'held original actual403');
    $('token').value='SYNTHETIC_EMPLOYEES_OTHER_IDENTITY';$('token').emit('input');$('token').value=config.token;$('token').emit('input');
    await control('restore');await load(config.B);await preview(config.cardB);const now=run('opportunityPlanView');
    transport.resume();await old;
@@ -129,8 +130,14 @@ function page(config, storage, calls, transport) {
  if(config.mode==='lost_ack'){
   check(Object.keys(storage).some(k=>k.startsWith('parkweave.service-plan-recovery.v1.')),'lost response retains original opaque plan recovery handle');
   for(const [k,v] of Object.entries(storage))if(k.startsWith('parkweave.service-plan-recovery.v1.')){const handle=JSON.parse(v);check(!('fact_provenance' in handle)&&!('reason' in handle)&&!('body' in handle),'local recovery handle excludes body and provenance');}
-  const n=calls.length;p=page(config,storage,calls,transport);({$,run}=p);await run(`loadPreparation(${JSON.stringify(config.A.preparation_id)},{role:'enterprise_operator'})`);await $('service-plan-retry').onclick();
+  const n=calls.length;p=page(config,storage,calls,transport);({$,run}=p);await run(`loadPreparation(${JSON.stringify(config.A.preparation_id)},{role:'enterprise_operator'})`);await $('service-plan-prepare').onclick();await $('service-plan-retry').onclick();
   check(calls.slice(n).every(c=>c.method==='GET'),'cold original plan recovery only GETs');
+  const originalAdopt=calls.find(c=>c.method==='POST'&&c.path.endsWith('/service-case-plan'));
+  const recovered=calls.slice(n).filter(c=>c.path.endsWith('/service-case-plan/command-recovery')&&typeof c.request_key==='string');
+  check(recovered.length>0&&recovered.every(c=>c.method==='GET'&&c.status===200&&c.request_key===originalAdopt.request_key),'actual cold GET uses exact original Idempotency-Key header');
+  check(run('servicePlanRecoveryHandle?.observed')===true,'original recovery is observed and still requires explicit release');
+  await $('service-plan-release').onclick();check(run('servicePlanRecoveryHandle')===null,'user explicitly ends original read-only recovery before later VERIFY');
+  check(calls.slice(n).every(c=>c.method==='GET'),'explicit recovery release only reads current original plan');
  }
  const sent=calls.filter(c=>c.method==='POST'&&c.path.endsWith('/service-case-plan')).at(-1);check(sent?.status===201,'original ADOPT must actually commit: '+$('opp-plan-status').textContent+' '+$('service-plan-error').textContent);await control('after_adopt');
  for(const adapter of ['P1','P2','P3','P4','P5']){
