@@ -1,0 +1,113 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="3" failures="0" skipped="0" tests="3" time="3.814" timestamp="2026-10-15T08:18:01.758988+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_service_release_preflight" name="test_actual_v4_same_release_directory_preview_and_no_business_writes" time="1.736"><error message="failed on setup with &quot;parkweave.store.Denied: invalid assignment scope&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-29/test_actual_v4_same_release_di0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f=a['f'];release=register(a)['release'];a['catalog'].bind_instance('park-a',uuid4().hex,material_instance(release))
+&gt;           p=setup(f,'LOCAL_MATERIAL_PREPARATION')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_case_steps.py:31: in setup
+    p = ready(f)
+        ^^^^^^^^
+tests/test_executor_receipts.py:25: in ready
+    f[1].assign_status('executor-a',UUID(row['run_id']),active=True)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.store.Store object at 0x7f88cbdae4e0&gt;
+principal_id = 'executor-a'
+run_id = UUID('fd51bf9a-742e-494f-a79e-e2b10ad4989b'), active = True
+
+    def assign_status(self,principal_id,run_id,active=True):
+        """Owner-only synthetic setup; cannot assign cross-org or mutate role grants."""
+        with self.connect() as c:
+            self.lock_principal(c,principal_id,exclusive=True)
+            p=c.execute('SELECT * FROM principals WHERE id=%s',(principal_id,)).fetchone()
+            r=c.execute('SELECT * FROM runs WHERE id=%s',(run_id,)).fetchone()
+            if not p or not r or p['role']=='enterprise_operator' or (p['park_id'],p['org_id'])!=(r['park_id'],r['org_id']):
+&gt;               raise Denied('invalid assignment scope')
+E               parkweave.store.Denied: invalid assignment scope
+
+src/parkweave/store.py:428: Denied</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_title_only_new_head_is_contract_compatible_but_current_case_needs_recheck" time="0.818"><error message="failed on setup with &quot;parkweave.store.Denied: invalid assignment scope&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-29/test_title_only_new_head_is_co0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f=a['f'];release=register(a)['release'];a['catalog'].bind_instance('park-a',uuid4().hex,material_instance(release))
+&gt;           p=setup(f,'LOCAL_MATERIAL_PREPARATION')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_case_steps.py:31: in setup
+    p = ready(f)
+        ^^^^^^^^
+tests/test_executor_receipts.py:25: in ready
+    f[1].assign_status('executor-a',UUID(row['run_id']),active=True)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.store.Store object at 0x7f88cb0567b0&gt;
+principal_id = 'executor-a'
+run_id = UUID('606bd898-be54-447a-8849-0146fd85a2ed'), active = True
+
+    def assign_status(self,principal_id,run_id,active=True):
+        """Owner-only synthetic setup; cannot assign cross-org or mutate role grants."""
+        with self.connect() as c:
+            self.lock_principal(c,principal_id,exclusive=True)
+            p=c.execute('SELECT * FROM principals WHERE id=%s',(principal_id,)).fetchone()
+            r=c.execute('SELECT * FROM runs WHERE id=%s',(run_id,)).fetchone()
+            if not p or not r or p['role']=='enterprise_operator' or (p['park_id'],p['org_id'])!=(r['park_id'],r['org_id']):
+&gt;               raise Denied('invalid assignment scope')
+E               parkweave.store.Denied: invalid assignment scope
+
+src/parkweave/store.py:428: Denied</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_private_immutable_evidence_idempotency_cold_restart_and_key_parameter_conflict" time="0.821"><error message="failed on setup with &quot;parkweave.store.Denied: invalid assignment scope&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-29/test_private_immutable_evidenc0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f=a['f'];release=register(a)['release'];a['catalog'].bind_instance('park-a',uuid4().hex,material_instance(release))
+&gt;           p=setup(f,'LOCAL_MATERIAL_PREPARATION')
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_case_steps.py:31: in setup
+    p = ready(f)
+        ^^^^^^^^
+tests/test_executor_receipts.py:25: in ready
+    f[1].assign_status('executor-a',UUID(row['run_id']),active=True)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.store.Store object at 0x7f88c9d977d0&gt;
+principal_id = 'executor-a'
+run_id = UUID('360b2d43-0cdc-43ae-b8b4-3116aa1b2683'), active = True
+
+    def assign_status(self,principal_id,run_id,active=True):
+        """Owner-only synthetic setup; cannot assign cross-org or mutate role grants."""
+        with self.connect() as c:
+            self.lock_principal(c,principal_id,exclusive=True)
+            p=c.execute('SELECT * FROM principals WHERE id=%s',(principal_id,)).fetchone()
+            r=c.execute('SELECT * FROM runs WHERE id=%s',(run_id,)).fetchone()
+            if not p or not r or p['role']=='enterprise_operator' or (p['park_id'],p['org_id'])!=(r['park_id'],r['org_id']):
+&gt;               raise Denied('invalid assignment scope')
+E               parkweave.store.Denied: invalid assignment scope
+
+src/parkweave/store.py:428: Denied</error></testcase></testsuite></testsuites>

@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.runtime/service-release-preflight-audit/audit_archive_pairs.py", line 109, in <module>
+    prepare(args.source_sha) if args.prepare else audit(args.source_sha)
+                                                  ^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/service-release-preflight-audit/audit_archive_pairs.py", line 64, in audit
+    metadata_before={name:record(ARCHIVE/name) for name in ('.gitattributes','README.md','audit.json','index.json')}
+                          ^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/service-release-preflight-audit/audit_archive_pairs.py", line 19, in record
+    data=path.read_bytes();return {'bytes':len(data),'sha256':sha(data)}
+         ^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1019, in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/docs/F2/evidence/service-release-preflight-20261015/README.md'

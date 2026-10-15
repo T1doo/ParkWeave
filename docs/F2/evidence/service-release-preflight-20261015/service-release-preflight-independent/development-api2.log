@@ -1,0 +1,39 @@
+....................F.....                                               [100%]
+=================================== FAILURES ===================================
+_ test_withdrawn_target_refuses_new_report_and_cold_record_never_revives_it[template] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'template'
+
+    def withdraw(r,new,kind):
+        a=r['a']
+        if kind=='template':
+            from parkweave.template_candidate import Command
+>           v=a['engine'].read('template-publisher',a['scope'])
+                ^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_release_preflight_independent.py:248: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+response = <Response [403 Forbidden]>, code = 200
+
+    def ok(response, code=200):
+>       assert response.status_code == code, response.text
+E       AssertionError: {"detail":"record unavailable or authorization denied"}
+E       assert 403 == 200
+E        +  where 403 = <Response [403 Forbidden]>.status_code
+
+tests/test_service_selection_full_chain.py:35: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_service_release_preflight_independent.py::test_only_intersecting_lock_changes_classification_without_unlock[unchanged-COMPATIBLE-affected0-preserved0-locked0]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_service_release_preflight_independent.py::test_withdrawn_target_refuses_new_report_and_cold_record_never_revives_it[template]
+1 failed, 25 passed, 19 deselected, 2 warnings in 250.72s (0:04:10)

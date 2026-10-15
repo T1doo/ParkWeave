@@ -1,0 +1,450 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="16" failures="0" skipped="0" tests="20" time="17.646" timestamp="2026-10-15T08:15:51.320760+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_service_release_preflight" name="test_actual_v4_same_release_directory_preview_and_no_business_writes" time="1.575"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_actual_v4_same_release_di0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'cd3c921a-6d58-44af-800b-2b6546e1de41', 'case_id': 'c1dab4bc-fb31-4b9e-a0d2-3f1b4712cc45', 'run_id': 'e5f4f0d1-8119-4304-9e74-db518b972ca8', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_title_only_new_head_is_contract_compatible_but_current_case_needs_recheck" time="0.934"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_title_only_new_head_is_co0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'd601dcfb-46fc-4799-9d20-6abc5bf9dcc9', 'case_id': '6e40068a-d696-404a-9ce3-b20b53725c43', 'run_id': 'd6498296-dd3b-4f24-8951-9c9c97279b96', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_real_source_rule_change_uses_selected_steps_and_original_lock_not_overwritten" time="0.850"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_real_source_rule_change_u0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '9371a864-3103-4100-afd4-6e95728c3705', 'case_id': '83d364c0-bdeb-4b2f-9746-d335408fde24', 'run_id': '1a6140a0-8503-4e2e-886f-8c7439efd402', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_private_immutable_evidence_idempotency_cold_restart_and_key_parameter_conflict" time="0.946"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_private_immutable_evidenc0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '55318797-8e4c-4d9a-8495-1d05802a45d6', 'case_id': 'b0205f06-c73a-4600-a203-936335759c1c', 'run_id': 'b68b4e70-9291-4e07-a3d6-8db1dfbb7205', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_observed_case_and_source_aba_or_plan_change_reject_record_without_log_write[preparation_aba]" time="0.888"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_observed_case_and_source_0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'd1d3e418-3d0b-490b-a67f-9dba864ed888', 'case_id': '4cea488c-8c9f-419a-b04e-615a27c18b5c', 'run_id': '1e123bfb-9ff0-4c1f-bfdb-3f95920d913d', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_observed_case_and_source_aba_or_plan_change_reject_record_without_log_write[catalog_aba]" time="0.934"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_observed_case_and_source_1')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '7e8b0b87-e5a2-457e-950b-be8e394aeb16', 'case_id': 'e2e55122-a57e-4606-a8bc-2fcd3979dc36', 'run_id': 'b9b24923-b180-4b05-9e23-c0d03616da10', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_observed_case_and_source_aba_or_plan_change_reject_record_without_log_write[plan_revision]" time="0.860"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_observed_case_and_source_2')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '1aee1b43-796c-4d5d-9d82-92d7e278ebbc', 'case_id': 'd7fddd32-2a87-4c53-a87b-6d2fbc7da2c8', 'run_id': '11283317-8fba-4150-9b2f-bb69fb46c204', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_saved_history_survives_current_target_withdrawal_without_becoming_authority" time="0.967"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_saved_history_survives_cu0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'c8349463-2322-44b7-950b-45efdf6a4f79', 'case_id': 'fec2adad-dcaa-4046-9078-f70ef4e109b9', 'run_id': '21fdbcc7-8277-478b-830e-1661871eab3b', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_other_owner_park_or_role_cannot_read_preflight_or_cold_evidence[fixture-b]" time="0.896"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_other_owner_park_or_role_0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'bad04c80-68af-4fb9-b698-057102682ea6', 'case_id': '2626e417-ca18-4dab-8dd0-05a6d83ae783', 'run_id': '8e3b547f-3e8b-409c-ab6c-28d500098661', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_other_owner_park_or_role_cannot_read_preflight_or_cold_evidence[fixture-c]" time="0.980"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_other_owner_park_or_role_1')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '530a8e5d-258c-4d0b-a15f-2f61c963b9c9', 'case_id': 'b8beef25-f070-466b-8d53-65f32b9e5e4b', 'run_id': '4c4d9694-f4ad-4284-b1cd-3948cf4a0e97', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_other_owner_park_or_role_cannot_read_preflight_or_cold_evidence[prep-specialist-fixture-a]" time="0.970"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_other_owner_park_or_role_2')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '73fb1fed-ff3c-4e11-86aa-03e60113f45c', 'case_id': '193d05ff-a2b4-4d7d-850a-1f47d3dd7acc', 'run_id': '979824e2-2443-49bb-a23c-bc2f3101f73b', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_other_owner_park_or_role_cannot_read_preflight_or_cold_evidence[executor-a]" time="0.883"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_other_owner_park_or_role_3')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'b2c6eecf-6518-44b1-a9cf-c99508cec704', 'case_id': '0aeb837a-385e-4b03-9acf-3902c38445b4', 'run_id': 'dd4d2a5f-ceab-4aec-a414-95faf7c1281a', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_read_revocation_denies_cold_get_and_prepare_revocation_retains_history_only" time="1.002"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_read_revocation_denies_co0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '7aee7b76-4b1e-4423-9fd2-9f5763f0c15a', 'case_id': '3278cd9a-e61f-4176-bab2-704e8ae9eefd', 'run_id': '022b6174-2860-45b9-95af-3891c27cbf18', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_new_graph_schema_and_missing_verified_base_are_unknown_not_recordable" time="0.900"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_new_graph_schema_and_miss0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'd80e2b70-8a8c-47e5-a8d4-22f9cb8c402e', 'case_id': '7a044e21-ac80-44f4-869a-01423dafabf9', 'run_id': '9f2af9bc-7c40-4e4d-a6e4-237a34d0a687', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_fixture_gate_is_exact_and_default_capability_remains_closed[False]" time="0.331" /><testcase classname="tests.test_service_release_preflight" name="test_fixture_gate_is_exact_and_default_capability_remains_closed[1]" time="0.327" /><testcase classname="tests.test_service_release_preflight" name="test_fixture_gate_is_exact_and_default_capability_remains_closed[true]" time="0.460" /><testcase classname="tests.test_service_release_preflight" name="test_fixture_gate_is_exact_and_default_capability_remains_closed[flag3]" time="0.320" /><testcase classname="tests.test_service_release_preflight" name="test_record_rejects_bool_float_revision_instead_of_canonical_type_alias[True]" time="1.061"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_record_rejects_bool_float0')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'daa1e178-3edb-49c4-9d5c-17abc9aa8c86', 'case_id': '69ee9f1a-59f7-40c5-8b20-6602dcfb896f', 'run_id': '6e87825c-4ed7-43dc-b0fe-26fe3680cf2c', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase><testcase classname="tests.test_service_release_preflight" name="test_record_rejects_bool_float_revision_instead_of_canonical_type_alias[1.0]" time="0.966"><error message="failed on setup with &quot;AssertionError: {&quot;detail&quot;:&quot;adapter sources, binding, reported obstacle or predecessors need recheck&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-28/test_record_rejects_bool_float1')
+
+    @pytest.fixture
+    def checked(capability_catalog,tmp_path):
+        a=capability_catalog;f=a['f']
+        journal=ConsumerRepository(tmp_path/'preflight.consumer.candidate.sqlite3')
+        checker=preflight.ServiceReleasePreflight(a['catalog'],journal,enabled_for_isolated_tests=True)
+        with TestClient(create_app(f[0],capability_catalog=a['catalog'],service_release_preflight=checker)) as api:
+            a['f']=(*f[:3],api)
+            f,p,candidate,body=generate(a)
+            adopted=steps.adopt(f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,body)
+&gt;           verified(f,p,'P1')
+
+tests/test_service_release_preflight.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '51254d28-0fbd-47fc-916b-9b0fa60a94a3', 'case_id': '7b147a4d-c770-4fe4-b191-cc00aebc7d00', 'run_id': '399d65d2-2e0d-40e1-a239-55df52e7c0ed', 'revision': 2, ...}
+adapter = 'P1'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+&gt;       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_service_case_steps.py:71: AssertionError</error></testcase></testsuite></testsuites>

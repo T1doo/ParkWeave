@@ -1,0 +1,17 @@
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.runtime/service-release-preflight-audit/audit_final_gate.py", line 90, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/ParkWeave/.runtime/service-release-preflight-audit/audit_final_gate.py", line 67, in main
+    pairs=read('.runtime/service-release-preflight-audit/archive-independent-pairs.json');assert pairs['source_sha']==S and pairs['status']=='PAIR_REBUILD_PASS_FINAL_COVERAGE_GATE_PENDING'
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/service-release-preflight-audit/audit_final_gate.py", line 9, in read
+    def read(p):return json.loads((R/p).read_text())
+                                  ^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1027, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/.runtime/service-release-preflight-audit/archive-independent-pairs.json'
