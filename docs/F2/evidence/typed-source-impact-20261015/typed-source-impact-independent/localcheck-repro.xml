@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="5.372" timestamp="2026-10-15T06:32:16.520885+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_typed_source_impact_independent" name="test_literal_actual_source_partitions_and_stable_node_ids[local_check]" time="5.154"><failure message="AssertionError: {&quot;detail&quot;:&quot;current cycle already validated&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+scenario = 'local_check'
+
+    @pytest.mark.parametrize('scenario',['resource_collection','resource_rule','resource_capacity','run_access','receipt','local_check'])
+    def test_literal_actual_source_partitions_and_stable_node_ids(typed_http,scenario):
+        f,_ = typed_http; p,g,d,s = complete(f,local=True); original = stored(f,p)
+        _,old = checked_graph(source_impact(f,p),p,original)
+        if scenario == 'resource_collection': add_resource(f)
+        elif scenario in {'resource_rule','resource_capacity'}:
+            from parkweave.resource_holds import RESOURCE_ID
+            with f[1].connect() as c:
+                clause = 'buffer_seconds=buffer_seconds+1' if scenario == 'resource_rule' else 'capacity=capacity+1'
+                c.execute('UPDATE synthetic_resources SET revision=revision+1,'+clause+' WHERE id=%s',(RESOURCE_ID,))
+        elif scenario == 'run_access':
+            with f[1].connect() as c: c.execute("INSERT INTO run_assignments(run_id,principal_id,park_id,org_id,active) VALUES(%s,'unassigned','park-a','org-a',true)",(p['run_id'],))
+        elif scenario == 'receipt':
+            s=receipt_command(f,s,'REOPEN').json();s=receipt_command(f,s,'SUBMIT',text='SYNTHETIC independent typed actual receipt v3').json();ack=receipt_command(f,s,'ACKNOWLEDGE');assert ack.status_code == 200,ack.text
+        else:
+&gt;           response=lifecycle_command(f,p,lifecycle_read(f,p).json(),'REVALIDATE');assert response.status_code == 200,response.text
+                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: {"detail":"current cycle already validated"}
+E           assert 409 == 200
+E            +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_typed_source_impact_independent.py:172: AssertionError</failure></testcase></testsuite></testsuites>

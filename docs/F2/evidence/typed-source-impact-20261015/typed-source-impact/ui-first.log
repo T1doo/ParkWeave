@@ -1,0 +1,343 @@
+..............FFFFFF.FF.....FF.......................................... [ 97%]
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_______________ test_actual_worklist_ui_offline[late_navigation] _______________
+
+mode = 'late_navigation'
+
+    @pytest.mark.parametrize('mode',['missing_session','403_pending','late_identity','identity_aba','context_reset','late_403',
+        'bad_shape','bad_target','bad_receipt','claim_complete','bad_cursor','too_many','pagination','cancelled',
+        'late_navigation','open_run','open_materials','open_dispatch','open_receipt','open_localcase'])
+    def test_actual_worklist_ui_offline(mode):
+>       x=run(mode);assert x['mode']==mode and x['checks']>=2
+          ^^^^^^^^^
+
+tests/test_case_worklist_offline.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+mode = 'late_navigation', data = None
+
+    def run(mode,data=None):
+        result=subprocess.run(['node',str(Path(__file__).with_name('case_worklist_offline.js')),mode],
+            input=json.dumps(data) if data is not None else None,capture_output=True,text=True,timeout=15,
+            cwd=Path(__file__).resolve().parents[1])
+>       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/case_worklist_offline.js:6:26)
+E             at /workspace/ParkWeave/tests/case_worklist_offline.js:67:75
+E         evalmachine.<anonymous>:94
+E          clearCaseWorklist();const c={generation:caseSourceImpactGeneration,token:$('token').value,page:pageGeneration,prep:prepGeneration,plan:servicePlanGeneration};
+E                                                                                                         ^
+E         
+E         ReferenceError: pageGeneration is not defined
+E             at loadCaseSourceImpact (evalmachine.<anonymous>:94:97)
+E             at impact.onclick (evalmachine.<anonymous>:60:217)
+E             at /workspace/ParkWeave/tests/case_worklist_offline.js:67:65
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/case_worklist_offline.js', 'late_navigation'], returncode=1...almachine.<anonymous>:60:217)\n    at /workspace/ParkWeave/tests/case_worklist_offline.js:67:65\n\nNode.js v24.19.0\n").returncode
+
+tests/test_case_worklist_offline.py:11: AssertionError
+__________________ test_actual_worklist_ui_offline[open_run] ___________________
+
+mode = 'open_run'
+
+    @pytest.mark.parametrize('mode',['missing_session','403_pending','late_identity','identity_aba','context_reset','late_403',
+        'bad_shape','bad_target','bad_receipt','claim_complete','bad_cursor','too_many','pagination','cancelled',
+        'late_navigation','open_run','open_materials','open_dispatch','open_receipt','open_localcase'])
+    def test_actual_worklist_ui_offline(mode):
+>       x=run(mode);assert x['mode']==mode and x['checks']>=2
+          ^^^^^^^^^
+
+tests/test_case_worklist_offline.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+mode = 'open_run', data = None
+
+    def run(mode,data=None):
+        result=subprocess.run(['node',str(Path(__file__).with_name('case_worklist_offline.js')),mode],
+            input=json.dumps(data) if data is not None else None,capture_output=True,text=True,timeout=15,
+            cwd=Path(__file__).resolve().parents[1])
+>       assert result.returncode==0,result.stderr
+E       AssertionError: ReferenceError: pageGeneration is not defined
+E             at loadCaseSourceImpact (evalmachine.<anonymous>:94:97)
+E             at impact.onclick (evalmachine.<anonymous>:60:217)
+E             at /workspace/ParkWeave/tests/case_worklist_offline.js:71:54
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/case_worklist_offline.js', 'open_run'], returncode=1, stdou...t impact.onclick (evalmachine.<anonymous>:60:217)\n    at /workspace/ParkWeave/tests/case_worklist_offline.js:71:54\n').returncode
+
+tests/test_case_worklist_offline.py:11: AssertionError
+_______________ test_actual_worklist_ui_offline[open_materials] ________________
+
+mode = 'open_materials'
+
+    @pytest.mark.parametrize('mode',['missing_session','403_pending','late_identity','identity_aba','context_reset','late_403',
+        'bad_shape','bad_target','bad_receipt','claim_complete','bad_cursor','too_many','pagination','cancelled',
+        'late_navigation','open_run','open_materials','open_dispatch','open_receipt','open_localcase'])
+    def test_actual_worklist_ui_offline(mode):
+>       x=run(mode);assert x['mode']==mode and x['checks']>=2
+          ^^^^^^^^^
+
+tests/test_case_worklist_offline.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+mode = 'open_materials', data = None
+
+    def run(mode,data=None):
+        result=subprocess.run(['node',str(Path(__file__).with_name('case_worklist_offline.js')),mode],
+            input=json.dumps(data) if data is not None else None,capture_output=True,text=True,timeout=15,
+            cwd=Path(__file__).resolve().parents[1])
+>       assert result.returncode==0,result.stderr
+E       AssertionError: ReferenceError: pageGeneration is not defined
+E             at loadCaseSourceImpact (evalmachine.<anonymous>:94:97)
+E             at impact.onclick (evalmachine.<anonymous>:60:217)
+E             at /workspace/ParkWeave/tests/case_worklist_offline.js:71:54
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/case_worklist_offline.js', 'open_materials'], returncode=1,...t impact.onclick (evalmachine.<anonymous>:60:217)\n    at /workspace/ParkWeave/tests/case_worklist_offline.js:71:54\n').returncode
+
+tests/test_case_worklist_offline.py:11: AssertionError
+________________ test_actual_worklist_ui_offline[open_dispatch] ________________
+
+mode = 'open_dispatch'
+
+    @pytest.mark.parametrize('mode',['missing_session','403_pending','late_identity','identity_aba','context_reset','late_403',
+        'bad_shape','bad_target','bad_receipt','claim_complete','bad_cursor','too_many','pagination','cancelled',
+        'late_navigation','open_run','open_materials','open_dispatch','open_receipt','open_localcase'])
+    def test_actual_worklist_ui_offline(mode):
+>       x=run(mode);assert x['mode']==mode and x['checks']>=2
+          ^^^^^^^^^
+
+tests/test_case_worklist_offline.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+mode = 'open_dispatch', data = None
+
+    def run(mode,data=None):
+        result=subprocess.run(['node',str(Path(__file__).with_name('case_worklist_offline.js')),mode],
+            input=json.dumps(data) if data is not None else None,capture_output=True,text=True,timeout=15,
+            cwd=Path(__file__).resolve().parents[1])
+>       assert result.returncode==0,result.stderr
+E       AssertionError: ReferenceError: pageGeneration is not defined
+E             at loadCaseSourceImpact (evalmachine.<anonymous>:94:97)
+E             at impact.onclick (evalmachine.<anonymous>:60:217)
+E             at /workspace/ParkWeave/tests/case_worklist_offline.js:71:54
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/case_worklist_offline.js', 'open_dispatch'], returncode=1, ...t impact.onclick (evalmachine.<anonymous>:60:217)\n    at /workspace/ParkWeave/tests/case_worklist_offline.js:71:54\n').returncode
+
+tests/test_case_worklist_offline.py:11: AssertionError
+________________ test_actual_worklist_ui_offline[open_receipt] _________________
+
+mode = 'open_receipt'
+
+    @pytest.mark.parametrize('mode',['missing_session','403_pending','late_identity','identity_aba','context_reset','late_403',
+        'bad_shape','bad_target','bad_receipt','claim_complete','bad_cursor','too_many','pagination','cancelled',
+        'late_navigation','open_run','open_materials','open_dispatch','open_receipt','open_localcase'])
+    def test_actual_worklist_ui_offline(mode):
+>       x=run(mode);assert x['mode']==mode and x['checks']>=2
+          ^^^^^^^^^
+
+tests/test_case_worklist_offline.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+mode = 'open_receipt', data = None
+
+    def run(mode,data=None):
+        result=subprocess.run(['node',str(Path(__file__).with_name('case_worklist_offline.js')),mode],
+            input=json.dumps(data) if data is not None else None,capture_output=True,text=True,timeout=15,
+            cwd=Path(__file__).resolve().parents[1])
+>       assert result.returncode==0,result.stderr
+E       AssertionError: ReferenceError: pageGeneration is not defined
+E             at loadCaseSourceImpact (evalmachine.<anonymous>:94:97)
+E             at impact.onclick (evalmachine.<anonymous>:60:217)
+E             at /workspace/ParkWeave/tests/case_worklist_offline.js:71:54
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/case_worklist_offline.js', 'open_receipt'], returncode=1, s...t impact.onclick (evalmachine.<anonymous>:60:217)\n    at /workspace/ParkWeave/tests/case_worklist_offline.js:71:54\n').returncode
+
+tests/test_case_worklist_offline.py:11: AssertionError
+_______________ test_actual_worklist_ui_offline[open_localcase] ________________
+
+mode = 'open_localcase'
+
+    @pytest.mark.parametrize('mode',['missing_session','403_pending','late_identity','identity_aba','context_reset','late_403',
+        'bad_shape','bad_target','bad_receipt','claim_complete','bad_cursor','too_many','pagination','cancelled',
+        'late_navigation','open_run','open_materials','open_dispatch','open_receipt','open_localcase'])
+    def test_actual_worklist_ui_offline(mode):
+>       x=run(mode);assert x['mode']==mode and x['checks']>=2
+          ^^^^^^^^^
+
+tests/test_case_worklist_offline.py:19: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+mode = 'open_localcase', data = None
+
+    def run(mode,data=None):
+        result=subprocess.run(['node',str(Path(__file__).with_name('case_worklist_offline.js')),mode],
+            input=json.dumps(data) if data is not None else None,capture_output=True,text=True,timeout=15,
+            cwd=Path(__file__).resolve().parents[1])
+>       assert result.returncode==0,result.stderr
+E       AssertionError: ReferenceError: pageGeneration is not defined
+E             at loadCaseSourceImpact (evalmachine.<anonymous>:94:97)
+E             at impact.onclick (evalmachine.<anonymous>:60:217)
+E             at /workspace/ParkWeave/tests/case_worklist_offline.js:71:54
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/case_worklist_offline.js', 'open_localcase'], returncode=1,...t impact.onclick (evalmachine.<anonymous>:60:217)\n    at /workspace/ParkWeave/tests/case_worklist_offline.js:71:54\n').returncode
+
+tests/test_case_worklist_offline.py:11: AssertionError
+___________ test_full_original_page_entry_isolation[intake_success] ____________
+
+mode = 'intake_success'
+
+    @pytest.mark.parametrize('mode',['intake_success','intake_candidate','intake_unknown','intake_wrong_run','run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','receipt_reject_409','receipt_reject_422','receipt_reject_ambiguous','receipt_form_pending','receipt_form_unknown','resource_write_semantic','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:61:110
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'intake_success'], retur...s/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:61:110\n').returncode
+
+tests/test_worklist_real_entries_offline.py:12: AssertionError
+__________ test_full_original_page_entry_isolation[intake_candidate] ___________
+
+mode = 'intake_candidate'
+
+    @pytest.mark.parametrize('mode',['intake_success','intake_candidate','intake_unknown','intake_wrong_run','run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','receipt_reject_409','receipt_reject_422','receipt_reject_ambiguous','receipt_form_pending','receipt_form_unknown','resource_write_semantic','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:61:110
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'intake_candidate'], ret...s/worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:61:110\n').returncode
+
+tests/test_worklist_real_entries_offline.py:12: AssertionError
+_________ test_full_original_page_entry_isolation[material_to_receipt] _________
+
+mode = 'material_to_receipt'
+
+    @pytest.mark.parametrize('mode',['intake_success','intake_candidate','intake_unknown','intake_wrong_run','run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','receipt_reject_409','receipt_reject_422','receipt_reject_ambiguous','receipt_form_pending','receipt_form_unknown','resource_write_semantic','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: {"harness_setup_error":""}
+E         AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:119:227
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'material_to_receipt'], .../worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:119:227\n').returncode
+
+tests/test_worklist_real_entries_offline.py:12: AssertionError
+________ test_full_original_page_entry_isolation[material_to_localcase] ________
+
+mode = 'material_to_localcase'
+
+    @pytest.mark.parametrize('mode',['intake_success','intake_candidate','intake_unknown','intake_wrong_run','run_403','run_403_invalid_json','run_403_pending_reference','material_to_receipt','material_to_localcase','receipt_reject_409','receipt_reject_422','receipt_reject_ambiguous','receipt_form_pending','receipt_form_unknown','resource_write_semantic','resource_write_pending','resource_write_unknown','history_rendered','history_pending',*[f'manual_receipt_{action}_{phase}' for action in ['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'] for phase in ['pending','unknown']],*[
+        'pending_'+name for name in ['prepCommandPending','caseFactPending','materialReusePending','receiptLocalPending','dispatchPending','servicePlanPending','resourceBindingPending','runAccessPending','prepRecoveryHandle','prepRecoveryChecking','oppBusy','fbBusy','planApprovalBusy','localCaseRecoveryBusy','servicePlanRecoveryChecking','handoffSubmitting','caseCancelBusy','caseReconBusy','bundleBusy','deliveryBusy','executionPreviewSubmitting','resourceExecutionPreviewSubmitting','dispatchExecutionPreviewSubmitting','receiptExecutionPreviewSubmitting','lifecycleExecutionPreviewSubmitting']]])
+    def test_full_original_page_entry_isolation(mode):
+        result=subprocess.run(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),mode],
+            cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: {"harness_setup_error":""}
+E         AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E         
+E           assert(v)
+E         
+E             at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E             at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:119:227
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/worklist_real_entries_offline.js', 'material_to_localcase'].../worklist_real_entries_offline.js:5:26)\n    at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:119:227\n').returncode
+
+tests/test_worklist_real_entries_offline.py:12: AssertionError
+____ test_cold_original_entries_use_owned_asgi_run_preparation_and_evidence ____
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_cold_original_entries_use_owned_asgi_run_preparation_and_evidence(preparation_fixture):
+        f=preparation_fixture
+        proc=subprocess.Popen(['node',str(Path(__file__).with_name('worklist_real_entries_offline.js')),'intake_cold_asgi'],
+            cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        requests=[];selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'Cold entry bridge made no progress within15 seconds'
+                line=proc.stdout.readline()
+                if not line:break
+                message=json.loads(line)
+                if 'request' not in message:
+                    assert message['mode']=='intake_cold_asgi' and message['checks']>=12
+                    break
+                request=message['request'];options=request['options'];method=options.get('method','GET')
+                requests.append((method,request['path']))
+                h=headers(f[2],key=options.get('headers',{}).get('Idempotency-Key'))
+                response=f[3].request(method,request['path'],headers=h,json=json.loads(options['body']) if options.get('body') else None)
+                assert response.status_code<400,(method,request['path'],response.status_code)
+                if method=='POST' and request['path']=='/api/runs':f[0].finish(f[0].claim('synthetic-cold-entry'))
+                proc.stdin.write(json.dumps({'status':response.status_code,'body':response.json()})+'\n');proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read()
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/worklist_real_entries_offline.js:5:26)
+E                 at /workspace/ParkWeave/tests/worklist_real_entries_offline.js:49:334
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', '/workspace/ParkWeave/tests/worklist_re...>.wait
+
+tests/test_worklist_real_entries_offline.py:37: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_case_worklist_offline.py::test_real_asgi_queue_response_renders_in_original_page_code
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_worklist_offline.py::test_actual_worklist_ui_offline[late_navigation]
+FAILED tests/test_case_worklist_offline.py::test_actual_worklist_ui_offline[open_run]
+FAILED tests/test_case_worklist_offline.py::test_actual_worklist_ui_offline[open_materials]
+FAILED tests/test_case_worklist_offline.py::test_actual_worklist_ui_offline[open_dispatch]
+FAILED tests/test_case_worklist_offline.py::test_actual_worklist_ui_offline[open_receipt]
+FAILED tests/test_case_worklist_offline.py::test_actual_worklist_ui_offline[open_localcase]
+FAILED tests/test_worklist_real_entries_offline.py::test_full_original_page_entry_isolation[intake_success]
+FAILED tests/test_worklist_real_entries_offline.py::test_full_original_page_entry_isolation[intake_candidate]
+FAILED tests/test_worklist_real_entries_offline.py::test_full_original_page_entry_isolation[material_to_receipt]
+FAILED tests/test_worklist_real_entries_offline.py::test_full_original_page_entry_isolation[material_to_localcase]
+FAILED tests/test_worklist_real_entries_offline.py::test_cold_original_entries_use_owned_asgi_run_preparation_and_evidence
+11 failed, 63 passed, 2 warnings in 13.93s

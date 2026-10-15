@@ -1,0 +1,157 @@
+{
+  "review_date": "2026-10-15",
+  "frozen_source_sha": "a5d9da251c223e3a64e20d3d47987d5b58fcdb6f",
+  "status": "Read-only delivery planning while parent frozen gates run; no new test/service/source/Git mutation.",
+  "claim_boundary": {
+    "no_percent_complete": true,
+    "no_test_count_as_product_completion": true,
+    "formal_acceptance": "NOT_RUN until the relevant fixed oracle and actual environment execute; parent current results must be reported separately."
+  },
+  "demonstrable_loop": [
+    {
+      "step": 1,
+      "behavior": "在原已授权合成Case完成原六目标/P1–P5本地产物与本人VERIFY，保留P1原人工锁作为不应改动证明。",
+      "qualification": "原既有合成业务链；不是现实履约或资格审批。"
+    },
+    {
+      "step": 2,
+      "behavior": "在工作清单逐Case明确GET /api/preparations/{id}/source-impact；没有机会卡仍能只读查看来源分组、before/current摘要、原step端点和PRECEDES传播。",
+      "qualification": "聚合MATERIAL_PACKAGE/FACT_PURPOSE_BINDING不含隐藏事实值/旧材料ID；日期UNKNOWN与影响未知分开。"
+    },
+    {
+      "step": 3,
+      "behavior": "已有owner授权的可选资源集合发生实际记录变化后，再GET显示P2–P5受影响、P1及原锁保留。",
+      "qualification": "受控演示的源变化必须来自原有合法办理/fixture来源，不把展示图当成修改资源或新增Grant入口。"
+    },
+    {
+      "step": 4,
+      "behavior": "沿原机会IMPORT/REFRESH定位同Case，查看来源组及影响分区，用户独立确认后发原local_revision ADOPT；新v2事件绑定schema1可重建图证明。",
+      "qualification": "原卡REFRESH不采纳；资源集合变化时旧卡REFRESH可能NO_CHANGE，新预览仍核真实来源。没有新卡/自动外发/后台扫描。"
+    },
+    {
+      "step": 5,
+      "behavior": "受影响步骤经原适配器更正实际产物并逐项原VERIFY，再GET原六目标证据及工作清单；稳定plan/step UUID、原事件、旧核验快照和未受影响锁保留。",
+      "qualification": "采纳本身不执行、不重验、不批准，也不将Case置FULFILLED。"
+    },
+    {
+      "step": 6,
+      "behavior": "丢回执以原opaque句柄冷GET核原actor/key；未知字段或缺基线显示THIS_CASE扩大且拒新采纳，撤权/来源ABA拒绝新写。",
+      "qualification": "历史v1按原算法，v2/schema1按固定build_v1；当前编译器升级不重解释旧证明。"
+    }
+  ],
+  "demo_transport": "当前可据真实完整HTML脚本→HTTP→ASGI→自有PostgreSQL证据演示；Node VM DOM/fetch替身不是实际浏览器，不冒充Windows或正式AT。",
+  "highest_value_next_bounded_feature": {
+    "name": "共享来源版本到本人当前有权Case的有界反向定位",
+    "value": "本片已解释单个Case为何需要重验，下一步回答某次共享来源变化还影响本人哪些Case；复用既有逐Case图与原采纳，不重做机会卡或业务执行。",
+    "first_scope": [
+      "OWNER_RESOURCE_QUERY_SET：原owner全部已有授权可选资源集合，候选为同owner/park/org、既有含P2计划的合成Case；未被选中的资源新增也纳入。",
+      "SERVICE_CATALOG_REFERENCE：原有权服务目录精确park/service/version与原修订/head；候选为本人对应服务版本的原Case。合同改变仍要求原明确替换。"
+    ],
+    "not_yet_claimed": [
+      "不按当前typed node ID跨Case关联；这些ID仅plan/Case内按adapter/facet稳定。",
+      "不把聚合集合hash解释成某个旧单资源/旧assertion的精确因果关系。",
+      "不枚举其他owner/tenant，不自动IMPORT/REFRESH/ADOPT/VERIFY，不发布或通知外部。",
+      "不实现任意DAG/跨机构工作流或通用反向图索引。"
+    ],
+    "implementation_outline": [
+      "先冻结受信来源selector（closed kind + 当前可读实际来源ref + tenant/owner binding）；source UUID或digest只定位，不授予访问。来源集合ref可直接为OWNER_RESOURCE_QUERY_SET，避免伪造旧逐资源身份。",
+      "复用case_worklist.read中的owner/park/org/namespace/case.create等SQL范围，加入原service版本和已保存计划的必要prefilter；单次SELECT只取有界候选Case/preparation UUID及版本。",
+      "每个候选复用typed_source_impact.read或其单Case内部读函数，仍核READ/PREPARE、原owner及Case/Run绑定；保留当前未知/失效Case，不能因无法重建而丢出影响清单。",
+      "每Case独立原锁序/事务并及时释放，避免一次外层事务跨多个parent与共享资源锁形成逆序死锁；最终重验当前身份/权限，403整页清私有数据。",
+      "来源hash+scoped xmin epoch、候选集合指纹和每Case plan revision同时绑定分页；来源A→B→A、候选集新增/移除、撤权或版本变化则明确STALE/重新读取，不能续旧游标宣称完整。",
+      "先限单次10个Case和完整候选枚举最大256个（具体上限须先行合同和测量决定）；next-row检测溢出。未遍历/溢出/未知范围必须可见，只在枚举和来源均未变且全部页完成时说明该有界范围已覆盖。",
+      "响应按Case给shared_source_basis、当前图sha/版本、affected/preserved及UNKNOWN/blocked理由，链接原单Case入口；新采纳仍由原入口重新预览并明确确认，不批量采用。"
+    ],
+    "reuse": [
+      {
+        "code": "src/parkweave/case_worklist.py::read",
+        "purpose": "本人合成Case范围、稳定分页与只读记录投影；不能原样复用为真实核验结论。"
+      },
+      {
+        "code": "src/parkweave/registered_dependencies.py::collections",
+        "purpose": "全部已有授权资源与当前Run访问集合指纹，含未命中和next-row上界。"
+      },
+      {
+        "code": "src/parkweave/typed_source_impact.py::read/build_v1",
+        "purpose": "逐Case当前权限、聚合来源分组、结构不确定范围及原步骤影响。"
+      },
+      {
+        "code": "src/parkweave/source_change_adoption.py::epochs/build",
+        "purpose": "scoped行版本ABA、当前来源/卡/计划双重校验及原明确采纳协议。"
+      },
+      {
+        "code": "src/parkweave/preparation.py::grant/scoped",
+        "purpose": "动态READ/PREPARE与原owner/tenant门；不扩大Grant或角色。"
+      }
+    ],
+    "minimal_change_surface": "下一片候选为新的只读source-impact查询模块、API/原工作清单少量UI和独立测试；原则上不需新DDL/Grant/worker/外部连接。此为建议，尚未实现或验证。",
+    "acceptance_oracle": [
+      "同owner两Case共享资源集合变化，两者含P2时均P2–P5受影响、各P1锁保持；仅含P1的Case不被误判有P2依赖。",
+      "不同owner/tenant不出现在候选、计数、游标或错误正文中；撤权后旧分页与旧选择均不能读。",
+      "未选可用资源新增也定位；不能只查已关联资源。",
+      "缺before/未知字段/过期来源分别标明，UNKNOWN不遗漏也不授权；无依赖和无计划明确单列。",
+      "来源/候选集合ABA、分页中新Case、同Case计划换版均使旧分页失效；最终不误称已覆盖当前全部Case。",
+      "全新只读路径与所有分页无业务写、无隐式失效、无新机会或自动POST。"
+    ]
+  },
+  "later_general_dependency_gap": {
+    "scope": "在反向定位之后再扩一般来源节点/更多边类型、业务包级未知范围与跨合同兼容预检。当前只建立原P1–P5的有限快照分组和实际读取边；不需先重写原执行器。",
+    "migration_rule": "已完成有限同结构采用、前向追加原Case已有义务的结构增强。破坏性目标/节点/schema/service/registry合同迁移仍按首版拒绝，不把不执行破坏性迁移当作必须补的功能。"
+  },
+  "external_prerequisites": [
+    {
+      "item": "Windows/Win11与原生安装",
+      "needed": "实际获准的干净Win11设备、锁定Python/PG来源、原生PID/路径/停启持久性与完整Job/S4、安全authority前提和人工签收。",
+      "current_boundary": "本环境Linux；原SESSION/CONFIG创建暂停、owner/ACL/security限制保留。只读Doctor或Server受限CI不替代。",
+      "ref": "docs/F1/Win11FirstUseRemaining.md"
+    },
+    {
+      "item": "实际浏览器",
+      "needed": "在现有授权边界内可执行的真实浏览器环境及真实页面可见交互证据。",
+      "current_boundary": "本轮HTML Node VM不等于渲染浏览器；历史ERR_BLOCKED_BY_ADMINISTRATOR不换URL/工具绕过。"
+    },
+    {
+      "item": "正式AT/PR0",
+      "needed": "固定原AT01–35及适用EX的fixture、初态、独立oracle、正式执行类型和同版真实证据；B0/B1/B2及漏更/误改/人工介入/全部失败成本分列。",
+      "current_boundary": "专项测试数量不形成完成百分比，不把分窗重叠PASS合并签收正式AT。",
+      "refs": [
+        "docs/验收规格.json",
+        "docs/分阶段开发计划.md:131",
+        "docs/平台产品设计.md:286"
+      ]
+    },
+    {
+      "item": "真实模型工具闭环",
+      "needed": "原模型账户许可、安全凭据注入、总额度/速率与明确执行预算、实际工具反馈/修订/usage原件。",
+      "current_boundary": "LIVE/provider关闭、真实模型调用0；不由本次开发授权推导费用或凭据权限。"
+    },
+    {
+      "item": "真实来源与正式治理",
+      "needed": "真实园区/政策资料许可、审核发布/维护主体、既有园区映射和独立业务审批/成果回执责任。",
+      "current_boundary": "有限ServiceRelease/ParkInstance、第二园区合成选择、既有owner Approval已经实现；未具备的是正式真实治理与现实履约，不能重列这些有限能力为0。",
+      "refs": [
+        "docs/F2/ServiceCapabilitySelection-20261014.md",
+        "docs/F2/TemplateStructureMigrationDelivery-20261015.md"
+      ]
+    },
+    {
+      "item": "参赛C0材料与提交",
+      "needed": "取得实际最新统一模板正文及hash、准确提交截止时刻/时区、双赛道关联作品规则、附件表达及视频二维码接收方访问条件；队伍/命名信息、来源许可和真实效果材料。",
+      "current_boundary": "本次仅核仓库，没有联网核查赛事现状；仓库记载模板正文未取得、准确时间与附件形式待核实，不能当当前官方结论。生成单PDF前逐栏核模板；实际上传/对外分享需原明确授权与真实回执。不得编作品效果、链接或将他赛道5分钟/720P等条件移植。",
+      "refs": [
+        "docs/平台产品设计.md:401",
+        "docs/平台产品设计.md:406",
+        "docs/平台产品设计.md:428"
+      ]
+    }
+  ],
+  "seven_day_priority": "当前窗口2026-10-15至2026-10-22：先完成本冻结源码门禁、正常dev推送和归档；随即冻结只读共享来源反向定位合同并实现/独测/独审，同时提前收齐外部前提。缺前提只阻塞相应真实验收，不拖延已授权开发，不沿月底慢排。",
+  "no_actions_run": [
+    "no new tests",
+    "no new services",
+    "no implementation",
+    "no source/test/script/doc/Git edits",
+    "no browsing/external app writes",
+    "no model/production/deployment/permissions changes"
+  ]
+}

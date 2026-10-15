@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="0.506" timestamp="2026-10-15T06:29:19.944113+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_typed_source_impact" name="test_scalar_type_change_never_disappears_behind_python_numeric_equality[True]" time="0.004"><failure message="AssertionError: assert ('4c56c03cc9f092489f0a47d04f32ff2a195a9e955b3c27ee24c5ea3b061fdd0f' != 'f99bdfb61fe472233ee612026afb06a8195d7e97fbc4515524ff9e2b5a8b719b' and False)">replacement = True
+
+    @pytest.mark.parametrize('replacement',[True,1.0])
+    def test_scalar_type_change_never_disappears_behind_python_numeric_equality(replacement):
+        parent,plan,before,manifest=sample();current=deepcopy(before);current['P1']['preparation_revision']=replacement
+        graph=typed.build(parent,plan,before,current,manifest,manifest)
+        node=next(n for n in graph['nodes'] if n['adapter_id']=='P1' and n['facet']=='MATERIAL_PACKAGE')
+&gt;       assert node['before_sha256']!=node['current_sha256'] and node['changed']
+E       AssertionError: assert ('4c56c03cc9f092489f0a47d04f32ff2a195a9e955b3c27ee24c5ea3b061fdd0f' != 'f99bdfb61fe472233ee612026afb06a8195d7e97fbc4515524ff9e2b5a8b719b' and False)
+
+tests/test_typed_source_impact.py:157: AssertionError</failure></testcase><testcase classname="tests.test_typed_source_impact" name="test_scalar_type_change_never_disappears_behind_python_numeric_equality[1.0]" time="0.002"><failure message="AssertionError: assert ('4c56c03cc9f092489f0a47d04f32ff2a195a9e955b3c27ee24c5ea3b061fdd0f' != 'c31dbebc9119b5a37d1322cadf05cbf18700118156c40f3a4f3a942a5c31276b' and False)">replacement = 1.0
+
+    @pytest.mark.parametrize('replacement',[True,1.0])
+    def test_scalar_type_change_never_disappears_behind_python_numeric_equality(replacement):
+        parent,plan,before,manifest=sample();current=deepcopy(before);current['P1']['preparation_revision']=replacement
+        graph=typed.build(parent,plan,before,current,manifest,manifest)
+        node=next(n for n in graph['nodes'] if n['adapter_id']=='P1' and n['facet']=='MATERIAL_PACKAGE')
+&gt;       assert node['before_sha256']!=node['current_sha256'] and node['changed']
+E       AssertionError: assert ('4c56c03cc9f092489f0a47d04f32ff2a195a9e955b3c27ee24c5ea3b061fdd0f' != 'c31dbebc9119b5a37d1322cadf05cbf18700118156c40f3a4f3a942a5c31276b' and False)
+
+tests/test_typed_source_impact.py:157: AssertionError</failure></testcase></testsuite></testsuites>

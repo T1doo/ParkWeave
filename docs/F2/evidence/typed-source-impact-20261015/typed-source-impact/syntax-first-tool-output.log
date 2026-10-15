@@ -1,0 +1,19 @@
+Capture provenance: transcribed from the complete observed exec tool receipt for the initial syntax-check invocation. It was not redirected to a file at execution time. The saved summary remains separately retained.
+
+node:fs:484
+    return binding.readFileUtf8(path, stringToFlags(options.flag));
+                   ^
+
+Error: ENOENT: no such file or directory, open '/proc/133774/fd/pipe:[311647]'
+    at Object.readFileSync (node:fs:484:20)
+    at node:internal/main/check_syntax:36:21 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/proc/133774/fd/pipe:[311647]'
+}
+
+Node.js v24.19.0
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+BrokenPipeError: [Errno 32] Broken pipe
