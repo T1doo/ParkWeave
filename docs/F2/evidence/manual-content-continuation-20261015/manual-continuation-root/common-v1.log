@@ -1,0 +1,1330 @@
+...F....F.....F....................................FFFFFFFF............. [ 23%]
+..............FFFFFFFF....................FF..F................F........ [ 47%]
+........................................................................ [ 70%]
+........................................................................ [ 94%]
+.................                                                        [100%]
+=================================== FAILURES ===================================
+_ test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f3d9a8c2210>
+
+    def test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first(template_consumption,monkeypatch):
+        f=template_consumption;row,v,data,p=legacy(f,monkeypatch);saved=journal(f);before=products(f['owner'],include_audit=True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/legacy_closed_actual.js',row['instance_id']],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'legacy cold page bridge timeout'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                r=f['client'].request(method,q['path'],headers=headers(f,key=o.get('headers',{}).get('Idempotency-Key')),json=body);messages.append({'method':method,'path':q['path'],'status':r.status_code});assert r.status_code<400,r.text
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['checks']>=7
+            assert all(q['method']=='GET' for q in messages)
+            assert journal(f)==saved and products(f['owner'],include_audit=True)==before
+        finally:
+>           Path('.runtime/legacy-closed-20261014/cold-page-chain.json').write_text(json.dumps({'summary':summary,'requests':messages,'zero_business_and_journal_writes':journal(f)==saved and products(f['owner'],include_audit=True)==before},indent=2)+'\n')
+
+tests/test_legacy_closed.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/legacy-closed-20261014/cold-page-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/legacy-closed-20261014/cold-page-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_original_full_page_private_goal_projection_cold_get_and_late_owner_response _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_original_full_page_private_goal_projection_cold_get_and_late_owner_response(template_consumption):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row=private_case(f);grants=grant_snapshot(f['owner']);messages=[];summary=None;lost=False;revoked=False
+        proc=subprocess.Popen(['node','tests/manual_goal_privacy_actual.js',row['preparation_id'],ENTERPRISES[0],REVIEWERS[0],A,B],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'privacy page bridge timeout'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('revoke_specialist'):
+                    assert grant_snapshot(f['owner'])==grants
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(REVIEWERS[0],))
+                    revoked=True;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None))
+                if actor==REVIEWERS[0]:assert B not in r.text,'unrequested target leaked in actual specialist HTTP response'
+                assert r.status_code==200 or revoked and r.status_code==403,r.text
+                drop=method=='POST' and actor==REVIEWERS[0] and not lost
+                if drop:lost=True
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            stderr=proc.stderr.read().decode();assert proc.wait(timeout=15)==0,stderr;assert summary and summary['checks']>=25 and summary['manual_posts']==3;assert lost and revoked
+            owner=read(f,row).json();assert [i['goal'] for i in owner['items']]==[A,B];assert owner['items'][0]['state']=='WITHDRAWN' and owner['items'][1]['state']=='NOT_REQUESTED';assert owner['overall_goal_state']=='PARTIAL'
+            with f['owner'].connect() as c:assert c.execute('SELECT count(*) AS n FROM runs').fetchone()['n']==1
+        finally:
+>           Path('.runtime/manual-goal-privacy-20261014/actual-chain.json').write_text(json.dumps({'summary':summary,'requests':messages,'lost_specialist_reply_after_commit':lost,'revoked_existing_read':revoked},indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_privacy.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-privacy-20261014/actual-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-privacy-20261014/actual-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+___ test_actual_full_page_replaced_plan_old_handle_and_revoked_write_actions ___
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_actual_full_page_replaced_plan_old_handle_and_revoked_write_actions(template_consumption):
+        import json,subprocess,selectors
+        from uuid import uuid4
+        from pathlib import Path
+        f=template_consumption;row=private_case(f);v=read(f,row).json();assert post(f,row,{**body(v,'REQUEST'),'goal':A},'history-request').status_code==200
+        v=read(f,row,user=REVIEWERS[0]).json();take={**body(v,'TAKE'),'goal':A};key=str(uuid4());old=post(f,row,take,key,user=REVIEWERS[0]);assert old.status_code==200
+        replace_plan(f,row)
+        with f['owner'].connect() as c:c.execute("UPDATE action_grants SET active=false WHERE principal_id=%s AND action='case.create'",(ENTERPRISES[0],))
+        before=products(f['owner']);messages=[];summary=None;h=dict(actor=REVIEWERS[0],id=row['preparation_id'],key=key)
+        proc=subprocess.Popen(['node','tests/manual_goal_history_actual.js',row['preparation_id'],ENTERPRISES[0],REVIEWERS[0],json.dumps(h)],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'history page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('revoke_history_reader'):
+                    assert products(f['owner'])==before
+                    with f['owner'].connect() as c:c.execute("UPDATE preparation_grants SET active=false WHERE principal_id=%s AND capability='REVIEW_ASSIGNED'",(REVIEWERS[0],))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];assert o.get('method','GET')=='GET';actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][actor]});messages.append(dict(path=q['path'],actor=actor,status=r.status_code))
+                if actor==REVIEWERS[0]:assert B not in r.text
+                assert r.status_code in (200,403),r.text;proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['checks']>=15 and summary['posts']==0;assert products(f['owner'])==before
+        finally:
+>           Path('.runtime/manual-goal-privacy-20261014/history-page-chain.json').write_text(json.dumps({'summary':summary,'requests':messages,'old_reply_discarded_seeded_opaque_handle':True,'all_page_calls_get':True},indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_privacy.py:156: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-privacy-20261014/history-page-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-privacy-20261014/history-page-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_actual_owned_pg_recheck_wait_rechecks_new_material_before_admission[request] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+phase = 'request'
+
+    @pytest.mark.parametrize('phase',['request','take'])
+    def test_actual_owned_pg_recheck_wait_rechecks_new_material_before_admission(template_consumption,phase):
+        import time,json
+        from pathlib import Path
+        from parkweave.preparation import _insert_evidence
+        f=template_consumption
+        if phase=='request':row,_=replied(f);d=request_data(read(f,row).json());user=ENTERPRISES[0]
+        else:row,_=applied(f);d=take_data(read(f,row,user=REVIEWERS[0]).json());user=REVIEWERS[0]
+        with ThreadPoolExecutor(1) as pool:
+            with f['owner'].connect() as holder:
+                parent=holder.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(row['preparation_id'],)).fetchone();pid=holder.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid'];future=pool.submit(post,f,row,d,'waiting-recheck',user=user);deadline=time.monotonic()+2;blocked=False
+                with f['owner'].connect() as monitor:
+                    while time.monotonic()<deadline:
+                        monitor.execute('SELECT pg_stat_clear_snapshot()');blocked=monitor.execute('SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND %s=ANY(pg_blocking_pids(pid))) AS yes',(pid,)).fetchone()['yes']
+                        if blocked:break
+                        time.sleep(.01)
+                assert blocked;actor=holder.execute('SELECT * FROM principals WHERE id=%s',(ENTERPRISES[0],)).fetchone();_insert_evidence(holder,actor,parent,'material_outline','SYNTHETIC newer recheck material','DOCUMENT_EXCERPT','SYNTHETIC changed source')
+            r=future.result(timeout=5);assert r.status_code==409,r.text
+        v=read(f,row).json();assert v['items'][0]['state']==('WAITING_OWNER_ACKNOWLEDGEMENT' if phase=='request' else 'RECHECK_REQUESTED')
+>       Path('.runtime/manual-goal-recheck-20261014/pg-'+phase+'.json').write_text(json.dumps(dict(actual_owned_pg_parent_wait=blocked,response=r.status_code,state=v['items'][0]['state']))+'\n')
+
+tests/test_manual_goal_recheck.py:144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-recheck-20261014/pg-request.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-recheck-20261014/pg-request.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_actual_owned_pg_recheck_wait_rechecks_new_material_before_admission[take] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+phase = 'take'
+
+    @pytest.mark.parametrize('phase',['request','take'])
+    def test_actual_owned_pg_recheck_wait_rechecks_new_material_before_admission(template_consumption,phase):
+        import time,json
+        from pathlib import Path
+        from parkweave.preparation import _insert_evidence
+        f=template_consumption
+        if phase=='request':row,_=replied(f);d=request_data(read(f,row).json());user=ENTERPRISES[0]
+        else:row,_=applied(f);d=take_data(read(f,row,user=REVIEWERS[0]).json());user=REVIEWERS[0]
+        with ThreadPoolExecutor(1) as pool:
+            with f['owner'].connect() as holder:
+                parent=holder.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(row['preparation_id'],)).fetchone();pid=holder.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid'];future=pool.submit(post,f,row,d,'waiting-recheck',user=user);deadline=time.monotonic()+2;blocked=False
+                with f['owner'].connect() as monitor:
+                    while time.monotonic()<deadline:
+                        monitor.execute('SELECT pg_stat_clear_snapshot()');blocked=monitor.execute('SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND %s=ANY(pg_blocking_pids(pid))) AS yes',(pid,)).fetchone()['yes']
+                        if blocked:break
+                        time.sleep(.01)
+                assert blocked;actor=holder.execute('SELECT * FROM principals WHERE id=%s',(ENTERPRISES[0],)).fetchone();_insert_evidence(holder,actor,parent,'material_outline','SYNTHETIC newer recheck material','DOCUMENT_EXCERPT','SYNTHETIC changed source')
+            r=future.result(timeout=5);assert r.status_code==409,r.text
+        v=read(f,row).json();assert v['items'][0]['state']==('WAITING_OWNER_ACKNOWLEDGEMENT' if phase=='request' else 'RECHECK_REQUESTED')
+>       Path('.runtime/manual-goal-recheck-20261014/pg-'+phase+'.json').write_text(json.dumps(dict(actual_owned_pg_parent_wait=blocked,response=r.status_code,state=v['items'][0]['state']))+'\n')
+
+tests/test_manual_goal_recheck.py:144: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-recheck-20261014/pg-take.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-recheck-20261014/pg-take.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+__ test_original_page_explicit_recheck_cold_unknown_cancel_and_late[waiting] ___
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'waiting'
+
+    @pytest.mark.parametrize('mode',['waiting','ended','lost_request','lost_take','cancel','late'])
+    def test_original_page_explicit_recheck_cold_unknown_cancel_and_late(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row,_=replied(f)
+        if mode=='ended':assert post(f,row,ack_data(read(f,row).json()),'known-before-recheck').status_code==200
+        grants=grant_snapshot(f['owner']);resources=resource_state(f);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_recheck_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'recheck page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text
+                if actor==REVIEWERS[0]:assert B not in r.text
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants and resource_state(f)==resources
+                drop=not lost and method=='POST' and ((mode=='lost_request' and data['action']=='REQUEST_RECHECK') or (mode=='lost_take' and data['action']=='TAKE_RECHECK'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 4);assert lost==(mode in ('lost_request','lost_take'))
+        finally:
+>           Path('.runtime/manual-goal-recheck-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_recheck.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-recheck-20261014/page-waiting-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-recheck-20261014/page-waiting-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+___ test_original_page_explicit_recheck_cold_unknown_cancel_and_late[ended] ____
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'ended'
+
+    @pytest.mark.parametrize('mode',['waiting','ended','lost_request','lost_take','cancel','late'])
+    def test_original_page_explicit_recheck_cold_unknown_cancel_and_late(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row,_=replied(f)
+        if mode=='ended':assert post(f,row,ack_data(read(f,row).json()),'known-before-recheck').status_code==200
+        grants=grant_snapshot(f['owner']);resources=resource_state(f);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_recheck_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'recheck page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text
+                if actor==REVIEWERS[0]:assert B not in r.text
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants and resource_state(f)==resources
+                drop=not lost and method=='POST' and ((mode=='lost_request' and data['action']=='REQUEST_RECHECK') or (mode=='lost_take' and data['action']=='TAKE_RECHECK'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 4);assert lost==(mode in ('lost_request','lost_take'))
+        finally:
+>           Path('.runtime/manual-goal-recheck-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_recheck.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-recheck-20261014/page-ended-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-recheck-20261014/page-ended-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_original_page_explicit_recheck_cold_unknown_cancel_and_late[lost_request] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'lost_request'
+
+    @pytest.mark.parametrize('mode',['waiting','ended','lost_request','lost_take','cancel','late'])
+    def test_original_page_explicit_recheck_cold_unknown_cancel_and_late(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row,_=replied(f)
+        if mode=='ended':assert post(f,row,ack_data(read(f,row).json()),'known-before-recheck').status_code==200
+        grants=grant_snapshot(f['owner']);resources=resource_state(f);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_recheck_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'recheck page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text
+                if actor==REVIEWERS[0]:assert B not in r.text
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants and resource_state(f)==resources
+                drop=not lost and method=='POST' and ((mode=='lost_request' and data['action']=='REQUEST_RECHECK') or (mode=='lost_take' and data['action']=='TAKE_RECHECK'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 4);assert lost==(mode in ('lost_request','lost_take'))
+        finally:
+>           Path('.runtime/manual-goal-recheck-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_recheck.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-recheck-20261014/page-lost_request-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-recheck-20261014/page-lost_request-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_original_page_explicit_recheck_cold_unknown_cancel_and_late[lost_take] __
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'lost_take'
+
+    @pytest.mark.parametrize('mode',['waiting','ended','lost_request','lost_take','cancel','late'])
+    def test_original_page_explicit_recheck_cold_unknown_cancel_and_late(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row,_=replied(f)
+        if mode=='ended':assert post(f,row,ack_data(read(f,row).json()),'known-before-recheck').status_code==200
+        grants=grant_snapshot(f['owner']);resources=resource_state(f);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_recheck_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'recheck page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text
+                if actor==REVIEWERS[0]:assert B not in r.text
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants and resource_state(f)==resources
+                drop=not lost and method=='POST' and ((mode=='lost_request' and data['action']=='REQUEST_RECHECK') or (mode=='lost_take' and data['action']=='TAKE_RECHECK'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 4);assert lost==(mode in ('lost_request','lost_take'))
+        finally:
+>           Path('.runtime/manual-goal-recheck-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_recheck.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-recheck-20261014/page-lost_take-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-recheck-20261014/page-lost_take-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+___ test_original_page_explicit_recheck_cold_unknown_cancel_and_late[cancel] ___
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'cancel'
+
+    @pytest.mark.parametrize('mode',['waiting','ended','lost_request','lost_take','cancel','late'])
+    def test_original_page_explicit_recheck_cold_unknown_cancel_and_late(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row,_=replied(f)
+        if mode=='ended':assert post(f,row,ack_data(read(f,row).json()),'known-before-recheck').status_code==200
+        grants=grant_snapshot(f['owner']);resources=resource_state(f);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_recheck_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'recheck page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text
+                if actor==REVIEWERS[0]:assert B not in r.text
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants and resource_state(f)==resources
+                drop=not lost and method=='POST' and ((mode=='lost_request' and data['action']=='REQUEST_RECHECK') or (mode=='lost_take' and data['action']=='TAKE_RECHECK'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 4);assert lost==(mode in ('lost_request','lost_take'))
+        finally:
+>           Path('.runtime/manual-goal-recheck-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_recheck.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-recheck-20261014/page-cancel-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-recheck-20261014/page-cancel-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+____ test_original_page_explicit_recheck_cold_unknown_cancel_and_late[late] ____
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'late'
+
+    @pytest.mark.parametrize('mode',['waiting','ended','lost_request','lost_take','cancel','late'])
+    def test_original_page_explicit_recheck_cold_unknown_cancel_and_late(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row,_=replied(f)
+        if mode=='ended':assert post(f,row,ack_data(read(f,row).json()),'known-before-recheck').status_code==200
+        grants=grant_snapshot(f['owner']);resources=resource_state(f);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_recheck_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'recheck page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text
+                if actor==REVIEWERS[0]:assert B not in r.text
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants and resource_state(f)==resources
+                drop=not lost and method=='POST' and ((mode=='lost_request' and data['action']=='REQUEST_RECHECK') or (mode=='lost_take' and data['action']=='TAKE_RECHECK'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 4);assert lost==(mode in ('lost_request','lost_take'))
+        finally:
+>           Path('.runtime/manual-goal-recheck-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_recheck.py:174: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-recheck-20261014/page-late-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-recheck-20261014/page-late-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_actual_owned_pg_lock_wait_rechecks_reply_source_before_awareness[material] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+winner = 'material'
+
+    @pytest.mark.parametrize('winner',['material','cancelled'])
+    def test_actual_owned_pg_lock_wait_rechecks_reply_source_before_awareness(template_consumption,winner):
+        import time,json
+        from pathlib import Path
+        from parkweave.preparation import _insert_evidence
+        f=template_consumption;row,_=replied(f);d=ack_data(read(f,row).json())
+        with ThreadPoolExecutor(1) as pool:
+            with f['owner'].connect() as holder:
+                parent=holder.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(row['preparation_id'],)).fetchone();pid=holder.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid'];future=pool.submit(post,f,row,d,'waiting-awareness')
+                deadline=time.monotonic()+2;blocked=False
+                with f['owner'].connect() as monitor:
+                    while time.monotonic()<deadline:
+                        monitor.execute('SELECT pg_stat_clear_snapshot()');blocked=monitor.execute('SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND %s=ANY(pg_blocking_pids(pid))) AS yes',(pid,)).fetchone()['yes']
+                        if blocked:break
+                        time.sleep(.01)
+                assert blocked
+                if winner=='cancelled':holder.execute("UPDATE cases SET state='CANCELLED' WHERE id=%s",(row['case_id'],))
+                else:
+                    actor=holder.execute('SELECT * FROM principals WHERE id=%s',(ENTERPRISES[0],)).fetchone();_insert_evidence(holder,actor,parent,'material_outline','SYNTHETIC changed after reply','DOCUMENT_EXCERPT','SYNTHETIC newer material')
+            r=future.result(timeout=5);assert r.status_code==409,r.text
+        v=read(f,row).json();assert v['items'][0]['state']=='WAITING_OWNER_ACKNOWLEDGEMENT' and 'ACKNOWLEDGE_REPLY' not in v['items'][0]['allowed_actions']
+>       Path('.runtime/manual-goal-reply-20261014/pg-'+winner+'.json').write_text(json.dumps(dict(actual_pg_lock_wait=blocked,winner=winner,status=r.status_code,revision=v['revision']))+'\n')
+
+tests/test_manual_goal_reply.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-reply-20261014/pg-material.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-reply-20261014/pg-material.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_actual_owned_pg_lock_wait_rechecks_reply_source_before_awareness[cancelled] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+winner = 'cancelled'
+
+    @pytest.mark.parametrize('winner',['material','cancelled'])
+    def test_actual_owned_pg_lock_wait_rechecks_reply_source_before_awareness(template_consumption,winner):
+        import time,json
+        from pathlib import Path
+        from parkweave.preparation import _insert_evidence
+        f=template_consumption;row,_=replied(f);d=ack_data(read(f,row).json())
+        with ThreadPoolExecutor(1) as pool:
+            with f['owner'].connect() as holder:
+                parent=holder.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(row['preparation_id'],)).fetchone();pid=holder.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid'];future=pool.submit(post,f,row,d,'waiting-awareness')
+                deadline=time.monotonic()+2;blocked=False
+                with f['owner'].connect() as monitor:
+                    while time.monotonic()<deadline:
+                        monitor.execute('SELECT pg_stat_clear_snapshot()');blocked=monitor.execute('SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND %s=ANY(pg_blocking_pids(pid))) AS yes',(pid,)).fetchone()['yes']
+                        if blocked:break
+                        time.sleep(.01)
+                assert blocked
+                if winner=='cancelled':holder.execute("UPDATE cases SET state='CANCELLED' WHERE id=%s",(row['case_id'],))
+                else:
+                    actor=holder.execute('SELECT * FROM principals WHERE id=%s',(ENTERPRISES[0],)).fetchone();_insert_evidence(holder,actor,parent,'material_outline','SYNTHETIC changed after reply','DOCUMENT_EXCERPT','SYNTHETIC newer material')
+            r=future.result(timeout=5);assert r.status_code==409,r.text
+        v=read(f,row).json();assert v['items'][0]['state']=='WAITING_OWNER_ACKNOWLEDGEMENT' and 'ACKNOWLEDGE_REPLY' not in v['items'][0]['allowed_actions']
+>       Path('.runtime/manual-goal-reply-20261014/pg-'+winner+'.json').write_text(json.dumps(dict(actual_pg_lock_wait=blocked,winner=winner,status=r.status_code,revision=v['revision']))+'\n')
+
+tests/test_manual_goal_reply.py:141: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-reply-20261014/pg-cancelled.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-reply-20261014/pg-cancelled.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_original_page_reply_awareness_cancel_late_and_lost_original_key[normal] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'normal'
+
+    @pytest.mark.parametrize('mode',['normal','unable','lost_reply','lost_ack','cancel','late'])
+    def test_original_page_reply_awareness_cancel_late_and_lost_original_key(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row=ready(f);grants=grant_snapshot(f['owner']);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_reply_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'reply page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text;assert B not in r.text if actor==REVIEWERS[0] else True
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants
+                drop=not lost and method=='POST' and ((mode=='lost_reply' and data['action']=='REPLY') or (mode=='lost_ack' and data['action']=='ACKNOWLEDGE_REPLY'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 2);assert lost==(mode in ('lost_reply','lost_ack'))
+        finally:
+>           Path('.runtime/manual-goal-reply-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_reply.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-reply-20261014/page-normal-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-reply-20261014/page-normal-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_original_page_reply_awareness_cancel_late_and_lost_original_key[unable] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'unable'
+
+    @pytest.mark.parametrize('mode',['normal','unable','lost_reply','lost_ack','cancel','late'])
+    def test_original_page_reply_awareness_cancel_late_and_lost_original_key(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row=ready(f);grants=grant_snapshot(f['owner']);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_reply_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'reply page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text;assert B not in r.text if actor==REVIEWERS[0] else True
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants
+                drop=not lost and method=='POST' and ((mode=='lost_reply' and data['action']=='REPLY') or (mode=='lost_ack' and data['action']=='ACKNOWLEDGE_REPLY'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 2);assert lost==(mode in ('lost_reply','lost_ack'))
+        finally:
+>           Path('.runtime/manual-goal-reply-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_reply.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-reply-20261014/page-unable-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-reply-20261014/page-unable-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_original_page_reply_awareness_cancel_late_and_lost_original_key[lost_reply] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'lost_reply'
+
+    @pytest.mark.parametrize('mode',['normal','unable','lost_reply','lost_ack','cancel','late'])
+    def test_original_page_reply_awareness_cancel_late_and_lost_original_key(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row=ready(f);grants=grant_snapshot(f['owner']);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_reply_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'reply page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text;assert B not in r.text if actor==REVIEWERS[0] else True
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants
+                drop=not lost and method=='POST' and ((mode=='lost_reply' and data['action']=='REPLY') or (mode=='lost_ack' and data['action']=='ACKNOWLEDGE_REPLY'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 2);assert lost==(mode in ('lost_reply','lost_ack'))
+        finally:
+>           Path('.runtime/manual-goal-reply-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_reply.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-reply-20261014/page-lost_reply-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-reply-20261014/page-lost_reply-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_original_page_reply_awareness_cancel_late_and_lost_original_key[lost_ack] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'lost_ack'
+
+    @pytest.mark.parametrize('mode',['normal','unable','lost_reply','lost_ack','cancel','late'])
+    def test_original_page_reply_awareness_cancel_late_and_lost_original_key(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row=ready(f);grants=grant_snapshot(f['owner']);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_reply_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'reply page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text;assert B not in r.text if actor==REVIEWERS[0] else True
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants
+                drop=not lost and method=='POST' and ((mode=='lost_reply' and data['action']=='REPLY') or (mode=='lost_ack' and data['action']=='ACKNOWLEDGE_REPLY'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 2);assert lost==(mode in ('lost_reply','lost_ack'))
+        finally:
+>           Path('.runtime/manual-goal-reply-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_reply.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-reply-20261014/page-lost_ack-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-reply-20261014/page-lost_ack-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_original_page_reply_awareness_cancel_late_and_lost_original_key[cancel] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'cancel'
+
+    @pytest.mark.parametrize('mode',['normal','unable','lost_reply','lost_ack','cancel','late'])
+    def test_original_page_reply_awareness_cancel_late_and_lost_original_key(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row=ready(f);grants=grant_snapshot(f['owner']);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_reply_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'reply page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text;assert B not in r.text if actor==REVIEWERS[0] else True
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants
+                drop=not lost and method=='POST' and ((mode=='lost_reply' and data['action']=='REPLY') or (mode=='lost_ack' and data['action']=='ACKNOWLEDGE_REPLY'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 2);assert lost==(mode in ('lost_reply','lost_ack'))
+        finally:
+>           Path('.runtime/manual-goal-reply-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_reply.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-reply-20261014/page-cancel-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-reply-20261014/page-cancel-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+__ test_original_page_reply_awareness_cancel_late_and_lost_original_key[late] __
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'late'
+
+    @pytest.mark.parametrize('mode',['normal','unable','lost_reply','lost_ack','cancel','late'])
+    def test_original_page_reply_awareness_cancel_late_and_lost_original_key(template_consumption,mode):
+        import json,subprocess,selectors
+        from pathlib import Path
+        f=template_consumption;row=ready(f);grants=grant_snapshot(f['owner']);baseline=products(f['owner'],True);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goal_reply_actual.js',REVIEWERS[0],ENTERPRISES[0],row['preparation_id'],mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'reply page timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('cancel_case'):
+                    cancel(f,row);baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);assert r.status_code==200,r.text;assert B not in r.text if actor==REVIEWERS[0] else True
+                if method=='GET':assert products(f['owner'],True)==baseline
+                else:baseline=products(f['owner'],True)
+                assert grant_snapshot(f['owner'])==grants
+                drop=not lost and method=='POST' and ((mode=='lost_reply' and data['action']=='REPLY') or (mode=='lost_ack' and data['action']=='ACKNOWLEDGE_REPLY'));lost=lost or drop
+                messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None,dropped_reply=drop))
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==(1 if mode in ('cancel','late') else 2);assert lost==(mode in ('lost_reply','lost_ack'))
+        finally:
+>           Path('.runtime/manual-goal-reply-20261014/page-'+mode+'-chain.json').write_text(json.dumps(dict(summary=summary,requests=messages,lost_original_response=lost),indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_reply.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-reply-20261014/page-late-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-reply-20261014/page-late-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_____ test_actual_parent_pg_lock_wait_rechecks_committed_source[cancelled] _____
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+winner = 'cancelled'
+
+    @pytest.mark.parametrize('winner',['cancelled','material'])
+    def test_actual_parent_pg_lock_wait_rechecks_committed_source(template_consumption,winner):
+        import time,json
+        from pathlib import Path
+        from parkweave.preparation import _insert_evidence
+        f=template_consumption;row,v=setup(f);data=body(v,'REQUEST');blocked=False
+        with ThreadPoolExecutor(1) as pool:
+            with f['owner'].connect() as holder:
+                parent=holder.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(row['preparation_id'],)).fetchone();pid=holder.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid']
+                future=pool.submit(post,f,row,data,'pg-wait-'+winner)
+                deadline=time.monotonic()+2
+                with f['owner'].connect() as monitor:
+                    while time.monotonic()<deadline:
+                        monitor.execute('SELECT pg_stat_clear_snapshot()')
+                        blocked=monitor.execute('SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND %s=ANY(pg_blocking_pids(pid))) AS yes',(pid,)).fetchone()['yes']
+                        if blocked:break
+                        time.sleep(.01)
+                assert blocked,'actual PG parent blocker not observed'
+                if winner=='cancelled':holder.execute("UPDATE cases SET state='CANCELLED' WHERE id=%s",(row['case_id'],))
+                else:
+                    actor=holder.execute('SELECT * FROM principals WHERE id=%s',(ENTERPRISES[0],)).fetchone();_insert_evidence(holder,actor,parent,'material_outline','SYNTHETIC newer evidence','DOCUMENT_EXCERPT','SYNTHETIC updated source')
+            result=future.result(timeout=5);assert result.status_code==409,result.text
+        assert read(f,row).json()['revision']==0
+>       Path('.runtime/same-case-goals-20261014/pg-'+winner+'.json').write_text(json.dumps({'actual_pg_parent_lock_wait':blocked,'winner':winner,'response':result.status_code,'manual_revision':0})+'\n')
+
+tests/test_manual_goal_requests.py:106: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/same-case-goals-20261014/pg-cancelled.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/same-case-goals-20261014/pg-cancelled.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_____ test_actual_parent_pg_lock_wait_rechecks_committed_source[material] ______
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+winner = 'material'
+
+    @pytest.mark.parametrize('winner',['cancelled','material'])
+    def test_actual_parent_pg_lock_wait_rechecks_committed_source(template_consumption,winner):
+        import time,json
+        from pathlib import Path
+        from parkweave.preparation import _insert_evidence
+        f=template_consumption;row,v=setup(f);data=body(v,'REQUEST');blocked=False
+        with ThreadPoolExecutor(1) as pool:
+            with f['owner'].connect() as holder:
+                parent=holder.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(row['preparation_id'],)).fetchone();pid=holder.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid']
+                future=pool.submit(post,f,row,data,'pg-wait-'+winner)
+                deadline=time.monotonic()+2
+                with f['owner'].connect() as monitor:
+                    while time.monotonic()<deadline:
+                        monitor.execute('SELECT pg_stat_clear_snapshot()')
+                        blocked=monitor.execute('SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND %s=ANY(pg_blocking_pids(pid))) AS yes',(pid,)).fetchone()['yes']
+                        if blocked:break
+                        time.sleep(.01)
+                assert blocked,'actual PG parent blocker not observed'
+                if winner=='cancelled':holder.execute("UPDATE cases SET state='CANCELLED' WHERE id=%s",(row['case_id'],))
+                else:
+                    actor=holder.execute('SELECT * FROM principals WHERE id=%s',(ENTERPRISES[0],)).fetchone();_insert_evidence(holder,actor,parent,'material_outline','SYNTHETIC newer evidence','DOCUMENT_EXCERPT','SYNTHETIC updated source')
+            result=future.result(timeout=5);assert result.status_code==409,result.text
+        assert read(f,row).json()['revision']==0
+>       Path('.runtime/same-case-goals-20261014/pg-'+winner+'.json').write_text(json.dumps({'actual_pg_parent_lock_wait':blocked,'winner':winner,'response':result.status_code,'manual_revision':0})+'\n')
+
+tests/test_manual_goal_requests.py:106: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/same-case-goals-20261014/pg-material.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/same-case-goals-20261014/pg-material.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_actual_original_page_same_case_facts_manual_request_lost_reply_and_cold_get _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_actual_original_page_same_case_facts_manual_request_lost_reply_and_cold_get(template_consumption):
+        import json,subprocess,selectors
+        from pathlib import Path
+        from test_template_consumer import body as consume_body
+        from test_template_consumer_planning import ready,preview,adoption,post as adopt_post
+        f=template_consumption;data=consume_body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',EXTERNAL];data['materials'][1]['text']='地区甲 / 17 / 本次服务诉求'
+        row=ready(f,data);pv=preview(f,row).json();assert adopt_post(f,row,'adopt',{**adoption(pv),'partial_adoption':True},'actual-original-partial').status_code==200
+        grants=grant_snapshot(f['owner']);before=products(f['owner']);messages=[];summary=None;lost=False
+        proc=subprocess.Popen(['node','tests/manual_goals_actual.js',row['instance_id'],row['preparation_id'],ENTERPRISES[0],REVIEWERS[0]],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'manual original page bridge timeout'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None;actor=o.get('headers',{}).get('Authorization','').removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o.get('headers',{}).get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=body);messages.append(dict(method=method,path=q['path'],status=r.status_code,actor=actor,action=body.get('action') if body else None));assert r.status_code<400,r.text
+                drop=method=='POST' and q['path'].endswith('/manual-goal-requests') and not lost
+                if drop:lost=True
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json(),**({'lost':True} if drop else {})})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['checks']>=30;assert summary['manual_posts']==5 and lost
+            after=products(f['owner']);assert grant_snapshot(f['owner'])==grants;assert after['runs']==before['runs'] and after['cases']==before['cases'] and after['model_steps']==before['model_steps'];assert len(after['preparations'])==1
+            fact=f['client'].get('/api/preparations/'+row['preparation_id']+'/fact-clarifications',headers=headers(f));assert fact.json()['state']=='CURRENT' and fact.json()['case_id']==row['case_id']
+            result=f['client'].get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(f));assert result.json()['state']=='PARTIAL' and result.json()['results'][1]['state']=='UNSUPPORTED'
+        finally:
+>           Path('.runtime/same-case-goals-20261014/actual-chain.json').write_text(json.dumps({'summary':summary,'requests':messages,'lost_reply_after_actual_commit':lost},indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_requests.py:155: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/same-case-goals-20261014/actual-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/same-case-goals-20261014/actual-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+_ test_original_page_cold_confirmed_manual_tasks_stale_subject_permission_and_pages _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_original_page_cold_confirmed_manual_tasks_stale_subject_permission_and_pages(template_consumption):
+        import json,subprocess,selectors
+        from pathlib import Path
+        from uuid import UUID
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST');messages=[];bridges=[];summary=None;page_snapshot=products(f['owner']);expected_case=row['case_id'];grants=grant_snapshot(f['owner'])
+        proc=subprocess.Popen(['node','tests/manual_goal_tasks_actual.js',ENTERPRISES[0],REVIEWERS[0],A,B],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'task page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg and 'result' not in msg:
+                    if msg.get('replace_current_plan'):replace_plan(f,row)
+                    elif msg.get('create_beta_request'):act(f,row,'REQUEST',goal=B)
+                    elif msg.get('revoke_specialist_list'):
+                        assert grant_snapshot(f['owner'])==grants
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(REVIEWERS[0],))
+                    elif msg.get('scale_owner_pages'):
+                        # Deliberately restore only the test prerequisite already used, not an app permission repair.
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(REVIEWERS[0],))
+                        act(f,row,'TAKE',REVIEWERS[0],goal=B);act(f,row,'REQUEST_EVIDENCE',REVIEWERS[0],goal=B)
+                        with f['owner'].connect() as c:
+                            for _ in range(100):
+                                run,case,id=uuid4(),uuid4(),uuid4()
+                                c.execute("INSERT INTO runs(id,principal_id,park_id,org_id,namespace,request_key,fingerprint,input,state) SELECT %s,principal_id,park_id,org_id,namespace,%s,fingerprint,input,state FROM runs WHERE id=%s",(run,uuid4().hex,UUID(row['run_id'])))
+                                c.execute('INSERT INTO cases SELECT %s,%s,park_id,org_id,goal,state,source,external_acceptance,offline_fulfillment FROM cases WHERE id=%s',(case,run,UUID(row['case_id'])))
+                                c.execute("INSERT INTO preparations(id,run_id,case_id,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,state) SELECT %s,%s,%s,owner_id,reviewer_id,park_id,org_id,service_id,service_version,namespace,goal,'IN_PREPARATION' FROM preparations WHERE id=%s",(id,run,case,UUID(row['preparation_id'])))
+                    else:raise AssertionError(msg)
+                    bridges.append(msg);page_snapshot=products(f['owner']);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');data=json.loads(o['body']) if o.get('body') else None;actor=o['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_');h={'Authorization':'Bearer '+f['tokens'][actor]}
+                if key:=o['headers'].get('Idempotency-Key'):h['Idempotency-Key']=key
+                r=f['client'].request(method,q['path'],headers=h,json=data);messages.append(dict(method=method,path=q['path'],actor=actor,status=r.status_code,action=data.get('action') if data else None))
+                assert r.status_code in (200,403),r.text
+                if method=='GET':assert products(f['owner'])==page_snapshot,'queue or entry GET changed business records'
+                else:page_snapshot=products(f['owner'])
+                if q['path'].startswith('/api/preparation-tasks') and actor==REVIEWERS[0] and not any(x.get('create_beta_request') for x in bridges):assert B not in r.text
+                if q['path'].startswith('/api/preparations/') and method=='POST':assert q['path'].split('/')[3]==row['preparation_id'] and r.json()['case_id']==expected_case
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['checks']>=30 and summary['posts']==3;assert products(f['owner'])==page_snapshot
+            assert grant_snapshot(f['owner'])==grants
+        finally:
+>           Path('.runtime/manual-goal-tasks-20261014/actual-chain.json').write_text(json.dumps({'summary':summary,'requests':messages,'explicit_test_bridges':bridges,'scale_setup_clones_for_read_bound_only':100},indent=2)+'\n');sel.close()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_manual_goal_tasks.py:133: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/manual-goal-tasks-20261014/actual-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/manual-goal-tasks-20261014/actual-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_differentiated_planning.py::test_original_page_differentiates_declared_constraints_and_confirms_exact_source
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_differentiated_planning.py::test_original_page_differentiates_declared_constraints_and_confirms_exact_source
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_legacy_closed.py::test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first
+FAILED tests/test_manual_goal_privacy.py::test_original_full_page_private_goal_projection_cold_get_and_late_owner_response
+FAILED tests/test_manual_goal_privacy.py::test_actual_full_page_replaced_plan_old_handle_and_revoked_write_actions
+FAILED tests/test_manual_goal_recheck.py::test_actual_owned_pg_recheck_wait_rechecks_new_material_before_admission[request]
+FAILED tests/test_manual_goal_recheck.py::test_actual_owned_pg_recheck_wait_rechecks_new_material_before_admission[take]
+FAILED tests/test_manual_goal_recheck.py::test_original_page_explicit_recheck_cold_unknown_cancel_and_late[waiting]
+FAILED tests/test_manual_goal_recheck.py::test_original_page_explicit_recheck_cold_unknown_cancel_and_late[ended]
+FAILED tests/test_manual_goal_recheck.py::test_original_page_explicit_recheck_cold_unknown_cancel_and_late[lost_request]
+FAILED tests/test_manual_goal_recheck.py::test_original_page_explicit_recheck_cold_unknown_cancel_and_late[lost_take]
+FAILED tests/test_manual_goal_recheck.py::test_original_page_explicit_recheck_cold_unknown_cancel_and_late[cancel]
+FAILED tests/test_manual_goal_recheck.py::test_original_page_explicit_recheck_cold_unknown_cancel_and_late[late]
+FAILED tests/test_manual_goal_reply.py::test_actual_owned_pg_lock_wait_rechecks_reply_source_before_awareness[material]
+FAILED tests/test_manual_goal_reply.py::test_actual_owned_pg_lock_wait_rechecks_reply_source_before_awareness[cancelled]
+FAILED tests/test_manual_goal_reply.py::test_original_page_reply_awareness_cancel_late_and_lost_original_key[normal]
+FAILED tests/test_manual_goal_reply.py::test_original_page_reply_awareness_cancel_late_and_lost_original_key[unable]
+FAILED tests/test_manual_goal_reply.py::test_original_page_reply_awareness_cancel_late_and_lost_original_key[lost_reply]
+FAILED tests/test_manual_goal_reply.py::test_original_page_reply_awareness_cancel_late_and_lost_original_key[lost_ack]
+FAILED tests/test_manual_goal_reply.py::test_original_page_reply_awareness_cancel_late_and_lost_original_key[cancel]
+FAILED tests/test_manual_goal_reply.py::test_original_page_reply_awareness_cancel_late_and_lost_original_key[late]
+FAILED tests/test_manual_goal_requests.py::test_actual_parent_pg_lock_wait_rechecks_committed_source[cancelled]
+FAILED tests/test_manual_goal_requests.py::test_actual_parent_pg_lock_wait_rechecks_committed_source[material]
+FAILED tests/test_manual_goal_requests.py::test_actual_original_page_same_case_facts_manual_request_lost_reply_and_cold_get
+FAILED tests/test_manual_goal_tasks.py::test_original_page_cold_confirmed_manual_tasks_stale_subject_permission_and_pages
+23 failed, 282 passed, 3 warnings in 726.61s (0:12:06)

@@ -1,0 +1,114 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="19.612" timestamp="2026-10-15T11:50:44.455957+00:00" hostname="87a5e83cf057"><testcase classname="" name="test_final_source_read_unknown_rolls_back_and_retains_original_key[KEEP_AND_CONTINUE]" time="10.334"><failure message="AssertionError: (500, 'Internal Server Error')&#10;assert 500 == 409&#10; +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f1eb08ea9c0&gt;
+action = 'KEEP_AND_CONTINUE'
+
+    @pytest.mark.parametrize('action', ['KEEP_AND_CONTINUE', 'MERGE_NOTE'])
+    def test_final_source_read_unknown_rolls_back_and_retains_original_key(http_f, monkeypatch, action):
+        f = http_f
+        parent, _, _, _ = complete(f, goals=SIX_GOALS, local=True)
+        incoming = 'SYNTHETIC exact source condition\nSYNTHETIC use original verification'
+        manual = 'SYNTHETIC retained human note\n' + incoming
+        edit(f, parent, manual)
+        parent, card = changed(f, parent, mixed=True, text=incoming)
+        value = read(f, parent, card)
+        assert value.status_code == 200, value.text
+        value = value.json()
+        assert value['continuation']['can_keep_and_continue'] and value['continuation']['can_merge']
+        before_plan = stored(f, parent)
+        assert before_plan['required_goals'] == SIX_GOALS
+        assert [s['adapter_id'] for s in before_plan['steps']] == ['P1', 'P2', 'P3', 'P4', 'P5']
+        body = deepcopy(value['action_requests'][action])
+        body['reason'] = 'SYNTHETIC final-read unavailable original request'
+        if action == 'MERGE_NOTE':
+            body['text'] = manual + '\nSYNTHETIC explicit appended reminder'
+        key = uuid4().hex
+        before = snapshot(f)
+        original_basis = notes._basis
+        calls = []
+    
+        def last_read_unavailable(*args, **kwargs):
+            calls.append(len(calls) + 1)
+            if len(calls) == 2:
+                # A bounded source reader can legitimately report unavailability.
+                # Let actual _view catch Conflict and return its normal UNKNOWN,
+                # None-basis result. No fake successful permission/plan/source DTO.
+                raise notes.Conflict('SYNTHETIC final source reader unavailable')
+            return original_basis(*args, **kwargs)
+    
+        monkeypatch.setattr(notes, '_basis', last_read_unavailable)
+        response = f[3].post(path(parent) + '/commands', headers=headers(f[2], key=key), json=body)
+        monkeypatch.setattr(notes, '_basis', original_basis)
+        unchanged = snapshot(f) == before and stored(f, parent) == before_plan
+        recovered = cold(f, parent, key)
+        row = dict(action=action, actual_HTTP_status=response.status_code, required_HTTP_status=409,
+                   final_read_seam_called=len(calls), all_business_and_plan_and_ledger_rows_unchanged=unchanged,
+                   cold_GET_status=recovered.status_code,
+                   cold_result=recovered.json().get('status') if recovered.status_code == 200 else None,
+                   actual_original_six_goal_P1_P5_API_PG_setup=True,
+                   source_unavailability='CONTROLLED_FINAL_READER_CONFLICT_SEAM_NOT_A_REAL_SOURCE_EXPIRY_EVENT',
+                   synthetic_fault_injection=True, real_browser=False)
+        with (HERE / (os.environ['REVIEW_SEAM_WINDOW'] + '-observed.jsonl')).open('a') as stream:
+            stream.write(json.dumps(row, sort_keys=True) + '\n')
+&gt;       assert response.status_code == 409, (response.status_code, response.text)
+E       AssertionError: (500, 'Internal Server Error')
+E       assert 500 == 409
+E        +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code
+
+../test_final_unknown.py:70: AssertionError</failure></testcase><testcase classname="" name="test_final_source_read_unknown_rolls_back_and_retains_original_key[MERGE_NOTE]" time="8.940"><failure message="AssertionError: (500, 'Internal Server Error')&#10;assert 500 == 409&#10; +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f1eaea49fa0&gt;
+action = 'MERGE_NOTE'
+
+    @pytest.mark.parametrize('action', ['KEEP_AND_CONTINUE', 'MERGE_NOTE'])
+    def test_final_source_read_unknown_rolls_back_and_retains_original_key(http_f, monkeypatch, action):
+        f = http_f
+        parent, _, _, _ = complete(f, goals=SIX_GOALS, local=True)
+        incoming = 'SYNTHETIC exact source condition\nSYNTHETIC use original verification'
+        manual = 'SYNTHETIC retained human note\n' + incoming
+        edit(f, parent, manual)
+        parent, card = changed(f, parent, mixed=True, text=incoming)
+        value = read(f, parent, card)
+        assert value.status_code == 200, value.text
+        value = value.json()
+        assert value['continuation']['can_keep_and_continue'] and value['continuation']['can_merge']
+        before_plan = stored(f, parent)
+        assert before_plan['required_goals'] == SIX_GOALS
+        assert [s['adapter_id'] for s in before_plan['steps']] == ['P1', 'P2', 'P3', 'P4', 'P5']
+        body = deepcopy(value['action_requests'][action])
+        body['reason'] = 'SYNTHETIC final-read unavailable original request'
+        if action == 'MERGE_NOTE':
+            body['text'] = manual + '\nSYNTHETIC explicit appended reminder'
+        key = uuid4().hex
+        before = snapshot(f)
+        original_basis = notes._basis
+        calls = []
+    
+        def last_read_unavailable(*args, **kwargs):
+            calls.append(len(calls) + 1)
+            if len(calls) == 2:
+                # A bounded source reader can legitimately report unavailability.
+                # Let actual _view catch Conflict and return its normal UNKNOWN,
+                # None-basis result. No fake successful permission/plan/source DTO.
+                raise notes.Conflict('SYNTHETIC final source reader unavailable')
+            return original_basis(*args, **kwargs)
+    
+        monkeypatch.setattr(notes, '_basis', last_read_unavailable)
+        response = f[3].post(path(parent) + '/commands', headers=headers(f[2], key=key), json=body)
+        monkeypatch.setattr(notes, '_basis', original_basis)
+        unchanged = snapshot(f) == before and stored(f, parent) == before_plan
+        recovered = cold(f, parent, key)
+        row = dict(action=action, actual_HTTP_status=response.status_code, required_HTTP_status=409,
+                   final_read_seam_called=len(calls), all_business_and_plan_and_ledger_rows_unchanged=unchanged,
+                   cold_GET_status=recovered.status_code,
+                   cold_result=recovered.json().get('status') if recovered.status_code == 200 else None,
+                   actual_original_six_goal_P1_P5_API_PG_setup=True,
+                   source_unavailability='CONTROLLED_FINAL_READER_CONFLICT_SEAM_NOT_A_REAL_SOURCE_EXPIRY_EVENT',
+                   synthetic_fault_injection=True, real_browser=False)
+        with (HERE / (os.environ['REVIEW_SEAM_WINDOW'] + '-observed.jsonl')).open('a') as stream:
+            stream.write(json.dumps(row, sort_keys=True) + '\n')
+&gt;       assert response.status_code == 409, (response.status_code, response.text)
+E       AssertionError: (500, 'Internal Server Error')
+E       assert 500 == 409
+E        +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code
+
+../test_final_unknown.py:70: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,66 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f6c92a67cb0>
+
+    def test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first(template_consumption,monkeypatch):
+        f=template_consumption;row,v,data,p=legacy(f,monkeypatch);saved=journal(f);before=products(f['owner'],include_audit=True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/legacy_closed_actual.js',row['instance_id']],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'legacy cold page bridge timeout'
+                line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];o=q['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                r=f['client'].request(method,q['path'],headers=headers(f,key=o.get('headers',{}).get('Idempotency-Key')),json=body);messages.append({'method':method,'path':q['path'],'status':r.status_code});assert r.status_code<400,r.text
+                proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+            assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['checks']>=7
+            assert all(q['method']=='GET' for q in messages)
+            assert journal(f)==saved and products(f['owner'],include_audit=True)==before
+        finally:
+>           Path('.runtime/legacy-closed-20261014/cold-page-chain.json').write_text(json.dumps({'summary':summary,'requests':messages,'zero_business_and_journal_writes':journal(f)==saved and products(f['owner'],include_audit=True)==before},indent=2)+'\n')
+
+tests/test_legacy_closed.py:48: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1047: in write_text
+    with self.open(mode='w', encoding=encoding, errors=errors, newline=newline) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('.runtime/legacy-closed-20261014/cold-page-chain.json')
+mode = 'w', buffering = -1, encoding = 'locale', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+>       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '.runtime/legacy-closed-20261014/cold-page-chain.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_legacy_closed.py::test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_legacy_closed.py::test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_legacy_closed.py::test_actual_cold_template_page_with_no_handle_cannot_preview_or_adopt_legacy_first
+1 failed, 3 warnings in 4.22s

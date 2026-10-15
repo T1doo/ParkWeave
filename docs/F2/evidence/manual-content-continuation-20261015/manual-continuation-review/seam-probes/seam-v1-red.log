@@ -1,0 +1,490 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_final_source_read_unknown_rolls_back_and_retains_original_key[KEEP_AND_CONTINUE] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1eb08ea9c0>
+action = 'KEEP_AND_CONTINUE'
+
+    @pytest.mark.parametrize('action', ['KEEP_AND_CONTINUE', 'MERGE_NOTE'])
+    def test_final_source_read_unknown_rolls_back_and_retains_original_key(http_f, monkeypatch, action):
+        f = http_f
+        parent, _, _, _ = complete(f, goals=SIX_GOALS, local=True)
+        incoming = 'SYNTHETIC exact source condition\nSYNTHETIC use original verification'
+        manual = 'SYNTHETIC retained human note\n' + incoming
+        edit(f, parent, manual)
+        parent, card = changed(f, parent, mixed=True, text=incoming)
+        value = read(f, parent, card)
+        assert value.status_code == 200, value.text
+        value = value.json()
+        assert value['continuation']['can_keep_and_continue'] and value['continuation']['can_merge']
+        before_plan = stored(f, parent)
+        assert before_plan['required_goals'] == SIX_GOALS
+        assert [s['adapter_id'] for s in before_plan['steps']] == ['P1', 'P2', 'P3', 'P4', 'P5']
+        body = deepcopy(value['action_requests'][action])
+        body['reason'] = 'SYNTHETIC final-read unavailable original request'
+        if action == 'MERGE_NOTE':
+            body['text'] = manual + '\nSYNTHETIC explicit appended reminder'
+        key = uuid4().hex
+        before = snapshot(f)
+        original_basis = notes._basis
+        calls = []
+    
+        def last_read_unavailable(*args, **kwargs):
+            calls.append(len(calls) + 1)
+            if len(calls) == 2:
+                # A bounded source reader can legitimately report unavailability.
+                # Let actual _view catch Conflict and return its normal UNKNOWN,
+                # None-basis result. No fake successful permission/plan/source DTO.
+                raise notes.Conflict('SYNTHETIC final source reader unavailable')
+            return original_basis(*args, **kwargs)
+    
+        monkeypatch.setattr(notes, '_basis', last_read_unavailable)
+        response = f[3].post(path(parent) + '/commands', headers=headers(f[2], key=key), json=body)
+        monkeypatch.setattr(notes, '_basis', original_basis)
+        unchanged = snapshot(f) == before and stored(f, parent) == before_plan
+        recovered = cold(f, parent, key)
+        row = dict(action=action, actual_HTTP_status=response.status_code, required_HTTP_status=409,
+                   final_read_seam_called=len(calls), all_business_and_plan_and_ledger_rows_unchanged=unchanged,
+                   cold_GET_status=recovered.status_code,
+                   cold_result=recovered.json().get('status') if recovered.status_code == 200 else None,
+                   actual_original_six_goal_P1_P5_API_PG_setup=True,
+                   source_unavailability='CONTROLLED_FINAL_READER_CONFLICT_SEAM_NOT_A_REAL_SOURCE_EXPIRY_EVENT',
+                   synthetic_fault_injection=True, real_browser=False)
+        with (HERE / (os.environ['REVIEW_SEAM_WINDOW'] + '-observed.jsonl')).open('a') as stream:
+            stream.write(json.dumps(row, sort_keys=True) + '\n')
+>       assert response.status_code == 409, (response.status_code, response.text)
+E       AssertionError: (500, 'Internal Server Error')
+E       assert 500 == 409
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+../test_final_unknown.py:70: AssertionError
+----------------------------- Captured stderr call -----------------------------
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 411, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1215, in __call__
+    await super().__call__(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 197, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/api.py", line 156, in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 173, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 1310, in handle
+    await super().handle(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 362, in run_endpoint_function
+    return await run_in_threadpool(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py", line 240, in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/api.py", line 106, in owner_note_command
+    try:return note_conflicts.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/executor_receipts.py", line 18, in call
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/plan_source_conflicts.py", line 542, in command
+    if data.action in CONTINUATION_ACTIONS:final_basis=continuation_basis(c,parent,final_basis)
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/plan_source_conflicts.py", line 118, in continuation_basis
+    data=continuation_snapshot(c,parent,basis['note'],basis['source'])
+                                        ~~~~~^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+------------------------------ Captured log call -------------------------------
+ERROR    uvicorn.error:h11_impl.py:416 Exception in ASGI application
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 411, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1215, in __call__
+    await super().__call__(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 197, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/api.py", line 156, in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 173, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 1310, in handle
+    await super().handle(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 362, in run_endpoint_function
+    return await run_in_threadpool(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py", line 240, in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/api.py", line 106, in owner_note_command
+    try:return note_conflicts.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/executor_receipts.py", line 18, in call
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/plan_source_conflicts.py", line 542, in command
+    if data.action in CONTINUATION_ACTIONS:final_basis=continuation_basis(c,parent,final_basis)
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/plan_source_conflicts.py", line 118, in continuation_basis
+    data=continuation_snapshot(c,parent,basis['note'],basis['source'])
+                                        ~~~~~^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+_ test_final_source_read_unknown_rolls_back_and_retains_original_key[MERGE_NOTE] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1eaea49fa0>
+action = 'MERGE_NOTE'
+
+    @pytest.mark.parametrize('action', ['KEEP_AND_CONTINUE', 'MERGE_NOTE'])
+    def test_final_source_read_unknown_rolls_back_and_retains_original_key(http_f, monkeypatch, action):
+        f = http_f
+        parent, _, _, _ = complete(f, goals=SIX_GOALS, local=True)
+        incoming = 'SYNTHETIC exact source condition\nSYNTHETIC use original verification'
+        manual = 'SYNTHETIC retained human note\n' + incoming
+        edit(f, parent, manual)
+        parent, card = changed(f, parent, mixed=True, text=incoming)
+        value = read(f, parent, card)
+        assert value.status_code == 200, value.text
+        value = value.json()
+        assert value['continuation']['can_keep_and_continue'] and value['continuation']['can_merge']
+        before_plan = stored(f, parent)
+        assert before_plan['required_goals'] == SIX_GOALS
+        assert [s['adapter_id'] for s in before_plan['steps']] == ['P1', 'P2', 'P3', 'P4', 'P5']
+        body = deepcopy(value['action_requests'][action])
+        body['reason'] = 'SYNTHETIC final-read unavailable original request'
+        if action == 'MERGE_NOTE':
+            body['text'] = manual + '\nSYNTHETIC explicit appended reminder'
+        key = uuid4().hex
+        before = snapshot(f)
+        original_basis = notes._basis
+        calls = []
+    
+        def last_read_unavailable(*args, **kwargs):
+            calls.append(len(calls) + 1)
+            if len(calls) == 2:
+                # A bounded source reader can legitimately report unavailability.
+                # Let actual _view catch Conflict and return its normal UNKNOWN,
+                # None-basis result. No fake successful permission/plan/source DTO.
+                raise notes.Conflict('SYNTHETIC final source reader unavailable')
+            return original_basis(*args, **kwargs)
+    
+        monkeypatch.setattr(notes, '_basis', last_read_unavailable)
+        response = f[3].post(path(parent) + '/commands', headers=headers(f[2], key=key), json=body)
+        monkeypatch.setattr(notes, '_basis', original_basis)
+        unchanged = snapshot(f) == before and stored(f, parent) == before_plan
+        recovered = cold(f, parent, key)
+        row = dict(action=action, actual_HTTP_status=response.status_code, required_HTTP_status=409,
+                   final_read_seam_called=len(calls), all_business_and_plan_and_ledger_rows_unchanged=unchanged,
+                   cold_GET_status=recovered.status_code,
+                   cold_result=recovered.json().get('status') if recovered.status_code == 200 else None,
+                   actual_original_six_goal_P1_P5_API_PG_setup=True,
+                   source_unavailability='CONTROLLED_FINAL_READER_CONFLICT_SEAM_NOT_A_REAL_SOURCE_EXPIRY_EVENT',
+                   synthetic_fault_injection=True, real_browser=False)
+        with (HERE / (os.environ['REVIEW_SEAM_WINDOW'] + '-observed.jsonl')).open('a') as stream:
+            stream.write(json.dumps(row, sort_keys=True) + '\n')
+>       assert response.status_code == 409, (response.status_code, response.text)
+E       AssertionError: (500, 'Internal Server Error')
+E       assert 500 == 409
+E        +  where 500 = <Response [500 Internal Server Error]>.status_code
+
+../test_final_unknown.py:70: AssertionError
+----------------------------- Captured stderr call -----------------------------
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 411, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1215, in __call__
+    await super().__call__(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 197, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/api.py", line 156, in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 173, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 1310, in handle
+    await super().handle(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 362, in run_endpoint_function
+    return await run_in_threadpool(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py", line 240, in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/api.py", line 106, in owner_note_command
+    try:return note_conflicts.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/executor_receipts.py", line 18, in call
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/plan_source_conflicts.py", line 542, in command
+    if data.action in CONTINUATION_ACTIONS:final_basis=continuation_basis(c,parent,final_basis)
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/plan_source_conflicts.py", line 118, in continuation_basis
+    data=continuation_snapshot(c,parent,basis['note'],basis['source'])
+                                        ~~~~~^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+------------------------------ Captured log call -------------------------------
+ERROR    uvicorn.error:h11_impl.py:416 Exception in ASGI application
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 411, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1215, in __call__
+    await super().__call__(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 197, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/api.py", line 156, in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 173, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 1310, in handle
+    await super().handle(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 362, in run_endpoint_function
+    return await run_in_threadpool(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py", line 240, in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/api.py", line 106, in owner_note_command
+    try:return note_conflicts.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/executor_receipts.py", line 18, in call
+    try:return fn(*args,**kwargs)
+               ^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/plan_source_conflicts.py", line 542, in command
+    if data.action in CONTINUATION_ACTIONS:final_basis=continuation_basis(c,parent,final_basis)
+                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/plan_source_conflicts.py", line 118, in continuation_basis
+    data=continuation_snapshot(c,parent,basis['note'],basis['source'])
+                                        ~~~~~^^^^^^^^
+TypeError: 'NoneType' object is not subscriptable
+=============================== warnings summary ===============================
+../../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/parkweave/plan_source_conflicts.py:42
+  /workspace/ParkWeave/.runtime/manual-continuation-review/seam-probes/source-v1/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+::test_final_source_read_unknown_rolls_back_and_retains_original_key[KEEP_AND_CONTINUE]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ::test_final_source_read_unknown_rolls_back_and_retains_original_key[KEEP_AND_CONTINUE]
+FAILED ::test_final_source_read_unknown_rolls_back_and_retains_original_key[MERGE_NOTE]
+2 failed, 3 warnings in 19.61s

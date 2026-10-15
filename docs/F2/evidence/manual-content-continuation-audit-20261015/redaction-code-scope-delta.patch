@@ -1,0 +1,83 @@
+--- preparation-v1/audit_archive.py
++++ current/audit_archive.py
+@@ -58,7 +58,7 @@
+         counts['exact_private_value'] += count
+         parts = []
+         for line in text.splitlines(keepends=True):
+-            if FIXTURE.match(line) or SESSIONS.match(line):
++            if suffix not in {'.py', '.js'} and (FIXTURE.match(line) or SESSIONS.match(line)):
+                 counts['fixture_repr_line'] += 1
+                 parts.append('[REDACTED_SYNTHETIC_FIXTURE_REPR]' + ('\n' if line.endswith('\n') else ''))
+             else:
+@@ -206,10 +206,10 @@
+     return dict(status='PASS', old_raw_originals=len(records), records=records)
+ 
+ 
+-def residual_context(text):
++def residual_context(text, suffix=''):
+     found = []
+     for number, line in enumerate(text.splitlines(), 1):
+-        if FIXTURE.match(line) or SESSIONS.match(line):
++        if suffix not in {'.py', '.js'} and (FIXTURE.match(line) or SESSIONS.match(line)):
+             found.append(dict(line=number, kind='FIXTURE_OR_SESSION_REPR_LINE'))
+         for match in BEARER.finditer(line):
+             found.append(dict(line=number, kind='FULL_SESSION_IN_BEARER_CONTEXT', value_sha256=digest(match.group(1).encode())))
+@@ -277,7 +277,7 @@
+         assert reconstructed == exported, 'independent rebuilt bytes differ: ' + row['export_path']
+         assert counts == row['redactions'], 'redaction counts differ: ' + row['export_path']
+         assert not matcher.has_residual(exported.decode()), 'known private value in exported file'
+-        assert not residual_context(exported.decode()), 'unmasked fixture/session context: ' + row['export_path']
++        assert not residual_context(exported.decode(), target.suffix), 'unmasked fixture/session context: ' + row['export_path']
+         suffixes[check_structure(target)] += 1
+         redactions.update(counts)
+         assert source.read_bytes() == raw
+@@ -288,7 +288,7 @@
+     assert set(before_primary) == expected_exports | metadata, 'unexpected primary files outside indexed payload/four metadata'
+     for path in metadata | {config['report']}:
+         data = relpath(path).read_text()
+-        assert not matcher.has_residual(data) and not residual_context(data)
++        assert not matcher.has_residual(data) and not residual_context(data, relpath(path).suffix)
+     attrs = (primary / '.gitattributes').read_text()
+     assert any('-text' in line.split() and '-whitespace' in line.split() for line in attrs.splitlines()
+                if line.strip() and not line.lstrip().startswith('#')), 'evidence raw-byte attributes absent'
+--- preparation-v1/selfcheck_prepare.py
++++ current/selfcheck_prepare.py
+@@ -6,7 +6,7 @@
+ import xml.etree.ElementTree as ET
+ 
+ from shared_matcher import KnownTokenRedactor, PLACEHOLDER
+-from audit_archive import rebuild
++from audit_archive import rebuild, residual_context
+ 
+ HERE = Path(__file__).resolve().parent
+ 
+@@ -61,17 +61,26 @@
+     assert ET.fromstring(result).find('.//failure').text == '[REDACTED_SYNTHETIC_FIXTURE_REPR]\nAssertionError: retained'
+     untouched = b'{ "assertion" : "unchanged" }\n'
+     assert rebuild(untouched, '.json', matcher) == (untouched, dict(exact_private_value=0, fixture_repr_line=0))
++    code = b'tokens = {"fixture-a": make_synthetic_session()}\n'
++    assert rebuild(code, '.py', matcher) == (code, dict(exact_private_value=0, fixture_repr_line=0))
++    assert not residual_context(code.decode(), '.py')
++    source_with_value = ('tokens = {"fixture-a": "' + one + '"}\n').encode()
++    for suffix in ['.py', '.js']:
++        result, counts = rebuild(source_with_value, suffix, matcher)
++        assert result == ('tokens = {"fixture-a": "' + PLACEHOLDER + '"}\n').encode()
++        assert counts == dict(exact_private_value=1, fixture_repr_line=0)
++        assert not residual_context(result.decode(), suffix)
+     scripts = {}
+     for path in sorted(HERE.glob('*.py')):
+         ast.parse(path.read_bytes(), filename=str(path))
+         scripts[path.name] = hashlib.sha256(path.read_bytes()).hexdigest()
+     output = dict(status='PREPARATION_SELF_CHECK_ONLY_NOT_ARCHIVE_OR_DELIVERY_PASS',
+-        matcher_synthetic_differential_cases=records, structured_oracles=4,
++        matcher_synthetic_differential_cases=records, structured_oracles=7,
+         syntax_checked_scripts=scripts, actual_primary_read=False, private_sets_read=False,
+         source_or_business_execution=False, actual_archive_final_gate_run=False,
+         algorithm_diversity_claimed=False)
+-    (HERE / 'preparation-selfcheck.json').write_text(json.dumps(output, indent=2) + '\n')
+-    print(json.dumps(dict(status=output['status'], differential_cases=len(records), structured_oracles=4,
++    (HERE / 'preparation-selfcheck-v2.json').write_text(json.dumps(output, indent=2) + '\n')
++    print(json.dumps(dict(status=output['status'], differential_cases=len(records), structured_oracles=7,
+         scripts=len(scripts), actual_archive_final_gate_run=False)))
+ 
+ 

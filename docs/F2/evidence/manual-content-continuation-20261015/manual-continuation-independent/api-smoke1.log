@@ -1,0 +1,91 @@
+/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+  from starlette.testclient import TestClient as TestClient  # noqa
+F.F.                                                                     [100%]
+=================================== FAILURES ===================================
+__ test_three_actual_versions_keep_edit_continue_does_not_grant_future_source __
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_three_actual_versions_keep_edit_continue_does_not_grant_future_source(cases):
+        t=cases;card,v=conflict(t);partition(t,v,'THREE_WAY_MATERIAL')
+        assert not v['continuation']['coverage_satisfied'];refuse(t,body(v,'KEEP_AND_CONTINUE'))
+        v=note_read(t,card);r=write(t,body(v,'EDIT_NOTE',MANUAL+'\n'+INCOMING));assert r.status_code==200,r.text
+        v=note_read(t,card);assert v['continuation']['coverage_satisfied'] and v['continuation']['can_keep_and_continue']
+        r=write(t,body(v,'KEEP_AND_CONTINUE'));assert r.status_code==200,r.text
+        after=r.json()['current'];assert after['state']=='CONTINUED_AWAITING_RECHECK'
+        assert after['note']['origin']=='MANUAL' and after['note']['text']==MANUAL+'\n'+INCOMING
+        assert after['note']['source_ref']['id']==v['source']['id']
+        assert after['note']['verified_package_sha256'] is None
+        old_request=body(note_read(t,card),'KEEP_AND_CONTINUE')
+>       change_material(t,THIRD);card=import_refresh(t);v=note_read(t,card)
+        ^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/manual-continuation-independent/test_manual_content_continuation_independent.py:181: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+text = '要求：改用合成补正清单。\n核验：继续走原审核确认流程。'
+
+    def change_material(t, text):
+        p=preparation_read(t['f'],t['rows']['A']).json()['preparation']
+        p=dict(p,preparation_id=t['rows']['A']['preparation_id'])
+        if p['state']!='DRAFT':
+            response=prepare(t['f'],p,'REOPEN',reason='SYNTHETIC new actual source revision')
+>           assert response.status_code==200,response.text
+E           AssertionError: {"detail":"reviewed preparation required for reopen"}
+E           assert 409 == 200
+E            +  where 409 = <Response [409 Conflict]>.status_code
+
+.runtime/manual-continuation-independent/test_manual_content_continuation_independent.py:113: AssertionError
+_ test_literal_source_lines_require_counts_original_whitespace_and_case[  EXACT  \nSECOND-manual\nEXACT\nSECOND-expected1] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+source = '  EXACT  \nSECOND', manual = 'manual\nEXACT\nSECOND'
+expected = {'  EXACT  ': (1, 0, 1), 'SECOND': (1, 1, 0)}
+
+    @pytest.mark.parametrize('source,manual,expected',[
+        ('DUP\nDUP','manual\nDUP',{'DUP':(2,1,1)}),
+        ('  EXACT  \nSECOND','manual\nEXACT\nSECOND',{'  EXACT  ':(1,0,1),'SECOND':(1,1,0)}),
+        ('CaseSensitive','manual\ncasesensitive',{'CaseSensitive':(1,0,1)}),
+    ])
+    def test_literal_source_lines_require_counts_original_whitespace_and_case(cases,source,manual,expected):
+>       t=cases;card,v=conflict(t,text=manual,source=source);c=v['continuation']
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/manual-continuation-independent/test_manual_content_continuation_independent.py:201: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+text = 'manual\nEXACT\nSECOND', source = '  EXACT  \nSECOND', locked = False
+
+    def conflict(t, text=MANUAL, source=INCOMING, locked=False):
+        initial=note_read(t);r=write(t,body(initial,'EDIT_NOTE',text));assert r.status_code==200,r.text
+        if locked:assert lock(t['f'],t['rows']['A'],'P1').status_code==200
+        change_material(t,source);card=import_refresh(t);view=note_read(t,card)
+>       assert view['note']['text']==text and view['source']['text']==source
+E       AssertionError: assert ('manual\nEXACT\nSECOND' == 'manual\nEXACT\nSECOND'
+E         
+E           manual
+E           EXACT
+E           SECOND and 'EXACT  \nSECOND' == '  EXACT  \nSECOND'
+E         
+E         -   EXACT  
+E         ? --
+E         + EXACT  
+E           SECOND)
+
+.runtime/manual-continuation-independent/test_manual_content_continuation_independent.py:133: AssertionError
+=============================== warnings summary ===============================
+.runtime/manual-continuation-independent/test_manual_content_continuation_independent.py::test_three_actual_versions_keep_edit_continue_does_not_grant_future_source
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+.runtime/manual-continuation-independent/test_manual_content_continuation_independent.py::test_three_actual_versions_keep_edit_continue_does_not_grant_future_source
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/manual-continuation-independent/test_manual_content_continuation_independent.py::test_three_actual_versions_keep_edit_continue_does_not_grant_future_source
+FAILED .runtime/manual-continuation-independent/test_manual_content_continuation_independent.py::test_literal_source_lines_require_counts_original_whitespace_and_case[  EXACT  \nSECOND-manual\nEXACT\nSECOND-expected1]
+2 failed, 2 passed, 21 deselected, 2 warnings in 95.00s (0:01:35)
