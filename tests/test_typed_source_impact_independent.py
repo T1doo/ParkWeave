@@ -169,7 +169,8 @@ def test_literal_actual_source_partitions_and_stable_node_ids(typed_http,scenari
     elif scenario == 'receipt':
         s=receipt_command(f,s,'REOPEN').json();s=receipt_command(f,s,'SUBMIT',text='SYNTHETIC independent typed actual receipt v3').json();ack=receipt_command(f,s,'ACKNOWLEDGE');assert ack.status_code == 200,ack.text
     else:
-        response=lifecycle_command(f,p,lifecycle_read(f,p).json(),'REVALIDATE');assert response.status_code == 200,response.text
+        for action in ('CLOSE_LOCAL_RECORD','REOPEN','REVALIDATE'):
+            response=lifecycle_command(f,p,lifecycle_read(f,p).json(),action);assert response.status_code == 200,response.text
     before=snapshot(f); value,graph=checked_graph(source_impact(f,p),p,original)
     assert_partition(graph,original,scenario);assert graph['unknown_scope'] is None
     assert graph['changed_node_ids'] and {node['id'] for node in old['nodes']} == {node['id'] for node in graph['nodes']}
