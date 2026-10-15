@@ -1,0 +1,114 @@
+/workspace/ParkWeave/.runtime/note-template-carry-review/source-wip-v1/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+  class Command(BaseModel):
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- /workspace/ParkWeave/.venv/bin/python
+cachedir: /tmp/note-carry-review-wip-cache-v2
+rootdir: /workspace/ParkWeave
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.12.3
+collecting ... collected 2 items
+
+.runtime/note-template-carry-review/wip-probes-v2/test_carry_review.py::test_actual_success_receipt_strict_epoch_types_and_frozen_history FAILED [ 50%]
+.runtime/note-template-carry-review/wip-probes-v2/test_carry_review.py::test_real_v2_material_continue_first_carry_then_edit_reconfirm_next_hop FAILED [100%]
+
+=================================== FAILURES ===================================
+______ test_actual_success_receipt_strict_epoch_types_and_frozen_history _______
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_actual_success_receipt_strict_epoch_types_and_frozen_history(upgrade_case):
+        u=upgrade_case;row,p,target=ready(u);_,body=request(u,row,target)
+        response=apply(u,row,body);assert response.status_code==200,response.text
+        with u['f'][1].connect() as c:parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()
+        assert plans._recovery_proofs(parent)
+        results=[]
+        for label,slot,value in [('current_bool','current_epochs',True),('current_float','current_epochs',1.0),('captured_bool','captured_epochs',True),('captured_float','captured_epochs',1.0)]:
+            candidate=deepcopy(parent);plan=candidate['service_case_plan'];event=plan['events'][-1];patch=event['template_upgrade'];proof=patch['note_carry']
+            assert proof['materials'][slot][0]['version']==1
+            proof['materials'][slot][0]['version']=value
+            proof['sha256']=migration.sha({k:v for k,v in proof.items() if k!='sha256'})
+            patch['request']['expected_note_carry_sha256']=proof['sha256']
+            event['fingerprint']=migration.fingerprint(row['instance_id'],migration.NoteCarryApply.model_validate(patch['request']))
+            try:plans._recovery_proofs(candidate)
+            except Conflict:rejected=True
+            else:rejected=False
+            results.append(dict(case=label,expected_rejected=True,actual_rejected=rejected))
+        record('historical-epoch-type-matrix',dict(actual_successful_PG_API_setup=True,pure_mutation_checks=results,no_PG_tampering=True))
+>       assert all(r['actual_rejected'] for r in results),results
+E       AssertionError: [{'case': 'current_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'current_float', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_float', 'expected_rejected': True, 'actual_rejected': False}]
+E       assert False
+E        +  where False = all(<generator object test_actual_success_receipt_strict_epoch_types_and_frozen_history.<locals>.<genexpr> at 0x7f5e7ae64e10>)
+
+.runtime/note-template-carry-review/wip-probes-v2/test_carry_review.py:49: AssertionError
+___ test_real_v2_material_continue_first_carry_then_edit_reconfirm_next_hop ____
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_real_v2_material_continue_first_carry_then_edit_reconfirm_next_hop(upgrade_case):
+        from test_case_resources import get as resource_read,post as resource_link
+        from test_service_dispatches import offer,command as dispatch_command
+        from test_case_lifecycle import read as local_read,act as local_command
+        u=upgrade_case;row,p,target=ready(u);f=u['f'];manual=next(iter(stored(u,row)['owner_amendments'].values()))['text']
+        # The fixture's new publication does not affect actual material commands.
+        current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+        reopened=prepare(f,current,'REOPEN',reason='SYNTHETIC real source change before v2 carry');assert reopened.status_code==200,reopened.text
+        incoming='SYNTHETIC review literal exact condition\n  preserve actual source spaces  '
+        current,card=changed(f,reopened.json(),text=incoming)
+        v=note_read(f,p,card);assert v.status_code==200,v.text;v=v.json()
+        merged=manual+'\n'+v['source']['text']
+        result=note_send(f,p,v,'MERGE_NOTE',merged);assert result.status_code==200,result.text
+        assert result.json()['receipt']['plan_note']['version']==2
+        source=preview(f,p,card);assert source.status_code==200 and source.json()['can_adopt'],source.text
+        adopted=adopt(f,p,source.json()['adoption']);assert adopted.status_code==201,adopted.text
+        current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+        reviewed=prepare(f,current,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC actual replacement review');assert reviewed.status_code==200,reviewed.text
+        confirmed=prepare(f,reviewed.json(),'CONFIRM',reason='SYNTHETIC owner replacement confirmed');assert confirmed.status_code==200,confirmed.text
+        verified(f,p,'P1')
+        link=resource_read(f,p).json();old=link['current']['record']
+        current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+        linked=resource_link(f,current,dict(id=old['combination_id']),revision=link['link_revision']);assert linked.status_code==201,linked.text
+        verified(f,p,'P2')
+        with f[1].connect() as c:dispatch_id=str(c.execute('SELECT id FROM service_dispatches WHERE preparation_id=%s',(row['preparation_id'],)).fetchone()['id'])
+        dispatch=f[3].get('/api/service-dispatches/'+dispatch_id,headers=headers(f[2],'prep-specialist-fixture-a'));assert dispatch.status_code==200,dispatch.text
+        current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id']);value=dispatch.json()
+        offered=offer(f,current,revision=value['revision'],recovery_receipt_step_id=value['recovery_receipt_step_id'])[0];assert offered.status_code==201,offered.text
+        accepted=dispatch_command(f,offered.json(),'ACCEPT');assert accepted.status_code==200,accepted.text
+        verified(f,p,'P3')
+        receipt=f[3].get('/api/executor-receipts/'+accepted.json()['receipt_step_id'],headers=headers(f[2],'executor-a'));assert receipt.status_code==200,receipt.text
+        submitted=receipt_act(f,receipt.json(),'SUBMIT');assert submitted.status_code==200,submitted.text
+        acknowledged=receipt_act(f,submitted.json(),'ACKNOWLEDGE');assert acknowledged.status_code==200,acknowledged.text
+        verified(f,p,'P4')
+        local=local_read(f,p);assert local.status_code==200,local.text
+        rechecked=local_command(f,p,local.json(),'REVALIDATE');assert rechecked.status_code==200,rechecked.text
+        verified(f,p,'P5')
+        before=deepcopy(stored(u,row));business=facts(u);v,body=request(u,row,target);assert v['application']['note_carry']['eligible'],v['application']['note_carry']
+        key=uuid4().hex;first=apply(u,row,body,key);assert first.status_code==200,first.text
+        assert stored(u,row)['owner_amendments']==before['owner_amendments'] and facts(u)==business
+        edit(f,p,merged+'\nSYNTHETIC later owner note')
+        # Original material continuation must be possible through the real current
+        # card. The upgrade must never waive this existing note re-confirmation.
+        value=note_read(f,p,card);assert value.status_code==200,value.text;value=value.json()
+        record('v2-post-carry-edit-view',value)
+>       assert 'KEEP_AND_CONTINUE' in value['action_requests'],value
+E       AssertionError: {'continuation': None, 'scope': 'OWNER_PLAN_SOURCE_CONFLICT', 'schema': 1, 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', ...}
+E       assert 'KEEP_AND_CONTINUE' in {}
+
+.runtime/note-template-carry-review/wip-probes-v2/test_carry_review.py:97: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/note-template-carry-review/wip-probes-v2/test_carry_review.py::test_actual_success_receipt_strict_epoch_types_and_frozen_history
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/ParkWeave/.runtime/note-template-carry-review/wip-probes-v2/results.xml -
+=========================== short test summary info ============================
+FAILED .runtime/note-template-carry-review/wip-probes-v2/test_carry_review.py::test_actual_success_receipt_strict_epoch_types_and_frozen_history - AssertionError: [{'case': 'current_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'current_float', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_float', 'expected_rejected': True, 'actual_rejected': False}]
+assert False
+ +  where False = all(<generator object test_actual_success_receipt_strict_epoch_types_and_frozen_history.<locals>.<genexpr> at 0x7f5e7ae64e10>)
+FAILED .runtime/note-template-carry-review/wip-probes-v2/test_carry_review.py::test_real_v2_material_continue_first_carry_then_edit_reconfirm_next_hop - AssertionError: {'continuation': None, 'scope': 'OWNER_PLAN_SOURCE_CONFLICT', 'schema': 1, 'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', ...}
+assert 'KEEP_AND_CONTINUE' in {}
+======================== 2 failed, 2 warnings in 24.79s ========================

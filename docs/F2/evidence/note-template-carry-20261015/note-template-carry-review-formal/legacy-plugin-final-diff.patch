@@ -1,0 +1,35 @@
+--- prepared v1 plugin
++++ frozen-window plugin
+@@ -6,6 +6,8 @@
+     destination = Path(os.environ['LEGACY_ARTIFACT_DESTINATION'])
+     config._common_original_open = Path.open
+     config._common_original_mkdir = Path.mkdir
++    config._carry_original_exists = Path.exists
++    config._carry_original_chmod = Path.chmod
+     roots = [root / '.runtime' / name for name in json.loads((root / '.runtime/note-template-carry-final/artifact-legacy-roots.json').read_text())]
+     records = []
+     seen = set()
+@@ -42,6 +44,16 @@
+         # All target parents are new artifact preparation, not business state.
+         record(path, target, 'mkdir')
+         return config._common_original_mkdir(target, parents=True, exist_ok=True)
++    def exists(path):
++        target = replacement(path)
++        return config._carry_original_exists(target if target is not None else path)
++    def chmod(path, mode, *a, **kw):
++        target = replacement(path)
++        if target is not None:
++            record(path, target, "chmod")
++        return config._carry_original_chmod(target if target is not None else path, mode, *a, **kw)
++    Path.exists = exists
++    Path.chmod = chmod
+     Path.open = opened
+     Path.mkdir = mkdir
+ 
+@@ -49,3 +61,6 @@
+ def pytest_unconfigure(config):
+     Path.open = config._common_original_open
+     Path.mkdir = config._common_original_mkdir
++
++    Path.exists = config._carry_original_exists
++    Path.chmod = config._carry_original_chmod

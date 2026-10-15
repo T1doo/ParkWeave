@@ -1,0 +1,22 @@
+{
+  "raw_full_root2_counts": {
+    "PASS": 788,
+    "FAIL": 1,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "source_sha": "f686adafe3cec9b2820c10fada51ef2f57a559a6",
+  "failure": [
+    {
+      "node": "test_resource_window_expiry_during_actual_last_source_row_lock_wait",
+      "message_first_line": "AssertionError: assert 409 == 200",
+      "location_lines": [
+        ">    assert local_act(f,p,local_read(f,p).json(),'REVALIDATE').status_code==200;verified(f,p,'P5');assert get(f,p).json()['state']=='LOCAL_OUTPUTS_VERIFIED';before=snapshot(f)",
+        "tests/test_case_goal_results.py:148: AssertionError"
+      ]
+    }
+  ],
+  "classification": "Precondition :148 output already UNVERIFIED; target last-row-lock scenario :149+ not reached. No product/test/clock/assertion modifications; one complete44 module retry deferred until all other pytest stop.",
+  "root2_other24_complete_modules_eligible_nodes": 745,
+  "entire_failed_module44_excluded_from_qualified_union": true
+}

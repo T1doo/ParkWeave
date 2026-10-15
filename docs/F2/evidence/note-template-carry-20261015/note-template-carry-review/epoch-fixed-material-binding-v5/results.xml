@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="4.168" timestamp="2026-10-15T14:07:52.743364+00:00" hostname="87a5e83cf057"><testcase classname=".runtime.note-template-carry-review.epoch-fixed-material-binding-v5.test_carry_review" name="test_actual_success_receipt_strict_epoch_types_and_frozen_history" time="3.988"><failure message="AssertionError: [{'case': 'current_need_summary_forged', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'current_outline_kind_forged', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_need_summary_forged', 'expected_rejected': True, 'actual_rejected': True}]&#10;assert False&#10; +  where False = all(&lt;generator object test_actual_success_receipt_strict_epoch_types_and_frozen_history.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f2d81a9f2a0&gt;)">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_actual_success_receipt_strict_epoch_types_and_frozen_history(upgrade_case):
+        u=upgrade_case;row,p,target=ready(u);_,body=request(u,row,target)
+        response=apply(u,row,body);assert response.status_code==200,response.text
+        with u['f'][1].connect() as c:parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()
+        assert plans._recovery_proofs(parent)
+        results=[]
+        for label in ['current_need_summary_forged','current_outline_kind_forged','captured_need_summary_forged']:
+            candidate=deepcopy(parent);plan=candidate['service_case_plan'];event=plan['events'][-1];patch=event['template_upgrade'];proof=patch['note_carry']
+            if label=='current_need_summary_forged':
+                target=next(m for m in proof['materials']['current'] if m['slot']=='need_summary')
+                target['text']='SYNTHETIC arbitrary current summary that was never used by actual P1 VERIFY'
+                from parkweave.store import digest
+                target['source_sha256']=digest(target['text'])
+                epoch=next(m for m in proof['materials']['current_epochs'] if m['slot']=='need_summary');epoch['source_sha256']=target['source_sha256']
+            elif label=='current_outline_kind_forged':
+                target=next(m for m in proof['materials']['current'] if m['slot']=='material_outline')
+                target['source_label']='SYNTHETIC different outline label never present in actual source'
+            else:
+                target=proof['materials']['captured_epochs'][0];target['source_sha256']='a'*64
+            proof['sha256']=migration.sha({k:v for k,v in proof.items() if k!='sha256'})
+            patch['request']['expected_note_carry_sha256']=proof['sha256']
+            event['fingerprint']=migration.fingerprint(row['instance_id'],migration.NoteCarryApply.model_validate(patch['request']))
+            try:plans._recovery_proofs(candidate)
+            except Conflict:rejected=True
+            else:rejected=False
+            results.append(dict(case=label,expected_rejected=True,actual_rejected=rejected))
+        record('historical-material-binding-matrix',dict(actual_successful_PG_API_setup=True,pure_mutation_checks=results,no_PG_tampering=True))
+&gt;       assert all(r['actual_rejected'] for r in results),results
+E       AssertionError: [{'case': 'current_need_summary_forged', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'current_outline_kind_forged', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_need_summary_forged', 'expected_rejected': True, 'actual_rejected': True}]
+E       assert False
+E        +  where False = all(&lt;generator object test_actual_success_receipt_strict_epoch_types_and_frozen_history.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f2d81a9f2a0&gt;)
+
+.runtime/note-template-carry-review/epoch-fixed-material-binding-v5/test_carry_review.py:58: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="9.166" timestamp="2026-10-15T15:01:08.195230+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_case_goal_results" name="test_resource_window_expiry_during_actual_last_source_row_lock_wait" time="8.795"><failure message="AssertionError: assert 'UNVERIFIED' == 'LOCAL_OUTPUTS_VERIFIED'&#10;  &#10;  - LOCAL_OUTPUTS_VERIFIED&#10;  + UNVERIFIED">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_resource_window_expiry_during_actual_last_source_row_lock_wait(link_fixture):
+     import time
+     f=link_fixture;p,g,d,s=complete(f,local=True)
+     with f[1].connect() as c:c.execute("UPDATE synthetic_resource_holds SET starts_at=clock_timestamp()-interval '1 minute',ends_at=clock_timestamp()+interval '2 seconds' WHERE id IN (SELECT hold_id FROM synthetic_resource_combination_members WHERE combination_id=%s)",(g['id'],))
+     for a in ('P2','P3','P4'):verified(f,p,a)
+&gt;    assert local_act(f,p,local_read(f,p).json(),'REVALIDATE').status_code==200;verified(f,p,'P5');assert get(f,p).json()['state']=='LOCAL_OUTPUTS_VERIFIED';before=snapshot(f)
+                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    AssertionError: assert 'UNVERIFIED' == 'LOCAL_OUTPUTS_VERIFIED'
+E      
+E      - LOCAL_OUTPUTS_VERIFIED
+E      + UNVERIFIED
+
+tests/test_case_goal_results.py:148: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,135 @@
+{
+  "base_sha": "ed5d32b6bbcf261d802fe579a2daab16330a5879",
+  "source_and_test_writes_stopped": true,
+  "source_files": {
+    "src/parkweave/note_template_carry.py": "dd379f99b5a7e13106d1b49f93fac0cdc862d6a2e885f3acc181b9d66a0f7312",
+    "src/parkweave/template_migration.py": "511d9a3c46de62ccd2b8175aa64dc572d83a83f160a75b4986cfa0c950eda24e",
+    "src/parkweave/template_upgrade.py": "901054f04b370eac2238e0c9e19b6512b7c7bded3de682405c2397a7137e8db9",
+    "tests/test_note_template_carry.py": "bb29d6031d56254f49e15f72d48fe3ac6aac19cc57cb53f7a1761b3bae07be66",
+    "tests/test_note_template_carry_epoch_types.py": "9a404c3960c7f97e759ab8af465874ebb5e27ef2338e389e122f7b49d46a493b"
+  },
+  "shared_or_git_writes": false,
+  "first_manifest": "/workspace/ParkWeave/.runtime/note-template-carry-backend/candidate-v1.json",
+  "delta_manifest": "/workspace/ParkWeave/.runtime/note-template-carry-backend/candidate-v2-final.json",
+  "windows": [
+    {
+      "name": "smoke",
+      "log": ".runtime/note-template-carry-backend/smoke.log",
+      "junit": ".runtime/note-template-carry-backend/smoke.xml",
+      "collected_junit_cases": 0,
+      "pass_count": 0,
+      "failure_count": 0,
+      "error_count": 0,
+      "junit_seconds": 0.017,
+      "failed_nodes": [],
+      "classification": "SETUP_PATH_ERROR_NO_PRODUCT_EXECUTION"
+    },
+    {
+      "name": "smoke2",
+      "log": ".runtime/note-template-carry-backend/smoke2.log",
+      "junit": ".runtime/note-template-carry-backend/smoke2.xml",
+      "collected_junit_cases": 2,
+      "pass_count": 2,
+      "failure_count": 0,
+      "error_count": 0,
+      "junit_seconds": 10.054,
+      "failed_nodes": [],
+      "classification": "PASS"
+    },
+    {
+      "name": "development1",
+      "log": ".runtime/note-template-carry-backend/development1.log",
+      "junit": ".runtime/note-template-carry-backend/development1.xml",
+      "collected_junit_cases": 12,
+      "pass_count": 12,
+      "failure_count": 0,
+      "error_count": 0,
+      "junit_seconds": 30.994,
+      "failed_nodes": [],
+      "classification": "PASS"
+    },
+    {
+      "name": "compatibility1",
+      "log": ".runtime/note-template-carry-backend/compatibility1.log",
+      "junit": ".runtime/note-template-carry-backend/compatibility1.xml",
+      "collected_junit_cases": 52,
+      "pass_count": 51,
+      "failure_count": 1,
+      "error_count": 0,
+      "junit_seconds": 226.871,
+      "failed_nodes": [
+        ".runtime.note-template-carry-backend.private-worktree.tests.test_template_migration_independent::test_independent_old_code_read_never_reverses_already_happened_business"
+      ],
+      "classification": "PRIVATE_CWD_ENV_FAILURE_WITH_51_PASS"
+    },
+    {
+      "name": "epoch-red",
+      "log": ".runtime/note-template-carry-backend/epoch-red.log",
+      "junit": ".runtime/note-template-carry-backend/epoch-red.xml",
+      "collected_junit_cases": 4,
+      "pass_count": 0,
+      "failure_count": 4,
+      "error_count": 0,
+      "junit_seconds": 30.326,
+      "failed_nodes": [
+        ".runtime.note-template-carry-backend.private-worktree.tests.test_note_template_carry_epoch_types::test_rehashed_nested_epoch_version_types_are_rejected_by_history[bool-current_epochs]",
+        ".runtime.note-template-carry-backend.private-worktree.tests.test_note_template_carry_epoch_types::test_rehashed_nested_epoch_version_types_are_rejected_by_history[bool-captured_epochs]",
+        ".runtime.note-template-carry-backend.private-worktree.tests.test_note_template_carry_epoch_types::test_rehashed_nested_epoch_version_types_are_rejected_by_history[float-current_epochs]",
+        ".runtime.note-template-carry-backend.private-worktree.tests.test_note_template_carry_epoch_types::test_rehashed_nested_epoch_version_types_are_rejected_by_history[float-captured_epochs]"
+      ],
+      "classification": "EXPECTED_PRODUCT_RED_HISTORICAL_TYPE_ALIAS"
+    },
+    {
+      "name": "development2",
+      "log": ".runtime/note-template-carry-backend/development2.log",
+      "junit": ".runtime/note-template-carry-backend/development2.xml",
+      "collected_junit_cases": 16,
+      "pass_count": 16,
+      "failure_count": 0,
+      "error_count": 0,
+      "junit_seconds": 61.549,
+      "failed_nodes": [],
+      "classification": "PASS"
+    },
+    {
+      "name": "git-target",
+      "log": ".runtime/note-template-carry-backend/git-target.log",
+      "junit": ".runtime/note-template-carry-backend/git-target.xml",
+      "collected_junit_cases": 1,
+      "pass_count": 1,
+      "failure_count": 0,
+      "error_count": 0,
+      "junit_seconds": 6.234,
+      "failed_nodes": [],
+      "classification": "PASS"
+    }
+  ],
+  "do_not_sum_overlapping_development_windows": true,
+  "history_type_defect": {
+    "red": "epoch-red.xml: four actual owned-PG/API historical false accepts",
+    "fix": "New helper only: type(version) is int plus canonical exact reference comparison",
+    "green": "development2.xml: all16 PASS; current/captured bool/float original goal/read/coldGET all refuse"
+  },
+  "compatibility_environment": {
+    "cause": "Original git archive src path interpreted relative to nested private cwd; object exists",
+    "evidence": "compatibility1-git-archive-diagnosis.json",
+    "bounded_retry": "git-target.xml:1 PASS; original test unchanged, private product imports, repo cwd and fixed-artifact-only redirect incl exists/chmod"
+  },
+  "scope": [
+    "Single P1 MANUAL note, same Case/scope/family and exact same structure only",
+    "Fresh carry confirmation for target template-source changes; original five VERIFYs required",
+    "Original note/body/event_id/revision/source_package and old events untouched",
+    "No migration of SOURCE notes, structure-with-note or nonlocal replacement"
+  ],
+  "remaining": [
+    "Root integration/UI actual HTTP+PG independent validation",
+    "One frozen SHA full affected regression, review, normal dev-branch push/archive"
+  ],
+  "not_run": [
+    "Windows",
+    "Real browser",
+    "Formal business AT",
+    "Real model",
+    "Production"
+  ]
+}

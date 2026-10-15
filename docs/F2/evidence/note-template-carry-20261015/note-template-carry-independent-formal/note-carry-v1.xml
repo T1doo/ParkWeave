@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="18" time="483.407" timestamp="2026-10-15T14:19:35.800587+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_note_template_carry_independent" name="test_literal_title_or_template_source_carry_and_original_verification[1]" time="28.728" /><testcase classname="tests.test_note_template_carry_independent" name="test_literal_title_or_template_source_carry_and_original_verification[2]" time="36.899" /><testcase classname="tests.test_note_template_carry_independent" name="test_original_routes_never_silently_carry_manual_note[apply]" time="23.276" /><testcase classname="tests.test_note_template_carry_independent" name="test_original_routes_never_silently_carry_manual_note[apply-structure]" time="22.426" /><testcase classname="tests.test_note_template_carry_independent" name="test_new_confirmation_is_strict_and_required[False]" time="24.543" /><testcase classname="tests.test_note_template_carry_independent" name="test_new_confirmation_is_strict_and_required[1]" time="24.133" /><testcase classname="tests.test_note_template_carry_independent" name="test_new_confirmation_is_strict_and_required[None]" time="24.831" /><testcase classname="tests.test_note_template_carry_independent" name="test_affected_lock_requires_original_unlock_and_fresh_carry" time="32.099" /><testcase classname="tests.test_note_template_carry_independent" name="test_carry_owner_and_tenant_boundaries[fixture-b]" time="26.455" /><testcase classname="tests.test_note_template_carry_independent" name="test_carry_owner_and_tenant_boundaries[fixture-c]" time="23.290" /><testcase classname="tests.test_note_template_carry_independent" name="test_current_authority_precedes_original_receipt[READ]" time="24.245" /><testcase classname="tests.test_note_template_carry_independent" name="test_current_authority_precedes_original_receipt[PREPARE]" time="23.192"><failure message="psycopg.errors.UndefinedColumn: column &quot;revision&quot; does not exist&#10;LINE 1: ...DATE preparation_grants SET active=false,revision=revision+1...&#10;                                                             ^">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+capability = 'PREPARE'
+
+    @pytest.mark.parametrize('capability',['READ','PREPARE','EXECUTE'])
+    def test_current_authority_precedes_original_receipt(carry,capability):
+        t=carry;_,d=request(t,target(t));key=uuid4().hex;r=apply(t,d,key=key);assert r.status_code==200,r.text
+        with t['f'][1].connect() as c:
+            t['f'][1].lock_principal(c,'fixture-a',exclusive=True)
+            table='preparation_grants' if capability=='PREPARE' else 'capability_grants'
+&gt;           c.execute('UPDATE '+table+" SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND capability=%s",(capability,))
+
+tests/test_note_template_carry_independent.py:214: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f4de16de180&gt;
+query = "UPDATE preparation_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND capability=%s"
+params = ('PREPARE',), prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.UndefinedColumn: column "revision" does not exist
+E           LINE 1: ...DATE preparation_grants SET active=false,revision=revision+1...
+E                                                                        ^
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: UndefinedColumn</failure></testcase><testcase classname="tests.test_note_template_carry_independent" name="test_current_authority_precedes_original_receipt[EXECUTE]" time="29.346"><failure message="AssertionError: {&quot;detail&quot;:&quot;record unavailable or authorization denied&quot;}&#10;assert (403 == 200)&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+capability = 'EXECUTE'
+
+    @pytest.mark.parametrize('capability',['READ','PREPARE','EXECUTE'])
+    def test_current_authority_precedes_original_receipt(carry,capability):
+        t=carry;_,d=request(t,target(t));key=uuid4().hex;r=apply(t,d,key=key);assert r.status_code==200,r.text
+        with t['f'][1].connect() as c:
+            t['f'][1].lock_principal(c,'fixture-a',exclusive=True)
+            table='preparation_grants' if capability=='PREPARE' else 'capability_grants'
+            c.execute('UPDATE '+table+" SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND capability=%s",(capability,))
+        refused(t,d,status=403,key=key);before=full_snapshot(t);r=recovery(t,key)
+&gt;       if capability=='EXECUTE':assert r.status_code==200 and r.json()['status']=='COMMITTED',r.text
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"record unavailable or authorization denied"}
+E       assert (403 == 200)
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+
+tests/test_note_template_carry_independent.py:216: AssertionError</failure></testcase><testcase classname="tests.test_note_template_carry_independent" name="test_owned_pg_aba_rejects_same_visible_state[material]" time="34.202" /><testcase classname="tests.test_note_template_carry_independent" name="test_owned_pg_aba_rejects_same_visible_state[note]" time="37.381" /><testcase classname="tests.test_note_template_carry_independent" name="test_owned_pg_aba_rejects_same_visible_state[parent]" time="29.218" /><testcase classname="tests.test_note_template_carry_independent" name="test_owned_pg_aba_rejects_same_visible_state[action_grant]" time="18.047" /><testcase classname="tests.test_note_template_carry_independent" name="test_current_target_head_cannot_reuse_old_carry[withdraw]" time="15.725" /></testsuite></testsuites>

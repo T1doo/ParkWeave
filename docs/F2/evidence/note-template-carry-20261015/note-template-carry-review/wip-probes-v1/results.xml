@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="2" time="15.214" timestamp="2026-10-15T13:58:17.367570+00:00" hostname="87a5e83cf057"><testcase classname=".runtime.note-template-carry-review.wip-probes-v1.test_carry_review" name="test_actual_success_receipt_strict_epoch_types_and_frozen_history" time="7.054"><failure message="AssertionError: [{'case': 'current_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'current_float', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_float', 'expected_rejected': True, 'actual_rejected': False}]&#10;assert False&#10; +  where False = all(&lt;generator object test_actual_success_receipt_strict_epoch_types_and_frozen_history.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f648e155be0&gt;)">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_actual_success_receipt_strict_epoch_types_and_frozen_history(upgrade_case):
+        u=upgrade_case;row,p,target=ready(u);_,body=request(u,row,target)
+        response=apply(u,row,body);assert response.status_code==200,response.text
+        with u['f'][1].connect() as c:parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()
+        assert plans._recovery_proofs(parent)
+        results=[]
+        for label,slot,value in [('current_bool','current_epochs',True),('current_float','current_epochs',1.0),('captured_bool','captured_epochs',True),('captured_float','captured_epochs',1.0)]:
+            candidate=deepcopy(parent);plan=candidate['service_case_plan'];event=plan['events'][-1];patch=event['template_upgrade'];proof=patch['note_carry']
+            assert proof['materials'][slot][0]['version']==1
+            proof['materials'][slot][0]['version']=value
+            proof['sha256']=migration.sha({k:v for k,v in proof.items() if k!='sha256'})
+            patch['request']['expected_note_carry_sha256']=proof['sha256']
+            event['fingerprint']=migration.fingerprint(row['instance_id'],migration.NoteCarryApply.model_validate(patch['request']))
+            try:plans._recovery_proofs(candidate)
+            except Conflict:rejected=True
+            else:rejected=False
+            results.append(dict(case=label,expected_rejected=True,actual_rejected=rejected))
+        record('historical-epoch-type-matrix',dict(actual_successful_PG_API_setup=True,pure_mutation_checks=results,no_PG_tampering=True))
+&gt;       assert all(r['actual_rejected'] for r in results),results
+E       AssertionError: [{'case': 'current_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'current_float', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_float', 'expected_rejected': True, 'actual_rejected': False}]
+E       assert False
+E        +  where False = all(&lt;generator object test_actual_success_receipt_strict_epoch_types_and_frozen_history.&lt;locals&gt;.&lt;genexpr&gt; at 0x7f648e155be0&gt;)
+
+.runtime/note-template-carry-review/wip-probes-v1/test_carry_review.py:49: AssertionError</failure></testcase><testcase classname=".runtime.note-template-carry-review.wip-probes-v1.test_carry_review" name="test_real_v2_material_continue_first_carry_then_edit_reconfirm_next_hop" time="7.340"><failure message="AssertionError: {&quot;scope&quot;:&quot;OWNER_PLAN_SOURCE_CONFLICT&quot;,&quot;schema&quot;:1,&quot;status&quot;:&quot;DEFINITIVELY_REJECTED&quot;,&quot;preparation_id&quot;:&quot;25ae8dcb-c799-4cf1-8f74-b622c32757ca&quot;,&quot;case_id&quot;:&quot;3879441e-abee-4f3f-ab66-dd764b947805&quot;,&quot;run_id&quot;:&quot;6ca6f92a-5dcc-4c41-a8ac-eb194828ba06&quot;,&quot;actor_ref&quot;:&quot;27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db&quot;,&quot;request_key&quot;:&quot;efffa4b8b1fe463ea0ead90d803c4bfa&quot;,&quot;fingerprint&quot;:&quot;c328c35a5ea83c8d54bb3534c8426c60faf81f2ca8614c6adf2d22a92620beb9&quot;,&quot;action&quot;:&quot;MERGE_NOTE&quot;,&quot;plan_id&quot;:&quot;756efd9e-4632-47e4-8a7d-be85570fa5cb&quot;,&quot;definitively_rejected&quot;:true,&quot;business_writes&quot;:false,&quot;automatically_replayed&quot;:false}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_real_v2_material_continue_first_carry_then_edit_reconfirm_next_hop(upgrade_case):
+        from test_case_resources import get as resource_read,post as resource_link
+        from test_service_dispatches import offer,command as dispatch_command
+        from test_case_lifecycle import read as local_read,act as local_command
+        u=upgrade_case;row,p,target=ready(u);f=u['f'];manual=next(iter(stored(u,row)['owner_amendments'].values()))['text']
+        # The fixture's new publication does not affect actual material commands.
+        current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+        reopened=prepare(f,current,'REOPEN',reason='SYNTHETIC real source change before v2 carry');assert reopened.status_code==200,reopened.text
+        incoming='SYNTHETIC review literal exact condition\n  preserve actual source spaces  '
+        current,card=changed(f,reopened.json(),text=incoming)
+        v=note_read(f,p,card);assert v.status_code==200,v.text;v=v.json()
+        merged=manual+'\n'+incoming
+&gt;       result=note_send(f,p,v,'MERGE_NOTE',merged);assert result.status_code==200,result.text
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"scope":"OWNER_PLAN_SOURCE_CONFLICT","schema":1,"status":"DEFINITIVELY_REJECTED","preparation_id":"25ae8dcb-c799-4cf1-8f74-b622c32757ca","case_id":"3879441e-abee-4f3f-ab66-dd764b947805","run_id":"6ca6f92a-5dcc-4c41-a8ac-eb194828ba06","actor_ref":"27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db","request_key":"efffa4b8b1fe463ea0ead90d803c4bfa","fingerprint":"c328c35a5ea83c8d54bb3534c8426c60faf81f2ca8614c6adf2d22a92620beb9","action":"MERGE_NOTE","plan_id":"756efd9e-4632-47e4-8a7d-be85570fa5cb","definitively_rejected":true,"business_writes":false,"automatically_replayed":false}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+.runtime/note-template-carry-review/wip-probes-v1/test_carry_review.py:64: AssertionError</failure></testcase></testsuite></testsuites>

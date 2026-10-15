@@ -1,0 +1,86 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- /workspace/ParkWeave/.venv/bin/python
+cachedir: /tmp/note-carry-review-wip-cache-v1
+rootdir: /workspace/ParkWeave
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.12.3
+collecting ... collected 2 items
+
+.runtime/note-template-carry-review/wip-probes-v1/test_carry_review.py::test_actual_success_receipt_strict_epoch_types_and_frozen_history FAILED [ 50%]
+.runtime/note-template-carry-review/wip-probes-v1/test_carry_review.py::test_real_v2_material_continue_first_carry_then_edit_reconfirm_next_hop FAILED [100%]
+
+=================================== FAILURES ===================================
+______ test_actual_success_receipt_strict_epoch_types_and_frozen_history _______
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_actual_success_receipt_strict_epoch_types_and_frozen_history(upgrade_case):
+        u=upgrade_case;row,p,target=ready(u);_,body=request(u,row,target)
+        response=apply(u,row,body);assert response.status_code==200,response.text
+        with u['f'][1].connect() as c:parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()
+        assert plans._recovery_proofs(parent)
+        results=[]
+        for label,slot,value in [('current_bool','current_epochs',True),('current_float','current_epochs',1.0),('captured_bool','captured_epochs',True),('captured_float','captured_epochs',1.0)]:
+            candidate=deepcopy(parent);plan=candidate['service_case_plan'];event=plan['events'][-1];patch=event['template_upgrade'];proof=patch['note_carry']
+            assert proof['materials'][slot][0]['version']==1
+            proof['materials'][slot][0]['version']=value
+            proof['sha256']=migration.sha({k:v for k,v in proof.items() if k!='sha256'})
+            patch['request']['expected_note_carry_sha256']=proof['sha256']
+            event['fingerprint']=migration.fingerprint(row['instance_id'],migration.NoteCarryApply.model_validate(patch['request']))
+            try:plans._recovery_proofs(candidate)
+            except Conflict:rejected=True
+            else:rejected=False
+            results.append(dict(case=label,expected_rejected=True,actual_rejected=rejected))
+        record('historical-epoch-type-matrix',dict(actual_successful_PG_API_setup=True,pure_mutation_checks=results,no_PG_tampering=True))
+>       assert all(r['actual_rejected'] for r in results),results
+E       AssertionError: [{'case': 'current_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'current_float', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_float', 'expected_rejected': True, 'actual_rejected': False}]
+E       assert False
+E        +  where False = all(<generator object test_actual_success_receipt_strict_epoch_types_and_frozen_history.<locals>.<genexpr> at 0x7f648e155be0>)
+
+.runtime/note-template-carry-review/wip-probes-v1/test_carry_review.py:49: AssertionError
+___ test_real_v2_material_continue_first_carry_then_edit_reconfirm_next_hop ____
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_real_v2_material_continue_first_carry_then_edit_reconfirm_next_hop(upgrade_case):
+        from test_case_resources import get as resource_read,post as resource_link
+        from test_service_dispatches import offer,command as dispatch_command
+        from test_case_lifecycle import read as local_read,act as local_command
+        u=upgrade_case;row,p,target=ready(u);f=u['f'];manual=next(iter(stored(u,row)['owner_amendments'].values()))['text']
+        # The fixture's new publication does not affect actual material commands.
+        current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+        reopened=prepare(f,current,'REOPEN',reason='SYNTHETIC real source change before v2 carry');assert reopened.status_code==200,reopened.text
+        incoming='SYNTHETIC review literal exact condition\n  preserve actual source spaces  '
+        current,card=changed(f,reopened.json(),text=incoming)
+        v=note_read(f,p,card);assert v.status_code==200,v.text;v=v.json()
+        merged=manual+'\n'+incoming
+>       result=note_send(f,p,v,'MERGE_NOTE',merged);assert result.status_code==200,result.text
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"scope":"OWNER_PLAN_SOURCE_CONFLICT","schema":1,"status":"DEFINITIVELY_REJECTED","preparation_id":"25ae8dcb-c799-4cf1-8f74-b622c32757ca","case_id":"3879441e-abee-4f3f-ab66-dd764b947805","run_id":"6ca6f92a-5dcc-4c41-a8ac-eb194828ba06","actor_ref":"27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db","request_key":"efffa4b8b1fe463ea0ead90d803c4bfa","fingerprint":"c328c35a5ea83c8d54bb3534c8426c60faf81f2ca8614c6adf2d22a92620beb9","action":"MERGE_NOTE","plan_id":"756efd9e-4632-47e4-8a7d-be85570fa5cb","definitively_rejected":true,"business_writes":false,"automatically_replayed":false}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+.runtime/note-template-carry-review/wip-probes-v1/test_carry_review.py:64: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/parkweave/plan_source_conflicts.py:42
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+.runtime/note-template-carry-review/wip-probes-v1/test_carry_review.py::test_actual_success_receipt_strict_epoch_types_and_frozen_history
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/ParkWeave/.runtime/note-template-carry-review/wip-probes-v1/results.xml -
+=========================== short test summary info ============================
+FAILED .runtime/note-template-carry-review/wip-probes-v1/test_carry_review.py::test_actual_success_receipt_strict_epoch_types_and_frozen_history - AssertionError: [{'case': 'current_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'current_float', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_bool', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_float', 'expected_rejected': True, 'actual_rejected': False}]
+assert False
+ +  where False = all(<generator object test_actual_success_receipt_strict_epoch_types_and_frozen_history.<locals>.<genexpr> at 0x7f648e155be0>)
+FAILED .runtime/note-template-carry-review/wip-probes-v1/test_carry_review.py::test_real_v2_material_continue_first_carry_then_edit_reconfirm_next_hop - AssertionError: {"scope":"OWNER_PLAN_SOURCE_CONFLICT","schema":1,"status":"DEFINITIVELY_REJECTED","preparation_id":"25ae8dcb-c799-4cf1-8f74-b622c32757ca","case_id":"3879441e-abee-4f3f-ab66-dd764b947805","run_id":"6ca6f92a-5dcc-4c41-a8ac-eb194828ba06","actor_ref":"27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db","request_key":"efffa4b8b1fe463ea0ead90d803c4bfa","fingerprint":"c328c35a5ea83c8d54bb3534c8426c60faf81f2ca8614c6adf2d22a92620beb9","action":"MERGE_NOTE","plan_id":"756efd9e-4632-47e4-8a7d-be85570fa5cb","definitively_rejected":true,"business_writes":false,"automatically_replayed":false}
+assert 409 == 200
+ +  where 409 = <Response [409 Conflict]>.status_code
+======================== 2 failed, 3 warnings in 15.22s ========================

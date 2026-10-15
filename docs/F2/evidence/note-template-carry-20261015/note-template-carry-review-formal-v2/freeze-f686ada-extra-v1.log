@@ -1,0 +1,39 @@
+........................................................................ [ 17%]
+..........................................................F............. [ 34%]
+........................................................................ [ 51%]
+........................................................................ [ 68%]
+........................................................................ [ 85%]
+...............................................................          [100%]
+=================================== FAILURES ===================================
+_ test_timed_source_expiration_during_actual_post_update_wait_rolls_back_lock __
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff099019190>
+
+    def test_timed_source_expiration_during_actual_post_update_wait_rolls_back_lock(preparation_fixture,monkeypatch):
+     import time
+     from parkweave import controlled_plans as cp
+>    f=preparation_fixture;p=setup(f);s=document(f,p);s['validity']['valid_until']=(datetime.now(timezone.utc)+timedelta(seconds=1)).isoformat();r=command(f,p,body(get(f,p).json(),source=s));assert r.status_code==200;e=r.json()['receipt']['payload']['entry'];selected={x['field_name']:x['id'] for x in fact_read(f,p).json()['sources'] if x['source_kind']=='USER_ASSERTED_SYNTHETIC'};selected['region']=e['id'];assert choose(f,p,selected).status_code==200
+                                                                                                                                                                                                                                                                                                                                                                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    AssertionError: assert 409 == 200
+E     +  where 409 = <Response [409 Conflict]>.status_code
+E     +    where <Response [409 Conflict]> = choose((<parkweave.store.Store object at 0x7ff09901bce0>, <parkweave.store.Store object at 0x7ff09901a510>, {'fixture-a': 'xx...re-a': '[REDACTED_SYNTHETIC_SESSION]', ...}, <starlette.testclient.TestClient object at 0x7ff098cb4b30>), {'preparation_id': 'abb64b22-194d-4723-91ee-45a400af07f9', 'case_id': 'cad7cfdf-2091-4c6c-93d4-847f9c7b7643', 'run_id': '2bdce811-c693-4076-95b0-d47447a4c987', 'revision': 5, ...}, {'employees': '1c1f2df9-1e01-4ca2-9c86-5d96efb46d71', 'region': '3e4079f3-816d-48e9-8f08-12d50d0fbda8', 'service_need': 'a6d83700-4fa0-445e-81ad-3afa30b6586d'})
+
+tests/test_case_fact_bundle.py:172: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+src/parkweave/plan_source_conflicts.py:42
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_case_fact_clarifications.py::test_real_ledger_conflicting_sources_selection_history_and_redacted_events
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_fact_bundle.py::test_timed_source_expiration_during_actual_post_update_wait_rolls_back_lock
+1 failed, 422 passed, 3 warnings in 1275.04s (0:21:15)

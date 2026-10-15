@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="42.665" timestamp="2026-10-15T14:25:38.978286+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_note_template_carry_independent" name="test_current_authority_precedes_original_receipt[PREPARE]" time="42.034"><failure message="psycopg.errors.UndefinedColumn: column &quot;revision&quot; does not exist&#10;LINE 1: ...DATE preparation_grants SET active=false,revision=revision+1...&#10;                                                             ^">tests/test_note_template_carry_independent.py:214: in test_current_authority_precedes_original_receipt
+    c.execute('UPDATE '+table+" SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND capability=%s",(capability,))
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.UndefinedColumn: column "revision" does not exist
+E   LINE 1: ...DATE preparation_grants SET active=false,revision=revision+1...
+E                                                                ^</failure></testcase></testsuite></testsuites>

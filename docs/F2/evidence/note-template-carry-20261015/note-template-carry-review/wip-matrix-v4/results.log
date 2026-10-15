@@ -1,0 +1,66 @@
+/workspace/ParkWeave/.runtime/note-template-carry-review/source-wip-v1/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+  class Command(BaseModel):
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- /workspace/ParkWeave/.venv/bin/python
+cachedir: /tmp/note-carry-review-wip-cache-v4
+rootdir: /workspace/ParkWeave
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.12.3
+collecting ... collected 1 item
+
+.runtime/note-template-carry-review/wip-matrix-v4/test_carry_review.py::test_actual_success_receipt_strict_epoch_types_and_frozen_history FAILED [100%]
+
+=================================== FAILURES ===================================
+______ test_actual_success_receipt_strict_epoch_types_and_frozen_history _______
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_actual_success_receipt_strict_epoch_types_and_frozen_history(upgrade_case):
+        u=upgrade_case;row,p,target=ready(u);_,body=request(u,row,target)
+        response=apply(u,row,body);assert response.status_code==200,response.text
+        with u['f'][1].connect() as c:parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone()
+        assert plans._recovery_proofs(parent)
+        results=[]
+        for label in ['current_need_summary_forged','current_outline_kind_forged','captured_need_summary_forged']:
+            candidate=deepcopy(parent);plan=candidate['service_case_plan'];event=plan['events'][-1];patch=event['template_upgrade'];proof=patch['note_carry']
+            if label=='current_need_summary_forged':
+                target=next(m for m in proof['materials']['current'] if m['slot']=='need_summary')
+                target['text']='SYNTHETIC arbitrary current summary that was never used by actual P1 VERIFY'
+                from parkweave.store import digest
+                target['source_sha256']=digest(target['text'])
+                epoch=next(m for m in proof['materials']['current_epochs'] if m['slot']=='need_summary');epoch['source_sha256']=target['source_sha256']
+            elif label=='current_outline_kind_forged':
+                target=next(m for m in proof['materials']['current'] if m['slot']=='material_outline')
+                target['source_label']='SYNTHETIC different outline label never present in actual source'
+            else:
+                target=proof['materials']['captured_epochs'][0];target['source_sha256']='a'*64
+            proof['sha256']=migration.sha({k:v for k,v in proof.items() if k!='sha256'})
+            patch['request']['expected_note_carry_sha256']=proof['sha256']
+            event['fingerprint']=migration.fingerprint(row['instance_id'],migration.NoteCarryApply.model_validate(patch['request']))
+            try:plans._recovery_proofs(candidate)
+            except Conflict:rejected=True
+            else:rejected=False
+            results.append(dict(case=label,expected_rejected=True,actual_rejected=rejected))
+        record('historical-material-binding-matrix',dict(actual_successful_PG_API_setup=True,pure_mutation_checks=results,no_PG_tampering=True))
+>       assert all(r['actual_rejected'] for r in results),results
+E       AssertionError: [{'case': 'current_need_summary_forged', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'current_outline_kind_forged', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_need_summary_forged', 'expected_rejected': True, 'actual_rejected': True}]
+E       assert False
+E        +  where False = all(<generator object test_actual_success_receipt_strict_epoch_types_and_frozen_history.<locals>.<genexpr> at 0x7f365c1341e0>)
+
+.runtime/note-template-carry-review/wip-matrix-v4/test_carry_review.py:58: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/note-template-carry-review/wip-matrix-v4/test_carry_review.py::test_actual_success_receipt_strict_epoch_types_and_frozen_history
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/ParkWeave/.runtime/note-template-carry-review/wip-matrix-v4/results.xml -
+=========================== short test summary info ============================
+FAILED .runtime/note-template-carry-review/wip-matrix-v4/test_carry_review.py::test_actual_success_receipt_strict_epoch_types_and_frozen_history - AssertionError: [{'case': 'current_need_summary_forged', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'current_outline_kind_forged', 'expected_rejected': True, 'actual_rejected': False}, {'case': 'captured_need_summary_forged', 'expected_rejected': True, 'actual_rejected': True}]
+assert False
+ +  where False = all(<generator object test_actual_success_receipt_strict_epoch_types_and_frozen_history.<locals>.<genexpr> at 0x7f365c1341e0>)
+======================== 1 failed, 2 warnings in 3.79s =========================

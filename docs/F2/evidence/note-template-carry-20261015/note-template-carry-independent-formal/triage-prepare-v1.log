@@ -1,0 +1,27 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_current_authority_precedes_original_receipt[PREPARE] ___________
+tests/test_note_template_carry_independent.py:214: in test_current_authority_precedes_original_receipt
+    c.execute('UPDATE '+table+" SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND capability=%s",(capability,))
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: in execute
+    raise ex.with_traceback(None)
+E   psycopg.errors.UndefinedColumn: column "revision" does not exist
+E   LINE 1: ...DATE preparation_grants SET active=false,revision=revision+1...
+E                                                                ^
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_note_template_carry_independent.py::test_current_authority_precedes_original_receipt[PREPARE]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_note_template_carry_independent.py::test_current_authority_precedes_original_receipt[PREPARE]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_note_template_carry_independent.py::test_current_authority_precedes_original_receipt[PREPARE]
+1 failed, 3 warnings in 42.67s

@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="4" time="30.326" timestamp="2026-10-15T13:59:17.222327+00:00" hostname="87a5e83cf057"><testcase classname=".runtime.note-template-carry-backend.private-worktree.tests.test_note_template_carry_epoch_types" name="test_rehashed_nested_epoch_version_types_are_rejected_by_history[bool-current_epochs]" time="7.382"><failure message="AssertionError: rehashed bool/float epoch version was accepted as integer in historical proof&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+slot = 'current_epochs', value = True
+
+    @pytest.mark.parametrize('slot',['current_epochs','captured_epochs'])
+    @pytest.mark.parametrize('value',[True,1.0],ids=['bool','float'])
+    def test_rehashed_nested_epoch_version_types_are_rejected_by_history(upgrade_case,slot,value):
+        u=upgrade_case;row,p,target=ready(u);_,body=request(u,row,target);key='SYNTHETIC_epoch_type_history'
+        result=apply(u,row,body,key);assert result.status_code==200,result.text
+        plan=deepcopy(stored(u,row));event=plan['events'][-1];proof=event['template_upgrade']['note_carry']
+        assert proof['materials'][slot][0]['version']==1
+        proof['materials'][slot][0]['version']=value
+        proof['sha256']=sha({k:v for k,v in proof.items() if k!='sha256'})
+        event['template_upgrade']['request']['expected_note_carry_sha256']=proof['sha256']
+        data=migration.NoteCarryApply.model_validate(event['template_upgrade']['request']);event['fingerprint']=migration.fingerprint(row['instance_id'],data)
+        with u['f'][1].connect() as c:c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),row['preparation_id']))
+        before=facts(u)
+        response=u['client'].get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+&gt;       assert response.status_code==409, 'rehashed bool/float epoch version was accepted as integer in historical proof'
+E       AssertionError: rehashed bool/float epoch version was accepted as integer in historical proof
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_note_template_carry_epoch_types.py:26: AssertionError</failure></testcase><testcase classname=".runtime.note-template-carry-backend.private-worktree.tests.test_note_template_carry_epoch_types" name="test_rehashed_nested_epoch_version_types_are_rejected_by_history[bool-captured_epochs]" time="8.746"><failure message="AssertionError: rehashed bool/float epoch version was accepted as integer in historical proof&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+slot = 'captured_epochs', value = True
+
+    @pytest.mark.parametrize('slot',['current_epochs','captured_epochs'])
+    @pytest.mark.parametrize('value',[True,1.0],ids=['bool','float'])
+    def test_rehashed_nested_epoch_version_types_are_rejected_by_history(upgrade_case,slot,value):
+        u=upgrade_case;row,p,target=ready(u);_,body=request(u,row,target);key='SYNTHETIC_epoch_type_history'
+        result=apply(u,row,body,key);assert result.status_code==200,result.text
+        plan=deepcopy(stored(u,row));event=plan['events'][-1];proof=event['template_upgrade']['note_carry']
+        assert proof['materials'][slot][0]['version']==1
+        proof['materials'][slot][0]['version']=value
+        proof['sha256']=sha({k:v for k,v in proof.items() if k!='sha256'})
+        event['template_upgrade']['request']['expected_note_carry_sha256']=proof['sha256']
+        data=migration.NoteCarryApply.model_validate(event['template_upgrade']['request']);event['fingerprint']=migration.fingerprint(row['instance_id'],data)
+        with u['f'][1].connect() as c:c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),row['preparation_id']))
+        before=facts(u)
+        response=u['client'].get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+&gt;       assert response.status_code==409, 'rehashed bool/float epoch version was accepted as integer in historical proof'
+E       AssertionError: rehashed bool/float epoch version was accepted as integer in historical proof
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_note_template_carry_epoch_types.py:26: AssertionError</failure></testcase><testcase classname=".runtime.note-template-carry-backend.private-worktree.tests.test_note_template_carry_epoch_types" name="test_rehashed_nested_epoch_version_types_are_rejected_by_history[float-current_epochs]" time="6.467"><failure message="AssertionError: rehashed bool/float epoch version was accepted as integer in historical proof&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+slot = 'current_epochs', value = 1.0
+
+    @pytest.mark.parametrize('slot',['current_epochs','captured_epochs'])
+    @pytest.mark.parametrize('value',[True,1.0],ids=['bool','float'])
+    def test_rehashed_nested_epoch_version_types_are_rejected_by_history(upgrade_case,slot,value):
+        u=upgrade_case;row,p,target=ready(u);_,body=request(u,row,target);key='SYNTHETIC_epoch_type_history'
+        result=apply(u,row,body,key);assert result.status_code==200,result.text
+        plan=deepcopy(stored(u,row));event=plan['events'][-1];proof=event['template_upgrade']['note_carry']
+        assert proof['materials'][slot][0]['version']==1
+        proof['materials'][slot][0]['version']=value
+        proof['sha256']=sha({k:v for k,v in proof.items() if k!='sha256'})
+        event['template_upgrade']['request']['expected_note_carry_sha256']=proof['sha256']
+        data=migration.NoteCarryApply.model_validate(event['template_upgrade']['request']);event['fingerprint']=migration.fingerprint(row['instance_id'],data)
+        with u['f'][1].connect() as c:c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),row['preparation_id']))
+        before=facts(u)
+        response=u['client'].get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+&gt;       assert response.status_code==409, 'rehashed bool/float epoch version was accepted as integer in historical proof'
+E       AssertionError: rehashed bool/float epoch version was accepted as integer in historical proof
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_note_template_carry_epoch_types.py:26: AssertionError</failure></testcase><testcase classname=".runtime.note-template-carry-backend.private-worktree.tests.test_note_template_carry_epoch_types" name="test_rehashed_nested_epoch_version_types_are_rejected_by_history[float-captured_epochs]" time="7.433"><failure message="AssertionError: rehashed bool/float epoch version was accepted as integer in historical proof&#10;assert 200 == 409&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+slot = 'captured_epochs', value = 1.0
+
+    @pytest.mark.parametrize('slot',['current_epochs','captured_epochs'])
+    @pytest.mark.parametrize('value',[True,1.0],ids=['bool','float'])
+    def test_rehashed_nested_epoch_version_types_are_rejected_by_history(upgrade_case,slot,value):
+        u=upgrade_case;row,p,target=ready(u);_,body=request(u,row,target);key='SYNTHETIC_epoch_type_history'
+        result=apply(u,row,body,key);assert result.status_code==200,result.text
+        plan=deepcopy(stored(u,row));event=plan['events'][-1];proof=event['template_upgrade']['note_carry']
+        assert proof['materials'][slot][0]['version']==1
+        proof['materials'][slot][0]['version']=value
+        proof['sha256']=sha({k:v for k,v in proof.items() if k!='sha256'})
+        event['template_upgrade']['request']['expected_note_carry_sha256']=proof['sha256']
+        data=migration.NoteCarryApply.model_validate(event['template_upgrade']['request']);event['fingerprint']=migration.fingerprint(row['instance_id'],data)
+        with u['f'][1].connect() as c:c.execute('UPDATE preparations SET service_case_plan=%s WHERE id=%s',(Jsonb(plan),row['preparation_id']))
+        before=facts(u)
+        response=u['client'].get('/api/preparations/'+row['preparation_id']+'/goal-results',headers=headers(u['f'][2]))
+&gt;       assert response.status_code==409, 'rehashed bool/float epoch version was accepted as integer in historical proof'
+E       AssertionError: rehashed bool/float epoch version was accepted as integer in historical proof
+E       assert 200 == 409
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_note_template_carry_epoch_types.py:26: AssertionError</failure></testcase></testsuite></testsuites>

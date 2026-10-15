@@ -1,0 +1,36 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____ test_resource_window_expiry_during_actual_last_source_row_lock_wait ______
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_resource_window_expiry_during_actual_last_source_row_lock_wait(link_fixture):
+     import time
+     f=link_fixture;p,g,d,s=complete(f,local=True)
+     with f[1].connect() as c:c.execute("UPDATE synthetic_resource_holds SET starts_at=clock_timestamp()-interval '1 minute',ends_at=clock_timestamp()+interval '2 seconds' WHERE id IN (SELECT hold_id FROM synthetic_resource_combination_members WHERE combination_id=%s)",(g['id'],))
+     for a in ('P2','P3','P4'):verified(f,p,a)
+>    assert local_act(f,p,local_read(f,p).json(),'REVALIDATE').status_code==200;verified(f,p,'P5');assert get(f,p).json()['state']=='LOCAL_OUTPUTS_VERIFIED';before=snapshot(f)
+                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    AssertionError: assert 'UNVERIFIED' == 'LOCAL_OUTPUTS_VERIFIED'
+E      
+E      - LOCAL_OUTPUTS_VERIFIED
+E      + UNVERIFIED
+
+tests/test_case_goal_results.py:148: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_case_goal_results.py::test_resource_window_expiry_during_actual_last_source_row_lock_wait
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_case_goal_results.py::test_resource_window_expiry_during_actual_last_source_row_lock_wait
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_goal_results.py::test_resource_window_expiry_during_actual_last_source_row_lock_wait
+1 failed, 3 warnings in 9.16s

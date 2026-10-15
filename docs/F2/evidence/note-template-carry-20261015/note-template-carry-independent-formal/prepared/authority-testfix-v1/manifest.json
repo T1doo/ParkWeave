@@ -1,0 +1,21 @@
+{
+  "status": "IMMUTABLE_TEST_FIXTURE_ONLY_CORRECTION",
+  "source_sha": "c376c5b49226f104fc6a2b54cc967284c5fcc12f",
+  "target": "tests/test_note_template_carry_independent.py",
+  "expected_previous_sha256": "4787522d8272fd283d210bc190201b011321281d8657784eb50ace56b572a4c0",
+  "candidate_path": ".runtime/note-template-carry-independent-formal/prepared/authority-testfix-v1/test_note_template_carry_independent.py",
+  "candidate_sha256": "2351ba04ba8ac71010bea93f0851b7ba4ad0c276a792caf3f12f7049118b1527",
+  "bytes": 21543,
+  "changes": [
+    "PREPARE preparation_grants has no revision column; active=false only. capability_grants original revision increment retained.",
+    "Original recovery reader uses TemplateUpgradeChecker._context, which requires PREPARE and EXECUTE as well as READ/action grant. All three withdrawn-capability GET cases must return403."
+  ],
+  "read_only_source_evidence": [
+    "src/parkweave/migration-009.sql:9",
+    "src/parkweave/template_upgrade.py:91",
+    "src/parkweave/template_upgrade.py:92",
+    "src/parkweave/template_migration.py:495"
+  ],
+  "obsolete_claim": "Earlier readonly EXECUTE-only GET200 summary was incorrect for this original template-upgrade reader and is withdrawn; original logs and immutable prior snapshots retained.",
+  "product_permission_or_guard_changes": false
+}

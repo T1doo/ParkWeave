@@ -1,0 +1,304 @@
+{
+  "kind": "PRE_IMPLEMENTATION_LITERAL_DESIGN_NOT_EXECUTED",
+  "baseline_source_sha": "ed5d32b6bbcf261d802fe579a2daab16330a5879",
+  "contract_status": "FINAL_ROOT_CONTRACT",
+  "scope": "NoteCarryApply only; original Apply plus strict true confirm_note_carry and expected_note_carry_sha256; original apply/structure routes remain refused for notes",
+  "all_designs_not_execution_denominator": true,
+  "manual_literal": "人工说明：兼容模板升级后仍保留本提醒与两处空格  。\n本说明不充当事实、许可或办理完成。",
+  "step_ids": "Map these literal adapter sets to original UUIDs only at execution; never derive expected sets from product impact output",
+  "scenarios": [
+    {
+      "id": "NC00_TITLE_ONLY",
+      "when": "same structure, exactly unchanged template definition.source, current verified Case",
+      "expected": "Explicit carry applies; exact MANUAL text/hash/origin and stable IDs/history preserved",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": [],
+      "expected_apply_preserved": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC01_TITLE_LOCKS",
+      "when": "title-only with original current P1 and P3 locks",
+      "expected": "Preserve full unaffected lock objects; no UNLOCK or VERIFY implied",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": [],
+      "expected_apply_preserved": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC02_TEMPLATE_SOURCE",
+      "when": "same structure but actual template source differs",
+      "expected": "Explicit carry only; full original step VERIFY required, prior outputs retained",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "expected_apply_preserved": [],
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC03_AFFECTED_LOCK",
+      "when": "template source differs and P3 currently locked",
+      "expected": "Refuse until original explicit UNLOCK, then fresh check/choice/carry",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "expected_apply_preserved": [],
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC04_CURRENT_MATERIAL",
+      "when": "actual outline changes after prior manual continuation",
+      "expected": "Prior continuation never authorizes changed current source; preserve M, reject stale carry",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "intentional_unknown": false,
+      "apply_status": "REJECT_PENDING_FRESH_CURRENT_SOURCE_DECISION"
+    },
+    {
+      "id": "NC05_EDIT_AFTER_CONTINUE",
+      "when": "EDIT after a new continuation, even if conditions remain present",
+      "expected": "Require fresh explicit source reconciliation; carry must not bypass original adoption guard",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC06_OLD_DECISIONS",
+      "when": "old KEEP_MANUAL or DEFER unresolved",
+      "expected": "Remain pending; no carry upgrade bypass",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC07_STRUCTURE",
+      "when": "registered structural strengthening with a manual note",
+      "expected": "Carry unsupported; both original apply routes must preserve note and reject carrying it",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC08_BREAKING_ROLLBACK",
+      "when": "destructive target or backwards/superseded target",
+      "expected": "Refuse actual legal-shaped request, no business rollback",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC09_UNKNOWN",
+      "when": "current source/baseline unavailable or UNKNOWN",
+      "expected": "No writable carry proof; original complete stale request denied; UNKNOWN precision separately reported",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "intentional_unknown": true,
+      "apply_status": "REJECT_UNKNOWN"
+    },
+    {
+      "id": "NC10_FOREIGN",
+      "when": "wrong owner, tenant, park or Case/instance mismatch",
+      "expected": "Current authorization refusal; no private note exposure or business write",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC11_REVOKED",
+      "when": "READ/PREPARE/EXECUTE revoked before command or recovery",
+      "expected": "Current authorization precedes replay; denied audit is distinguished from business writes",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC12_ABA",
+      "when": "source/manual/plan/target versions restore identical visible values",
+      "expected": "Reject stale carry request; clearly label owner-PG fault injections versus legal commands",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC13_IDEMPOTENCY",
+      "when": "same original key exact body and conflicting body",
+      "expected": "Same body replays one original event; conflicting body rejects",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC14_CONCURRENT",
+      "when": "two distinct keys same original preview/CAS",
+      "expected": "At most one commit; no divergent MANUAL carry or duplicate adoption",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC15_COLD_GET",
+      "when": "actual apply commits and response is deliberately lost",
+      "expected": "Cold original key GET only; no automatic POST; exact proof before releasing pending",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC16_ROLLBACK",
+      "when": "fault immediately after actual PG plan UPDATE",
+      "expected": "Whole transaction rolls back; original note/plan/effective binding/business rows unchanged",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC17_HISTORY",
+      "when": "multiple compatible releases after original v1/v2 note history",
+      "expected": "Append proof; original history prefix and immutable consumer binding/stages preserved",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC18_TARGET_UNAVAILABLE",
+      "when": "target withdrawn/expired after preview or after commit",
+      "expected": "New apply/VERIFY fail as appropriate; committed historical GET remains truthful under current auth",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC19_UI_PENDING",
+      "when": "unchecked carry, unfinished original command, changed draft, late identity response",
+      "expected": "No phantom handle or automatic command; current denied clears private views, late denied cannot clear newer view",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC20_BAD_RECOVERY",
+      "when": "controlled malformed COMMITTED proof",
+      "expected": "Retain original opaque handle and refuse release/re-POST; injection is not backend response evidence",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    },
+    {
+      "id": "NC21_BUDGET",
+      "when": "original 64 event cap and required VERIFY/UNLOCK reservation",
+      "expected": "Reject before apply if closure cannot finish within original event budget",
+      "status": "NOT_RUN_DESIGN",
+      "expected_apply_affected": null,
+      "expected_apply_preserved": null,
+      "expected_current_business_source_affected": null,
+      "intentional_unknown": false
+    }
+  ],
+  "fixture": {
+    "primary": "fresh_chain + isolated original TemplateUpgradeChecker + publish ALL_GOALS + new_case + enable_approval + finish_chain + original EDIT_NOTE",
+    "six_goals": "test_new_enterprise_local_chain.ALL_GOALS, not legacy GOALS-only full()",
+    "control": "Optional original two_cases with OUT temporarily redirected to this new runtime and A explicitly settled after B owner manifest changes",
+    "source_changes": "Original REOPEN/ADD/REVIEW/CONFIRM commands; do not fabricate older fine-grained history"
+  },
+  "driver": {
+    "shipped_pages": [
+      "src/parkweave/template_upgrade_web.html",
+      "src/parkweave/web.html"
+    ],
+    "transport": "Node native fetch -> actual loopback HTTP -> ASGI -> newly owned PostgreSQL",
+    "mechanics": "Full shipped scripts, parse real id/tag/form/button/data-choice elements before VM; invoke installed onclick/onsubmit wrappers, not product helper copies",
+    "flows": [
+      "title exact-M carry with preserved locks",
+      "template source change + explicit original affected VERIFY + 6 goals/worklist",
+      "committed lost reply -> cold GET only",
+      "current actual403",
+      "late actual403 identity ABA",
+      "malformed recovery marked controlled transport fixture"
+    ],
+    "not_run": [
+      "Real browser",
+      "Windows",
+      "Formal AT",
+      "Real model",
+      "Production"
+    ]
+  },
+  "revision": 3,
+  "clarification": "Template-apply affected sets and existing current business-source affected sets are separate. Same template source does not erase independent Case invalidation.",
+  "contract": {
+    "path": "docs/F2/NoteTemplateCarryContract-20261015.md",
+    "sha256": "588da7bb2d0587bae204e5da350268b814072ae8168cd41cd46cb9d4be0e5691"
+  }
+}
