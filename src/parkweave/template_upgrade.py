@@ -187,7 +187,15 @@ class TemplateUpgradeChecker:
         if a['required_goals'] != b['required_goals'] or a['steps'] != b['steps']: changes.append('REGISTERED_GOALS_OR_STEPS_CHANGED')
         if stale: changes.append('CURRENT_CASE_DEPENDENCIES_REQUIRE_RECHECK')
         if unresolved: changes.append('UNRESOLVED_CONSUMER_STAGE')
-        classification = 'BREAKING_REJECTED' if breaking else 'LOCK_CONFLICT' if any(s == 'LOCK_CONFLICT' for s in states.values()) or (locked and needs) else 'NEEDS_RECHECK' if needs else 'COMPATIBLE'
+        lock_conflict=any(s=='LOCK_CONFLICT' for s in states.values()) or (locked and needs)
+        if plan and not breaking and (a['required_goals']!=b['required_goals'] or a['steps']!=b['steps']):
+            from .template_migration import structure_change
+            try:
+                proof=structure_change(parent,plan,dict(release_id=comparison['release_id'],release_sha256=sha(comparison),snapshot=comparison),
+                    dict(release_id=new['release_id'],release_sha256=target_sha,snapshot=new))
+                lock_conflict=any(s=='LOCK_CONFLICT' for s in states.values()) or any(s.get('manual_lock') and s['id'] in proof['affected_step_ids'] for s in plan['steps'])
+            except Conflict:pass
+        classification = 'BREAKING_REJECTED' if breaking else 'LOCK_CONFLICT' if lock_conflict else 'NEEDS_RECHECK' if needs else 'COMPATIBLE'
         allowed = ['KEEP_CURRENT']
         if classification in ('COMPATIBLE', 'NEEDS_RECHECK'): allowed.append('REQUEST_RECHECK')
         if classification == 'COMPATIBLE': allowed.append('ACK_COMPATIBLE')
@@ -266,6 +274,10 @@ def install_routes(app, checker):
 
     @app.post('/api/template-upgrade/{instance_id}/apply')
     def apply_revision(instance_id: UUID, data: template_migration.Apply, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
+        return checker.apply(token(authorization), instance_id, idempotency_key, data)
+
+    @app.post('/api/template-upgrade/{instance_id}/apply-structure')
+    def apply_structure(instance_id: UUID, data: template_migration.StructureApply, authorization: str | None = Header(default=None), idempotency_key: str = Header()):
         return checker.apply(token(authorization), instance_id, idempotency_key, data)
 
     @app.get('/api/template-upgrade/{instance_id}/apply-requests/{key}')

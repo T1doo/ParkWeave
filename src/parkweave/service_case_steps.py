@@ -553,8 +553,8 @@ def _recovery_proofs(parent):
                     latest_dependencies=event['dependencies'];dependencies.validate(latest_dependencies)
                     fp=cp._hash(dict(preparation_id=str(parent['id']),action='ADOPT',**_adopt_request(data)))
                 elif event['action']=='TEMPLATE_UPGRADE':
-                    from .template_migration import Apply,fingerprint
-                    request=Apply.model_validate(event['template_upgrade']['request'])
+                    from .template_migration import parse_apply_request,fingerprint
+                    request=parse_apply_request(event['template_upgrade'])
                     fp=fingerprint(request.expected_instance_id,request)
                 else:
                     if event['step_id'] not in step_ids or event['action']=='ADOPT':raise ValueError()
