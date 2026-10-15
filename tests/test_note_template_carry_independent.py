@@ -211,10 +211,10 @@ def test_current_authority_precedes_original_receipt(carry,capability):
     with t['f'][1].connect() as c:
         t['f'][1].lock_principal(c,'fixture-a',exclusive=True)
         table='preparation_grants' if capability=='PREPARE' else 'capability_grants'
-        c.execute('UPDATE '+table+" SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND capability=%s",(capability,))
+        revision_change=',revision=revision+1' if table=='capability_grants' else ''
+        c.execute('UPDATE '+table+" SET active=false"+revision_change+" WHERE principal_id='fixture-a' AND capability=%s",(capability,))
     refused(t,d,status=403,key=key);before=full_snapshot(t);r=recovery(t,key)
-    if capability=='EXECUTE':assert r.status_code==200 and r.json()['status']=='COMMITTED',r.text
-    else:assert r.status_code==403,r.text
+    assert r.status_code==403,r.text
     assert full_snapshot(t)==before
 
 
