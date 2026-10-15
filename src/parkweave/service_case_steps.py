@@ -568,6 +568,8 @@ def _recovery_proofs(parent):
                 elif event['action'] in ('EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER','KEEP_AND_CONTINUE','MERGE_NOTE'):
                     from .plan_source_conflicts import Command as NoteCommand,fingerprint as note_fingerprint
                     expected=revision-1
+                    if event['plan_note']['version']==3:
+                        from .material_package_continuation import Command as NoteCommand
                     data=NoteCommand.model_validate(event['plan_note']['request'])
                     if data.action!=event['action'] or data.expected_plan_revision!=revision-1 or data.reason!=event['reason']:raise ValueError()
                     fp=note_fingerprint(parent['id'],data)

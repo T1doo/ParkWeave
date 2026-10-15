@@ -282,6 +282,9 @@ def validate_embedded_event(value,event):
         if type(proof['version']) is not int:raise ValueError()
         if proof['version']==1 and action in ACTIONS_V1:return validate_embedded_event_v1(value,event)
         if proof['version']==2 and action in CONTINUATION_ACTIONS:return validate_embedded_event_v2(value,event)
+        if proof['version']==3 and action in CONTINUATION_ACTIONS:
+            from .material_package_continuation import validate_embedded_event_v3
+            return validate_embedded_event_v3(value,event)
     except (KeyError,TypeError,AttributeError):pass
     raise ValueError('unsupported original note event schema or action')
 
@@ -320,6 +323,9 @@ def validate_plan_history(parent,plan):
         if not same(proof['preview_basis']['plan_ref'],expected_ref) or not same(proof['before_note'],current):raise ValueError('note plan revision or original body changed')
         matching=[e for e in ledger['events'] if e['id']==proof['op_event_id']]
         if len(matching)!=1 or not same(validate_embedded_event(ledger,matching[0]),event):raise ValueError('note ledger counterpart missing or changed')
+        if proof['version']==3:
+            from .material_package_continuation import validate_plan_context_v1
+            validate_plan_context_v1(parent,plan,event)
         if event['actor_id']!=parent['owner_id']:raise ValueError('note owner changed')
         step=next((s for s in plan['steps'] if s['id']==event['step_id']),None)
         if not step or step['adapter_id']!='P1':raise ValueError('only original P1 annotation supported')
@@ -329,6 +335,8 @@ def validate_plan_history(parent,plan):
 
 def adoption_blockers(c,parent,plan):
     if not plan or not plan.get('owner_amendments'):return []
+    from . import material_package_continuation as package
+    if package.active(plan):return package.adoption_blockers(c,parent,plan)
     try:
         note=next(iter(plan['owner_amendments'].values()));_note(note,plan['id'],note['step_id'])
         actual=next(m for m in _materials(c,parent) if m['slot']=='material_outline')
@@ -437,6 +445,9 @@ def _view(store,c,p,parent,card_id=None):
     can_edit=can_write and not locked and capacity and not source_view['unknown_scope'] and not source_blockers
     resolve_context=bool(can_write and conflict and card_id is not None and not source_blockers)
     choices=((['KEEP_MANUAL','DEFER'] if capacity else [])+(['ACCEPT_SOURCE'] if not locked and accept_capacity else [])) if resolve_context else []
+    from .material_package_continuation import active as package_active
+    package_mode=package_active(plan)
+    if package_mode:choices=[a for a in choices if a!='ACCEPT_SOURCE']
     can_resolve=bool(choices)
     state='NO_NOTE' if note is None else 'CONFLICT' if conflict else 'NO_CHANGE'
     last=next((e for e in reversed(plan['events']) if e['action'] in ACTIONS),None)
@@ -461,6 +472,7 @@ def _view(store,c,p,parent,card_id=None):
         continue_blocks=[]
         if continued['baseline'] is None:continue_blocks.append('ACTUAL_HISTORICAL_NOTE_SOURCE_REQUIRED')
         if not continued['coverage_known']:continue_blocks.append('BOUNDED_NONEMPTY_SOURCE_LINES_REQUIRED')
+        if package_mode:continue_blocks.append('PACKAGE_V3_CONFIRMATION_REQUIRED')
         eligible=bool(resolve_context and not locked and accept_capacity and not continue_blocks)
         new_basis=dict(basis,schema=2,continuation=deepcopy(continued)) if not continue_blocks else None
         continued.update(blocking_reasons=sorted(set(continue_blocks+blocks)),preview_sha256=sha(new_basis) if new_basis else None,

@@ -96,6 +96,17 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
 
     from . import case_opportunities as opportunities
     from . import plan_source_conflicts as note_conflicts
+    from . import material_package_continuation as material_package
+    from fastapi.exceptions import RequestValidationError
+    from fastapi.exception_handlers import request_validation_exception_handler
+
+    @app.exception_handler(RequestValidationError)
+    async def material_package_request_validation(request: Request,error: RequestValidationError):
+        route=request.scope.get('route')
+        if getattr(route,'path',None)=='/api/preparations/{preparation_id}/plan-material-package/commands':
+            # Bad UTF-8 input must not be echoed by the default error encoder.
+            return JSONResponse(status_code=422,content={'detail':'invalid bounded material package request'})
+        return await request_validation_exception_handler(request,error)
 
     @app.get('/api/preparations/{preparation_id}/plan-source-conflicts')
     def owner_note_read(preparation_id: UUID,card_id: UUID|None=None,authorization: str|None=Header(default=None)):
@@ -109,6 +120,19 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     @app.get('/api/preparations/{preparation_id}/plan-source-conflicts/recovery/{request_key}')
     def owner_note_recovery(preparation_id: UUID,request_key: str,authorization: str|None=Header(default=None)):
         return note_conflicts.recover(store,token(authorization),preparation_id,resource_key(request_key))
+    @app.get('/api/preparations/{preparation_id}/plan-material-package')
+    def material_package_read(preparation_id: UUID,card_id: UUID|None=None,authorization: str|None=Header(default=None)):
+        return material_package.read(store,token(authorization),preparation_id,card_id=card_id)
+
+    @app.post('/api/preparations/{preparation_id}/plan-material-package/commands')
+    def material_package_command(preparation_id: UUID,data: material_package.Command,authorization: str|None=Header(default=None),idempotency_key: str=Header()):
+        try:return material_package.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+        except material_package.DefinitiveConflict as error:return JSONResponse(status_code=409,content=error.proof)
+
+    @app.get('/api/preparations/{preparation_id}/plan-material-package/recovery/{request_key}')
+    def material_package_recovery(preparation_id: UUID,request_key: str,authorization: str|None=Header(default=None)):
+        return material_package.recover(store,token(authorization),preparation_id,resource_key(request_key))
+
     @app.get('/api/cases/worklist')
     def owner_case_worklist(limit: int=Query(default=20,ge=1,le=50),after: UUID|None=Query(default=None),
                             authorization: str|None=Header(default=None)):
