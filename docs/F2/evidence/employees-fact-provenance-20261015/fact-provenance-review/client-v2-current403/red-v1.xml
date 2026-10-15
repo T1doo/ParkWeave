@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.120" timestamp="2026-10-15T22:33:32.404044+00:00" hostname="87a5e83cf057"><testcase classname=".runtime.fact-provenance-review.client-v2-current403.test_employees_fact_client_probes" name="test_employees_client_late_crypto_and_rehashed_flags" time="0.058"><failure message="AssertionError: Error: current403 original clearPreparation must run once before preview generation invalidation&#10;      at assert (/workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:9:42)&#10;      at current403Scenario (/workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:88:2)&#10;      at /workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:95:15&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fa... at /workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:95:15\n').returncode">def test_employees_client_late_crypto_and_rehashed_flags():
+        root=Path(__file__).resolve().parents[1] if Path(__file__).parent.name=='tests' else Path.cwd()
+        candidate=Path(__file__).with_name('employees_fact_client_probes.js')
+        run=subprocess.run(['node',str(candidate)],cwd=root,text=True,capture_output=True,timeout=20)
+&gt;       assert run.returncode==0,run.stderr
+E       AssertionError: Error: current403 original clearPreparation must run once before preview generation invalidation
+E             at assert (/workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:9:42)
+E             at current403Scenario (/workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:88:2)
+E             at /workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:95:15
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fa... at /workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:95:15\n').returncode
+
+.runtime/fact-provenance-review/client-v2-current403/test_employees_fact_client_probes.py:11: AssertionError</failure></testcase></testsuite></testsuites>

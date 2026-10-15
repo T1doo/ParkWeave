@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="15.502" timestamp="2026-10-15T22:16:44.627561+00:00" hostname="87a5e83cf057"><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_resource_change_preserves_original_p1_lock_and_verify_evidence" time="15.295"><failure message="AssertionError: {&quot;detail&quot;:&quot;current cycle already validated&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_resource_change_preserves_original_p1_lock_and_verify_evidence(facts_case):
+        t=facts_case;assert lock(t['f'],t['p'],'P1').status_code==200;old=deepcopy(stored(t['f'],t['p']))
+&gt;       add_resource(t['f']);c=card(t);partition(t,view(t,c),'FP10');accepted(t,c);repair_tail(t,('P2','P3','P4','P5'));final(t)
+                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/fact-provenance-independent/candidate/tests/test_employees_fact_provenance_independent.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+adapters = ('P2', 'P3', 'P4', 'P5')
+
+    def repair_tail(t,adapters):
+        for a in adapters:
+            if a!='P5':verified(t['f'],t['p'],a)
+&gt;       r=local_act(t['f'],t['p'],local_read(t['f'],t['p']).json(),'REVALIDATE');assert r.status_code==200,r.text
+                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"current cycle already validated"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+.runtime/fact-provenance-independent/candidate/tests/test_employees_fact_provenance_independent.py:162: AssertionError</failure></testcase></testsuite></testsuites>

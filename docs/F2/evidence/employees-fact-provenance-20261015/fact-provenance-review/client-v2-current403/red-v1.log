@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_____________ test_employees_client_late_crypto_and_rehashed_flags _____________
+
+    def test_employees_client_late_crypto_and_rehashed_flags():
+        root=Path(__file__).resolve().parents[1] if Path(__file__).parent.name=='tests' else Path.cwd()
+        candidate=Path(__file__).with_name('employees_fact_client_probes.js')
+        run=subprocess.run(['node',str(candidate)],cwd=root,text=True,capture_output=True,timeout=20)
+>       assert run.returncode==0,run.stderr
+E       AssertionError: Error: current403 original clearPreparation must run once before preview generation invalidation
+E             at assert (/workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:9:42)
+E             at current403Scenario (/workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:88:2)
+E             at /workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:95:15
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fa... at /workspace/ParkWeave/.runtime/fact-provenance-review/client-v2-current403/employees_fact_client_probes.js:95:15\n').returncode
+
+.runtime/fact-provenance-review/client-v2-current403/test_employees_fact_client_probes.py:11: AssertionError
+=========================== short test summary info ============================
+FAILED .runtime/fact-provenance-review/client-v2-current403/test_employees_fact_client_probes.py::test_employees_client_late_crypto_and_rehashed_flags
+1 failed in 0.12s

@@ -1,0 +1,165 @@
+{
+  "status": "DEVELOPMENT_ONLY_NO_SCORE_MIGRATION",
+  "candidate_manifest": "candidate-v2.json",
+  "windows": [
+    {
+      "path": ".runtime/fact-provenance-independent/api-v1.xml",
+      "cases": 16,
+      "passed": 14,
+      "failed": 2,
+      "errors": 0,
+      "seconds": 207.655
+    },
+    {
+      "path": ".runtime/fact-provenance-independent/focus-v2.xml",
+      "cases": 4,
+      "passed": 2,
+      "failed": 2,
+      "errors": 0,
+      "seconds": 100.018
+    },
+    {
+      "path": ".runtime/fact-provenance-independent/html-positive-v1.xml",
+      "cases": 1,
+      "passed": 0,
+      "failed": 1,
+      "errors": 0,
+      "seconds": 12.967
+    },
+    {
+      "path": ".runtime/fact-provenance-independent/html-positive-v2.xml",
+      "cases": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0,
+      "seconds": 21.626
+    },
+    {
+      "path": ".runtime/fact-provenance-independent/html-positive-v3.xml",
+      "cases": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0,
+      "seconds": 20.067
+    },
+    {
+      "path": ".runtime/fact-provenance-independent/resource-diag-v1.xml",
+      "cases": 1,
+      "passed": 0,
+      "failed": 1,
+      "errors": 0,
+      "seconds": 15.295
+    },
+    {
+      "path": ".runtime/fact-provenance-independent/smoke-v1.xml",
+      "cases": 1,
+      "passed": 1,
+      "failed": 0,
+      "errors": 0,
+      "seconds": 11.659
+    }
+  ],
+  "corrections": [
+    {
+      "raw": [
+        "api-v1.log",
+        "api-v1.xml",
+        "resource-diag-v1.log",
+        "resource-diag-v1.xml"
+      ],
+      "category": "FIXTURE",
+      "failure": "REVALIDATE409 current cycle already validated after P2-P4 VERIFY succeeded",
+      "correction": "Use original verification_current; issue REVALIDATE only if false, always original P5 VERIFY",
+      "product_changed": false
+    },
+    {
+      "raw": [
+        "api-v1.log",
+        "api-v1.xml"
+      ],
+      "category": "FIXTURE_AUTHORIZATION",
+      "failure": "f[0] app Store denied UPDATE field_grants",
+      "correction": "Use original owned fixture administrator f[1] to simulate revocation; no app right expanded",
+      "product_changed": false
+    },
+    {
+      "raw": [
+        "html-positive-v1.log",
+        "html-positive-v1.xml"
+      ],
+      "category": "MECHANICAL_HTML_FIXTURE",
+      "failure": "Programmatic onclick on disabled unchecked ADOPT cleared original preview, subsequent checkbox alone did not authorize",
+      "correction": "Read original exact preview again and fill reason/confirm; assert actual original POST201 before inspecting ADOPT",
+      "product_changed": false
+    },
+    {
+      "raw": [
+        "focus-v2.log",
+        "focus-v2.xml"
+      ],
+      "category": "MECHANICAL_READER_INTERRUPTED",
+      "failure": "Selector and TextIO line buffering after immediate per-call trace caused false45s no-progress",
+      "correction": "Dedicated stdout thread and queue, same45s progress bound; only own pytest interrupted by SIGINT, original warnings and interrupted fixture cleanup traceback retained",
+      "product_changed": false
+    }
+  ],
+  "limits": [
+    "Historical development windows are retained, no scores migrate from WIP or failed181.",
+    "No installation/real browser/Windows/formalAT/real model/production.",
+    "Combined API request total NOT_RECORDED; final4HTML native fetch136 precisely recorded."
+  ],
+  "additional_windows": [
+    {
+      "xml": "html-compat-v3.xml",
+      "result": "5PASS2FAIL",
+      "seconds": 107.9,
+      "failures": [
+        "actual product current403 error-handler generation order",
+        "mechanical cold page did not first load service plan; exact header assertion correctly failed"
+      ]
+    },
+    {
+      "xml": "html-compat-v4.xml",
+      "result": "7PASS",
+      "seconds": 115.61,
+      "source_status": "WIP authorized product web fix; all four HTML + three compatibility preflight only, not final frozen score"
+    }
+  ],
+  "formal_failed_window": "formal-181-failed-window-check.json",
+  "final_candidate": "candidate-v3.json",
+  "current403_product_fix": "Root fixed error-handler dispatch order; complete frozen8fe new61 includes 4 real native HTTP modes and controlled6 client branches, allPASS.",
+  "cold_recovery_fixture_fix": "Use shipped service-plan-prepare then original exact-key GET, explicit service-plan-release, then original VERIFY; capture actual idempotency header value only and preserve unkeyed identity probe distinction.",
+  "final_frozen_evidence": {
+    "source_sha": "8fe3e6c6ebdb14366dd80032c953c79e746e3fd1",
+    "outputs": [
+      "final-8fe/coverage.json",
+      "final-8fe/html.json",
+      "final-8fe/closure.json"
+    ],
+    "new_complete_counts": {
+      "PASS": 61,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0
+    },
+    "backend_complete_counts": {
+      "PASS": 254,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0
+    },
+    "status": "LIMITED_PASS",
+    "fp29": "LEGACY_PURE_LITERAL_ONLY",
+    "not_run_design_rows": [
+      "FP04",
+      "FP06",
+      "FP11",
+      "FP13",
+      "FP22",
+      "FP27",
+      "FP31",
+      "FP34"
+    ],
+    "sealed_primary": true
+  }
+}

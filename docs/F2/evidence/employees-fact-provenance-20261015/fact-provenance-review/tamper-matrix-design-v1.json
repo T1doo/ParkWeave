@@ -1,0 +1,165 @@
+{
+  "schema": 1,
+  "status": "DESIGN_ONLY_NOT_EXECUTED",
+  "contract_commit": "87ef8ad",
+  "scope": "READ_ONLY_ARCHITECTURE_REVIEW",
+  "threat_boundary": "Original structural fingerprints and scoped actual capture; no claim against an administrator rewriting every ledger and receipt coherently",
+  "cases": [
+    {
+      "id": "FP-R01",
+      "mutation": "Fine node assertion_id changed only; recompute fine/source-change hashes",
+      "expected": "REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R02",
+      "mutation": "Fine row hash points at another existing employees row in same snapshot",
+      "expected": "REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R03",
+      "mutation": "Fine decision_ref replaced with genuine older confirmation; rehash proof",
+      "expected": "REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R04",
+      "mutation": "Fine current confirmation from future preparation_revision",
+      "expected": "REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R05",
+      "mutation": "Registered before replaced by later confirmation rather than original VERIFY prefix",
+      "expected": "REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R06",
+      "mutation": "Current descriptor and fineproof jointly changed to older valid decision while later confirmation existed at captured preparation_revision",
+      "expected": "REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R07",
+      "mutation": "Receipt fingerprint changed while ledger snapshot remains valid",
+      "expected": "CAPTURE_UNKNOWN",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R08",
+      "mutation": "Receipt decision_ref or decision_sha differs from exact ledger event",
+      "expected": "CAPTURE_UNKNOWN",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R09",
+      "mutation": "Two physical receipts satisfy same chosen decision identity",
+      "expected": "CAPTURE_UNKNOWN",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R10",
+      "mutation": "Missing receipt with otherwise valid ledger",
+      "expected": "CAPTURE_UNKNOWN",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R11",
+      "mutation": "Receipt same decision but different Case/Run/actor/action/revision",
+      "expected": "CAPTURE_UNKNOWN",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R12",
+      "mutation": "Prefix loses DECLARE or skips original clarification revision",
+      "expected": "UNKNOWN_OR_REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R13",
+      "mutation": "Ledger prefix event boolean revision or preparation_revision",
+      "expected": "UNKNOWN_OR_REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R14",
+      "mutation": "employees choice duplicated; other required field missing",
+      "expected": "UNKNOWN_OR_REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R15",
+      "mutation": "Choice fingerprint/revision does not match chosen original snapshot row",
+      "expected": "UNKNOWN_OR_REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R16",
+      "mutation": "Original chosen row missing; equivalent current DB assertion exists",
+      "expected": "UNKNOWN_OR_REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R17",
+      "mutation": "Unsupported DOCUMENT_EXTRACT_SYNTHETIC selected employees row",
+      "expected": "UNKNOWN_OR_REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R18",
+      "mutation": "Fine proof endpoints replaced by syntactically valid UUIDs; rehash all",
+      "expected": "REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R19",
+      "mutation": "Original graph partition changed to P1/P5-only; fineproof matches fabricated partition",
+      "expected": "REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R20",
+      "mutation": "Historical confirmation added after successful adoption at higher preparation_revision",
+      "expected": "HISTORY_STILL_VALID",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R21",
+      "mutation": "Employees unchanged but another fact choice/source changed",
+      "expected": "KNOWN_AGGREGATE_IMPACT_RETAINED",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R22",
+      "mutation": "Receipt row xmin ABA between preview and POST but original contents restored",
+      "expected": "POST_REJECT",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R23",
+      "mutation": "Explicit scope omitted; old request fingerprint and source-change v2",
+      "expected": "LEGACY_BYTE_COMPATIBLE",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R24",
+      "mutation": "Explicit new scope with existing MANUAL/package/template composition",
+      "expected": "POST_REJECT_NEW_PATH_ONLY",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R25",
+      "mutation": "Fineproof contains injected source_excerpt/value/raw source_snapshot property",
+      "expected": "REJECT_CLOSED_SCHEMA",
+      "execution": "NOT_RUN"
+    },
+    {
+      "id": "FP-R26",
+      "mutation": "Current actual grant expired after preview while content hashes unchanged",
+      "expected": "POST_REJECT",
+      "execution": "NOT_RUN"
+    }
+  ]
+}

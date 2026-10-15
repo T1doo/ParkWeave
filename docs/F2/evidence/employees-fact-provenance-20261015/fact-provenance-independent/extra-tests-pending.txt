@@ -1,0 +1,42 @@
+
+
+def test_enhanced_history_then_default_adopt_is_nonsticky_and_cold_readable(facts_case):
+    from test_source_change_adoption import preview as original_preview
+    t=facts_case;c=change_fact(t);accepted(t,c);repair_material(t)
+    first=deepcopy(stored(t['f'],t['p']))
+    c=change_fact(t,value=31);v=original_preview(t['f'],t['p'],c).json()
+    assert v['scope']=='SOURCE_CHANGE_LOCAL_REVISION_PREVIEW' and v['can_adopt']
+    assert 'fact_provenance_scope' not in v['adoption']
+    key=uuid4().hex;r=send(t,v['adoption'],key);assert r.status_code==201,r.text
+    now=stored(t['f'],t['p']);change=now['events'][-1]['local_revision']['source_change']
+    assert change['version']==2 and 'fact_provenance' not in change
+    assert now['events'][:len(first['events'])]==first['events']
+    before=full(t);r=recover(t['f'],t['p'],key);assert r.status_code==200 and r.json()['status']=='COMMITTED';assert full(t)==before
+    repair_material(t)
+    record('compatibility',enhanced_v3_then_legacy_v2=True,scope_not_sticky=True,original_cold_get=True)
+
+
+@pytest.mark.parametrize('mode',['MANUAL','MATERIAL_PACKAGE'])
+def test_existing_manual_or_package_combination_refuses_only_new_scope(facts_case,mode):
+    from test_source_change_adoption import preview as original_preview
+    t=facts_case;f,p=t['f'],t['p'];base='/api/preparations/'+p['preparation_id']
+    v=f[3].get(base+'/plan-source-conflicts',headers=headers(f[2])).json()
+    b=dict(schema=1,action='EDIT_NOTE',expected_plan_id=v['plan_id'],expected_plan_revision=v['plan_revision'],
+        expected_note_revision=v['note']['revision'] if v['note'] else 0,expected_ledger_revision=v['opportunity_revision'],
+        expected_preview_sha256=v['preview_sha256'],card_id=v['card_id'],text='SYNTHETIC original owner MANUAL note kept intact',reason='SYNTHETIC explicit original manual edit')
+    r=f[3].post(base+'/plan-source-conflicts/commands',headers=headers(f[2],key=uuid4().hex),json=b);assert r.status_code==200,r.text
+    c=card(t)
+    if mode=='MATERIAL_PACKAGE':
+        v=f[3].get(base+'/plan-material-package',headers=headers(f[2]),params={'card_id':c['id']}).json()
+        b=dict(schema=2,action='KEEP_AND_CONTINUE',expected_plan_id=v['plan_id'],expected_plan_revision=v['plan_revision'],
+            expected_note_revision=v['note']['revision'],expected_ledger_revision=v['opportunity_revision'],
+            expected_preview_sha256=v['preview_sha256'],card_id=c['id'],text=None,reason='SYNTHETIC explicit original package enrollment',confirm_package=True)
+        r=f[3].post(base+'/plan-material-package/commands',headers=headers(f[2],key=uuid4().hex),json=b);assert r.status_code==200,r.text
+        assert r.json()['current']['package_confirmation']['active'] is True
+    c=change_fact(t);before=full(t);v=view(t,c)
+    assert not v['can_adopt'] and v['fact_provenance'] is None and v['unknown_scope']=='THIS_CASE' and v['preserved']==[]
+    assert v['adoption'] is None and 'FACT_PROVENANCE_COMBINATION_UNSUPPORTED' in v['blocking_reasons']
+    r=original_preview(f,p,c);assert r.status_code==200 and r.json()['scope']=='SOURCE_CHANGE_LOCAL_REVISION_PREVIEW'
+    assert 'fact_provenance_scope' not in r.json()['adoption']
+    assert full(t)==before
+    record('compatibility',unsupported_combination=mode,enhanced_rejected=True,legacy_preview_unchanged=True)

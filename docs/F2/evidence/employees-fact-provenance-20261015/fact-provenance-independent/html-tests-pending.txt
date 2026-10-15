@@ -1,0 +1,71 @@
+
+
+def html_controls(t,mode,state):
+    f,u,p=t['f'],t['u'],t['p']
+    def before_adopt():state['before']=deepcopy(stored(f,p))
+    def after_adopt():
+        now=stored(f,p);old=state['before'];change=now['events'][-1]['local_revision']['source_change']
+        assert change['version']==3 and change['fact_provenance']['scope']==SCOPE
+        assert now['events'][:-1]==old['events'] and now['history']==old['history']
+        assert [s['verified_sources'] for s in now['steps']]==[s['verified_sources'] for s in old['steps']]
+    def material():chain.material_decision(u,p,'REVIEW');chain.material_decision(u,p,'CONFIRM')
+    def resources():
+        q=link_read(f,p).json();item=q['current']['record'];current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+        r=link_write(f,current,dict(id=item['combination_id']),revision=q['link_revision']);assert r.status_code==201,r.text
+    def dispatch():
+        id=t['completed']['A']['dispatch']['dispatch_id'];current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+        q=f[3].get('/api/service-dispatches/'+id,headers=headers(f[2],'prep-specialist-fixture-a')).json()
+        r=offer(f,current,revision=q['revision'],recovery_receipt_step_id=q['recovery_receipt_step_id'])[0];assert r.status_code==201,r.text
+        r=dispatch_act(f,r.json(),'ACCEPT');assert r.status_code==200,r.text;state['dispatch']=r.json()
+    def report():chain.report_and_ack(u,p,state['dispatch'])
+    def local():
+        r=local_act(f,p,local_read(f,p).json(),'REVALIDATE');assert r.status_code==200,r.text
+    def revoke():
+        with f[1].connect() as db:db.execute("UPDATE field_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND field_name='employees' AND capability='READ'")
+        state['denied_snapshot']=full(t)
+    def restore():
+        assert full(t)==state['denied_snapshot']
+        with f[1].connect() as db:db.execute("UPDATE field_grants SET active=true,revision=revision+1 WHERE principal_id='fixture-a' AND field_name='employees' AND capability='READ'")
+    def denied():assert full(t)==state['denied_snapshot']
+    return dict(change_fact=lambda:change_fact(t,refresh=False),before_adopt=before_adopt,after_adopt=after_adopt,
+        review_material=material,relink_resources=resources,reoffer_accept=dispatch,new_report_ack=report,revalidate_local=local,
+        final_evidence=lambda:final(t),revoke=revoke,restore=restore,assert_denied_read_no_write=denied)
+
+
+def run_html(t,mode):
+    OUT.mkdir(parents=True,exist_ok=True);state={};controls=html_controls(t,mode,state)
+    config=dict(base=str(t['f'][3].base_url).rstrip('/'),token=t['f'][2]['fixture-a'],mode=mode,A=t['p'])
+    if mode in ('current_403','late_403'):
+        config['card']=card(t)['id']
+        if mode=='late_403':
+            B=create_declared_case(t['u'],t['release'],t['selected'],number=351)
+            # B has original actual fact choices and plan but no fabricated VERIFY.
+            q=opp_read(t['f'],B).json();r=opp_post(t['f'],B,opp_body(q,item=entry()));assert r.status_code==200,r.text
+            config.update(B=B,cardB=r.json()['current']['cards'][0]['id'])
+    script=Path(__file__).with_name('employees_fact_provenance_real_html.js')
+    process=subprocess.Popen(['node',str(script)],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    selector=selectors.DefaultSelector();selector.register(process.stdout,selectors.EVENT_READ);lines=[];err='';result=None
+    attempt=mode+'-'+uuid4().hex[:8]
+    try:
+        process.stdin.write(json.dumps(config)+'\n');process.stdin.flush()
+        while True:
+            assert selector.select(timeout=45),'Original employees HTML flow made no progress for45 seconds'
+            line=process.stdout.readline()
+            if not line:break
+            lines.append(line);msg=json.loads(line)
+            if 'trace' in msg:continue
+            if 'control' in msg:
+                controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+            else:result=msg;break
+        code=process.wait(timeout=10);err=process.stderr.read();assert code==0,err
+        assert result and result['scope']=='FULL_ORIGINAL_HTML_EMPLOYEES_PROVENANCE_ACTUAL_HTTP_ASGI_OWNED_PG'
+        assert result['fake_dto'] is False and result['real_browser']=='NOT_RUN'
+        record('html-results',mode=mode,checks=result['checks'],requests=len(result['calls']),trace=attempt+'.stdout.jsonl',actual_http=True,real_browser='NOT_RUN')
+    finally:
+        selector.close()
+        if process.poll() is None:process.terminate();process.wait(timeout=5)
+        (OUT/(attempt+'.stdout.jsonl')).write_text(''.join(lines));(OUT/(attempt+'.stderr.log')).write_text(err+process.stderr.read())
+
+
+@pytest.mark.parametrize('mode',['positive','lost_ack','current_403','late_403'])
+def test_full_original_html_explicit_employees_adoption_and_authority(facts_case,mode):run_html(facts_case,mode)

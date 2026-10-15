@@ -1,0 +1,45 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________________ test_html_wip[positive] ____________________________
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'positive'
+
+    @pytest.mark.parametrize('mode',['positive','lost_ack','current_403','late_403'])
+>   def test_html_wip(facts_case,mode):owner.run_html(facts_case,mode)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/fact-provenance-independent/candidate/tests/test_employees_fact_html_wip.py:9: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.runtime/fact-provenance-independent/html-tests-pending.txt:57: in run_html
+    controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def after_adopt():
+>       now=stored(f,p);old=state['before'];change=now['events'][-1]['local_revision']['source_change']
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'local_revision'
+
+.runtime/fact-provenance-independent/html-tests-pending.txt:7: KeyError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/fact-provenance-independent/candidate/tests/test_employees_fact_html_wip.py::test_html_wip[positive]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+.runtime/fact-provenance-independent/candidate/tests/test_employees_fact_html_wip.py::test_html_wip[positive]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+.runtime/fact-provenance-independent/candidate/tests/test_employees_fact_html_wip.py::test_html_wip[positive]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/fact-provenance-independent/candidate/tests/test_employees_fact_html_wip.py::test_html_wip[positive]
+1 failed, 3 deselected, 4 warnings in 13.20s

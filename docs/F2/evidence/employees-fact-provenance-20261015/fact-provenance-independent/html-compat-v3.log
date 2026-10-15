@@ -1,0 +1,126 @@
+.FF....                                                                  [100%]
+=================================== FAILURES ===================================
+_ test_full_original_html_explicit_employees_adoption_and_authority[lost_ack] __
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'lost_ack'
+
+    @pytest.mark.parametrize('mode',['positive','lost_ack','current_403','late_403'])
+>   def test_full_original_html_explicit_employees_adoption_and_authority(facts_case,mode):run_html(facts_case,mode)
+                                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/fact-provenance-independent/candidate-v3-work/tests/test_employees_fact_provenance_independent.py:382: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'lost_ack'
+
+    def run_html(t,mode):
+        OUT.mkdir(parents=True,exist_ok=True);state={};controls=html_controls(t,mode,state)
+        config=dict(base=str(t['f'][3].base_url).rstrip('/'),token=t['f'][2]['fixture-a'],mode=mode,A=t['p'])
+        if mode in ('current_403','late_403'):
+            config['card']=card(t)['id']
+            if mode=='late_403':
+                B=create_declared_case(t['u'],t['release'],t['selected'],number=351)
+                # B has original actual fact choices and plan but no fabricated VERIFY.
+                q=opp_read(t['f'],B).json();r=opp_post(t['f'],B,opp_body(q,item=entry()));assert r.status_code==200,r.text
+                config.update(B=B,cardB=r.json()['current']['cards'][0]['id'])
+        script=Path(__file__).with_name('employees_fact_provenance_real_html.js')
+        process=subprocess.Popen(['node',str(script)],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        incoming=queue.Queue();lines=[];err='';result=None
+        def consume_stdout():
+            for line in process.stdout:incoming.put(line)
+            incoming.put(None)
+        reader=threading.Thread(target=consume_stdout,daemon=True);reader.start()
+        attempt=mode+'-'+uuid4().hex[:8]
+        try:
+            process.stdin.write(json.dumps(config)+'\n');process.stdin.flush()
+            while True:
+                try:line=incoming.get(timeout=45)
+                except queue.Empty:raise AssertionError('Original employees HTML flow made no progress for45 seconds')
+                if line is None:break
+                lines.append(line);msg=json.loads(line)
+                if 'trace' in msg:continue
+                if 'control' in msg:
+                    controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+                else:result=msg;break
+>           code=process.wait(timeout=10);err=process.stderr.read();assert code==0,err
+                                                                    ^^^^^^^^^^^^^^^^^^
+E           AssertionError: {"message":"actual cold GET uses exact original Idempotency-Key header","stack":"AssertionError [ERR_ASSERTION]: actual cold GET uses exact original Idempotency-Key header\n    at check (/workspace/ParkWeave/.runtime/fact-provenance-independent/candidate-v3-work/tests/employees_fact_provenance_real_html.js:12:51)\n    at /workspace/ParkWeave/.runtime/fact-provenance-independent/candidate-v3-work/tests/employees_fact_provenance_real_html.js:137:3\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)","diagnostics":{"calls":[{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5","status":200,"response_scope":"SYNTHETIC_LOCAL_PREPARATION_ONLY"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/readiness","status":200,"response_scope":"SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/material-corrections","status":200,"response_scope":"SYNTHETIC_SLOT_MATERIAL_CORRECTIONS"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/material-objections","status":200,"response_scope":"SYNTHETIC_MATERIAL_DELIVERY_OBJECTION"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/material-reuse","status":200,"response_scope":"SYNTHETIC_SAME_OWNER_MATERIAL_OUTLINE_REUSE"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/fact-clarifications","status":200},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/case-cancellation","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/case-cancellation-before-receipt","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/case-cancellation-reconciliation","status":200,"response_scope":"SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/opportunities","status":200,"response_scope":"SYNTHETIC_CASE_OPPORTUNITY_ONLY"},{"method":"POST","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/opportunities/commands","status":200,"body":{"action":"IMPORT","expected_revision":0,"expected_source_sha256":"ddef5376b1f5b249936b1b7e43f858e63b50b425c5d7c07ec892773d39d4b179","reason":"SYNTHETIC explicit original import","entry":{"family_id":"4d7c1e3c-d2c4-4c7f-973e-9ab7a5b32e60","generation":1,"kind":"LOCAL_CASE_DATA","catalog_version":1,"title":"SYNTHETIC actual employees source changed","note":"Unverified hint provides no facts or authority"}},"request_key":"ce870a40-bd25-42db-9488-1fbb4a391444"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/opportunities/recovery/ce870a40-bd25-42db-9488-1fbb4a391444","status":200,"response_scope":"SYNTHETIC_CASE_OPPORTUNITY_ONLY"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/opportunities","status":200,"response_scope":"SYNTHETIC_CASE_OPPORTUNITY_ONLY"},{"method":"POST","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/opportunities/commands","status":200,"body":{"action":"REFRESH","expected_revision":1,"expected_source_sha256":"70583fa242f366bdfc19ea29f544077789788e989f3d031bd25237018ca735db","reason":"SYNTHETIC original explicit actual-source refresh"},"request_key":"549066e1-482d-4830-a98a-49890f931ccc"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/opportunities/recovery/549066e1-482d-4830-a98a-49890f931ccc","status":200,"response_scope":"SYNTHETIC_CASE_OPPORTUNITY_ONLY"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/service-case-plan","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/employees-fact-impact?card_id=86eb2fe5-ab5f-449c-92dc-cfc36a0714fc","status":200,"graph_sha256":"1f6cb0296404b2a42557d92a1e99d74f8cb699983433caf5fdbe2776460219fe","response_scope":"EMPLOYEES_FACT_PROVENANCE_PREVIEW","fact_provenance_sha256":"4f6196e675b8fab105848c64cd925bf05169c00e2c33d6cf88061e8956cfa465"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/service-case-plan","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/employees-fact-impact?card_id=86eb2fe5-ab5f-449c-92dc-cfc36a0714fc","status":200,"graph_sha256":"1f6cb0296404b2a42557d92a1e99d74f8cb699983433caf5fdbe2776460219fe","response_scope":"EMPLOYEES_FACT_PROVENANCE_PREVIEW","fact_provenance_sha256":"4f6196e675b8fab105848c64cd925bf05169c00e2c33d6cf88061e8956cfa465"},{"method":"POST","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/service-case-plan","status":201,"body":{"expected_preparation_revision":9,"expected_request_revision":2,"expected_source_sha256":"8c093db233dbd9f74f07830d86f93d14ae4e0fd6a3f82e075df3d8b7e3d2c323","expected_plan_revision":7,"required_goals":["LOCAL_MATERIAL_PREPARATION","LOCAL_CASE_RESOURCE_ASSOCIATION","LOCAL_INTERNAL_ACCEPTANCE","LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT","LOCAL_CASE_RECORD_RECHECK","LOCAL_SYNTHETIC_COORDINATION_RECORDS"],"reason":"SYNTHETIC explicit original exact employees provenance","local_revision":true,"opportunity_proof":{"card_id":"86eb2fe5-ab5f-449c-92dc-cfc36a0714fc","expected_ledger_revision":2,"expected_card_version":2,"expected_basis_sha256":"70583fa242f366bdfc19ea29f544077789788e989f3d031bd25237018ca735db","expected_preview_sha256":"04526f1c670a7a58f662a674f14310062616e627df054fbe7e2124f4aafd94b3"},"fact_provenance_scope":"EMPLOYEES_USER_ASSERTION_V1"},"request_key":"42ceac20-b573-4828-899e-155199308dd4","response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5","status":200,"response_scope":"SYNTHETIC_LOCAL_PREPARATION_ONLY"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/readiness","status":200,"response_scope":"SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/material-corrections","status":200,"response_scope":"SYNTHETIC_SLOT_MATERIAL_CORRECTIONS"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/material-objections","status":200,"response_scope":"SYNTHETIC_MATERIAL_DELIVERY_OBJECTION"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/material-reuse","status":200,"response_scope":"SYNTHETIC_SAME_OWNER_MATERIAL_OUTLINE_REUSE"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/fact-clarifications","status":200},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/case-cancellation","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/case-cancellation-before-receipt","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT"},{"method":"GET","path":"/api/preparations/6b4f0c25-493e-4899-b061-84214cb31ce5/case-cancellation-reconciliation","status":200,"response_scope":"SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION"}]}}
+E             
+E           assert 1 == 0
+
+.runtime/fact-provenance-independent/candidate-v3-work/tests/test_employees_fact_provenance_independent.py:368: AssertionError
+_ test_full_original_html_explicit_employees_adoption_and_authority[current_403] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'current_403'
+
+    @pytest.mark.parametrize('mode',['positive','lost_ack','current_403','late_403'])
+>   def test_full_original_html_explicit_employees_adoption_and_authority(facts_case,mode):run_html(facts_case,mode)
+                                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/fact-provenance-independent/candidate-v3-work/tests/test_employees_fact_provenance_independent.py:382: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'current_403'
+
+    def run_html(t,mode):
+        OUT.mkdir(parents=True,exist_ok=True);state={};controls=html_controls(t,mode,state)
+        config=dict(base=str(t['f'][3].base_url).rstrip('/'),token=t['f'][2]['fixture-a'],mode=mode,A=t['p'])
+        if mode in ('current_403','late_403'):
+            config['card']=card(t)['id']
+            if mode=='late_403':
+                B=create_declared_case(t['u'],t['release'],t['selected'],number=351)
+                # B has original actual fact choices and plan but no fabricated VERIFY.
+                q=opp_read(t['f'],B).json();r=opp_post(t['f'],B,opp_body(q,item=entry()));assert r.status_code==200,r.text
+                config.update(B=B,cardB=r.json()['current']['cards'][0]['id'])
+        script=Path(__file__).with_name('employees_fact_provenance_real_html.js')
+        process=subprocess.Popen(['node',str(script)],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        incoming=queue.Queue();lines=[];err='';result=None
+        def consume_stdout():
+            for line in process.stdout:incoming.put(line)
+            incoming.put(None)
+        reader=threading.Thread(target=consume_stdout,daemon=True);reader.start()
+        attempt=mode+'-'+uuid4().hex[:8]
+        try:
+            process.stdin.write(json.dumps(config)+'\n');process.stdin.flush()
+            while True:
+                try:line=incoming.get(timeout=45)
+                except queue.Empty:raise AssertionError('Original employees HTML flow made no progress for45 seconds')
+                if line is None:break
+                lines.append(line);msg=json.loads(line)
+                if 'trace' in msg:continue
+                if 'control' in msg:
+                    controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+                else:result=msg;break
+>           code=process.wait(timeout=10);err=process.stderr.read();assert code==0,err
+                                                                    ^^^^^^^^^^^^^^^^^^
+E           AssertionError: {"message":"current denial clears original private plan and preview","stack":"AssertionError [ERR_ASSERTION]: current denial clears original private plan and preview\n    at check (/workspace/ParkWeave/.runtime/fact-provenance-independent/candidate-v3-work/tests/employees_fact_provenance_real_html.js:12:51)\n    at /workspace/ParkWeave/.runtime/fact-provenance-independent/candidate-v3-work/tests/employees_fact_provenance_real_html.js:106:4\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)","diagnostics":{"calls":[{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015","status":200,"response_scope":"SYNTHETIC_LOCAL_PREPARATION_ONLY"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/readiness","status":200,"response_scope":"SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/material-corrections","status":200,"response_scope":"SYNTHETIC_SLOT_MATERIAL_CORRECTIONS"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/material-objections","status":200,"response_scope":"SYNTHETIC_MATERIAL_DELIVERY_OBJECTION"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/material-reuse","status":200,"response_scope":"SYNTHETIC_SAME_OWNER_MATERIAL_OUTLINE_REUSE"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/fact-clarifications","status":200},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/case-cancellation","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/case-cancellation-before-receipt","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/case-cancellation-reconciliation","status":200,"response_scope":"SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/opportunities","status":200,"response_scope":"SYNTHETIC_CASE_OPPORTUNITY_ONLY"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/service-case-plan","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/employees-fact-impact?card_id=a156b437-7192-427d-8e4d-f6f213263bd2","status":200,"graph_sha256":"182d0fbecc6623c76ae1b848515f7ffa5299977f7f803eb2e9132152f74aea4d","response_scope":"EMPLOYEES_FACT_PROVENANCE_PREVIEW","fact_provenance_sha256":"12bda9cdf1c7efaff1e4eef6d3cfba42051c58ec434f5d06c237a1859ea64062"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/service-case-plan","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/22b86a6b-2cb8-4968-9f45-580dbe15b015/employees-fact-impact?card_id=a156b437-7192-427d-8e4d-f6f213263bd2","status":403}]}}
+E             
+E           assert 1 == 0
+
+.runtime/fact-provenance-independent/candidate-v3-work/tests/test_employees_fact_provenance_independent.py:368: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.runtime/fact-provenance-independent/candidate-v3-work/tests/test_employees_fact_provenance_independent.py::test_full_original_html_explicit_employees_adoption_and_authority[positive]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+.runtime/fact-provenance-independent/candidate-v3-work/tests/test_employees_fact_provenance_independent.py::test_full_original_html_explicit_employees_adoption_and_authority[positive]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+.runtime/fact-provenance-independent/candidate-v3-work/tests/test_employees_fact_provenance_independent.py::test_full_original_html_explicit_employees_adoption_and_authority[positive]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/fact-provenance-independent/candidate-v3-work/tests/test_employees_fact_provenance_independent.py::test_full_original_html_explicit_employees_adoption_and_authority[lost_ack]
+FAILED .runtime/fact-provenance-independent/candidate-v3-work/tests/test_employees_fact_provenance_independent.py::test_full_original_html_explicit_employees_adoption_and_authority[current_403]
+2 failed, 5 passed, 16 deselected, 4 warnings in 107.90s (0:01:47)

@@ -1,0 +1,45 @@
+{
+  "status": "COMPLETE_ORIGINAL_FAILURE_DIAGNOSIS",
+  "source_sha": "8fe3e6c6ebdb14366dd80032c953c79e746e3fd1",
+  "window_counts": {
+    "PASS": 788,
+    "FAIL": 1,
+    "ERROR": 0,
+    "SKIP": 0
+  },
+  "xml_sha256": "919a71cd8bd7007080d396ea743669e7a5eb463f1d99cf2be167623eba72acb7",
+  "log_sha256": "462af027e636bda3633b0482d4fd03138e8de2b2d2be3793826a17b534d5756f",
+  "collection_junit_exact_unique": true,
+  "target_module": {
+    "path": "tests/test_service_plan_recovery.py",
+    "complete_items": 30,
+    "PASS": 29,
+    "FAIL": 1
+  },
+  "other_modules": {
+    "count": 24,
+    "PASS": 759
+  },
+  "observed_failure": {
+    "identity": "tests/test_service_plan_recovery.py::test_actual_resource_expiry_during_last_lifecycle_lock_wait_is_read_only",
+    "line": 115,
+    "phase": "precondition P5 verified helper; before target lifecycle lock/thread/wait",
+    "HTTP_status": 200,
+    "actual_P5_state": "BLOCKED",
+    "prior_P2_P3_P4_and_REVALIDATE_passed": true,
+    "test_total_seconds": "8.371",
+    "hold_budget_seconds": 2,
+    "raw_P5_blocking_reasons": "NOT_RECORDED",
+    "raw_hold_remaining_clock": "NOT_RECORDED",
+    "load_cause": "INFERENCE_CONSISTENT_WITH_PREMATURE_EXPIRY_NOT_PROVEN_BY_RAW"
+  },
+  "bounded_retry_recommendation": {
+    "appropriate": true,
+    "count_limit": 1,
+    "condition": "All other heavy pytest workers finished; same original complete30 module with unchanged commands/assertions/timing/budgets",
+    "selection": "Exclude all original30 including29PASS, use all fresh30 only if complete PASS; retain other complete24 modules759PASS",
+    "failure_remains_preserved": true
+  },
+  "new_tests_or_retries_executed_by_reviewer": false,
+  "source624_and_runner4_current_frozen_hashes_equal": true
+}

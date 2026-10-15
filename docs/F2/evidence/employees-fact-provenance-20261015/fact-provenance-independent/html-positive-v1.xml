@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="13.199" timestamp="2026-10-15T22:15:04.848874+00:00" hostname="87a5e83cf057"><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_html_wip" name="test_html_wip[positive]" time="12.967"><failure message="KeyError: 'local_revision'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'positive'
+
+    @pytest.mark.parametrize('mode',['positive','lost_ack','current_403','late_403'])
+&gt;   def test_html_wip(facts_case,mode):owner.run_html(facts_case,mode)
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/fact-provenance-independent/candidate/tests/test_employees_fact_html_wip.py:9: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.runtime/fact-provenance-independent/html-tests-pending.txt:57: in run_html
+    controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def after_adopt():
+&gt;       now=stored(f,p);old=state['before'];change=now['events'][-1]['local_revision']['source_change']
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'local_revision'
+
+.runtime/fact-provenance-independent/html-tests-pending.txt:7: KeyError</failure></testcase></testsuite></testsuites>

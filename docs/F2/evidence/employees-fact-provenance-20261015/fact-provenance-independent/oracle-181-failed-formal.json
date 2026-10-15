@@ -1,0 +1,1128 @@
+{
+  "schema": 1,
+  "scope": "EMPLOYEES_USER_ASSERTION_V1",
+  "source_sha": "18145586c90c394b0022721f114eac36a0893504",
+  "oracle_sha256": "2946aead86d0e81a6ba4625603acd9256cac1e956392e523fc9b07104d841843",
+  "evidence_xml": [
+    {
+      "path": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+      "sha256": "728999eafeac3912ac5229e80dea27d4d62b6c0b10832796e78130956a93d489"
+    }
+  ],
+  "status": "MECHANICAL_MAPPING_NOT_AN_ADDITIONAL_TEST",
+  "counts": {
+    "BOUNDED_HTTP_LITERAL": 10,
+    "NOT_RUN": 9,
+    "VARIANT_MULTIPLE_SOURCE_FIELDS_CHANGED": 2,
+    "PURE_REJECTION_ONLY": 9,
+    "VARIANT_PURE_SCOPE_REJECTION_AND_HTTP_REQUEST_DENIAL": 1,
+    "VARIANT_PURE_TYPE_AND_REVISION_REJECTION": 1,
+    "VARIANT_HTTP_UNKNOWN_MALFORMED_LEDGER": 1,
+    "VARIANT_LEGACY_REQUEST_SERIALIZATION": 1,
+    "VARIANT_CURRENT_ADOPT_AUTHORITY_DENIAL": 1,
+    "VARIANT_REAL_TWO_COMMIT_ABA_BOUNDARY": 1,
+    "INCOMPLETE_OR_FAILED": 1,
+    "VARIANT_ORIGINAL_KEY_PARAMETER_CONFLICT": 1,
+    "VARIANT_NEW_V3_THEN_LEGACY_V2_AND_COLD_GET": 1,
+    "VARIANT_COMBINATION_REJECTS_WITH_LEGACY_PREVIEW": 1
+  },
+  "rows": [
+    {
+      "id": "FP01",
+      "scenario": "identical confirmed employees selection; all actual sources identical",
+      "literal_expected": {
+        "affected": [],
+        "preserved": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "BOUNDED_HTTP_LITERAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": true,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_exact_historical_selection_read_without_card_is_pure",
+          "status": "PASS"
+        }
+      ],
+      "limitation": null
+    },
+    {
+      "id": "FP02",
+      "scenario": "employees value changed and explicitly confirmed using new original assertion",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "BOUNDED_HTTP_LITERAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": true,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_actual_fact_confirmation_then_explicit_original_adopt_verify[employees-FP02]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": null
+    },
+    {
+      "id": "FP03",
+      "scenario": "same employees value but selected assertion identity changed",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "BOUNDED_HTTP_LITERAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": true,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_actual_fact_confirmation_then_explicit_original_adopt_verify[same_value-FP03]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": null
+    },
+    {
+      "id": "FP04",
+      "scenario": "same selected assertion identity but actual revision and matching choice changed",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "NOT_RUN",
+      "execution": "NOT_RUN",
+      "exact_literal_http_pass": false,
+      "evidence": [],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP05",
+      "scenario": "employees selected source_ref changed with matching original proof",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "VARIANT_MULTIPLE_SOURCE_FIELDS_CHANGED",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_actual_fact_confirmation_then_explicit_original_adopt_verify[employees-FP02]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP06",
+      "scenario": "employees selected validity interval changed with matching original proof",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "NOT_RUN",
+      "execution": "NOT_RUN",
+      "exact_literal_http_pass": false,
+      "evidence": [],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP07",
+      "scenario": "employees selected excerpt changed with matching original proof",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "VARIANT_MULTIPLE_SOURCE_FIELDS_CHANGED",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_actual_fact_confirmation_then_explicit_original_adopt_verify[employees-FP02]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP08",
+      "scenario": "employees unchanged; additional unselected employees assertion confirmed",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "SELECTED_UNCHANGED_AGGREGATE_CHANGED",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "BOUNDED_HTTP_LITERAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": true,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_actual_fact_confirmation_then_explicit_original_adopt_verify[unselected-FP08]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": null
+    },
+    {
+      "id": "FP09",
+      "scenario": "employees unchanged; other required field selected assertion changed",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "SELECTED_UNCHANGED_AGGREGATE_CHANGED",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "BOUNDED_HTTP_LITERAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": true,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_actual_fact_confirmation_then_explicit_original_adopt_verify[region-FP09]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": null
+    },
+    {
+      "id": "FP10",
+      "scenario": "only resource capacity/query changed; fact descriptors unchanged",
+      "literal_expected": {
+        "affected": [
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [
+          "P1"
+        ],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "BOUNDED_HTTP_LITERAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": true,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_resource_change_preserves_original_p1_lock_and_verify_evidence",
+          "status": "PASS"
+        }
+      ],
+      "limitation": null
+    },
+    {
+      "id": "FP11",
+      "scenario": "only dispatch/Run access changed; fact descriptors unchanged",
+      "literal_expected": {
+        "affected": [
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [
+          "P1",
+          "P2"
+        ],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "NOT_RUN",
+      "execution": "NOT_RUN",
+      "exact_literal_http_pass": false,
+      "evidence": [],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP12",
+      "scenario": "only receipt changed; fact descriptors unchanged",
+      "literal_expected": {
+        "affected": [
+          "P4",
+          "P5"
+        ],
+        "preserved": [
+          "P1",
+          "P2",
+          "P3"
+        ],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "BOUNDED_HTTP_LITERAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": true,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_receipt_change_preserves_three_original_locks",
+          "status": "PASS"
+        }
+      ],
+      "limitation": null
+    },
+    {
+      "id": "FP13",
+      "scenario": "only local check changed; fact descriptors unchanged",
+      "literal_expected": {
+        "affected": [
+          "P5"
+        ],
+        "preserved": [
+          "P1",
+          "P2",
+          "P3",
+          "P4"
+        ],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "NOT_RUN",
+      "execution": "NOT_RUN",
+      "exact_literal_http_pass": false,
+      "evidence": [],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP14",
+      "scenario": "registered before decision_ref not found in retained ledger",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "BOUNDED_HTTP_LITERAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": true,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_missing_or_wrong_original_confirmation_history_stays_unknown[missing_historical_event]",
+          "status": "PASS"
+        },
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_missing_or_wrong_original_confirmation_history_stays_unknown[missing_receipt]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": null
+    },
+    {
+      "id": "FP15",
+      "scenario": "registered before decision_sha mismatch",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "PURE_REJECTION_ONLY",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[wrong_sha]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP16",
+      "scenario": "before descriptor hash mismatch",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "PURE_REJECTION_ONLY",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[descriptor_sha]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP17",
+      "scenario": "historical snapshot source_sha mismatch",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "PURE_REJECTION_ONLY",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[source_sha]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP18",
+      "scenario": "historical source binding is another Case/Run/owner/tenant",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "VARIANT_PURE_SCOPE_REJECTION_AND_HTTP_REQUEST_DENIAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[wrong_owner]",
+          "status": "PASS"
+        },
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_cross_tenant_owner_and_role_never_receive_private_provenance",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP19",
+      "scenario": "employees choice missing or duplicated",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "PURE_REJECTION_ONLY",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[duplicate_choice]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP20",
+      "scenario": "employees choice assertion absent from historical snapshot",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "PURE_REJECTION_ONLY",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[missing_row]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP21",
+      "scenario": "employees choice revision mismatch",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "VARIANT_PURE_TYPE_AND_REVISION_REJECTION",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[bad_revision]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP22",
+      "scenario": "employees choice fingerprint mismatch",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "NOT_RUN",
+      "execution": "NOT_RUN",
+      "exact_literal_http_pass": false,
+      "evidence": [],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP23",
+      "scenario": "historical selected row duplicated",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "PURE_REJECTION_ONLY",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[duplicate_row]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP24",
+      "scenario": "historical selected row field mismatch",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "PURE_REJECTION_ONLY",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[wrong_field]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP25",
+      "scenario": "historical source row unsupported kind / bundle-derived",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "PURE_REJECTION_ONLY",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[unsupported_source]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP26",
+      "scenario": "current descriptor STALE / UNKNOWN / unsatisfied",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "VARIANT_HTTP_UNKNOWN_MALFORMED_LEDGER",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_missing_or_wrong_original_confirmation_history_stays_unknown[missing_historical_event]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP27",
+      "scenario": "new current fact unavailable and only old committed confirmation remains",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "NOT_RUN",
+      "execution": "NOT_RUN",
+      "exact_literal_http_pass": false,
+      "evidence": [],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP28",
+      "scenario": "selected provenance snapshot malformed scalar/type",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "PURE_REJECTION_ONLY",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[scalar_snapshot]",
+          "status": "PASS"
+        },
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[bad_value]",
+          "status": "PASS"
+        },
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_historical_detail_is_never_filled_from_current[bad_row_keys]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP29",
+      "scenario": "unmapped original source field still caught by existing graph",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "UNKNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "LEGACY_PURE_LITERAL_ONLY",
+      "execution": "NOT_RUN",
+      "exact_literal_http_pass": false,
+      "evidence": [],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP30",
+      "scenario": "both original descriptors NOT_DECLARED; no fine-grained enrollment",
+      "literal_expected": {
+        "affected": [],
+        "preserved": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "unknown_scope": null,
+        "employee_provenance": "NOT_APPLICABLE_AGGREGATE_LEGACY",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "VARIANT_LEGACY_REQUEST_SERIALIZATION",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance.py::test_optional_request_extension_preserves_legacy_serialization",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP31",
+      "scenario": "before NOT_DECLARED current explicitly confirmed original fact purpose",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "HISTORICAL_DETAIL_UNAVAILABLE",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "NOT_RUN",
+      "execution": "NOT_RUN",
+      "exact_literal_http_pass": false,
+      "evidence": [],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP32",
+      "scenario": "resource change with P1 locked and employees selected proof unchanged",
+      "literal_expected": {
+        "affected": [
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [
+          "P1"
+        ],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "ORIGINAL_UNAFFECTED_LOCK_RETAINED"
+      },
+      "coverage_kind": "BOUNDED_HTTP_LITERAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": true,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_resource_change_preserves_original_p1_lock_and_verify_evidence",
+          "status": "PASS"
+        }
+      ],
+      "limitation": null
+    },
+    {
+      "id": "FP33",
+      "scenario": "employees change with P1 locked",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "ORIGINAL_LOCK_CONFLICT_UNTIL_EXPLICIT_UNLOCK"
+      },
+      "coverage_kind": "BOUNDED_HTTP_LITERAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": true,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_affected_lock_requires_original_explicit_unlock",
+          "status": "PASS"
+        }
+      ],
+      "limitation": null
+    },
+    {
+      "id": "FP34",
+      "scenario": "employees change plus receipt change union remains all five",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "NOT_RUN",
+      "execution": "NOT_RUN",
+      "exact_literal_http_pass": false,
+      "evidence": [],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP35",
+      "scenario": "same prior confirmation replay after current authority revoked",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": "THIS_CASE",
+        "employee_provenance": "CURRENT_AUTHORITY_UNAVAILABLE",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "VARIANT_CURRENT_ADOPT_AUTHORITY_DENIAL",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_revoke_then_restore_does_not_revive_old_preview",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP36",
+      "scenario": "source ABA between preview and ADOPT",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN_PREVIEW_STALE_EPOCH",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "VARIANT_REAL_TWO_COMMIT_ABA_BOUNDARY",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_source_row_aba_between_preview_and_original_adopt_refuses",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP37",
+      "scenario": "lost successful ADOPT response cold original-key GET recovers original event",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "NO_SECOND_POST"
+      },
+      "coverage_kind": "VARIANT_COMMITTED_RESPONSE_LOSS_AND_COLD_GET",
+      "execution": "INCOMPLETE_OR_FAILED",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_full_original_html_explicit_employees_adoption_and_authority[lost_ack]",
+          "status": "FAIL"
+        },
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_same_key_changed_scope_parameters_and_cold_original_get",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP38",
+      "scenario": "same ADOPT key changed expected provenance parameters",
+      "literal_expected": {
+        "affected": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "preserved": [],
+        "unknown_scope": null,
+        "employee_provenance": "KNOWN",
+        "new_source_adopt": "REFUSED"
+      },
+      "coverage_kind": "VARIANT_ORIGINAL_KEY_PARAMETER_CONFLICT",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_same_key_changed_scope_parameters_and_cold_original_get",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP39",
+      "scenario": "old stored schema1 graph remains interpreted by frozen build_v1",
+      "literal_expected": {
+        "affected": [],
+        "preserved": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "unknown_scope": null,
+        "employee_provenance": "LEGACY_NOT_REINTERPRETED",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "VARIANT_NEW_V3_THEN_LEGACY_V2_AND_COLD_GET",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_enhanced_history_then_default_adopt_is_nonsticky_and_cold_readable",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    },
+    {
+      "id": "FP40",
+      "scenario": "old v3 material-package continuation remains separate historical protocol",
+      "literal_expected": {
+        "affected": [],
+        "preserved": [
+          "P1",
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "unknown_scope": null,
+        "employee_provenance": "LEGACY_NOT_REINTERPRETED",
+        "new_source_adopt": "EXISTING_GATES"
+      },
+      "coverage_kind": "VARIANT_COMBINATION_REJECTS_WITH_LEGACY_PREVIEW",
+      "execution": "PASS",
+      "exact_literal_http_pass": false,
+      "evidence": [
+        {
+          "xml": "/workspace/ParkWeave/.runtime/fact-provenance-final/new.xml",
+          "identity": "tests/test_employees_fact_provenance_independent.py::test_existing_manual_or_package_combination_refuses_only_new_scope[MATERIAL_PACKAGE]",
+          "status": "PASS"
+        }
+      ],
+      "limitation": "This evidence does not execute the entire design row as a real HTTP literal partition scenario."
+    }
+  ],
+  "note": "Pure rejection proves no facade partition, VARIANT is explicitly partial, same testcase may support multiple design rows. Do not sum40 rows as tests. Windows/browser/AT/models/production NOT_RUN."
+}

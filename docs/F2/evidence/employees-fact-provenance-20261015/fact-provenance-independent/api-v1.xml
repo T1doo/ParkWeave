@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="16" time="207.969" timestamp="2026-10-15T22:13:33.969725+00:00" hostname="87a5e83cf057"><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_exact_historical_selection_read_without_card_is_pure" time="9.817" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_actual_fact_confirmation_then_explicit_original_adopt_verify[employees-FP02]" time="14.682" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_actual_fact_confirmation_then_explicit_original_adopt_verify[same_value-FP03]" time="16.290" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_actual_fact_confirmation_then_explicit_original_adopt_verify[unselected-FP08]" time="16.275" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_actual_fact_confirmation_then_explicit_original_adopt_verify[region-FP09]" time="14.970" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_resource_change_preserves_original_p1_lock_and_verify_evidence" time="12.945"><failure message="AssertionError: {&quot;detail&quot;:&quot;current cycle already validated&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_resource_change_preserves_original_p1_lock_and_verify_evidence(facts_case):
+        t=facts_case;assert lock(t['f'],t['p'],'P1').status_code==200;old=deepcopy(stored(t['f'],t['p']))
+&gt;       add_resource(t['f']);c=card(t);partition(t,view(t,c),'FP10');accepted(t,c);repair_tail(t,('P2','P3','P4','P5'));final(t)
+                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/fact-provenance-independent/candidate/tests/test_employees_fact_provenance_independent.py:228: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+adapters = ('P2', 'P3', 'P4', 'P5')
+
+    def repair_tail(t,adapters):
+        for a in adapters:
+            if a!='P5':verified(t['f'],t['p'],a)
+&gt;       r=local_act(t['f'],t['p'],local_read(t['f'],t['p']).json(),'REVALIDATE');assert r.status_code==200,r.text
+                                                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"current cycle already validated"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+.runtime/fact-provenance-independent/candidate/tests/test_employees_fact_provenance_independent.py:162: AssertionError</failure></testcase><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_receipt_change_preserves_three_original_locks" time="17.381" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_missing_or_wrong_original_confirmation_history_stays_unknown[missing_receipt]" time="10.149" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_missing_or_wrong_original_confirmation_history_stays_unknown[wrong_receipt_payload]" time="8.981" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_missing_or_wrong_original_confirmation_history_stays_unknown[missing_historical_event]" time="8.884" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_cross_tenant_owner_and_role_never_receive_private_provenance" time="9.704" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_same_key_changed_scope_parameters_and_cold_original_get" time="17.798" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_affected_lock_requires_original_explicit_unlock" time="19.425" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_scope_cannot_bypass_original_local_revision_and_opportunity" time="10.721" /><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_revoke_then_restore_does_not_revive_old_preview" time="9.735"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table field_grants">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_revoke_then_restore_does_not_revive_old_preview(facts_case):
+        t=facts_case;c=change_fact(t);b=view(t,c)['adoption'];f=t['f']
+&gt;       f[0].revoke_field('fixture-a','employees','WRITE')
+
+.runtime/fact-provenance-independent/candidate/tests/test_employees_fact_provenance_independent.py:288: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/store.py:617: in revoke_field
+    c.execute("UPDATE field_grants SET active=false,revision=revision+1 WHERE principal_id=%s AND field_name=%s AND capability=%s",
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;parkweave.store._AccessConnection [BAD] at 0x7f4edd473ad0&gt;
+query = 'UPDATE field_grants SET active=false,revision=revision+1 WHERE principal_id=%s AND field_name=%s AND capability=%s'
+params = ('fixture-a', 'employees', 'WRITE'), prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table field_grants
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase><testcase classname=".runtime.fact-provenance-independent.candidate.tests.test_employees_fact_provenance_independent" name="test_source_row_aba_between_preview_and_original_adopt_refuses" time="9.898" /></testsuite></testsuites>
