@@ -8,6 +8,7 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]/'windows'))
 from lifecycle_diagnostics import CATEGORIES as LIFECYCLE_CATEGORIES
 
 MAX_REPORT_BYTES=512*1024
+MAX_ALLOWLIST_BYTES=512*1024
 MAX_JUNIT_BYTES=4*1024*1024
 MAX_TEST_CASES=10000
 MAX_FAILURE_IDS=25
@@ -86,7 +87,7 @@ def read_report(path):
 
 
 def _allowed_tests():
-    value=json.loads(_bounded_bytes(Path(__file__).with_name('diagnostic-test-ids.json'),256*1024))
+    value=json.loads(_bounded_bytes(Path(__file__).with_name('diagnostic-test-ids.json'),MAX_ALLOWLIST_BYTES))
     if not isinstance(value,dict) or set(value)!={'schema','test_ids'} or type(value['schema']) is not int or value['schema']!=1:raise ValueError('invalid allowlist')
     ids=value['test_ids']
     if not isinstance(ids,list) or not 0<len(ids)<=3000 or any(not isinstance(x,str) or len(x)>256 or not re.fullmatch(TEST_ID_PATTERN,x) for x in ids) or len(set(ids))!=len(ids):raise ValueError('invalid allowlist')

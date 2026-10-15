@@ -91,6 +91,24 @@ def test_committed_allowlist_exactly_matches_trusted_test_functions():
     assert m._allowed_tests()==expected
 
 
+def test_static_allowlist_actual_byte_boundary_and_private_refusal(tmp_path,monkeypatch):
+    m=module('diagnostics')
+    raw=Path(m.__file__).with_name('diagnostic-test-ids.json').read_bytes()
+    expected=frozenset(json.loads(raw)['test_ids'])
+    path=tmp_path/'diagnostic-test-ids.json'
+    limit=512*1024  # Independent public contract; other diagnostic limits stay unchanged.
+    assert len(raw)<limit
+    path.write_bytes(b' '*(limit-len(raw))+raw)
+    monkeypatch.setattr(m,'__file__',str(tmp_path/'diagnostics.py'))
+    assert path.stat().st_size==limit and m._allowed_tests()==expected
+    with path.open('ab') as stream:stream.write(b' ')
+    with pytest.raises(ValueError,match='diagnostic input too large'):m._allowed_tests()
+    _,reference=junit(tmp_path,[('test_lifecycle','test_config_write_is_exclusive_and_no_secret_fields','failure')])
+    result=m.failure_tests(tmp_path,reference)
+    assert result=={'state':'ALLOWLIST_UNAVAILABLE','failed_test_ids':[],'test_cases_seen':0,'failed_cases':0,'unknown_failed_cases':0,'ids_truncated':False}
+    assert POISON not in json.dumps(result)
+
+
 def test_actual_unittest_class_junit_exact_identity_and_private_parameter_redaction(tmp_path):
     m=module('diagnostics')
     method='test_wrong_python_not_accepted_as_ready'
