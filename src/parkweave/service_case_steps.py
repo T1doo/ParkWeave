@@ -15,6 +15,7 @@ from psycopg.types.json import Jsonb
 from . import bounded_planning as planning, controlled_plans as cp
 from . import preparation as prep, case_lifecycle as life, executor_receipts as er, registered_dependencies as dependencies
 from .store import Conflict, Denied
+from .source_change_adoption import OpportunityProof
 
 SCOPE='SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN'
 ROLES={'P1':('enterprise_operator','park_specialist'),
@@ -33,6 +34,7 @@ class Adopt(BaseModel):
     reason:str=Field(min_length=1,max_length=1000)
     local_revision:Literal[True]|None=None
     partial_adoption:Literal[True]|None=None
+    opportunity_proof:OpportunityProof|None=None
 
     candidate_id:str|None=Field(default=None,pattern='^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
     expected_candidate_sha256:str|None=Field(default=None,pattern='^[a-f0-9]{64}$')
@@ -41,6 +43,7 @@ class Adopt(BaseModel):
     @model_validator(mode='after')
     def paired_candidate(self):
         values=(self.candidate_id,self.expected_candidate_sha256,self.expected_verification_sha256)
+        if self.opportunity_proof is not None and (self.local_revision is not True or self.partial_adoption is not None):raise ValueError('opportunity proof requires explicit original local revision')
         if any(v is not None for v in values) and (not all(v is not None for v in values) or self.local_revision is not None):raise ValueError('complete candidate confirmation for adoption required')
         return self
 
@@ -546,7 +549,7 @@ def _recovery_proofs(parent):
                         data.required_goals!=plan['required_goals'] or
                         data.expected_request_revision!=plan['binding']['request_intent']['revision'] or
                         data.reason!=event['reason'] or patch['previous_sha256']!=(latest_dependencies['sha256'] if latest_dependencies else None) or
-                        set(patch)!={'request','previous_sha256','affected','preserved'} or
+                        set(patch)!=({'request','previous_sha256','affected','preserved','source_change'} if data.opportunity_proof is not None else {'request','previous_sha256','affected','preserved'}) or
                         not isinstance(patch['affected'],list) or not isinstance(patch['preserved'],list) or
                         not patch['affected'] or len(set(patch['affected']+patch['preserved']))!=len(step_ids) or
                         set(patch['affected']+patch['preserved'])!=step_ids):raise ValueError()
@@ -694,12 +697,24 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
             if not prior:raise Conflict('existing registered plan required for local revision')
             _recovery_proofs(parent)
             if _binding_issues(c,parent,prior,store=store):raise Conflict('changed request or service contract requires original explicit replacement')
-            basis,affected,unknown=dependency_impact(store,c,parent,prior)
+            source_change=None
+            if data.opportunity_proof is not None:
+                from .source_change_adoption import build
+                opportunity_preview,source_change,basis,affected=build(store,c,p,parent,data.opportunity_proof.card_id,current=current)
+                if not opportunity_preview['can_adopt'] or opportunity_preview['adoption']['opportunity_proof']!=data.opportunity_proof.model_dump():
+                    raise Conflict('current opportunity source-change preview required')
+            else:basis,affected,unknown=dependency_impact(store,c,parent,prior)
             if not affected or any(not v['known'] for v in basis['collections'].values()):raise Conflict('known current dependency patch required')
             if basis!=dependencies.manifest(prior['steps'],current['dependency_collections']):raise Conflict('dependency collection changed during local adoption')
             locks=[s for s in prior['steps'] if _manual_lock(prior,s)]
             if any(s['adapter_id'] in affected for s in locks):raise Conflict('affected locked decisions require explicit unlock')
             if prior['revision']+1+len(locks)>LIMIT:raise Conflict('event capacity reserved for explicit unlocks')
+            if source_change is not None:
+                # Re-read actual sources, original card/ledger and proposal after
+                # source locks/waits, immediately before the single plan write.
+                final_preview,final_change,final_basis,final_affected=build(store,c,p,parent,data.opportunity_proof.card_id)
+                if (not final_preview['can_adopt'] or final_change!=source_change or final_basis!=basis or final_affected!=affected):
+                    raise Conflict('opportunity source changed during explicit adoption')
             before=prior.get('dependency_manifest')
             for a in affected:_invalidate(prior,int(a[1:]))
             prior['dependency_manifest']=basis;prior['revision']+=1
@@ -708,6 +723,7 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
             event['local_revision']=dict(request=_adopt_request(data),previous_sha256=before['sha256'] if before else None,
                                         affected=[s['id'] for s in prior['steps'] if s['adapter_id'] in affected],
                                         preserved=[s['id'] for s in prior['steps'] if s['adapter_id'] not in affected])
+            if source_change is not None:event['local_revision']['source_change']=source_change
             _context(store,c,token,id,True);_save(c,parent,prior)
             return _view(store,c,p,parent,prior,event)
         history=[]

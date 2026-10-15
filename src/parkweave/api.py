@@ -99,6 +99,10 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     @app.get('/api/preparations/{preparation_id}/opportunities')
     def opportunity_read(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return opportunities.read(store,token(authorization),preparation_id)
+    @app.get('/api/preparations/{preparation_id}/opportunities/{card_id}/plan-revision')
+    def opportunity_plan_revision(preparation_id: UUID,card_id: UUID,authorization: str | None=Header(default=None)):
+        from . import source_change_adoption
+        return source_change_adoption.read(store,token(authorization),preparation_id,card_id)
     @app.post('/api/preparations/{preparation_id}/opportunities/commands')
     def opportunity_command(preparation_id: UUID,data: opportunities.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return opportunities.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)

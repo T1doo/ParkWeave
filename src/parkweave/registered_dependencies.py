@@ -121,10 +121,13 @@ def plan_proof(parent,plan):
                     event['coordination_only'] is not True or event['source_sha256'] is not None or event['sources'] is not None or
                     event['fingerprint']!=cp._hash(dict(preparation_id=str(parent['id']),action='ADOPT',**_adopt_request(request))) or
                     patch['previous_sha256']!=(latest['sha256'] if latest else None) or
-                    set(patch)!={'request','previous_sha256','affected','preserved'} or
+                    set(patch)!=({'request','previous_sha256','affected','preserved','source_change'} if request.opportunity_proof is not None else {'request','previous_sha256','affected','preserved'}) or
                     not isinstance(patch['affected'],list) or not isinstance(patch['preserved'],list) or not patch['affected'] or
                     len(patch['affected']+patch['preserved'])!=len(step_ids) or set(patch['affected']+patch['preserved'])!=step_ids or value is None):raise ValueError()
                 affected,_=impact_between(plan['steps'],latest,value)
+                if request.opportunity_proof is not None:
+                    from .source_change_adoption import validate_history
+                    affected=validate_history(parent,plan,event,latest,value)
                 # History carries its original declaration version. Never recompile it
                 # with today's VERSION/DECLARATIONS; current writes prove their preview.
                 original_edges=[dict(upstream=dep,downstream=s['adapter_id'],kind='PRECEDES',provenance='COMPILED_REGISTERED_ADAPTER')
