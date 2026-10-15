@@ -147,3 +147,14 @@ def test_expired_actual_source_refuses_preview_adoption_even_with_pending_curren
     before=snapshot(f);r=preview(f,p,card);assert r.status_code==200,r.text;x=r.json()
     assert not x['can_adopt'] and 'CURRENT_KNOWN_SOURCE_REQUIRED' in x['blocking_reasons']
     assert adopt(f,p,x['adoption']).status_code==409 and snapshot(f)==before
+
+
+def test_original_opportunity_recovery_key_plan_revision_keeps_its_route(http_f):
+    f=http_f;p,x,_=imported(f)
+    result=post(f,p,body(x,'REFRESH'),key='plan-revision')
+    assert result.status_code==200,result.text
+    before=snapshot(f)
+    recovered=f[3].get('/api/preparations/'+p['preparation_id']+'/opportunities/recovery/plan-revision',headers=headers(f[2]))
+    assert recovered.status_code==200,recovered.text
+    assert recovered.json()['receipt']==result.json()['receipt']
+    assert snapshot(f)==before
