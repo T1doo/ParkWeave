@@ -1,0 +1,61 @@
+......................F                                                  [100%]
+=================================== FAILURES ===================================
+__ test_malformed_other_case_plan_is_unknown_without_raw_content_or_omission ___
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    
+    
+    def test_malformed_other_case_plan_is_unknown_without_raw_content_or_omission(http_f):
+>       from psycopg.types.json import Jsonb
+                                 ^^^^^^^^^^^^
+
+tests/test_shared_source_cases.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f748f2628a0>
+query = 'UPDATE preparations SET service_case_plan=%s WHERE id=%s'
+params = (Jsonb('SYNTHETIC PRIVATE_BAD_PLAN'), 'c0c8c398-bc98-489e-91be-d2ab91091c5c')
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.CheckViolation: new row for relation "preparations" violates check constraint "preparations_service_case_plan_check"
+E           DETAIL:  Failing row contains (c0c8c398-bc98-489e-91be-d2ab91091c5c, 190dafb0-36f2-43a1-bef1-c019e4bc6941, 7483a29e-328a-4e21-a37b-be4469e11b79, fixture-a, prep-specialist-fixture-a, park-a, org-a, synthetic-material-preparation, 1, SYNTHETIC, SYNTHETIC资料准备, LOCAL_CONFIRMED, 8, 0b1b9f904e216d36d95486e50ccf6216f824394e6bb47632c126561099205b43, 2026-10-15 07:21:21.005645+00, {"source": "USER_EXPLICIT_STATEMENT", "coverage": {"items": [{"g..., null, null, "SYNTHETIC PRIVATE_BAD_PLAN", null, null, null, null).
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: CheckViolation
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_shared_source_cases.py::test_two_actual_cases_share_owner_resource_pool_and_unaffected_p1_lock
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_shared_source_cases.py::test_malformed_other_case_plan_is_unknown_without_raw_content_or_omission
+1 failed, 22 passed, 2 warnings in 82.98s (0:01:22)

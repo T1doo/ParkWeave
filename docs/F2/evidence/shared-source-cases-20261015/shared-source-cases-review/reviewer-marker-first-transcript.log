@@ -1,0 +1,6 @@
+REVIEWER TOOL RECEIPT TRANSCRIPTION, NOT A REDIRECTED ORIGINAL STDOUT FILE.
+During WIP-only source-record checks, the literal marker assertion expected projection_schema=1 while the backend had just adopted the stronger shared PROJECTION_SCHEMA constant for both response and cursor. The tool returned exit1:
+Traceback (most recent call last):
+  File "<stdin>", line 6, in <module>
+AssertionError
+Follow-up read showed all safety markers present and projection_schema=PROJECTION_SCHEMA with PROJECTION_SCHEMA=1. This was an outdated reviewer marker check, not a product regression or an executed application test. The record script was updated to recognize the bound constant. No earlier product evidence is relabeled.

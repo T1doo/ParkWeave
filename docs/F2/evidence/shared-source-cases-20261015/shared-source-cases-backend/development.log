@@ -1,0 +1,51 @@
+...F.....F........                                                       [100%]
+=================================== FAILURES ===================================
+_______________ test_no_preparation_case_is_not_silently_omitted _______________
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_no_preparation_case_is_not_silently_omitted(http_f):
+        f=http_f;p=setup(f,GOALS[0])
+        r=f[3].post('/api/runs',headers=headers(f[2],key=uuid4().hex),json={'goal':'SYNTHETIC no preparation original Case'})
+>       assert r.status_code==201,r.text;f[0].finish(f[0].claim('synthetic-no-preparation'))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"run_id":"31a8ce23-b2d9-436e-8155-c539a78af26c"}
+E       assert 202 == 201
+E        +  where 202 = <Response [202 Accepted]>.status_code
+
+tests/test_shared_source_cases.py:60: AssertionError
+_ test_cursor_binds_all_candidate_case_versions_and_actual_source_epoch[preparation_aba] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mutation = 'preparation_aba'
+
+    @pytest.mark.parametrize('mutation',['source_aba','preparation_aba','new_case','plan_revision','nonpage_receipt'])
+    def test_cursor_binds_all_candidate_case_versions_and_actual_source_epoch(http_f,mutation):
+        f=http_f;p,_,_,s=complete(f);q=setup(f,GOALS[0]);assert adopt(f,q).status_code==201;verified(f,q,'P1')
+        r=query(f,p,limit=1);assert r.status_code==200,r.text;cursor=r.json()['next_cursor'];assert cursor
+        if mutation=='source_aba':
+            from parkweave.resource_holds import RESOURCE_ID
+            with f[1].connect() as c:capacity=c.execute('SELECT capacity FROM synthetic_resources WHERE id=%s',(RESOURCE_ID,)).fetchone()['capacity']
+            with f[1].connect() as c:c.execute('UPDATE synthetic_resources SET capacity=capacity+1 WHERE id=%s',(RESOURCE_ID,))
+            with f[1].connect() as c:c.execute('UPDATE synthetic_resources SET capacity=%s WHERE id=%s',(capacity,RESOURCE_ID))
+        elif mutation=='preparation_aba':
+            with f[1].connect() as c:c.execute("UPDATE preparations SET goal=goal||' SYNTHETIC ABA' WHERE id=%s",(q['preparation_id'],))
+>           with f[1].connect() as c:c.execute('UPDATE preparations SET goal=%s WHERE id=%s',(q['goal'],q['preparation_id']))
+                                                                                              ^^^^^^^^^
+E           KeyError: 'goal'
+
+tests/test_shared_source_cases.py:83: KeyError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_shared_source_cases.py::test_two_actual_cases_share_owner_resource_pool_and_unaffected_p1_lock
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_shared_source_cases.py::test_no_preparation_case_is_not_silently_omitted
+FAILED tests/test_shared_source_cases.py::test_cursor_binds_all_candidate_case_versions_and_actual_source_epoch[preparation_aba]
+2 failed, 16 passed, 2 warnings in 75.68s (0:01:15)

@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="10" time="70.151" timestamp="2026-10-15T07:14:59.852128+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_shared_source_cases_independent" name="test_resource_reverse_literal_multiple_cases_no_plan_and_unrelated_read_only" time="8.222"><failure message="AssertionError: assert ({'id': UUID('99ffa698-f8d7-4899-ae55-b4ffc95b21b8'), 'fence': 1} and UUID('99ffa698-f8d7-4899-ae55-b4ffc95b21b8') == '99ffa698-f8d7-4899-ae55-b4ffc95b21b8')">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_resource_reverse_literal_multiple_cases_no_plan_and_unrelated_read_only(shared_http):
+        f, _ = shared_http
+        p, _, _, _ = complete(f, local=True); q, _, _, _ = complete(f, local=True)
+&gt;       r = one_step(f); n = create(f)[0]; u = no_preparation(f)
+                                               ^^^^^^^^^^^^^^^^^
+
+tests/test_shared_source_cases_independent.py:104: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+user = 'fixture-a'
+
+    def no_preparation(f, user='fixture-a'):
+        run = f[0].submit(f[2][user], uuid4().hex, Intake(goal='SYNTHETIC PRIVATE_SHARED_UNPREPARED'))
+&gt;       work = f[0].claim('independent-shared-unprepared'); assert work and work['id'] == run
+                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: assert ({'id': UUID('99ffa698-f8d7-4899-ae55-b4ffc95b21b8'), 'fence': 1} and UUID('99ffa698-f8d7-4899-ae55-b4ffc95b21b8') == '99ffa698-f8d7-4899-ae55-b4ffc95b21b8')
+
+tests/test_shared_source_cases_independent.py:86: AssertionError</failure></testcase><testcase classname="tests.test_shared_source_cases_independent" name="test_other_case_material_change_is_not_selected_shared_source_change" time="7.480" /><testcase classname="tests.test_shared_source_cases_independent" name="test_catalog_exact_current_reference_affects_all_original_steps" time="4.927" /><testcase classname="tests.test_shared_source_cases_independent" name="test_missing_verified_baseline_is_unknown_never_no_impact" time="1.557" /><testcase classname="tests.test_shared_source_cases_independent" name="test_original_html_shared_source_to_other_case_explicit_six_goal_chain[positive]" time="18.801" /><testcase classname="tests.test_shared_source_cases_independent" name="test_original_html_shared_source_to_other_case_explicit_six_goal_chain[lost]" time="20.035" /><testcase classname="tests.test_shared_source_cases_independent" name="test_original_html_reverse_current_denial_late_aba_and_source_selection[current_403]" time="2.079" /><testcase classname="tests.test_shared_source_cases_independent" name="test_original_html_reverse_current_denial_late_aba_and_source_selection[late_aba]" time="2.221" /><testcase classname="tests.test_shared_source_cases_independent" name="test_original_html_reverse_current_denial_late_aba_and_source_selection[late_403]" time="2.377" /><testcase classname="tests.test_shared_source_cases_independent" name="test_original_html_reverse_current_denial_late_aba_and_source_selection[kind_switch]" time="2.196" /></testsuite></testsuites>

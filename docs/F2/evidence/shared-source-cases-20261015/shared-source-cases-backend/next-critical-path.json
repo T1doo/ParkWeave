@@ -1,0 +1,281 @@
+{
+  "basis_freeze_sha": "bc4f384fa32817ddf3b332f898d59b5b994bfe2f",
+  "kind": "Read-only original-plan and AT24-27 alignment; recommendations only, no new execution or authorization.",
+  "scope_limit": "本片两类共享来源、当前owner/tenant/park、合成Case、有界只读反向定位；完整冻结回归仍由root处理，本文不预签结果。",
+  "references": {
+    "product": "docs/平台产品设计.md",
+    "phase": "docs/分阶段开发计划.md",
+    "formal_at": "docs/验收规格.json",
+    "shared_contract": "docs/F2/SharedSourceCasesContract-20261015.md",
+    "shared_impl": "src/parkweave/shared_source_cases.py",
+    "shared_tests": "tests/test_shared_source_cases.py",
+    "typed_contract": "docs/F2/TypedSourceImpactContract-20261015.md",
+    "typed_delivery": "docs/F2/TypedSourceImpact-20261015.md",
+    "adoption_delivery": "docs/F2/SourceOpportunityAdoption-20261015.md",
+    "capability_delivery": "docs/F2/ServiceCapabilitySelection-20261014.md",
+    "structure_delivery": "docs/F2/TemplateStructureMigrationDelivery-20261015.md",
+    "upgrade_contract": "docs/F2/TemplateUpgradeCheckContract.md",
+    "critical_path": "docs/DeliveryCriticalPath-20261010.md",
+    "plan": "docs/Plan.md"
+  },
+  "actual_demonstrable_loop": [
+    {
+      "step": "本人从原Case来源视图明确选OWNER_RESOURCE_QUERY_SET或SERVICE_CATALOG_REFERENCE，读取有权Case受影响/保留/未知分区；source身份独立于plan局部nodeID，目录精确到service_version。",
+      "references": [
+        "docs/F2/SharedSourceCasesContract-20261015.md",
+        "src/parkweave/shared_source_cases.py"
+      ]
+    },
+    {
+      "step": "资源真实新增/变化定位含P2的Case的P2-P5影响并保留P1；材料整体变化独列，不误归所选资源源；无计划/无preparation仍可见UNKNOWN。",
+      "references": [
+        "tests/test_shared_source_cases.py",
+        "src/parkweave/shared_source_cases.py"
+      ]
+    },
+    {
+      "step": "回原逐Case来源图和原材料/机会入口：人工导入/刷新真实来源→绑定当前计划/版本的预览→本人明确原local ADOPT→原受影响VERIFY→六目标证据与工作清单。反向列表本身只有GET，不自动执行此链。",
+      "references": [
+        "docs/F2/SharedSourceCasesContract-20261015.md",
+        "docs/F2/SourceOpportunityAdoption-20261015.md",
+        "docs/F2/TypedSourceImpact-20261015.md"
+      ]
+    },
+    {
+      "step": "保留稳定P1-P5、六目标、历史和未受影响锁；来源/权限/候选/Case ABA拒旧页，未遍历页、缺基线、未知和溢出明确UNKNOWN，候选全集manifest不当成全部Case影响已核对。",
+      "references": [
+        "src/parkweave/shared_source_cases.py",
+        "tests/test_shared_source_cases.py",
+        "docs/F2/TypedSourceImpactContract-20261015.md"
+      ]
+    }
+  ],
+  "formal_at24_27": {
+    "AT-24": {
+      "scenario": "机会提示作用域和去重",
+      "steps": "导入事件与手动刷新，重复/乱序触发",
+      "oracle": "只匹配有权企业；同版本不重复骚扰；不外发消息或宣称后台一直在线",
+      "status": "NOT_RUN",
+      "initial_state": "待实现fixture",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "type": "待执行时指定",
+      "references": [
+        "docs/验收规格.json",
+        "docs/分阶段开发计划.md"
+      ],
+      "implemented_subset": "同Case原机会导入/刷新/忽略/撤回及明确采用已有；本片新增资源查询全集与精确目录行的owner/tenant/park有权Case反向定位，含去界限、未知和撤权保护，不外发、不声称常在线。",
+      "remaining_acceptance_gap": "原正式表的fixture初态、独立执行类型、重复/乱序事件与同版本不重复提示的完整任务集合仍待正式绑定/执行签收；不得把本次只读分页或既有工程机会测试重新记成整项正式PASS。更广企业/政策匹配与真实来源许可仍是另一范围。"
+    },
+    "AT-25": {
+      "scenario": "依赖失效与未知扩大重验",
+      "steps": "修改源规则/资料/容量，再生成补丁和检查",
+      "oracle": "确定依赖更新；未知扩大重验而非乱改；分别报告漏更新与误改",
+      "status": "NOT_RUN",
+      "initial_state": "待实现fixture",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "type": "待执行时指定",
+      "references": [
+        "docs/验收规格.json",
+        "docs/分阶段开发计划.md"
+      ],
+      "implemented_subset": "逐Case固定schema图、真实聚合前后来源、集合指纹、unknown扩大THIS_CASE、原局部ADOPT/VERIFY与两类源的跨Case发现已有。既有typed-source交付已单列字面漏更/误改统计；本批冻结统计由root/independent最终窗口另记。",
+      "remaining_acceptance_gap": "正式规则/材料/容量变化集及组合变化的独立应更新/应保留全集、未知分母、人工重验与失败成本记录未完成整项签收；一般动态/语义边、跨业务包未知范围和非当前固定适配器关系不能由本片两类查询推得。"
+    },
+    "AT-26": {
+      "scenario": "人工锁与历史事实",
+      "steps": "提出变更并处理冲突",
+      "oracle": "LOCK_CONFLICT保留原内容；未解冲突不自动发布；历史不删除，当前有效性单列",
+      "status": "NOT_RUN",
+      "initial_state": "待实现fixture",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "type": "待执行时指定",
+      "references": [
+        "docs/验收规格.json",
+        "docs/分阶段开发计划.md"
+      ],
+      "implemented_subset": "原受影响manual lock阻塞、明确UNLOCK、未影响P1锁和hash保留、稳定UUID/正文/原事件/旧核验证据保留及当前有效性分列已有。",
+      "remaining_acceptance_gap": "原正式多类型人工正文/手工分配/明确决定的变更冲突与合并发布任务、适用时点与历史事实判据尚未整体签收；不能由有限step lock证明宣称所有业务人工内容已覆盖。不得以完成验收为理由自动解锁或发布。"
+    },
+    "AT-27": {
+      "scenario": "定义升级与业务数据",
+      "steps": "尝试不兼容发布/数据迁移/回退",
+      "oracle": "阻止不兼容操作；版本回退不回滚业务事实，预检有证据",
+      "status": "NOT_RUN",
+      "initial_state": "待实现fixture",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "type": "待执行时指定",
+      "references": [
+        "docs/验收规格.json",
+        "docs/分阶段开发计划.md"
+      ],
+      "implemented_subset": "有限模板兼容检查、旧/新不可变发布证明、破坏性/回退拒绝、同结构及有限前向结构增强、业务事实不反向回滚已有；有限ServiceRelease/ParkInstance也已交付。",
+      "remaining_acceptance_gap": "正式跨服务合同/源版本差异的逐Case适用性预检、非现有有限模板形状的拒绝解释和完整原发布/数据迁移/回退任务证据未整体签收；原规范允许首版拒绝破坏性迁移，不要求实现破坏性执行。"
+    }
+  },
+  "next_highest_value_bounded_feature": {
+    "name": "已有受信ServiceRelease跨版本的逐Case只读合同差异与适用性预检",
+    "reason": "两类反向发现已实现；当前来源采用对服务/目录绑定不兼容变化继续拒绝，下一处断点是解释目标受审服务版本与原Case合同差异，给出可证明的需重验/锁冲突/破坏性拒绝依据，而非重做模板升级或扩大自动执行。",
+    "references": [
+      "docs/平台产品设计.md",
+      "docs/F2/SourceOpportunityAdoption-20261015.md",
+      "docs/F2/ServiceCapabilitySelection-20261014.md",
+      "docs/F2/TemplateUpgradeCheckContract.md"
+    ],
+    "minimal_contract": [
+      "入口明确绑定原owner单Case和一个原授权门可读、当前经审核的目标ServiceRelease；旧release按原不可变历史证明读，目标按原source_review/head/validity/current权限核对；自身hash或REVIEW字符串不构成发布权。",
+      "逐字段穷尽现有有限ServiceRelease的supported_goals/steps及adapter revision/depends_on/material_requirements/resource_requirements/role_keys/field_keys/completion_checks/source_review/validity，以及ParkInstance字段/角色/资源映射。纯hash/presence摘要显示，不倒填旧隐藏事实。",
+      "只读分为现有合同可证明兼容、需原重验、人工锁冲突、破坏性拒绝及UNKNOWN；原必需目标删除、动作/参数/责任权限合同变化、回退或不能证明者不得自动变可采用。新增解释不放宽原ADOPT、替换和迁移入口。",
+      "proof绑定原Case/plan revision和row epochs、旧新release/hash、原registry/actions/contracts、完整当前source集合及权限；原交易锁序首尾重读，拒ABA/撤权/撤回/到期；不跨数据库声称原子迁移。",
+      "结果关联原source graph稳定stepUUID，分别给出特定合同差异与整个Case当前阻塞；未知先扩大THIS_CASE，并拒绝任何由本功能发起的执行。无自动卡片/迁移/发布，无新增Grant/schema/模型/费用。"
+    ],
+    "reusable_existing_components": [
+      {
+        "path": "src/parkweave/service_capability_contract.py",
+        "symbols": [
+          "ServiceRelease",
+          "ParkInstance",
+          "validate_release_integrity",
+          "validate_instance_integrity"
+        ],
+        "purpose": "有限结构与固定历史registry/actions完整性，注意本模块不是发布权。"
+      },
+      {
+        "path": "src/parkweave/service_capability_catalog.py",
+        "symbols": [
+          "IsolatedServiceCapabilityCatalog"
+        ],
+        "purpose": "复用原授权受审目录和原默认关闭的合成门，不另造正式批准。"
+      },
+      {
+        "path": "src/parkweave/template_upgrade.py",
+        "symbols": [
+          "TemplateUpgradeChecker._check"
+        ],
+        "purpose": "复用原兼容/锁/破坏性分类约束，保留已有模板路径，不重复实现。"
+      },
+      {
+        "path": "src/parkweave/template_migration.py",
+        "symbols": [
+          "release_proof",
+          "structure_change",
+          "SourceLease",
+          "validate_plan"
+        ],
+        "purpose": "既有有限结构与到commit来源门保留，不扩大执行。"
+      },
+      {
+        "path": "src/parkweave/source_change_adoption.py",
+        "symbols": [
+          "evidence_sources",
+          "epochs"
+        ],
+        "purpose": "原核验基线与有界scoped row版本。"
+      },
+      {
+        "path": "src/parkweave/typed_source_impact.py",
+        "symbols": [
+          "build_v1",
+          "read"
+        ],
+        "purpose": "现有schema1及历史固定compiler，新的兼容解释不能重解释旧v1/v2事件。"
+      }
+    ],
+    "independent_exit_oracle": "先冻结旧/新有限合同与Case初态、字面应影响/应保留/应拒集合；覆盖无害说明、来源修订、材料/资源/责任映射变化、锁、删除/回退/未知字段、撤权/到期/ABA和旧历史读取。分别报告漏更与误改及UNKNOWN、重验范围/人工步骤/失败成本，不用产品closure生成预期；随后原HTML→HTTP/ASGI→自有PG、冻结完整受影响回归与独审。",
+    "execution_status": "Proposal only. This turn starts no new source implementation/test/service."
+  },
+  "already_delivered_do_not_relist_missing": [
+    {
+      "item": "OWNER_RESOURCE_QUERY_SET和SERVICE_CATALOG_REFERENCE两类有界反向定位",
+      "references": [
+        "docs/F2/SharedSourceCasesContract-20261015.md",
+        "src/parkweave/shared_source_cases.py"
+      ]
+    },
+    {
+      "item": "原机会IMPORT/REFRESH/IGNORE/WITHDRAW、来源明确局部ADOPT/VERIFY和六目标读取",
+      "references": [
+        "docs/F2/SourceOpportunityAdoption-20261015.md"
+      ]
+    },
+    {
+      "item": "有限来源组与逐Case图、固定schema1历史compiler",
+      "references": [
+        "docs/F2/TypedSourceImpact-20261015.md"
+      ]
+    },
+    {
+      "item": "有限合成ServiceRelease/ParkInstance与第二园区冷输入",
+      "references": [
+        "docs/F2/ServiceCapabilitySelection-20261014.md"
+      ]
+    },
+    {
+      "item": "同结构模板迁移与既有有限前向结构增强",
+      "references": [
+        "docs/F2/TemplateStructureMigrationDelivery-20261015.md",
+        "docs/F2/TemplateUpgradeCheckContract.md"
+      ]
+    }
+  ],
+  "external_prerequisites_not_run": [
+    {
+      "gate": "Windows原生",
+      "gap": "实际Win11 x64授权环境与原安装/owner/ACL/Job合同、干净启动/停止/重启及完整固定验收；Linux、Server或mock不替代。旧原生安全暂停/拒绝边界保持，不扩权限或绕过拒绝。",
+      "references": [
+        "docs/平台产品设计.md §9",
+        "docs/分阶段开发计划.md F3-T06",
+        "docs/Plan.md"
+      ]
+    },
+    {
+      "gate": "真实浏览器",
+      "gap": "本片完整HTML在Node VM经真实HTTP/ASGI/自有PG是工程证据，不是真浏览器/移动设备；既有浏览器访问拒绝不通过换工具/网络策略绕过。",
+      "references": [
+        "docs/F2/SharedSourceCasesContract-20261015.md",
+        "docs/F2/TypedSourceImpact-20261015.md"
+      ]
+    },
+    {
+      "gate": "正式AT/PR0",
+      "gap": "AT24-27仍NOT_RUN，原35项PR0及固定业务、安全不变量需按初态、reset、类型和独立oracle逐项执行；不能把开发pytest数量换算完成百分比。",
+      "references": [
+        "docs/验收规格.json",
+        "docs/分阶段开发计划.md F3通过条件"
+      ]
+    },
+    {
+      "gate": "真实模型/同模型对照",
+      "gap": "调用授权、可核实模型ID/endpoint、安全注入、调用/费用上限及预算、usage/失败全成本和B0/B1/B2固定对照前提未在本轮获得；调用0，不自行读取凭据/启用模型。",
+      "references": [
+        "docs/平台产品设计.md §10、§12.3",
+        "docs/DeliveryCriticalPath-20261010.md"
+      ]
+    },
+    {
+      "gate": "真实来源与治理",
+      "gap": "有权资料/政策的许可及维护者、适用期、独立审核发布/Approval主体、当前企业用途授权、真实机构受理/履约回执及效果观察，不能由合成Release/Approval或提示文字替代。",
+      "references": [
+        "docs/平台产品设计.md §5.3、§5.5、§11、§12.1",
+        "docs/F2/ServiceCapabilitySelection-20261014.md"
+      ]
+    },
+    {
+      "gate": "生产",
+      "gap": "无部署/正式发布/生产迁移/真实履约执行授权，保持NOT_RUN；这不是本轮工程开发阻断的替代理由。",
+      "references": [
+        "docs/F2/SharedSourceCasesContract-20261015.md",
+        "docs/DeliveryCriticalPath-20261010.md"
+      ]
+    },
+    {
+      "gate": "参赛资料与第二作品",
+      "gap": "最新赛方模板正文及hash、规则/截止时区、复用政策、单PDF与视频接收权限、最终上传授权/回执，以及第二作品已有负责人提供的实际环境SHA/测试/缺口需独立核实；不从本库估计。",
+      "references": [
+        "docs/平台产品设计.md §13",
+        "docs/DeliveryCriticalPath-20261010.md"
+      ]
+    }
+  ],
+  "schedule": "按用户2026-10-15至2026-10-22一周目标：本片冻结门完成即接下一有界合同，不等月底；外部前提并行准备，缺失如实保留，不能倒推出新授权或承诺整版通过。",
+  "primary_backend_directory_finalized_after_this_write": true
+}

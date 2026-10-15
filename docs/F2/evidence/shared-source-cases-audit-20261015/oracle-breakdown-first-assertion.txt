@@ -1,0 +1,12 @@
+REVIEWER TOOL TRANSCRIPTION; original inline command and output remain in tool history, not a redirected stdout original.
+
+A supplemental subtype-only check after the successful pair and mechanical gates asserted all four shared intentional_unknown records had actual_state == UNKNOWN. That assertion stopped:
+  File "<stdin>", line 12, in <module>
+  AssertionError
+
+Independent follow-up over the same immutable final traces found:
+  shared: 12 records /24 expected affected pairs; intentional_unknown=4.
+  Exact state subtypes: UNKNOWN=2, NO_PLAN=1, NO_PREPARATION=1 (plus 4CHANGED,2NOT_DEPENDENT,2UNCHANGED).
+  typed: 11 records /38 pairs; unknown_scope THIS_CASE=3; intentional expansion=2.
+
+The prior mechanical gate already compared each actual state/relationship with its literal expected value and passed. No product, primary archive, source, trace or count was changed. This was an overstrict reviewer subtype assumption, not a product failure or a discarded failing test. The corrected supplementary report uses explicit subtypes and retains all four conservative unknown-category records without claiming four literal UNKNOWN state labels.

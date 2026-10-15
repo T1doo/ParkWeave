@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="18" time="75.675" timestamp="2026-10-15T07:15:44.872029+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_shared_source_cases" name="test_two_actual_cases_share_owner_resource_pool_and_unaffected_p1_lock" time="9.893" /><testcase classname="tests.test_shared_source_cases" name="test_selected_source_never_inherits_unrelated_material_or_receipt_impact" time="4.334" /><testcase classname="tests.test_shared_source_cases" name="test_p1_only_not_dependent_and_no_plan_remains_visible_unknown" time="4.951" /><testcase classname="tests.test_shared_source_cases" name="test_no_preparation_case_is_not_silently_omitted" time="1.280"><failure message="AssertionError: {&quot;run_id&quot;:&quot;31a8ce23-b2d9-436e-8155-c539a78af26c&quot;}&#10;assert 202 == 201&#10; +  where 202 = &lt;Response [202 Accepted]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_no_preparation_case_is_not_silently_omitted(http_f):
+        f=http_f;p=setup(f,GOALS[0])
+        r=f[3].post('/api/runs',headers=headers(f[2],key=uuid4().hex),json={'goal':'SYNTHETIC no preparation original Case'})
+&gt;       assert r.status_code==201,r.text;f[0].finish(f[0].claim('synthetic-no-preparation'))
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"run_id":"31a8ce23-b2d9-436e-8155-c539a78af26c"}
+E       assert 202 == 201
+E        +  where 202 = &lt;Response [202 Accepted]&gt;.status_code
+
+tests/test_shared_source_cases.py:60: AssertionError</failure></testcase><testcase classname="tests.test_shared_source_cases" name="test_reverse_lookup_does_not_grant_other_owner_tenant_or_role_access[fixture-b]" time="3.489" /><testcase classname="tests.test_shared_source_cases" name="test_reverse_lookup_does_not_grant_other_owner_tenant_or_role_access[fixture-c]" time="3.323" /><testcase classname="tests.test_shared_source_cases" name="test_reverse_lookup_does_not_grant_other_owner_tenant_or_role_access[prep-specialist-fixture-a]" time="3.695" /><testcase classname="tests.test_shared_source_cases" name="test_reverse_lookup_does_not_grant_other_owner_tenant_or_role_access[executor-a]" time="3.518" /><testcase classname="tests.test_shared_source_cases" name="test_cursor_binds_all_candidate_case_versions_and_actual_source_epoch[source_aba]" time="4.525" /><testcase classname="tests.test_shared_source_cases" name="test_cursor_binds_all_candidate_case_versions_and_actual_source_epoch[preparation_aba]" time="4.656"><failure message="KeyError: 'goal'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mutation = 'preparation_aba'
+
+    @pytest.mark.parametrize('mutation',['source_aba','preparation_aba','new_case','plan_revision','nonpage_receipt'])
+    def test_cursor_binds_all_candidate_case_versions_and_actual_source_epoch(http_f,mutation):
+        f=http_f;p,_,_,s=complete(f);q=setup(f,GOALS[0]);assert adopt(f,q).status_code==201;verified(f,q,'P1')
+        r=query(f,p,limit=1);assert r.status_code==200,r.text;cursor=r.json()['next_cursor'];assert cursor
+        if mutation=='source_aba':
+            from parkweave.resource_holds import RESOURCE_ID
+            with f[1].connect() as c:capacity=c.execute('SELECT capacity FROM synthetic_resources WHERE id=%s',(RESOURCE_ID,)).fetchone()['capacity']
+            with f[1].connect() as c:c.execute('UPDATE synthetic_resources SET capacity=capacity+1 WHERE id=%s',(RESOURCE_ID,))
+            with f[1].connect() as c:c.execute('UPDATE synthetic_resources SET capacity=%s WHERE id=%s',(capacity,RESOURCE_ID))
+        elif mutation=='preparation_aba':
+            with f[1].connect() as c:c.execute("UPDATE preparations SET goal=goal||' SYNTHETIC ABA' WHERE id=%s",(q['preparation_id'],))
+&gt;           with f[1].connect() as c:c.execute('UPDATE preparations SET goal=%s WHERE id=%s',(q['goal'],q['preparation_id']))
+                                                                                              ^^^^^^^^^
+E           KeyError: 'goal'
+
+tests/test_shared_source_cases.py:83: KeyError</failure></testcase><testcase classname="tests.test_shared_source_cases" name="test_cursor_binds_all_candidate_case_versions_and_actual_source_epoch[new_case]" time="5.052" /><testcase classname="tests.test_shared_source_cases" name="test_cursor_binds_all_candidate_case_versions_and_actual_source_epoch[plan_revision]" time="4.593" /><testcase classname="tests.test_shared_source_cases" name="test_cursor_binds_all_candidate_case_versions_and_actual_source_epoch[nonpage_receipt]" time="4.622" /><testcase classname="tests.test_shared_source_cases" name="test_pages_are_deterministic_and_cursor_cannot_change_source_or_subject" time="4.473" /><testcase classname="tests.test_shared_source_cases" name="test_exact_catalog_row_scope_changes_without_implicating_resource_pool" time="3.777" /><testcase classname="tests.test_shared_source_cases" name="test_unavailable_catalog_never_becomes_unchanged_valid_shared_source" time="3.523" /><testcase classname="tests.test_shared_source_cases" name="test_candidate_limit_unknown_is_explicit_and_never_invents_complete_enumeration" time="1.822" /><testcase classname="tests.test_shared_source_cases" name="test_current_read_revocation_precedes_even_an_old_cursor" time="3.886" /></testsuite></testsuites>

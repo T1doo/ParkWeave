@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="7.357" timestamp="2026-10-15T07:19:04.922578+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_shared_source_cases_independent" name="test_unknown_shared_source_cannot_be_reported_as_unchanged" time="4.588" /><testcase classname="tests.test_shared_source_cases_independent" name="test_known_first_page_still_reports_unchecked_remaining_cases" time="2.550"><failure message="AssertionError: assert (None == 'CURRENT_OWNER_CASE_SET')">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_known_first_page_still_reports_unchecked_remaining_cases(shared_http):
+        f,_=shared_http; p=one_step(f); one_step(f); before=snapshot(f)
+        value=checked(lookup(f,p,limit=1),p)
+        assert value['has_more'] and not value['all_cases_checked']
+&gt;       assert value['unknown_scope'] == 'CURRENT_OWNER_CASE_SET' and value['state'] == 'UNKNOWN'
+E       AssertionError: assert (None == 'CURRENT_OWNER_CASE_SET')
+
+tests/test_shared_source_cases_independent.py:245: AssertionError</failure></testcase></testsuite></testsuites>

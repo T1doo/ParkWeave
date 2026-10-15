@@ -1,0 +1,98 @@
+{
+  "freeze_sha": "bc4f384fa32817ddf3b332f898d59b5b994bfe2f",
+  "writer_scope": [
+    "src/parkweave/shared_source_cases.py",
+    "tests/test_shared_source_cases.py"
+  ],
+  "source_and_tests_frozen": true,
+  "git_writes_by_agent": false,
+  "formal_frozen_regression": "Owned by root: 64 modules, separate frozen-SHA evidence.",
+  "delivered": {
+    "source_kinds": [
+      "OWNER_RESOURCE_QUERY_SET",
+      "SERVICE_CATALOG_REFERENCE"
+    ],
+    "projection_schema": 1,
+    "graph_schema_supported": 1,
+    "candidate_limit": 32,
+    "max_page_limit": 20,
+    "cursor_bytes_limit": 4096,
+    "manifest_bytes_limit": 4194304,
+    "read_only": true,
+    "per_case_owner_permission": true,
+    "case_plan_impact_separate_from_selected_source": true
+  },
+  "coverage": [
+    "Two actual owner Cases share resource pool; selected source affects literal P2-P5, preserving P1 lock and all business-state snapshots.",
+    "Whole Case material changes remain separate from selected resource source impact.",
+    "P1-only plans are NOT_DEPENDENT on resource pool; missing plans/preparations remain visible UNKNOWN.",
+    "Exact catalog service version identity, catalog source changes and unavailable catalog.",
+    "Cross-owner, cross-tenant and other-role rejection; current READ revocation rejects even old cursor.",
+    "Committed source and preparation A-B-A, new candidate, plan revision and off-page receipt changes stale old cursor.",
+    "Every partial or later page explicitly UNKNOWN/CASE_PAGES_NOT_CHECKED; cursor is no authority or visited-page proof.",
+    "Candidate overflow, original parent lock busy 409, malformed allowed plan object, recursive/duplicate/untrusted cursor.",
+    "Current graph/projection schema fields and zero business writes on successful/refused reads."
+  ],
+  "development_failures_preserved": [
+    {
+      "run": "development",
+      "count": 2,
+      "cause": "Test fixture assumptions: run creation returns 202 and command receipt has no goal field. Fixed expected status and read original goal from owned DB for ABA restoration. No product-path failure."
+    },
+    {
+      "run": "final-focused",
+      "count": 1,
+      "cause": "Malformed scalar fixture rejected by existing preparations object CHECK before reader. Replaced with permitted object missing the plan header; original CHECK retained. Target and full rerun passed."
+    }
+  ],
+  "runs": [
+    {
+      "name": "development",
+      "junit": ".runtime/shared-source-cases-backend/development.xml",
+      "log": ".runtime/shared-source-cases-backend/development.log",
+      "tests": 18,
+      "failures": 2,
+      "errors": 0,
+      "time_seconds": 75.675
+    },
+    {
+      "name": "final-focused",
+      "junit": ".runtime/shared-source-cases-backend/final-focused.xml",
+      "log": ".runtime/shared-source-cases-backend/final-focused.log",
+      "tests": 23,
+      "failures": 1,
+      "errors": 0,
+      "time_seconds": 82.974
+    },
+    {
+      "name": "malformed-target",
+      "junit": ".runtime/shared-source-cases-backend/malformed-target.xml",
+      "log": ".runtime/shared-source-cases-backend/malformed-target.log",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "time_seconds": 3.064
+    },
+    {
+      "name": "final-focused-second",
+      "junit": ".runtime/shared-source-cases-backend/final-focused-second.xml",
+      "log": ".runtime/shared-source-cases-backend/final-focused-second.log",
+      "tests": 23,
+      "failures": 0,
+      "errors": 0,
+      "time_seconds": 98.358
+    }
+  ],
+  "warnings": [
+    "Existing FastAPI/Starlette httpx deprecation.",
+    "Existing XDG_RUNTIME_DIR fallback warning; PG cache explicitly set under workspace."
+  ],
+  "boundaries": [
+    "Per-Case original transactions and start/end manifests are not one atomic cross-Case database snapshot.",
+    "Original authorization locking and existing SELECT-only source reads are reused; uncoordinated external administrator changes committing after the final read remain the stated existing boundary.",
+    "Only current owner/tenant/park synthetic Case scope; two explicit shared source kinds. Aggregate material/fact nodes are not global entities.",
+    "No automatic opportunity/adoption/execution, new grants, DDL, deployment, real model or external charges.",
+    "Windows, real browser, formal AT, real model and production/governance validation remain not performed."
+  ],
+  "remaining_backend_blockers": []
+}
