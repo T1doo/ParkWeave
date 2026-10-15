@@ -135,6 +135,8 @@ def build(store,c,p,parent,card_id,*,current=None):
     if typed_graph['unknown_scope']:affected={s['adapter_id'] for s in plan['steps']}
     else:affected={s['adapter_id'] for s in plan['steps'] if s['id'] in typed_graph['affected']}
     blockers=list(binding_issues)
+    from .plan_source_conflicts import adoption_blockers
+    blockers.extend(adoption_blockers(c,parent,plan))
     if typed_graph['unknown_scope']:blockers.append('KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED')
     if missing:blockers.append('CURRENT_VERIFIED_SOURCE_BASE_REQUIRED')
     if unknown or any(not x['known'] for x in dependency_basis['collections'].values()):blockers.append('KNOWN_CURRENT_DEPENDENCIES_REQUIRED')

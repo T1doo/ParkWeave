@@ -95,6 +95,20 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         return delivery.recover(store,token(authorization),preparation_id,resource_key(request_key))
 
     from . import case_opportunities as opportunities
+    from . import plan_source_conflicts as note_conflicts
+
+    @app.get('/api/preparations/{preparation_id}/plan-source-conflicts')
+    def owner_note_read(preparation_id: UUID,card_id: UUID|None=None,authorization: str|None=Header(default=None)):
+        return note_conflicts.read(store,token(authorization),preparation_id,card_id=card_id)
+
+    @app.post('/api/preparations/{preparation_id}/plan-source-conflicts/commands')
+    def owner_note_command(preparation_id: UUID,data: note_conflicts.Command,authorization: str|None=Header(default=None),idempotency_key: str=Header()):
+        try:return note_conflicts.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
+        except note_conflicts.DefinitiveConflict as error:return JSONResponse(status_code=409,content=error.proof)
+
+    @app.get('/api/preparations/{preparation_id}/plan-source-conflicts/recovery/{request_key}')
+    def owner_note_recovery(preparation_id: UUID,request_key: str,authorization: str|None=Header(default=None)):
+        return note_conflicts.recover(store,token(authorization),preparation_id,resource_key(request_key))
     @app.get('/api/cases/worklist')
     def owner_case_worklist(limit: int=Query(default=20,ge=1,le=50),after: UUID|None=Query(default=None),
                             authorization: str|None=Header(default=None)):

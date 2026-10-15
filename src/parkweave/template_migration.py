@@ -356,6 +356,7 @@ def application(checker,context,check,events,t):
         blockers.append('VERIFIED_ORIGINAL_CASE_CREATION_REQUIRED')
     if not plan: blockers.append('PLAN_REQUIRED')
     if plan:plans._recovery_proofs(parent)
+    if plan and plan.get('owner_amendments'):blockers.append('OWNER_NOTE_CONTROLLED_CARRY_REQUIRED_FOR_APPLICATION')
     effective=_effective(instance,plan)
     target=release_proof(checker.engine,t,check['target_release_id'],check['target_release_sha256'],current=True)
     release_proof(checker.engine,t,effective['release_id'],effective['release_sha256'])
@@ -402,6 +403,12 @@ def apply(checker,token,instance_id,key,data):
         if old:
             if old['action']!=ACTION:raise Conflict('original request action changed')
             return dict(**FLAGS,event=old,historical_only=True,effective_release_id=old['template_upgrade']['target_release']['release_id'])
+        from .plan_source_conflicts import adoption_guard
+        adoption_guard(c,parent,plan)
+        # Note history binds the original complete step contracts. A migration
+        # must not silently reinterpret that history or discard the owner body.
+        if plan.get('owner_amendments'):
+            raise Conflict('owner coordination note requires controlled carry before template application')
         local=c.execute('SELECT state FROM case_local_lifecycles WHERE preparation_id=%s',(parent['id'],)).fetchone()
         if local and local['state']=='LOCAL_RECORD_CLOSED':raise Conflict('closed local Case cannot adopt template revision')
         with checker.engine.lock,source_connection(checker.engine) as t,checker.repository.connect() as journal:

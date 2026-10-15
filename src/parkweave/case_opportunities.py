@@ -85,14 +85,18 @@ def ledger(row):
         previous=None;keys=set();ids=set()
         for index,e in enumerate(value['events'],1):
             if (not isinstance(e,dict) or type(e['revision']) is not int or e['revision']!=index or e['actor_id']!=row['owner_id'] or
-                e['previous_sha256']!=previous or e['scope']!=SCOPE or e['action'] not in ('IMPORT','REFRESH','IGNORE','WITHDRAW') or
+                e['previous_sha256']!=previous or e['scope']!=SCOPE or e['action'] not in ('IMPORT','REFRESH','IGNORE','WITHDRAW','EDIT_PLAN_NOTE','RESOLVE_PLAN_NOTE') or
                 e['request_key'] in keys or e['sha256']!=sha({k:v for k,v in e.items() if k!='sha256'})):
                 raise ValueError()
             if not re.fullmatch('[a-f0-9]{64}',e['fingerprint']) or not re.fullmatch('[A-Za-z0-9_-]{1,100}',e['request_key']):raise ValueError()
             if (e['id'] in ids or not isinstance(e['reason'],str) or not 1<=len(e['reason'])<=1000 or
-                e['outcome'] not in {'IMPORT':('IMPORTED','DUPLICATE'),'REFRESH':('REFRESHED','NO_CHANGE'),'IGNORE':('IGNORE',),'WITHDRAW':('WITHDRAW',)}[e['action']]):raise ValueError()
+                e['outcome'] not in {'IMPORT':('IMPORTED','DUPLICATE'),'REFRESH':('REFRESHED','NO_CHANGE'),'IGNORE':('IGNORE',),'WITHDRAW':('WITHDRAW',),
+                    'EDIT_PLAN_NOTE':('EDIT_NOTE',),'RESOLVE_PLAN_NOTE':('KEEP_MANUAL','ACCEPT_SOURCE','DEFER')}[e['action']]):raise ValueError()
             UUID(e['id']);ids.add(e['id']);keys.add(e['request_key']);previous=e['sha256']
         project(value)
+        if any(e['action'] in ('EDIT_PLAN_NOTE','RESOLVE_PLAN_NOTE') for e in value['events']):
+            from .plan_source_conflicts import validate_ledger_links
+            validate_ledger_links(row,value)
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('opportunity history proof invalid')
     return deepcopy(value)
 
@@ -120,6 +124,9 @@ def project(value):
             if card['state']=='WITHDRAWN' or payload['version']!=card['version']+1:raise ValueError()
             if action=='IGNORE' and card['state']!='PENDING_REVIEW':raise ValueError()
             card['version']=payload['version'];card['state']='IGNORED' if action=='IGNORE' else 'WITHDRAWN'
+        elif action in ('EDIT_PLAN_NOTE','RESOLVE_PLAN_NOTE'):
+            from .plan_source_conflicts import validate_embedded_event
+            validate_embedded_event(value,e)
         elif e['outcome']=='DUPLICATE':
             if payload['card_id'] not in cards:raise ValueError()
         else:raise ValueError()

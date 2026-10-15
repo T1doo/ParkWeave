@@ -214,7 +214,12 @@ def proposal(store,c,p,parent,candidate_combination_id=None,comparison_plan=None
     if not reviewer:issues['P1'].append('CURRENT_REVIEWER_AUTHORITY_REQUIRED')
     from . import service_case_steps as case_steps
     adopted=parent.get('service_case_plan')
-    if adopted and case_steps._selection_plan(adopted):
+    if adopted and (case_steps._selection_plan(adopted) or
+                    adopted.get('partial_adoption') is not True and case_steps._supported(parent)):
+        # Existing fully supported registered plans, including the original
+        # six-goal TemplateConsumer plan, use the same exact P1 proof gate as
+        # trusted selections. The legacy one-goal intent summary cannot stand
+        # in for an already adopted registered plan's immutable proof.
         # This projection runs in a READ ONLY transaction. Validate the frozen
         # adoption and its P1 snapshot without invoking downstream FOR SHARE
         # readers or persisting their invalidation observations.

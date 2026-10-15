@@ -435,6 +435,11 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
     affected=[s['id'] for s in plan['steps'] if binding_issues or s['adapter_id'] in dependency_affected or s.get('invalidated') or states[s['adapter_id']] in ('BLOCKED','LOCK_CONFLICT')]
     impact=dict(scope='REGISTERED_CASE_CHAIN',unknown_scope='THIS_CASE' if binding_issues or dependency_unknown else None,
                 directly_changed=direct,affected=affected,preserved=[s['id'] for s in plan['steps'] if s['id'] not in affected])
+    note_blockers=[]
+    if owner and plan.get('owner_amendments'):
+        from .plan_source_conflicts import adoption_blockers
+        note_blockers=adoption_blockers(c,parent,plan)
+        if binding_issues:note_blockers=note_blockers+['OWNER_NOTE_CONTROLLED_CARRY_REQUIRED_FOR_REPLACEMENT']
     events=plan['events'] if owner else [{k:e[k] for k in ('id','revision','action','step_id')} for e in plan['events']]
     receipt=None
     if event and event['actor_id']==p['id']:
@@ -454,13 +459,14 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
                 binding=plan['binding'] if owner else None,binding_issues=binding_issues if owner else None,
                 required_goals=plan['required_goals'] if owner else None,goal_coverage=plan['goal_coverage'] if owner else None,
                 history=plan.get('history',[]) if owner else [],events=events,event=event if owner else None,command_receipt=receipt,
-                can_adopt=template_current and owner and p.get('_plan_write') and bool(preview) and preview['state']=='COVERED_PREVIEW_ONLY' and (
+                can_adopt=not note_blockers and template_current and owner and p.get('_plan_write') and bool(preview) and preview['state']=='COVERED_PREVIEW_ONLY' and (
                     bool(binding_issues) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8 or
                     not binding_issues and bool(dependency_affected) and plan['revision']+1+sum(bool(s.get('manual_lock')) for s in plan['steps'])<=LIMIT and
                     not any(s.get('manual_lock') and s['adapter_id'] in dependency_affected for s in plan['steps']) and not any(not v['known'] for v in dependency_basis['collections'].values())),
                 local_revision_required=plan.get('partial_adoption') is not True and not binding_issues and bool(dependency_affected),
-                can_adopt_partial=bool(template_current and owner and p.get('_plan_write') and preview and preview['partial_offer']['can_adopt'] and (binding_issues or plan.get('partial_adoption') is True and dependency_affected) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8),
+                can_adopt_partial=bool(not plan.get('owner_amendments') and template_current and owner and p.get('_plan_write') and preview and preview['partial_offer']['can_adopt'] and (binding_issues or plan.get('partial_adoption') is True and dependency_affected) and not any(s.get('manual_lock') for s in plan['steps']) and len(plan.get('history',[]))<8),
                 change_impact=impact if owner else None,
+                **(dict(owner_note_blockers=note_blockers) if owner and plan.get('owner_amendments') else {}),
                 new_grants=False,automatic_execution=False,case_goal_completed=False,
                 external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE')
 
@@ -559,6 +565,12 @@ def _recovery_proofs(parent):
                     from .template_migration import parse_apply_request,fingerprint
                     request=parse_apply_request(event['template_upgrade'])
                     fp=fingerprint(request.expected_instance_id,request)
+                elif event['action'] in ('EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER'):
+                    from .plan_source_conflicts import Command as NoteCommand,fingerprint as note_fingerprint
+                    expected=revision-1
+                    data=NoteCommand.model_validate(event['plan_note']['request'])
+                    if data.action!=event['action'] or data.expected_plan_revision!=revision-1 or data.reason!=event['reason']:raise ValueError()
+                    fp=note_fingerprint(parent['id'],data)
                 else:
                     if event['step_id'] not in step_ids or event['action']=='ADOPT':raise ValueError()
                     expected=revision-1
@@ -572,6 +584,8 @@ def _recovery_proofs(parent):
                 proofs.append((plan,event,expected,previous))
             if latest_dependencies!=plan.get('dependency_manifest'):raise ValueError()
             dependencies.plan_proof(parent,plan)
+            from .plan_source_conflicts import validate_plan_history
+            validate_plan_history(parent,plan)
             from .template_migration import validate_plan
             validate_plan(parent,plan)
         return proofs
@@ -663,6 +677,12 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
         if old:
             if data.candidate_id is not None:_recovery_proofs(parent)
             return _view(store,c,p,parent,prior,old)
+        from .plan_source_conflicts import adoption_guard
+        adoption_guard(c,parent,prior)
+        # Replacement creates a new plan identity. Until an explicit annotation
+        # carry contract exists, preserve the current owner body in this plan.
+        if prior and prior.get('owner_amendments') and data.local_revision is not True:
+            raise Conflict('owner coordination note requires controlled carry before plan replacement')
         if prior and prior.get('template_migration'):
             from .template_migration import live_guard
             live_guard(store,c,parent,prior)
