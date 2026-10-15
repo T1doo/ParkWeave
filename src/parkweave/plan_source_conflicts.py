@@ -4,6 +4,7 @@ This is a P1 coordination annotation, not a material edit, compiled contract,
 verified business fact or publication. Notes and decisions have original plan
 events and exact opportunity-ledger counterparts in the same PG row transaction.
 """
+from collections import Counter
 from copy import deepcopy
 from typing import Literal
 from uuid import UUID,uuid4
@@ -19,7 +20,11 @@ from .store import Conflict,Denied,digest
 
 SCOPE='OWNER_PLAN_SOURCE_CONFLICT'
 VERSION=1
-ACTIONS=('EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER')
+ACTIONS_V1=('EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER')
+CONTINUATION_ACTIONS=('KEEP_AND_CONTINUE','MERGE_NOTE')
+ACTIONS=ACTIONS_V1+CONTINUATION_ACTIONS
+CONTINUATION_SCOPE='OWNER_NOTE_EXACT_LINE_CONTINUATION'
+MAX_CONDITIONS_V1=128
 OP_ACTIONS=('EDIT_PLAN_NOTE','RESOLVE_PLAN_NOTE')
 NOTE_LIMIT=4000
 
@@ -37,7 +42,7 @@ class DefinitiveConflict(Conflict):
 class Command(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True)
     schema:int=Field(ge=1,le=1)
-    action:Literal['EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER']
+    action:Literal['EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER','KEEP_AND_CONTINUE','MERGE_NOTE']
     expected_plan_id:UUID=Field(strict=False)
     expected_plan_revision:int=Field(ge=1,le=63)
     expected_note_revision:int=Field(ge=0,le=64)
@@ -50,9 +55,13 @@ class Command(BaseModel):
     @model_validator(mode='after')
     def shape(self):
         if not self.reason.strip():raise ValueError('explicit nonblank decision reason required')
-        if self.action=='EDIT_NOTE':
+        if self.action in ('EDIT_NOTE','MERGE_NOTE'):
             if self.text is None or not self.text.strip():raise ValueError('explicit owner coordination text required')
         elif self.text is not None or self.card_id is None:raise ValueError('decision uses actual server source and current card only')
+        if self.action in CONTINUATION_ACTIONS and self.card_id is None:raise ValueError('current opportunity required for explicit continuation')
+        if self.action=='MERGE_NOTE':
+            try:self.text.encode('utf-8')
+            except UnicodeError:raise ValueError('valid exact UTF-8 content required') from None
         return self
 
 
@@ -62,6 +71,55 @@ def request(data):return data.model_dump(mode='json')
 def fingerprint(id,data):return sha(dict(preparation_id=str(id),**request(data)))
 def source_ref(source):return {k:source[k] for k in ('id','slot','version','source_sha256')}
 
+
+
+def line_coverage_v1(text,source_text):
+    """Frozen bounded exact-line carriage; never a semantic obligation check."""
+    if not isinstance(text,str) or not isinstance(source_text,str):
+        return dict(coverage_known=False,coverage_satisfied=False,conditions=[])
+    try:text.encode('utf-8');source_text.encode('utf-8')
+    except UnicodeError:return dict(coverage_known=False,coverage_satisfied=False,conditions=[])
+    required=[line for line in source_text.splitlines() if line.strip()]
+    if not 1<=len(required)<=MAX_CONDITIONS_V1:
+        return dict(coverage_known=False,coverage_satisfied=False,conditions=[])
+    counts=Counter(required);present=Counter(text.splitlines());conditions=[]
+    for line,count in counts.items():
+        missing=max(0,count-present[line])
+        conditions.append(dict(id=sha(dict(schema=1,kind='EXACT_NONEMPTY_SOURCE_LINE',line=line)),line=line,
+            required_count=count,present_count=present[line],missing_count=missing,satisfied=missing==0))
+    return dict(coverage_known=True,coverage_satisfied=all(row['satisfied'] for row in conditions),conditions=conditions)
+
+
+def line_coverage(text,source_text):return line_coverage_v1(text,source_text)
+
+
+def continuation_data_v1(note,source,baseline,baseline_epoch,package_epochs):
+    return dict(schema=1,scope=CONTINUATION_SCOPE,baseline=deepcopy(baseline),baseline_epoch=baseline_epoch,
+        baseline_package_epochs=deepcopy(package_epochs),baseline_package_epochs_sha256=sha(package_epochs) if package_epochs is not None else None,
+        manual={k:note[k] for k in ('text','text_sha256','revision','event_id')},incoming=deepcopy(source),
+        **line_coverage_v1(note['text'],source['text']),manual_preserved=True,semantic_evaluated=False)
+
+
+def continuation_snapshot(c,parent,note,source):
+    if note is None:return None
+    baseline=None;epoch=None;package_epochs=[]
+    for captured in note['source_package']:
+        row=c.execute('SELECT id,slot,version,text,source_kind,source_label,source_sha256,authenticity,xmin::text AS row_epoch FROM preparation_evidence WHERE preparation_id=%s AND id=%s AND slot=%s AND version=%s AND source_sha256=%s',
+            (parent['id'],captured['id'],captured['slot'],captured['version'],captured['source_sha256'])).fetchone()
+        actual=op.normal({k:v for k,v in row.items() if k!='row_epoch'}) if row else None
+        if not same(actual,captured):baseline=None;epoch=None;package_epochs=None;break
+        package_epochs.append(dict(source_ref(captured),row_epoch=row['row_epoch']))
+        if captured['slot']=='material_outline':baseline=actual;epoch=row['row_epoch']
+    return continuation_data_v1(note,source,baseline,epoch,package_epochs)
+
+
+
+def continuation_basis(c,parent,basis):
+    if not isinstance(basis,dict):raise Conflict('current source inspection unavailable; preserve original request key')
+    data=continuation_snapshot(c,parent,basis['note'],basis['source'])
+    if not data or data['baseline'] is None or not data['coverage_known']:
+        raise Conflict('known actual historical source and bounded source lines required')
+    return dict(basis,schema=2,continuation=data)
 
 def _material(value):
     keys={'id','slot','version','text','source_kind','source_label','source_sha256','authenticity'}
@@ -106,7 +164,7 @@ def _plan_ref(parent,plan,revision,step_id):
         steps_sha256=sha([{k:s[k] for k in ('id','adapter_id','adapter','adapter_revision','depends_on','contract')} for s in plan['steps']]))
 
 
-def validate_embedded_event(value,event):
+def validate_embedded_event_v1(value,event):
     """Pure ledger validation; deliberately never calls op.ledger/recovery."""
     try:
         if set(event['payload'])!={'plan_event'}:raise ValueError()
@@ -157,6 +215,77 @@ def validate_embedded_event(value,event):
     except (KeyError,TypeError,ValueError,AttributeError):raise ValueError('note opportunity event proof invalid') from None
 
 
+def validate_embedded_event_v2(value,event):
+    """Pure ledger validation; deliberately never calls op.ledger/recovery."""
+    try:
+        if set(event['payload'])!={'plan_event'}:raise ValueError()
+        plan_event=event['payload']['plan_event'];proof=plan_event['plan_note'];data=Command.model_validate(proof['request'])
+        if set(plan_event)!={'id','plan_id','revision','actor_id','request_key','fingerprint','action','reason','step_id','source_sha256','sources','coordination_only','plan_note'}:raise ValueError()
+        proof_keys={'version','request','preview_basis','preview_sha256','op_event_id','op_revision','op_previous_sha256','before_note','after_note','sha256'}
+        if (set(proof)!=proof_keys or type(proof['version']) is not int or proof['version']!=2 or
+            proof['sha256']!=sha({k:v for k,v in proof.items() if k!='sha256'}) or
+            proof['preview_sha256']!=sha(proof['preview_basis']) or proof['preview_sha256']!=data.expected_preview_sha256 or
+            proof['op_event_id']!=event['id'] or type(proof['op_revision']) is not int or proof['op_revision']!=event['revision'] or proof['op_previous_sha256']!=event['previous_sha256'] or
+            event['revision']!=data.expected_ledger_revision+1 or event['outcome']!=data.action or
+            event['action']!=('EDIT_PLAN_NOTE' if data.action=='EDIT_NOTE' else 'RESOLVE_PLAN_NOTE') or
+            plan_event['actor_id']!=event['actor_id'] or plan_event['request_key']!=event['request_key'] or
+            plan_event['fingerprint']!=event['fingerprint'] or plan_event['action']!=data.action or
+            plan_event['plan_id']!=str(data.expected_plan_id) or plan_event['revision']!=data.expected_plan_revision+1 or
+            plan_event['source_sha256'] is not None or plan_event['sources'] is not None or plan_event['coordination_only'] is not True or
+            plan_event['reason']!=data.reason or plan_event['fingerprint']!=fingerprint(value['binding']['id'],data)):
+            raise ValueError('note decision event proof invalid')
+        basis=proof['preview_basis']
+        if set(basis)!={'schema','binding','actor_ref','plan_ref','note','ledger_revision','ledger_sha256','card_id','card','source','materials','source_epochs_sha256','case_versions_sha256','source_change','continuation'}:raise ValueError()
+        if (basis['schema']!=2 or type(basis['schema']) is not int or not same(basis['binding'],value['binding']) or
+            basis['actor_ref']!=sha(dict(actor_id=event['actor_id'])) or type(basis['ledger_revision']) is not int or basis['ledger_revision']!=data.expected_ledger_revision or
+            basis['ledger_sha256']!=event['previous_sha256'] or basis['plan_ref']['plan_id']!=str(data.expected_plan_id) or
+            basis['plan_ref']['plan_revision']!=data.expected_plan_revision or basis['plan_ref']['step_id']!=plan_event['step_id'] or
+            not same(basis['note'],proof['before_note']) or (proof['before_note']['revision'] if proof['before_note'] else 0)!=data.expected_note_revision or
+            basis['card_id']!=(str(data.card_id) if data.card_id else None)):
+            raise ValueError('note preview binding invalid')
+        _material(basis['source'])
+        if not isinstance(basis['materials'],list) or len(basis['materials'])!=2:raise ValueError()
+        for material in basis['materials']:_material(material)
+        if {m['slot'] for m in basis['materials']}!=set(prep.SLOTS) or basis['source']['slot']!='material_outline':raise ValueError('complete source preview required')
+        if not same(next(m for m in basis['materials'] if m['slot']=='material_outline'),basis['source']):raise ValueError()
+        for key in ('source_epochs_sha256','case_versions_sha256'):
+            if not isinstance(basis[key],str) or not re.fullmatch('[a-f0-9]{64}',basis[key]):raise ValueError()
+        before=_note(proof['before_note'],plan_event['plan_id'],plan_event['step_id'])
+        after=_note(proof['after_note'],plan_event['plan_id'],plan_event['step_id'])
+        if data.action not in CONTINUATION_ACTIONS or before is None or after is None:raise ValueError()
+        snapshot=basis['continuation'];baseline=snapshot['baseline'];_material(baseline)
+        package_epochs=snapshot['baseline_package_epochs']
+        if not isinstance(package_epochs,list) or len(package_epochs)!=2:raise ValueError('original material package epochs required')
+        for material,epoch in zip(before['source_package'],package_epochs):
+            if (not isinstance(epoch,dict) or set(epoch)!=set(source_ref(material))|{'row_epoch'} or
+                not same({k:v for k,v in epoch.items() if k!='row_epoch'},source_ref(material)) or
+                not isinstance(epoch['row_epoch'],str) or not re.fullmatch('[0-9]{1,20}',epoch['row_epoch'])):raise ValueError('original material epoch binding invalid')
+        if next(e['row_epoch'] for e in package_epochs if e['slot']=='material_outline')!=snapshot['baseline_epoch']:raise ValueError()
+        expected=continuation_data_v1(before,basis['source'],baseline,snapshot['baseline_epoch'],package_epochs)
+        captured=next(m for m in before['source_package'] if m['slot']=='material_outline')
+        if (not same(snapshot,expected) or not same(baseline,captured) or
+            not isinstance(snapshot['baseline_epoch'],str) or not re.fullmatch('[0-9]{1,20}',snapshot['baseline_epoch']) or
+            not snapshot['coverage_known'] or after['revision']!=before['revision']+1 or after['event_id']!=plan_event['id'] or
+            after['origin']!='MANUAL' or after['verified_package_sha256'] is not None or
+            not same(after['source_ref'],source_ref(basis['source'])) or not same(after['source_package'],basis['materials'])):raise ValueError('continuation three-version binding invalid')
+        text=before['text'] if data.action=='KEEP_AND_CONTINUE' else data.text
+        if (after['text']!=text or (data.action=='MERGE_NOTE' and before['text'] not in text) or
+            not line_coverage_v1(text,basis['source']['text'])['coverage_satisfied']):raise ValueError('explicit manual carriage proof invalid')
+        return plan_event
+    except (KeyError,TypeError,ValueError,AttributeError):raise ValueError('note opportunity event proof invalid') from None
+
+
+def validate_embedded_event(value,event):
+    """Schema dispatch never reinterprets an old note decision as continuation."""
+    try:
+        proof=event['payload']['plan_event']['plan_note'];action=event['payload']['plan_event']['action']
+        if type(proof['version']) is not int:raise ValueError()
+        if proof['version']==1 and action in ACTIONS_V1:return validate_embedded_event_v1(value,event)
+        if proof['version']==2 and action in CONTINUATION_ACTIONS:return validate_embedded_event_v2(value,event)
+    except (KeyError,TypeError,AttributeError):pass
+    raise ValueError('unsupported original note event schema or action')
+
+
 def validate_ledger_links(parent,value):
     """Bidirectional exact links, without invoking any recursive plan reader."""
     plan=parent.get('service_case_plan')
@@ -204,7 +333,17 @@ def adoption_blockers(c,parent,plan):
         note=next(iter(plan['owner_amendments'].values()));_note(note,plan['id'],note['step_id'])
         actual=next(m for m in _materials(c,parent) if m['slot']=='material_outline')
     except (ValueError,TypeError,KeyError,StopIteration,Conflict):return ['OWNER_NOTE_SOURCE_UNKNOWN']
-    if same(note['source_ref'],source_ref(actual)):return []
+    if same(note['source_ref'],source_ref(actual)):
+        rebased=next((e for e in reversed(plan['events']) if e['action'] in CONTINUATION_ACTIONS and
+            same(e['plan_note']['after_note']['source_ref'],note['source_ref'])),None)
+        if note['origin']=='MANUAL' and rebased:
+            reasons=[]
+            if note['event_id']!=rebased['id']:reasons.append('OWNER_NOTE_CONTENT_EDIT_REQUIRES_RECONFIRMATION')
+            coverage=line_coverage(note['text'],actual['text'])
+            if not coverage['coverage_known']:reasons.append('OWNER_NOTE_SOURCE_LINES_UNKNOWN')
+            elif not coverage['coverage_satisfied']:reasons.append('OWNER_NOTE_SOURCE_LINES_NOT_CARRIED')
+            return reasons
+        return []
     latest=next((e for e in reversed(plan['events']) if e['action'] in ACTIONS),None)
     choice=latest['action'] if latest else None
     return ['OWNER_NOTE_SOURCE_KEPT_PENDING' if choice=='KEEP_MANUAL' else 'OWNER_NOTE_SOURCE_DEFERRED' if choice=='DEFER' else 'OWNER_NOTE_SOURCE_CONFLICT_REQUIRES_DECISION']
@@ -266,7 +405,7 @@ def _basis(store,c,p,parent,plan,note,card_id):
 
 def _view(store,c,p,parent,card_id=None):
     plan=deepcopy(parent.get('service_case_plan'))
-    result=dict(scope=SCOPE,schema=VERSION,actor_ref=sha(dict(actor_id=p['id'])),preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),
+    result=dict(continuation=None,scope=SCOPE,schema=VERSION,actor_ref=sha(dict(actor_id=p['id'])),preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),
         plan_id=None,plan_revision=0,step_id=None,card_id=str(card_id) if card_id else None,card_version=None,opportunity_revision=op.ledger(parent)['revision'],
         preview_sha256=None,note=None,source=None,material_diffs=[],state='UNKNOWN',can_edit=False,can_resolve=False,allowed_choices=[],blocking_reasons=[],affected=[],preserved=[],history=[],action_requests={},unknown_scope='THIS_CASE',
         read_only=True,automatically_replayed=False,new_grants=False,automatic_execution=False,case_goal_completed=False,qualification_decision='NOT_EVALUATED')
@@ -279,11 +418,11 @@ def _view(store,c,p,parent,card_id=None):
     result.update(plan_id=plan['id'],plan_revision=plan['revision'],step_id=p1['id'],note=note,history=history,affected=[s['id'] for s in plan['steps']])
     try:basis,source_view=_basis(store,c,p,parent,plan,note,card_id)
     except Conflict as error:return dict(result,blocking_reasons=['CURRENT_KNOWN_SOURCE_AND_CARD_REQUIRED']),None
-    conflict=bool(note and note['source_ref']!=source_ref(basis['source']))
+    conflict=bool(note and adoption_blockers(c,parent,plan))
     locks=[s for s in plan['steps'] if service._manual_lock(plan,s)]
     locked=bool(p1.get('manual_lock'));source_blockers=[]
     if source_view:
-        source_blockers=[r for r in source_view['blocking_reasons'] if r not in {'AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK','NO_ACTUAL_SOURCE_CHANGE'} and not r.startswith('OWNER_NOTE_SOURCE_')]
+        source_blockers=[r for r in source_view['blocking_reasons'] if r not in {'AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK','NO_ACTUAL_SOURCE_CHANGE'} and not r.startswith('OWNER_NOTE_SOURCE_') and r!='OWNER_NOTE_CONTENT_EDIT_REQUIRES_RECONFIRMATION']
     if source_view and source_view['unknown_scope']:source_blockers.append('KNOWN_SOURCE_CHANGE_REQUIRED')
     can_write=not prep.case_write_blocked(c,parent)
     try:store.check_capability(c,p,'EXECUTE')
@@ -306,6 +445,9 @@ def _view(store,c,p,parent,card_id=None):
     if note and not conflict and note['origin']=='SOURCE':
         _,_,_,_,states,_=service._inspect(store,c,parent,deepcopy(plan),observe=False)
         state='RESOLVED' if states['P1']=='VERIFIED' else 'ACCEPTED_AWAITING_RECHECK'
+    if note and not conflict and last and last['action'] in CONTINUATION_ACTIONS:
+        _,_,_,_,states,_=service._inspect(store,c,parent,deepcopy(plan),observe=False)
+        state='RESOLVED' if states['P1']=='VERIFIED' else 'CONTINUED_AWAITING_RECHECK'
     if source_view['unknown_scope'] or source_blockers:state='UNKNOWN'
     blocks=list(source_blockers)
     if locked:blocks.append('P1_LOCK_REQUIRES_ORIGINAL_UNLOCK_FOR_EDIT_OR_ACCEPT')
@@ -314,6 +456,18 @@ def _view(store,c,p,parent,card_id=None):
     template=dict(schema=VERSION,expected_plan_id=plan['id'],expected_plan_revision=plan['revision'],expected_note_revision=note['revision'] if note else 0,
         expected_ledger_revision=basis['ledger_revision'],expected_preview_sha256=sha(basis),card_id=basis['card_id'],reason='')
     action_requests={a:dict(template,action=a,text='' if a=='EDIT_NOTE' else None) for a in (['EDIT_NOTE'] if can_edit else [])+choices}
+    continued=continuation_snapshot(c,parent,note,basis['source'])
+    if continued is not None:
+        continue_blocks=[]
+        if continued['baseline'] is None:continue_blocks.append('ACTUAL_HISTORICAL_NOTE_SOURCE_REQUIRED')
+        if not continued['coverage_known']:continue_blocks.append('BOUNDED_NONEMPTY_SOURCE_LINES_REQUIRED')
+        eligible=bool(resolve_context and not locked and accept_capacity and not continue_blocks)
+        new_basis=dict(basis,schema=2,continuation=deepcopy(continued)) if not continue_blocks else None
+        continued.update(blocking_reasons=sorted(set(continue_blocks+blocks)),preview_sha256=sha(new_basis) if new_basis else None,
+            can_keep_and_continue=bool(eligible and continued['coverage_satisfied']),can_merge=eligible)
+        if continued['can_keep_and_continue']:action_requests['KEEP_AND_CONTINUE']=dict(template,expected_preview_sha256=continued['preview_sha256'],action='KEEP_AND_CONTINUE',text=None)
+        if continued['can_merge']:action_requests['MERGE_NOTE']=dict(template,expected_preview_sha256=continued['preview_sha256'],action='MERGE_NOTE',text='')
+    result['continuation']=continued
     result.update(card_version=basis['card']['version'] if basis['card'] else None,opportunity_revision=basis['ledger_revision'],preview_sha256=sha(basis),source=basis['source'],
         material_diffs=_material_diffs(c,parent,note,basis['materials']),state=state,can_edit=can_edit,can_resolve=can_resolve,
         allowed_choices=choices,blocking_reasons=sorted(set(blocks)),affected=source_view['affected'],preserved=source_view['preserved'],action_requests=action_requests,unknown_scope=source_view['unknown_scope'])
@@ -349,26 +503,35 @@ def command(store,token,id,key,data):
         view,basis=_view(store,c,p,parent,data.card_id)
         if basis is None:raise Conflict('current source inspection unavailable; preserve original request key')
         if view['state']=='UNKNOWN':raise Conflict('unknown source inspection; preserve original request key')
+        if data.action in CONTINUATION_ACTIONS:basis=continuation_basis(c,parent,basis)
+        preview_sha=sha(basis)
         if (data.action not in view['action_requests'] or data.expected_plan_id!=UUID(view['plan_id']) or
             data.expected_plan_revision!=view['plan_revision'] or data.expected_note_revision!=(view['note']['revision'] if view['note'] else 0) or
-            data.expected_ledger_revision!=view['opportunity_revision'] or data.expected_preview_sha256!=view['preview_sha256']):
+            data.expected_ledger_revision!=view['opportunity_revision'] or data.expected_preview_sha256!=preview_sha):
             raise DefinitiveConflict(parent,p,key,data)
         plan=deepcopy(parent['service_case_plan']);ledger=op.ledger(parent)
         if ledger['revision']>=op.MAX_EVENTS:raise Conflict('bounded opportunity history exhausted')
-        before=deepcopy(view['note']);after=deepcopy(before);plan['revision']+=1
+        before=deepcopy(view['note']);after=deepcopy(before)
+        if data.action in CONTINUATION_ACTIONS:
+            text=before['text'] if data.action=='KEEP_AND_CONTINUE' else data.text
+            if (not line_coverage(text,basis['source']['text'])['coverage_satisfied'] or
+                data.action=='MERGE_NOTE' and before['text'] not in text):raise DefinitiveConflict(parent,p,key,data)
+        plan['revision']+=1
         step=next(s for s in plan['steps'] if s['id']==view['step_id'])
         event=service._event(plan,p,key,fp,data.action,data.reason,step)
-        if data.action in ('EDIT_NOTE','ACCEPT_SOURCE'):
-            material_package=basis['materials'] if before is None or data.action=='ACCEPT_SOURCE' else before['source_package']
+        if data.action in ('EDIT_NOTE','ACCEPT_SOURCE')+CONTINUATION_ACTIONS:
+
+            material_package=basis['materials'] if before is None or data.action in ('ACCEPT_SOURCE',)+CONTINUATION_ACTIONS else before['source_package']
             before_p1=adoption.evidence_sources(parent,parent['service_case_plan']).get('P1',{})
             package_sha=prep.snapshot(parent,material_package)
             verified=package_sha if before_p1.get('preparation_sha256')==package_sha else None
-            after=dict(version=VERSION,revision=(before['revision'] if before else 0)+1,text=data.text if data.action=='EDIT_NOTE' else basis['source']['text'],
-                text_sha256=digest(data.text if data.action=='EDIT_NOTE' else basis['source']['text']),origin='MANUAL' if data.action=='EDIT_NOTE' else 'SOURCE',
+            content=data.text if data.action in ('EDIT_NOTE','MERGE_NOTE') else before['text'] if data.action=='KEEP_AND_CONTINUE' else basis['source']['text']
+            after=dict(version=VERSION,revision=(before['revision'] if before else 0)+1,text=content,
+                text_sha256=digest(content),origin='SOURCE' if data.action=='ACCEPT_SOURCE' else 'MANUAL',
                 source_ref=source_ref(next(m for m in material_package if m['slot']=='material_outline')),source_package=deepcopy(material_package),
-                verified_package_sha256=before['verified_package_sha256'] if before and data.action=='EDIT_NOTE' else verified,event_id=event['id'],plan_id=plan['id'],step_id=step['id'])
+                verified_package_sha256=None if data.action in CONTINUATION_ACTIONS else before['verified_package_sha256'] if before and data.action=='EDIT_NOTE' else verified,event_id=event['id'],plan_id=plan['id'],step_id=step['id'])
         op_id=str(uuid4())
-        proof=dict(version=VERSION,request=request(data),preview_basis=basis,preview_sha256=sha(basis),op_event_id=op_id,op_revision=ledger['revision']+1,
+        proof=dict(version=2 if data.action in CONTINUATION_ACTIONS else VERSION,request=request(data),preview_basis=basis,preview_sha256=sha(basis),op_event_id=op_id,op_revision=ledger['revision']+1,
             op_previous_sha256=ledger['events'][-1]['sha256'] if ledger['events'] else None,before_note=before,after_note=after)
         proof['sha256']=sha(proof);event['plan_note']=proof
         plan['owner_amendments']={step['id']:after}
@@ -377,7 +540,8 @@ def command(store,token,id,key,data):
             created_at=c.execute('SELECT clock_timestamp() now').fetchone()['now'].isoformat(),previous_sha256=proof['op_previous_sha256'],payload=dict(plan_event=deepcopy(event)))
         op_event['sha256']=op.sha(op_event)
         final,final_basis=_view(store,c,p,parent,data.card_id)
-        if final_basis!=basis or final['preview_sha256']!=data.expected_preview_sha256:raise Conflict('source changed before owner note decision')
+        if data.action in CONTINUATION_ACTIONS:final_basis=continuation_basis(c,parent,final_basis)
+        if not same(final_basis,basis) or sha(final_basis)!=data.expected_preview_sha256:raise Conflict('source changed before owner note decision')
         ledger['events'].append(op_event);ledger['revision']+=1
         c.execute('UPDATE preparations SET opportunities=%s,service_case_plan=%s WHERE id=%s',(Jsonb(ledger),Jsonb(plan),id))
         updated=c.execute('SELECT * FROM preparations WHERE id=%s',(id,)).fetchone()

@@ -66,10 +66,10 @@ def structure(plan,*,parent=None):
                 isinstance(event['request_key'],str) and re.fullmatch(r'tc:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}:ADOPT_PLAN',event['request_key']))
             if (type(event['revision']) is not int or event['revision']!=i or event['plan_id']!=plan['id'] or event['id'] in event_ids or
                 (event['actor_id'],event['request_key']) in keys or not (re.fullmatch('[A-Za-z0-9_-]{1,100}',event['request_key']) or legacy_adoption_key) or not re.fullmatch('[a-f0-9]{64}',event['fingerprint']) or
-                event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK','TEMPLATE_UPGRADE','EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER') or
+                event['action'] not in ('ADOPT','BEGIN','REPORT_FAILURE','RETRY','VERIFY','LOCK','UNLOCK','TEMPLATE_UPGRADE','EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER','KEEP_AND_CONTINUE','MERGE_NOTE') or
                 (i==1 and event['action']!='ADOPT') or (event['step_id'] is None if event['action'] in ('ADOPT','TEMPLATE_UPGRADE') else event['step_id'] in ids) is not True):raise ValueError()
             keys.add((event['actor_id'],event['request_key']));event_ids.add(event['id'])
-        if any(e['action'] in ('TEMPLATE_UPGRADE','EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER') for e in plan['events']) or plan.get('template_migration') is not None or plan.get('owner_amendments') is not None:
+        if any(e['action'] in ('TEMPLATE_UPGRADE','EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER','KEEP_AND_CONTINUE','MERGE_NOTE') for e in plan['events']) or plan.get('template_migration') is not None or plan.get('owner_amendments') is not None:
             if parent is None:raise ValueError()
             steps._recovery_proofs(parent)
     except (KeyError,TypeError,ValueError,AttributeError):raise Conflict('adopted goal result plan proof invalid')

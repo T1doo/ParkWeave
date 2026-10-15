@@ -91,7 +91,7 @@ def ledger(row):
             if not re.fullmatch('[a-f0-9]{64}',e['fingerprint']) or not re.fullmatch('[A-Za-z0-9_-]{1,100}',e['request_key']):raise ValueError()
             if (e['id'] in ids or not isinstance(e['reason'],str) or not 1<=len(e['reason'])<=1000 or
                 e['outcome'] not in {'IMPORT':('IMPORTED','DUPLICATE'),'REFRESH':('REFRESHED','NO_CHANGE'),'IGNORE':('IGNORE',),'WITHDRAW':('WITHDRAW',),
-                    'EDIT_PLAN_NOTE':('EDIT_NOTE',),'RESOLVE_PLAN_NOTE':('KEEP_MANUAL','ACCEPT_SOURCE','DEFER')}[e['action']]):raise ValueError()
+                    'EDIT_PLAN_NOTE':('EDIT_NOTE',),'RESOLVE_PLAN_NOTE':('KEEP_MANUAL','ACCEPT_SOURCE','DEFER','KEEP_AND_CONTINUE','MERGE_NOTE')}[e['action']]):raise ValueError()
             UUID(e['id']);ids.add(e['id']);keys.add(e['request_key']);previous=e['sha256']
         project(value)
         if any(e['action'] in ('EDIT_PLAN_NOTE','RESOLVE_PLAN_NOTE') for e in value['events']):

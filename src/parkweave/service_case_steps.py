@@ -565,7 +565,7 @@ def _recovery_proofs(parent):
                     from .template_migration import parse_apply_request,fingerprint
                     request=parse_apply_request(event['template_upgrade'])
                     fp=fingerprint(request.expected_instance_id,request)
-                elif event['action'] in ('EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER'):
+                elif event['action'] in ('EDIT_NOTE','KEEP_MANUAL','ACCEPT_SOURCE','DEFER','KEEP_AND_CONTINUE','MERGE_NOTE'):
                     from .plan_source_conflicts import Command as NoteCommand,fingerprint as note_fingerprint
                     expected=revision-1
                     data=NoteCommand.model_validate(event['plan_note']['request'])
