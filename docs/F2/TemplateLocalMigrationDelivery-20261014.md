@@ -33,3 +33,5 @@
 下一步按原计划补结构变更的兼容预检及迁移策略；当前结构增删继续明确拒绝，正式 AT25–27 与发布治理另行验收。
 
 自动审批曾拒绝删除私有src目录，理由为非必要的广泛不可逆源丢失。删除未执行、未重试；旧目录保留，在新空私目录完成验证。完整原始报错保留于[native-harness/auto-review-delete-rejection.txt](evidence/template-local-migration-20261014/native-harness/auto-review-delete-rejection.txt)，该操作拒绝与测试FAIL分列，当前无剩余阻断。
+
+源码与交付报告的git diff --check均退出0。全原样归档的同一检查退出2，232项诊断均位于已审计raw归档，主要为原pytest日志/XML中的空白；按原样保留要求不清理这些字节，完整诊断保存在运行目录delivery-archive-diff.txt。归档诊断分类helper首版正则过宽导致AssertionError，原错及校正证明另存运行目录，不计作pytest失败。
