@@ -70,7 +70,7 @@ function page(config, storage, calls, transport) {
   if (['late_draft', 'late_identity_aba', 'late_denied'].includes(config.mode)) {
     const arm = predicate => { transport.hold = predicate; transport.ready = new Promise(resolve => transport.held = resolve); transport.release = new Promise(resolve => transport.resume = resolve); };
     if (config.mode === 'late_denied') await control('revoke_read');
-    arm(call => call.path.endsWith(config.mode === 'late_denied' ? '/service-case-plan' : '/plan-revision'));
+    arm(call => call.path.endsWith(config.mode === 'late_denied' ? '/service-case-plan/command-recovery' : '/plan-revision'));
     let staleError = null;
     const late = run(`previewOpportunityPlan(${JSON.stringify(cardId)})`).catch(error => staleError = error);
     const held = await transport.ready;
