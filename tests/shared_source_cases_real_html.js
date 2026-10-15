@@ -58,7 +58,13 @@ function page(config, storage, calls, transport) {
   const arm = predicate => { transport.hold = predicate; transport.ready = new Promise(resolve => transport.held = resolve); transport.release = new Promise(resolve => transport.resume = resolve); };
   async function graph(anchor = config) {
     await $('case-worklist-read').onclick();
-    const card = $('case-worklist-items').children.find(e => e.children.some(child => child.dataset?.caseSourceImpact === anchor.preparation_id));
+    let card;
+    for (let page = 0; page < 3; page++) {
+      card = $('case-worklist-items').children.find(e => e.children.some(child => child.dataset?.caseSourceImpact === anchor.preparation_id));
+      if (card || $('case-worklist-next').hidden) break;
+      check(page < 2, 'anchor navigation remains bounded to three original worklist pages');
+      await $('case-worklist-next').onclick();
+    }
     check(!!card, 'current owner worklist has original anchor Case');
     const buttons = card.children.filter(e => e.tagName === 'button');
     check(!buttons[0].dataset.caseSourceImpact, 'original action stays the first button');
