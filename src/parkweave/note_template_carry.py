@@ -94,6 +94,19 @@ def _epoch_list(value,materials):
         if not isinstance(item,dict) or set(item)!=set(expected)|{'row_epoch'} or not _epoch(item['row_epoch']) or type(item['version']) is not int or not _same({k:v for k,v in item.items() if k!='row_epoch'},expected):raise ValueError('exact source epoch reference required')
 
 
+def verified_material_package_v1(parent,plan,revision,materials):
+    """Anchor the full historical package to the original pre-carry P1 proof."""
+    prefix=[event for event in plan['events'] if event['revision']<revision]
+    p1=adoption.evidence_sources(parent,plan,events=prefix).get('P1')
+    if (not isinstance(p1,dict) or not _hash(p1.get('preparation_sha256')) or
+        type(p1.get('service_version')) is not int or p1['service_version']<1 or
+        p1.get('preparation_id')!=str(parent['id']) or p1.get('case_id')!=str(parent['case_id']) or p1.get('run_id')!=str(parent['run_id']) or
+        p1.get('service_id')!=plan['binding']['service_id']):raise ValueError('original P1 material verification required')
+    original=dict(parent,service_id=p1['service_id'],service_version=p1['service_version'])
+    if notes.prep.snapshot(original,materials)!=p1['preparation_sha256']:
+        raise ValueError('complete material package differs from original pre-carry P1 verification')
+
+
 def validate_v1(parent,plan,event,before,target,check,choice,affected,preserved):
     """Validate historical prefix inputs; never reinterpret with current notes."""
     try:
@@ -116,6 +129,7 @@ def validate_v1(parent,plan,event,before,target,check,choice,affected,preserved)
         outline=next(m for m in materials['current'] if m['slot']=='material_outline')
         if notes.source_ref(outline)!=note['source_ref']:raise ValueError('resolved material anchor required')
         _epoch_list(materials['current_epochs'],materials['current']);_epoch_list(materials['captured_epochs'],note['source_package'])
+        verified_material_package_v1(parent,plan,event['revision'],materials['current'])
         if (not isinstance(versions,dict) or set(versions)!={'preparation_epoch','case_epoch','run_epoch','source_epochs_sha256','action_grant_epochs'} or
             any(not _epoch(versions[k]) for k in ('preparation_epoch','case_epoch','run_epoch')) or not _hash(versions['source_epochs_sha256'])):raise ValueError()
         grants=versions['action_grant_epochs']
@@ -152,6 +166,7 @@ def projection(checker,context,check,events,t,base,before,target):
         binding,issues,_,_,states,_=service._inspect(checker.consumer.store,c,parent,deepcopy(plan),observe=False,fresh_clock=True)
         if binding or any(states[s['adapter_id']]!='VERIFIED' or issues[s['adapter_id']] for s in plan['steps']):blockers.append('CURRENT_VERIFIED_CASE_SOURCES_REQUIRED')
         current=sorted(notes._materials(c,parent),key=lambda m:m['slot'])
+        verified_material_package_v1(parent,plan,plan['revision']+1,current)
         material_proof=dict(current=current,current_epochs=_epochs_for(c,parent,current),captured_epochs=_epochs_for(c,parent,note['source_package']))
         versions=case_versions(c,parent,p);ledger=op.ledger(parent)
         choice=events[-1] if events else None

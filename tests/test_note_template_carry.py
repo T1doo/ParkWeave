@@ -34,7 +34,7 @@ def apply(u,row,body,key=None,path='apply-note-carry'):
     return u['client'].post('/api/template-upgrade/'+row['instance_id']+'/'+path,headers=headers(u['f'][2],key=key or uuid4().hex),json=body)
 
 @pytest.mark.parametrize('source,locked',[('1',True),('2',False)])
-def test_actual_manual_carry_preserves_history_locks_and_original_six_outputs(upgrade_case,source,locked):
+def test_actual_manual_carry_preserves_history_locks_and_original_case_outputs(upgrade_case,source,locked):
     u=upgrade_case;row,p,target=ready(u,source,locked);old=deepcopy(stored(u,row));business=facts(u)
     v,body=request(u,row,target);a=v['application'];n=a['note_carry'];ids=[s['id'] for s in old['steps']]
     assert not a['eligible'] and n['eligible'],n
