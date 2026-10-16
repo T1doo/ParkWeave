@@ -1,7 +1,7 @@
 """Observed cancellation fences with controlled preflight/fetch doubles only.
 
-Fixture allow flags do not establish tracked schema33 eligibility: before_receipt
-and reconciliation retain the backend ORDINARY_MANUAL_CASE_REQUIRED boundary.
+Fixture allow flags do not establish tracked schema33 eligibility. The real
+before_receipt policy is tested separately; reconciliation retains its old gate.
 Fresh retry here proves exact-409 classification and page controls, not PG effects.
 """
 import json,subprocess

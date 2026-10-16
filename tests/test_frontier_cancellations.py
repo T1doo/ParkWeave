@@ -68,8 +68,8 @@ def test_frontier_cancellation_original_policy_captured_fence_rejects_late_and_p
  if policy=='before_accept':
   module=first;stale=x['old_cancel_body'];record('stale_get',x['old_cancel_view']);fresh,view=cancellation_body(module,x);record('fresh_get',view);assert view['can_cancel'],view
  elif policy=='before_receipt':
-  module=before;d=accept(x);stale,view=cancellation_body(module,x);record('stale_get',view);assert not view['can_cancel'] and view['blockers']==['ORDINARY_MANUAL_CASE_REQUIRED'],view
-  verified(f,p,'P3');fresh,view=cancellation_body(module,x);record('fresh_get',view);assert not view['can_cancel'] and view['blockers']==['ORDINARY_MANUAL_CASE_REQUIRED'],view
+  module=before;d=accept(x);stale,view=cancellation_body(module,x);record('stale_get',view);assert view['can_cancel'] and not view['blockers'],view
+  verified(f,p,'P3');fresh,view=cancellation_body(module,x);record('fresh_get',view);assert view['can_cancel'] and not view['blockers'],view
  else:
   module=recon;d=accept(x);verified(f,p,'P3');row=receipt_submit(x,d)
   stale,view=cancellation_body(module,x,'REQUEST_CANCEL');record('stale_get',view);assert not view['can_request'] and view['blockers']==['ORDINARY_MANUAL_CASE_REQUIRED'],view
@@ -88,7 +88,7 @@ def test_frontier_cancellation_original_policy_captured_fence_rejects_late_and_p
  assert checkpoint(x)==before_state
  key=uuid4().hex;r=module.post(f,p,fresh,key)
  record('fresh_submission',{'status':r.status_code,'reply':r.json(),'no_effect':checkpoint(x)==before_state})
- if policy!='before_accept':
+ if policy=='reconciliation':
   assert r.status_code==409 and 'ORDINARY_MANUAL_CASE_REQUIRED' in r.json()['detail'],r.text
   assert checkpoint(x)==before_state
   assert module.recover(f,p,key).json()['status']=='NOT_OBSERVED'

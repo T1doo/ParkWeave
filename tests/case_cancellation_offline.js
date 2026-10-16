@@ -4,7 +4,7 @@ const html=fs.readFileSync('src/parkweave/web.html','utf8');
 const code=html.slice(html.indexOf('// Case cancellation: opaque'),html.indexOf('// Internal offers share'));
 const requestedMode=process.argv[2],after=requestedMode.startsWith('after_'),mode=after?requestedMode.slice(6):requestedMode,id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',cid='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',key='cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 let checks=0;const check=v=>{checks++;assert(v);};
-class Element{constructor(){this.hidden=false;this.disabled=false;this.checked=false;this.value='';this.textContent='';}closest(){return null;}replaceChildren(){}append(){}reset(){}}
+class Element{constructor(){const classes=new Set();this.classList={add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n)),contains:n=>classes.has(n)};this.hidden=false;this.disabled=false;this.checked=false;this.value='';this.textContent='';}closest(){return null;}replaceChildren(){}append(){}reset(){}}
 const elements=new Map(),$=name=>{if(!elements.has(name))elements.set(name,new Element());return elements.get(name);};
 const storage={},calls=[],events=[];
 const context=vm.createContext({$,console,Date,Map,Set,JSON,Number,String,Error,encodeURIComponent,crypto:{randomUUID:()=>key},

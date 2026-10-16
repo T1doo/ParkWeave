@@ -3,7 +3,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const html=fs.readFileSync('src/parkweave/web.html','utf8'),code=html.slice(html.indexOf('// Case cancellation: opaque'),html.indexOf('// Internal offers share'));
 const mode=process.argv[2],id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',cid='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',key='cccccccc-cccc-4ccc-8ccc-cccccccccccc',rid='dddddddd-dddd-4ddd-8ddd-dddddddddddd',scope='SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION';
 let checks=0;const check=v=>{checks++;assert(v);};
-class Element{constructor(){this.hidden=false;this.disabled=false;this.checked=false;this.value='';this.textContent='';this.children=[];}closest(){return null;}replaceChildren(){this.children=[];}append(...c){this.children.push(...c);}reset(){}}
+class Element{constructor(){const classes=new Set();this.classList={add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n)),contains:n=>classes.has(n)};this.hidden=false;this.disabled=false;this.checked=false;this.value='';this.textContent='';this.children=[];}closest(){return null;}replaceChildren(){this.children=[];}append(...c){this.children.push(...c);}reset(){}}
 const captureCallbacks={};const elements=new Map(),$=n=>{if(!elements.has(n))elements.set(n,new Element());return elements.get(n);};
 const storage={},calls=[];const context=vm.createContext({$,console,Date,Map,Set,JSON,Number,String,Error,encodeURIComponent,crypto:{randomUUID:()=>key},generation:1,
  localStorage:{getItem:n=>storage[n]??null,setItem:(n,v)=>storage[n]=v,removeItem:n=>delete storage[n]},document:{querySelectorAll:()=>[],addEventListener:(kind,fn)=>captureCallbacks[kind]=fn},

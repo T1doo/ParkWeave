@@ -7,7 +7,7 @@ The common parent lock serializes the full lineage with SUBMIT and reassignment.
 """
 import json
 from . import case_cancellation as cc, preparation as prep, service_dispatches as sd, executor_receipts as er
-from .store import Conflict, Denied, digest
+from .store import Store, Conflict, Denied, digest
 
 SCOPE='SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT'
 ACTION='CANCEL_BEFORE_RECEIPT'
@@ -24,9 +24,23 @@ def _head(value):
     return dict(id=data.get('id'),revision=data.get('revision'),sha256=digest(prep.canonical(data)))
 
 
+def _before_receipt_schema33_enabled(store,c):
+    """Extend only this cancellation policy, never handoff or reconciliation."""
+    from .isolated_local_execution import provider
+    return (type(store) is Store and provider(store) is None
+        and not any(getattr(store,name,None) is not None for name in (
+            '_isolated_run_access','_isolated_local_execution','_isolated_execution_preview',
+            '_isolated_resource_execution_preview','_isolated_dispatch_execution_preview',
+            '_isolated_receipt_execution_preview','_isolated_lifecycle_execution_preview'))
+        and c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']==33
+        and bool(c.execute('SELECT 1 FROM schema_version WHERE version=29').fetchone()))
+
+
 def _manual_lineage(store,c,parent,root,*,allow_manual_receipts=False):
     issues=[]
-    if not sd._handoff_enabled(store,c):issues.append('ORDINARY_MANUAL_CASE_REQUIRED')
+    if not (sd._handoff_enabled(store,c) or
+            (not allow_manual_receipts and _before_receipt_schema33_enabled(store,c))):
+        issues.append('ORDINARY_MANUAL_CASE_REQUIRED')
     if any(a.get('managed_access') is not None for a in c.execute('SELECT * FROM run_assignments WHERE run_id=%s',(parent['run_id'],)).fetchall()):
         issues.append('ISOLATED_RUN_ACCESS_NOT_SUPPORTED')
     steps=c.execute('SELECT * FROM service_receipt_steps WHERE preparation_id=%s OR case_id=%s ORDER BY id LIMIT 65',
