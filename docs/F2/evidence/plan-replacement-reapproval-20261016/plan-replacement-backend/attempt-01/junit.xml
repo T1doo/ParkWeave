@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="4.208" timestamp="2026-10-16T05:11:15.985181+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_plan_replacement_reapproval" name="test_replacement_actual_new_approval_and_atomic_delivery" time="3.752"><failure message="AssertionError: {&quot;detail&quot;:&quot;known nonbreaking original catalog replacement required&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_replacement_actual_new_approval_and_atomic_delivery(link_fixture):
+        f=link_fixture;p,first_value,bridge,publication=first(f);old=replace(f,p,publication)
+&gt;       hs,d=bundle(f);data=quoted(f,p,{**d,'expected_link_revision':1,'expected_previous_plan_id':old['id']})
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/plan-replacement-backend/candidate/tests/test_plan_replacement_reapproval.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '2d9d4409-593f-4c13-9879-0b15019fa7b8', 'case_id': '9fe8d8d5-ec0c-4513-9743-8b160004336a', 'run_id': 'e65d0a0c-7152-40f3-aaa4-c067324812f0', 'revision': 8, ...}
+data = {'members': [{'hold_id': 'c21c81a1-8025-42f0-a05a-f2cba43bf369', 'expected_revision': 1}, {'hold_id': 'c7489345-78cd-4...ected_revision': 1}], 'expected_link_revision': 1, 'expected_previous_plan_id': '9aceaa99-0cc7-4176-b6bc-6460efde65fa'}
+
+    def quoted(f,p,data):
+&gt;       r=preview(f,p,data); assert r.status_code == 200,r.text
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"known nonbreaking original catalog replacement required"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_case_resource_delivery.py:28: AssertionError</failure></testcase></testsuite></testsuites>

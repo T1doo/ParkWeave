@@ -1,0 +1,58 @@
+..........................F...                                           [100%]
+=================================== FAILURES ===================================
+_ test_independent_later_explicit_owner_note_keeps_consumed_replacement_receipt_historical _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_independent_later_explicit_owner_note_keeps_consumed_replacement_receipt_historical(replacement_case):
+     from test_plan_source_reapproval import approved
+     from test_case_resource_delivery import submit,recover,effects
+     from test_service_plan_approval import ledger
+     x=replacement_case;f,p=x['f'],x['p'];hs,data=new_quote(x);item,_=approved(f,p,data);key=uuid4().hex
+     r=submit(f,p,{**data,'approval_id':item['id']},key);assert r.status_code==201,r.text
+     receipt=deepcopy(r.json()['receipt']);oldledger=deepcopy(ledger(f,p));before=effects(f)
+     from test_case_lifecycle import read as localread,act as localact
+     verified(f,p,'P2')
+     from test_service_dispatches import offer,command as dispatch
+     from test_executor_receipts import act as receipt
+     q=f[3].get('/api/service-dispatches/'+x['old_dispatch']['dispatch_id'],headers=headers(f[2],'prep-specialist-fixture-a'));assert q.status_code==200,q.text
+     q=q.json();r=offer(f,p,revision=q['revision'],recovery_receipt_step_id=q['recovery_receipt_step_id'])[0];assert r.status_code==201,r.text
+     accepted=dispatch(f,r.json(),'ACCEPT');assert accepted.status_code==200,accepted.text
+     verified(f,p,'P3')
+     sr=f[3].get('/api/executor-receipts/'+accepted.json()['receipt_step_id'],headers=headers(f[2],'executor-a')).json()
+     sr=receipt(f,sr,'SUBMIT');assert sr.status_code==200,sr.text
+     sr=receipt(f,sr.json(),'ACKNOWLEDGE');assert sr.status_code==200,sr.text
+     verified(f,p,'P4')
+     assert localact(f,p,localread(f,p).json(),'REVALIDATE').status_code==200
+     verified(f,p,'P5')
+    
+     path='/api/preparations/'+p['preparation_id']+'/plan-source-conflicts'
+     read=f[3].get(path,headers=headers(f[2]));assert read.status_code==200,read.text
+     body={**read.json()['action_requests']['EDIT_NOTE'],'text':'SYNTHETIC explicit owner coordination note after replacement approval consumption','reason':'SYNTHETIC original owner retains later manual content'}
+     changed=f[3].post(path+'/commands',headers=headers(f[2],key=uuid4().hex),json=body);assert changed.status_code==200,changed.text
+     cold=recover(f,p,key);assert cold.status_code==200,cold.text
+>    assert cold.json()['receipt']==receipt and cold.json()['independent_check']['status']=='NEEDS_RECHECK'
+E    AssertionError: assert ({'at': '2026-10-16T05:46:15.608985+00:00', 'scope': 'LOCAL_SYNTHETIC_BOUNDED_RESOURCE_BUNDLE_ONLY', 'action': 'CONFIRM...ds_at': '2026-10-16T13:46:07.631985+00:00', 'quantity': 1, 'starts_at': '2026-10-16T12:46:07.631985+00:00', ...}], ...} == <function act at 0x7f60da26df80>)
+
+tests/test_plan_replacement_independent.py:301: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_plan_replacement_independent.py::test_independent_explicit_new_approval_and_original_verify_six_goals
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_plan_replacement_independent.py::test_independent_explicit_new_approval_and_original_verify_six_goals
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_plan_replacement_independent.py::test_independent_explicit_new_approval_and_original_verify_six_goals
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_plan_replacement_independent.py::test_independent_later_explicit_owner_note_keeps_consumed_replacement_receipt_historical
+1 failed, 29 passed, 4 warnings in 679.05s (0:11:19)

@@ -1,0 +1,78 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="4" failures="0" skipped="0" tests="4" time="7.656" timestamp="2026-10-16T05:36:05.839753+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_plan_replacement_chromium" name="test_actual_installed_chromium_whole_plan_new_approval[positive]" time="1.920"><error message="failed on setup with &quot;FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/.runtime/plan-replacement-ui-fixture/artifacts/redaction-9f1b1e5a16804d5388a794aebc7d9116.private.json'&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/parkweave-plan-replacement-replacement-chromium/test_actual_installed_chromium0')
+
+    @pytest.fixture
+    def replacement_case(capability_resource_catalog,tmp_path):
+     expected=os.environ.get('PLAN_REPLACEMENT_TEST_SOURCE_ROOT')
+     if expected:
+      import importlib
+      for name in ('case_resource_delivery','service_plan_approval','case_resources','plan_replacement_compatibility','resource_plan_binding','api'):
+       module=importlib.import_module('parkweave.'+name)
+       assert Path(module.__file__).resolve().parent==Path(expected).resolve()
+     a=capability_resource_catalog;f=a['f'];oldpairs=bind_all(a)
+     out=next(p for p in Path(__file__).resolve().parents if (p/'pyproject.toml').exists())/'.runtime/plan-replacement-ui-fixture/artifacts'
+     out.mkdir(parents=True,exist_ok=True)
+     private=out/('redaction-'+uuid4().hex+'.private.json')
+&gt;    with os.fdopen(os.open(private,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),'w') as h:json.dump(sorted(set(f[2].values())),h)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/.runtime/plan-replacement-ui-fixture/artifacts/redaction-9f1b1e5a16804d5388a794aebc7d9116.private.json'
+
+tests/plan_replacement_fixture_support.py:56: FileNotFoundError</error></testcase><testcase classname="tests.test_plan_replacement_chromium" name="test_actual_installed_chromium_whole_plan_new_approval[lost_commit]" time="1.824"><error message="failed on setup with &quot;FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/.runtime/plan-replacement-ui-fixture/artifacts/redaction-3402a52fb9954000a086b154ee492ac5.private.json'&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/parkweave-plan-replacement-replacement-chromium/test_actual_installed_chromium1')
+
+    @pytest.fixture
+    def replacement_case(capability_resource_catalog,tmp_path):
+     expected=os.environ.get('PLAN_REPLACEMENT_TEST_SOURCE_ROOT')
+     if expected:
+      import importlib
+      for name in ('case_resource_delivery','service_plan_approval','case_resources','plan_replacement_compatibility','resource_plan_binding','api'):
+       module=importlib.import_module('parkweave.'+name)
+       assert Path(module.__file__).resolve().parent==Path(expected).resolve()
+     a=capability_resource_catalog;f=a['f'];oldpairs=bind_all(a)
+     out=next(p for p in Path(__file__).resolve().parents if (p/'pyproject.toml').exists())/'.runtime/plan-replacement-ui-fixture/artifacts'
+     out.mkdir(parents=True,exist_ok=True)
+     private=out/('redaction-'+uuid4().hex+'.private.json')
+&gt;    with os.fdopen(os.open(private,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),'w') as h:json.dump(sorted(set(f[2].values())),h)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/.runtime/plan-replacement-ui-fixture/artifacts/redaction-3402a52fb9954000a086b154ee492ac5.private.json'
+
+tests/plan_replacement_fixture_support.py:56: FileNotFoundError</error></testcase><testcase classname="tests.test_plan_replacement_chromium" name="test_actual_installed_chromium_whole_plan_new_approval[lost_propose]" time="1.538"><error message="failed on setup with &quot;FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/.runtime/plan-replacement-ui-fixture/artifacts/redaction-32020320ba5e4a00b3043b0487ffa669.private.json'&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/parkweave-plan-replacement-replacement-chromium/test_actual_installed_chromium2')
+
+    @pytest.fixture
+    def replacement_case(capability_resource_catalog,tmp_path):
+     expected=os.environ.get('PLAN_REPLACEMENT_TEST_SOURCE_ROOT')
+     if expected:
+      import importlib
+      for name in ('case_resource_delivery','service_plan_approval','case_resources','plan_replacement_compatibility','resource_plan_binding','api'):
+       module=importlib.import_module('parkweave.'+name)
+       assert Path(module.__file__).resolve().parent==Path(expected).resolve()
+     a=capability_resource_catalog;f=a['f'];oldpairs=bind_all(a)
+     out=next(p for p in Path(__file__).resolve().parents if (p/'pyproject.toml').exists())/'.runtime/plan-replacement-ui-fixture/artifacts'
+     out.mkdir(parents=True,exist_ok=True)
+     private=out/('redaction-'+uuid4().hex+'.private.json')
+&gt;    with os.fdopen(os.open(private,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),'w') as h:json.dump(sorted(set(f[2].values())),h)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/.runtime/plan-replacement-ui-fixture/artifacts/redaction-32020320ba5e4a00b3043b0487ffa669.private.json'
+
+tests/plan_replacement_fixture_support.py:56: FileNotFoundError</error></testcase><testcase classname="tests.test_plan_replacement_chromium" name="test_actual_installed_chromium_whole_plan_new_approval[lost_approve]" time="1.220"><error message="failed on setup with &quot;FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/.runtime/plan-replacement-ui-fixture/artifacts/redaction-a799dd2ba8d84039ab46587f7b13904f.private.json'&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/parkweave-plan-replacement-replacement-chromium/test_actual_installed_chromium3')
+
+    @pytest.fixture
+    def replacement_case(capability_resource_catalog,tmp_path):
+     expected=os.environ.get('PLAN_REPLACEMENT_TEST_SOURCE_ROOT')
+     if expected:
+      import importlib
+      for name in ('case_resource_delivery','service_plan_approval','case_resources','plan_replacement_compatibility','resource_plan_binding','api'):
+       module=importlib.import_module('parkweave.'+name)
+       assert Path(module.__file__).resolve().parent==Path(expected).resolve()
+     a=capability_resource_catalog;f=a['f'];oldpairs=bind_all(a)
+     out=next(p for p in Path(__file__).resolve().parents if (p/'pyproject.toml').exists())/'.runtime/plan-replacement-ui-fixture/artifacts'
+     out.mkdir(parents=True,exist_ok=True)
+     private=out/('redaction-'+uuid4().hex+'.private.json')
+&gt;    with os.fdopen(os.open(private,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),'w') as h:json.dump(sorted(set(f[2].values())),h)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/.runtime/plan-replacement-ui-fixture/artifacts/redaction-a799dd2ba8d84039ab46587f7b13904f.private.json'
+
+tests/plan_replacement_fixture_support.py:56: FileNotFoundError</error></testcase></testsuite></testsuites>

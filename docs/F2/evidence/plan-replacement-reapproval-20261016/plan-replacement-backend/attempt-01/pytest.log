@@ -1,0 +1,48 @@
+F
+=================================== FAILURES ===================================
+___________ test_replacement_actual_new_approval_and_atomic_delivery ___________
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_replacement_actual_new_approval_and_atomic_delivery(link_fixture):
+        f=link_fixture;p,first_value,bridge,publication=first(f);old=replace(f,p,publication)
+>       hs,d=bundle(f);data=quoted(f,p,{**d,'expected_link_revision':1,'expected_previous_plan_id':old['id']})
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.runtime/plan-replacement-backend/candidate/tests/test_plan_replacement_reapproval.py:43: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '2d9d4409-593f-4c13-9879-0b15019fa7b8', 'case_id': '9fe8d8d5-ec0c-4513-9743-8b160004336a', 'run_id': 'e65d0a0c-7152-40f3-aaa4-c067324812f0', 'revision': 8, ...}
+data = {'members': [{'hold_id': 'c21c81a1-8025-42f0-a05a-f2cba43bf369', 'expected_revision': 1}, {'hold_id': 'c7489345-78cd-4...ected_revision': 1}], 'expected_link_revision': 1, 'expected_previous_plan_id': '9aceaa99-0cc7-4176-b6bc-6460efde65fa'}
+
+    def quoted(f,p,data):
+>       r=preview(f,p,data); assert r.status_code == 200,r.text
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"known nonbreaking original catalog replacement required"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_case_resource_delivery.py:28: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_plan_replacement_reapproval.py::test_replacement_actual_new_approval_and_atomic_delivery
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_plan_replacement_reapproval.py::test_replacement_actual_new_approval_and_atomic_delivery
+  /workspace/ParkWeave/.runtime/plan-replacement-backend/candidate/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_plan_replacement_reapproval.py::test_replacement_actual_new_approval_and_atomic_delivery
+  /workspace/ParkWeave/.runtime/plan-replacement-backend/candidate/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/plan-replacement-backend/candidate/tests/test_plan_replacement_reapproval.py::test_replacement_actual_new_approval_and_atomic_delivery
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+1 failed, 4 warnings in 4.21s

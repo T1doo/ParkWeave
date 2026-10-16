@@ -1,0 +1,190 @@
+EEEE                                                                     [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_original_entire_html_replacement_approval_and_recovery[positive] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-62/test_original_entire_html_repl0')
+
+    @pytest.fixture
+    def replacement_case(capability_resource_catalog,tmp_path):
+     a=capability_resource_catalog;f=a['f'];oldpairs=bind_all(a)
+     out=next(p for p in Path(__file__).resolve().parents if (p/'pyproject.toml').exists())/'.runtime/plan-replacement-ui-fixture/artifacts'
+     out.mkdir(parents=True,exist_ok=True)
+     private=out/(uuid4().hex+'.private.json')
+     with os.fdopen(os.open(private,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),'w') as h:json.dump(sorted(set(f[2].values())),h)
+     checker=pf.ServiceReleasePreflight(a['catalog'],ConsumerRepository(tmp_path/'independent-preflight.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+     p=ready(f);r=save(f,p,goals=ALL_GOALS);assert r.status_code==200
+     p={**p,'revision':r.json()['revision']}
+     p=command(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC independent six-goal review').json()
+     p=command(f,p,'CONFIRM',reason='SYNTHETIC independent six-goal confirm').json()
+     old=generate(a,p);verified(f,p,'P1')
+     from test_resource_bundles import bundle
+     from test_case_resource_delivery import quoted,submit
+     from test_plan_source_reapproval import approved
+     from test_service_plan_approval import enable
+     from test_service_dispatches import offer,command as dispatch
+     from test_executor_receipts import act as receipt
+     from test_case_lifecycle import read as localread,act as localact
+>    bridge=enable(f,p,enabled_for_source_reapproval_tests=True,enabled_for_plan_replacement_tests=True,plan_replacement_preflight=checker)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/plan_replacement_fixture_support.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '501c3189-b547-4037-8ff5-e814d809c805', 'case_id': '530ebc47-1f1a-414b-9b86-5817d71567a1', 'run_id': '6cb2ad34-bef1-49e5-b503-a1d55b69eacd', 'revision': 8, ...}
+kwargs = {'enabled_for_source_reapproval_tests': True, 'enabled_for_plan_replacement_tests': True, 'plan_replacement_preflight': <parkweave.service_release_preflight.ServiceReleasePreflight object at 0x7fba26699a60>}
+
+    def enable(f,p,**kwargs):
+>       bridge=approval.IsolatedPlanApproval(f[1],f[1]._case_fact_fixture_receipt,
+            preparation_ids=[p['preparation_id']],enabled_for_isolated_tests=True,**kwargs)
+E       TypeError: IsolatedPlanApproval.__init__() got an unexpected keyword argument 'enabled_for_plan_replacement_tests'
+
+../../../tests/test_service_plan_approval.py:21: TypeError
+_ ERROR at setup of test_original_entire_html_replacement_approval_and_recovery[lost_ack] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-62/test_original_entire_html_repl1')
+
+    @pytest.fixture
+    def replacement_case(capability_resource_catalog,tmp_path):
+     a=capability_resource_catalog;f=a['f'];oldpairs=bind_all(a)
+     out=next(p for p in Path(__file__).resolve().parents if (p/'pyproject.toml').exists())/'.runtime/plan-replacement-ui-fixture/artifacts'
+     out.mkdir(parents=True,exist_ok=True)
+     private=out/(uuid4().hex+'.private.json')
+     with os.fdopen(os.open(private,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),'w') as h:json.dump(sorted(set(f[2].values())),h)
+     checker=pf.ServiceReleasePreflight(a['catalog'],ConsumerRepository(tmp_path/'independent-preflight.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+     p=ready(f);r=save(f,p,goals=ALL_GOALS);assert r.status_code==200
+     p={**p,'revision':r.json()['revision']}
+     p=command(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC independent six-goal review').json()
+     p=command(f,p,'CONFIRM',reason='SYNTHETIC independent six-goal confirm').json()
+     old=generate(a,p);verified(f,p,'P1')
+     from test_resource_bundles import bundle
+     from test_case_resource_delivery import quoted,submit
+     from test_plan_source_reapproval import approved
+     from test_service_plan_approval import enable
+     from test_service_dispatches import offer,command as dispatch
+     from test_executor_receipts import act as receipt
+     from test_case_lifecycle import read as localread,act as localact
+>    bridge=enable(f,p,enabled_for_source_reapproval_tests=True,enabled_for_plan_replacement_tests=True,plan_replacement_preflight=checker)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/plan_replacement_fixture_support.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': '74a262b0-77c2-4cf3-afa3-2c7bcdc0bc19', 'case_id': '484fb87b-44a8-45f1-b732-2c4d607d198e', 'run_id': '4e66cffb-78db-41e3-a14c-64108cf8e77f', 'revision': 8, ...}
+kwargs = {'enabled_for_source_reapproval_tests': True, 'enabled_for_plan_replacement_tests': True, 'plan_replacement_preflight': <parkweave.service_release_preflight.ServiceReleasePreflight object at 0x7fba25544b60>}
+
+    def enable(f,p,**kwargs):
+>       bridge=approval.IsolatedPlanApproval(f[1],f[1]._case_fact_fixture_receipt,
+            preparation_ids=[p['preparation_id']],enabled_for_isolated_tests=True,**kwargs)
+E       TypeError: IsolatedPlanApproval.__init__() got an unexpected keyword argument 'enabled_for_plan_replacement_tests'
+
+../../../tests/test_service_plan_approval.py:21: TypeError
+_ ERROR at setup of test_original_entire_html_replacement_approval_and_recovery[current_403] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-62/test_original_entire_html_repl2')
+
+    @pytest.fixture
+    def replacement_case(capability_resource_catalog,tmp_path):
+     a=capability_resource_catalog;f=a['f'];oldpairs=bind_all(a)
+     out=next(p for p in Path(__file__).resolve().parents if (p/'pyproject.toml').exists())/'.runtime/plan-replacement-ui-fixture/artifacts'
+     out.mkdir(parents=True,exist_ok=True)
+     private=out/(uuid4().hex+'.private.json')
+     with os.fdopen(os.open(private,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),'w') as h:json.dump(sorted(set(f[2].values())),h)
+     checker=pf.ServiceReleasePreflight(a['catalog'],ConsumerRepository(tmp_path/'independent-preflight.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+     p=ready(f);r=save(f,p,goals=ALL_GOALS);assert r.status_code==200
+     p={**p,'revision':r.json()['revision']}
+     p=command(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC independent six-goal review').json()
+     p=command(f,p,'CONFIRM',reason='SYNTHETIC independent six-goal confirm').json()
+     old=generate(a,p);verified(f,p,'P1')
+     from test_resource_bundles import bundle
+     from test_case_resource_delivery import quoted,submit
+     from test_plan_source_reapproval import approved
+     from test_service_plan_approval import enable
+     from test_service_dispatches import offer,command as dispatch
+     from test_executor_receipts import act as receipt
+     from test_case_lifecycle import read as localread,act as localact
+>    bridge=enable(f,p,enabled_for_source_reapproval_tests=True,enabled_for_plan_replacement_tests=True,plan_replacement_preflight=checker)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/plan_replacement_fixture_support.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'cd92bc9f-82b4-4278-bcc0-450bf55b9614', 'case_id': 'f3cbc4e3-d71f-4fd4-8b43-cd67d03ccd63', 'run_id': 'fda67d6b-2809-486f-8809-11072576f879', 'revision': 8, ...}
+kwargs = {'enabled_for_source_reapproval_tests': True, 'enabled_for_plan_replacement_tests': True, 'plan_replacement_preflight': <parkweave.service_release_preflight.ServiceReleasePreflight object at 0x7fba252dd580>}
+
+    def enable(f,p,**kwargs):
+>       bridge=approval.IsolatedPlanApproval(f[1],f[1]._case_fact_fixture_receipt,
+            preparation_ids=[p['preparation_id']],enabled_for_isolated_tests=True,**kwargs)
+E       TypeError: IsolatedPlanApproval.__init__() got an unexpected keyword argument 'enabled_for_plan_replacement_tests'
+
+../../../tests/test_service_plan_approval.py:21: TypeError
+_ ERROR at setup of test_original_entire_html_replacement_approval_and_recovery[late_403] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-62/test_original_entire_html_repl3')
+
+    @pytest.fixture
+    def replacement_case(capability_resource_catalog,tmp_path):
+     a=capability_resource_catalog;f=a['f'];oldpairs=bind_all(a)
+     out=next(p for p in Path(__file__).resolve().parents if (p/'pyproject.toml').exists())/'.runtime/plan-replacement-ui-fixture/artifacts'
+     out.mkdir(parents=True,exist_ok=True)
+     private=out/(uuid4().hex+'.private.json')
+     with os.fdopen(os.open(private,os.O_CREAT|os.O_EXCL|os.O_WRONLY,0o600),'w') as h:json.dump(sorted(set(f[2].values())),h)
+     checker=pf.ServiceReleasePreflight(a['catalog'],ConsumerRepository(tmp_path/'independent-preflight.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+     p=ready(f);r=save(f,p,goals=ALL_GOALS);assert r.status_code==200
+     p={**p,'revision':r.json()['revision']}
+     p=command(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC independent six-goal review').json()
+     p=command(f,p,'CONFIRM',reason='SYNTHETIC independent six-goal confirm').json()
+     old=generate(a,p);verified(f,p,'P1')
+     from test_resource_bundles import bundle
+     from test_case_resource_delivery import quoted,submit
+     from test_plan_source_reapproval import approved
+     from test_service_plan_approval import enable
+     from test_service_dispatches import offer,command as dispatch
+     from test_executor_receipts import act as receipt
+     from test_case_lifecycle import read as localread,act as localact
+>    bridge=enable(f,p,enabled_for_source_reapproval_tests=True,enabled_for_plan_replacement_tests=True,plan_replacement_preflight=checker)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/plan_replacement_fixture_support.py:64: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+p = {'preparation_id': 'd8038135-9013-4496-b2f0-e9433941f205', 'case_id': '0f0140bb-ed93-4702-b628-ea7d83786ee5', 'run_id': '00e1c5fe-ed7a-455b-8a89-24b4886b8839', 'revision': 8, ...}
+kwargs = {'enabled_for_source_reapproval_tests': True, 'enabled_for_plan_replacement_tests': True, 'plan_replacement_preflight': <parkweave.service_release_preflight.ServiceReleasePreflight object at 0x7fba25153530>}
+
+    def enable(f,p,**kwargs):
+>       bridge=approval.IsolatedPlanApproval(f[1],f[1]._case_fact_fixture_receipt,
+            preparation_ids=[p['preparation_id']],enabled_for_isolated_tests=True,**kwargs)
+E       TypeError: IsolatedPlanApproval.__init__() got an unexpected keyword argument 'enabled_for_plan_replacement_tests'
+
+../../../tests/test_service_plan_approval.py:21: TypeError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_plan_replacement_real_html.py::test_original_entire_html_replacement_approval_and_recovery[positive]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_plan_replacement_real_html.py::test_original_entire_html_replacement_approval_and_recovery[positive]
+  /workspace/ParkWeave/.runtime/plan-replacement-ui/candidate/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_plan_replacement_real_html.py::test_original_entire_html_replacement_approval_and_recovery[positive]
+  /workspace/ParkWeave/.runtime/plan-replacement-ui/candidate/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_plan_replacement_real_html.py::test_original_entire_html_replacement_approval_and_recovery[positive]
+ERROR tests/test_plan_replacement_real_html.py::test_original_entire_html_replacement_approval_and_recovery[lost_ack]
+ERROR tests/test_plan_replacement_real_html.py::test_original_entire_html_replacement_approval_and_recovery[current_403]
+ERROR tests/test_plan_replacement_real_html.py::test_original_entire_html_replacement_approval_and_recovery[late_403]
+4 warnings, 4 errors in 31.14s

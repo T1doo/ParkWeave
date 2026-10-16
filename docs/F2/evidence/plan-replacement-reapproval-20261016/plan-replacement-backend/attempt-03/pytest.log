@@ -1,0 +1,111 @@
+F.................................................................       [100%]
+=================================== FAILURES ===================================
+_ test_actual_six_goal_two_v4_snapshots_have_verifiable_compatible_forward_contract _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-61/test_actual_six_goal_two_v4_sn0')
+
+    def test_actual_six_goal_two_v4_snapshots_have_verifiable_compatible_forward_contract(capability_resource_catalog,tmp_path):
+     a=capability_resource_catalog;f=a['f'];oldpairs=bind_all(a)
+     p=ready(f);r=save(f,p,goals=ALL_GOALS);assert r.status_code==200
+     p={**p,'revision':r.json()['revision']}
+     p=command(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC independent six-goal review').json()
+     p=command(f,p,'CONFIRM',reason='SYNTHETIC independent six-goal confirm').json()
+     old=generate(a,p);verified(f,p,'P1')
+     from test_resource_bundles import bundle
+     from test_case_resource_delivery import quoted,submit
+     from test_plan_source_reapproval import approved
+     from test_service_plan_approval import enable
+     from test_service_dispatches import offer,command as dispatch
+     from test_executor_receipts import act as receipt
+     from test_case_lifecycle import read as localread,act as localact
+     checker=pf.ServiceReleasePreflight(a['catalog'],ConsumerRepository(tmp_path/'candidate-initial-preflight.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+     enable(f,p,enabled_for_source_reapproval_tests=True,enabled_for_plan_replacement_tests=True,plan_replacement_preflight=checker)
+     hs,b=bundle(f);d=quoted(f,p,b);item,_=approved(f,p,d)
+     result=submit(f,p,{**d,'approval_id':item['id']});assert result.status_code==201,result.text
+     verified(f,p,'P2');dr=dispatch(f,offer(f,p)[0].json(),'ACCEPT').json();verified(f,p,'P3')
+     sr=f[3].get('/api/executor-receipts/'+dr['receipt_step_id'],headers=headers(f[2],'executor-a')).json()
+     sr=receipt(f,sr,'SUBMIT').json();sr=receipt(f,sr,'ACKNOWLEDGE').json();verified(f,p,'P4')
+     lr=localact(f,p,localread(f,p).json(),'REVALIDATE');assert lr.status_code==200,lr.text
+     verified(f,p,'P5')
+     with f[1].connect() as c:oldstored=deepcopy(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['service_case_plan'])
+     a['published']=publication(a,goals=a['published']['snapshot']['definition']['required_goals'],source='1',name='SYNTHETIC independent compatible title-only full replacement')
+     newpairs=bind_all(a,2)
+     from parkweave import service_capability_catalog as cat
+     for r,i in oldpairs:
+      with a['catalog'].connection() as c:revision=cat.proof(cat.row(c,'park-a'))['revision']
+      a['catalog'].withdraw_release('park-a',uuid4().hex,r['release_id'],revision,'SYNTHETIC explicit superseded release retirement preserves Case history')
+     checker=pf.ServiceReleasePreflight(a['catalog'],ConsumerRepository(tmp_path/'independent-preflight.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+     comparisons=[]
+     for (r,i),(nr,ni) in zip(oldpairs,newpairs):
+      q=checker.preview(f[2]['fixture-a'],UUID(p['preparation_id']),original_release_id=r['release_id'],original_instance_id=i['instance_id'],target_instance_id=ni['instance_id'])
+      assert q['classification']=='NEEDS_RECHECK', {k:q[k] for k in ('classification','contract_classification','blocking_reasons','current_case_blocking_reasons')};assert q['classification']=='NEEDS_RECHECK' and q['contract_classification']=='COMPATIBLE'
+      assert q['target_current_available'] and not q['original_source_current_available'] and q['can_record']
+      comparisons.append(q)
+     new=generate(a,p,oldstored['revision'])
+     assert old['plan_id']!=new['plan_id'] and new['revision']==1
+     assert new['required_goals']==ALL_GOALS and len(new['steps'])==5
+     # Original replacement flattens prior history=[] rather than retaining nested history.
+     expected_old=deepcopy(oldstored);expected_old.pop('history',None)
+     assert new['history']==[expected_old]
+     assert {s['id'] for s in old['steps']}.isdisjoint(s['id'] for s in new['steps'])
+     with f[1].connect() as c:
+      parent=c.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+      proofs=steps._recovery_proofs(parent)
+      oldrecord=sc.find(parent,old['candidate_consumption']['candidate_id']);newrecord=sc.find(parent,new['candidate_consumption']['candidate_id'])
+     assert oldrecord['document']['catalog_snapshot']!=newrecord['document']['catalog_snapshot']
+     src=Path(steps.__file__).resolve();assert '/.runtime/plan-replacement-backend/candidate/src/' in str(src)
+     Path(__file__).resolve().parent.parent.joinpath('fixture-proof.json').write_text(json.dumps(dict(status='PASS',scope='FIXTURE_COMPATIBILITY_ONLY_NOT_DELIVERY',source_path=str(src),source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),goals=len(ALL_GOALS),services=len(comparisons),old_plan_id=old['plan_id'],new_plan_id=new['plan_id'],preflight_contract=[q['contract_classification'] for q in comparisons],history_exact=True),indent=2)+'\n')
+    
+     # Fresh Approval and original transaction on the actual new plan.
+     verified(f,p,'P1')
+     hs,b=bundle(f)
+     data=quoted(f,p,{**b,'expected_link_revision':1,'expected_previous_plan_id':oldstored['id']})
+     from test_case_resource_delivery import effects,recover
+     before=effects(f);assert submit(f,p,data).status_code==409 and effects(f)==before
+     item,view=approved(f,p,data)
+     assert item['purpose']=='CASE_RESOURCE_PLAN_REPLACEMENT'
+     assert item['context']['plan_replacement']['previous_plan_id']==oldstored['id']
+     assert len(item['context']['plan_replacement']['compatibility']['pairs'])==3
+     key=uuid4().hex;actual={**data,'approval_id':item['id']}
+     value=submit(f,p,actual,key);assert value.status_code==201,value.text
+     assert value.json()['independent_check']['status']=='CURRENT'
+     assert value.json()['link']['revision']==2 and effects(f)==[2,6,2,2,2]
+     verified(f,p,'P2')
+     cold=recover(f,p,key);assert cold.status_code==200,cold.text
+     assert cold.json()['receipt']==value.json()['receipt'] and cold.json()['independent_check']['status']=='CURRENT'
+     assert submit(f,p,actual,key).json()['receipt']==value.json()['receipt']
+    
+     verified(f,p,'P3');verified(f,p,'P4')
+     lr=localact(f,p,localread(f,p).json(),'REVALIDATE');assert lr.status_code==200,lr.text
+     verified(f,p,'P5')
+     goals=f[3].get('/api/preparations/'+p['preparation_id']+'/goal-results',headers=headers(f[2]))
+     assert goals.status_code==200,goals.text
+>    assert goals.json()['state']=='LOCAL_OUTPUTS_VERIFIED' and len(goals.json()['results'])==6
+E    AssertionError: assert ('UNVERIFIED' == 'LOCAL_OUTPUTS_VERIFIED'
+E      
+E      - LOCAL_OUTPUTS_VERIFIED
+E      + UNVERIFIED)
+
+tests/test_plan_replacement_reapproval.py:120: AssertionError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_plan_replacement_reapproval.py::test_actual_six_goal_two_v4_snapshots_have_verifiable_compatible_forward_contract
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_plan_replacement_reapproval.py::test_actual_six_goal_two_v4_snapshots_have_verifiable_compatible_forward_contract
+  /workspace/ParkWeave/.runtime/plan-replacement-backend/candidate/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_plan_replacement_reapproval.py::test_actual_six_goal_two_v4_snapshots_have_verifiable_compatible_forward_contract
+  /workspace/ParkWeave/.runtime/plan-replacement-backend/candidate/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_plan_replacement_reapproval.py::test_actual_six_goal_two_v4_snapshots_have_verifiable_compatible_forward_contract
+1 failed, 65 passed, 4 warnings in 281.39s (0:04:41)

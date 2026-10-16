@@ -1,0 +1,21 @@
+diff --git a/tests/test_plan_replacement_independent.py b/tests/test_plan_replacement_independent.py
+index 070325c..b31415c 100644
+--- a/tests/test_plan_replacement_independent.py
++++ b/tests/test_plan_replacement_independent.py
+@@ -298,5 +298,15 @@ def test_independent_later_explicit_owner_note_keeps_consumed_replacement_receip
+  body={**read.json()['action_requests']['EDIT_NOTE'],'text':'SYNTHETIC explicit owner coordination note after replacement approval consumption','reason':'SYNTHETIC original owner retains later manual content'}
+  changed=f[3].post(path+'/commands',headers=headers(f[2],key=uuid4().hex),json=body);assert changed.status_code==200,changed.text
+  cold=recover(f,p,key);assert cold.status_code==200,cold.text
+- assert cold.json()['receipt']==receipt and cold.json()['independent_check']['status']=='NEEDS_RECHECK'
++ # A later pure coordination note changes no resource/source fact. CURRENT
++ # describes this delivery only; it does not claim the whole Case is complete.
++ assert cold.json()['receipt']==receipt and cold.json()['independent_check']['status']=='CURRENT'
++ assert cold.json()['combination']['state']=='CONFIRMED'
++ from test_resource_bundles import states
++ assert states(f,hs)==['CONFIRMED']*3
++ note=f[3].get(path,headers=headers(f[2]));assert note.status_code==200,note.text
++ assert note.json()['note']['text']==body['text']
++ from test_service_case_steps import read as planread
++ current=planread(f,p);assert current.status_code==200,current.text
++ assert current.json()['required_goals']==ALL_GOALS
+  assert effects(f)==before and ledger(f,p)==oldledger

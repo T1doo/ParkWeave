@@ -1,0 +1,6 @@
+# Root review and diagnostic findings (pre-freeze)
+
+1. Candidate-v1 did not explicitly bound six goals/P1–P5. Requested finite guard; backend v2 implements it. No final frozen tests claimed.
+2. Historical replacement profile reconstruct should exactly match saved immutable proof; current-context drift alone remains NEEDS_RECHECK. Backend v2 implements profile equality; v3 under review adds consumed four-read verification and strict nested schema.
+3. Historical new-plan owner note / original TEMPLATE_UPGRADE after approved_revision must not erase old committed delivery; live unsupported changes still refuse. v3 in progress, actual followup probes required.
+4. Independent and HTML v2 actual chains both reached P1–P5 VERIFY but failed final goal LOCAL_OUTPUTS_VERIFIED assertion. Raw failure preserved. Root source inspection identifies material_objections.review_source catalog xmin epoch and strict material_proof gate as likely cause: V4 catalog publications/retirements change epoch after old REVIEW. Await actual diagnostic issues before concluding. Legal repair if confirmed is original owner REOPEN → assigned specialist REVIEW → owner CONFIRM after all catalog updates, before new V4 capture/ADOPT. Never change product gate/goal assertion or directly rewrite proof.

@@ -1,0 +1,72 @@
+"""Independent design fixture proof; does not claim replacement delivery implemented."""
+from copy import deepcopy
+from uuid import UUID,uuid4
+import hashlib,json
+from pathlib import Path
+import pytest
+from parkweave import service_case_steps as steps,service_selection_candidates as sc,bounded_planning as bp
+from parkweave import service_release_preflight as pf
+from parkweave.template_consumer import ConsumerRepository
+from parkweave.service_capability_contract import hash_instance
+from test_preparation import preparation_fixture,headers,command
+from test_executor_receipts import receipt_fixture,ready
+from test_service_capability_catalog_actual import capability_catalog,capability_resource_catalog,register,material_instance,coordination_instance
+from test_service_selection_candidates import planner
+from test_independent_selection_integration import adoption
+from test_service_case_steps import verified
+from test_new_enterprise_local_chain import ALL_GOALS
+from test_request_intents import save
+from test_template_upgrade import publication
+
+
+def generate(a,p,revision=0):
+ f=a['f'];store=f[0];store._isolated_service_capability_catalog=a['catalog']
+ with a['catalog'].connection() as c:
+  actor,parent=bp._context(store,c,f[2]['fixture-a'],UUID(p['preparation_id']))
+  q=sc.current(store,c,actor,parent,a['catalog'])
+ data=sc.Capture(expected_preparation_revision=q['preparation_revision'],expected_source_sha256=q['source_sha256'],expected_capability_catalog_sha256=q['capability_catalog_sha256'])
+ v=sc.generate(store,f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,data,catalog=a['catalog'],planner=planner([],mode='all'))
+ d=adoption(v).model_copy(update={'expected_plan_revision':revision})
+ return steps.adopt(store,f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,d)
+
+
+def bind_all(a,revision=1):
+ values=[]
+ for service in ('synthetic-material-preparation','synthetic-resource-coordination','synthetic-local-record-recheck'):
+  r=register(a,service=service)['release']
+  i=coordination_instance(r) if service=='synthetic-resource-coordination' else material_instance(r)
+  if service=='synthetic-local-record-recheck':i['instance_id']='park-a-recheck-instance'
+  i['config_revision']=revision;i['config_sha256']=hash_instance(i)
+  a['catalog'].bind_instance('park-a',uuid4().hex,i);values.append((r,i))
+ return values
+
+
+def test_actual_six_goal_two_v4_snapshots_have_verifiable_compatible_forward_contract(capability_resource_catalog,tmp_path):
+ a=capability_resource_catalog;f=a['f'];oldpairs=bind_all(a)
+ p=ready(f);r=save(f,p,goals=ALL_GOALS);assert r.status_code==200
+ p={**p,'revision':r.json()['revision']}
+ p=command(f,p,'REVIEW','prep-specialist-fixture-a',reason='SYNTHETIC independent six-goal review').json()
+ p=command(f,p,'CONFIRM',reason='SYNTHETIC independent six-goal confirm').json()
+ old=generate(a,p);verified(f,p,'P1')
+ with f[1].connect() as c:oldstored=deepcopy(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['service_case_plan'])
+ a['published']=publication(a,goals=a['published']['snapshot']['definition']['required_goals'],source='1',name='SYNTHETIC independent compatible title-only full replacement')
+ newpairs=bind_all(a,2)
+ checker=pf.ServiceReleasePreflight(a['catalog'],ConsumerRepository(tmp_path/'independent-preflight.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+ comparisons=[]
+ for (r,i),(nr,ni) in zip(oldpairs,newpairs):
+  q=checker.preview(f[2]['fixture-a'],UUID(p['preparation_id']),original_release_id=r['release_id'],original_instance_id=i['instance_id'],target_instance_id=ni['instance_id'])
+  assert q['classification']=='NEEDS_RECHECK' and q['contract_classification']=='COMPATIBLE'
+  assert q['target_current_available'] and not q['original_source_current_available'] and q['can_record']
+  comparisons.append(q)
+ new=generate(a,p,oldstored['revision'])
+ assert old['plan_id']!=new['plan_id'] and new['revision']==1
+ assert new['required_goals']==ALL_GOALS and len(new['steps'])==5
+ assert new['history']==[oldstored]
+ assert {s['id'] for s in old['steps']}.isdisjoint(s['id'] for s in new['steps'])
+ with f[1].connect() as c:
+  parent=c.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()
+  proofs=steps._recovery_proofs(parent)
+  oldrecord=sc.find(parent,old['candidate_consumption']['candidate_id']);newrecord=sc.find(parent,new['candidate_consumption']['candidate_id'])
+ assert oldrecord['document']['catalog_snapshot']!=newrecord['document']['catalog_snapshot']
+ src=Path(steps.__file__).resolve();assert '/.runtime/plan-replacement-oracle/baseline-v1/src/' in str(src)
+ Path('fixture-proof.json').write_text(json.dumps(dict(status='PASS',scope='FIXTURE_COMPATIBILITY_ONLY_NOT_DELIVERY',source_path=str(src),source_sha256=hashlib.sha256(src.read_bytes()).hexdigest(),goals=len(ALL_GOALS),services=len(comparisons),old_plan_id=old['plan_id'],new_plan_id=new['plan_id'],preflight_contract=[q['contract_classification'] for q in comparisons],history_exact=True),indent=2)+'\n')

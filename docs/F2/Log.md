@@ -1,3 +1,15 @@
+## 2026-10-16 F3-T03：原完整计划替换后的明确新批准
+
+冻结源码 `2dd98b67d52746dcdc3f358d2d60042cbea93909`。同 Case/owner、原六目标/P1–P5与三个V4服务的原完整旧链，经当前有限兼容预检、原资料重新核对、明确整计划 ADOPT 新 plan_id 与新P1，另行 PROPOSE/APPROVE `CASE_RESOURCE_PLAN_REPLACEMENT`，再原资源 COMMIT/link/CONSUME 同事务、P2–P5办理与 VERIFY，到六目标本地证据和工作清单。旧同plan来源再批准守卫及十字段协议保持；新14字段绑定旧/新计划、link、定义、初始ADOPT、当前明确批准及兼容指纹。原历史/旧UUID/人工决定/资源占用保留，无自动释放；当前未完成旧链、UNKNOWN/撤回/失效/破坏性及不支持组合仍拒绝。能力仅原自有合成PG fixture显式开启，默认关闭。
+
+最终同SHA **140完整相关模块/3690唯一pytest项PASS，0FAIL/ERROR/SKIP**；新增6模块45项在总数内，原133模块字节与3642实际节点保留（仅一个原导入期UUID参数在精确函数归一）。原CI12模块最后独占433P/14原平台SKIP，其后原2秒预算30项恢复完整独占；独审15pure+11client各一次通过，分列不重复计分。647源码、37runner/selection、19,446原tracked全程零漂移，10,885前批原件保持。原HTML4与Chrome4均在本SHA新跑；Python产品函数/进程内ASGI建立源/旧链/newADOPT/P1，页面实际新批准/资源交付/P2–P5 VERIFY/目标清单，后继dispatch/receipt/P5以Python loopbackHTTP控制。eaa alias29P1F、06fd资源状态oracle29P1F、b7原诊断名单341P1F及所有中断保全；精确CURRENT修正不改产品七文件，另仅登记18个可信测试函数ID、原名单与限制保持，最终同2dd全新重跑。Chrome外部helper输出已按原path/mtime/hash原样保全，未补写完成窗。
+
+[实际范围、失败史、终门及独立归档审计](PlanReplacementReapproval-20261016.md)。
+
+下一关键路径按10月15–22日一周目标立即推进一个有原始尚未开始证明的执行前沿合同，区分KNOWN_NOT_STARTED、UNKNOWN/缺失历史与迟到；不能删除现完整五VERIFY门或把只读预检当授权。更广在途/人工/迁移组合、一般来源/语义图、正式发布/Approval主体及现实履约仍待补；后继模板升级历史实探未执行，F5备份恢复属独立增强。专用PG27仍缺原profile/role门；Windows原生及其浏览器、广覆盖浏览器、正式AT、真实模型B0–B2和生产NOT_RUN。产品模型0，无强推/部署/新增费用、凭据或安全权限，无绕拒绝；main与旧开发分支只读。工作清单仍recorded_states_only/evidence_verified=false/case_goal_completed=false。
+
+下方旧时点记录逐字保留，以本段为最新范围。
+
 ## 2026-10-16 F2-T03/T05：来源变更后的明确再批准与原资源交付
 
 冻结源码 `0e8d9ced286e4506a10a9c69a9c43d289be33567`。同Case、同稳定计划从原机会真实来源刷新、预览、明确局部ADOPT，进入原PROPOSE/明确APPROVE→新HELD资源原COMMIT/重绑定/CONSUME同事务→受影响VERIFY→六目标及工作清单读取。复用原角色和capability，只有原已签发自有PG合成fixture显式开启，默认关闭；不是生产Approval/自动批准/新授权。绑定旧link/snapshot/批准计划、新source ADOPT及版本/资源/有效期；陈旧批准、去profile/重哈希/自引用、双proof缺失及后续link伪装首次均拒绝。原历史、原六目标/P1–P5、未影响锁及旧资源占用保留。
