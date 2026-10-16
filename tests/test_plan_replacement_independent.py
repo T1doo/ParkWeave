@@ -281,14 +281,14 @@ def test_independent_later_explicit_owner_note_keeps_consumed_replacement_receip
  from test_case_lifecycle import read as localread,act as localact
  verified(f,p,'P2')
  from test_service_dispatches import offer,command as dispatch
- from test_executor_receipts import act as receipt
+ from test_executor_receipts import act as receipt_act
  q=f[3].get('/api/service-dispatches/'+x['old_dispatch']['dispatch_id'],headers=headers(f[2],'prep-specialist-fixture-a'));assert q.status_code==200,q.text
  q=q.json();r=offer(f,p,revision=q['revision'],recovery_receipt_step_id=q['recovery_receipt_step_id'])[0];assert r.status_code==201,r.text
  accepted=dispatch(f,r.json(),'ACCEPT');assert accepted.status_code==200,accepted.text
  verified(f,p,'P3')
  sr=f[3].get('/api/executor-receipts/'+accepted.json()['receipt_step_id'],headers=headers(f[2],'executor-a')).json()
- sr=receipt(f,sr,'SUBMIT');assert sr.status_code==200,sr.text
- sr=receipt(f,sr.json(),'ACKNOWLEDGE');assert sr.status_code==200,sr.text
+ sr=receipt_act(f,sr,'SUBMIT');assert sr.status_code==200,sr.text
+ sr=receipt_act(f,sr.json(),'ACKNOWLEDGE');assert sr.status_code==200,sr.text
  verified(f,p,'P4')
  assert localact(f,p,localread(f,p).json(),'REVALIDATE').status_code==200
  verified(f,p,'P5')
