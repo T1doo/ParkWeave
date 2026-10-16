@@ -1,0 +1,44 @@
+{
+  "status": "CONTROLLED_STOP_BEFORE_ANY_SHARED_SOURCE_CHANGE",
+  "source_sha": "929d4f7a13c0b074e8340dad21f4460c7ddacd23",
+  "utc": "2026-10-16T02:52:58.688872+00:00",
+  "reason": "Two legacy browser test prerequisites require baseline validation/correction. Preserve all completed and interrupted windows. No scores migrated to next frozen SHA. No PostgreSQL or ASGI process killed directly.",
+  "actions": [
+    {
+      "pid": 2033764,
+      "kind": "coordinator_only",
+      "signal": "SIGTERM",
+      "argv": ".venv/bin/python .runtime/plan-reapproval-root/schedule.py"
+    },
+    {
+      "pid": 2038820,
+      "kind": "coordinator_only",
+      "signal": "SIGTERM",
+      "argv": ".venv/bin/python .runtime/plan-reapproval-root/finish_solo.py"
+    },
+    {
+      "pid": 2033862,
+      "kind": "owned_formal_pytest_only",
+      "signal": "SIGINT_GRACEFUL_TEARDOWN",
+      "argv": "/workspace/ParkWeave/.venv/bin/python -m pytest -q -p shared_capture -p legacy_artifact_capture tests/test_typed_source_impact.py tests/test_typed_source_impact_independent.py tests/test_shared_source_cases.py tests/test_shared_source_cases_independent.py tests/test_service_release_preflight.py tests/test_service_release_preflight_independent.py tests/test_at24_27_change_batch_independent.py tests/test_material_package_continuation.py --basetemp=/tmp/parkweave-plan-reapproval-backend --junitxml=.runtime/plan-reapproval-final/backend.xml"
+    },
+    {
+      "pid": 2166423,
+      "kind": "owned_formal_pytest_only",
+      "signal": "SIGINT_GRACEFUL_TEARDOWN",
+      "argv": "/workspace/ParkWeave/.venv/bin/python -m pytest -q -p shared_capture -p legacy_artifact_capture tests/test_unified_dependency_propagation.py tests/test_unified_dependency_propagation_literal.py tests/test_unified_dependency_propagation_independent.py tests/test_unified_dependency_client_probes.py --basetemp=/tmp/parkweave-plan-reapproval-prior-unified --junitxml=.runtime/plan-reapproval-final/prior-unified.xml"
+    },
+    {
+      "pid": 2169299,
+      "kind": "owned_formal_pytest_only",
+      "signal": "SIGINT_GRACEFUL_TEARDOWN",
+      "argv": "/workspace/ParkWeave/.venv/bin/python -m pytest -q -p shared_capture -p legacy_artifact_capture tests/test_note_template_carry_independent.py tests/test_multifield_source_package_independent.py --basetemp=/tmp/parkweave-plan-reapproval-independent-new --junitxml=.runtime/plan-reapproval-final/independent-new.xml"
+    },
+    {
+      "pid": 2172267,
+      "kind": "owned_formal_pytest_only",
+      "signal": "SIGINT_GRACEFUL_TEARDOWN",
+      "argv": "/workspace/ParkWeave/.venv/bin/python -m pytest -q -p shared_capture -p legacy_artifact_capture tests/test_manual_content_continuation_independent.py --basetemp=/tmp/parkweave-plan-reapproval-independent-prior --junitxml=.runtime/plan-reapproval-final/independent-prior.xml"
+    }
+  ]
+}

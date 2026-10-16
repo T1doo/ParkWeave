@@ -1,0 +1,49 @@
+--- a/tests/test_case_resource_delivery_browser.py
++++ b/tests/test_case_resource_delivery_browser.py
+@@ -74,11 +74,18 @@
+  end=time.monotonic()+10
+  while not responses and time.monotonic()<end:page.wait_for_timeout(20)
+  assert responses and effects(f)==[1,3,1,1,1]
++ original_handles=page.evaluate('deliveryHandles().map(h=>({name:h.name,raw:localStorage.getItem(h.name)}))');assert len(original_handles)==1
+  if target=='case':page.locator('#delivery-case').fill(str(uuid4()))
+- elif target=='identity':open_resources(page,f,'fixture-b')
++ elif target=='identity':
++  # The different tenant remains unauthorised; this checks a local identity switch,
++  # not a successful catalogue read. Do not wait for its refused bundle identity.
++  page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('change');page.locator('[data-tab="resource"]').click()
++  assert page.evaluate('deliveryQuote===null&&bundleActor===null')
+  else:page.locator('#resource-purpose').fill('SYNTHETIC different draft');page.locator('#resource-purpose').dispatch_event('input')
+  route,response=responses.pop();route.fulfill(response=response);settled(page);page.wait_for_timeout(150)
+  assert page.locator('#delivery-result').inner_text()=='' and page.evaluate('deliveryHandles().length')==1
++ assert page.evaluate('deliveryHandles().map(h=>({name:h.name,raw:localStorage.getItem(h.name)}))')==original_handles
++ assert effects(f)==[1,3,1,1,1]
+ 
+ 
+ def test_owned_api_process_restart_reads_committed_case_delivery_without_post(delivery_page,tmp_path):
+--- a/tests/test_new_enterprise_local_chain_browser.py
++++ b/tests/test_new_enterprise_local_chain_browser.py
+@@ -189,14 +189,23 @@
+         browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);ctx,page=template_page(browser,u)
+         try:
+             for goal in ALL_GOALS:page.locator('[data-template-goal="'+goal+'"]').check()
++            page.locator('#template-name').fill('SYNTHETIC explicit original unknown-save draft')
++            page.locator('#template-reason').fill('SYNTHETIC explicit original SAVE_DRAFT with lost acknowledgement')
+             keys=[]
+             def lose(route):
+                 response=route.fetch();assert response.status==200;keys.append(route.request.headers['idempotency-key']);route.abort('failed')
+             path='**/api/template-candidate/park-a/'+u['scope'].template_id+'/commands';page.route(path,lose)
+             page.locator('[data-template-action="SAVE_DRAFT"]').click();page.wait_for_function('()=>tp?.state==="UNKNOWN"')
+             assert page.locator('[data-template-goal]:disabled').count()==6
+-            original=page.evaluate('tp.body');page.unroute(path);page.locator('#template-retry').click();page.wait_for_function('()=>tp===null&&view?.revision===1')
++            original=page.evaluate('tp.body');original_key=page.evaluate('tp.key');assert keys==[original_key]
++            assert original['expected_revision']==0 and len(original['draft']['required_goals'])==6 and set(original['draft']['required_goals'])==set(ALL_GOALS)
++            retried=[]
++            def observe_retry(request):
++                if request.method=='POST' and request.url.endswith('/commands'):retried.append((request.header_value('idempotency-key'),request.post_data_json))
++            page.on('request',observe_retry)
++            page.unroute(path);page.locator('#template-retry').click();page.wait_for_function('()=>tp===null&&view?.revision===1')
+             assert page.evaluate('view.draft.required_goals')==original['draft']['required_goals'] and len(keys)==1
++            assert retried==[(original_key,original)]
+             assert len(page.evaluate('view.history'))==1
+             page.locator('#template-actor').select_option('template-reviewer');assert page.locator('[data-template-goal]:checked').count()==0
+         finally:ctx.close();browser.close()

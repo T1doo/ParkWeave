@@ -1,0 +1,32 @@
+{
+  "status": "STATIC_PRELIMINARY_REQUIRES_COMPLETE_WINDOW_TRACE",
+  "source_sha": "929d4f7a13c0b074e8340dad21f4460c7ddacd23",
+  "node": "tests/test_case_pg_vertical_integration.py::test_catalog_fix_and_case_cancellation_share_owned_database",
+  "module_test_functions": [
+    "test_catalog_fix_and_case_cancellation_share_owned_database"
+  ],
+  "special_profile_collection_items": 27,
+  "source_sha256": {
+    "tests/test_case_pg_vertical_integration.py": "ac24f4178fc16d8e9df6bb533695e04ffbcb7e2248432ba5dc35e8abd760dc78",
+    "tests/conftest.py": "f660a26e7707bdfc82d2a62feda73e50a0e525d3203da45b6c7b7a5379e4cbb7",
+    "scripts/case_pg_vertical/probe.py": "277b69fea1b8a48e14272e6e4f3f723ecedf2859ca3c9e76157244f5889568a8",
+    "scripts/case_pg_vertical/bootstrap.py": "de76c368ab637af481a4a58026ec341950ccaab12839281dbd85284f4e779ce4",
+    "scripts/case_pg_vertical/owned_pg.py": "74e8139c0bd19a6b428023ce9c08d4d4f654f79678cfc77986f74e2cf314c9e9",
+    "scripts/case_pg_vertical/selection.json": "9f6d0024daf319dcbf7833b9e46ec820b306302912bc50238d16e168d14b8a13",
+    "scripts/catalog_only/probe.py": "039de45b20c16bcd24ca7dd87271b51558b6b0065233f8aa8d675e819c6496a0"
+  },
+  "findings": [
+    "Ordinary conftest.pg creates parkweave_app but not pwci_writer; test directly grants privileges to pwci_writer before relying on pg.root and fixed 55441 catalog spec.",
+    "Original dedicated probe requires SessionSupplier(OwnedPG), exact 27-node selection, scoped I/O and ACL controls.",
+    "Original bootstrap requires exact old hosted branch/event/attempt/approval-only parent; no execution or gate bypass authorized here."
+  ],
+  "reporting_constraints": [
+    "Keep initial134-module/3643-item freeze and selection unchanged.",
+    "Ordinary-profile test outcome remains actual FAIL if final trace confirms; do not convert FAIL to SKIP or NOT_RUN.",
+    "Dedicated original27-node profile not executed for this slice must remain NOT_RUN, distinct from ordinary FAIL.",
+    "Only if exact final collection/JUnit show this sole failing one-test module,133 complete modules/3642 PASS may be reported as qualified subset with explicit exception; never134 all green."
+  ],
+  "product_or_pg_tests_executed": false,
+  "primary_review_modified": false,
+  "archive_gate_executed": false
+}

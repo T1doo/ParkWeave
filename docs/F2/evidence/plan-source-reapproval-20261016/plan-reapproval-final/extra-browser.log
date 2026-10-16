@@ -1,0 +1,182 @@
+..............................F....F...................                  [100%]
+=================================== FAILURES ===================================
+______ test_late_http_result_does_not_fill_current_private_view[identity] ______
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+target = 'identity'
+
+    @pytest.mark.parametrize('target',['case','identity','draft'])
+    def test_late_http_result_does_not_fill_current_private_view(delivery_page,target):
+     f,page,_=delivery_page;p,hs,d=ready_page(f,page);responses=[]
+     def delay(route):responses.append((route,route.fetch()))
+     page.route('**/api/preparations/'+p['preparation_id']+'/resource-delivery',delay);page.locator('#delivery-confirm').click()
+     end=time.monotonic()+10
+     while not responses and time.monotonic()<end:page.wait_for_timeout(20)
+     assert responses and effects(f)==[1,3,1,1,1]
+     if target=='case':page.locator('#delivery-case').fill(str(uuid4()))
+>    elif target=='identity':open_resources(page,f,'fixture-b')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_resource_delivery_browser.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_resource_bundles_browser.py:35: in open_resources
+    page.wait_for_function('()=>bundleActor!==null')
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7fb1029aec60>
+cb = <function Channel.send.<locals>.<lambda> at 0x7fb10936bce0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+---------------------------- Captured log teardown -----------------------------
+ERROR    asyncio:base_events.py:1833 Exception in callback Connection.dispatch.<locals>._done_callback(<Task cancell..._page.py:294>>) at /workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:539
+handle: <Handle Connection.dispatch.<locals>._done_callback(<Task cancell..._page.py:294>>) at /workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:539>
+Traceback (most recent call last):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 540, in _done_callback
+    exc = future.exception()
+          ^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_page.py", line 308, in _on_route
+    handled = await route_handler.handle(route)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_helper.py", line 442, in handle
+    return await self._handle_internal(route)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_helper.py", line 484, in _handle_internal
+    return await handled_future
+           ^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+_________ test_goal_selection_unknown_save_keeps_original_body_and_cas _________
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_goal_selection_unknown_save_keeps_original_body_and_cas(fresh_chain):
+        u=fresh_chain
+        with sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);ctx,page=template_page(browser,u)
+            try:
+                for goal in ALL_GOALS:page.locator('[data-template-goal="'+goal+'"]').check()
+                keys=[]
+                def lose(route):
+                    response=route.fetch();assert response.status==200;keys.append(route.request.headers['idempotency-key']);route.abort('failed')
+                path='**/api/template-candidate/park-a/'+u['scope'].template_id+'/commands';page.route(path,lose)
+                page.locator('[data-template-action="SAVE_DRAFT"]').click();page.wait_for_function('()=>tp?.state==="UNKNOWN"')
+                assert page.locator('[data-template-goal]:disabled').count()==6
+                original=page.evaluate('tp.body');page.unroute(path);page.locator('#template-retry').click();page.wait_for_function('()=>tp===null&&view?.revision===1')
+                assert page.evaluate('view.draft.required_goals')==original['draft']['required_goals'] and len(keys)==1
+                assert len(page.evaluate('view.history'))==1
+                page.locator('#template-actor').select_option('template-reviewer');assert page.locator('[data-template-goal]:checked').count()==0
+>           finally:ctx.close();browser.close()
+                    ^^^^^^^^^^^
+
+tests/test_new_enterprise_local_chain_browser.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:15386: in close
+    return mapping.from_maybe_impl(self._sync(self._impl_obj.close(reason=reason)))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_browser_context.py:581: in close
+    await self.request.dispose(reason=reason)
+.venv/lib/python3.12/site-packages/playwright/_impl/_fetch.py:120: in dispose
+    await self._channel.send("dispose", None, {"reason": reason})
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7fb102c759d0>
+cb = <function Channel.send.<locals>.<lambda> at 0x7fb103fa5f80>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           AssertionError: BrowserContext.close: assert 422 == 200
+E            +  where 422 = <APIResponse url='http://127.0.0.1:47423/api/template-candidate/park-a/new-enterprise-material-template/commands' status=422 status_text='Unprocessable Entity'>.status
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: AssertionError
+----------------------------- Captured stderr call -----------------------------
+Error occurred in event listener
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_page.py", line 308, in _on_route
+    handled = await route_handler.handle(route)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_helper.py", line 455, in handle
+    raise e
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_helper.py", line 442, in handle
+    return await self._handle_internal(route)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_helper.py", line 478, in _handle_internal
+    await handler_finished_future
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_helper.py", line 469, in _handler
+    self.handler(route, route.request)  # type: ignore
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_impl_to_api_mapping.py", line 139, in wrapper_func
+    return handler(
+           ^^^^^^^^
+  File "/workspace/ParkWeave/tests/test_new_enterprise_local_chain_browser.py", line 194, in lose
+    response=route.fetch();assert response.status==200;keys.append(route.request.headers['idempotency-key']);route.abort('failed')
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: assert 422 == 200
+ +  where 422 = <APIResponse url='http://127.0.0.1:47423/api/template-candidate/park-a/new-enterprise-material-template/commands' status=422 status_text='Unprocessable Entity'>.status
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_case_lifecycle_recovery_browser.py::test_true_three_actions_and_exact_get_receipts_at_three_widths[REVALIDATE]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_case_lifecycle_recovery_browser.py::test_true_three_actions_and_exact_get_receipts_at_three_widths[REVALIDATE]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_case_lifecycle_recovery_browser.py::test_true_three_actions_and_exact_get_receipts_at_three_widths[REVALIDATE]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_resource_delivery_browser.py::test_late_http_result_does_not_fill_current_private_view[identity]
+FAILED tests/test_new_enterprise_local_chain_browser.py::test_goal_selection_unknown_save_keeps_original_body_and_cas
+2 failed, 53 passed, 4 warnings in 476.09s (0:07:56)

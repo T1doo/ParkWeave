@@ -1,0 +1,101 @@
+{
+  "status": "WIP_CONTRACT_CHALLENGE_NOT_FROZEN_REVIEW",
+  "baseline_sha": "a794a1802e15100d691a969f0813aa371d707c36",
+  "actual_head_at_review_start": "a794a1802e15100d691a969f0813aa371d707c36",
+  "source_mutated_by_reviewer": false,
+  "git_mutated_by_reviewer": false,
+  "tests_run": false,
+  "pg_http_browser_run": false,
+  "files": {
+    "src/parkweave/service_plan_approval.py": "b32ccee3b2320d912536e578987d7dfb5a0b0edcfc0a89b5f070af082ece3cfb",
+    "src/parkweave/case_resource_delivery.py": "973d44af2d96b1b11e06e1e84ca98f05190a8cc86e2ae889d25206dd493d46b1",
+    "src/parkweave/resource_plan_binding.py": "08ece2ea37b8ba0833abed1d34aa20976e762624e40d18cbc5a6b6ad7dd42254",
+    "src/parkweave/case_resources.py": "b182841382aa1111a80f69b23344b6d20fb7de9e9dc380f1c4817cbf8ea44bef",
+    "src/parkweave/store.py": "cafc9f026ac500e6850e53db1fa6529978c53798593b31dc080a9528374c0cea",
+    "src/parkweave/service_case_steps.py": "7bbf4752d84b14c1519110d1bc0acab70c93a727ea6d95c414573d303e7a67fc",
+    "docs/sources/V1/平台产品设计 (2).md": "48ff72723678546500973b6ad45ae841320cda69f08f9ca24013137ae5e7b02b",
+    "docs/sources/V1/分阶段开发计划 (2).md": "4437dac3b86c12bd1ffc57cf7c4e66c154eea5ec2a5d8562d0ddfc1f6cfb5989"
+  },
+  "reusable": [
+    "Original PROPOSE/APPROVE/REVOKE/CONSUME bounded immutable ledger, CAS/idempotency, exact command and current source snapshot.",
+    "Original issued temporary own-PG/Case scope and default-disabled adapter.",
+    "Original resource locks, capacity confirm receipt and atomic first Case binder.",
+    "Original strict current binding comparison, immutable link snapshots, source impacts and old occupancy preservation.",
+    "Original guarded Store.commit recheck and cooperative catalog publication locks.",
+    "Original P1 gate, affected step VERIFY, actual receipt sources and six-goal/worklist readers."
+  ],
+  "selected_root_design": "Explicit after-link new HELD confirmation + exact current link rebind + new-purpose Approval consumption in original transaction; no standalone already-confirmed rebind approval-only claim.",
+  "challenges": [
+    {
+      "id": "R1",
+      "priority": "CONTRACT",
+      "finding": "Existing Approval covers exact first delivery only; no existing after-link reapproval/consumption path.",
+      "basis": [
+        "case_resource_delivery._candidate rejects existing Case link history",
+        "service_plan_approval._source delegates original first-only candidate",
+        "case_resources.bind has no Approval consumption"
+      ],
+      "required": "Explicit new opt-in after-link HELD-confirmation profile; never silently widen original first-only semantics."
+    },
+    {
+      "id": "R2",
+      "priority": "BLOCK_IF_MISSING",
+      "finding": "A self-hashed local ADOPT event or affected list is not original source proof.",
+      "required": "Unconditionally run original steps._recovery_proofs and fixed historical compilers; require current latest ADOPT is exact opportunity local source change, P2 affected, later revision than original delivered approved plan revision. Reject searching backwards past a newer incompatible ADOPT."
+    },
+    {
+      "id": "R3",
+      "priority": "BLOCK_IF_MISSING",
+      "finding": "Final commit guard must distinguish exact own link insertion from concurrent or forged latest history.",
+      "required": "Bind prior latest link UUID/revision/full snapshot and original receipt; permit own precise expected-revision+1 link only with matching actor/key/fingerprint/consumption event/actual original effect. Never generically drop latest link."
+    },
+    {
+      "id": "R4",
+      "priority": "BLOCK_IF_MISSING",
+      "finding": "Optional expected_link_revision must not accidentally enable new profile when Approval adapter or dedicated flag is absent.",
+      "required": "Non-None positive revision requires original enabled issued fixture adapter and explicit source-reapproval flag before any new effect; first request exclude_none fingerprints unchanged."
+    },
+    {
+      "id": "R5",
+      "priority": "BLOCK_IF_MISSING",
+      "finding": "Receipt/link history integrity must be checked through P2, goals and recovery, not only approval endpoint.",
+      "required": "New approval purpose preserves strict original receipt shape/history dispatch; after-link actual bundle receipt, ledger consumption and inserted link all agree. Missing or rehashed detached proof rejects read/VERIFY."
+    },
+    {
+      "id": "R6",
+      "priority": "BLOCK_IF_MISSING",
+      "finding": "Current source and authority can change during locks, or revoke/restore to same visible values.",
+      "required": "Retain original principal/capability/preparation/resource permission checks, row-version and epoch bindings, cooperative catalog lock and final guarded commit time/TTL recheck; do not grant permissions or treat old approved status as current authority."
+    },
+    {
+      "id": "R7",
+      "priority": "CONTRACT",
+      "finding": "Reapproval must preserve old confirmed occupancy and consumed historical facts.",
+      "required": "New HELD members confirm and original Case rebind plus CONSUME are one transaction; no automatic release or cancellation of old occupancy; failure restores all newly attempted effects while retaining old history."
+    },
+    {
+      "id": "R8",
+      "priority": "CONTRACT",
+      "finding": "The necessary action order includes plan/source repair before proposal approval.",
+      "required": "Actual source update and explicit original opportunity refresh/local ADOPT, original P1 VERIFY, new proposal and explicit APPROVE, original capacity COMMIT/rebind, affected original VERIFY and six goals/worklist. Later ADOPT/VERIFY before consuming must stale exact plan-revision approval."
+    }
+  ],
+  "minimum_rejection_matrix": [
+    "Wrong owner/tenant/Case/Run/role, withdrawn READ/EXECUTE/PREPARE/resource permissions including recovery.",
+    "New profile without explicit flag/issued adapter; old first-profile approval substituted for after-link or reverse.",
+    "Missing/stripped/rehashed original prior delivery receipt and approval consumption; unsupported legacy direct link.",
+    "Stale prior link revision or UUID; concurrent substitute; exact command member/order/reason/valid_until mismatch.",
+    "Latest ADOPT missing, not opportunity local source change, P2 unaffected, too old, downgraded/forged history or newer incompatible ADOPT.",
+    "Expired original new quote/hold before or during final lock; current source versions changed; ABA and revoke/restore.",
+    "Same key changed profile/link revision/body; cross-Case key reuse; duplicate consume with different key.",
+    "Late HTTP403/success after identity ABA or Case switch; unknown write recovery uses only original keyed GET.",
+    "Invalid or unknown source graph, unsupported catalog replacement, manual locked affected step, cancelled/reconciling Case.",
+    "Failure after resource confirmation or link insert must roll back new group/link/claim/consume together; historical original remains."
+  ],
+  "limits": [
+    "No execution tests in this scope review.",
+    "Default legacy independent bind remains original outside explicitly enabled new scope.",
+    "Only cooperative catalog/owner protocol closes last-read-to-COMMIT; noncooperative trusted owner remains outside guarantee.",
+    "Windows, real browser, formal AT, real models/production and general independent approval governance unverified."
+  ]
+}

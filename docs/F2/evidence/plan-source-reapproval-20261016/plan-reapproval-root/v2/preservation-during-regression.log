@@ -1,0 +1,14 @@
+fatal: could not read Username for 'https://github.com': No such device or address
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.runtime/plan-reapproval-root/v2/verify_preservation.py", line 30, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/ParkWeave/.runtime/plan-reapproval-root/v2/verify_preservation.py", line 14, in main
+    lines=subprocess.check_output(['git','ls-remote','--heads','origin'],text=True,timeout=60).splitlines()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['git', 'ls-remote', '--heads', 'origin']' returned non-zero exit status 128.

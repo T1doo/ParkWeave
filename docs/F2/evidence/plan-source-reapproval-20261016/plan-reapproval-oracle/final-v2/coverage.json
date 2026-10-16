@@ -1,0 +1,930 @@
+{
+  "source_sha": "0e8d9ced286e4506a10a9c69a9c43d289be33567",
+  "formal_new_passes": 54,
+  "formal_windows": {
+    "new-core": {
+      "passes": 18,
+      "modules": [
+        "tests/test_plan_source_reapproval.py",
+        "tests/test_plan_reapproval_client.py"
+      ]
+    },
+    "new-independent": {
+      "passes": 32,
+      "modules": [
+        "tests/test_plan_source_reapproval_independent.py"
+      ]
+    },
+    "new-chromium": {
+      "passes": 4,
+      "modules": [
+        "tests/test_plan_source_reapproval_chromium.py"
+      ]
+    }
+  },
+  "oracle_sha256": "dcd83cba6df630fe0aa29fc15851643b698d2b24bc704d126ef0f69ab4bb7724",
+  "design_status_unchanged": "DESIGN_ONLY_NOT_EXECUTED",
+  "rows": [
+    {
+      "id": "RA01",
+      "literal_expected": {
+        "id": "RA01",
+        "scenario": "Actual source S0→S1, explicit original local ADOPT P0→P1, business material correction and VERIFY P1, new holds H1/H2, explicit reapproval PROPOSE+APPROVE then COMMIT+rebind",
+        "expected": "COMMITTED_NEW_L1_CURRENT; NO_AUTO_VERIFY",
+        "expected_durable_changes": [
+          "one new Approval proposal A1, APPROVE and CONSUME",
+          "one new combination G1",
+          "one original resource receipt with exact new key K1",
+          "one new Case link L1=old revision+1"
+        ],
+        "expected_preserved": [
+          "old Approval events and consumption receipt",
+          "old link L0 complete immutable row",
+          "old combination G0 and confirmed occupancy",
+          "plan stable id, six required goals, prior journal prefix",
+          "unaffected lock objects and MANUAL bytes"
+        ],
+        "required_explicit_verification": [
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_LITERAL",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[material_fact]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Exact source update, ADOPT, new Approval and replacement resource link."
+    },
+    {
+      "id": "RA02",
+      "literal_expected": {
+        "id": "RA02",
+        "scenario": "RA01 then original affected business repairs and VERIFY P2/P3/P4/P5, goal-results and all worklist pages",
+        "expected": "LOCAL_OUTPUTS_VERIFIED; SIX_RESULTS; CASE_GOAL_COMPLETED_FALSE",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "old Approval events and consumption receipt",
+          "old link L0 complete immutable row",
+          "old combination G0 and confirmed occupancy",
+          "plan stable id, six required goals, prior journal prefix",
+          "unaffected lock objects and MANUAL bytes"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_LITERAL",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[material_fact]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[resource]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Original full six-goal closure and complete worklist flags."
+    },
+    {
+      "id": "RA03",
+      "literal_expected": {
+        "id": "RA03",
+        "scenario": "Source-only resource dependency change; original local ADOPT; P1 original verification still current; fresh G1 Approval",
+        "expected": "COMMITTED_NEW_L1_CURRENT; P1_UNTOUCHED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "old Approval events and consumption receipt",
+          "old link L0 complete immutable row",
+          "old combination G0 and confirmed occupancy",
+          "plan stable id, six required goals, prior journal prefix",
+          "unaffected lock objects and MANUAL bytes"
+        ],
+        "required_explicit_verification": [
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_LITERAL",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[resource]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Resource-only original partial revision retains complete P1 lock."
+    },
+    {
+      "id": "RA04",
+      "literal_expected": {
+        "id": "RA04",
+        "scenario": "New proposal without explicit APPROVE, or original checkbox unchecked",
+        "expected": "NO_RESOURCE_COMMIT; NO_LINK; NO_CONSUME",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_BEHAVIOR_VARIANT",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_original_default_first_delivery_and_unapproved_reapproval_refuse",
+          "status": "PASS"
+        }
+      ],
+      "note": "Unapproved new object refuses; unchecked UI independently covered in HTML."
+    },
+    {
+      "id": "RA05",
+      "literal_expected": {
+        "id": "RA05",
+        "scenario": "Reused old CONSUMED A0 for new S1/P1/H1 delivery",
+        "expected": "409; OLD_APPROVAL_NOT_REUSABLE",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_LITERAL",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_consumed_old_approval_cannot_authorize_new_source_delivery",
+          "status": "PASS"
+        }
+      ],
+      "note": "Consumed prior Approval cannot authorize new command."
+    },
+    {
+      "id": "RA06",
+      "literal_expected": {
+        "id": "RA06",
+        "scenario": "Unconsumed APPROVED A0 captured S0/P0 then source ADOPT becomes S1/P1",
+        "expected": "409; STALE_APPROVAL",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "NOT_RUN",
+      "coverage_kind": "NOT_RUN",
+      "evidence": [],
+      "note": "No matching executed new-window identity. Prior suites are not credited automatically."
+    },
+    {
+      "id": "RA07",
+      "literal_expected": {
+        "id": "RA07",
+        "scenario": "New A1 APPROVED then plan revision increments even if plan definition digest unchanged",
+        "expected": "409; PLAN_REVISION_CHANGED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_LITERAL",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_approved_new_object_never_revives_after_original_source_change[plan_revision]",
+          "status": "PASS"
+        }
+      ],
+      "note": "LOCK increments exact plan revision after Approval."
+    },
+    {
+      "id": "RA08",
+      "literal_expected": {
+        "id": "RA08",
+        "scenario": "New A1 APPROVED then actual material revision/content, fact purpose or P1 source changes",
+        "expected": "409; SOURCE_CHANGED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_BEHAVIOR_VARIANT",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_approved_new_object_never_revives_after_original_source_change[preparation_revision]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Actual preparation REOPEN; does not execute all listed material/fact/P1 changes."
+    },
+    {
+      "id": "RA09",
+      "literal_expected": {
+        "id": "RA09",
+        "scenario": "New A1 APPROVED then latest resource link changes L0→Lx",
+        "expected": "409; EXPECTED_LINK_REVISION_CHANGED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows including competing Lx"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "NOT_RUN",
+      "coverage_kind": "NOT_RUN",
+      "evidence": [],
+      "note": "No matching executed new-window identity. Prior suites are not credited automatically."
+    },
+    {
+      "id": "RA10",
+      "literal_expected": {
+        "id": "RA10",
+        "scenario": "New A1 APPROVED then resource rule revision, enabled state or capacity changes",
+        "expected": "409; RESOURCE_SOURCE_CHANGED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_BEHAVIOR_VARIANT",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_approved_new_object_never_revives_after_original_source_change[resource_capacity]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Capacity is changed; not all listed disabled/rule-revision variants."
+    },
+    {
+      "id": "RA11",
+      "literal_expected": {
+        "id": "RA11",
+        "scenario": "New A1 APPROVED then resource row values A→B→A with new xmin",
+        "expected": "409; SOURCE_EPOCH_CHANGED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_LITERAL",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_approved_new_object_never_revives_after_original_source_change[resource_aba]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Resource capacity restored through two committed changes."
+    },
+    {
+      "id": "RA12",
+      "literal_expected": {
+        "id": "RA12",
+        "scenario": "New A1 APPROVED then old latest-link identity/epoch A→B→A restored if fixture can legally represent it",
+        "expected": "409; OLD_LINK_EPOCH_OR_HISTORY_PROOF_CHANGED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "NOT_RUN",
+      "coverage_kind": "NOT_RUN",
+      "evidence": [],
+      "note": "No matching executed new-window identity. Prior suites are not credited automatically."
+    },
+    {
+      "id": "RA13",
+      "literal_expected": {
+        "id": "RA13",
+        "scenario": "New A1 APPROVED then current Run state/fence/revision/worker identity changes",
+        "expected": "409; EXECUTION_IDENTITY_CHANGED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "NOT_RUN",
+      "coverage_kind": "NOT_RUN",
+      "evidence": [],
+      "note": "No matching executed new-window identity. Prior suites are not credited automatically."
+    },
+    {
+      "id": "RA14",
+      "literal_expected": {
+        "id": "RA14",
+        "scenario": "Explicit APPROVE at database now >= valid_until",
+        "expected": "409; EXPIRED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "NOT_RUN",
+      "coverage_kind": "NOT_RUN",
+      "evidence": [],
+      "note": "No matching executed new-window identity. Prior suites are not credited automatically."
+    },
+    {
+      "id": "RA15",
+      "literal_expected": {
+        "id": "RA15",
+        "scenario": "COMMIT waits on final Case/authority/resource lock past valid_until",
+        "expected": "409; ENTIRE_TRANSACTION_ROLLED_BACK",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "new holds remain HELD",
+          "no new group/receipt/link/claim/CONSUME",
+          "old occupancy unchanged"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "NOT_RUN",
+      "coverage_kind": "NOT_RUN",
+      "evidence": [],
+      "note": "No matching executed new-window identity. Prior suites are not credited automatically."
+    },
+    {
+      "id": "RA16",
+      "literal_expected": {
+        "id": "RA16",
+        "scenario": "New candidate valid_until > now+120sec, > any hold expires_at, or expired hold",
+        "expected": "409; INVALID_VALIDITY",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_BEHAVIOR_VARIANT",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_expired_new_hold_refuses_quote_and_never_uses_old_approval",
+          "status": "PASS"
+        }
+      ],
+      "note": "Expired hold quote refusal; not all date bounds/approval deadline variants."
+    },
+    {
+      "id": "RA17",
+      "literal_expected": {
+        "id": "RA17",
+        "scenario": "Holding capacity conflicts with G0 old occupancy; no implicit release allowed",
+        "expected": "409; CAPACITY_CONFLICT",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "old G0 confirmed occupancy and all business rows"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "NOT_RUN",
+      "coverage_kind": "NOT_RUN",
+      "evidence": [],
+      "note": "No matching executed new-window identity. Prior suites are not credited automatically."
+    },
+    {
+      "id": "RA18",
+      "literal_expected": {
+        "id": "RA18",
+        "scenario": "Different owner or tenant or nonowner role invokes preview/propose/approve/COMMIT/recover",
+        "expected": "403; NO_PRIVATE_OBJECT",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_BEHAVIOR_VARIANT",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[fixture-b]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[fixture-c]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[prep-specialist-fixture-a]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[executor-a]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Four actual nonowner actors cover commit/Approval read/cold recovery; not every named stage."
+    },
+    {
+      "id": "RA19",
+      "literal_expected": {
+        "id": "RA19",
+        "scenario": "Current owner READ/EXECUTE/PREPARE/resource READ/HOLD revoked before first commit",
+        "expected": "403; NO_RESOURCE_EFFECT",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_LITERAL",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_original_revocation_denies_new_reapproval_without_effect[READ]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_original_revocation_denies_new_reapproval_without_effect[EXECUTE]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_original_revocation_denies_new_reapproval_without_effect[PREPARE]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_original_revocation_denies_new_reapproval_without_effect[resource_READ]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_original_revocation_denies_new_reapproval_without_effect[resource_HOLD]",
+          "status": "PASS"
+        }
+      ],
+      "note": "All five named capability revocations before delivery."
+    },
+    {
+      "id": "RA20",
+      "literal_expected": {
+        "id": "RA20",
+        "scenario": "Revoke+restore authority after A1 Approval returns same visible grants but newer versions",
+        "expected": "409; OLD_APPROVAL_NOT_REVIVED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_BEHAVIOR_VARIANT",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_approved_new_object_never_revives_after_original_source_change[authority_aba]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Owner EXECUTE revoked/restored; not all authority families."
+    },
+    {
+      "id": "RA21",
+      "literal_expected": {
+        "id": "RA21",
+        "scenario": "Same original K1 exact delivery repeated after successful COMMIT",
+        "expected": "SAME_ORIGINAL_RECEIPT; SINGLE_EFFECT",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "one group/claim/link/consume only"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_LITERAL",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[material_fact]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[resource]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Same exact key retry and cold GET; fixed single-effect counts."
+    },
+    {
+      "id": "RA22",
+      "literal_expected": {
+        "id": "RA22",
+        "scenario": "Same K1 altered approval_id/reason/member/expected-link/valid-until/body scope",
+        "expected": "409; IDEMPOTENCY_PARAMETER_CONFLICT",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_BEHAVIOR_VARIANT",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_exact_old_key_replay_rejects_changed_reapproval_parameters[reason]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_exact_old_key_replay_rejects_changed_reapproval_parameters[expected_link_revision]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_exact_old_key_replay_rejects_changed_reapproval_parameters[approval_id]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_exact_old_key_replay_rejects_changed_reapproval_parameters[valid_until]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Actual reason/link_revision/approval_id/valid_until; member/scope variants not run here."
+    },
+    {
+      "id": "RA23",
+      "literal_expected": {
+        "id": "RA23",
+        "scenario": "Real COMMIT succeeds then response is lost; original key cold GET",
+        "expected": "COMMITTED_HISTORICAL_ONLY; AUTOMATICALLY_REPLAYED_FALSE",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "no second POST or new resource effect"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTML_ACTUAL_HTTP",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_full_original_html_source_reapproval_and_original_authority[lost_ack]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Controlled committed response loss; same original key GET only.",
+      "browser_variant": {
+        "coverage_kind": "CHROMIUM_ACTUAL_HTTP",
+        "evidence": [
+          {
+            "identity": "tests/test_plan_source_reapproval_chromium.py::test_actual_installed_chromium_explicit_source_reapproval_to_six_goals[lost_commit]",
+            "status": "PASS"
+          }
+        ],
+        "note": "Actual browser committed response loss; source update and prerequisite P1 preparation occur through original Python controls."
+      }
+    },
+    {
+      "id": "RA24",
+      "literal_expected": {
+        "id": "RA24",
+        "scenario": "Cold GET unknown original key before any successful write",
+        "expected": "NOT_OBSERVED; NO_EXECUTION",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_LITERAL",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_unknown_original_key_get_never_executes_reapproval",
+          "status": "PASS"
+        }
+      ],
+      "note": "Actual NOT_OBSERVED GET with all business rows unchanged."
+    },
+    {
+      "id": "RA25",
+      "literal_expected": {
+        "id": "RA25",
+        "scenario": "Cold GET original successful K0 after new L1 supersedes old L0 and original validity expires",
+        "expected": "ORIGINAL_COMMITTED_RECEIPT_WITH_NEEDS_RECHECK; NO_REEXECUTION",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "old receipt and all business rows"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_BEHAVIOR_VARIANT",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[material_fact]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[resource]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Old superseded receipt NEEDS_RECHECK; expiry not independently crossed here."
+    },
+    {
+      "id": "RA26",
+      "literal_expected": {
+        "id": "RA26",
+        "scenario": "Two commits compete same new holds but different keys/approval objects",
+        "expected": "AT_MOST_ONE_COMMIT; LOSER409; NO_PARTIAL_EFFECT",
+        "expected_durable_changes": [],
+        "expected_preserved": [],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "NOT_RUN",
+      "coverage_kind": "NOT_RUN",
+      "evidence": [],
+      "note": "No matching executed new-window identity. Prior suites are not credited automatically."
+    },
+    {
+      "id": "RA27",
+      "literal_expected": {
+        "id": "RA27",
+        "scenario": "Concurrent REVOKE A1 versus COMMIT A1",
+        "expected": "ONE_SERIALIZED_OUTCOME; NEVER_PARTIAL_CONSUMPTION",
+        "expected_durable_changes": [],
+        "expected_preserved": [],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "NOT_RUN",
+      "coverage_kind": "NOT_RUN",
+      "evidence": [],
+      "note": "No matching executed new-window identity. Prior suites are not credited automatically."
+    },
+    {
+      "id": "RA28",
+      "literal_expected": {
+        "id": "RA28",
+        "scenario": "Failure inserted at receipt/claim/link/consume after holds confirmation begins",
+        "expected": "TRANSACTION_ROLLBACK",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "new holds remain HELD",
+          "no group/receipt/claim/link/consume",
+          "all old records"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "OWNED_PG_SERVICE_VARIANT",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_owned_pg_fault_rolls_back_entire_reapproval_transaction[synthetic_resource_combination_receipts]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_owned_pg_fault_rolls_back_entire_reapproval_transaction[resource_case_claims]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_owned_pg_fault_rolls_back_entire_reapproval_transaction[case_resource_links]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Three actual PostgreSQL insertion faults through original Python service, not HTTP; consumption-specific fault not claimed."
+    },
+    {
+      "id": "RA29",
+      "literal_expected": {
+        "id": "RA29",
+        "scenario": "Strip/rewrite reapproval reference or old/new link binding then rehash envelope",
+        "expected": "409; ORIGINAL_RECEIPT_HISTORY_PROOF_REQUIRED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "no new business effects"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "OWNED_ADMIN_CORRUPTION_HTTP",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval.py::test_rehashed_owned_fixture_profile_downgrade_and_self_reference_are_conflicts[STRIP_PROFILE]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval.py::test_rehashed_owned_fixture_profile_downgrade_and_self_reference_are_conflicts[SELF_ANCHOR]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval.py::test_rehashed_owned_fixture_profile_downgrade_and_self_reference_are_conflicts[STRIP_PROOFS]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Owner fixture deliberately rewrites proofs (including temporary trigger disable), then actual recovery/P2/plan/goal409; not legal application mutation."
+    },
+    {
+      "id": "RA30",
+      "literal_expected": {
+        "id": "RA30",
+        "scenario": "No opt-in reapproval scope sent through original first-delivery path after L0 exists",
+        "expected": "ORIGINAL_FIRST_DELIVERY_REFUSAL; DEFAULT_PROTOCOL_UNCHANGED",
+        "expected_durable_changes": [],
+        "expected_preserved": [
+          "all business rows and prior history"
+        ],
+        "required_explicit_verification": [],
+        "intended_layer": "HTTP_ASGI_OWNED_POSTGRESQL",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTTP_LITERAL",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_original_default_first_delivery_and_unapproved_reapproval_refuse",
+          "status": "PASS"
+        }
+      ],
+      "note": "Missing expected_link_revision retains original first-delivery refusal."
+    },
+    {
+      "id": "RA31",
+      "literal_expected": {
+        "id": "RA31",
+        "scenario": "Late 403/commit reply after Case switch or identity ABA",
+        "expected": "NEW_CASE_PRIVATE_STATE_UNCHANGED; ORIGINAL_RECOVERY_HANDLE_SCOPED",
+        "expected_durable_changes": [],
+        "expected_preserved": [],
+        "required_explicit_verification": [],
+        "intended_layer": "FULL_SHIPPED_HTML_NODE_DOM_ACTUAL_HTTP",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTML_ACTUAL_HTTP",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_full_original_html_source_reapproval_and_original_authority[late_403]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Actual held403 with Case/mode/identity ABA."
+    },
+    {
+      "id": "RA32",
+      "literal_expected": {
+        "id": "RA32",
+        "scenario": "Actual full HTML explicit new Approval+COMMIT, controlled lost reply and keyed cold GET, explicit release then VERIFY and goal/worklist reads",
+        "expected": "NO_UNCONFIRMED_POST; SINGLE_COMMIT; SIX_LOCAL_OUTPUTS",
+        "expected_durable_changes": [],
+        "expected_preserved": [],
+        "required_explicit_verification": [],
+        "intended_layer": "FULL_SHIPPED_HTML_NODE_DOM_ACTUAL_HTTP",
+        "execution": "DESIGN_ONLY_NOT_EXECUTED"
+      },
+      "execution": "PASS_WITH_SCOPE_LIMIT",
+      "coverage_kind": "HTML_ACTUAL_HTTP",
+      "evidence": [
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_full_original_html_source_reapproval_and_original_authority[positive]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_full_original_html_source_reapproval_and_original_authority[lost_ack]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_full_original_html_source_reapproval_and_original_authority[current_403]",
+          "status": "PASS"
+        },
+        {
+          "identity": "tests/test_plan_source_reapproval_independent.py::test_full_original_html_source_reapproval_and_original_authority[late_403]",
+          "status": "PASS"
+        }
+      ],
+      "note": "Node DOM actual shipped page; full positive/lost flows and denied read modes separate.",
+      "browser_variant": {
+        "coverage_kind": "CHROMIUM_ACTUAL_HTTP",
+        "evidence": [
+          {
+            "identity": "tests/test_plan_source_reapproval_chromium.py::test_actual_installed_chromium_explicit_source_reapproval_to_six_goals[positive]",
+            "status": "PASS"
+          },
+          {
+            "identity": "tests/test_plan_source_reapproval_chromium.py::test_actual_installed_chromium_explicit_source_reapproval_to_six_goals[lost_commit]",
+            "status": "PASS"
+          },
+          {
+            "identity": "tests/test_plan_source_reapproval_chromium.py::test_actual_installed_chromium_explicit_source_reapproval_to_six_goals[lost_propose]",
+            "status": "PASS"
+          },
+          {
+            "identity": "tests/test_plan_source_reapproval_chromium.py::test_actual_installed_chromium_explicit_source_reapproval_to_six_goals[lost_approve]",
+            "status": "PASS"
+          }
+        ],
+        "note": "Four installed Chromium modes, exact reapproval/commit and P2-P5 UI verification; initial source ADOPT/P1 repair are Python controls."
+      }
+    }
+  ],
+  "counts": {
+    "HTML_ACTUAL_HTTP": 3,
+    "HTTP_BEHAVIOR_VARIANT": 8,
+    "HTTP_LITERAL": 10,
+    "NOT_RUN": 9,
+    "OWNED_ADMIN_CORRUPTION_HTTP": 1,
+    "OWNED_PG_SERVICE_VARIANT": 1
+  },
+  "raw_sha256": {
+    ".runtime/plan-reapproval-final/v2/new-core.json": "38ec95b4afb4430e0a4cc0fcdb617227024b8a1965cad2d4eb6b88a6b13a1616",
+    ".runtime/plan-reapproval-final/v2/new-core.xml": "d41a831241b16fe4d7231032c415fcefe21c377452f362201780739d114fe0da",
+    ".runtime/plan-reapproval-final/v2/new-core-collection.json": "fc94a8e578bd05a0f6cfbb18785b9ff5089131c1abfef30b5afab6ee6b89294b",
+    ".runtime/plan-reapproval-final/v2/new-independent.json": "87d6f33836e418d17e837518628dda1e2a90ec336df3ad2a0f161ee9c80f0ad7",
+    ".runtime/plan-reapproval-final/v2/new-independent.xml": "141e38360c268266070985070667a5f53da0e4a792976178a5de8393e46a0b7b",
+    ".runtime/plan-reapproval-final/v2/new-independent-collection.json": "3e41957d461f54b84989641b6d634f7585cec96eae158db8e126ab030788f529",
+    ".runtime/plan-reapproval-final/v2/new-chromium.json": "7bcf48baff554fd62968fb31fb804d4879f7760e59d543608cd2ce2489a6f838",
+    ".runtime/plan-reapproval-final/v2/new-chromium.xml": "8f2cf9988760a5caec4c3b14209469f976be1ba0e9524ccc7d45561770ae4ecc",
+    ".runtime/plan-reapproval-final/v2/new-chromium-collection.json": "d5fc613b595e8005e72f32da29b10de74930617c950556f1f541c1729ce33f14",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-chromium/test_plan_source_reapproval_chromium/artifact-routes.jsonl": "7b8aa8910fea6bf9dc1e72a1079f2ccb589caab7c6df968a3b051be2defaa46c",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-chromium/test_plan_source_reapproval_chromium/helpers/test_plan_source_reapproval_independent/baseline-8a959a779403424ead5dafd42ef9eaf5.jsonl": "1475c50dff86284652867ac95059f178f6e7a2d63902d4ef4e8bce2026b58759",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-chromium/test_plan_source_reapproval_chromium/helpers/test_plan_source_reapproval_independent/closures-8a959a779403424ead5dafd42ef9eaf5.jsonl": "1cdd8d96c61c9ee15afce7d0723d1dc384a83863e944b190f43b83973894f868",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-chromium/test_plan_source_reapproval_chromium/helpers/test_plan_source_reapproval_independent/source-adopt-8a959a779403424ead5dafd42ef9eaf5.jsonl": "c7054d1b0077fdb41201e40eb6b5255b134a4f83077d3760d5a2725fc0ce246f",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-chromium/test_plan_source_reapproval_chromium/lost_approve-calls.json": "dee123a8534de141620dc35c7391a208223cbc22c22a6589f82a3cad5a4de566",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-chromium/test_plan_source_reapproval_chromium/lost_commit-calls.json": "85bd7502999f2d1d7b87b07abca634036c6d823bde39a78544e49d97fc412e05",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-chromium/test_plan_source_reapproval_chromium/lost_propose-calls.json": "e6524eb5f8d324bac9c736e195a36ed6c05071489c7ba1ef5fe6f4093857b21b",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-chromium/test_plan_source_reapproval_chromium/positive-calls.json": "8ba5b3172167c0129078dfc3b9b9e4f5a43887de6bb914f028b13fd50dc33173",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/artifact-routing-3e960cce8fcf4b31a7439445dd4cd72a.jsonl": "54da2b4eb7b8e9045440b76f1d35faf8bf6373b47eead8114f24ba7e353e1f6f",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/baseline-3e960cce8fcf4b31a7439445dd4cd72a.jsonl": "ee98d64b2493813e95c59ef3a7e32bcf27aeb0c66a2131edfa49bf5f297bc487",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/closure-3e960cce8fcf4b31a7439445dd4cd72a.jsonl": "dfde3a171031a15094575a46405fd1531d19bbd32785b321700bc0d37aba387a",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/closures-3e960cce8fcf4b31a7439445dd4cd72a.jsonl": "635ee744b673ab9353524e0b380ff435b21ea7e83187a8f186c5b52c9aa0cd6f",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/current_403-fb5a3223.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/current_403-fb5a3223.stdout.jsonl": "60f503871524f264a45e29a7ce20b0a31e51db4fcb3c37dce47e18bbd61c3d2d",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/html-results-3e960cce8fcf4b31a7439445dd4cd72a.jsonl": "d902bed9f6aabc62b5a9fcaf98a915e27cd56eb5eacd59c49fc92c36fffc92c2",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/late_403-3491119f.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/late_403-3491119f.stdout.jsonl": "8f95da95fcc895c0aae4fb1bb8222b34f838ab7a8b980fa4132ae2f095d7e1c7",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/lost_ack-8c162e8b.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/lost_ack-8c162e8b.stdout.jsonl": "454e2301437b9a6bc57d9935e28a23e6542ba63a559afdb334b44bc6fa5cae33",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/positive-e8b4e740.stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/positive-e8b4e740.stdout.jsonl": "ee2d6da4deada9ec1703db162be29f2261724ab9aad0c677769d67cd3359f1f7",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/refusals-3e960cce8fcf4b31a7439445dd4cd72a.jsonl": "0640db6d5ab32d1acf1fb3c2a280862b69f397a1a9facc8858eb8c35644ef165",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/rollback-3e960cce8fcf4b31a7439445dd4cd72a.jsonl": "2efba7c17621f9f8ff266f0393be6011ff41fa9bc2e5dc7093bd1649b1ab0046",
+    ".runtime/plan-reapproval-final/v2/artifacts/new-independent/test_plan_source_reapproval_independent/source-adopt-3e960cce8fcf4b31a7439445dd4cd72a.jsonl": "c28c764fcfc68aa53b4709d6f9bcaf86399cf818a620152f22130969f1228bbe"
+  }
+}

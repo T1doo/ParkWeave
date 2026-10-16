@@ -1,0 +1,16 @@
+fatal: ambiguous argument 'refs/heads/main': unknown revision or path not in the working tree.
+Use '--' to separate paths from revisions, like this:
+'git <command> [<revision>...] -- [<file>...]'
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.runtime/plan-reapproval-root/verify_preservation-v1.py", line 30, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/ParkWeave/.runtime/plan-reapproval-root/verify_preservation-v1.py", line 21, in main
+    main=subprocess.check_output(['git','rev-parse','refs/heads/main'],text=True).strip()
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 466, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/subprocess.py", line 571, in run
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['git', 'rev-parse', 'refs/heads/main']' returned non-zero exit status 128.

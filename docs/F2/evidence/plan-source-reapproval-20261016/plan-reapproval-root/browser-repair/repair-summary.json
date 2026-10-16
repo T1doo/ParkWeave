@@ -1,0 +1,95 @@
+{
+  "scope": "PRIVATE_WIP_NOT_FORMAL",
+  "product_changes": false,
+  "shared_source_writes": false,
+  "test_changes_only": [
+    "test_late_http_result_does_not_fill_current_private_view",
+    "test_goal_selection_unknown_save_keeps_original_body_and_cas"
+  ],
+  "baseline": {
+    "scope": "PRIVATE_WIP_NOT_FORMAL",
+    "git_snapshot": "a794a1802e15100d691a969f0813aa371d707c36",
+    "argv": [
+      "/workspace/ParkWeave/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-vv",
+      "-p",
+      "browser_repair_capture",
+      "tests/test_case_resource_delivery_browser.py::test_late_http_result_does_not_fill_current_private_view[identity]",
+      "tests/test_new_enterprise_local_chain_browser.py::test_goal_selection_unknown_save_keeps_original_body_and_cas",
+      "--basetemp=/tmp/parkweave-browser-repair-baseline",
+      "--junitxml=/workspace/ParkWeave/.runtime/plan-reapproval-root/browser-repair/baseline/junit.xml"
+    ],
+    "exit_code": 1,
+    "elapsed_seconds": 75.852231552999,
+    "counts": {
+      "PASS": 0,
+      "FAIL": 2,
+      "ERROR": 0,
+      "SKIP": 0
+    },
+    "collection_junit_exact": true,
+    "unique_junit": true,
+    "source_drift": [],
+    "product_source_changed": false
+  },
+  "fixed": {
+    "scope": "PRIVATE_WIP_NOT_FORMAL",
+    "git_snapshot": "929d4f7a13c0b074e8340dad21f4460c7ddacd23",
+    "argv": [
+      "/workspace/ParkWeave/.venv/bin/python",
+      "-m",
+      "pytest",
+      "-vv",
+      "-p",
+      "browser_repair_capture",
+      "tests/test_case_resource_delivery_browser.py",
+      "tests/test_new_enterprise_local_chain_browser.py",
+      "--basetemp=/tmp/parkweave-browser-repair-fixed",
+      "--junitxml=/workspace/ParkWeave/.runtime/plan-reapproval-root/browser-repair/fixed/junit.xml"
+    ],
+    "exit_code": 0,
+    "elapsed_seconds": 154.20063803599623,
+    "counts": {
+      "PASS": 21,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0
+    },
+    "collection_junit_exact": true,
+    "unique_junit": true,
+    "source_drift": [],
+    "product_source_changed": false
+  },
+  "baseline_failure_causes": [
+    "fixture-b has no authorised catalogue; original helper incorrectly waited 30000ms for bundleActor",
+    "template original mandatory name/reason missing; route.fetch actual422 contradicted asserted200"
+  ],
+  "preserved_assertions": [
+    "fixture-b retains original tenant and permissions",
+    "late response leaves current private result empty and preserves exact original opaque handle; resource effect once",
+    "real template200 followed by lost acknowledgement; explicit retry same original key and complete original body/CAS0/six goals; history once"
+  ],
+  "actual_package_proof": [
+    "baseline/actual-package.json",
+    "fixed/actual-package.json"
+  ],
+  "evidence": [
+    "baseline/stdout.log",
+    "baseline/junit.xml",
+    "baseline/source-before.json",
+    "baseline/source-after.json",
+    "baseline/collection.json",
+    "fixed/stdout.log",
+    "fixed/junit.xml",
+    "fixed/source-before.json",
+    "fixed/source-after.json",
+    "fixed/collection.json",
+    "candidate.diff",
+    "verified-manifest.json"
+  ],
+  "formal_result_reuse": false,
+  "remaining": "Parent new freeze and complete fresh formal regression; no WIP scores transferred. Browser negative modes and Windows/formalAT/production/model limitations remain in parent report.",
+  "manifest_note": "candidate-manifest.json updated to actual final candidate hashes during final verification; no test results or raw records overwritten. verified-manifest.json explicitly binds final candidates to executed fixed window."
+}

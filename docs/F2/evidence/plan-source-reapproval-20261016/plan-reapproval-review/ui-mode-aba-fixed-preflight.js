@@ -1,0 +1,7 @@
+// Controlled original context and mode change handler only; no HTTP/browser/PG.
+const fs=require('node:fs'),vm=require('node:vm'),crypto=require('node:crypto');
+const html=fs.readFileSync('src/parkweave/web.html','utf8');
+const code=html.match(/function deliveryContext\(\)\{[^\n]+/)[0]+'\n'+html.match(/function deliveryCurrent\(c\)\{[^\n]+/)[0]+'\n'+html.match(/\$\('delivery-reapproval'\)\.onchange=[^\n]+/)[0];
+const fields={'delivery-case':{value:'case-A'},'delivery-reapproval':{checked:true}},context={deliveryGeneration:0,resourceContext:()=>({generation:1}),resourceCurrent:()=>true,$:id=>fields[id]||(fields[id]={replaceChildren(){}}),bundleControls(){},combinationSelection:new Map([['h',{id:'hold',resource_revision:1}]])};
+vm.createContext(context);vm.runInContext(code,context);const old=context.deliveryContext();fields['delivery-reapproval'].checked=false;fields['delivery-reapproval'].onchange();const during=context.deliveryCurrent(old);fields['delivery-reapproval'].checked=true;fields['delivery-reapproval'].onchange();const after=context.deliveryCurrent(old);if(during||after)throw Error('mode changed context must not become current after ABA');
+process.stdout.write(JSON.stringify({layer:'CONTROLLED_ORIGINAL_CONTEXT_AND_HANDLER_NO_HTTP_BROWSER_PG',source_sha256:crypto.createHash('sha256').update(html).digest('hex'),status:'PASS',during_other_mode:during,after_mode_ABA:after})+'\n');

@@ -1,0 +1,111 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="55" time="476.077" timestamp="2026-10-16T02:40:24.495231+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_true_three_actions_and_exact_get_receipts_at_three_widths[REVALIDATE]" time="7.168" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_true_three_actions_and_exact_get_receipts_at_three_widths[CLOSE_LOCAL_RECORD]" time="4.933" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_true_three_actions_and_exact_get_receipts_at_three_widths[REOPEN]" time="4.678" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_committed_lost_reply_cold_refresh_uses_get_only_and_opaque_storage[REVALIDATE]" time="4.782" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_committed_lost_reply_cold_refresh_uses_get_only_and_opaque_storage[CLOSE_LOCAL_RECORD]" time="4.628" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_committed_lost_reply_cold_refresh_uses_get_only_and_opaque_storage[REOPEN]" time="4.629" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_unknown_or_bad_handles_never_send_post_or_disclose_revoked_private_view[corrupt]" time="4.035" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_unknown_or_bad_handles_never_send_post_or_disclose_revoked_private_view[not-observed]" time="3.982" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_unknown_or_bad_handles_never_send_post_or_disclose_revoked_private_view[id-array]" time="3.624" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_unknown_or_bad_handles_never_send_post_or_disclose_revoked_private_view[extra-body]" time="4.293" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_unknown_or_bad_handles_never_send_post_or_disclose_revoked_private_view[overflow]" time="4.005" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_unknown_or_bad_handles_never_send_post_or_disclose_revoked_private_view[revoked]" time="3.591" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_late_success_keeps_original_handle_without_filling_new_private_view[identity]" time="4.074" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_late_success_keeps_original_handle_without_filling_new_private_view[case]" time="4.504" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_late_success_keeps_original_handle_without_filling_new_private_view[draft]" time="4.125" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_refused_reply_lost_does_not_retry_post" time="4.188" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_owned_api_process_restart_recovers_original_event_with_get_only" time="7.419" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_storage_failure_blocks_post_and_recovered_action_restores_current_controls" time="4.025" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_bad_recovery_scope_preserves_original_handle_and_no_new_post" time="4.228" /><testcase classname="tests.test_case_lifecycle_recovery_browser" name="test_late_denial_does_not_clear_new_case_private_view" time="4.157" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_actual_case_capacity_http_page_independent_read_and_widths[3]" time="5.699" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_actual_case_capacity_http_page_independent_read_and_widths[8]" time="6.043" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_committed_lost_response_cold_get_only_no_private_body" time="6.105" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_unknown_storage_and_withdrawn_read_preserve_handles_no_writes[corrupt]" time="4.991" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_unknown_storage_and_withdrawn_read_preserve_handles_no_writes[not-observed]" time="5.225" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_unknown_storage_and_withdrawn_read_preserve_handles_no_writes[revoked]" time="5.677" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_unknown_storage_and_withdrawn_read_preserve_handles_no_writes[id-array]" time="5.194" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_unknown_storage_and_withdrawn_read_preserve_handles_no_writes[key-array]" time="4.540" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_unknown_storage_and_withdrawn_read_preserve_handles_no_writes[actor-number]" time="4.738" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_late_http_result_does_not_fill_current_private_view[case]" time="6.195" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_late_http_result_does_not_fill_current_private_view[identity]" time="35.540"><failure message="playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+target = 'identity'
+
+    @pytest.mark.parametrize('target',['case','identity','draft'])
+    def test_late_http_result_does_not_fill_current_private_view(delivery_page,target):
+     f,page,_=delivery_page;p,hs,d=ready_page(f,page);responses=[]
+     def delay(route):responses.append((route,route.fetch()))
+     page.route('**/api/preparations/'+p['preparation_id']+'/resource-delivery',delay);page.locator('#delivery-confirm').click()
+     end=time.monotonic()+10
+     while not responses and time.monotonic()&lt;end:page.wait_for_timeout(20)
+     assert responses and effects(f)==[1,3,1,1,1]
+     if target=='case':page.locator('#delivery-case').fill(str(uuid4()))
+&gt;    elif target=='identity':open_resources(page,f,'fixture-b')
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_resource_delivery_browser.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_resource_bundles_browser.py:35: in open_resources
+    page.wait_for_function('()=&gt;bundleActor!==null')
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;playwright._impl._connection.Connection object at 0x7fb1029aec60&gt;
+cb = &lt;function Channel.send.&lt;locals&gt;.&lt;lambda&gt; at 0x7fb10936bce0&gt;
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -&gt; Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+&gt;           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError</failure></testcase><testcase classname="tests.test_case_resource_delivery_browser" name="test_late_http_result_does_not_fill_current_private_view[draft]" time="5.355" /><testcase classname="tests.test_case_resource_delivery_browser" name="test_owned_api_process_restart_reads_committed_case_delivery_without_post" time="8.405" /><testcase classname="tests.test_new_enterprise_local_chain_browser" name="test_actual_cold_author_enterprise_reviewer_executor_whole_original_page_chain[320-fixture-a]" time="30.910" /><testcase classname="tests.test_new_enterprise_local_chain_browser" name="test_actual_cold_author_enterprise_reviewer_executor_whole_original_page_chain[1200-fixture-b]" time="28.799" /><testcase classname="tests.test_new_enterprise_local_chain_browser" name="test_goal_selection_unknown_save_keeps_original_body_and_cas" time="34.664"><failure message="AssertionError: BrowserContext.close: assert 422 == 200&#10; +  where 422 = &lt;APIResponse url='http://127.0.0.1:47423/api/template-candidate/park-a/new-enterprise-material-template/commands' status=422 status_text='Unprocessable Entity'&gt;.status">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_goal_selection_unknown_save_keeps_original_body_and_cas(fresh_chain):
+        u=fresh_chain
+        with sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);ctx,page=template_page(browser,u)
+            try:
+                for goal in ALL_GOALS:page.locator('[data-template-goal="'+goal+'"]').check()
+                keys=[]
+                def lose(route):
+                    response=route.fetch();assert response.status==200;keys.append(route.request.headers['idempotency-key']);route.abort('failed')
+                path='**/api/template-candidate/park-a/'+u['scope'].template_id+'/commands';page.route(path,lose)
+                page.locator('[data-template-action="SAVE_DRAFT"]').click();page.wait_for_function('()=&gt;tp?.state==="UNKNOWN"')
+                assert page.locator('[data-template-goal]:disabled').count()==6
+                original=page.evaluate('tp.body');page.unroute(path);page.locator('#template-retry').click();page.wait_for_function('()=&gt;tp===null&amp;&amp;view?.revision===1')
+                assert page.evaluate('view.draft.required_goals')==original['draft']['required_goals'] and len(keys)==1
+                assert len(page.evaluate('view.history'))==1
+                page.locator('#template-actor').select_option('template-reviewer');assert page.locator('[data-template-goal]:checked').count()==0
+&gt;           finally:ctx.close();browser.close()
+                    ^^^^^^^^^^^
+
+tests/test_new_enterprise_local_chain_browser.py:202: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:15386: in close
+    return mapping.from_maybe_impl(self._sync(self._impl_obj.close(reason=reason)))
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_browser_context.py:581: in close
+    await self.request.dispose(reason=reason)
+.venv/lib/python3.12/site-packages/playwright/_impl/_fetch.py:120: in dispose
+    await self._channel.send("dispose", None, {"reason": reason})
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;playwright._impl._connection.Connection object at 0x7fb102c759d0&gt;
+cb = &lt;function Channel.send.&lt;locals&gt;.&lt;lambda&gt; at 0x7fb103fa5f80&gt;
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -&gt; Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+&gt;           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           AssertionError: BrowserContext.close: assert 422 == 200
+E            +  where 422 = &lt;APIResponse url='http://127.0.0.1:47423/api/template-candidate/park-a/new-enterprise-material-template/commands' status=422 status_text='Unprocessable Entity'&gt;.status
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: AssertionError</failure></testcase><testcase classname="tests.test_new_enterprise_local_chain_browser" name="test_no_goal_or_modified_registry_does_not_create_publishable_template" time="9.491" /><testcase classname="tests.test_new_enterprise_local_chain_browser" name="test_review_reply_requires_exact_nested_saved_event_before_releasing_original_request[changed-nested-hash]" time="10.092" /><testcase classname="tests.test_new_enterprise_local_chain_browser" name="test_review_reply_requires_exact_nested_saved_event_before_releasing_original_request[missing-source]" time="9.553" /><testcase classname="tests.test_new_enterprise_local_chain_browser" name="test_review_reply_requires_exact_nested_saved_event_before_releasing_original_request[extra-source-key]" time="9.434" /><testcase classname="tests.test_new_enterprise_local_chain_browser" name="test_review_reply_requires_exact_nested_saved_event_before_releasing_original_request[wrong-source-type]" time="8.971" /><testcase classname="tests.test_service_plan_approval_browser" name="test_original_http_page_explicit_proposal_approval_atomic_delivery_and_three_widths" time="11.073" /><testcase classname="tests.test_service_plan_approval_browser" name="test_committed_lost_approval_response_cold_page_only_get_no_private_storage[PROPOSE]" time="8.431" /><testcase classname="tests.test_service_plan_approval_browser" name="test_committed_lost_approval_response_cold_page_only_get_no_private_storage[APPROVE]" time="10.436" /><testcase classname="tests.test_service_plan_approval_browser" name="test_committed_lost_approval_response_cold_page_only_get_no_private_storage[REVOKE]" time="10.309" /><testcase classname="tests.test_service_plan_approval_browser" name="test_approved_cold_new_page_reads_original_exact_command_then_delivers_once" time="13.077" /><testcase classname="tests.test_service_plan_approval_browser" name="test_source_changed_page_preserves_history_disables_submit_and_explicit_revoke" time="10.507" /><testcase classname="tests.test_service_plan_approval_browser" name="test_late_actual_approval_get_does_not_clear_or_fill_other_case_view[200]" time="13.094" /><testcase classname="tests.test_service_plan_approval_browser" name="test_late_actual_approval_get_does_not_clear_or_fill_other_case_view[403]" time="10.721" /><testcase classname="tests.test_service_plan_approval_browser" name="test_current_revocation_clears_private_approval_and_resource_dom" time="9.011" /><testcase classname="tests.test_service_plan_approval_browser" name="test_bad_or_changed_original_handle_never_accepts_proof_or_posts[extra-private-field]" time="7.042" /><testcase classname="tests.test_service_plan_approval_browser" name="test_bad_or_changed_original_handle_never_accepts_proof_or_posts[wrong-action]" time="8.316" /><testcase classname="tests.test_service_plan_approval_browser" name="test_bad_or_changed_original_handle_never_accepts_proof_or_posts[not-observed]" time="8.793" /><testcase classname="tests.test_service_plan_approval_browser" name="test_bad_or_changed_original_handle_never_accepts_proof_or_posts[stored-replacement]" time="7.296" /><testcase classname="tests.test_service_plan_approval_browser" name="test_delivery_lost_reply_with_approval_consumption_recovers_only_original_get" time="10.001" /></testsuite></testsuites>

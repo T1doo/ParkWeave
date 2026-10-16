@@ -1,0 +1,30 @@
+{
+  "status": "PREPARED_WAITING_COMPLETE_ORIGINAL_TRACE_NOT_AN_EXCEPTION_APPROVAL",
+  "original_window": "related-08",
+  "required_retry_scope": "ALL_ORIGINAL_WINDOW_MODULES_AND_ALL_COLLECTED_NODES",
+  "required_environment_name": "PARKWEAVE_T07_EVIDENCE_DIR",
+  "required_environment_value": "NEW_EMPTY_DIRECTORY_UNDER_FORMAL_V2_RETRY_ARTIFACTS",
+  "required_selection_item": {
+    "window": "ACTUAL_FULL_RETRY_NAME",
+    "modules": "EXACT_ORIGINAL_related-08_MODULE_ARRAY",
+    "reason": "ACTUAL_ORIGINAL_TEARDOWN_TRACE_AND_FRESH_ARTIFACT_OUTPUT_REASON",
+    "replaces": [
+      {
+        "window": "related-08",
+        "modules": "EXACT_ORIGINAL_related-08_MODULE_ARRAY"
+      }
+    ],
+    "retry_context": "PATH_TO_ACTUAL_SOURCE_ARGV_ENV_AND_ARTIFACT_BINDING_JSON"
+  },
+  "requirements": [
+    "Wait for complete JUnit/log before classifying the10E.",
+    "Keep original collection, full raw JUnit, log, source and helper snapshots and10 old artifacts unmodified.",
+    "Only final successful retry must have collection/JUnit exact unique identities; original teardown errors may create additional same-identity JUnit case records and must not be silently normalized.",
+    "A retry receipt must account for its entire original12-module window, not selected successful nodes.",
+    "Original env changes artifact directory only; no clock, budget, assertions, permissions, fixture, product, frozen helper changes.",
+    "Run only after all parallel windows and originally scheduled solo CI/recovery; one bounded complete retry.",
+    "No other failure receives automatic exclusion or retry exception."
+  ],
+  "archive_gate_executed": false,
+  "product_tests_executed": false
+}

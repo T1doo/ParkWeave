@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="5" time="11.377" timestamp="2026-10-16T01:39:07.778909+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_plan_source_reapproval_candidate" name="test_actual_explicit_source_adopt_reapproval_atomic_consumption_and_historical_verify" time="4.106"><failure message="AssertionError: {&quot;detail&quot;:&quot;Approval revision or bounded object limit changed&quot;}&#10;assert 409 == 201&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">tests/test_plan_source_reapproval_candidate.py:44: in test_actual_explicit_source_adopt_reapproval_atomic_consumption_and_historical_verify
+    item,view=approved(f,p,data)
+              ^^^^^^^^^^^^^^^^^^
+tests/test_service_plan_approval.py:51: in approved
+    x=propose(f,p,data); assert x.status_code==201,x.text
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: {"detail":"Approval revision or bounded object limit changed"}
+E   assert 409 == 201
+E    +  where 409 = &lt;Response [409 Conflict]&gt;.status_code</failure></testcase><testcase classname="tests.test_plan_source_reapproval_candidate" name="test_new_profile_requires_explicit_flag_and_new_adopt_not_just_existing_link" time="2.755" /><testcase classname="tests.test_plan_source_reapproval_candidate" name="test_enabled_scope_direct_bind_new_key_cannot_bypass_after_link_approval" time="2.212" /><testcase classname="tests.test_plan_source_reapproval_candidate" name="test_second_confirmation_fault_rolls_back_new_approval_consumption_and_capacity" time="2.039"><failure message="AssertionError: {&quot;detail&quot;:&quot;Approval revision or bounded object limit changed&quot;}&#10;assert 409 == 201&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">tests/test_plan_source_reapproval_candidate.py:82: in test_second_confirmation_fault_rolls_back_new_approval_consumption_and_capacity
+    item,_=approved(f,p,data);before=effects(f);events=deepcopy(ledger(f,p))
+           ^^^^^^^^^^^^^^^^^^
+tests/test_service_plan_approval.py:51: in approved
+    x=propose(f,p,data); assert x.status_code==201,x.text
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: {"detail":"Approval revision or bounded object limit changed"}
+E   assert 409 == 201
+E    +  where 409 = &lt;Response [409 Conflict]&gt;.status_code</failure></testcase><testcase classname="tests.test_plan_source_reapproval_candidate" name="test_new_flag_cannot_enable_original_default_off_constructor" time="0.000" /></testsuite></testsuites>

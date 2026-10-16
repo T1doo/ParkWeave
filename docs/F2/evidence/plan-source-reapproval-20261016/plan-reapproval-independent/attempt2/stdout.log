@@ -1,0 +1,152 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0 -- /workspace/ParkWeave/.venv/bin/python
+cachedir: .pytest_cache
+rootdir: /workspace/ParkWeave/.runtime/plan-reapproval-independent/attempt2/project
+configfile: pyproject.toml
+plugins: anyio-4.15.1, platformdirs-4.12.3
+collecting ... collected 32 items
+
+tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[material_fact] PASSED [  3%]
+tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[resource] FAILED [  6%]
+tests/test_plan_source_reapproval_independent.py::test_original_default_first_delivery_and_unapproved_reapproval_refuse PASSED [  9%]
+tests/test_plan_source_reapproval_independent.py::test_consumed_old_approval_cannot_authorize_new_source_delivery PASSED [ 12%]
+tests/test_plan_source_reapproval_independent.py::test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[fixture-b] PASSED [ 15%]
+tests/test_plan_source_reapproval_independent.py::test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[fixture-c] PASSED [ 18%]
+tests/test_plan_source_reapproval_independent.py::test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[prep-specialist-fixture-a] PASSED [ 21%]
+tests/test_plan_source_reapproval_independent.py::test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[executor-a] PASSED [ 25%]
+tests/test_plan_source_reapproval_independent.py::test_approved_new_object_never_revives_after_original_source_change[resource_capacity] PASSED [ 28%]
+tests/test_plan_source_reapproval_independent.py::test_approved_new_object_never_revives_after_original_source_change[resource_aba] PASSED [ 31%]
+tests/test_plan_source_reapproval_independent.py::test_approved_new_object_never_revives_after_original_source_change[plan_revision] PASSED [ 34%]
+tests/test_plan_source_reapproval_independent.py::test_approved_new_object_never_revives_after_original_source_change[authority_aba] PASSED [ 37%]
+tests/test_plan_source_reapproval_independent.py::test_approved_new_object_never_revives_after_original_source_change[preparation_revision] PASSED [ 40%]
+tests/test_plan_source_reapproval_independent.py::test_exact_old_key_replay_rejects_changed_reapproval_parameters[reason] PASSED [ 43%]
+tests/test_plan_source_reapproval_independent.py::test_exact_old_key_replay_rejects_changed_reapproval_parameters[expected_link_revision] PASSED [ 46%]
+tests/test_plan_source_reapproval_independent.py::test_exact_old_key_replay_rejects_changed_reapproval_parameters[approval_id] PASSED [ 50%]
+tests/test_plan_source_reapproval_independent.py::test_exact_old_key_replay_rejects_changed_reapproval_parameters[valid_until] PASSED [ 53%]
+tests/test_plan_source_reapproval_independent.py::test_unknown_original_key_get_never_executes_reapproval PASSED [ 56%]
+tests/test_plan_source_reapproval_independent.py::test_full_original_html_source_reapproval_and_original_authority[positive] PASSED [ 59%]
+tests/test_plan_source_reapproval_independent.py::test_full_original_html_source_reapproval_and_original_authority[lost_ack] PASSED [ 62%]
+tests/test_plan_source_reapproval_independent.py::test_full_original_html_source_reapproval_and_original_authority[current_403] PASSED [ 65%]
+tests/test_plan_source_reapproval_independent.py::test_full_original_html_source_reapproval_and_original_authority[late_403] PASSED [ 68%]
+tests/test_plan_source_reapproval_independent.py::test_actual_original_revocation_denies_new_reapproval_without_effect[READ] PASSED [ 71%]
+tests/test_plan_source_reapproval_independent.py::test_actual_original_revocation_denies_new_reapproval_without_effect[EXECUTE] PASSED [ 75%]
+tests/test_plan_source_reapproval_independent.py::test_actual_original_revocation_denies_new_reapproval_without_effect[PREPARE] PASSED [ 78%]
+tests/test_plan_source_reapproval_independent.py::test_actual_original_revocation_denies_new_reapproval_without_effect[resource_READ] PASSED [ 81%]
+tests/test_plan_source_reapproval_independent.py::test_actual_original_revocation_denies_new_reapproval_without_effect[resource_HOLD] PASSED [ 84%]
+tests/test_plan_source_reapproval_independent.py::test_expired_new_hold_refuses_quote_and_never_uses_old_approval FAILED [ 87%]
+tests/test_plan_source_reapproval_independent.py::test_no_explicit_source_opt_in_refuses_new_mode_under_original_issued_fixture PASSED [ 90%]
+tests/test_plan_source_reapproval_independent.py::test_owned_pg_fault_rolls_back_entire_reapproval_transaction[synthetic_resource_combination_receipts] PASSED [ 93%]
+tests/test_plan_source_reapproval_independent.py::test_owned_pg_fault_rolls_back_entire_reapproval_transaction[resource_case_claims] PASSED [ 96%]
+tests/test_plan_source_reapproval_independent.py::test_owned_pg_fault_rolls_back_entire_reapproval_transaction[case_resource_links] PASSED [100%]
+
+=================================== FAILURES ===================================
+_ test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[resource] _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'resource'
+
+    @pytest.mark.parametrize('kind',['material_fact','resource'])
+    def test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals(facts_case,kind):
+        t=facts_case;f,p=t['f'],t['p']
+        if kind=='resource':assert lock(f,p,'P1').status_code==200
+        oldplan=deepcopy(stored(f,p));old=original_rows(t);oldledger=deepcopy(ledger(f,p));oldlink=link_read(f,p).json()['link_revision']
+        hs,data,q,item=prepared_reapproval(t,kind)
+        key=uuid4().hex;r=commit(f,p,data,key);assert r.status_code==201,r.text;x=r.json()
+        assert x['independent_check']['status']=='CURRENT' and x['independent_check']['plan_p2_automatically_verified'] is False
+        assert x['link']['revision']==oldlink+1 and states(f,hs)==['CONFIRMED']*3
+        assert effects(f)==[2,6,2,2,2]
+        assert_prefix_preserved(old,original_rows(t));assert ledger(f,p)['events'][:len(oldledger['events'])]==oldledger['events']
+        assert ledger(f,p)['revision']==oldledger['revision']+3
+        before=full(t);assert commit(f,p,data,key).json()['receipt']==x['receipt'];assert full(t)==before
+        recovered=delivery_recover(f,p,key);assert recovered.status_code==200 and recovered.json()['receipt']==x['receipt'] and full(t)==before
+        if kind=='resource':assert stored(f,p)['steps'][0]==oldplan['steps'][0]
+>       finish_new_link(t);assert_prefix_preserved(old,original_rows(t))
+        ^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:256: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def finish_new_link(t):
+        f,p=t['f'],t['p'];verified(f,p,'P2')
+        id=t['completed']['A']['dispatch']['dispatch_id'];current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+        q=f[3].get('/api/service-dispatches/'+id,headers=headers(f[2],'prep-specialist-fixture-a')).json()
+>       r=offer(f,current,revision=q['revision'],recovery_receipt_step_id=q['recovery_receipt_step_id'])[0];assert r.status_code==201,r.text
+                                                                                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"new preparation acceptance requires the exact historical receipt generation"}
+E       assert 409 == 201
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_plan_source_reapproval_independent.py:224: AssertionError
+_______ test_expired_new_hold_refuses_quote_and_never_uses_old_approval ________
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_expired_new_hold_refuses_quote_and_never_uses_old_approval(facts_case):
+        t=facts_case;source_adopt(t);hs,data=fresh_holds(t)
+>       with t['f'][1].connect() as db:db.execute("UPDATE synthetic_resource_holds SET expires_at=clock_timestamp()-interval '1 second' WHERE id=%s",(hs[0]['id'],))
+                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:406: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f6244bf0a40>
+query = "UPDATE synthetic_resource_holds SET expires_at=clock_timestamp()-interval '1 second' WHERE id=%s"
+params = ('bb27021f-6e82-4b1e-80f5-b0b1e8f45ecf',), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.CheckViolation: new row for relation "synthetic_resource_holds" violates check constraint "synthetic_resource_holds_check1"
+E           DETAIL:  Failing row contains (bb27021f-6e82-4b1e-80f5-b0b1e8f45ecf, fa161ea0-b665-4ec5-b345-a070bfec764d, fixture-a, park-a, org-a, 1, 2026-10-16 15:05:28.717861+00, 2026-10-16 16:05:28.717861+00, 1, 300, SYNTHETIC original resource for fixture-a, HELD, 2026-10-16 02:05:28.726634+00, 2026-10-16 02:05:27.880213+00, SYNTHETIC).
+
+../../../../.venv/lib/python3.12/site-packages/psycopg/connection.py:304: CheckViolation
+=============================== warnings summary ===============================
+../../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[material_fact]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[material_fact]
+  /workspace/ParkWeave/.runtime/plan-reapproval-independent/attempt2/project/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[material_fact]
+  /workspace/ParkWeave/.runtime/plan-reapproval-independent/attempt2/project/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/ParkWeave/.runtime/plan-reapproval-independent/attempt2/junit.xml -
+=========================== short test summary info ============================
+FAILED tests/test_plan_source_reapproval_independent.py::test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[resource] - AssertionError: {"detail":"new preparation acceptance requires the exact historical receipt generation"}
+assert 409 == 201
+ +  where 409 = <Response [409 Conflict]>.status_code
+FAILED tests/test_plan_source_reapproval_independent.py::test_expired_new_hold_refuses_quote_and_never_uses_old_approval - psycopg.errors.CheckViolation: new row for relation "synthetic_resource_holds" violates check constraint "synthetic_resource_holds_check1"
+DETAIL:  Failing row contains (bb27021f-6e82-4b1e-80f5-b0b1e8f45ecf, fa161ea0-b665-4ec5-b345-a070bfec764d, fixture-a, park-a, org-a, 1, 2026-10-16 15:05:28.717861+00, 2026-10-16 16:05:28.717861+00, 1, 300, SYNTHETIC original resource for fixture-a, HELD, 2026-10-16 02:05:28.726634+00, 2026-10-16 02:05:27.880213+00, SYNTHETIC).
+============= 2 failed, 30 passed, 4 warnings in 533.42s (0:08:53) =============

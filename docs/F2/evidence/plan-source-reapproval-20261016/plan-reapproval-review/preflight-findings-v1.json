@@ -1,0 +1,67 @@
+{
+  "status": "WIP_PREFLIGHT_FINDINGS_NOT_FROZEN_VERDICT",
+  "baseline_sha": "a794a1802e15100d691a969f0813aa371d707c36",
+  "files_sha256_at_result": {
+    ".runtime/plan-reapproval-backend/candidate/src/parkweave/service_plan_approval.py": "e230ad7ffaa2d0b6b7f07376acc21f107bc7d4561340426298a16c20bd597c36",
+    ".runtime/plan-reapproval-backend/candidate/src/parkweave/case_resource_delivery.py": "5bf3993e75cdbc05529f68bb214551a710009ea806997f2226d0ad19b3ed8d3c",
+    ".runtime/plan-reapproval-backend/candidate/src/parkweave/case_resources.py": "17aa834614a86b3d35e23521121f8a14533e0f59e45d7c9db91f4303f1ec32eb",
+    ".runtime/plan-reapproval-backend/candidate/src/parkweave/api.py": "afb75ecf0b3beab7e301cd2c2e12c0babacd2e9ef8e160fd7a1f0173b91e09ff",
+    "src/parkweave/web.html": "a0ad0e8cf82d78afd51c95bc1dd16997c71746f1c6cde7d4cdfc7eb202a45172"
+  },
+  "source_modified_by_reviewer": false,
+  "git_modified_by_reviewer": false,
+  "postgres_http_browser_tests_run": false,
+  "long_suites_run": false,
+  "controlled_vm_probes_run": 2,
+  "findings": [
+    {
+      "id": "PF1",
+      "kind": "UI_BLOCKER",
+      "observed": "Approval recovery quote reconstruction omitted expected_link_revision, disabling final new-profile delivery.",
+      "current_status": "ROOT_FIX_SEEN_STATIC",
+      "needs_frozen_test": "Full original HTML PROPOSE recovery -> APPROVE recovery -> delivery; actual frozen HTTP/Pg."
+    },
+    {
+      "id": "PF2",
+      "kind": "HISTORY_READ_BLOCKER",
+      "observed": "Historical reapproval verifier used only current plan; a later legal replacement moved original plan to history and caused old committed GET rejection.",
+      "current_status": "BACKEND_FIX_SEEN_STATIC",
+      "needs_frozen_test": "Actual plan replacement then previous committed keyed GET returns known historical receipt with stale state, no write."
+    },
+    {
+      "id": "PF3",
+      "kind": "FAULT_REJECTION_BOUND",
+      "observed": "Recursive previous receipt verification preceded own/anchor monotonic relation proof.",
+      "current_status": "BACKEND_FIX_SEEN_STATIC",
+      "needs_frozen_test": "Rehashed self-reference refuses before recursion; two successive valid reapprovals preserve earlier GET."
+    },
+    {
+      "id": "PF4",
+      "kind": "UI_LATE_RESPONSE_ABA",
+      "observed": "Mode true->false->true revived old context because it compared only input values.",
+      "original_evidence": "ui-mode-aba-preflight.json",
+      "fixed_evidence": "ui-mode-aba-fixed-preflight.json",
+      "current_status": "ROOT_FIX_PASS_CONTROLLED_ORIGINAL_FUNCTIONS_ONLY",
+      "needs_frozen_test": "Actual delayed success/403 across Case/mode ABA keeps newer view and original handles."
+    },
+    {
+      "id": "PF5",
+      "kind": "PROTOCOL_DOWNGRADE",
+      "observed": "Stripping new purpose/request/context together must not reinterpret actual link revision>1 as original first delivery.",
+      "current_status": "BACKEND_FIX_SEEN_STATIC",
+      "needs_frozen_test": "Actual first link remains revision1; reapproval actual link revision=expected+1 and strict new ledger purpose/anchor; rehashed downgrade rejects through P2/goals/recovery."
+    }
+  ],
+  "observed_reuse_intact": [
+    "New non-None link profile requires explicit enabled adapter/issued Case scope.",
+    "Latest original ADOPT full recovery compiler validation and P2 affected check present.",
+    "Exact original receipt/ledger proof before previous link recursion.",
+    "Original direct binder historical replay precedes scoped new-write rejection.",
+    "Original member locks/capacity checks/atomic consume+bind/commit guard retained."
+  ],
+  "limits": [
+    "Candidates changed while review proceeded; file hashes above are a WIP observation snapshot, not frozen whole tree.",
+    "Static fix observations are not actual end-to-end PASS.",
+    "No claim about Windows, real browser, formal AT or production."
+  ]
+}

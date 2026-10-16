@@ -1,0 +1,1108 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="28" skipped="0" tests="32" time="456.043" timestamp="2026-10-16T01:48:16.458604+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_plan_source_reapproval_independent" name="test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[material_fact]" time="15.322"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    @pytest.mark.parametrize('kind',['material_fact','resource'])
+    def test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals(facts_case,kind):
+        t=facts_case;f,p=t['f'],t['p']
+        if kind=='resource':assert lock(f,p,'P1').status_code==200
+        oldplan=deepcopy(stored(f,p));old=original_rows(t);oldledger=deepcopy(ledger(f,p));oldlink=link_read(f,p).json()['link_revision']
+&gt;       hs,data,q,item=prepared_reapproval(t,kind)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:246: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[resource]" time="14.292"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'resource'
+
+    @pytest.mark.parametrize('kind',['material_fact','resource'])
+    def test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals(facts_case,kind):
+        t=facts_case;f,p=t['f'],t['p']
+        if kind=='resource':assert lock(f,p,'P1').status_code==200
+        oldplan=deepcopy(stored(f,p));old=original_rows(t);oldledger=deepcopy(ledger(f,p));oldlink=link_read(f,p).json()['link_revision']
+&gt;       hs,data,q,item=prepared_reapproval(t,kind)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:246: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'resource'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_original_default_first_delivery_and_unapproved_reapproval_refuse" time="13.733"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_original_default_first_delivery_and_unapproved_reapproval_refuse(facts_case):
+&gt;       t=facts_case;source_adopt(t);hs,data=fresh_holds(t)
+                     ^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:262: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_consumed_old_approval_cannot_authorize_new_source_delivery" time="13.539"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_consumed_old_approval_cannot_authorize_new_source_delivery(facts_case):
+        t=facts_case;old=ledger(t['f'],t['p']);oldid=approval_read(t['f'],t['p']).json()['items'][-1]['id']
+&gt;       source_adopt(t);hs,data=fresh_holds(t);b,_=quote(t,data)
+        ^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:270: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[fixture-b]" time="13.226"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+actor = 'fixture-b'
+
+    @pytest.mark.parametrize('actor',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval(facts_case,actor):
+&gt;       t=facts_case;hs,b,q,item=prepared_reapproval(t)
+                                 ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:276: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[fixture-c]" time="15.429"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+actor = 'fixture-c'
+
+    @pytest.mark.parametrize('actor',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval(facts_case,actor):
+&gt;       t=facts_case;hs,b,q,item=prepared_reapproval(t)
+                                 ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:276: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[prep-specialist-fixture-a]" time="16.113"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+actor = 'prep-specialist-fixture-a'
+
+    @pytest.mark.parametrize('actor',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval(facts_case,actor):
+&gt;       t=facts_case;hs,b,q,item=prepared_reapproval(t)
+                                 ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:276: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval[executor-a]" time="14.361"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+actor = 'executor-a'
+
+    @pytest.mark.parametrize('actor',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_original_tenant_owner_and_role_cannot_read_or_commit_new_approval(facts_case,actor):
+&gt;       t=facts_case;hs,b,q,item=prepared_reapproval(t)
+                                 ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:276: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_approved_new_object_never_revives_after_original_source_change[resource_revision]" time="17.821"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+damage = 'resource_revision'
+
+    @pytest.mark.parametrize('damage',['resource_revision','resource_aba','plan_revision','authority_aba','preparation_revision'])
+    def test_approved_new_object_never_revives_after_original_source_change(facts_case,damage):
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:284: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_approved_new_object_never_revives_after_original_source_change[resource_aba]" time="15.732"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+damage = 'resource_aba'
+
+    @pytest.mark.parametrize('damage',['resource_revision','resource_aba','plan_revision','authority_aba','preparation_revision'])
+    def test_approved_new_object_never_revives_after_original_source_change(facts_case,damage):
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:284: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_approved_new_object_never_revives_after_original_source_change[plan_revision]" time="13.144"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+damage = 'plan_revision'
+
+    @pytest.mark.parametrize('damage',['resource_revision','resource_aba','plan_revision','authority_aba','preparation_revision'])
+    def test_approved_new_object_never_revives_after_original_source_change(facts_case,damage):
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:284: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_approved_new_object_never_revives_after_original_source_change[authority_aba]" time="16.427"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+damage = 'authority_aba'
+
+    @pytest.mark.parametrize('damage',['resource_revision','resource_aba','plan_revision','authority_aba','preparation_revision'])
+    def test_approved_new_object_never_revives_after_original_source_change(facts_case,damage):
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:284: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_approved_new_object_never_revives_after_original_source_change[preparation_revision]" time="15.138"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+damage = 'preparation_revision'
+
+    @pytest.mark.parametrize('damage',['resource_revision','resource_aba','plan_revision','authority_aba','preparation_revision'])
+    def test_approved_new_object_never_revives_after_original_source_change(facts_case,damage):
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:284: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_exact_old_key_replay_rejects_changed_reapproval_parameters[reason]" time="17.552"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+field = 'reason'
+
+    @pytest.mark.parametrize('field',['reason','expected_link_revision','approval_id','valid_until'])
+    def test_exact_old_key_replay_rejects_changed_reapproval_parameters(facts_case,field):
+&gt;       t=facts_case;hs,b,q,item=prepared_reapproval(t);key=uuid4().hex;r=commit(t['f'],t['p'],b,key);assert r.status_code==201,r.text
+                                 ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:300: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_exact_old_key_replay_rejects_changed_reapproval_parameters[expected_link_revision]" time="13.262"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+field = 'expected_link_revision'
+
+    @pytest.mark.parametrize('field',['reason','expected_link_revision','approval_id','valid_until'])
+    def test_exact_old_key_replay_rejects_changed_reapproval_parameters(facts_case,field):
+&gt;       t=facts_case;hs,b,q,item=prepared_reapproval(t);key=uuid4().hex;r=commit(t['f'],t['p'],b,key);assert r.status_code==201,r.text
+                                 ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:300: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_exact_old_key_replay_rejects_changed_reapproval_parameters[approval_id]" time="13.025"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+field = 'approval_id'
+
+    @pytest.mark.parametrize('field',['reason','expected_link_revision','approval_id','valid_until'])
+    def test_exact_old_key_replay_rejects_changed_reapproval_parameters(facts_case,field):
+&gt;       t=facts_case;hs,b,q,item=prepared_reapproval(t);key=uuid4().hex;r=commit(t['f'],t['p'],b,key);assert r.status_code==201,r.text
+                                 ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:300: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_exact_old_key_replay_rejects_changed_reapproval_parameters[valid_until]" time="15.043"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+field = 'valid_until'
+
+    @pytest.mark.parametrize('field',['reason','expected_link_revision','approval_id','valid_until'])
+    def test_exact_old_key_replay_rejects_changed_reapproval_parameters(facts_case,field):
+&gt;       t=facts_case;hs,b,q,item=prepared_reapproval(t);key=uuid4().hex;r=commit(t['f'],t['p'],b,key);assert r.status_code==201,r.text
+                                 ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:300: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_unknown_original_key_get_never_executes_reapproval" time="12.125"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_unknown_original_key_get_never_executes_reapproval(facts_case):
+&gt;       t=facts_case;source_adopt(t);hs,data=fresh_holds(t);before=full(t)
+                     ^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:310: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_full_original_html_source_reapproval_and_original_authority[positive]" time="26.441" /><testcase classname="tests.test_plan_source_reapproval_independent" name="test_full_original_html_source_reapproval_and_original_authority[lost_ack]" time="24.753" /><testcase classname="tests.test_plan_source_reapproval_independent" name="test_full_original_html_source_reapproval_and_original_authority[current_403]" time="11.439" /><testcase classname="tests.test_plan_source_reapproval_independent" name="test_full_original_html_source_reapproval_and_original_authority[late_403]" time="11.652" /><testcase classname="tests.test_plan_source_reapproval_independent" name="test_actual_original_revocation_denies_new_reapproval_without_effect[READ]" time="11.092"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+capability = 'READ'
+
+    @pytest.mark.parametrize('capability',['READ','EXECUTE','PREPARE','resource_READ','resource_HOLD'])
+    def test_actual_original_revocation_denies_new_reapproval_without_effect(facts_case,capability):
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:395: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_actual_original_revocation_denies_new_reapproval_without_effect[EXECUTE]" time="11.671"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+capability = 'EXECUTE'
+
+    @pytest.mark.parametrize('capability',['READ','EXECUTE','PREPARE','resource_READ','resource_HOLD'])
+    def test_actual_original_revocation_denies_new_reapproval_without_effect(facts_case,capability):
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:395: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_actual_original_revocation_denies_new_reapproval_without_effect[PREPARE]" time="11.093"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+capability = 'PREPARE'
+
+    @pytest.mark.parametrize('capability',['READ','EXECUTE','PREPARE','resource_READ','resource_HOLD'])
+    def test_actual_original_revocation_denies_new_reapproval_without_effect(facts_case,capability):
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:395: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_actual_original_revocation_denies_new_reapproval_without_effect[resource_READ]" time="10.171"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+capability = 'resource_READ'
+
+    @pytest.mark.parametrize('capability',['READ','EXECUTE','PREPARE','resource_READ','resource_HOLD'])
+    def test_actual_original_revocation_denies_new_reapproval_without_effect(facts_case,capability):
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:395: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_actual_original_revocation_denies_new_reapproval_without_effect[resource_HOLD]" time="11.122"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+capability = 'resource_HOLD'
+
+    @pytest.mark.parametrize('capability',['READ','EXECUTE','PREPARE','resource_READ','resource_HOLD'])
+    def test_actual_original_revocation_denies_new_reapproval_without_effect(facts_case,capability):
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:395: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_expired_new_hold_refuses_quote_and_never_uses_old_approval" time="12.399"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_expired_new_hold_refuses_quote_and_never_uses_old_approval(facts_case):
+&gt;       t=facts_case;source_adopt(t);hs,data=fresh_holds(t)
+                     ^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:405: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_no_explicit_source_opt_in_refuses_new_mode_under_original_issued_fixture" time="12.559"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_no_explicit_source_opt_in_refuses_new_mode_under_original_issued_fixture(facts_case):
+&gt;       t=facts_case;source_adopt(t);hs,data=fresh_holds(t)
+                     ^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:411: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_owned_pg_fault_rolls_back_entire_reapproval_transaction[synthetic_resource_combination_receipts]" time="10.954"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+fault_table = 'synthetic_resource_combination_receipts'
+
+    @pytest.mark.parametrize('fault_table',['synthetic_resource_combination_receipts','resource_case_claims','case_resource_links'])
+    def test_owned_pg_fault_rolls_back_entire_reapproval_transaction(facts_case,fault_table):
+        import psycopg
+        from uuid import UUID
+        from parkweave import case_resource_delivery as delivery
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:423: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_owned_pg_fault_rolls_back_entire_reapproval_transaction[resource_case_claims]" time="11.125"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+fault_table = 'resource_case_claims'
+
+    @pytest.mark.parametrize('fault_table',['synthetic_resource_combination_receipts','resource_case_claims','case_resource_links'])
+    def test_owned_pg_fault_rolls_back_entire_reapproval_transaction(facts_case,fault_table):
+        import psycopg
+        from uuid import UUID
+        from parkweave import case_resource_delivery as delivery
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:423: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_independent" name="test_owned_pg_fault_rolls_back_entire_reapproval_transaction[case_resource_links]" time="11.041"><failure message="TypeError: record() got multiple values for argument 'kind'">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+fault_table = 'case_resource_links'
+
+    @pytest.mark.parametrize('fault_table',['synthetic_resource_combination_receipts','resource_case_claims','case_resource_links'])
+    def test_owned_pg_fault_rolls_back_entire_reapproval_transaction(facts_case,fault_table):
+        import psycopg
+        from uuid import UUID
+        from parkweave import case_resource_delivery as delivery
+&gt;       t=facts_case;f,p=t['f'],t['p'];hs,b,q,item=prepared_reapproval(t)
+                                                   ^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_plan_source_reapproval_independent.py:423: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_plan_source_reapproval_independent.py:230: in prepared_reapproval
+    source_adopt(t,kind);hs,data=fresh_holds(t);data,q=quote(t,data);item=approved(t,data)
+    ^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+kind = 'material_fact'
+
+    def source_adopt(t,kind='material_fact'):
+        f,p=t['f'],t['p'];old=deepcopy(stored(f,p))
+        if kind=='resource':add_resource(f)
+        else:
+            change_fact(t,refresh=False)
+            current=dict(prep_read(f,p).json()['preparation'],preparation_id=p['preparation_id'])
+            if current['state'] in ('REVIEWED','LOCAL_CONFIRMED'):
+                r=prepare(f,current,'REOPEN',reason='SYNTHETIC explicit source reapproval input');assert r.status_code==200,r.text;current=r.json()
+            r=add_material(f,current,slot='need_summary',text='SYNTHETIC actual source reapproval context v2');assert r.status_code==200,r.text
+        c=card(t)
+        from test_source_change_adoption import preview
+        q=preview(f,p,c);assert q.status_code==200,q.text;v=q.json()
+        ids={s['adapter_id']:s['id'] for s in old['steps']};wanted=ALL if kind!='resource' else ('P2','P3','P4','P5')
+        assert v['affected']==[ids[a] for a in wanted]
+        assert v['preserved']==([] if kind!='resource' else [ids['P1']]) and v['unknown_scope'] is None
+        r=adopt(f,p,v['adoption']);assert r.status_code==201,r.text
+        if kind!='resource':
+            chain.material_decision(t['u'],p,'REVIEW');chain.material_decision(t['u'],p,'CONFIRM');verified(f,p,'P1')
+        now=stored(f,p);assert now['id']==old['id'] and now['events'][:len(old['events'])]==old['events']
+&gt;       record('source-adopt',kind=kind,affected=list(wanted),preserved=[] if kind!='resource' else ['P1'],original_source_change=True,original_p1_verify=True)
+E       TypeError: record() got multiple values for argument 'kind'
+
+tests/test_plan_source_reapproval_independent.py:195: TypeError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,105 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="6" time="197.145" timestamp="2026-10-16T02:09:01.676468+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_plan_source_reapproval_independent" name="test_actual_explicit_original_reapproval_and_partial_verify_to_six_goals[resource]" time="28.892" /><testcase classname="tests.test_plan_source_reapproval_independent" name="test_expired_new_hold_refuses_quote_and_never_uses_old_approval" time="19.474" /><testcase classname="tests.test_plan_source_reapproval_chromium" name="test_actual_installed_chromium_explicit_source_reapproval_to_six_goals[positive]" time="34.085"><failure message="assert 0 == 1&#10; +  where 0 = len([])">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'positive'
+
+    @pytest.mark.parametrize('mode',['positive','lost_commit','lost_propose','lost_approve'])
+    def test_actual_installed_chromium_explicit_source_reapproval_to_six_goals(facts_case,mode):
+        t=facts_case;f,p=t['f'],t['p']
+        # Original HTTP source refresh/ADOPT/P1 prerequisites, no filled Case cloning.
+        source_adopt(t);hs,data=fresh_holds(t);old=original_rows(t);oldplan=deepcopy(stored(f,p));oldledger=deepcopy(ledger(f,p))
+        calls=[];pending={};errors=[];controls=html_controls(t,{})
+        with sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            ctx=browser.new_context();page=ctx.new_page()
+            def on_request(request):
+                row=dict(method=request.method,path=urlsplit(request.url).path,status=None)
+                key=request.header_value('idempotency-key')
+                if key:row['request_key']=key
+                calls.append(row);pending[request]=row
+            def on_response(response):
+                if response.request in pending:pending[response.request]['status']=response.status
+            page.on('request',on_request);page.on('response',on_response);page.on('pageerror',lambda e:errors.append(str(e)))
+            try:
+                page.goto(str(f[3].base_url).rstrip('/')+'/');open_resources(page,f);choose(page,hs)
+                page.locator('#delivery-case').fill(p['preparation_id'])
+                assert page.locator('#delivery-reapproval').is_enabled()
+                page.locator('#delivery-reapproval').check()
+                page.locator('#plan-approval-read').click();idle(page)
+                page.locator('#delivery-preview').click();page.wait_for_function('()=&gt;deliveryQuote!==null')
+                assert page.evaluate('deliveryQuote.view.expected_link_revision')==1
+                assert page.locator('#delivery-confirm').is_disabled()
+                assert not any(c['method']=='POST' and c['path'].endswith('/resource-delivery') for c in calls)
+                def lose_approval(action):
+                    def handler(route):
+                        response=route.fetch()
+                        pending[route.request]['status']=response.status
+                        pending[route.request]['approval_response_controlled_lost']=action
+                        assert response.status==(201 if action=='PROPOSE' else 200)
+                        route.abort('failed')
+                    return handler
+                def cold_approval(action):
+                    page.wait_for_function('()=&gt;planApprovalHandles()?.length===1')
+                    assert page.evaluate("planApprovalHandles().every(h=&gt;Object.keys(JSON.parse(localStorage.getItem(h.name))).sort().join(',')==='action,actor,approval_id,expires,id,key,revision,started,v')")
+                    saved=page.evaluate('planApprovalHandles().map(h=&gt;({key:h.key,action:h.action}))[0]')
+                    assert saved['action']==action
+                    count=len(calls);page.reload();open_resources(page,f);page.locator('#delivery-case').fill(p['preparation_id'])
+                    page.locator('#plan-approval-recover').click();idle(page);page.wait_for_function('()=&gt;planApprovalHandles()?.length===0')
+                    assert all(c['method']=='GET' for c in calls[count:])
+                    assert any(c['path'].endswith('/plan-approval/recovery/'+saved['key']) and c['status']==200 for c in calls[count:])
+                    assert not page.locator('#delivery-reapproval').is_checked()
+                    assert page.evaluate('planApprovalSelected.current===false&amp;&amp;planApprovalSelected.delivery===null&amp;&amp;deliveryQuote===null')
+                    # Explicitly choose original HELD members and new profile again.
+                    choose(page,hs);page.locator('#delivery-reapproval').check()
+                    page.locator('#plan-approval-read').click();idle(page)
+                    page.wait_for_function('()=&gt;deliveryQuote!==null')
+                    assert page.evaluate('deliveryQuote.view.expected_link_revision')==1
+                if mode=='lost_propose':page.route('**/api/preparations/'+p['preparation_id']+'/plan-approval/proposals',lose_approval('PROPOSE'))
+                page.locator('#plan-approval-propose').click();idle(page)
+                if mode=='lost_propose':cold_approval('PROPOSE')
+                page.wait_for_function('()=&gt;planApprovalSelected?.state==="PROPOSED"')
+                assert page.evaluate('planApprovalSelected.purpose')=='CASE_RESOURCE_REAPPROVAL'
+                if mode=='lost_approve':page.route('**/api/preparations/'+p['preparation_id']+'/plan-approval/commands',lose_approval('APPROVE'))
+                page.locator('#plan-approval-approve').click();idle(page)
+                if mode=='lost_approve':cold_approval('APPROVE')
+                page.wait_for_function('()=&gt;planApprovalSelected?.current_available===true')
+                assert page.locator('#delivery-confirm').is_enabled()
+                if mode=='lost_commit':
+                    def lose(route):
+                        response=route.fetch()
+                        pending[route.request]['status']=response.status
+                        pending[route.request]['committed_response_controlled_lost']=True
+                        assert response.status==201
+                        route.abort('failed')
+                    page.route('**/api/preparations/'+p['preparation_id']+'/resource-delivery',lose)
+                page.locator('#delivery-confirm').click();idle(page)
+                if mode=='lost_commit':
+                    page.wait_for_function('()=&gt;deliveryHandles()?.length===1')
+                    assert page.evaluate("deliveryHandles().every(h=&gt;Object.keys(JSON.parse(localStorage.getItem(h.name))).sort().join(',')==='actor,id,key')")
+                    count=len(calls);page.reload();open_resources(page,f);page.locator('#delivery-case').fill(p['preparation_id'])
+                    page.locator('#delivery-recover').click();idle(page);page.wait_for_function('()=&gt;deliveryHandles()?.length===0')
+                    assert all(c['method']=='GET' for c in calls[count:])
+                    committed=next(c for c in calls if c.get('committed_response_controlled_lost'))
+                    assert any(c['path'].endswith('/resource-delivery/recovery/'+committed['request_key']) and c['status']==200 for c in calls[count:])
+                page.wait_for_function("()=&gt;document.getElementById('delivery-result').dataset.state==='CURRENT'")
+                assert effects(f)==[2,6,2,2,2] and states(f,hs)==['CONFIRMED']*3
+                assert_prefix_preserved(old,original_rows(t));assert ledger(f,p)['events'][:len(oldledger['events'])]==oldledger['events']
+                assert stored(f,p)==oldplan,'resource transaction never auto-verifies P2-P5'
+                page.evaluate('(id)=&gt;loadPreparation(id,{role:"enterprise_operator"})',p['preparation_id'])
+                for adapter in ('P2','P3','P4','P5'):
+                    if adapter!='P2':controls[{'P3':'reoffer_accept','P4':'new_report_ack','P5':'revalidate_local'}[adapter]]()
+                    verify(page,p['preparation_id'],adapter)
+                page.locator('#goal-results-read').click();page.wait_for_function('()=&gt;goalResultView?.state==="LOCAL_OUTPUTS_VERIFIED"')
+                assert page.evaluate('goalResultView.results.length')==6
+                page.locator('[data-tab="collaboration"]').click()
+                with page.expect_response(lambda response:urlsplit(response.url).path=='/api/cases/worklist' and response.status==200):page.locator('#case-worklist-read').click()
+                page.wait_for_function('()=&gt;!document.getElementById("case-worklist-read").disabled')
+                for _ in range(4):
+                    if page.locator('#case-worklist-next').is_hidden():break
+                    with page.expect_response(lambda response:urlsplit(response.url).path=='/api/cases/worklist' and response.status==200):page.locator('#case-worklist-next').click()
+                    page.wait_for_function('()=&gt;!document.getElementById("case-worklist-next").disabled')
+                final(t)
+&gt;               assert len([c for c in calls if c['method']=='POST' and c['path'].endswith('/resource-delivery') and c['status']==201])==1
+E               assert 0 == 1
+E                +  where 0 = len([])
+
+tests/test_plan_source_reapproval_chromium.py:145: AssertionError</failure></testcase><testcase classname="tests.test_plan_source_reapproval_chromium" name="test_actual_installed_chromium_explicit_source_reapproval_to_six_goals[lost_commit]" time="34.523" /><testcase classname="tests.test_plan_source_reapproval_chromium" name="test_actual_installed_chromium_explicit_source_reapproval_to_six_goals[lost_propose]" time="37.893" /><testcase classname="tests.test_plan_source_reapproval_chromium" name="test_actual_installed_chromium_explicit_source_reapproval_to_six_goals[lost_approve]" time="39.456" /></testsuite></testsuites>

@@ -1,0 +1,35 @@
+{
+  "status": "LIMITED_PASS_WITH_PROFILE_GAP",
+  "source_sha": "929d4f7a13c0b074e8340dad21f4460c7ddacd23",
+  "excluded_modules": [
+    "tests/test_case_pg_vertical_integration.py"
+  ],
+  "ordinary_profile": {
+    "window": "extra-backend",
+    "identity": "tests/test_case_pg_vertical_integration.py::test_catalog_fix_and_case_cancellation_share_owned_database",
+    "outcome": "FAIL",
+    "failure": "psycopg.errors.UndefinedObject: role \"pwci_writer\" does not exist",
+    "line": 24,
+    "raw_failure_retained": true
+  },
+  "specialized_profile": {
+    "outcome": "NOT_RUN",
+    "complete_selection": 27,
+    "reason": "Original exact once hosted/branch/approval-only entry is inapplicable here. Normal pgserver fixture has no original OwnedPG writer role/root/socket identity. No role creation, gate override, approval edit or dedicated profile execution performed."
+  },
+  "original_protocol_sources_unchanged": {
+    "tests/test_case_pg_vertical_integration.py": "ac24f4178fc16d8e9df6bb533695e04ffbcb7e2248432ba5dc35e8abd760dc78",
+    "tests/conftest.py": "f660a26e7707bdfc82d2a62feda73e50a0e525d3203da45b6c7b7a5379e4cbb7",
+    "scripts/case_pg_vertical/probe.py": "277b69fea1b8a48e14272e6e4f3f723ecedf2859ca3c9e76157244f5889568a8",
+    "scripts/case_pg_vertical/owned_pg.py": "74e8139c0bd19a6b428023ce9c08d4d4f654f79678cfc77986f74e2cf314c9e9",
+    "scripts/case_pg_vertical/bootstrap.py": "de76c368ab637af481a4a58026ec341950ccaab12839281dbd85284f4e779ce4",
+    "scripts/case_pg_vertical/selection.json": "9f6d0024daf319dcbf7833b9e46ec820b306302912bc50238d16e168d14b8a13",
+    "scripts/case_pg_vertical/approval.json": "6571cb48578478709ba9a6f0d70dac35181a7f161df236cba62bf6a2d1877918"
+  },
+  "evidence_sha256": {
+    ".runtime/plan-reapproval-final/extra-backend.json": "42359b18aafb144df5b88c2f62c934c3579db142621314138740b0c0405dfa28",
+    ".runtime/plan-reapproval-final/extra-backend.xml": "7f3b07e6e3d97d8010fa338028ab2fb00714149039e4a83963b3325370212b0d",
+    ".runtime/plan-reapproval-final/extra-backend-collection.json": "e2c89c6466f7182fe9d4ea3a2320420a8546cc0e97d528841a796be38f47de13"
+  },
+  "scope": "One complete single-test unchanged module excluded from passing denominator; never rewrite actual FAIL as SKIP/NOT_RUN. Initial frozen134/3643 plan remains. All remaining modules and new54 must independently pass."
+}

@@ -1,0 +1,11 @@
+Only after actual ARCHIVE_READY, if GitHub remains authentication-blocked:
+.venv/bin/python .runtime/plan-reapproval-archive-audit/run_local_supervised.py --ready .runtime/plan-reapproval-delivery/archive-ready.json
+Only after supervisor exit0, inspect local-integrity-v1/local-integrity.json and then:
+.venv/bin/python .runtime/plan-reapproval-archive-audit/seal_local_outputs.py
+Publish exact files named by seal-local.json.public_sha256; copy seal-local.json separately unchanged.
+Top-level link targets to copy from this outside directory:
+local-integrity.json (exact alias of local-integrity-v1/local-integrity.json)
+seal-local.json
+Keep local-integrity-v1/ and all manifest paths relative to the public audit archive root.
+Never label this result full gate PASS, remote verified, pushed, or final delivery completed.
+Do not execute any command in this file before explicit Ready.

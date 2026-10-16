@@ -1,0 +1,31 @@
+"""Prepared fallback: local archive checks only. Never a remote/final-gate PASS."""
+from pathlib import Path
+from datetime import datetime,timezone
+import argparse,json,traceback
+import final_gate as audit
+
+def main():
+    parser=argparse.ArgumentParser()
+    parser.add_argument('--ready',required=True)
+    parser.add_argument('--run',default='local-integrity-v1')
+    args=parser.parse_args()
+    assert args.run.startswith('local-integrity-') and '/' not in args.run and '\\' not in args.run
+    ready_path=audit.ROOT/args.ready;ready_raw=ready_path.read_bytes();ready=json.loads(ready_raw)
+    assert ready.get('status')=='ARCHIVE_READY','requires actual final sealed archive and explicit Ready'
+    config=audit.load(str((audit.OWN/'audit-config-prepared.json').relative_to(audit.ROOT)))
+    blocked_path=config['remote_auth_failure_log'];blocked_raw=(audit.ROOT/blocked_path).read_bytes()
+    assert b'could not read Username for' in blocked_raw and b'https://github.com' in blocked_raw
+    out=audit.OWN/args.run;out.mkdir(exist_ok=False)
+    audit.save(out,'execution-input.json',dict(ready=ready,ready_path=args.ready,ready_sha256=audit.sha(ready_raw),config=config,verification_mode='LOCAL_INTEGRITY_ONLY',script_sha256=audit.sha((audit.OWN/'final_gate.py').read_bytes()),local_runner_sha256=audit.sha(Path(__file__).read_bytes()),transform_sha256=audit.sha((audit.OWN/'independent_transform.py').read_bytes()),inventory_sha256=audit.sha((audit.OWN/'inventory_rules.py').read_bytes()),profile_gap_sha256=audit.sha((audit.OWN/'profile_gap.py').read_bytes()),remote_auth_failure_log=blocked_path,remote_auth_failure_sha256=audit.sha(blocked_raw)))
+    try:
+        result=audit.gate(config,ready,out,args.ready,verification_mode='LOCAL_INTEGRITY_ONLY')
+        assert result['status']=='LOCAL_INTEGRITY_ONLY' and result['remote_status']=='NOT_VERIFIED_AUTH_BLOCKED'
+        assert result['baseline_remote_refs_unchanged'] is None
+        result.update(final_gate_pass=False,remote_verification_complete=False,delivery_or_push_performed=False,utc=datetime.now(timezone.utc).isoformat())
+    except Exception as error:
+        result=dict(status='LOCAL_INTEGRITY_CHECK_FAILED',final_gate_pass=False,remote_verification_complete=False,error_type=type(error).__name__,reason=str(error),traceback=traceback.format_exc())
+        audit.save(out,'local-integrity.json',result)
+        raise
+    audit.save(out,'local-integrity.json',result)
+    print(json.dumps(result))
+if __name__=='__main__':main()
