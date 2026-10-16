@@ -14,7 +14,7 @@ OUT=Path(os.environ.get('STRICT_P345_ARTIFACT_ROOT','.runtime/release-p345-root/
 
 
 def test_actual_chromium_new_strict_release_offer_accept_manual_receipt_close_verify_outputs(strict_p2):
-    x=strict_p2;t=x['t'];p=x['p'];f=x['f'];calls=[];errors=[];contexts=[];result=None
+    x=strict_p2;t=x['t'];p=x['p'];f=x['f'];calls=[];errors=[];contexts=[];result=None;verify_recoveries=[]
     with actual_http(t['app']) as (api,python_requests),sync_playwright() as pw:
         browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
         base=str(api.base_url).rstrip('/')
@@ -91,7 +91,17 @@ def test_actual_chromium_new_strict_release_offer_accept_manual_receipt_close_ve
             checks=[c for c in posts if c['body'].get('action')=='VERIFY']
             assert len(checks)==3 and [c['body']['expected_revision'] for c in checks]==sorted(set(c['body']['expected_revision'] for c in checks))
             assert all(len(c['body']['expected_source_sha256'])==64 for c in checks)
-            assert all(any(r['method']=='GET' and r['path'].endswith('/command-recovery') and r['request_key']==c['request_key'] for r in calls) for c in checks)
+            # Ordinary page GETs are current reads without an original key.
+            # Explicit API observation uses only the existing VERIFY key recovery;
+            # it is separately disclosed from the DOM commands above.
+            before_recovery=case_history(f[1],p['preparation_id'])
+            for check in checks:
+                proof=ok(api.get('/api/preparations/'+p['preparation_id']+'/service-case-plan/command-recovery',
+                    headers=headers(f[2],key=check['request_key'])))
+                assert proof['status']=='COMMITTED' and not proof['automatically_replayed']
+                assert proof['event']['request_key']==check['request_key'] and proof['event']['action']=='VERIFY'
+                verify_recoveries.append(dict(status=proof['status'],event=proof['event'],read_only=proof['read_only']))
+            assert case_history(f[1],p['preparation_id'])==before_recovery
             close=next(c['body'] for c in posts if c['body'].get('action')=='CLOSE_LOCAL_RECORD')
             assert close['expected_revision']==fresh_local['revision']
             assert close['expected_snapshot_sha256']==fresh_local['current_snapshot_sha256']
@@ -104,7 +114,7 @@ def test_actual_chromium_new_strict_release_offer_accept_manual_receipt_close_ve
                 actual_browser='INSTALLED_CHROMIUM',browser_version=browser.version,actual_html_http_asgi_owned_pg=True,
                 browser_scope='P2 initial state -> offer/ACCEPT -> VERIFY P3 -> manual SUBMIT/ACK -> VERIFY P4 -> REVALIDATE/fresh GET/CLOSE -> VERIFY P5 -> cold six outputs/worklist',
                 fixture_scope='strict revision publication/catalog retirement/register/bind/new inputs/assignment/material REVIEW+CONFIRM/ADOPT/P1/approval/resource delivery/P2 before browser',
-                calls=calls,python_requests=python_requests,result=result,page_errors=errors,real_model_calls=0,
+                calls=calls,python_requests=python_requests,explicit_api_verify_recoveries=verify_recoveries,result=result,page_errors=errors,real_model_calls=0,
                 no_generic_dispatch_receipt_key_get=True,case_goal_completed=False),indent=2)+'\n')
             for ctx in contexts:ctx.close()
             browser.close()
