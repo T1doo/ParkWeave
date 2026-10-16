@@ -62,7 +62,7 @@ def test_late_actual_execution_never_replaces_new_context(preview_page,tmp_path,
   if route.request.method!='POST':route.continue_();return
   r=route.fetch();assert r.status==201;held.append((route,r))
  page.route('**/api/preparations/'+p['preparation_id']+'/execution-preview',hold);page.locator('#execution-preview-run').click();wait_held(page,held)
- if target=='case':open_page(page,f,p2)
+ if target=='case':change_case_with_pending_preview(page,p2,'execution')
  elif target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')
  else:page.locator('#request-current').fill('SYNTHETIC NEW PREVIEW DRAFT');page.locator('#request-current').dispatch_event('input')
  page.locator('#execution-preview-result').evaluate('(e)=>e.textContent="SYNTHETIC NEW PREVIEW CONTEXT"');before=snapshot(f);held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(150)
@@ -194,6 +194,12 @@ def change_case_with_pending_preview(page,p,kind):
  assert page.evaluate('(flow)=>flow!==null&&activeEntryWriteFlow===flow',flow)
  page.evaluate('(id)=>loadPlan(id)',p['preparation_id'])
  page.wait_for_function('(id)=>planView!==null&&planId===id',arg=p['preparation_id'])
+ # Base assertions require a real new-Case preview. Read the original component
+ # before probing the intentionally forbidden UI click; this is controlled setup.
+ if kind=='execution':
+  page.evaluate('()=>loadExecutionPreview(planNavigation())')
+  page.wait_for_function('(id)=>executionPreviewView?.preparation_id===id',arg=p['preparation_id'])
+  view=page.evaluate_handle('executionPreviewView')
  assert page.evaluate("entryReadAllowed('bounded-planning-read')") is False
  assert page.evaluate('(flow)=>activeEntryWriteFlow===flow',flow)
  assert page.evaluate('JSON.stringify({...localStorage})')==storage
@@ -205,7 +211,10 @@ def change_case_with_pending_preview(page,p,kind):
   assert page.evaluate("entryReadAllowed('bounded-planning-read')") is False
   assert page.evaluate('(flow)=>activeEntryWriteFlow===flow',flow)
   assert page.evaluate('JSON.stringify({...localStorage})')==storage
-  assert page.evaluate(kind+'ExecutionPreviewView===null')
+  if kind=='execution':assert page.evaluate('(view)=>executionPreviewView===view',view)
+  else:assert page.evaluate(kind+'ExecutionPreviewView===null')
   assert '尚未确定' in page.locator('#page-feedback').inner_text()
   assert requests==[]
- finally:page.remove_listener('request',observe);flow.dispose()
+ finally:
+  page.remove_listener('request',observe);flow.dispose()
+  if kind=='execution':view.dispose()
