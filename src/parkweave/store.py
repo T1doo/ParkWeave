@@ -682,10 +682,18 @@ class Store:
                                 'evidence':[{'id':str(row['evidence_id']),'fact_id':str(row['id']),'source_ref':row['source_ref'],
                                              'value':row['value'],'unit':row['unit'],'valid_from':row['valid_from'].isoformat(),
                                              'valid_until':row['valid_until'].isoformat(),'applicable_at_assessment':row in valid,
+                                             'source_excerpt':row['source_excerpt'],
                                              'revision':row['revision'],'fingerprint':row['fingerprint'],
                                              'source_kind':row['source_kind']} for row in all_rows]})
             receipt={'source':'LOCAL_FACT_ASSESSMENT','assessed_at':now.isoformat(),'purpose':'SERVICE_PREPARATION',
-                     'results':results,'qualification_decision':'NOT_EVALUATED'}
+                     'assessment_goal':data.goal,'results':results,'qualification_decision':'NOT_EVALUATED',
+                     'verification':'UNVERIFIED','next_step_conditions':[
+                         {'field':item['field'],'condition':{
+                             'MISSING_EVIDENCE':'PROVIDE_SOURCED_EVIDENCE',
+                             'EXPIRED_OR_NOT_YET_VALID':'PROVIDE_CURRENT_SOURCED_EVIDENCE',
+                             'CONFLICTING_EVIDENCE':'RESOLVE_CONFLICT_WITH_SOURCED_EVIDENCE',
+                             'CONSISTENT_EVIDENCE':'AUTHORITATIVE_VERIFICATION_REQUIRED',
+                         }[item['reason']]} for item in results]}
             c.execute("UPDATE operations SET state='VERIFIED',receipt=%s WHERE id=%s",(Jsonb(receipt),op['id']))
             c.execute("UPDATE runs SET state='SUCCEEDED',success_scope='FACT_EVIDENCE_ASSESSED',lease_until=NULL,revision=revision+1 WHERE id=%s",(r['id'],))
             self.event(c,r['id'])

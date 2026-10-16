@@ -1,6 +1,9 @@
 """Ordinary configured product API plus read-only local launch diagnostics."""
 from fastapi import Header
 from fastapi.responses import HTMLResponse
+from pathlib import Path
+import re
+from typing import Literal
 from parkweave.api import configured_app
 from parkweave.store import Store, Denied
 import os
@@ -14,6 +17,7 @@ PAGE = '''<!doctype html><html lang="zh-CN"><meta charset="utf-8">
 <button id="check">只读核对当前范围</button><pre id="scope" role="status"></pre>
 <p>在 setup 输出目录的 .runtime/synthetic-sessions.json 中本机私下读取 fixture-a 会话，勿粘贴到日志或 URL。此页不保存会话。</p>
 <a href="/">打开原确认与办理页面</a>
+<p><a href="/local-facts">来源事实输入与历史一致性检查</a></p>
 <ol><li>在原页面输入同一会话和本次目标，点击“创建本地办理记录”。</li><li>点击前核对目标；“创建本地办理记录”会提交原本地动作，随后记录原运行编号。</li><li>重启后重新输入会话，使用“找回我的本地办理记录”或原运行编号读取；读取不重复提交。</li></ol>
 <h2>当前阻断</h2><p>完整新 Case 的获派执行者、可信服务目录和计划批准跨进程接线尚无普通运行时路径。不会借用测试 fixture、自动 assignment、重建 issued 证明或把 Mock 批准当事实。完整 P1–P5 与正式 AT-35 仍未签收。Windows、浏览器全链、真实模型、生产均未由本启动器验收。</p>
 <script>let generation=0;const token=document.getElementById('session'),out=document.getElementById('scope');token.oninput=()=>{generation++;out.textContent='';};document.getElementById('check').onclick=async()=>{const g=++generation;out.textContent='正在读取';try{const r=await fetch('/api/local-entry/scope',{headers:{Authorization:'Bearer '+token.value}});if(g!==generation)return;if(!r.ok)throw Error('当前会话或权限不可用；保持阻断');const x=await r.json();if(g===generation)out.textContent='角色：'+x.role+'；本地创建：'+(x.can_submit_local_case?'当前授权允许，原提交仍会复核':'当前不可用')+'；完整办理：阻断；目标完成：未证明';}catch(e){if(g===generation)out.textContent=e.message;}};</script></html>'''
@@ -27,6 +31,35 @@ def app():
     @application.get('/local-entry', response_class=HTMLResponse)
     def entry():
         return PAGE
+
+    @application.get('/local-facts', response_class=HTMLResponse)
+    def local_facts():
+        return Path(__file__).with_name('local_facts_web.html').read_text()
+
+    @application.get('/api/local-facts/requests/{request_key}')
+    def fact_request(request_key: str, kind: Literal['FACT', 'ASSESSMENT'],
+                     field: Literal['region', 'employees', 'service_need'] = 'region',
+                     authorization: str | None = Header(default=None)):
+        """Exact owner-key GET only. NOT_FOUND never authorizes a retry."""
+        from fastapi import HTTPException
+        if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', request_key):
+            raise HTTPException(422, 'invalid original request key')
+        if not authorization or not authorization.startswith('Bearer '):
+            raise HTTPException(401, 'session required')
+        with store.connect() as c:
+            c.execute('SET TRANSACTION READ ONLY')
+            p = store.auth(c, authorization[7:], lock=True)
+            store.check_fields(c, p, [field] if kind == 'FACT' else ['region', 'employees', 'service_need'], 'READ')
+            scope = (p['id'], p['park_id'], p['org_id'], request_key)
+            if kind == 'FACT':
+                row = c.execute('SELECT id,fingerprint FROM fact_assertions WHERE principal_id=%s AND park_id=%s AND org_id=%s '
+                                'AND request_key=%s AND field_name=%s', (*scope, field)).fetchone()
+            else:
+                row = c.execute("SELECT id,fingerprint FROM runs WHERE principal_id=%s AND park_id=%s AND org_id=%s AND request_key=%s "
+                                "AND namespace='SYNTHETIC' AND input->>'action'='facts.assess' "
+                                "AND NOT coalesce((input->>'candidate_review')::boolean,false)", scope).fetchone()
+        return dict(status='COMMITTED' if row else 'NOT_FOUND', kind=kind,
+                    record_id=str(row['id']) if row else None, fingerprint=row['fingerprint'] if row else None, read_only=True, automatically_replayed=False)
 
     @application.get('/api/local-entry/scope')
     def scope(authorization: str | None = Header(default=None)):
