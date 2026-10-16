@@ -1,0 +1,66 @@
+{
+  "review": "independent read-only source review and owned real launcher smoke",
+  "git_base": "dc7f998d7b0fd84142da5633d511a9bc1a8084ba",
+  "owned_state": "/tmp/parkweave-local-case-dgxm7uzl",
+  "processes_stopped": true,
+  "checks": [
+    {
+      "name": "setup",
+      "result": "PASS"
+    },
+    {
+      "name": "serve health owned PID",
+      "result": "PASS"
+    },
+    {
+      "name": "scope missing/invalid/fixture-a",
+      "result": "PASS 401/403/200; complete chain explicitly BLOCKED"
+    },
+    {
+      "name": "original HTTP POST /api/runs then original worker",
+      "result": "PASS LOCAL_CASE_CREATED, NEEDS_INPUT, NOT_SUBMITTED, NO_EVIDENCE",
+      "run_id": "2c8eebc4-d1ca-4f1f-aab7-259716e45170"
+    },
+    {
+      "name": "SIGTERM owner launcher",
+      "result": "PASS exit0; exact children stopped"
+    },
+    {
+      "name": "immediate same-port restart before SO_REUSEADDR fix",
+      "result": "FAIL OSError due TIME_WAIT; reported root and fixed by root"
+    },
+    {
+      "name": "alternate-port restart persisted GET and list",
+      "result": "PASS same result, read_only=true, automatically_replayed=false"
+    },
+    {
+      "name": "invalid JSON marker shape [] before fix",
+      "result": "FAIL unsanitized AttributeError; raw failure retained separately"
+    }
+  ],
+  "findings": [
+    {
+      "id": "R1",
+      "severity": "medium",
+      "issue": "bare socket bind probe rejects immediate same-port restart after completed HTTP requests",
+      "resolution": "root reports SO_REUSEADDR added; frozen retest pending"
+    },
+    {
+      "id": "R2",
+      "severity": "medium",
+      "issue": "new entry instruction asks nonexistent second preview/确认本地动作 button; original intake is one explicit POST submit",
+      "resolution": "reported root; pending"
+    },
+    {
+      "id": "R3",
+      "severity": "medium",
+      "issue": "marker JSON type and psycopg errors can escape sanitized CLI block diagnostics",
+      "resolution": "reported root; pending"
+    }
+  ],
+  "file_sha_at_record": {
+    "scripts/local_case_entry.py": "c57b163ca05d1a127ffa18ca43e2977b8218594d8f4284d9b4f1775b129b1f1c",
+    "scripts/local_case_entry_app.py": "5fa860dc1806522802402ddd74e5d1c3ed97991c9df796d63d0e85c5c02497bd",
+    "tests/test_local_case_entry.py": "243fe1d7a738cee7a87cedcb9d5e49ad4ea401aa7757b24ea8d665de3a643265"
+  }
+}
