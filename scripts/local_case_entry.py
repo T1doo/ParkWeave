@@ -44,7 +44,7 @@ def state_path(value):
 @contextmanager
 def locked_state(value):
     root = state_path(value)
-    with (root / 'entry.lock').open('a') as lock:
+    with (root / 'entry.lock').open('r+') as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError:
@@ -57,6 +57,7 @@ def setup():
         raise Denied('Linux synthetic fixture only')
     # Original receipt requires a newly created, live, empty cluster under /tmp.
     root = Path(tempfile.mkdtemp(prefix='parkweave-local-case-', dir='/tmp'))
+    (root / 'entry.lock').touch(mode=0o600, exist_ok=False)
     server = None
     try:
         with locked_state(root):

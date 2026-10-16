@@ -198,6 +198,20 @@ def test_foreign_symlink_and_concurrent_state_refused_without_repair(tmp_path):
     assert (root / 'local-case.json').read_bytes() == marker
 
 
+def test_foreign_matching_name_private_directory_is_untouched(tmp_path):
+    import tempfile
+    root = Path(tempfile.mkdtemp(prefix='parkweave-local-case-', dir='/tmp'))
+    try:
+        assert list(root.iterdir()) == []
+        result = subprocess.run([sys.executable, '-m', 'scripts.local_case_entry', 'serve',
+                                 '--state-dir', str(root), '--port', '18793'], cwd=tmp_path,
+                                env=ENV, capture_output=True, text=True, timeout=10)
+        assert result.returncode == 1 and 'Traceback' not in result.stderr
+        assert list(root.iterdir()) == []
+    finally:
+        root.rmdir()
+
+
 @pytest.mark.parametrize('broken', [[], {'namespace': 'FOREIGN'}, 'wrong-system-id', 'unconfirmed-stop'])
 def test_bad_marker_or_unconfirmed_stop_blocks_without_repair(tmp_path, broken):
     root = fresh(tmp_path)
