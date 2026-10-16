@@ -1,0 +1,45 @@
+{
+  "scope": "NODE_VM_ONLY_NOT_BROWSER_PG",
+  "checks": [
+    {
+      "script": "tests/case_cancellation_offline.js",
+      "mode": "after_cold_recovery",
+      "result": {
+        "mode": "after_cold_recovery",
+        "checks": 5,
+        "scope": "NODE_VM_DOM_FETCH_DOUBLES_ONLY"
+      },
+      "returncode": 0
+    },
+    {
+      "script": "tests/case_cancellation_offline.js",
+      "mode": "after_revoked",
+      "result": {
+        "mode": "after_revoked",
+        "checks": 5,
+        "scope": "NODE_VM_DOM_FETCH_DOUBLES_ONLY"
+      },
+      "returncode": 0
+    },
+    {
+      "script": "tests/case_cancellation_reconciliation_offline.js",
+      "mode": "cold_recovery",
+      "result": {
+        "mode": "cold_recovery",
+        "checks": 4,
+        "browser_attempts": 0
+      },
+      "returncode": 0
+    },
+    {
+      "script": "tests/case_cancellation_reconciliation_offline.js",
+      "mode": "resource_release_and_history",
+      "result": {
+        "mode": "resource_release_and_history",
+        "checks": 5,
+        "browser_attempts": 0
+      },
+      "returncode": 0
+    }
+  ]
+}

@@ -1,3 +1,11 @@
+## 2026-10-16 F2-T05/AT18：schema33接单后首次回执前明确取消
+
+冻结源码 `b46ea7c9c4379d3565f413077a1a5b339a8669d2`。复用原before_receipt合同和完整历史/来源/fence，当前owner明确确认后停止后续写入，保留六目标/P1–P5、责任、审批、资源占用及原事件；不释放、不重批、不复活。只读原键恢复经当前READ鉴权，撤EXECUTE可核对、撤READ拒绝；转派和回执后reconciliation门保持。
+
+11个完整直接模块508唯一项PASS；独占两锁序、回滚、幂等/撤权/跨owner、实际HTML/Chromium/ASGI/自有PG、冻结独审及失败保全见[本批报告](Schema33BeforeReceiptCancellation-20261016.md)。原335个PG项的后端字节与冻结一致，UI窄修另完整复验；原99旧模块不重跑，不声称全仓/正式AT通过。
+
+冷恢复限同进程原issued双桥重挂；任意owner SQL、跨进程恢复、Windows/广浏览器/正式AT/真实模型/生产和专用PG27缺口保持。下一关键路径为更广已接单来源变更的收束/独立重批/继续履约合同；模型0，无main写入/强推/部署/新费用或权限。下方历史时点原字节保留。
+
 ## 2026-10-16 F3-T03：P3从未接单的明确历史收束
 
 冻结源码 `c91bbea1e996c6608665bb76dd65218f2ba542c2`；独立schema3资格保留原OFFER/REOFFER及明确DECLINE/WITHDRAW历史、epoch与占用，不复用KNOWN_NOT_STARTED。OFFERED须原授权明确收束，ACCEPT/UNKNOWN拒绝，提示不作事实或授权。沿原完整ADOPT、新P1、明确新批准、资源提交和P2–P5业务/VERIFY到六目标证据/清单，仍recorded_states_only。
