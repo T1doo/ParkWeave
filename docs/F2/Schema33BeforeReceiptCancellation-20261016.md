@@ -1,3 +1,5 @@
+范围更正（2026-10-16）：旧99排除集合已补跑2模块248项，当前剩97模块/原基线2407节点。原335项早期PG仅证明后端，最终web另由133客户端与5浏览器接续验证；不跨批声称全仓通过。57c19eee时点公档、审计与失败原件保持不变，本更正不重签历史证据。
+
 # schema33 接单后、首次回执前的明确取消与冷核对
 
 冻结源码 `b46ea7c9c4379d3565f413077a1a5b339a8669d2`，接续 `75adba254a6455258b36d3b3e2f5707196548ec7`。开发分支 `dev/f2-schema33-before-receipt-cancel-20261016`，main只读。
@@ -32,6 +34,6 @@
 
 开发时夹具缺依赖/目标字段拼写、目录证明拒绝、冷Store缺原审批桥、故障trigger破坏冻结目录、缺DOM classList、浏览器route清理等失败原件均保留。首个冻结独测34P1F是测试遗漏原P3 VERIFY，原SUBMIT因此409；保全v1后仅补原VERIFY与诊断，新冻结版完整35项重跑通过。未修改产品门、权限或等待预算。[失败原件hash账本](evidence/schema33-before-receipt-cancel-20261016/cancel33-root/failure-ledger.json)及[全部本轮primary原件封印](evidence/schema33-before-receipt-cancel-20261016/cancel33-delivery/public-primary-seals.json)可核对；私有登记、完整失败原件与数据库保留本地，公档只发布有界文本证据与原件摘要，已知合成令牌按完整登记值处理。
 
-“直接writer拒绝”指原Python服务函数绕HTTP调用；不承诺阻止任意数据库owner SQL。schema33历史已有回执的 reconciliation、更广已接单来源迁移/继续履约合同仍未开放。原99个旧模块本轮未执行；不宣称全仓回归。Windows及其浏览器、广覆盖浏览器、正式AT、真实模型B0–B2、生产、跨进程恢复和原专用PG27前提均NOT_RUN。远端工作流分支过滤不含本开发分支，未改工作流或调度CI，CI NOT_RUN。
+“直接writer拒绝”指原Python服务函数绕HTTP调用；不承诺阻止任意数据库owner SQL。schema33历史已有回执的 reconciliation、更广已接单来源迁移/继续履约合同仍未开放。旧99排除集合中，本批已完整补跑before_receipt（107项）及reconciliation（141项），剩97模块/按原基线2407节点未重跑；两批不合并声称全仓通过；不宣称全仓回归。Windows及其浏览器、广覆盖浏览器、正式AT、真实模型B0–B2、生产、跨进程恢复和原专用PG27前提均NOT_RUN。远端工作流分支过滤不含本开发分支，未改工作流或调度CI，CI NOT_RUN。
 
 下一关键路径是已接单来源变更的明确收束、独立重批与继续履约合同；已有P4/P5效果、F5备份恢复和正式AT前提另行处理。继续按一周目标推进。模型调用0，无main修改、强推、部署、新费用、凭据、安全权限或绕访问拒绝。
