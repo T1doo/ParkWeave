@@ -64,6 +64,7 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
             p=store.auth(c,token(authorization),lock=True)
             store.check_capability(c,p,'READ')
         return dict(enabled=getattr(store,'_isolated_plan_approval',None) is not None,
+            source_reapproval_enabled=getattr(getattr(store,'_isolated_plan_approval',None),'source_reapproval_enabled',False) is True,
             production_execution_enabled=False,formal_release=False,role=p['role'])
 
     @app.get('/api/preparations/{preparation_id}/plan-approval')
@@ -83,7 +84,7 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         return approval_candidate().read(store,token(authorization),preparation_id,resource_key(request_key))
 
     @app.post('/api/preparations/{preparation_id}/resource-delivery/preview')
-    def delivery_preview(preparation_id: UUID,data: bundles.Bundle,authorization: str | None=Header(default=None)):
+    def delivery_preview(preparation_id: UUID,data: delivery.PreviewBundle,authorization: str | None=Header(default=None)):
         return delivery.preview(store,token(authorization),preparation_id,data)
 
     @app.post('/api/preparations/{preparation_id}/resource-delivery',status_code=201)

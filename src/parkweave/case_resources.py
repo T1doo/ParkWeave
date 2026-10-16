@@ -103,6 +103,17 @@ def _bind_locked(store,c,p,parent,id,key,data,fp,*,delivery_binding=None,plan_ap
     case=c.execute('SELECT id,run_id FROM cases WHERE id=%s FOR UPDATE',(parent['case_id'],)).fetchone()
     if not case or case['run_id']!=parent['run_id']:raise Denied('Case Run binding unavailable')
     if old:return _view(c,p,parent,rows,old,store=store)
+    approval=getattr(store,'_isolated_plan_approval',None)
+    if rows and approval is not None and getattr(approval,'source_reapproval_enabled',False) and str(parent['id']) in approval.ids:
+        approval._scope(c,p,parent)
+        if delivery_binding is None or plan_approval is None:raise Conflict('explicit source reapproval delivery required')
+        from .service_plan_approval import verify_receipt
+        receipt=c.execute('SELECT payload FROM synthetic_resource_combination_receipts WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+        if not receipt or receipt['payload'].get('delivery_binding')!=delivery_binding:raise Conflict('original reapproval delivery receipt required')
+        verify_receipt(parent,receipt['payload'],plan_approval)
+        anchor=delivery_binding.get('context',{}).get('source_reapproval',{})
+        if anchor.get('link_id')!=str(rows[-1]['id']) or anchor.get('link_revision')!=data.expected_link_revision:
+            raise Conflict('exact latest source reapproval anchor required')
     projection=None
     if data.expected_comparison_sha256 is not None:
         from . import resource_plan_binding as binding

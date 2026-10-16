@@ -20,6 +20,11 @@ from .store import Conflict, Denied
 
 SCOPE = 'ISOLATED_SYNTHETIC_CASE_RESOURCE_APPROVAL_V1'
 PURPOSE = 'CASE_RESOURCE_DELIVERY'
+REAPPROVAL_PURPOSE = 'CASE_RESOURCE_REAPPROVAL'
+
+
+def purpose(data):
+    return REAPPROVAL_PURPOSE if data.expected_link_revision is not None else PURPOSE
 LIMIT = 64
 OBJECT_LIMIT = 8
 COL = 'candidate_plan_approvals'
@@ -129,7 +134,7 @@ def _ledger(parent):
                     or not isinstance(e['binding'], dict)): raise ValueError()
                 b = e['binding']
                 if (set(b) != {'scope','purpose','context','plan_revision','execution_identity','authority','authority_sha256','materials','members','resource_revisions','source_versions','valid_until','contract_scope_ids'}
-                    or b.get('purpose') != PURPOSE or b.get('scope') != SCOPE
+                    or b.get('purpose') != purpose(data.delivery) or b.get('scope') != SCOPE
                     or b['authority_sha256'] != cp._hash(b['authority'])
                     or b['valid_until'] != data.delivery.valid_until.isoformat()
                     or b['plan_revision'] != data.delivery.expected_plan_revision
@@ -138,6 +143,22 @@ def _ledger(parent):
                     or any(str(parent[k]) != b['context'][v] for k,v in
                         [('id','preparation_id'),('case_id','case_id'),('run_id','run_id'),
                          ('owner_id','owner_id'),('park_id','park_id'),('org_id','org_id')])): raise ValueError()
+                anchor=b['context'].get('source_reapproval')
+                if data.delivery.expected_link_revision is None:
+                    if 'source_reapproval' in b['context']:raise ValueError()
+                else:
+                    anchor_keys={'link_id','link_revision','snapshot_sha256','previous_delivery_context','previous_approved_plan_revision',
+                        'approved_plan_revision','source_adoption_event_id','source_adoption_revision','source_adoption_sha256','source_change_sha256'}
+                    if (not isinstance(anchor,dict) or set(anchor)!=anchor_keys
+                        or type(anchor['link_revision']) is not int or anchor['link_revision']!=data.delivery.expected_link_revision
+                        or type(anchor['approved_plan_revision']) is not int or anchor['approved_plan_revision']!=data.delivery.expected_plan_revision
+                        or type(anchor['previous_approved_plan_revision']) is not int or type(anchor['source_adoption_revision']) is not int
+                        or not 1<=anchor['previous_approved_plan_revision']<anchor['source_adoption_revision']<=anchor['approved_plan_revision']<=64
+                        or not isinstance(anchor['previous_delivery_context'],dict)
+                        or anchor['previous_delivery_context'].get('plan_id')!=b['context'].get('plan_id')):raise ValueError()
+                    for key in ('link_id','source_adoption_event_id'):UUID(anchor[key])
+                    for key in ('snapshot_sha256','source_adoption_sha256','source_change_sha256'):
+                        if not isinstance(anchor[key],str) or re.fullmatch('[a-f0-9]{64}',anchor[key]) is None:raise ValueError()
                 items[aid] = dict(id=aid, state='PROPOSED', proposal=e, approval=None, consumption=None)
             elif action in ('APPROVE', 'REVOKE'):
                 data = Command.model_validate(request)
@@ -153,6 +174,10 @@ def _ledger(parent):
             elif action == 'CONSUME':
                 item = items[aid]
                 data = delivery.Deliver.model_validate(request['delivery'])
+                # First delivery can consume once only. A later association
+                # cannot strip its reapproval profile and become another first.
+                prior_consumed=any(i['consumption'] is not None for i in items.values())
+                if (data.expected_link_revision is None and prior_consumed) or (data.expected_link_revision is not None and not prior_consumed):raise ValueError()
                 if (set(request) != {'action', 'delivery'} or request['action'] != action
                     or str(data.approval_id) != aid or item['state'] != 'APPROVED'
                     or e['binding'] is not None or not isinstance(e['receipt'], dict)
@@ -168,8 +193,10 @@ def _ledger(parent):
 
 
 class IsolatedPlanApproval:
-    def __init__(self, owner_store=None, fixture_proof=None, *, preparation_ids=(), enabled_for_isolated_tests=False):
+    def __init__(self, owner_store=None, fixture_proof=None, *, preparation_ids=(), enabled_for_isolated_tests=False, enabled_for_source_reapproval_tests=False):
         self.enabled = enabled_for_isolated_tests is True
+        self.source_reapproval_enabled=enabled_for_source_reapproval_tests is True
+        if self.source_reapproval_enabled and not self.enabled:raise Denied('original isolated Approval must be enabled')
         self.owner, self.proof = owner_store, fixture_proof
         self.ids = frozenset(str(UUID(str(id))) for id in preparation_ids)
         if not self.enabled: return
@@ -280,6 +307,8 @@ class IsolatedPlanApproval:
                 raise Conflict('Approval actual delivery members mismatch')
             context, issues = delivery._context(store,c,p,parent)
             if issues: raise Conflict('Approval prerequisite changed before commit')
+            if data.expected_link_revision is not None:
+                context=delivery._source_reapproval(store,c,p,parent,data,context,consumed=consumed)
             hs = [dict(h,state='HELD',combination_id=None) for h in hs]
             if parent['service_case_plan']['revision'] != data.expected_plan_revision:
                 raise Conflict('Approval plan changed before commit')
@@ -299,7 +328,7 @@ class IsolatedPlanApproval:
                 ([h['resource_id'] for h in hs],)).fetchall(),
             run=c.execute('SELECT id,xmin::text row_version FROM runs WHERE id=%s',(parent['run_id'],)).fetchone())
         if catalog_proof is not None:versions['cooperative_catalog']=catalog_proof
-        return cp._normal(dict(scope=SCOPE,purpose=PURPOSE,context=context,
+        return cp._normal(dict(scope=SCOPE,purpose=purpose(data),context=context,
             plan_revision=parent['service_case_plan']['revision'],execution_identity=identity,
             authority=authority,authority_sha256=cp._hash(authority),materials=slots,
             members=hs,resource_revisions=[rules[k] for k in sorted(rules,key=str)],source_versions=versions,
@@ -366,7 +395,9 @@ class IsolatedPlanApproval:
                     (p['id'],item['consumption']['key'])).fetchone()
                 if not r or r['fingerprint']!=item['consumption']['receipt']['fingerprint']:
                     raise Conflict('Approval original consumption receipt required')
-                verify_receipt(parent,r['payload'])
+                link=c.execute('SELECT revision FROM case_resource_links WHERE preparation_id=%s AND actor_id=%s AND request_key=%s',(parent['id'],p['id'],item['consumption']['key'])).fetchone()
+                if link is None:raise Conflict('Approval original consumption association required')
+                verify_receipt(parent,r['payload'],link_revision=link['revision'])
             if item['state'] in ('PROPOSED','APPROVED'):
                 data=Proposal.model_validate({k:v for k,v in e['request'].items() if k!='action'}).delivery
                 try:
@@ -378,7 +409,7 @@ class IsolatedPlanApproval:
                 except Denied: reason='CURRENT_AUTHORITY_REQUIRED'
                 except Conflict: reason='SOURCE_OR_PREREQUISITE_CHANGED_OR_EXPIRED'
             result.append(dict(id=item['id'],state=item['state'],current=current,current_available=current and item['state']=='APPROVED',reason=reason,
-                purpose=PURPOSE,plan_id=b['context']['plan_id'],plan_sha256=b['context']['plan_definition_sha256'],
+                purpose=b['purpose'],plan_id=b['context']['plan_id'],plan_sha256=b['context']['plan_definition_sha256'],
                 binding_sha256=cp._hash(b),authority_sha256=b['authority_sha256'],execution_identity=b['execution_identity'],
                 service_id=b['context']['service_id'],service_version=b['context']['service_version'],catalog_sha256=b['context']['catalog_sha256'],
                 materials=b['materials'],valid_until=b['valid_until'],members=[{k:h[k] for k in ('id','resource_id','resource_revision','starts_at','ends_at','quantity')} for h in b['members']],
@@ -461,9 +492,11 @@ class IsolatedPlanApproval:
         return parent
 
 
-def verify_receipt(parent,receipt,expected=None):
+def verify_receipt(parent,receipt,expected=None,*,link_revision=None):
+    if link_revision is not None and (type(link_revision) is not int or not 1<=link_revision<=64):raise Conflict('original plan Approval association revision required')
     proof=receipt.get('plan_approval')
     if proof is None:
+        if link_revision not in (None,1):raise Conflict('later delivery association requires original plan Approval')
         if expected is not None: raise Conflict('original plan Approval receipt reference required')
         if parent.get(COL) is not None or parent.get('candidate_plan_approval_head') is not None:
             _,items=_ledger(parent)
@@ -474,6 +507,10 @@ def verify_receipt(parent,receipt,expected=None):
     _,items=_ledger(parent)
     try:
         item=items[proof['id']]; event=item['consumption']; approval=item['approval']
+        if link_revision is not None:
+            original=Proposal.model_validate({k:v for k,v in item['proposal']['request'].items() if k!='action'}).delivery
+            required_revision=original.expected_link_revision+1 if original.expected_link_revision is not None else 1
+            if type(link_revision) is not int or not 1<=link_revision<=64 or link_revision!=required_revision:raise ValueError()
         if (set(proof)!={'scope','id','approval_event_id','consumption_event_id','binding_sha256'}
             or proof['scope']!=SCOPE or item['state']!='CONSUMED' or not event or not approval
             or proof['approval_event_id']!=approval['id'] or proof['consumption_event_id']!=event['id']

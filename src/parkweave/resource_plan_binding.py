@@ -108,9 +108,8 @@ def catalog_decision(c,parent,link):
     if link and link['snapshot'].get('delivery_binding'):
         receipts=c.execute("SELECT payload FROM synthetic_resource_combination_receipts WHERE combination_id=%s AND action='CONFIRM'",(link['combination_id'],)).fetchall()
         if len(receipts)!=1: raise Denied('original Case delivery receipt required')
-        if receipts[0]['payload'].get('plan_approval') is not None or link['snapshot'].get('plan_approval') is not None:
-            from .service_plan_approval import verify_receipt
-            verify_receipt(parent,receipts[0]['payload'],link['snapshot'].get('plan_approval'))
+        from .service_plan_approval import verify_receipt
+        verify_receipt(parent,receipts[0]['payload'],link['snapshot'].get('plan_approval'),link_revision=link['revision'])
     from .catalog_publication import snapshot as catalog_snapshot
     current=catalog_snapshot(c,parent)
     now_copy=_catalog_copy(current)
