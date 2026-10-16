@@ -1,0 +1,677 @@
+{
+  "baseline": "e0ffc81f2d29dbfd498c1a9a93206e689bd0b310",
+  "status": "DESIGN_ONLY_NOT_EXECUTED",
+  "fixed_predecessors": {
+    "P1": [],
+    "P2": [
+      "P1"
+    ],
+    "P3": [
+      "P2"
+    ],
+    "P4": [
+      "P3"
+    ],
+    "P5": [
+      "P4"
+    ]
+  },
+  "notes": [
+    "Expected sets are literal, not computed by implementation closure.",
+    "Rows UP13-UP16 intentionally use different retained per-consumer baselines.",
+    "None denotes result not specified by this row, never empty affected or evidence of PASS.",
+    "UNKNOWN original guards may add further blocker codes."
+  ],
+  "rows": [
+    {
+      "id": "UP01",
+      "scenario": "Identical before/current and dependency manifests",
+      "directly_changed": [],
+      "affected": [],
+      "preserved": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": "NO_ACTUAL_SOURCE_CHANGE",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP02",
+      "scenario": "Only P4 receipt hash observation changes",
+      "directly_changed": [
+        "P4"
+      ],
+      "affected": [
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1",
+        "P2",
+        "P3"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP03",
+      "scenario": "Only P3 dispatch revision observation changes",
+      "directly_changed": [
+        "P3"
+      ],
+      "affected": [
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1",
+        "P2"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP04",
+      "scenario": "Only P2 resource rule observation changes",
+      "directly_changed": [
+        "P2"
+      ],
+      "affected": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP05",
+      "scenario": "P2 resource and P4 receipt change together",
+      "directly_changed": [
+        "P2",
+        "P4"
+      ],
+      "affected": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP06",
+      "scenario": "P1 service rule and P4 receipt change together",
+      "directly_changed": [
+        "P1",
+        "P4"
+      ],
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP07",
+      "scenario": "Fact clarification change in P1 and P5",
+      "directly_changed": [
+        "P1",
+        "P5"
+      ],
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP08",
+      "scenario": "Material package change in all five observations",
+      "directly_changed": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP09",
+      "scenario": "Material plus fact plus service rule mixed changes at P1",
+      "directly_changed": [
+        "P1"
+      ],
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP10",
+      "scenario": "Resource collection manifest changes; source snapshots identical",
+      "directly_changed": [],
+      "affected": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP11",
+      "scenario": "Run access collection manifest changes; source snapshots identical",
+      "directly_changed": [],
+      "affected": [
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1",
+        "P2"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP12",
+      "scenario": "Both collection manifests change; receipt also changes",
+      "directly_changed": [
+        "P4"
+      ],
+      "affected": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP13",
+      "scenario": "P1 material before=current v2; P2 material before=v1,current=v2; other material observations current",
+      "directly_changed": [
+        "P2"
+      ],
+      "affected": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP14",
+      "scenario": "P1 fact before=current v2; only P5 fact before=v1,current=v2",
+      "directly_changed": [
+        "P5"
+      ],
+      "affected": [
+        "P5"
+      ],
+      "preserved": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP15",
+      "scenario": "Only P5 material observation changed; shared material node must not fan out to P1",
+      "directly_changed": [
+        "P5"
+      ],
+      "affected": [
+        "P5"
+      ],
+      "preserved": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP16",
+      "scenario": "Only P5 resource association observation changed; P2 current already verified",
+      "directly_changed": [
+        "P5"
+      ],
+      "affected": [
+        "P5"
+      ],
+      "preserved": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP17",
+      "scenario": "Only P5 local lifecycle changes",
+      "directly_changed": [
+        "P5"
+      ],
+      "affected": [
+        "P5"
+      ],
+      "preserved": [
+        "P1",
+        "P2",
+        "P3",
+        "P4"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP18",
+      "scenario": "Missing P3 retained baseline",
+      "directly_changed": null,
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": "THIS_CASE",
+      "adoption_blocker": "KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP19",
+      "scenario": "Current unmapped private field",
+      "directly_changed": null,
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": "THIS_CASE",
+      "adoption_blocker": "KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP20",
+      "scenario": "Dependency collection known=false",
+      "directly_changed": null,
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": "THIS_CASE",
+      "adoption_blocker": "KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP21",
+      "scenario": "Declaration version mismatch",
+      "directly_changed": null,
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": "THIS_CASE",
+      "adoption_blocker": "KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP22",
+      "scenario": "P5 sources container missing",
+      "directly_changed": null,
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": "THIS_CASE",
+      "adoption_blocker": "KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP23",
+      "scenario": "Malformed bounded resource list",
+      "directly_changed": null,
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": "THIS_CASE",
+      "adoption_blocker": "KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP24",
+      "scenario": "Current fact purpose unsatisfied",
+      "directly_changed": null,
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": "THIS_CASE",
+      "adoption_blocker": "KNOWN_CURRENT_SOURCE_GRAPH_REQUIRED",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_LITERAL"
+    },
+    {
+      "id": "UP25",
+      "scenario": "Receipt change with P1 manual lock untouched",
+      "directly_changed": [
+        "P4"
+      ],
+      "affected": [
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1",
+        "P2",
+        "P3"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "HTTP_PG_AND_HTML"
+    },
+    {
+      "id": "UP26",
+      "scenario": "Resource change with affected P3 manual lock",
+      "directly_changed": [
+        "P2"
+      ],
+      "affected": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": "AFFECTED_LOCK_REQUIRES_EXPLICIT_UNLOCK",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "HTTP_PG"
+    },
+    {
+      "id": "UP27",
+      "scenario": "Material change with stale MANUAL source choice",
+      "directly_changed": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": null,
+      "adoption_blocker": "OWNER_NOTE_SOURCE_CONFLICT_REQUIRES_DECISION",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "HTTP_PG_AND_HTML"
+    },
+    {
+      "id": "UP28",
+      "scenario": "Material change after explicit original KEEP_AND_CONTINUE with line obligations satisfied",
+      "directly_changed": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "HTTP_PG_AND_HTML"
+    },
+    {
+      "id": "UP29",
+      "scenario": "Material change after DEFER",
+      "directly_changed": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "affected": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [],
+      "unknown_scope": null,
+      "adoption_blocker": "OWNER_NOTE_SOURCE_DEFERRED",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "HTTP_PG"
+    },
+    {
+      "id": "UP30",
+      "scenario": "Known source graph whose epochs changed A to B to A after preview",
+      "directly_changed": [
+        "P2"
+      ],
+      "affected": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "preserved": [
+        "P1"
+      ],
+      "unknown_scope": null,
+      "adoption_blocker": "ORIGINAL_EPOCHS_CONFLICT",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "HTTP_PG"
+    },
+    {
+      "id": "UP31",
+      "scenario": "Same idempotency key with altered dependency_scope",
+      "directly_changed": null,
+      "affected": null,
+      "preserved": null,
+      "unknown_scope": null,
+      "adoption_blocker": "ORIGINAL_IDEMPOTENCY_PARAMETER_CONFLICT",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "HTTP_PG"
+    },
+    {
+      "id": "UP32",
+      "scenario": "Lost ADOPT acknowledgement; cold GET same original key",
+      "directly_changed": null,
+      "affected": null,
+      "preserved": null,
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "HTTP_PG_AND_HTML"
+    },
+    {
+      "id": "UP33",
+      "scenario": "Default request has no dependency_scope",
+      "directly_changed": null,
+      "affected": null,
+      "preserved": null,
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "OLD_PROTOCOL_BYTE_COMPATIBILITY"
+    },
+    {
+      "id": "UP34",
+      "scenario": "Old source-change v1/v2 or employees v3 history after new compiler evolves",
+      "directly_changed": null,
+      "affected": null,
+      "preserved": null,
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "FROZEN_HISTORY_DISPATCH"
+    },
+    {
+      "id": "UP35",
+      "scenario": "Rehashed forged observation or edge in stored v4 history",
+      "directly_changed": null,
+      "affected": null,
+      "preserved": null,
+      "unknown_scope": null,
+      "adoption_blocker": "HISTORY_RECONSTRUCTION_MISMATCH",
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "PURE_HISTORY_REJECTION"
+    },
+    {
+      "id": "UP36",
+      "scenario": "Late 403 or identity ABA arriving after selecting a new Case",
+      "directly_changed": null,
+      "affected": null,
+      "preserved": null,
+      "unknown_scope": null,
+      "adoption_blocker": null,
+      "execution_status": "DESIGN_ONLY_NOT_EXECUTED",
+      "intended_layer": "HTML_CONTEXT_ISOLATION"
+    }
+  ]
+}
