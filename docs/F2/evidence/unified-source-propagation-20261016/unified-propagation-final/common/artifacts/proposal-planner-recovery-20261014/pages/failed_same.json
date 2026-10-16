@@ -1,0 +1,78 @@
+{
+  "summary": {
+    "result": "PASS",
+    "mode": "failed_same",
+    "checks": 17,
+    "http": 6,
+    "posts": 2,
+    "cold": false,
+    "exactOriginalKeyOnly": true
+  },
+  "requests": [
+    {
+      "method": "GET",
+      "path": "/api/preparations/3ae079dc-ac25-49c6-9122-fa1ffc9c5777/service-case-plan/command-recovery",
+      "status": 200,
+      "key": null,
+      "body": null,
+      "actual_status": "NO_REQUEST",
+      "nodevm_fault": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/preparations/3ae079dc-ac25-49c6-9122-fa1ffc9c5777/service-case-plan",
+      "status": 200,
+      "key": null,
+      "body": null,
+      "actual_status": null,
+      "nodevm_fault": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/preparations/3ae079dc-ac25-49c6-9122-fa1ffc9c5777/service-plan-candidates",
+      "status": 409,
+      "key": "00000000-0000-4000-8000-000000000100",
+      "body": {
+        "expected_preparation_revision": 2,
+        "expected_source_sha256": "281b8704bf2cd66a912e331d0af2c24d7ad4bd3ebcc71f6383399bba5d86ed44"
+      },
+      "actual_status": null,
+      "nodevm_fault": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/preparations/3ae079dc-ac25-49c6-9122-fa1ffc9c5777/service-plan-candidates/recovery",
+      "status": 200,
+      "key": "00000000-0000-4000-8000-000000000100",
+      "body": null,
+      "actual_status": "FAILED_SAFE",
+      "nodevm_fault": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/preparations/3ae079dc-ac25-49c6-9122-fa1ffc9c5777/service-plan-candidates",
+      "status": 201,
+      "key": "00000000-0000-4000-8000-000000000101",
+      "body": {
+        "expected_preparation_revision": 2,
+        "expected_source_sha256": "281b8704bf2cd66a912e331d0af2c24d7ad4bd3ebcc71f6383399bba5d86ed44"
+      },
+      "actual_status": null,
+      "nodevm_fault": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/preparations/3ae079dc-ac25-49c6-9122-fa1ffc9c5777/service-plan-candidates/recovery",
+      "status": 200,
+      "key": "00000000-0000-4000-8000-000000000101",
+      "body": null,
+      "actual_status": "COMMITTED",
+      "nodevm_fault": null
+    }
+  ],
+  "stderr": "",
+  "fake_provider_requests": 2,
+  "actual_provider_requests": 0,
+  "live_quota_writes": 0,
+  "browser_runs": 0
+}

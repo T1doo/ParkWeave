@@ -1,0 +1,38 @@
+{
+  "status": "WIP_STATIC_REVIEW_REQUIRES_FRONTEND_FIX_AND_FROZEN_REVIEW",
+  "head": "90b1c09da88e882bfc0119816fe5e14a1cbafe41",
+  "files": {
+    "src/parkweave/unified_dependency_propagation.py": "c98ece38560bbbc02eb7e59f35ea2158b3289e266960278d5ae66174abc39748",
+    "src/parkweave/service_case_steps.py": "7bbf4752d84b14c1519110d1bc0acab70c93a727ea6d95c414573d303e7a67fc",
+    "src/parkweave/source_change_adoption.py": "f57eb3225150fd7a2bf3b4e9a498add99c5986314d8ca74b888a09cdfb23b871",
+    "src/parkweave/api.py": "d53f16196150b2f9abd3ccb5b53da56202f5d12d770c4e468c57d467c2639364",
+    "src/parkweave/web.html": "75be63d6409b2face3ccbbce83c6eb7c0e5e6fc01ed7d60b6c17b891dce1915a"
+  },
+  "source_mutated_by_reviewer": false,
+  "pg_http_run_by_reviewer": false,
+  "checks": [
+    "Changed consumer observation roots followed only by compiled PRECEDES edges; shared node.changed not used to fan out.",
+    "Bounded node/edge/observation counts; no arbitrary or model-inferred edges.",
+    "Unknown schema1 source reasons propagate to whole Case, adoption removed. Unknown recorded date alone does not imply unknown Case.",
+    "v4 exact history reconstruction then original strict v2 proof validation; old default exclude_none preserves fingerprints.",
+    "Original current-card, owner/authority, MANUAL blocker, source epoch, lock and two locked pre-write reads retained.",
+    "No new endpoint: original card plan-revision query is explicit scoped."
+  ],
+  "findings": [
+    {
+      "id": "R1",
+      "severity": "REQUIRED_BEFORE_FREEZE",
+      "component": "web.html unifiedDependencyPropagationCheck",
+      "issue": "Rehashed noncanonical IDs, duplicate facet/type group and extra node fields accepted by client checker",
+      "evidence": "client-structure-probe-original.json",
+      "candidate": "strict-checker-candidate.js",
+      "candidate_evidence": "client-structure-probe-candidate.json",
+      "authority_bypass": false
+    }
+  ],
+  "limitations": [
+    "WIP snapshot only; not a frozen source verdict",
+    "Controlled VM pure probes; not real browser, HTTP or PostgreSQL",
+    "No full relevant regression independently run in this preflight"
+  ]
+}

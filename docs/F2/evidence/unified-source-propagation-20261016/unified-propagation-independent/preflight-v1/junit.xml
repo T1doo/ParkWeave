@@ -1,0 +1,337 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="11" skipped="0" tests="45" time="237.149" timestamp="2026-10-16T00:16:11.012635+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP01]" time="0.005" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP02]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP03]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP04]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP05]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP06]" time="0.005" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP07]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP08]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP09]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP10]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP11]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP12]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP13]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP14]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP15]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP16]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP17]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP18]" time="0.003" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP19]" time="0.003" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP20]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP21]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP22]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP23]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_literal" name="test_frozen_literal_partitions_and_consumer_observation_seeds[UP24]" time="0.004" /><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_full_original_html_unified_adoption_and_authority[positive]" time="10.866"><failure message="AssertionError: {&quot;detail&quot;:&quot;receipt preparation dependency changed; explicit replanning required&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'positive'
+
+    @pytest.mark.parametrize('mode',['positive','lost_ack','current_403','late_403'])
+&gt;   def test_full_original_html_unified_adoption_and_authority(facts_case,mode):run_html(facts_case,mode)
+                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:270: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_unified_dependency_propagation_independent.py:253: in run_html
+    controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unified_dependency_propagation_independent.py:221: in &lt;lambda&gt;
+    return dict(change_fact=lambda:mixed_change(t,refresh=False),before_adopt=before_adopt,after_adopt=after_adopt,
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unified_dependency_propagation_independent.py:288: in mixed_change
+    add_resource(t['f']);change_receipt(t)
+                         ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def change_receipt(t):
+        id=t['completed']['A']['dispatch']['receipt_step_id']
+        q=t['f'][3].get('/api/executor-receipts/'+id,headers=headers(t['f'][2])).json()
+&gt;       r=receipt_act(t['f'],q,'REOPEN');assert r.status_code==200,r.text
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"receipt preparation dependency changed; explicit replanning required"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_unified_dependency_propagation_independent.py:276: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_full_original_html_unified_adoption_and_authority[lost_ack]" time="9.769"><failure message="AssertionError: {&quot;detail&quot;:&quot;receipt preparation dependency changed; explicit replanning required&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'lost_ack'
+
+    @pytest.mark.parametrize('mode',['positive','lost_ack','current_403','late_403'])
+&gt;   def test_full_original_html_unified_adoption_and_authority(facts_case,mode):run_html(facts_case,mode)
+                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:270: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_unified_dependency_propagation_independent.py:253: in run_html
+    controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unified_dependency_propagation_independent.py:221: in &lt;lambda&gt;
+    return dict(change_fact=lambda:mixed_change(t,refresh=False),before_adopt=before_adopt,after_adopt=after_adopt,
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_unified_dependency_propagation_independent.py:288: in mixed_change
+    add_resource(t['f']);change_receipt(t)
+                         ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def change_receipt(t):
+        id=t['completed']['A']['dispatch']['receipt_step_id']
+        q=t['f'][3].get('/api/executor-receipts/'+id,headers=headers(t['f'][2])).json()
+&gt;       r=receipt_act(t['f'],q,'REOPEN');assert r.status_code==200,r.text
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"receipt preparation dependency changed; explicit replanning required"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_unified_dependency_propagation_independent.py:276: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_full_original_html_unified_adoption_and_authority[current_403]" time="13.808"><failure message="AssertionError: {&quot;message&quot;:&quot;actual current employees GET403&quot;,&quot;stack&quot;:&quot;AssertionError [ERR_ASSERTION]: actual current employees GET403\n    at check (/workspace/ParkWeave/tests/unified_dependency_propagation_real_html.js:12:51)\n    at /workspace/ParkWeave/tests/unified_dependency_propagation_real_html.js:105:4&quot;,&quot;diagnostics&quot;:{&quot;calls&quot;:[{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_LOCAL_PREPARATION_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/readiness&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/material-corrections&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_SLOT_MATERIAL_CORRECTIONS&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/material-objections&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_MATERIAL_DELIVERY_OBJECTION&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/material-reuse&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_SAME_OWNER_MATERIAL_OUTLINE_REUSE&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/fact-clarifications&quot;,&quot;status&quot;:200},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/case-cancellation&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/case-cancellation-before-receipt&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/case-cancellation-reconciliation&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/opportunities&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_CASE_OPPORTUNITY_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/service-case-plan/command-recovery&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/service-case-plan&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/opportunities/43f1d4b7-44f2-4b00-8fcc-12c5c111e5f2/plan-revision?dependency_scope=BOUNDED_MULTI_SOURCE_V1&quot;,&quot;status&quot;:200,&quot;graph_sha256&quot;:&quot;854a3a79822ae456acc9dde5f93b79e80dbe5ff1f91789917d8d482324750d52&quot;,&quot;response_scope&quot;:&quot;BOUNDED_MULTI_SOURCE_REVISION_PREVIEW&quot;,&quot;dependency_propagation_sha256&quot;:&quot;3e3ac731318d70291f770e8eaea9fe35aa9cc2449a4990c863d602919372a6d2&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/service-case-plan/command-recovery&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/service-case-plan&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/opportunities/43f1d4b7-44f2-4b00-8fcc-12c5c111e5f2/plan-revision?dependency_scope=BOUNDED_MULTI_SOURCE_V1&quot;,&quot;status&quot;:200,&quot;graph_sha256&quot;:&quot;3ebe09fe166c95f10505f5b8a3739dbba6136b449c50cafb88939226736f252f&quot;,&quot;response_scope&quot;:&quot;BOUNDED_MULTI_SOURCE_REVISION_PREVIEW&quot;,&quot;dependency_propagation_sha256&quot;:&quot;1659008e5518a5e27fc2105035dcd71b8a1f5a5613ec2c1d687b5040bce6751e&quot;}]}}&#10;  &#10;assert 1 == 0">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'current_403'
+
+    @pytest.mark.parametrize('mode',['positive','lost_ack','current_403','late_403'])
+&gt;   def test_full_original_html_unified_adoption_and_authority(facts_case,mode):run_html(facts_case,mode)
+                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:270: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'current_403'
+
+    def run_html(t,mode):
+        OUT.mkdir(parents=True,exist_ok=True);state={};controls=html_controls(t,mode,state)
+        config=dict(base=str(t['f'][3].base_url).rstrip('/'),token=t['f'][2]['fixture-a'],mode=mode,A=t['p'])
+        if mode in ('current_403','late_403'):
+            config['card']=card(t)['id']
+            if mode=='late_403':
+                B=create_declared_case(t['u'],t['release'],t['selected'],number=351)
+                # B has original actual fact choices and plan but no fabricated VERIFY.
+                q=opp_read(t['f'],B).json();r=opp_post(t['f'],B,opp_body(q,item=entry()));assert r.status_code==200,r.text
+                config.update(B=B,cardB=r.json()['current']['cards'][0]['id'])
+        script=Path(__file__).with_name('unified_dependency_propagation_real_html.js')
+        process=subprocess.Popen(['node',str(script)],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        incoming=queue.Queue();lines=[];err='';result=None
+        def consume_stdout():
+            for line in process.stdout:incoming.put(line)
+            incoming.put(None)
+        reader=threading.Thread(target=consume_stdout,daemon=True);reader.start()
+        attempt=mode+'-'+uuid4().hex[:8]
+        try:
+            process.stdin.write(json.dumps(config)+'\n');process.stdin.flush()
+            while True:
+                try:line=incoming.get(timeout=45)
+                except queue.Empty:raise AssertionError('Original employees HTML flow made no progress for45 seconds')
+                if line is None:break
+                lines.append(line);msg=json.loads(line)
+                if 'trace' in msg:continue
+                if 'control' in msg:
+                    controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+                else:result=msg;break
+&gt;           code=process.wait(timeout=10);err=process.stderr.read();assert code==0,err
+                                                                    ^^^^^^^^^^^^^^^^^^
+E           AssertionError: {"message":"actual current employees GET403","stack":"AssertionError [ERR_ASSERTION]: actual current employees GET403\n    at check (/workspace/ParkWeave/tests/unified_dependency_propagation_real_html.js:12:51)\n    at /workspace/ParkWeave/tests/unified_dependency_propagation_real_html.js:105:4","diagnostics":{"calls":[{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa","status":200,"response_scope":"SYNTHETIC_LOCAL_PREPARATION_ONLY"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/readiness","status":200,"response_scope":"SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/material-corrections","status":200,"response_scope":"SYNTHETIC_SLOT_MATERIAL_CORRECTIONS"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/material-objections","status":200,"response_scope":"SYNTHETIC_MATERIAL_DELIVERY_OBJECTION"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/material-reuse","status":200,"response_scope":"SYNTHETIC_SAME_OWNER_MATERIAL_OUTLINE_REUSE"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/fact-clarifications","status":200},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/case-cancellation","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/case-cancellation-before-receipt","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/case-cancellation-reconciliation","status":200,"response_scope":"SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/opportunities","status":200,"response_scope":"SYNTHETIC_CASE_OPPORTUNITY_ONLY"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/service-case-plan","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/opportunities/43f1d4b7-44f2-4b00-8fcc-12c5c111e5f2/plan-revision?dependency_scope=BOUNDED_MULTI_SOURCE_V1","status":200,"graph_sha256":"854a3a79822ae456acc9dde5f93b79e80dbe5ff1f91789917d8d482324750d52","response_scope":"BOUNDED_MULTI_SOURCE_REVISION_PREVIEW","dependency_propagation_sha256":"3e3ac731318d70291f770e8eaea9fe35aa9cc2449a4990c863d602919372a6d2"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/service-case-plan","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/02c17b56-0917-4e51-b150-5aff1825c8fa/opportunities/43f1d4b7-44f2-4b00-8fcc-12c5c111e5f2/plan-revision?dependency_scope=BOUNDED_MULTI_SOURCE_V1","status":200,"graph_sha256":"3ebe09fe166c95f10505f5b8a3739dbba6136b449c50cafb88939226736f252f","response_scope":"BOUNDED_MULTI_SOURCE_REVISION_PREVIEW","dependency_propagation_sha256":"1659008e5518a5e27fc2105035dcd71b8a1f5a5613ec2c1d687b5040bce6751e"}]}}
+E             
+E           assert 1 == 0
+
+tests/test_unified_dependency_propagation_independent.py:255: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_full_original_html_unified_adoption_and_authority[late_403]" time="16.406"><failure message="AssertionError: {&quot;message&quot;:&quot;held original actual403&quot;,&quot;stack&quot;:&quot;AssertionError [ERR_ASSERTION]: held original actual403\n    at check (/workspace/ParkWeave/tests/unified_dependency_propagation_real_html.js:12:51)\n    at /workspace/ParkWeave/tests/unified_dependency_propagation_real_html.js:109:48\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&quot;,&quot;diagnostics&quot;:{&quot;calls&quot;:[{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_LOCAL_PREPARATION_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/readiness&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/material-corrections&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_SLOT_MATERIAL_CORRECTIONS&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/material-objections&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_MATERIAL_DELIVERY_OBJECTION&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/material-reuse&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_SAME_OWNER_MATERIAL_OUTLINE_REUSE&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/fact-clarifications&quot;,&quot;status&quot;:200},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/case-cancellation&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/case-cancellation-before-receipt&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/case-cancellation-reconciliation&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/opportunities&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_CASE_OPPORTUNITY_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/service-case-plan/command-recovery&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/service-case-plan&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/opportunities/1fbee0aa-fc57-43c6-a151-49addfef2ade/plan-revision?dependency_scope=BOUNDED_MULTI_SOURCE_V1&quot;,&quot;status&quot;:200,&quot;graph_sha256&quot;:&quot;34259c8379b26f2bb2f162878c3952b2242d6cd210ad2bbe30cc391557e7d7fc&quot;,&quot;response_scope&quot;:&quot;BOUNDED_MULTI_SOURCE_REVISION_PREVIEW&quot;,&quot;dependency_propagation_sha256&quot;:&quot;b2d63e4a09e08d83b720e158a0d6a1613534de4d9d5e05178feb1fd6551b2484&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/service-case-plan/command-recovery&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/service-case-plan&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/opportunities/1fbee0aa-fc57-43c6-a151-49addfef2ade/plan-revision?dependency_scope=BOUNDED_MULTI_SOURCE_V1&quot;,&quot;status&quot;:200,&quot;graph_sha256&quot;:&quot;cdabe386d25bb035f92ce0fba03afebbc3ac3386f0caf7f66983410d48d34d01&quot;,&quot;response_scope&quot;:&quot;BOUNDED_MULTI_SOURCE_REVISION_PREVIEW&quot;,&quot;dependency_propagation_sha256&quot;:&quot;f768deeb495292239f8b907d9257070686462daf9dcde44adcee10171ac721e4&quot;}]}}&#10;  &#10;assert 1 == 0">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'late_403'
+
+    @pytest.mark.parametrize('mode',['positive','lost_ack','current_403','late_403'])
+&gt;   def test_full_original_html_unified_adoption_and_authority(facts_case,mode):run_html(facts_case,mode)
+                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:270: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+mode = 'late_403'
+
+    def run_html(t,mode):
+        OUT.mkdir(parents=True,exist_ok=True);state={};controls=html_controls(t,mode,state)
+        config=dict(base=str(t['f'][3].base_url).rstrip('/'),token=t['f'][2]['fixture-a'],mode=mode,A=t['p'])
+        if mode in ('current_403','late_403'):
+            config['card']=card(t)['id']
+            if mode=='late_403':
+                B=create_declared_case(t['u'],t['release'],t['selected'],number=351)
+                # B has original actual fact choices and plan but no fabricated VERIFY.
+                q=opp_read(t['f'],B).json();r=opp_post(t['f'],B,opp_body(q,item=entry()));assert r.status_code==200,r.text
+                config.update(B=B,cardB=r.json()['current']['cards'][0]['id'])
+        script=Path(__file__).with_name('unified_dependency_propagation_real_html.js')
+        process=subprocess.Popen(['node',str(script)],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        incoming=queue.Queue();lines=[];err='';result=None
+        def consume_stdout():
+            for line in process.stdout:incoming.put(line)
+            incoming.put(None)
+        reader=threading.Thread(target=consume_stdout,daemon=True);reader.start()
+        attempt=mode+'-'+uuid4().hex[:8]
+        try:
+            process.stdin.write(json.dumps(config)+'\n');process.stdin.flush()
+            while True:
+                try:line=incoming.get(timeout=45)
+                except queue.Empty:raise AssertionError('Original employees HTML flow made no progress for45 seconds')
+                if line is None:break
+                lines.append(line);msg=json.loads(line)
+                if 'trace' in msg:continue
+                if 'control' in msg:
+                    controls[msg['control']]();process.stdin.write('{}\n');process.stdin.flush()
+                else:result=msg;break
+&gt;           code=process.wait(timeout=10);err=process.stderr.read();assert code==0,err
+                                                                    ^^^^^^^^^^^^^^^^^^
+E           AssertionError: {"message":"held original actual403","stack":"AssertionError [ERR_ASSERTION]: held original actual403\n    at check (/workspace/ParkWeave/tests/unified_dependency_propagation_real_html.js:12:51)\n    at /workspace/ParkWeave/tests/unified_dependency_propagation_real_html.js:109:48\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)","diagnostics":{"calls":[{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29","status":200,"response_scope":"SYNTHETIC_LOCAL_PREPARATION_ONLY"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/readiness","status":200,"response_scope":"SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/material-corrections","status":200,"response_scope":"SYNTHETIC_SLOT_MATERIAL_CORRECTIONS"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/material-objections","status":200,"response_scope":"SYNTHETIC_MATERIAL_DELIVERY_OBJECTION"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/material-reuse","status":200,"response_scope":"SYNTHETIC_SAME_OWNER_MATERIAL_OUTLINE_REUSE"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/fact-clarifications","status":200},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/case-cancellation","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/case-cancellation-before-receipt","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/case-cancellation-reconciliation","status":200,"response_scope":"SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/opportunities","status":200,"response_scope":"SYNTHETIC_CASE_OPPORTUNITY_ONLY"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/service-case-plan","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/opportunities/1fbee0aa-fc57-43c6-a151-49addfef2ade/plan-revision?dependency_scope=BOUNDED_MULTI_SOURCE_V1","status":200,"graph_sha256":"34259c8379b26f2bb2f162878c3952b2242d6cd210ad2bbe30cc391557e7d7fc","response_scope":"BOUNDED_MULTI_SOURCE_REVISION_PREVIEW","dependency_propagation_sha256":"b2d63e4a09e08d83b720e158a0d6a1613534de4d9d5e05178feb1fd6551b2484"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/service-case-plan","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/5d1f4a40-b3ff-42ca-98bf-d09733b92d29/opportunities/1fbee0aa-fc57-43c6-a151-49addfef2ade/plan-revision?dependency_scope=BOUNDED_MULTI_SOURCE_V1","status":200,"graph_sha256":"cdabe386d25bb035f92ce0fba03afebbc3ac3386f0caf7f66983410d48d34d01","response_scope":"BOUNDED_MULTI_SOURCE_REVISION_PREVIEW","dependency_propagation_sha256":"f768deeb495292239f8b907d9257070686462daf9dcde44adcee10171ac721e4"}]}}
+E             
+E           assert 1 == 0
+
+tests/test_unified_dependency_propagation_independent.py:255: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_actual_mixed_material_fact_resource_receipt_explicit_adopt_verify" time="8.755"><failure message="AssertionError: {&quot;detail&quot;:&quot;receipt preparation dependency changed; explicit replanning required&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_actual_mixed_material_fact_resource_receipt_explicit_adopt_verify(facts_case):
+&gt;       t=facts_case;c=mixed_change(t);v=view(t,c);partition(t,v,'UP09')
+                       ^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:293: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_unified_dependency_propagation_independent.py:288: in mixed_change
+    add_resource(t['f']);change_receipt(t)
+                         ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def change_receipt(t):
+        id=t['completed']['A']['dispatch']['receipt_step_id']
+        q=t['f'][3].get('/api/executor-receipts/'+id,headers=headers(t['f'][2])).json()
+&gt;       r=receipt_act(t['f'],q,'REOPEN');assert r.status_code==200,r.text
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"receipt preparation dependency changed; explicit replanning required"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_unified_dependency_propagation_independent.py:276: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_receipt_change_retains_three_original_locked_steps" time="13.990" /><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_resource_change_affected_manual_lock_needs_original_unlock" time="17.573" /><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_same_key_altered_scope_and_actual_original_cold_get" time="8.850"><failure message="AssertionError: {&quot;detail&quot;:&quot;receipt preparation dependency changed; explicit replanning required&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_same_key_altered_scope_and_actual_original_cold_get(facts_case):
+&gt;       t=facts_case;c=mixed_change(t);b,key,r=accepted(t,c);before=full(t)
+                       ^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:318: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_unified_dependency_propagation_independent.py:288: in mixed_change
+    add_resource(t['f']);change_receipt(t)
+                         ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def change_receipt(t):
+        id=t['completed']['A']['dispatch']['receipt_step_id']
+        q=t['f'][3].get('/api/executor-receipts/'+id,headers=headers(t['f'][2])).json()
+&gt;       r=receipt_act(t['f'],q,'REOPEN');assert r.status_code==200,r.text
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"receipt preparation dependency changed; explicit replanning required"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_unified_dependency_propagation_independent.py:276: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_original_owner_tenant_role_scope_refuses_graph_and_adopt[fixture-b]" time="9.760"><failure message="AssertionError: {&quot;detail&quot;:&quot;receipt preparation dependency changed; explicit replanning required&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+user = 'fixture-b'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_original_owner_tenant_role_scope_refuses_graph_and_adopt(facts_case,user):
+&gt;       t=facts_case;c=mixed_change(t);b=view(t,c)['adoption'];before=full(t)
+                       ^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:327: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_unified_dependency_propagation_independent.py:288: in mixed_change
+    add_resource(t['f']);change_receipt(t)
+                         ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def change_receipt(t):
+        id=t['completed']['A']['dispatch']['receipt_step_id']
+        q=t['f'][3].get('/api/executor-receipts/'+id,headers=headers(t['f'][2])).json()
+&gt;       r=receipt_act(t['f'],q,'REOPEN');assert r.status_code==200,r.text
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"receipt preparation dependency changed; explicit replanning required"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_unified_dependency_propagation_independent.py:276: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_original_owner_tenant_role_scope_refuses_graph_and_adopt[fixture-c]" time="8.510"><failure message="AssertionError: {&quot;detail&quot;:&quot;receipt preparation dependency changed; explicit replanning required&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+user = 'fixture-c'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_original_owner_tenant_role_scope_refuses_graph_and_adopt(facts_case,user):
+&gt;       t=facts_case;c=mixed_change(t);b=view(t,c)['adoption'];before=full(t)
+                       ^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:327: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_unified_dependency_propagation_independent.py:288: in mixed_change
+    add_resource(t['f']);change_receipt(t)
+                         ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def change_receipt(t):
+        id=t['completed']['A']['dispatch']['receipt_step_id']
+        q=t['f'][3].get('/api/executor-receipts/'+id,headers=headers(t['f'][2])).json()
+&gt;       r=receipt_act(t['f'],q,'REOPEN');assert r.status_code==200,r.text
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"receipt preparation dependency changed; explicit replanning required"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_unified_dependency_propagation_independent.py:276: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_original_owner_tenant_role_scope_refuses_graph_and_adopt[prep-specialist-fixture-a]" time="8.861"><failure message="AssertionError: {&quot;detail&quot;:&quot;receipt preparation dependency changed; explicit replanning required&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+user = 'prep-specialist-fixture-a'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_original_owner_tenant_role_scope_refuses_graph_and_adopt(facts_case,user):
+&gt;       t=facts_case;c=mixed_change(t);b=view(t,c)['adoption'];before=full(t)
+                       ^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:327: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_unified_dependency_propagation_independent.py:288: in mixed_change
+    add_resource(t['f']);change_receipt(t)
+                         ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def change_receipt(t):
+        id=t['completed']['A']['dispatch']['receipt_step_id']
+        q=t['f'][3].get('/api/executor-receipts/'+id,headers=headers(t['f'][2])).json()
+&gt;       r=receipt_act(t['f'],q,'REOPEN');assert r.status_code==200,r.text
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"receipt preparation dependency changed; explicit replanning required"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_unified_dependency_propagation_independent.py:276: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_original_owner_tenant_role_scope_refuses_graph_and_adopt[executor-a]" time="8.774"><failure message="AssertionError: {&quot;detail&quot;:&quot;receipt preparation dependency changed; explicit replanning required&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+user = 'executor-a'
+
+    @pytest.mark.parametrize('user',['fixture-b','fixture-c','prep-specialist-fixture-a','executor-a'])
+    def test_original_owner_tenant_role_scope_refuses_graph_and_adopt(facts_case,user):
+&gt;       t=facts_case;c=mixed_change(t);b=view(t,c)['adoption'];before=full(t)
+                       ^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:327: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_unified_dependency_propagation_independent.py:288: in mixed_change
+    add_resource(t['f']);change_receipt(t)
+                         ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def change_receipt(t):
+        id=t['completed']['A']['dispatch']['receipt_step_id']
+        q=t['f'][3].get('/api/executor-receipts/'+id,headers=headers(t['f'][2])).json()
+&gt;       r=receipt_act(t['f'],q,'REOPEN');assert r.status_code==200,r.text
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"receipt preparation dependency changed; explicit replanning required"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_unified_dependency_propagation_independent.py:276: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_resource_row_a_b_a_refuses_preview_after_values_restore" time="9.372" /><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_unconfirmed_fact_selection_unknown_never_authorizes" time="9.491" /><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_new_v4_then_original_default_v2_is_nonsticky" time="8.591"><failure message="AssertionError: {&quot;detail&quot;:&quot;receipt preparation dependency changed; explicit replanning required&quot;}&#10;assert 409 == 200&#10; +  where 409 = &lt;Response [409 Conflict]&gt;.status_code">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def test_new_v4_then_original_default_v2_is_nonsticky(facts_case):
+        from test_source_change_adoption import preview as original_preview
+&gt;       t=facts_case;c=mixed_change(t);accepted(t,c);repair_material(t)
+                       ^^^^^^^^^^^^^^^
+
+tests/test_unified_dependency_propagation_independent.py:348: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_unified_dependency_propagation_independent.py:288: in mixed_change
+    add_resource(t['f']);change_receipt(t)
+                         ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+
+    def change_receipt(t):
+        id=t['completed']['A']['dispatch']['receipt_step_id']
+        q=t['f'][3].get('/api/executor-receipts/'+id,headers=headers(t['f'][2])).json()
+&gt;       r=receipt_act(t['f'],q,'REOPEN');assert r.status_code==200,r.text
+                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: {"detail":"receipt preparation dependency changed; explicit replanning required"}
+E       assert 409 == 200
+E        +  where 409 = &lt;Response [409 Conflict]&gt;.status_code
+
+tests/test_unified_dependency_propagation_independent.py:276: AssertionError</failure></testcase><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_manual_source_conflict_reuses_original_explicit_package_decisions[KEEP_AND_CONTINUE]" time="18.719" /><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_manual_source_conflict_reuses_original_explicit_package_decisions[DEFER]" time="11.773" /><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_original_execute_revocation_then_restore_cannot_revive_prior_preview" time="8.214" /><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_rehashed_forged_v4_graph_refuses_original_plan_goal_and_cold_reads[observation]" time="10.423" /><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_rehashed_forged_v4_graph_refuses_original_plan_goal_and_cold_reads[edge]" time="8.918" /><testcase classname="tests.test_unified_dependency_propagation_independent" name="test_rehashed_forged_v4_graph_refuses_original_plan_goal_and_cold_reads[path]" time="15.022" /></testsuite></testsuites>

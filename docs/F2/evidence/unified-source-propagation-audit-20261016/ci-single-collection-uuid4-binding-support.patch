@@ -1,0 +1,44 @@
+--- prepared-gate-literal-cross-window-ci
++++ prepared-gate-specific-original-uuid4-correspondence
+@@ -2,7 +2,7 @@
+ from pathlib import Path
+ from datetime import datetime,timezone
+ from collections import Counter
+-import argparse,hashlib,json,re,subprocess,sys,traceback,xml.etree.ElementTree as ET
++import argparse,ast,hashlib,json,re,subprocess,sys,traceback,uuid,xml.etree.ElementTree as ET
+ from independent_transform import Transform,selftest
+ ROOT=Path('/workspace/ParkWeave')
+ OWN=Path(__file__).resolve().parent
+@@ -132,14 +132,30 @@
+         prior,prior_nodes=window(Path(config['formal_base']),'ci-metadata',freeze)
+         assert prior['exit_code']==1 and Counter(prior_nodes.values())==Counter(PASS=432,FAIL=1,SKIP=14)
+         assert set(prior['modules'])==set(record['modules'])==set(selection['separate_ci_window']) and len(prior['modules'])==12
+-        assert set(prior_nodes)==set(nodes),'complete original12 CI modules must be retried, never individual nodes'
++        assert len(prior_nodes)==len(nodes)==447
++        common=set(prior_nodes)&set(nodes);prior_only=set(prior_nodes)-set(nodes);current_only=set(nodes)-set(prior_nodes)
++        assert len(common)==446 and len(prior_only)==len(current_only)==1
++        original_id=next(iter(prior_only));current_id=next(iter(current_only))
++        prefix='tests/test_summary_publication.py::test_report_current_run_attempt_sha_cluster_binding_is_required[cluster_id-'
++        pattern=re.escape(prefix)+r'([a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12})\]'
++        for identity in (original_id,current_id):
++            match=re.fullmatch(pattern,identity);assert match,('unexpected collection identity difference',identity)
++            parsed=uuid.UUID(match.group(1));assert parsed.version==4 and str(parsed)==match.group(1)
++        assert prior_nodes[original_id]==nodes[current_id]=='PASS'
++        source_path='tests/test_summary_publication.py';source_raw=(ROOT/source_path).read_bytes()
++        assert sha(source_raw)==freeze['source_paths'][source_path]
++        assert source_raw==command('git','show','e0ffc81f2d29dbfd498c1a9a93206e689bd0b310:'+source_path)
++        function=next(n for n in ast.parse(source_raw).body if isinstance(n,ast.FunctionDef) and n.name=='test_report_current_run_attempt_sha_cluster_binding_is_required')
++        expected_tuple=ast.dump(ast.parse("('cluster_id',str(uuid4()))",mode='eval').body,include_attributes=False)
++        assert sum(ast.dump(n,include_attributes=False)==expected_tuple for d in function.decorator_list for n in ast.walk(d))==1
++        collection_binding=dict(literal_identical_nodes=446,original_unique_id=original_id,current_unique_id=current_id,parameter_position='Only original cluster_id tuple value str(uuid4()) in named function decorator',source_path=source_path,source_sha256=sha(source_raw),all447_original_node_values_retained=True,one_to_one_uuid4_correspondence_only=True)
+         failed=[n for n,status in prior_nodes.items() if status=='FAIL']
+         assert failed==['tests/test_summary_publication.py::test_actual_bounded_private_wrapper_then_independent_publisher[timeout]']
+         prior_xml=ROOT/config['formal_base']/'ci-metadata.xml'
+         case=next(c for c in ET.parse(prior_xml).getroot().iter('testcase') if junit_id(c)==failed[0]);failure=case.find('failure')
+         assert failure is not None and 'SYNTHETIC_PRIVATE_ERROR_ENV_DSN_PATH_TRACE' in failure.get('message','') and "in ''" in failure.get('message','')
+         assert 'tests/test_summary_publication.py:66:' in failure.text
+-        replacement=dict(original_window='ci-metadata',original_counts=dict(Counter(prior_nodes.values())),failure_identity=failed[0],full_module_replacement=True,collection_identity_exact=True,reason=config['ci_replacement_reason'],failure_phase='Line66 expected printed fixture marker in captured stdout; stdout empty. Earlier124/timeout assertions passed. Sole cause not established.')
++        replacement=dict(original_window='ci-metadata',original_counts=dict(Counter(prior_nodes.values())),failure_identity=failed[0],full_module_replacement=True,within_each_window_collection_junit_exact=True,cross_window_collection_binding=collection_binding,reason=config['ci_replacement_reason'],failure_phase='Line66 expected printed fixture marker in captured stdout; stdout empty. Earlier124/timeout assertions passed. Sole cause not established.')
+     return dict(window=name,modules=12,counts=dict(Counter(nodes.values())),skip_reasons=skips,main107_denominator_overlap=0,replacement=replacement)
+ def html_traces(base,classification):
+     scope='FULL_ORIGINAL_HTML_UNIFIED_PROPAGATION_ACTUAL_HTTP_ASGI_OWNED_PG'

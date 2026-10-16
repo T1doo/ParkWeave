@@ -1,0 +1,11 @@
+from pathlib import Path
+p=Path('src/parkweave/web.html');html=p.read_text();start=html.index('async function unifiedDependencyPropagationCheck(');end=html.index('function renderUnifiedDependencyPropagation(',start)
+s=html[start:end]
+s=s.replace(" const fail=()=>{throw Error('统一来源传播与原观察、类型边或受影响分区无法核对');};", " const fail=()=>{throw Error('统一来源传播与原观察、类型边或受影响分区无法核对');};\n const exact=(x,keys)=>x!==null&&typeof x==='object'&&!Array.isArray(x)&&same(Object.keys(x).sort(),keys.slice().sort());\n if(!exact(g,['schema','scope','binding','plan_id','original_graph_sha256','nodes','observations','edges','step_endpoints','changed_node_ids','changed_observation_ids','propagation_paths','affected','preserved','unknown_scope','unknown_reasons','new_grants','automatic_execution','sha256']))fail();")
+s=s.replace("const nodes=new Map(),observations=new Map(),originals=new Map(old.nodes.map(n=>[n.id,n])),edges=new Map(),steps=new Set(g.step_endpoints.map(s=>s.id));", "const nodes=new Map(),groups=new Set(),observations=new Map(),originals=new Map(old.nodes.map(n=>[n.id,n])),edges=new Map(),steps=new Set(g.step_endpoints.map(s=>s.id));")
+s=s.replace("for(const n of g.nodes){if(!boundedCaseHash(n.id)", "for(const n of g.nodes){const key=receiptHistoryCanonical([n.facet,n.type]);if(!exact(n,['id','type','facet','aggregate','observation_ids','changed','known'])||groups.has(key)||n.id!==await digest({scope,binding:g.binding,plan_id:g.plan_id,facet:n.facet,type:n.type}))fail();groups.add(key);if(!boundedCaseHash(n.id)")
+s=s.replace("observations.has(o.id)||!original", "observations.has(o.id)||o.id!==await digest({scope,source_node_id:o.source_node_id,original_node_id:o.original_node_id})||!original")
+s=s.replace("!boundedCaseHash(e.id)||edges.has(e.id)", "!boundedCaseHash(e.id)||e.id!==await digest({scope,edge:expectedEdges[i]})||edges.has(e.id)")
+Path('.runtime/unified-propagation-review/strict-checker-candidate.js').write_text(s)
+import difflib
+Path('.runtime/unified-propagation-review/strict-checker-candidate.patch').write_text(''.join(difflib.unified_diff(html[start:end].splitlines(True),s.splitlines(True),fromfile='web.html:unifiedDependencyPropagationCheck',tofile='private-strict-candidate')))

@@ -1,0 +1,52 @@
+........................................................F............... [ 16%]
+.............................................................sss........ [ 32%]
+..................s.sss................................................. [ 48%]
+........................................................................ [ 64%]
+.......ssss............................................................. [ 80%]
+............................................................s........s.. [ 96%]
+.....s.........                                                          [100%]
+=================================== FAILURES ===================================
+___ test_actual_bounded_private_wrapper_then_independent_publisher[timeout] ____
+
+publication = ({'PARKWEAVE_CI_ROOT': '/tmp/parkweave-unified-propagation-ci-metadata/test_actual_bounded_private_wr1/parkweave-serve...neering.json'), PosixPath('/tmp/parkweave-unified-propagation-ci-metadata/test_actual_bounded_private_wr1/summary.md'))
+tmp_path = PosixPath('/tmp/parkweave-unified-propagation-ci-metadata/test_actual_bounded_private_wr1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f7b4915c560>
+mode = 'timeout'
+
+    @pytest.mark.parametrize('mode',['failed','timeout','missing','cleanup_failure'])
+    def test_actual_bounded_private_wrapper_then_independent_publisher(publication,tmp_path,monkeypatch,mode):
+        source,path,output=publication;path.unlink();trace=tmp_path/'trace';trace.mkdir();wrapper=module('native_command')
+        # All environment values here are synthetic. The wrapper's real inheritance
+        # retains the summary destination; it suppresses console text through files.
+        env=minimal_environment(os.environ,**source)
+        code='import sys,os,time;from pathlib import Path;sys.path.insert(0,'+repr(str(ROOT/'scripts/windows_ci'))+');import native_suite as s;import summary_report as r;print('+repr(POISON)+',flush=True);print('+repr(POISON)+',file=sys.stderr,flush=True);'
+        if mode=='missing':code+='raise SystemExit(1)'
+        elif mode=='timeout':code+='r.persist(Path(os.environ["PARKWEAVE_CI_ROOT"])/"engineering.json",s.summary([]),os.environ,"IN_PROGRESS","regression_run");time.sleep(10)'
+        else:
+            code+='e=RuntimeError('+repr(POISON)+');'
+            if mode=='cleanup_failure':code+='e.parkweave_owned_browser_cleanup=("TimeoutExpired","PermissionError");'
+            code+='raise SystemExit(s.emit_summary(Path(os.environ["PARKWEAVE_CI_ROOT"])/"engineering.json",[s.exception_row("lifecycle_exception",e,"native_browser")]))'
+        with patch.dict(os.environ,env,clear=True):
+            result=wrapper.execute(sys.executable,['-c',code],'native_suite',.6 if mode=='timeout' else 15,trace)
+        assert result['exit_code']==(124 if mode=='timeout' else 1)
+        assert result['timed_out']==(mode=='timeout')
+        assert 'stdout' not in result and 'stderr' not in result
+>       assert POISON in (trace/result['stdout_file']).read_text(encoding='utf-8')
+E       AssertionError: assert 'SYNTHETIC_PRIVATE_ERROR_ENV_DSN_PATH_TRACE' in ''
+E        +  where '' = read_text(encoding='utf-8')
+E        +    where read_text = (PosixPath('/tmp/parkweave-unified-propagation-ci-metadata/test_actual_bounded_private_wr1/trace') / 'native_suite-2cf7e0bf613f4a54841bb76434024bde.stdout').read_text
+
+tests/test_summary_publication.py:66: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_lifecycle_diagnostics.py::test_real_isolated_local_database_scope_schema_and_role
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_summary_publication.py::test_actual_bounded_private_wrapper_then_independent_publisher[timeout]
+1 failed, 432 passed, 14 skipped, 2 warnings in 26.97s
