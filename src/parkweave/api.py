@@ -65,6 +65,7 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
             store.check_capability(c,p,'READ')
         return dict(enabled=getattr(store,'_isolated_plan_approval',None) is not None,
             source_reapproval_enabled=getattr(getattr(store,'_isolated_plan_approval',None),'source_reapproval_enabled',False) is True,
+            plan_replacement_enabled=getattr(getattr(store,'_isolated_plan_approval',None),'plan_replacement_enabled',False) is True,
             production_execution_enabled=False,formal_release=False,role=p['role'])
 
     @app.get('/api/preparations/{preparation_id}/plan-approval')

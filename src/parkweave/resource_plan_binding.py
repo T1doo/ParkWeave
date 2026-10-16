@@ -110,6 +110,8 @@ def catalog_decision(c,parent,link):
         if len(receipts)!=1: raise Denied('original Case delivery receipt required')
         from .service_plan_approval import verify_receipt
         verify_receipt(parent,receipts[0]['payload'],link['snapshot'].get('plan_approval'),link_revision=link['revision'])
+        from .plan_replacement_compatibility import verify_history
+        verify_history(getattr(c,'_access_store',None),c,parent,link,receipts[0]['payload'])
     from .catalog_publication import snapshot as catalog_snapshot
     current=catalog_snapshot(c,parent)
     now_copy=_catalog_copy(current)

@@ -2,7 +2,7 @@
 from datetime import timedelta, timezone
 from uuid import UUID
 
-from pydantic import AwareDatetime, Field, field_validator
+from pydantic import AwareDatetime, Field, field_validator, model_validator
 
 from . import resource_bundles as rb, resource_combinations as rc, resource_holds as rh
 from . import case_resources as cr, preparation as prep, controlled_plans as cp
@@ -19,6 +19,13 @@ def _boundary(**extra):
 
 class PreviewBundle(rb.Bundle):
     expected_link_revision: int | None = Field(default=None, ge=1, le=64)
+    expected_previous_plan_id: UUID | None = Field(default=None, strict=False)
+
+    @model_validator(mode='after')
+    def replacement_requires_original_link(self):
+        if self.expected_previous_plan_id is not None and self.expected_link_revision is None:
+            raise ValueError('replacement requires exact original association revision')
+        return self
 
 
 class Deliver(PreviewBundle):
@@ -78,7 +85,8 @@ def _source_reapproval(store,c,p,parent,data,context,*,consumed=None,historical=
     revision=getattr(data,'expected_link_revision',None)
     if revision is None:return context
     approval=getattr(store,'_isolated_plan_approval',None)
-    if not historical and (not approval or not approval.enabled or not approval.source_reapproval_enabled):
+    replacement=getattr(data,'expected_previous_plan_id',None) is not None
+    if not historical and (not approval or not approval.enabled or not (approval.plan_replacement_enabled if replacement else approval.source_reapproval_enabled)):
         from .store import Denied
         raise Denied('isolated source reapproval disabled')
     if not historical:approval._scope(c,p,parent)
@@ -100,7 +108,8 @@ def _source_reapproval(store,c,p,parent,data,context,*,consumed=None,historical=
     if own_links:
         if len(own_links)!=1:raise Conflict('ambiguous reapproval association')
         own_link=own_links[0];own_proof=own_link['snapshot'].get('delivery_binding') or {}
-        own=own_proof.get('context',{}).get('source_reapproval',{})
+        own_context=own_proof.get('context',{})
+        own=own_context.get('plan_replacement',{}) if replacement else own_context.get('source_reapproval',{})
         actual=c.execute('SELECT payload,fingerprint FROM synthetic_resource_combination_receipts WHERE combination_id=%s AND actor_id=%s AND request_key=%s',(own_link['combination_id'],p['id'],own_link['request_key'])).fetchone()
         if (own_link['revision']!=revision+1 or own_link['actor_id']!=p['id']
             or own_link['fingerprint']!=own_proof.get('fingerprint') or own_link['request_key']!=own_proof.get('request_key')
@@ -117,6 +126,9 @@ def _source_reapproval(store,c,p,parent,data,context,*,consumed=None,historical=
     checked=_verify(store,c,p,parent,old_receipt['payload'])
     if checked['link']!=anchor or old_receipt['payload']['delivery_binding']!=prior:
         raise Conflict('exact original approved association required')
+    if replacement:
+        from .plan_replacement_compatibility import binding as replacement_binding
+        return dict(context,plan_replacement=replacement_binding(store,c,p,parent,data,anchor,prior,historical=historical))
     current_plan=parent['service_case_plan'];plan=current_plan
     if historical:
         matches=[x for x in [current_plan,*current_plan.get('history',[])] if x['id']==prior['context'].get('plan_id')]
@@ -166,9 +178,22 @@ def _candidate(store, c, p, parent, data, *, observe=True):
     return context, cp._hash(source), hs, now
 
 
+def _delivery_connection(store,data):
+    if data.expected_previous_plan_id is None:return store.connect()
+    from .service_release_preflight import ServiceReleasePreflight
+    from .store import Denied
+    bridge=getattr(store,'_isolated_plan_approval',None)
+    checker=getattr(bridge,'plan_replacement_preflight',None)
+    if (not bridge or not bridge.enabled or not bridge.plan_replacement_enabled
+        or type(checker) is not ServiceReleasePreflight or checker.store is not store
+        or getattr(store,'_isolated_service_capability_catalog',None) is not checker.catalog):
+        raise Denied('explicit original plan replacement preflight required')
+    return checker.catalog.connection()
+
+
 @bounded
 def preview(store, token, id, data):
-    with store.connect() as c:
+    with _delivery_connection(store,data) as c:
         p, parent = cr._parent(store, c, token, id, write=True)
         context, sha, hs, now = _candidate(store, c, p, parent, data)
         expiry = min(now+timedelta(seconds=120), *[h['expires_at'] for h in hs])
@@ -177,7 +202,8 @@ def preview(store, token, id, data):
             source_sha256=cp._hash(dict(source=sha,valid_until=expiry.isoformat())), valid_until=expiry,
             members=[rh._public(h, now) for h in hs], formal_approval='NOT_IMPLEMENTED', formal_release=False,
             synthetic_plan_approval_required=getattr(store,'_isolated_plan_approval',None) is not None,
-            **({'expected_link_revision':data.expected_link_revision} if getattr(data,'expected_link_revision',None) is not None else {}))
+            **({'expected_link_revision':data.expected_link_revision} if getattr(data,'expected_link_revision',None) is not None else {}),
+            **({'expected_previous_plan_id':str(data.expected_previous_plan_id)} if data.expected_previous_plan_id is not None else {}))
 
 
 def _verify(store, c, p, parent, receipt):
@@ -214,24 +240,26 @@ def _verify(store, c, p, parent, receipt):
         link['snapshot'].get('delivery_binding') != proof or
         link['snapshot'].get('plan_approval') != receipt.get('plan_approval')): raise Conflict('delivery association proof mismatch')
     verify_receipt(parent,receipt,link['snapshot'].get('plan_approval'),link_revision=link['revision'])
-    anchor=expected.get('source_reapproval')
+    anchor=expected.get('plan_replacement') if 'plan_replacement' in expected else expected.get('source_reapproval')
     if anchor is None:
         if link['revision']!=1:raise Conflict('first delivery proof cannot authorize a later association')
     else:
-        from .service_plan_approval import _ledger, REAPPROVAL_PURPOSE
+        from .service_plan_approval import _ledger, REAPPROVAL_PURPOSE, REPLACEMENT_PURPOSE
         item=_ledger(parent)[1].get(receipt.get('plan_approval',{}).get('id'))
         if (not isinstance(anchor,dict) or type(anchor.get('link_revision')) is not int
             or link['revision']!=anchor['link_revision']+1 or not item
-            or item['proposal']['binding']['purpose']!=REAPPROVAL_PURPOSE):
+            or item['proposal']['binding']['purpose']!=(REPLACEMENT_PURPOSE if 'plan_replacement' in expected else REAPPROVAL_PURPOSE)):
             raise Conflict('original source reapproval association profile required')
     claim = c.execute('SELECT * FROM resource_case_claims WHERE combination_id=%s',(gid,)).fetchone()
     if not claim or any(claim[k] != link[k] for k in ('case_id','owner_id','park_id','org_id')):
         raise Conflict('delivery Case claim mismatch')
     context, issues = _context(store, c, p, parent)
-    if 'source_reapproval' in expected:
+    if 'source_reapproval' in expected or 'plan_replacement' in expected:
         from .service_plan_approval import _ledger
         historical=Deliver.model_validate(_ledger(parent)[1][receipt['plan_approval']['id']]['proposal']['request']['delivery'])
         context=_source_reapproval(store,c,p,parent,historical,context,consumed=str(gid),historical=True,consumption_key=proof['request_key'])
+        if 'plan_replacement' in expected and context.get('plan_replacement')!=expected['plan_replacement']:
+            raise Conflict('original replacement immutable proof changed')
         if parent['service_case_plan']['id']!=expected['plan_id'] or any(e['action']=='ADOPT' and e['revision']>proof['approved_plan_revision'] for e in parent['service_case_plan']['events']):issues.append('DELIVERY_APPROVED_PLAN_ADOPTION_CHANGED')
     if context != expected: issues.append('DELIVERY_SOURCE_CHANGED')
     association = cr._view(c, p, parent, rows, store=store)
@@ -247,7 +275,7 @@ def _verify(store, c, p, parent, receipt):
 @bounded
 def deliver(store, token, id, key, data):
     fp = digest(prep.canonical(dict(preparation_id=str(id), action='CASE_RESOURCE_DELIVERY', **data.model_dump(mode='json', exclude_none=True))))
-    with store.connect() as c:
+    with _delivery_connection(store,data) as c:
         p, parent = cr._parent(store, c, token, id, write=True)
         for m in data.members: rh._scope(c, p, rh._own(c,p,m.hold_id)['resource_id'], write=True)
         rh._key(c, p, key)

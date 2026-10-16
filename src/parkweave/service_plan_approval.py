@@ -21,9 +21,11 @@ from .store import Conflict, Denied
 SCOPE = 'ISOLATED_SYNTHETIC_CASE_RESOURCE_APPROVAL_V1'
 PURPOSE = 'CASE_RESOURCE_DELIVERY'
 REAPPROVAL_PURPOSE = 'CASE_RESOURCE_REAPPROVAL'
+REPLACEMENT_PURPOSE = 'CASE_RESOURCE_PLAN_REPLACEMENT'
 
 
 def purpose(data):
+    if data.expected_previous_plan_id is not None:return REPLACEMENT_PURPOSE
     return REAPPROVAL_PURPOSE if data.expected_link_revision is not None else PURPOSE
 LIMIT = 64
 OBJECT_LIMIT = 8
@@ -144,9 +146,14 @@ def _ledger(parent):
                         [('id','preparation_id'),('case_id','case_id'),('run_id','run_id'),
                          ('owner_id','owner_id'),('park_id','park_id'),('org_id','org_id')])): raise ValueError()
                 anchor=b['context'].get('source_reapproval')
-                if data.delivery.expected_link_revision is None:
+                if data.delivery.expected_previous_plan_id is not None:
+                    from .plan_replacement_compatibility import validate_binding
                     if 'source_reapproval' in b['context']:raise ValueError()
+                    validate_binding(b['context'].get('plan_replacement'),data.delivery,b['context'])
+                elif data.delivery.expected_link_revision is None:
+                    if 'source_reapproval' in b['context'] or 'plan_replacement' in b['context']:raise ValueError()
                 else:
+                    if 'plan_replacement' in b['context']:raise ValueError()
                     anchor_keys={'link_id','link_revision','snapshot_sha256','previous_delivery_context','previous_approved_plan_revision',
                         'approved_plan_revision','source_adoption_event_id','source_adoption_revision','source_adoption_sha256','source_change_sha256'}
                     if (not isinstance(anchor,dict) or set(anchor)!=anchor_keys
@@ -193,10 +200,18 @@ def _ledger(parent):
 
 
 class IsolatedPlanApproval:
-    def __init__(self, owner_store=None, fixture_proof=None, *, preparation_ids=(), enabled_for_isolated_tests=False, enabled_for_source_reapproval_tests=False):
+    def __init__(self, owner_store=None, fixture_proof=None, *, preparation_ids=(), enabled_for_isolated_tests=False, enabled_for_source_reapproval_tests=False, enabled_for_plan_replacement_tests=False, plan_replacement_preflight=None):
         self.enabled = enabled_for_isolated_tests is True
         self.source_reapproval_enabled=enabled_for_source_reapproval_tests is True
-        if self.source_reapproval_enabled and not self.enabled:raise Denied('original isolated Approval must be enabled')
+        self.plan_replacement_enabled=enabled_for_plan_replacement_tests is True
+        self.plan_replacement_preflight=plan_replacement_preflight
+        if self.plan_replacement_enabled:
+            from .service_release_preflight import ServiceReleasePreflight
+            if (type(plan_replacement_preflight) is not ServiceReleasePreflight
+                or getattr(plan_replacement_preflight.store,'_isolated_service_capability_catalog',None) is not plan_replacement_preflight.catalog):
+                raise Denied('explicit original ServiceRelease preflight required')
+            plan_replacement_preflight.consumer.validate_fixture()
+        if (self.source_reapproval_enabled or self.plan_replacement_enabled) and not self.enabled:raise Denied('original isolated Approval must be enabled')
         self.owner, self.proof = owner_store, fixture_proof
         self.ids = frozenset(str(UUID(str(id))) for id in preparation_ids)
         if not self.enabled: return
@@ -260,6 +275,8 @@ class IsolatedPlanApproval:
 
     def attach_store(self,store):
         if not self.enabled or store.mode != 'LOCAL': raise Denied('isolated plan Approval disabled')
+        if self.plan_replacement_enabled and self.plan_replacement_preflight.store is not store:
+            raise Denied('same original preflight store required')
         with self.owner.connect() as c: self._owner_proof(c)
         with store.connect() as c: self._connection(c)
         store._isolated_plan_approval = self
@@ -398,6 +415,10 @@ class IsolatedPlanApproval:
                 link=c.execute('SELECT revision FROM case_resource_links WHERE preparation_id=%s AND actor_id=%s AND request_key=%s',(parent['id'],p['id'],item['consumption']['key'])).fetchone()
                 if link is None:raise Conflict('Approval original consumption association required')
                 verify_receipt(parent,r['payload'],link_revision=link['revision'])
+                from .plan_replacement_compatibility import verify_history
+                original_link=c.execute('SELECT * FROM case_resource_links WHERE preparation_id=%s AND actor_id=%s AND request_key=%s',
+                    (parent['id'],p['id'],item['consumption']['key'])).fetchone()
+                verify_history(store,c,parent,original_link,r['payload'])
             if item['state'] in ('PROPOSED','APPROVED'):
                 data=Proposal.model_validate({k:v for k,v in e['request'].items() if k!='action'}).delivery
                 try:
@@ -433,9 +454,16 @@ class IsolatedPlanApproval:
             self._guard(c,parent,event['approval_id'] if event else UUID(int=0),auth_only=True)
             return self._view(store,c,p,parent,event,recovery=key is not None)
 
+    def _write_connection(self,store):
+        if self.plan_replacement_enabled:
+            checker=self.plan_replacement_preflight
+            if checker.store is not store:raise Denied('same original preflight store required')
+            return checker.catalog.connection()
+        return store.connect()
+
     def propose(self,store,token,id,key,data):
         request=dict(action='PROPOSE',**body(data))
-        with store.connect() as c:
+        with self._write_connection(store) as c:
             p,parent=cr._parent(store,c,token,id,write=True); self._scope(c,p,parent)
             self._key(c,p,parent,key)
             event=self._replay(parent,key,request)
@@ -450,7 +478,7 @@ class IsolatedPlanApproval:
 
     def command(self,store,token,id,key,data):
         request=body(data)
-        with store.connect() as c:
+        with self._write_connection(store) as c:
             p,parent=cr._parent(store,c,token,id,write=True); self._scope(c,p,parent)
             self._key(c,p,parent,key)
             event=self._replay(parent,key,request)
