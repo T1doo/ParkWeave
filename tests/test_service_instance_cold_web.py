@@ -10,7 +10,7 @@ HARNESS = r'''
 const fs=require('fs'),vm=require('vm'),assert=require('assert'),crypto=require('crypto');
 const mode=process.argv[1],id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0'),sha=c=>c.repeat(64);let seq=50;
 class Element{
-constructor(tag='div'){this.tagName=tag;this.children=[];const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.style={};this.listeners={};}
+constructor(tag='div'){const classes=new Set();this.classList={add:(...names)=>names.forEach(n=>classes.add(n)),remove:(...names)=>names.forEach(n=>classes.delete(n)),contains:n=>classes.has(n)};this.tagName=tag;this.children=[];const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.style={};this.listeners={};}
 append(...x){this.children.push(...x)}replaceChildren(...x){this.children=x;this.textContent=''}prepend(...x){this.children.unshift(...x)}reset(){}addEventListener(n,f){(this.listeners[n]??=[]).push(f)}setAttribute(){}removeAttribute(n){delete this[n]}closest(){return null}querySelectorAll(selector){const found=[];for(const e of this.children){if(selector==='input[data-cold-goal]'&&e.dataset?.coldGoal)found.push(e);if(e.querySelectorAll)found.push(...e.querySelectorAll(selector));}return found}scrollIntoView(){}focus(){}select(){}remove(){}get firstElementChild(){return this.children[0]}get options(){return this.children.filter(x=>x.tagName==='option')}get selectedOptions(){return this.options.filter(x=>x.value===this.value)}
 }
 

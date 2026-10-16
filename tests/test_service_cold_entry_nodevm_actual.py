@@ -33,7 +33,7 @@ def test_complete_original_html_fresh_cold_input_actual_pg_asgi(selection_full_c
     with owner.connect() as c:
         assert c.execute('SELECT count(*) n FROM cases').fetchone()['n']==0
     root=Path(__file__).resolve().parents[1]
-    out=root/'.runtime/at-replay-20261014/cold-entry'/('pytest-'+str(os.getpid()));out.mkdir(parents=True,exist_ok=True)
+    out=Path(os.environ.get('COLD_ENTRY_ARTIFACT_ROOT',str(root/'.runtime/at-replay-20261014/cold-entry')))/('pytest-'+str(os.getpid()));out.mkdir(parents=True,exist_ok=True)
     proc=subprocess.Popen(['node','tests/service_cold_entry_actual_nodevm.js',mode],cwd=root,text=True,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=1)
     selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
     traffic=[];controls=[];result=None;stderr='';run_id=None
