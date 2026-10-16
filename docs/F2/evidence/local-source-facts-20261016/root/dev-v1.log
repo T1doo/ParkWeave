@@ -1,0 +1,151 @@
+F.....F                                                                  [100%]
+=================================== FAILURES ===================================
+___________ test_two_browser_inputs_worker_conditions_and_cold_read ____________
+
+tmp_path = PosixPath('/tmp/parkweave-local-facts-dev-v1/test_two_browser_inputs_worker0')
+
+    def test_two_browser_inputs_worker_conditions_and_cold_read(tmp_path):
+        from playwright.sync_api import sync_playwright
+        root = fresh(tmp_path); h = auth(root); saved = []
+        with running(root, tmp_path/'first.log') as api:
+            port = api.base_url.port
+            with sync_playwright() as pw:
+                browser = chromium(pw)
+                try:
+                    page = browser.new_page(); writes = []
+                    page.on('request', lambda r: writes.append(r.url) if r.method == 'POST' else None)
+                    page.goto(str(api.base_url)+'/local-entry')
+                    page.locator('a[href="/local-facts"]').click()
+                    page.locator('#session').fill(h['Authorization'][7:])
+                    for number, value in enumerate(('甲地区', '乙地区'), 1):
+                        fill_source(page, value, f'SYNTHETIC-source-{number}')
+                        with page.expect_response(lambda r: r.request.method == 'POST' and r.url.endswith('/api/facts')) as response:
+                            page.locator('#source-save').click()
+                        assert response.value.status == 201
+                        page.locator('#release').click()
+                        page.locator('#goal').fill(f'SYNTHETIC input {number}')
+                        page.locator('#assess-confirm').check()
+                        with page.expect_response(lambda r: r.request.method == 'POST' and r.url.endswith('/api/runs')) as response:
+                            page.locator('#assess-save').click()
+                        run = response.value.json()['run_id']
+                        row = wait(api, h, run); saved.append(row)
+                        page.locator('#result-read').click()
+>                       page.wait_for_function("document.querySelector('#result').textContent.includes('下一步条件')")
+
+tests/test_local_fact_entry.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f92cf6ec920>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f92cf3507c0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: Page.wait_for_function: EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: script-src 'self' 'unsafe-inline'".
+E           
+E               at eval (<anonymous>)
+E               at predicate (eval at evaluate (:311:30), <anonymous>:4:60)
+E               at next (eval at evaluate (:311:30), <anonymous>:29:33)
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+______ test_browser_lost_replies_exact_key_get_and_delayed_cross_identity ______
+
+tmp_path = PosixPath('/tmp/parkweave-local-facts-dev-v1/test_browser_lost_replies_exac0')
+
+    def test_browser_lost_replies_exact_key_get_and_delayed_cross_identity(tmp_path):
+        from playwright.sync_api import sync_playwright
+        root=fresh(tmp_path);h=auth(root)
+        with running(root,tmp_path/'lost.log') as api:
+            with sync_playwright() as pw:
+                browser=chromium(pw)
+                try:
+                    page=browser.new_page();posts=[]
+                    def drop(route):
+                        posts.append(route.request.url);route.fetch();route.abort('failed')
+                    page.route('**/api/facts',drop)
+                    page.goto(str(api.base_url)+'/local-facts');page.locator('#session').fill(h['Authorization'][7:])
+                    fill_source(page,'甲地区','SYNTHETIC-lost-fact');page.locator('#source-save').click()
+                    page.wait_for_function("document.querySelector('#error').textContent.length>0")
+                    assert page.locator('#source-save').is_disabled()
+                    old_handle=page.evaluate("sessionStorage.getItem('parkweave-local-facts-pending-v1')");page.reload()
+                    assert page.locator('#source-save').is_disabled() and page.locator('#assess-save').is_disabled()
+>                   assert page.evaluate("sessionStorage.getItem('parkweave-local-facts-pending-v1')")==old_handle
+
+tests/test_local_fact_entry.py:212: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f92cf2cbe60>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f92cf228fe0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: Page.wait_for_function: EvalError: Evaluating a string as JavaScript violates the following Content Security Policy directive because 'unsafe-eval' is not an allowed source of script: script-src 'self' 'unsafe-inline'".
+E           
+E               at eval (<anonymous>)
+E               at predicate (eval at evaluate (:311:30), <anonymous>:4:60)
+E               at next (eval at evaluate (:311:30), <anonymous>:29:33)
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_local_fact_entry.py::test_two_browser_inputs_worker_conditions_and_cold_read
+FAILED tests/test_local_fact_entry.py::test_browser_lost_replies_exact_key_get_and_delayed_cross_identity
+2 failed, 5 passed, 2 warnings in 53.44s
