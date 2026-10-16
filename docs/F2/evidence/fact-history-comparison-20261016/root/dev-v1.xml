@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="3" skipped="0" tests="3" time="23.159" timestamp="2026-10-16T23:15:15.467374+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_fact_history_comparison" name="test_actual_page_added_conflict_explicit_new_check_and_cold_pair" time="8.269"><failure message="AssertionError: assert not True&#10; +  where True = exists()&#10; +    where exists = (PosixPath('/tmp/parkweave-local-case-hgfxzth5') / 'data/postmaster.pid').exists">tmp_path = PosixPath('/tmp/parkweave-fact-compare-dev-v1/test_actual_page_added_conflic0')
+
+    def test_actual_page_added_conflict_explicit_new_check_and_cold_pair(tmp_path):
+        from playwright.sync_api import sync_playwright, expect
+        root = fresh(tmp_path); h = auth(root); saved = []
+&gt;       with running(root, tmp_path/'first.log') as api:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_fact_history_comparison.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/tmp/parkweave-local-case-hgfxzth5')
+log_path = PosixPath('/tmp/parkweave-fact-compare-dev-v1/test_actual_page_added_conflic0/first.log')
+port = 35287
+
+    @contextmanager
+    def running(root, log_path, port=None):
+        if port is None:
+            with socket.socket() as sock:
+                sock.bind(('127.0.0.1', 0))
+                port = sock.getsockname()[1]
+        with log_path.open('w') as output:
+            child = subprocess.Popen([sys.executable, '-m', 'scripts.local_case_entry', 'serve',
+                                      '--state-dir', str(root), '--port', str(port)],
+                                     cwd=log_path.parent, env=ENV, stdout=output, stderr=subprocess.STDOUT)
+            try:
+                deadline = time.monotonic() + 35
+                report = None
+                while time.monotonic() &lt; deadline:
+                    for line in log_path.read_text().splitlines():
+                        if line.startswith('{'):
+                            report = json.loads(line)
+                    if report:
+                        break
+                    assert child.poll() is None, 'inspect launcher log'
+                    time.sleep(.1)
+                assert report and report['api_pid'] != child.pid
+                with httpx.Client(base_url=f'http://127.0.0.1:{port}', timeout=5) as api:
+                    assert api.get('/health').json()['process_id'] == report['api_pid']
+                    yield api
+            finally:
+                if child.poll() is None:
+                    child.terminate()
+                    child.wait(timeout=40)
+            assert child.returncode == 0
+&gt;           assert not (root / 'data/postmaster.pid').exists()
+E           AssertionError: assert not True
+E            +  where True = exists()
+E            +    where exists = (PosixPath('/tmp/parkweave-local-case-hgfxzth5') / 'data/postmaster.pid').exists
+
+tests/test_local_case_entry.py:65: AssertionError</failure></testcase><testcase classname="tests.test_fact_history_comparison" name="test_server_clock_expiry_preserves_history_and_explicit_reassessment" time="9.456"><failure message="AssertionError: assert not True&#10; +  where True = exists()&#10; +    where exists = (PosixPath('/tmp/parkweave-local-case-gay_rg02') / 'data/postmaster.pid').exists">tmp_path = PosixPath('/tmp/parkweave-fact-compare-dev-v1/test_server_clock_expiry_prese0')
+
+    def test_server_clock_expiry_preserves_history_and_explicit_reassessment(tmp_path):
+        root = fresh(tmp_path); h = auth(root)
+&gt;       with running(root, tmp_path/'expiry.log') as api:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_fact_history_comparison.py:127: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/tmp/parkweave-local-case-gay_rg02')
+log_path = PosixPath('/tmp/parkweave-fact-compare-dev-v1/test_server_clock_expiry_prese0/expiry.log')
+port = 33385
+
+    @contextmanager
+    def running(root, log_path, port=None):
+        if port is None:
+            with socket.socket() as sock:
+                sock.bind(('127.0.0.1', 0))
+                port = sock.getsockname()[1]
+        with log_path.open('w') as output:
+            child = subprocess.Popen([sys.executable, '-m', 'scripts.local_case_entry', 'serve',
+                                      '--state-dir', str(root), '--port', str(port)],
+                                     cwd=log_path.parent, env=ENV, stdout=output, stderr=subprocess.STDOUT)
+            try:
+                deadline = time.monotonic() + 35
+                report = None
+                while time.monotonic() &lt; deadline:
+                    for line in log_path.read_text().splitlines():
+                        if line.startswith('{'):
+                            report = json.loads(line)
+                    if report:
+                        break
+                    assert child.poll() is None, 'inspect launcher log'
+                    time.sleep(.1)
+                assert report and report['api_pid'] != child.pid
+                with httpx.Client(base_url=f'http://127.0.0.1:{port}', timeout=5) as api:
+                    assert api.get('/health').json()['process_id'] == report['api_pid']
+                    yield api
+            finally:
+                if child.poll() is None:
+                    child.terminate()
+                    child.wait(timeout=40)
+            assert child.returncode == 0
+&gt;           assert not (root / 'data/postmaster.pid').exists()
+E           AssertionError: assert not True
+E            +  where True = exists()
+E            +    where exists = (PosixPath('/tmp/parkweave-local-case-gay_rg02') / 'data/postmaster.pid').exists
+
+tests/test_local_case_entry.py:65: AssertionError</failure></testcase><testcase classname="tests.test_fact_history_comparison" name="test_current_read_revocation_refuses_comparison_and_cold_read" time="5.235"><failure message="AssertionError: assert not True&#10; +  where True = exists()&#10; +    where exists = (PosixPath('/tmp/parkweave-local-case-segfu3pu') / 'data/postmaster.pid').exists">tmp_path = PosixPath('/tmp/parkweave-fact-compare-dev-v1/test_current_read_revocation_r0')
+
+    def test_current_read_revocation_refuses_comparison_and_cold_read(tmp_path):
+        from playwright.sync_api import sync_playwright, expect
+        root = fresh(tmp_path); h = auth(root)
+&gt;       with running(root, tmp_path/'before.log') as api:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_fact_history_comparison.py:158: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:144: in __exit__
+    next(self.gen)
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+root = PosixPath('/tmp/parkweave-local-case-segfu3pu')
+log_path = PosixPath('/tmp/parkweave-fact-compare-dev-v1/test_current_read_revocation_r0/before.log')
+port = 39853
+
+    @contextmanager
+    def running(root, log_path, port=None):
+        if port is None:
+            with socket.socket() as sock:
+                sock.bind(('127.0.0.1', 0))
+                port = sock.getsockname()[1]
+        with log_path.open('w') as output:
+            child = subprocess.Popen([sys.executable, '-m', 'scripts.local_case_entry', 'serve',
+                                      '--state-dir', str(root), '--port', str(port)],
+                                     cwd=log_path.parent, env=ENV, stdout=output, stderr=subprocess.STDOUT)
+            try:
+                deadline = time.monotonic() + 35
+                report = None
+                while time.monotonic() &lt; deadline:
+                    for line in log_path.read_text().splitlines():
+                        if line.startswith('{'):
+                            report = json.loads(line)
+                    if report:
+                        break
+                    assert child.poll() is None, 'inspect launcher log'
+                    time.sleep(.1)
+                assert report and report['api_pid'] != child.pid
+                with httpx.Client(base_url=f'http://127.0.0.1:{port}', timeout=5) as api:
+                    assert api.get('/health').json()['process_id'] == report['api_pid']
+                    yield api
+            finally:
+                if child.poll() is None:
+                    child.terminate()
+                    child.wait(timeout=40)
+            assert child.returncode == 0
+&gt;           assert not (root / 'data/postmaster.pid').exists()
+E           AssertionError: assert not True
+E            +  where True = exists()
+E            +    where exists = (PosixPath('/tmp/parkweave-local-case-segfu3pu') / 'data/postmaster.pid').exists
+
+tests/test_local_case_entry.py:65: AssertionError</failure></testcase></testsuite></testsuites>

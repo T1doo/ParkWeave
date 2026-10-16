@@ -1,0 +1,13 @@
+# F3-T03 frozen independent review — PASS
+
+Frozen source: `c74489ccb67347bc9ec607a5b7148be6e81830c4`; baseline: `9c7bbc569353dc9234d10ee566f03114f686d3b4`. All 708 frozen source/test/script inputs checked independently before and after execution, with zero hash differences. Root is the only source/Git writer; this reviewer wrote only the new review root and its own real /tmp test directory.
+
+Reviewed all five changed files. No blocking findings. Original facts.assess worker projection retains its evidence shape, validity interval, reasons and next-step mapping. New GET requires the original enterprise owner, park/org scope, READ capability and every historical field READ. Its transaction is READ ONLY; one current-source SQL statement supplies both rows and server observation time. Historical receipts remain unchanged and current projections are explicitly unpersisted. No Case binding, new rights, PREPARE/assignment/approval contract, authoritative-source selection or model call was added.
+
+The two early review suggestions were fixed before freezing: pair display rejects non-newer or differently ordered fields, and the current snapshot shows next-step conditions. Browser rendering uses text nodes and session/read epochs; denial and identity changes clear comparison content.
+
+Independently executed the complete `tests/test_fact_history_comparison.py`: **3 PASS**, 0 failure/error/skip, 34.80 seconds, exit 0. This is overlap with root's regression and must not be added to its unique test count. Actual Chromium → ASGI → owned PostgreSQL → original worker chain verified two source inputs and an added conflict, a later explicit original assessment, original receipt preservation, visible side-by-side display and rejection of an older pairing. Restart on the same port restored both records using GET with zero browser POST. Separate scenarios exercised real server-clock expiry and original field READ revocation, including restart denial. Business/permission snapshots remained unchanged across read-only comparisons.
+
+Evidence: independent.xml, independent.log, independent-outcome.json, freeze-check-before.json, chain-proof.json, expiry-proof.json, history-current-new.png and frozen-verdict.json in this directory. Raw independent owned fixtures remain under `/tmp/parkweave-fact-compare-review-v1`; no old sealed root was changed.
+
+Limits: only the new three-test module was independently executed. Fixed synthetic setup and original owner revocation are test preconditions. No formal AT-35, Windows, real model, production or full Case lifecycle result is claimed. Source authenticity and qualification remain UNVERIFIED / NOT_EVALUATED. Broader regression and archive review are separate integrator gates.
