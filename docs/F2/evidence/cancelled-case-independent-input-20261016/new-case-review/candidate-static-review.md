@@ -1,0 +1,17 @@
+# Independent new Case navigation candidate static review
+
+Input HEAD f635d806659265899616396ffb9a047d2a600af3, plus private UI patch and new uncommitted shared test module. Result: no static blocking finding. No shared source/tests/Git mutations; no PostgreSQL started.
+
+The candidate navigation is restricted to the existing before_receipt scope, actual current owner/Case and CANCELLED view. It explicitly reconfirms user intent, rejects every unresolved original/cold handle, then calls the original authenticated GET and rechecks scope/actor/Case/material version/local version/source digest/current context before navigation. Original tab clearing invalidates the old context; coldClear clears all input fields, directory and command state. The handler performs no POST, copies no old materials, reuses no old approval/resource/acceptance, releases no capacity and does not revive the old Case. READ-only access can permit read-only navigation, but the existing cold configuration and command APIs independently recheck EXECUTE, PREPARE and case.create authority. Default-disabled instance consumer remains refused.
+
+UNKNOWN handles are retained, including corruption. Pending operations after the GET are checked again. Changed token/context/view, unchecked confirmation and fresh GET refusal/changed state preserve the original context or clear private views by the original 403 behavior. There is no stored new authorization or inherited source definition. The navigation does not constitute same-Case source migration.
+
+The new ASGI test composes real original ordinary commands and verifies distinct Run/Case/preparation/plan/material/approval/hold/combination/dispatch/receipt identities, original six goals, P1–P5 verification, original Case history and original key recovery. Capacity remains occupied until a distinct original resource release call succeeds. Separate foreign-owner and revoked-HOLD tests require 403 and preserved old data. Root's execution window must establish runtime results; this static review does not claim them.
+
+The test explicitly calls owner-fixture assign_status on the independently created Run and constructs an issued IsolatedPlanApproval fixture bridge admitting the old and new preparations. These are disclosed fixture setup, not a product grant or proof that every setup action is available to an end user. Do not describe it as an entirely end-user-only setup or production provisioning proof.
+
+The sole old cold actual test module change is selecting its output directory through COLD_ENTRY_ARTIFACT_ROOT, with the original path as default. No business assertion or time budget changes. This prevents authorized new tests from mutating previously sealed evidence.
+
+Coverage accounting is chronological: the previous delivered batch correction remains 97 prior modules / 2407 original-baseline nodes not rerun. Only if this new batch executes all seven nodes in test_service_cold_entry_nodevm_actual.py and those seven pass may the cumulative remainder become 96 modules / 2400 nodes. Keep the current batch's PASS total separate from previous 508; never merge them as one same-SHA run.
+
+Required remaining evidence: final source freeze review; actual candidate UI/browser navigation and fresh cold input; complete affected original clients and seven original cold actual nodes; current namespace/owner/revocation/default-disabled refusal; final exact runtime counts and preserved failures.
