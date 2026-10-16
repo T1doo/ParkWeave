@@ -183,20 +183,23 @@ def test_schema33_event_failure_rolls_back_case_lifecycle_frontier_and_all_resou
 def test_schema33_cancellation_first_real_parent_lock_serializes_and_refuses_first_submit(accepted_schema33):
     x = accepted_schema33
     f, p = x['f'], x['p']
+    verified(f, p, 'P3')
     cancel_request, submit_request = cancel_body(x), receipt_body(x)
     results = []
+    def record(kind, response):
+        results.append((kind, response.status_code, response.json()))
     with f[1].connect() as blocker:
         blocker.execute('SELECT * FROM cases WHERE id=%s FOR UPDATE', (p['case_id'],))
-        cancel_thread = threading.Thread(target=lambda: results.append(('cancel', post(f, p, cancel_request).status_code)))
+        cancel_thread = threading.Thread(target=lambda: record('cancel', post(f, p, cancel_request)))
         cancel_thread.start()
         wait_for_pg_lock(f, 'SELECT * FROM cases WHERE id=')
-        receipt_thread = threading.Thread(target=lambda: results.append(('submit', receipt_post(x, submit_request).status_code)))
+        receipt_thread = threading.Thread(target=lambda: record('submit', receipt_post(x, submit_request)))
         receipt_thread.start()
         wait_for_pg_lock(f, 'FROM preparations WHERE id=')
     cancel_thread.join(6)
     receipt_thread.join(6)
     assert not cancel_thread.is_alive() and not receipt_thread.is_alive()
-    assert sorted(results) == [('cancel', 200), ('submit', 409)]
+    assert sorted((kind, status) for kind, status, _ in results) == [('cancel', 200), ('submit', 409)], results
     after = snapshot(f)
     assert not after['service_step_receipts']
     assert len(after['case_local_events']) == 1
@@ -205,9 +208,12 @@ def test_schema33_cancellation_first_real_parent_lock_serializes_and_refuses_fir
 def test_schema33_first_submit_wins_real_parent_lock_then_cancel_rechecks_whole_history(accepted_schema33, monkeypatch):
     x = accepted_schema33
     f, p = x['f'], x['p']
+    verified(f, p, 'P3')
     cancel_request, submit_request = cancel_body(x), receipt_body(x)
     entered, release = threading.Event(), threading.Event()
     results, once = [], []
+    def record(kind, response):
+        results.append((kind, response.status_code, response.json()))
     original = prep.case_write_guard
     def pause(c, parent):
         original(c, parent)
@@ -216,10 +222,10 @@ def test_schema33_first_submit_wins_real_parent_lock_then_cancel_rechecks_whole_
             entered.set()
             assert release.wait(5)
     monkeypatch.setattr(prep, 'case_write_guard', pause)
-    receipt_thread = threading.Thread(target=lambda: results.append(('submit', receipt_post(x, submit_request).status_code)))
+    receipt_thread = threading.Thread(target=lambda: record('submit', receipt_post(x, submit_request)))
     receipt_thread.start()
     assert entered.wait(3)
-    cancel_thread = threading.Thread(target=lambda: results.append(('cancel', post(f, p, cancel_request).status_code)))
+    cancel_thread = threading.Thread(target=lambda: record('cancel', post(f, p, cancel_request)))
     cancel_thread.start()
     try:
         wait_for_pg_lock(f, 'FROM preparations WHERE id=')
@@ -228,7 +234,7 @@ def test_schema33_first_submit_wins_real_parent_lock_then_cancel_rechecks_whole_
     receipt_thread.join(6)
     cancel_thread.join(6)
     assert not cancel_thread.is_alive() and not receipt_thread.is_alive()
-    assert sorted(results) == [('cancel', 409), ('submit', 200)]
+    assert sorted((kind, status) for kind, status, _ in results) == [('cancel', 409), ('submit', 200)], results
     current = get(f, p).json()
     assert current['case_state'] != 'CANCELLED' and not current['can_cancel']
     assert 'HISTORICAL_RECEIPT_SUBMISSION_NOT_SUPPORTED' in current['blockers']
