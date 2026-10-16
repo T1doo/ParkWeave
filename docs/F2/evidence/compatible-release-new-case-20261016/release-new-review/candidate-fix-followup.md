@@ -1,0 +1,11 @@
+# Development fix follow-up review
+
+The previously reproduced numeric-confirmation and late-preflight issues are corrected. Actual model validation now accepts only literal Python/JSON true and rejects 1, 1.0, false, string and null. The updated actual-HTML pure NodeVM reproduction clears a preflight while GET is in flight and confirms the late reply no longer reinstates it. New evidence files confirmation-fixed-probe.json and late-preflight-fixed-probe.json preserve the original unfixed reproduction files separately. No PostgreSQL/browser was started.
+
+Static review confirms direct strict command now requires publication_confirmed is True and binds it only to the strict fingerprint and immutable event. Default Command/config schemas and request dictionaries retain their old bytes. API forwards the validated explicit confirmation. UI exact metadata-only handle shape, UUID/hash/revision bounds, storage set/remove readback, stricter COMMITTED action/release/profile/confirmation/flags checks and dedicated preflight generation/view identity are present. Finite malformed proof errors now produce Conflict instead of unbounded 500s.
+
+One remaining original-key-preservation issue was sent immediately to root: recoverPublication captures a handle, awaits GET, then removes the current value at that location without verifying it remains byte-identical to the captured raw handle. A separately replaced unknown handle in the same location could be removed by a late old response. Require exact raw equality before removal and preserve a replacement on mismatch; add a delayed-recovery replacement check.
+
+Minor defensive improvement also sent: validate preflight returned scope, 64-hex digest and explicit no-migration/no-grant flags before setting publicationCheck, rather than allowing malformed proof metadata to be persisted as a corrupt opaque handle. The backend publication transaction would reject an invalid digest, but UI should not manufacture an unrecoverable malformed handle from a rejected preflight.
+
+Candidate remains unfrozen; final actual-SHA review and root's complete direct execution windows are still required. Broader repository-global strict-mode persistence is explicitly not claimed by the process-level opt-in.
