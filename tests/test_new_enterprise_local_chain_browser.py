@@ -189,14 +189,23 @@ def test_goal_selection_unknown_save_keeps_original_body_and_cas(fresh_chain):
         browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);ctx,page=template_page(browser,u)
         try:
             for goal in ALL_GOALS:page.locator('[data-template-goal="'+goal+'"]').check()
+            page.locator('#template-name').fill('SYNTHETIC explicit original unknown-save draft')
+            page.locator('#template-reason').fill('SYNTHETIC explicit original SAVE_DRAFT with lost acknowledgement')
             keys=[]
             def lose(route):
                 response=route.fetch();assert response.status==200;keys.append(route.request.headers['idempotency-key']);route.abort('failed')
             path='**/api/template-candidate/park-a/'+u['scope'].template_id+'/commands';page.route(path,lose)
             page.locator('[data-template-action="SAVE_DRAFT"]').click();page.wait_for_function('()=>tp?.state==="UNKNOWN"')
             assert page.locator('[data-template-goal]:disabled').count()==6
-            original=page.evaluate('tp.body');page.unroute(path);page.locator('#template-retry').click();page.wait_for_function('()=>tp===null&&view?.revision===1')
+            original=page.evaluate('tp.body');original_key=page.evaluate('tp.key');assert keys==[original_key]
+            assert original['expected_revision']==0 and len(original['draft']['required_goals'])==6 and set(original['draft']['required_goals'])==set(ALL_GOALS)
+            retried=[]
+            def observe_retry(request):
+                if request.method=='POST' and request.url.endswith('/commands'):retried.append((request.header_value('idempotency-key'),request.post_data_json))
+            page.on('request',observe_retry)
+            page.unroute(path);page.locator('#template-retry').click();page.wait_for_function('()=>tp===null&&view?.revision===1')
             assert page.evaluate('view.draft.required_goals')==original['draft']['required_goals'] and len(keys)==1
+            assert retried==[(original_key,original)]
             assert len(page.evaluate('view.history'))==1
             page.locator('#template-actor').select_option('template-reviewer');assert page.locator('[data-template-goal]:checked').count()==0
         finally:ctx.close();browser.close()

@@ -74,11 +74,18 @@ def test_late_http_result_does_not_fill_current_private_view(delivery_page,targe
  end=time.monotonic()+10
  while not responses and time.monotonic()<end:page.wait_for_timeout(20)
  assert responses and effects(f)==[1,3,1,1,1]
+ original_handles=page.evaluate('deliveryHandles().map(h=>({name:h.name,raw:localStorage.getItem(h.name)}))');assert len(original_handles)==1
  if target=='case':page.locator('#delivery-case').fill(str(uuid4()))
- elif target=='identity':open_resources(page,f,'fixture-b')
+ elif target=='identity':
+  # The different tenant remains unauthorised; this checks a local identity switch,
+  # not a successful catalogue read. Do not wait for its refused bundle identity.
+  page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('change');page.locator('[data-tab="resource"]').click()
+  assert page.evaluate('deliveryQuote===null&&bundleActor===null')
  else:page.locator('#resource-purpose').fill('SYNTHETIC different draft');page.locator('#resource-purpose').dispatch_event('input')
  route,response=responses.pop();route.fulfill(response=response);settled(page);page.wait_for_timeout(150)
  assert page.locator('#delivery-result').inner_text()=='' and page.evaluate('deliveryHandles().length')==1
+ assert page.evaluate('deliveryHandles().map(h=>({name:h.name,raw:localStorage.getItem(h.name)}))')==original_handles
+ assert effects(f)==[1,3,1,1,1]
 
 
 def test_owned_api_process_restart_reads_committed_case_delivery_without_post(delivery_page,tmp_path):
