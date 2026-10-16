@@ -1,5 +1,5 @@
 """Original template and product page handlers connected through owned ASGI."""
-import hashlib,json,selectors,subprocess
+import hashlib,json,selectors,subprocess,os
 import pytest
 from pathlib import Path
 from uuid import uuid4
@@ -101,10 +101,10 @@ def test_template_new_input_full_original_local_chain_and_changed_source_rejecti
                     assert c.execute('SELECT count(*) n FROM synthetic_resource_combination_members m JOIN synthetic_resource_holds h ON h.id=m.hold_id WHERE m.combination_id=%s AND h.state=%s',(item['combination'],'CONFIRMED')).fetchone()['n']==2
                     parent=c.execute('SELECT case_id,run_id,service_case_plan FROM preparations WHERE id=%s',(item['preparation'],)).fetchone();assert str(parent['case_id'])==item['case'] and str(parent['run_id'])==item['run'];assert parent['service_case_plan']['id']==item['plan']
                 else:assert c.execute('SELECT count(*) n FROM preparations').fetchone()['n']==0
-            out=Path('.runtime/template-repeat-cold-20261013' if mode=='repeat_cold' else '.runtime/template-full-chain-20261013');out.mkdir(parents=True,exist_ok=True)
+            out=(Path(os.environ.get('RELEASE_REGRESSION_ARTIFACT_ROOT','.runtime'))/('template-repeat-cold-20261013' if mode=='repeat_cold' else 'template-full-chain-20261013'));out.mkdir(parents=True,exist_ok=True)
             (out/('actual-'+mode+'.json')).write_text(json.dumps({'summary':summary,'requests':requests,'permission_snapshot_unchanged':True,'first_history_unchanged':first_before is not None,'same_owned_database_two_inputs':mode=='repeat_cold','first_history_sha256':hashlib.sha256(json.dumps(first_before,sort_keys=True,default=str).encode()).hexdigest() if first_before else None,'first_history_rows':{k:len(v) for k,v in first_before.items()} if first_before else None},indent=2)+'\n')
         finally:
-            out=Path('.runtime/template-repeat-cold-20261013' if mode=='repeat_cold' else '.runtime/template-full-chain-20261013');out.mkdir(parents=True,exist_ok=True);(out/('partial-'+mode+'.json')).write_text(json.dumps({'summary':summary,'requests':requests,'denials':denials},indent=2)+'\n')
+            out=(Path(os.environ.get('RELEASE_REGRESSION_ARTIFACT_ROOT','.runtime'))/('template-repeat-cold-20261013' if mode=='repeat_cold' else 'template-full-chain-20261013'));out.mkdir(parents=True,exist_ok=True);(out/('partial-'+mode+'.json')).write_text(json.dumps({'summary':summary,'requests':requests,'denials':denials},indent=2)+'\n')
             selector.close()
             if proc.poll() is None:proc.terminate();proc.wait(timeout=5)
 

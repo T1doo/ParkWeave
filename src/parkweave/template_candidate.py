@@ -183,7 +183,9 @@ class TemplateRepository:
 
 
 class TemplateEngine:
-    def __init__(self,config=None,repository=None,clock=None):
+    def __init__(self,config=None,repository=None,clock=None,*,compatible_publication_only=False):
+        if type(compatible_publication_only) is not bool:raise ValueError("exact compatible publication mode required")
+        self.compatible_publication_only=compatible_publication_only
         self._config=TemplateConfig.model_validate((config or TemplateConfig()).model_dump())
         self.repository=repository;self.clock=clock or (lambda:datetime.now(timezone.utc));self.lock=threading.RLock()
         if repository is not None:self._bind_contract(self._config)
@@ -315,17 +317,50 @@ class TemplateEngine:
                 if expected_release_sha256 is not None and release['release_sha256']!=expected_release_sha256:raise Conflict('template release hash changed')
                 return release
 
-    def command(self,actor,scope,key,data):
+    def publication_preflight(self,actor,scope):
+        from .compatible_publication import inspect
+        with self.lock:
+            self._enabled()
+            with self.repository.transaction() as c:
+                return inspect(self,c,actor,scope)
+
+    def publication_recover(self,actor,scope,key):
+        with self.lock:
+            self._authorize(actor,'READ',scope,self.clock())
+            with self.repository.transaction() as c:
+                self._enabled(c)
+                row=c.execute('SELECT * FROM template_events WHERE actor=? AND key=? AND scope=? AND action=?',
+                    (actor,key,canonical(scope.model_dump()),'CANDIDATE_PUBLISH')).fetchone()
+                event=json.loads(row['payload']) if row else None
+                return dict(status='COMMITTED' if row else 'NOT_OBSERVED',request_key=key,
+                    automatically_replayed=False,event=event,current=self._view(c,actor,scope))
+
+    def command(self,actor,scope,key,data,*,publication_preflight_sha256=None,publication_confirmed=False):
         if not isinstance(key,str) or not 1<=len(key)<=100:raise ValueError('bounded template request key required')
         with self.lock:
             self._authorize(actor,data.action,scope,self.clock())
-            fp=sha(dict(scope=scope.model_dump(),**data.model_dump(mode='json')))
+            request=dict(scope=scope.model_dump(),**data.model_dump(mode='json'))
+            if publication_preflight_sha256 is not None:
+                if data.action!='CANDIDATE_PUBLISH' or not self.compatible_publication_only:
+                    raise Conflict('explicit compatible publication mode required')
+                if publication_confirmed is not True:raise Conflict('explicit boolean compatible publication confirmation required')
+                request['publication_preflight_sha256']=publication_preflight_sha256
+                request['publication_confirmed']=True
+            if self.compatible_publication_only and data.action=='CANDIDATE_PUBLISH' and publication_preflight_sha256 is None:
+                raise Conflict('current compatible preflight and explicit confirmation required')
+            fp=sha(request)
             with self.repository.transaction() as c:
                 self._enabled(c)
                 row=self._row(c,scope);old=c.execute('SELECT * FROM template_events WHERE actor=? AND key=?',(actor,key)).fetchone()
                 if old:
                     if old['fp']!=fp or old['scope']!=canonical(scope.model_dump()):raise Conflict('template request key fingerprint or scope changed')
                     return self._view(c,actor,scope,json.loads(old['payload']))
+                compatibility=None
+                if publication_preflight_sha256 is not None:
+                    from .compatible_publication import inspect
+                    compatibility=inspect(self,c,actor,scope)
+                    if not compatibility['can_publish'] or compatibility['preflight_sha256']!=publication_preflight_sha256:
+                        raise Conflict('current compatible publication preflight required')
                 revision=row['revision'] if row else 0
                 if data.expected_revision!=revision or (row and data.expected_definition_sha256!=row['definition_sha']):raise Conflict('template revision or definition changed')
                 if revision>=64:raise Conflict('template event history limit reached')
@@ -387,5 +422,8 @@ class TemplateEngine:
                           (canonical(scope.model_dump()),row['id'] if row else str(uuid4()),revision,version,state,canonical(definition),sha(definition),author,canonical(review) if review else None,release_id))
                 event=dict(id=str(uuid4()),scope=scope.model_dump(),revision=revision,content_version=version,action=data.action,
                            actor_id=actor,definition_sha256=sha(definition),release_id=release_id,reason=data.reason,**FLAGS)
+                if compatibility is not None:
+                    event['publication_preflight']=compatibility
+                    event['publication_confirmed']=True
                 c.execute('INSERT INTO template_events VALUES(?,?,?,?,?,?,?)',(actor,key,fp,canonical(scope.model_dump()),revision,data.action,canonical(event)))
                 return self._view(c,actor,scope,event)

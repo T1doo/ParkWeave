@@ -1,5 +1,5 @@
 """Original template HTML handlers, owned PG/ASGI; no browser or model."""
-import json,selectors,subprocess
+import json,selectors,subprocess,os
 from pathlib import Path
 from test_template_consumer import template_consumption,headers,finish
 from template_candidate_support import ENTERPRISES,grant_snapshot
@@ -20,9 +20,9 @@ def test_template_consumer_current_constraints_preview_confirmation_and_return_e
             proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
         assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['checks']>=25;assert grant_snapshot(f['owner'])==before
         rows=f['consumer'].instances(f['tokens'][ENTERPRISES[0]])['items'];assert len(rows)==3 and sum(x['state']=='PLAN_ADOPTED' for x in rows)==2;assert next(x for x in rows if x['instance_id']==summary['third'])['plan_id'] is None
-        r=Path('.runtime/template-consumer-planning-20261013');r.mkdir(parents=True,exist_ok=True);(r/'actual-chain.json').write_text(json.dumps({'summary':summary,'requests':requests,'permission_snapshot_unchanged':True,'lost_responses':0},indent=2)+'\n')
+        r=(Path(os.environ.get('RELEASE_REGRESSION_ARTIFACT_ROOT','.runtime'))/'template-consumer-planning-20261013');r.mkdir(parents=True,exist_ok=True);(r/'actual-chain.json').write_text(json.dumps({'summary':summary,'requests':requests,'permission_snapshot_unchanged':True,'lost_responses':0},indent=2)+'\n')
     finally:
-        r=Path('.runtime/template-consumer-planning-20261013');r.mkdir(parents=True,exist_ok=True);(r/'latest-partial-chain.json').write_text(json.dumps({'summary':summary,'requests':requests},indent=2)+'\n')
+        r=(Path(os.environ.get('RELEASE_REGRESSION_ARTIFACT_ROOT','.runtime'))/'template-consumer-planning-20261013');r.mkdir(parents=True,exist_ok=True);(r/'latest-partial-chain.json').write_text(json.dumps({'summary':summary,'requests':requests},indent=2)+'\n')
         sel.close()
         if proc.poll() is None:proc.terminate();proc.wait(timeout=5)
 

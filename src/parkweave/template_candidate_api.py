@@ -38,7 +38,7 @@ def create_template_candidate_app(engine=None,consumer=None):
     def page():return Path(__file__).with_name('template_candidate_web.html').read_text(encoding='utf-8')
 
     @app.get('/api/template-candidate/status')
-    def status():return engine.status()
+    def status():return dict(**engine.status(),compatible_publication_only=engine.compatible_publication_only)
 
     def scope(park,template):
         try:return Scope(park_id=park,template_id=template)
@@ -51,6 +51,24 @@ def create_template_candidate_app(engine=None,consumer=None):
     @app.post('/api/template-candidate/{park}/{template}/commands')
     def command(park:str,template:str,data:Command,x_isolated_template_actor:str|None=Header(default=None),idempotency_key:str=Header(min_length=1,max_length=100)):
         return engine.command(x_isolated_template_actor,scope(park,template),idempotency_key,data)
+
+    if engine.compatible_publication_only:
+        from .compatible_publication import Publication
+
+        @app.get('/api/template-candidate/{park}/{template}/publication-preflight')
+        def publication_preflight(park:str,template:str,x_isolated_template_actor:str|None=Header(default=None)):
+            return engine.publication_preflight(x_isolated_template_actor,scope(park,template))
+
+        @app.post('/api/template-candidate/{park}/{template}/compatible-publications')
+        def compatible_publication(park:str,template:str,data:Publication,x_isolated_template_actor:str|None=Header(default=None),idempotency_key:str=Header(min_length=1,max_length=100)):
+            data.validate_publication()
+            return engine.command(x_isolated_template_actor,scope(park,template),idempotency_key,data.command,
+                publication_preflight_sha256=data.expected_preflight_sha256,publication_confirmed=data.confirmed)
+
+        @app.get('/api/template-candidate/{park}/{template}/compatible-publications/{request_key}')
+        def publication_recover(park:str,template:str,request_key:str,x_isolated_template_actor:str|None=Header(default=None)):
+            if not 1<=len(request_key)<=100:raise HTTPException(422,'bounded original key required')
+            return engine.publication_recover(x_isolated_template_actor,scope(park,template),request_key)
 
     if consumer is not None:
         if not engine.config.enabled_for_isolated_tests or not consumer.config.enabled_for_isolated_tests:raise ValueError('explicit isolated template and consumer contracts required for consumer routes')
