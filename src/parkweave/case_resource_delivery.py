@@ -21,7 +21,7 @@ def _boundary(**extra):
 class PreviewBundle(rb.Bundle):
     expected_link_revision: int | None = Field(default=None, ge=1, le=64)
     expected_previous_plan_id: UUID | None = Field(default=None, strict=False)
-    replacement_frontier_profile: Literal['KNOWN_NOT_STARTED_V1'] | None = None
+    replacement_frontier_profile: Literal['KNOWN_NOT_STARTED_V1','P3_NEVER_ACCEPTED_CLOSED_V1'] | None = None
 
     @model_validator(mode='after')
     def replacement_requires_original_link(self):

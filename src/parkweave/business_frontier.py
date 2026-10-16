@@ -144,31 +144,33 @@ class KnownNotStartedFrontier:
   if enabled_for_isolated_tests is not True or owner_store.mode!='LOCAL':raise Denied('explicit owned frontier installation required')
   self.owner,self.proof=owner_store,fixture_proof;self.generation=str(uuid4())
   with owner_store.connect() as c:
-   self._owner(c)
-   c.execute('LOCK TABLE preparations IN ACCESS EXCLUSIVE MODE')
-   if c.execute('SELECT 1 FROM preparations LIMIT 1').fetchone():raise Denied('frontier installation must precede every preparation birth; no backfill')
-   if c.execute("SELECT 1 FROM pg_attribute WHERE attrelid='preparations'::regclass AND attname=%s AND NOT attisdropped",(BIRTH,)).fetchone():raise Denied('frontier may be installed only once per issued generation')
-   for table in TABLES:
-    if c.execute(SQL('SELECT 1 FROM {} LIMIT 1').format(SQL(table))).fetchone():raise Denied('frontier installation requires original empty business relations')
-   from .service_plan_approval import _install_schema
-   _install_schema(c)
-   self.endpoint=(c.info.host,c.info.port)
-   self.oids=[c.execute('SELECT %s::regclass::oid value',('public.'+t,)).fetchone()['value'] for t in TABLES]
-   c.execute('ALTER TABLE preparations ADD COLUMN candidate_frontier_birth jsonb, ADD COLUMN candidate_business_frontier jsonb, ADD COLUMN candidate_frontier_consumptions jsonb')
-   for name,body in (('candidate_frontier_birth_guard',_birth_body(self.generation)),('candidate_frontier_effect_guard',_effect_body(self.oids)),('candidate_frontier_truncate_guard',TRUNCATE_BODY),('candidate_frontier_consumption_guard',CONSUMPTION_BODY)):
-    c.execute(SQL('CREATE FUNCTION public.{}() RETURNS trigger LANGUAGE plpgsql AS {}').format(SQL(name),Literal(body)))
-   c.execute('CREATE TRIGGER candidate_frontier_birth BEFORE INSERT OR UPDATE OR DELETE ON preparations FOR EACH ROW EXECUTE FUNCTION public.candidate_frontier_birth_guard()')
-   c.execute('ALTER TABLE preparations ENABLE ALWAYS TRIGGER candidate_frontier_birth')
-   for table in ('preparations',*TABLES):
-    if table!='preparations':
-     c.execute(SQL('CREATE TRIGGER candidate_frontier_effect BEFORE INSERT OR UPDATE OR DELETE ON {} FOR EACH ROW EXECUTE FUNCTION public.candidate_frontier_effect_guard()').format(SQL(table)))
-     c.execute(SQL('ALTER TABLE {} ENABLE ALWAYS TRIGGER candidate_frontier_effect').format(SQL(table)))
-    c.execute(SQL('CREATE TRIGGER candidate_frontier_truncate BEFORE TRUNCATE ON {} FOR EACH STATEMENT EXECUTE FUNCTION public.candidate_frontier_truncate_guard()').format(SQL(table)))
-    c.execute(SQL('ALTER TABLE {} ENABLE ALWAYS TRIGGER candidate_frontier_truncate').format(SQL(table)))
-   c.execute("CREATE CONSTRAINT TRIGGER candidate_frontier_consumption AFTER UPDATE ON preparations DEFERRABLE INITIALLY DEFERRED FOR EACH ROW WHEN (OLD.candidate_frontier_consumptions IS DISTINCT FROM NEW.candidate_frontier_consumptions) EXECUTE FUNCTION public.candidate_frontier_consumption_guard()")
-   c.execute('ALTER TABLE preparations ENABLE ALWAYS TRIGGER candidate_frontier_consumption')
-   self.schema=self._catalog(c);self.schema_sha256=cp._hash(self.schema)
+   self._install(c)
 
+ def _install(self,c):
+  self._owner(c)
+  c.execute('LOCK TABLE preparations IN ACCESS EXCLUSIVE MODE')
+  if c.execute('SELECT 1 FROM preparations LIMIT 1').fetchone():raise Denied('frontier installation must precede every preparation birth; no backfill')
+  if c.execute("SELECT 1 FROM pg_attribute WHERE attrelid='preparations'::regclass AND attname=%s AND NOT attisdropped",(BIRTH,)).fetchone():raise Denied('frontier may be installed only once per issued generation')
+  for table in TABLES:
+   if c.execute(SQL('SELECT 1 FROM {} LIMIT 1').format(SQL(table))).fetchone():raise Denied('frontier installation requires original empty business relations')
+  from .service_plan_approval import _install_schema
+  _install_schema(c)
+  self.endpoint=(c.info.host,c.info.port)
+  self.oids=[c.execute('SELECT %s::regclass::oid value',('public.'+t,)).fetchone()['value'] for t in TABLES]
+  c.execute('ALTER TABLE preparations ADD COLUMN candidate_frontier_birth jsonb, ADD COLUMN candidate_business_frontier jsonb, ADD COLUMN candidate_frontier_consumptions jsonb')
+  for name,body in (('candidate_frontier_birth_guard',_birth_body(self.generation)),('candidate_frontier_effect_guard',_effect_body(self.oids)),('candidate_frontier_truncate_guard',TRUNCATE_BODY),('candidate_frontier_consumption_guard',CONSUMPTION_BODY)):
+   c.execute(SQL('CREATE FUNCTION public.{}() RETURNS trigger LANGUAGE plpgsql AS {}').format(SQL(name),Literal(body)))
+  c.execute('CREATE TRIGGER candidate_frontier_birth BEFORE INSERT OR UPDATE OR DELETE ON preparations FOR EACH ROW EXECUTE FUNCTION public.candidate_frontier_birth_guard()')
+  c.execute('ALTER TABLE preparations ENABLE ALWAYS TRIGGER candidate_frontier_birth')
+  for table in ('preparations',*TABLES):
+   if table!='preparations':
+    c.execute(SQL('CREATE TRIGGER candidate_frontier_effect BEFORE INSERT OR UPDATE OR DELETE ON {} FOR EACH ROW EXECUTE FUNCTION public.candidate_frontier_effect_guard()').format(SQL(table)))
+    c.execute(SQL('ALTER TABLE {} ENABLE ALWAYS TRIGGER candidate_frontier_effect').format(SQL(table)))
+   c.execute(SQL('CREATE TRIGGER candidate_frontier_truncate BEFORE TRUNCATE ON {} FOR EACH STATEMENT EXECUTE FUNCTION public.candidate_frontier_truncate_guard()').format(SQL(table)))
+   c.execute(SQL('ALTER TABLE {} ENABLE ALWAYS TRIGGER candidate_frontier_truncate').format(SQL(table)))
+  c.execute("CREATE CONSTRAINT TRIGGER candidate_frontier_consumption AFTER UPDATE ON preparations DEFERRABLE INITIALLY DEFERRED FOR EACH ROW WHEN (OLD.candidate_frontier_consumptions IS DISTINCT FROM NEW.candidate_frontier_consumptions) EXECUTE FUNCTION public.candidate_frontier_consumption_guard()")
+  c.execute('ALTER TABLE preparations ENABLE ALWAYS TRIGGER candidate_frontier_consumption')
+  self.schema=self._catalog(c);self.schema_sha256=cp._hash(self.schema)
  def _owner(self,c):
   p=self.proof
   if (type(p) is not facts.FixtureDatabaseEvidence or facts._fixture_databases.get(p.nonce) is not p
@@ -324,6 +326,9 @@ def validate_qualification(q,data,context):
 
 def record_consumption(store,c,parent,data,key,fp,receipt,proof):
  if data.replacement_frontier_profile is None:return
+ if data.replacement_frontier_profile=='P3_NEVER_ACCEPTED_CLOSED_V1':
+  from .p3_never_accepted_closure import record_consumption as consume
+  return consume(store,c,parent,data,key,fp,receipt,proof)
  protocol=getattr(store,'_known_not_started_frontier',None)
  if type(protocol) is not KnownNotStartedFrontier:raise Denied('original frontier consumption protocol required')
  q=proof['context']['plan_replacement']['compatibility']['qualification']
@@ -348,6 +353,9 @@ def assert_live_qualification(protocol,c,parent,data,expected):
 
 def final_consumption_check(store,c,parent,data,proof):
  if data.replacement_frontier_profile is None:return
+ if data.replacement_frontier_profile=='P3_NEVER_ACCEPTED_CLOSED_V1':
+  from .p3_never_accepted_closure import assert_live
+  return assert_live(store,c,parent,data,proof['context']['plan_replacement']['compatibility']['qualification'])
  protocol=getattr(store,'_known_not_started_frontier',None)
  if type(protocol) is not KnownNotStartedFrontier:raise Denied('original frontier consumption protocol required')
  assert_live_qualification(protocol,c,parent,data,proof['context']['plan_replacement']['compatibility']['qualification'])

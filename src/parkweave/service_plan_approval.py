@@ -226,13 +226,19 @@ def _ledger(parent):
 
 
 class IsolatedPlanApproval:
-    def __init__(self, owner_store=None, fixture_proof=None, *, preparation_ids=(), enabled_for_isolated_tests=False, enabled_for_source_reapproval_tests=False, enabled_for_plan_replacement_tests=False, plan_replacement_preflight=None, enabled_for_known_not_started_tests=False, known_not_started_frontier=None):
+    def __init__(self, owner_store=None, fixture_proof=None, *, preparation_ids=(), enabled_for_isolated_tests=False, enabled_for_source_reapproval_tests=False, enabled_for_plan_replacement_tests=False, plan_replacement_preflight=None, enabled_for_known_not_started_tests=False, known_not_started_frontier=None, enabled_for_p3_closure_tests=False, p3_closure_frontier=None):
         self.enabled = enabled_for_isolated_tests is True
         self.source_reapproval_enabled=enabled_for_source_reapproval_tests is True
         self.plan_replacement_enabled=enabled_for_plan_replacement_tests is True
         self.plan_replacement_preflight=plan_replacement_preflight
         self.known_not_started_enabled=enabled_for_known_not_started_tests is True
         self.known_not_started_frontier=known_not_started_frontier
+        self.p3_closure_enabled=enabled_for_p3_closure_tests is True
+        self.p3_closure_frontier=p3_closure_frontier
+        if self.p3_closure_enabled:
+            from .p3_never_accepted_closure import P3NeverAcceptedClosure
+            if not self.plan_replacement_enabled or type(p3_closure_frontier) is not P3NeverAcceptedClosure:
+                raise Denied('explicit original P3 closure and replacement scope required')
         if self.known_not_started_enabled:
             from .business_frontier import KnownNotStartedFrontier
             if not self.plan_replacement_enabled or type(known_not_started_frontier) is not KnownNotStartedFrontier:
@@ -295,6 +301,8 @@ class IsolatedPlanApproval:
             raise Denied('same original preflight store required')
         with self.owner.connect() as c: self._owner_proof(c)
         with store.connect() as c: self._connection(c)
+        if self.p3_closure_enabled and (getattr(store,'_p3_closure_frontier',None) is not self.p3_closure_frontier or getattr(store,'_known_not_started_frontier',None) is not self.p3_closure_frontier.frontier):
+            raise Denied('same issued P3 closure store required')
         if self.known_not_started_enabled and getattr(store,'_known_not_started_frontier',None) is not self.known_not_started_frontier:
             raise Denied('same original issued frontier store required')
         store._isolated_plan_approval = self

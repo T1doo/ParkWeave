@@ -86,6 +86,11 @@ def compare(store,c,p,parent,previous,current,*,historical=False,approved_revisi
                     or step['verified_sha256']!=cp._hash(step['verified_sources'])
                     or verification(parent,previous,step) is None):
                     raise Conflict('original complete verified five-step replacement predecessor required')
+        elif frontier_profile=='P3_NEVER_ACCEPTED_CLOSED_V1':
+            from .p3_never_accepted_closure import _protocol
+            protocol=_protocol(store)
+            if not getattr(bridge,'p3_closure_enabled',False) or bridge.p3_closure_frontier is not protocol:raise Denied('explicit enabled P3 closure scope required')
+            qualification=protocol.qualify(c,parent,previous,historical=historical,consumption_key=consumption_key)
         else:
             from .business_frontier import KnownNotStartedFrontier
             protocol=getattr(bridge,'known_not_started_frontier',None)
@@ -161,7 +166,9 @@ def compare(store,c,p,parent,previous,current,*,historical=False,approved_revisi
             frozen_registry_sha256=cp._hash(old_record['frozen_registry']),pairs=reports,
             affected=[s['id'] for s in current['steps']],preserved=[],
             automatic_adoption=False,automatic_approval=False,automatic_release=False)
-        if qualification is not None:result.update(schema=2,profile='ORIGINAL_V4_SERVICE_RELEASE_KNOWN_NOT_STARTED_V1',qualification=qualification)
+        if qualification is not None:
+            schema,profile=(3,'ORIGINAL_V4_SERVICE_RELEASE_P3_NEVER_ACCEPTED_CLOSED_V1') if frontier_profile=='P3_NEVER_ACCEPTED_CLOSED_V1' else (2,'ORIGINAL_V4_SERVICE_RELEASE_KNOWN_NOT_STARTED_V1')
+            result.update(schema=schema,profile=profile,qualification=qualification)
         return result
     except (KeyError,TypeError,ValueError,AttributeError):
         raise Conflict('known nonbreaking original V4 replacement preflight required') from None
@@ -338,13 +345,18 @@ def verify_history(store,c,parent,link,receipt):
 
 def validate_binding(value,data,context):
     if data.replacement_frontier_profile is None:return _validate_complete_binding(value,data,context)
-    from .business_frontier import validate_qualification
+    if data.replacement_frontier_profile=='P3_NEVER_ACCEPTED_CLOSED_V1':
+        from .p3_never_accepted_closure import validate_qualification
+        schema,profile=3,'ORIGINAL_V4_SERVICE_RELEASE_P3_NEVER_ACCEPTED_CLOSED_V1'
+    else:
+        from .business_frontier import validate_qualification
+        schema,profile=2,'ORIGINAL_V4_SERVICE_RELEASE_KNOWN_NOT_STARTED_V1'
     if type(value) is not dict or set(value)!=KEYS:raise ValueError('strict original replacement proof required')
     report=value.get('compatibility')
     original_keys={'schema','profile','classification','previous_candidate_id','replacement_candidate_id','previous_candidate_sha256',
         'replacement_candidate_sha256','frozen_registry_sha256','pairs','affected','preserved','automatic_adoption','automatic_approval','automatic_release'}
-    if (type(report) is not dict or set(report)!=original_keys|{'qualification'} or type(report['schema']) is not int or report['schema']!=2
-        or report['profile']!='ORIGINAL_V4_SERVICE_RELEASE_KNOWN_NOT_STARTED_V1' or value['compatibility_sha256']!=cp._hash(report)):
+    if (type(report) is not dict or set(report)!=original_keys|{'qualification'} or type(report['schema']) is not int or report['schema']!=schema
+        or report['profile']!=profile or value['compatibility_sha256']!=cp._hash(report)):
         raise ValueError('strict versioned known-not-started replacement required')
     validate_qualification(report['qualification'],data,context)
     old_report={k:v for k,v in report.items() if k!='qualification'};old_report.update(schema=SCHEMA,profile=PROFILE)
