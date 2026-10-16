@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="3.055" timestamp="2026-10-16T15:56:41.833838+00:00" hostname="87a5e83cf057"><testcase classname="tests.test_p3_closure_backend" name="test_closure_explicit_approval_native_anchor_and_original_tail[WITHDRAW]" time="2.448"><error message="failed on setup with &quot;psycopg.errors.SyntaxError: syntax error at end of input&#10;LINE 48:    IF action IS DISTINCT FROM CASE WHEN n=1 THEN ''OFFER'' E...&#10;                                                    ^&quot;">[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-91/test_closure_explicit_approval0')
+request = &lt;SubRequest 'closure_case' for &lt;Function test_closure_explicit_approval_native_anchor_and_original_tail[WITHDRAW]&gt;&gt;
+
+    @pytest.fixture
+    def closure_case(capability_resource_catalog, tmp_path, request):
+        value = getattr(request, 'param', {})
+        if isinstance(value, str):
+            value = dict(action=value)
+&gt;       return build_closure(capability_resource_catalog, tmp_path, **value)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/p3_closure_fixture_support.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/p3_closure_fixture_support.py:63: in build_closure
+    protocol = P3NeverAcceptedClosure(f[1], f[1]._case_fact_fixture_receipt, enabled_for_isolated_tests=True)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/p3_never_accepted_closure.py:114: in __init__
+    c.execute(SQL('CREATE FUNCTION public.{}() RETURNS trigger LANGUAGE plpgsql AS {}').format(SQL(name),Literal(body)))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7fa82816aff0&gt;
+query = Composed([SQL('CREATE FUNCTION public.'), SQL('candidate_p3closure_guard'), SQL('() RETURNS trigger LANGUAGE plpgsql A...WHERE preparation_id=NEW.id) THEN RAISE EXCEPTION 'no original P4/P5 effect required'; END IF;\n RETURN NEW;\nEND\n")])
+params = None, prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.SyntaxError: syntax error at end of input
+E           LINE 48:    IF action IS DISTINCT FROM CASE WHEN n=1 THEN ''OFFER'' E...
+E                                                               ^
+
+../../../.venv/lib/python3.12/site-packages/psycopg/connection.py:304: SyntaxError</error></testcase></testsuite></testsuites>

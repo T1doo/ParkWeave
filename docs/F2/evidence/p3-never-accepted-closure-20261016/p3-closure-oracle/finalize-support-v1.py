@@ -1,0 +1,10 @@
+from pathlib import Path
+import datetime,hashlib,json
+R=Path('/workspace/ParkWeave');O=R/'.runtime/p3-closure-oracle';F=R/'.runtime/p3-closure-root/v1/freeze.json'
+assert not (O/'writer-cessation.json').exists()
+def ref(p):return dict(path=str(p.relative_to(R)),sha256=hashlib.sha256(p.read_bytes()).hexdigest(),bytes=p.stat().st_size)
+r=json.loads((O/'final-independent-result-v1.json').read_text());assert r['counts']==dict(PASS=37,FAIL=0,ERROR=0,SKIP=0)
+files=[O/n for n in ('final-independent-result-v1.json','final-node-evidence-v1.json','final-import-provenance-v1.json','final-private-registration-manifest-v1.json','final-artifact-routing-v1.json','final-design-coverage-v1.json','analyze-final-v1.py','analyzer-execution-v1.log','analyzer-failure-01.json','analyze-final-v1-failed-mode-assumption.py','finalize-support-v1.py')]
+support=dict(status='FINAL_FRESH37_SUPPORT_COMPLETE_NOT_OTHER_WINDOWS',source_sha=r['source_sha'],freeze_path=str(F.relative_to(R)),freeze_sha256=ref(F)['sha256'],counts=r['counts'],windows=r['windows'],files=[ref(p) for p in files],scope='Exactly final p3-independent35+p3-races-solo2; no development/backend/core/HTML/Chrome or other running pool scores transferred.',design_specifications='Original32 remain design-only; finite actual mappings overlap37 nodes and explicitly record NOT_RUN/VARIANT limits.',actual_import_records=37,product_modules_each_record=8,all_actual_frozen_current_imports=True,private_registration_files=r['private_registration_files'],all_private_600=True,externalcopyselection=[],not_run_in_this37=['native socket HTTP','browser','Windows','formal AT','special PG27','real product models','production','general preexisting-preparation migration','protocol DDL ABA','resource COMMIT rollback','grant false-true ABA','query-denied/overflow full matrix'],analyzer_correction='One preserved analyzer-only action/state naming assertion failure; no original evidence edit or business rerun.')
+p=O/'final-support-manifest-v1.json';p.write_text(json.dumps(support,indent=2)+'\n')
+print(json.dumps(dict(support=ref(p),actual_counts=r['counts'],private_registration_files=r['private_registration_files'])))

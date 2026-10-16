@@ -1,0 +1,234 @@
+{
+  "status": "DESIGN_ONLY_NOT_EXECUTED",
+  "actual_tests": 0,
+  "baseline_sha": "c6f0771f92b585829bda1e7496aee98945e6877d",
+  "profile": "P3_NEVER_ACCEPTED_CLOSED_V1",
+  "compatibility_schema": 3,
+  "rows": [
+    {
+      "id": "PC01",
+      "name": "WITHDRAWN_full_new_chain",
+      "arrangement": "Original old P1/P2, OFFER and assigned-reviewer WITHDRAW; original compatible replacement, explicit new profile approval/COMMIT, newP1-P5 true VERIFY and six goals/worklist; epoch remains nonzero.",
+      "expected": "POSITIVE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC02",
+      "name": "DECLINED_full_new_chain",
+      "arrangement": "Same independent positive with original executor DECLINE; preserve literal DECLINED and DECLINE provenance, never label withdrawn.",
+      "expected": "POSITIVE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC03",
+      "name": "multi_offer_complete_history",
+      "arrangement": "Original 3 cycles OFFER/REOFFER and explicit closures, all offers/events/marker correspondence; no ACCEPT.",
+      "expected": "POSITIVE_LIMITED",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC04",
+      "name": "OFFERED_not_closed",
+      "arrangement": "Original OFFERED must refuse qualifier/preview; no automatic WITHDRAW; explicit authorized WITHDRAW changes digest and enables fresh proof.",
+      "expected": "REFUSE_THEN_FRESH",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC05",
+      "name": "never_offered_not_this_profile",
+      "arrangement": "P1/P2 complete and tracker0 belongs original separate KNS profile, not closure profile; do not coerce no rows into closed.",
+      "expected": "REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC06",
+      "name": "historical_ACCEPT_even_if_current_resolved",
+      "arrangement": "Actual ACCEPT creates original receipt; any later current state or empty current receipt cannot erase acceptance.",
+      "expected": "REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC07",
+      "name": "P4_P5_any_historical_effect",
+      "arrangement": "Original legacy CREATE/SUBMIT/P5 lifecycle effect or permanent marker trace refuses; missing current row is not no-effect proof.",
+      "expected": "REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC08",
+      "name": "missing_event_gap",
+      "arrangement": "Delete original event under controlled owner fault, no new permissions; root revision gap/marker mismatch must fail.",
+      "expected": "UNKNOWN_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC09",
+      "name": "missing_offer_or_root_scope",
+      "arrangement": "Missing/duplicated/foreign-root membership or current_offer_id mismatch cannot reconstruct complete bounded lineage.",
+      "expected": "UNKNOWN_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC10",
+      "name": "event_payload_fingerprint_fence_chain",
+      "arrangement": "Actor/role/action/state/offer/executor/preparation/request_key/fingerprint/revision and exact historical five-field fence all reconstructed; saved current fence cannot substitute past fence.",
+      "expected": "REFUSE_MUTATION",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC11",
+      "name": "event_summary_live_binding",
+      "arrangement": "Profile q19, compat schema3/top14, dispatch8/events10, raw event digest/marker digest agree at preview PROPOSE APPROVE COMMIT and immediate final check.",
+      "expected": "EXACT_SHAPE_AND_LIVE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC12",
+      "name": "real_event_delete_restore_ABA",
+      "arrangement": "Controlled owner removes and restores same event row/current appearance in separate transactions; marker and row transaction lineage remain changed.",
+      "expected": "REFUSE_NO_RESET",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC13",
+      "name": "protocol_DDL_ABA",
+      "arrangement": "Disable/re-enable/recreate trigger/function, replication change, truncate or mixed installation generation loses fixed dual-issued identity.",
+      "expected": "REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC14",
+      "name": "no_backfill_or_resnapshot",
+      "arrangement": "Dual base+closure protocol installs before prep; preexisting prep/partial schema/second install not qualified or repaired by resnapshot.",
+      "expected": "REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC15",
+      "name": "ACCEPT_wins_parent_wait",
+      "arrangement": "Actual original OFFERED; executor ACCEPT queued first under real parent lock then reviewer WITHDRAW; one200 one409, real receipt survives; future closure qualifier rejects.",
+      "expected": "ACTUAL_TWO_TRANSACTION_ORDER",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC16",
+      "name": "WITHDRAW_wins_parent_wait",
+      "arrangement": "Same proper role GETs/same fivefence; reviewer WITHDRAW first, ACCEPT second; one200 one409, no receipt, closure qualifier succeeds.",
+      "expected": "ACTUAL_TWO_TRANSACTION_ORDER",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC17",
+      "name": "REOFFER_before_adopt",
+      "arrangement": "Old closed/P1P2 current, original fresh REOFFER commits first; OFFERED qualifier rejects, original WITHDRAW needed, fresh digest/epoch different.",
+      "expected": "BUSINESS_STAGE_ORDER",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC18",
+      "name": "REOFFER_after_adopt_before_newP2",
+      "arrangement": "New full ADOPT/P1 has P2 pending; original REOFFER gate409 and marker/history unchanged. Do not fabricate old API success with ownerSQL.",
+      "expected": "REFUSE_ORIGINAL_GATE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC19",
+      "name": "COMMIT_first_old_intents_late",
+      "arrangement": "New closure COMMIT/newP2 first; old captured OFFER/ACCEPT/WITHDRAW intent refuses; fresh original REOFFER/ACCEPT allowed.",
+      "expected": "BUSINESS_STAGE_ORDER",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC20",
+      "name": "late_source_or_epoch_after_approval",
+      "arrangement": "Actual legitimate reachable stage mutation invalidates old q; approved delivery must not consume stale summary. OwnerSQL injections separately labelled, not fake original gate bypass.",
+      "expected": "REFUSE_NO_CONSUME",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC21",
+      "name": "WITHDRAW_transaction_rollback",
+      "arrangement": "After original event/marker writes, fail original dispatch_notice_outbox enqueue with controlled test trigger outside watched schema; all P3/history/marker/outbox rolls back.",
+      "expected": "REAL_PG_ROLLBACK",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC22",
+      "name": "OFFER_REOFFER_transaction_rollback",
+      "arrangement": "Same real original action fault path; retain exact prior lineage and original request receipt absent.",
+      "expected": "REAL_PG_ROLLBACK",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC23",
+      "name": "resource_delivery_rollback",
+      "arrangement": "Original capacity/link/CONSUME transaction fault rolls back independent closure consumption anchor and new effects; old holds/receipts unchanged.",
+      "expected": "REAL_PG_ROLLBACK",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC24",
+      "name": "old_delivery_key_cold_GET",
+      "arrangement": "After actual new REOFFER/ACCEPT/P4/P5, original consumed resource key GET and ApprovalGET preserve old receipt/closure prefix and perform no business writes.",
+      "expected": "ACTUAL_COLD_READ",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC25",
+      "name": "same_key_receipt_and_conflict",
+      "arrangement": "Identical original request replay yields original event/receipt; changed summary/profile/previous plan/members/reason samekey conflicts without loss or duplicates.",
+      "expected": "IDEMPOTENCY",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC26",
+      "name": "historical_prefix_after_new_ACCEPT",
+      "arrangement": "Independent immutable consumed closure anchor validates only actual closed old prefix; current root changes/head ACCEPT after new plan are new facts, not revocation of old consumed record.",
+      "expected": "POSITIVE_HISTORY",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC27",
+      "name": "owner_tenant_role_boundaries",
+      "arrangement": "Other owner/park/org, wrong reviewer/executor role, copied prep/fence/profile denies; no new Run assignment or grants.",
+      "expected": "DENIED",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC28",
+      "name": "revocation_and_real_ABA",
+      "arrangement": "Current READ/EXECUTE/PREPARE/HOLD/assigned reviewer or Run authority and committed false->true ABA keep source stale; historical fact does not grant current read.",
+      "expected": "DENIED_OR_STALE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC29",
+      "name": "profile_no_downgrade",
+      "arrangement": "Explicit closure profile cannot strip to original full5 or KNS profile; no automaticprofile switch, unsupported semantics UNKNOWN.",
+      "expected": "REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC30",
+      "name": "capacity_and_goal_history_preserved",
+      "arrangement": "All six goals/P1-P5/old plan steps/manual decisions/history/old confirmed holds retained; resource release independent; worklist recordedstates only.",
+      "expected": "POSITIVE_LIMITED",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC31",
+      "name": "bounded_complete_query",
+      "arrangement": "All events through rootrevision and all offers, exact count/order; overflow/unknown/incomplete/denied query failclosed.",
+      "expected": "UNKNOWN_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "PC32",
+      "name": "original_paths_unchanged",
+      "arrangement": "Original fully-complete fiveVERIFY and zero-frontier contract remain independent; no new protocol requirement retroactively rejects their valid fixtures.",
+      "expected": "REGRESSION_SCOPE_SEPARATE",
+      "status": "NOT_RUN"
+    }
+  ],
+  "score_rule": "Rows may overlap eventual nodes. No design or static review score is actual PG/HTTP evidence."
+}

@@ -1,0 +1,363 @@
+{
+  "source_sha": "c91bbea1e996c6608665bb76dd65218f2ba542c2",
+  "design": {
+    "path": ".runtime/p3-closure-oracle/oracle-design-v1.json",
+    "sha256": "588f4f46adb0ff335495dc3713be0e55298846ecb6ef38a178d5d68387442416",
+    "bytes": 10201,
+    "mtime_ns": 1792165714483628343
+  },
+  "rows": [
+    {
+      "id": "PC01",
+      "name": "WITHDRAWN_full_new_chain",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case1]"
+      ],
+      "limits": "WITHDRAW cycles1/3; Python source setup, original TestClient commands."
+    },
+    {
+      "id": "PC02",
+      "name": "DECLINED_full_new_chain",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case2]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case3]"
+      ],
+      "limits": "DECLINE cycles1/3 retains literal state/action."
+    },
+    {
+      "id": "PC03",
+      "name": "multi_offer_complete_history",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case1]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case3]"
+      ],
+      "limits": "One and three cycles only, not max bound."
+    },
+    {
+      "id": "PC04",
+      "name": "OFFERED_not_closed",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_offered_requires_explicit_current_authorized_withdraw[closure_case0]"
+      ],
+      "limits": "Real OFFER then explicit WITHDRAW; qualification component refusal."
+    },
+    {
+      "id": "PC05",
+      "name": "never_offered_not_this_profile",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_no_dispatch_history_cannot_claim_closed_profile[closure_case0]"
+      ],
+      "limits": "Zero dispatch closure claim refused by PG component."
+    },
+    {
+      "id": "PC06",
+      "name": "historical_ACCEPT_even_if_current_resolved",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "VARIANT",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_any_actual_acceptance_keeps_real_receipt_and_refuses_qualification[closure_case0]"
+      ],
+      "limits": "Actual ACCEPT preserved receipt and refusal; no later resolved/deleted receipt variant."
+    },
+    {
+      "id": "PC07",
+      "name": "P4_P5_any_historical_effect",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "VARIANT",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_any_actual_acceptance_keeps_real_receipt_and_refuses_qualification[closure_case0]"
+      ],
+      "limits": "Actual ACCEPT/CREATE refusal; no independent SUBMIT/P5-only/deleted-tail matrix."
+    },
+    {
+      "id": "PC08",
+      "name": "missing_event_gap",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_controlled_owner_history_damage_cannot_be_rehashed_to_closed[delete_event-closure_case0]"
+      ],
+      "limits": "Owner delete-event fault; component refusal."
+    },
+    {
+      "id": "PC09",
+      "name": "missing_offer_or_root_scope",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "NOT_RUN_HERE",
+      "nodeids": [],
+      "limits": "No missing-offer/root/foreign-membership mutation in these37."
+    },
+    {
+      "id": "PC10",
+      "name": "event_payload_fingerprint_fence_chain",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "VARIANT",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_controlled_owner_history_damage_cannot_be_rehashed_to_closed[delete_event-closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_controlled_owner_history_damage_cannot_be_rehashed_to_closed[delete_restore_event-closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_controlled_owner_history_damage_cannot_be_rehashed_to_closed[payload_fence_boolean-closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_controlled_owner_history_damage_cannot_be_rehashed_to_closed[request_key-closure_case0]"
+      ],
+      "limits": "Actual raw xmin/payload/marker replay in positives; fence bool/request-key mutations only, not all actor/action axes."
+    },
+    {
+      "id": "PC11",
+      "name": "event_summary_live_binding",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case1]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case2]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case3]"
+      ],
+      "limits": "Exact19/15/14 shape and raw native marker/event checks; not every individual checkpoint independently fault-injected."
+    },
+    {
+      "id": "PC12",
+      "name": "real_event_delete_restore_ABA",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_controlled_owner_history_damage_cannot_be_rehashed_to_closed[delete_restore_event-closure_case0]"
+      ],
+      "limits": "Owner actual delete+restore committed ABA, component refuses."
+    },
+    {
+      "id": "PC13",
+      "name": "protocol_DDL_ABA",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "NOT_RUN_HERE",
+      "nodeids": [],
+      "limits": "No protocol DDL/replication/TRUNCATE ABA experiment in these37."
+    },
+    {
+      "id": "PC14",
+      "name": "no_backfill_or_resnapshot",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "NOT_RUN_HERE",
+      "nodeids": [],
+      "limits": "Positive dual pre-birth installation is not negative backfill/resnapshot test."
+    },
+    {
+      "id": "PC15",
+      "name": "ACCEPT_wins_parent_wait",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_races.py::test_p3_closure_original_parent_wait_accept_withdraw_both_orders[ACCEPT-closure_case0]"
+      ],
+      "limits": "Real queued parent lock; ACCEPT200/WITHDRAW409; receipt preserved."
+    },
+    {
+      "id": "PC16",
+      "name": "WITHDRAW_wins_parent_wait",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_races.py::test_p3_closure_original_parent_wait_accept_withdraw_both_orders[WITHDRAW-closure_case0]"
+      ],
+      "limits": "Real queued parent lock; WITHDRAW200/ACCEPT409; no receipt; qualifies."
+    },
+    {
+      "id": "PC17",
+      "name": "REOFFER_before_adopt",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_real_reoffer_revives_offered_and_requires_new_withdraw_digest[closure_case0]"
+      ],
+      "limits": "Real REOFFER before adoption then explicit new WITHDRAW digest."
+    },
+    {
+      "id": "PC18",
+      "name": "REOFFER_after_adopt_before_newP2",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_new_adopt_p1_pending_p2_original_reoffer_gate_refuses"
+      ],
+      "limits": "New ADOPT/P1, pendingP2 original REOFFER409 no writes."
+    },
+    {
+      "id": "PC19",
+      "name": "COMMIT_first_old_intents_late",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_new_commit_then_old_actual_captured_intents_refuse_without_writing[old_offer]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_new_commit_then_old_actual_captured_intents_refuse_without_writing[old_accept]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_new_commit_then_old_actual_captured_intents_refuse_without_writing[old_resolution]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_new_commit_then_old_actual_captured_intents_refuse_without_writing[newplan_preP2_offer]"
+      ],
+      "limits": "Four captured stale bodies409 after newCOMMIT/P2; fresh tail in positive nodes."
+    },
+    {
+      "id": "PC20",
+      "name": "late_source_or_epoch_after_approval",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "VARIANT",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_wrong_preview_summary_binding_cannot_consume_approval[expected_source_sha256]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_wrong_preview_summary_binding_cannot_consume_approval[expected_plan_revision]"
+      ],
+      "limits": "Wrong expected source SHA/plan revision refused, not actual post-approval source/epoch writer."
+    },
+    {
+      "id": "PC21",
+      "name": "WITHDRAW_transaction_rollback",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_original_dispatch_transaction_rolls_back_after_real_event_before_notice[closure_case2-WITHDRAW]"
+      ],
+      "limits": "Outbox post-event fault; actual original WITHDRAW rollback."
+    },
+    {
+      "id": "PC22",
+      "name": "OFFER_REOFFER_transaction_rollback",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_original_dispatch_transaction_rolls_back_after_real_event_before_notice[closure_case0-OFFER]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_original_dispatch_transaction_rolls_back_after_real_event_before_notice[closure_case1-REOFFER]"
+      ],
+      "limits": "OFFER/REOFFER post-event fault; real rollback."
+    },
+    {
+      "id": "PC23",
+      "name": "resource_delivery_rollback",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "NOT_RUN_HERE",
+      "nodeids": [],
+      "limits": "No resource COMMIT/nativeanchor fault rollback in these37."
+    },
+    {
+      "id": "PC24",
+      "name": "old_delivery_key_cold_GET",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case1]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case2]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case3]"
+      ],
+      "limits": "Old/new resource keys and Approval cold GET exact readonly; no generic P3 request-key GET invented."
+    },
+    {
+      "id": "PC25",
+      "name": "same_key_receipt_and_conflict",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case1]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case2]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case3]"
+      ],
+      "limits": "Original resource samekey replay and four changed-parameter conflicts."
+    },
+    {
+      "id": "PC26",
+      "name": "historical_prefix_after_new_ACCEPT",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case1]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case2]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case3]"
+      ],
+      "limits": "Old native closed prefix remains readable after fresh new ACCEPT/fulltail."
+    },
+    {
+      "id": "PC27",
+      "name": "owner_tenant_role_boundaries",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_other_identity_cannot_preview_propose_consume_or_read_old_receipt[fixture-b]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_other_identity_cannot_preview_propose_consume_or_read_old_receipt[fixture-c]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_other_identity_cannot_preview_propose_consume_or_read_old_receipt[prep-specialist-fixture-a]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_other_identity_cannot_preview_propose_consume_or_read_old_receipt[executor-a]"
+      ],
+      "limits": "Other fixture principals/wrong reviewer/executor quote/propose/COMMIT/oldreceipt deny."
+    },
+    {
+      "id": "PC28",
+      "name": "revocation_and_real_ABA",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "VARIANT",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_current_revocation_refuses_approved_new_commit_without_effects[READ]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_current_revocation_refuses_approved_new_commit_without_effects[EXECUTE]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_current_revocation_refuses_approved_new_commit_without_effects[PREPARE]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_current_revocation_refuses_approved_new_commit_without_effects[HOLD]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_current_revocation_refuses_approved_new_commit_without_effects[REVIEWER_READ]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_current_revocation_refuses_approved_new_commit_without_effects[REVIEWER_ASSIGNED]"
+      ],
+      "limits": "Six current capability revocations; no false-true ABA/Run authority experiment."
+    },
+    {
+      "id": "PC29",
+      "name": "profile_no_downgrade",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_profile_never_downgrades_to_zero_or_completed[None]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_profile_never_downgrades_to_zero_or_completed[KNOWN_NOT_STARTED_V1]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_profile_never_downgrades_to_zero_or_completed[UNKNOWN]"
+      ],
+      "limits": "None/KNS/UNKNOWN profile requests refuse."
+    },
+    {
+      "id": "PC30",
+      "name": "capacity_and_goal_history_preserved",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "EXECUTED_LIMITED",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case1]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case2]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_actual_mode_history_new_approval_original_tail_and_readonly_cold_receipts[closure_case3]"
+      ],
+      "limits": "Six local goals/worklist/old confirmed holds/events preserved; no complete manual-decision mutation matrix."
+    },
+    {
+      "id": "PC31",
+      "name": "bounded_complete_query",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "VARIANT",
+      "nodeids": [
+        "tests/test_p3_closure_independent.py::test_p3_closure_controlled_owner_history_damage_cannot_be_rehashed_to_closed[delete_event-closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_controlled_owner_history_damage_cannot_be_rehashed_to_closed[delete_restore_event-closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_controlled_owner_history_damage_cannot_be_rehashed_to_closed[payload_fence_boolean-closure_case0]",
+        "tests/test_p3_closure_independent.py::test_p3_closure_controlled_owner_history_damage_cannot_be_rehashed_to_closed[request_key-closure_case0]"
+      ],
+      "limits": "Actual missing event and full positive bounded history; no overflow/query-denied/incomplete transport tests."
+    },
+    {
+      "id": "PC32",
+      "name": "original_paths_unchanged",
+      "design_status": "DESIGN_ONLY_SPECIFICATION_UNCHANGED",
+      "actual_status": "NOT_RUN_HERE",
+      "nodeids": [],
+      "limits": "Root separate regressions excluded; original zero/full5 modules are not these37."
+    }
+  ],
+  "actual_unique_nodes": 37,
+  "design_rows_not_added_to_test_counts": true,
+  "scope": "Finite37 only; no backend/core/HTML/Chrome/development/old frontier scores transferred"
+}

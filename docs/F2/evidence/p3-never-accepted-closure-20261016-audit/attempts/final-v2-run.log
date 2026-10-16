@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.runtime/p3-closure-audit/tooling-v2/audit_archive.py", line 189, in <module>
+    if __name__=='__main__':main()
+                            ^^^^^^
+  File "/workspace/ParkWeave/.runtime/p3-closure-audit/tooling-v2/audit_archive.py", line 184, in main
+    for name,h in old_seal['files'].items():require(sha((ROOT/name).read_bytes())==h,'sealed original v1 audit changed across v2 audit '+name)
+                                                        ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1019, in read_bytes
+    with self.open(mode='rb') as f:
+         ^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py", line 1013, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/workspace/ParkWeave/after.json'

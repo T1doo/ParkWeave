@@ -1,0 +1,15 @@
+from pathlib import Path
+import os,sys,json,hashlib,subprocess,time,datetime,xml.etree.ElementTree as ET
+R=Path('/workspace/ParkWeave');name=sys.argv[1];modules=sys.argv[2:]
+assert name.replace('-','').isalnum() and modules and all(m.startswith('tests/test_') and Path(m).is_file() for m in modules)
+D=R/'.runtime/p3-closure-root/dev'/name;D.mkdir(parents=True,exist_ok=False)
+paths=sorted(set(subprocess.check_output(['git','ls-files','-z','--','src','tests','scripts','pyproject.toml'],text=True).split(chr(0)))-{''}|set(subprocess.check_output(['git','ls-files','--others','--exclude-standard','-z','--','src','tests','scripts'],text=True).split(chr(0)))-{''})
+def hashes():return {p:hashlib.sha256((R/p).read_bytes()).hexdigest() for p in paths}
+before=hashes();manifest=D/'source-paths.json';manifest.write_text(json.dumps(dict(source_paths=before),indent=2)+chr(10))
+env=dict(os.environ,PYTHONDONTWRITEBYTECODE='1',PYTHONPATH=str(R/'.runtime/p3-closure-root/runner')+os.pathsep+str(R)+os.pathsep+os.environ.get('PYTHONPATH',''),TYPED_COLLECTION=str(D/'collection.json'),TYPED_PRIVATE=str(D/'redaction.private.json'),TYPED_CAPTURE_PLUGIN=str(R/'.runtime/p3-closure-root/runner/shared_capture.py'),LEGACY_ARTIFACT_DESTINATION=str(D/'legacy'),AT_BATCH_ARTIFACT_ROOT=str(D/'artifacts'),AT_BATCH_WINDOW=name,P3_CLOSURE_ARTIFACT_ROOT=str(D/'p3-fixture'),P3_CLOSURE_ORACLE_ARTIFACT_ROOT=str(D/'p3-oracle'),P3_CLOSURE_TEST_SOURCE_ROOT=str(R/'src/parkweave'),P3_CLOSURE_TEST_SOURCE_MANIFEST=str(manifest),FRONTIER_ARTIFACT_ROOT=str(D/'frontier-fixture'),FRONTIER_ORACLE_ARTIFACT_ROOT=str(D/'frontier-oracle'),FRONTIER_TEST_SOURCE_ROOT=str(R/'src/parkweave'),FRONTIER_TEST_SOURCE_MANIFEST=str(manifest),PLAN_REPLACEMENT_TEST_SOURCE_ROOT=str(R/'src/parkweave'),PARKWEAVE_T07_EVIDENCE_DIR=str(D/'t07-evidence'))
+args=[str(R/'.venv/bin/python'),'-B','-m','pytest','-q','-p','shared_capture','-p','legacy_artifact_capture',*modules,'--basetemp=/tmp/parkweave-p3-closure-dev-'+name,'--junitxml='+str(D/'junit.xml')];start=time.monotonic();started=datetime.datetime.now(datetime.timezone.utc).isoformat()
+with (D/'pytest.log').open('w') as out:code=subprocess.run(args,cwd=R,env=env,stdout=out,stderr=subprocess.STDOUT).returncode
+counts=dict(PASS=0,FAIL=0,ERROR=0,SKIP=0)
+if (D/'junit.xml').exists():
+ for case in ET.parse(D/'junit.xml').iter('testcase'):counts['ERROR' if case.find('error') is not None else 'FAIL' if case.find('failure') is not None else 'SKIP' if case.find('skipped') is not None else 'PASS']+=1
+after=hashes();x=dict(scope='DEVELOPMENT_ACTUAL_UNCOMMITTED_SOURCE_NO_FROZEN_SCORE',head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),modules=modules,argv=args,exit_code=code,counts=counts,source_paths=before,source_drift=[p for p in before if before[p]!=after[p]],started_utc=started,finished_utc=datetime.datetime.now(datetime.timezone.utc).isoformat(),elapsed_seconds=time.monotonic()-start);(D/'result.json').write_text(json.dumps(x,indent=2)+chr(10));print(json.dumps({k:v for k,v in x.items() if k!='source_paths'}));raise SystemExit(code or bool(x['source_drift']))

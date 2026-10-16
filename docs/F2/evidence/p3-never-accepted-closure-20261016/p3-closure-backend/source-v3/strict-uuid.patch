@@ -1,0 +1,55 @@
+--- a/src/parkweave/p3_never_accepted_closure.py
++++ b/src/parkweave/p3_never_accepted_closure.py
+@@ -228,6 +228,11 @@
+ 
+ 
+ def validate_qualification(q,data,context):
++ def canonical_uuid(value):
++  if type(value) is not str:raise ValueError('canonical closure UUID string required')
++  try:valid=str(UUID(value))==value
++  except ValueError:raise ValueError('canonical closure UUID string required') from None
++  if not valid:raise ValueError('canonical closure UUID string required')
+  if (type(q) is not dict or set(q)!=QUALIFICATION_KEYS or type(q['schema']) is not int or q['schema']!=1
+   or q['profile']!=PROFILE or q['state']!='CLOSED_WITHOUT_ACCEPTANCE' or q['closure_state'] not in ('DECLINED','WITHDRAWN')
+   or type(q['epoch']) is not int or not 6<=q['epoch']<=186 or q['ever_started'] is not True
+@@ -240,14 +245,14 @@
+   or any(b[k]!=context[k] for k in ('preparation_id','case_id','run_id','owner_id','park_id','org_id'))
+   or type(b['birth_xid']) is not str or re.fullmatch('[0-9]{1,24}',b['birth_xid']) is None or q['birth_sha256']!=cp._hash(b)):
+   raise ValueError('original independent closure birth required')
+- UUID(b['generation'])
++ canonical_uuid(b['generation'])
+  for k in ('birth_sha256','protocol_sha256'):
+   if type(q[k]) is not str or re.fullmatch('[a-f0-9]{64}',q[k]) is None:raise ValueError('closure identity digest required')
+  if type(q['verified_prefix']) is not list or len(q['verified_prefix'])!=2:raise ValueError('original P1/P2 verified closure prefix required')
+  for adapter,item in zip(('P1','P2'),q['verified_prefix']):
+   if (type(item) is not dict or set(item)!={'adapter_id','step_id','event_id','event_revision','source_sha256','event_sha256'}
+    or item['adapter_id']!=adapter or type(item['event_revision']) is not int or not 1<=item['event_revision']<=64):raise ValueError('original closure prefix event required')
+-  UUID(item['step_id']);UUID(item['event_id'])
++  canonical_uuid(item['step_id']);canonical_uuid(item['event_id'])
+   if any(type(item[k]) is not str or re.fullmatch('[a-f0-9]{64}',item[k]) is None for k in ('source_sha256','event_sha256')):raise ValueError('closure prefix event digest required')
+  if type(q['collections']) is not list or len(q['collections'])!=8:raise ValueError('complete original closure collections required')
+  if q['tail']!={'P3':'CLOSED_WITHOUT_ACCEPTANCE','P4':'NO_RECEIPT_EFFECT','P5':'NO_LOCAL_LIFECYCLE_EFFECT'}:raise ValueError('strict closed tail required')
+@@ -256,7 +261,7 @@
+   or d['state']!=q['closure_state'] or type(d['offers_count']) is not int or d['offers_count']!=d['revision']//2
+   or type(d['events_count']) is not int or d['events_count']!=d['revision'] or q['epoch']!=3*d['revision']
+   or type(d['events']) is not list or len(d['events'])!=d['revision']):raise ValueError('complete bounded closed dispatch required')
+- UUID(d['id']);UUID(d['current_offer_id'])
++ canonical_uuid(d['id']);canonical_uuid(d['current_offer_id'])
+  for digest in (q['marker_sha256'],d['history_sha256']):
+   if type(digest) is not str or re.fullmatch('[a-f0-9]{64}',digest) is None:raise ValueError('closure digest required')
+  counts=[1,d['offers_count'],d['events_count'],0,0,0,0,0]
+@@ -268,10 +273,12 @@
+  ids=set();pairs=set();last=None
+  for n,e in enumerate(d['events'],1):
+   if (type(e) is not dict or set(e)!=EVENT_KEYS or type(e['revision']) is not int or e['revision']!=n
+-   or e['id'] in ids or type(e['actor_id']) is not str or not 1<=len(e['actor_id'])<=100
++   or type(e['actor_id']) is not str or not 1<=len(e['actor_id'])<=100
+    or type(e['request_key']) is not str or re.fullmatch('[A-Za-z0-9_-]{1,100}',e['request_key']) is None
+    or type(e['transaction']) is not str or re.fullmatch('[0-9]{1,24}',e['transaction']) is None):raise ValueError('strict original closure event required')
+-  UUID(e['id']);UUID(e['offer_id']);ids.add(e['id'])
++  canonical_uuid(e['id']);canonical_uuid(e['offer_id'])
++  if e['id'] in ids:raise ValueError('unique original closure event required')
++  ids.add(e['id'])
+   for k in ('fingerprint','payload_sha256'):
+    if type(e[k]) is not str or re.fullmatch('[a-f0-9]{64}',e[k]) is None:raise ValueError('closure event digest required')
+   if n%2:
