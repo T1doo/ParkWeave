@@ -1,0 +1,227 @@
+{
+  "schema": 1,
+  "status": "DESIGN_ONLY_NOT_EXECUTED",
+  "baseline_sha": "c2263edd889c2b9b4ada9f502b3a41b32eb9341f",
+  "tests_executed": 0,
+  "rows": [
+    {
+      "id": "F01",
+      "name": "issued_before_birth_positive",
+      "arrangement": "Install exact issued owner PG tracker before creating new prep. Original V4 six-goal plan, original P1 VERIFY, new three-hold proposal/approval/delivery, original P2 VERIFY; assert all eight complete queries zero plus born marker epoch0 and everfalse. Publish compatible source, re-review/confirm, original full ADOPT/P1, explicit fresh approval/COMMIT, original tail P2-P5 VERIFY; all six local goals and worklist. Cold receipt after tail must remain readable.",
+      "expected": "POSITIVE_FULL_NEW_CHAIN",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F02",
+      "name": "legacy_marker_absent",
+      "arrangement": "Same visible P1/P2 and zero current effects, prep born before install. No backfill.",
+      "expected": "UNKNOWN_REFUSE_NO_EFFECTS",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F03",
+      "name": "missing_marker_or_forged_birth",
+      "arrangement": "Delete/reinsert/alter marker or attach copied issuer/birth marker from another prep/DB/generation; use controlled owner fault only.",
+      "expected": "REFUSE_NOT_PROOF",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F04",
+      "name": "same_pending_visible_different_history",
+      "arrangement": "OFFER then DECLINE/WITHDRAW by original commands; plan P3 remains pending. Never-started candidate has same plan states but different real history.",
+      "expected": "STARTED_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F05",
+      "name": "accepted_generation_even_no_submit",
+      "arrangement": "Original OFFER/ACCEPT creates receipt CREATE; no text submitted. Pending P4/P5 is insufficient.",
+      "expected": "STARTED_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F06",
+      "name": "legacy_receipt_create",
+      "arrangement": "Original legacy receipt CREATE without dispatch where allowed; no SUBMIT.",
+      "expected": "STARTED_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F07",
+      "name": "local_reopen_history",
+      "arrangement": "Original REOPEN/cancel/reconciliation history where legally available or isolated original table fault; missing P5 verification is not zero history.",
+      "expected": "STARTED_OR_UNKNOWN_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F08",
+      "name": "all_eight_queries_required",
+      "arrangement": "One-at-a-time denied/unavailable query, incomplete query projection, omitted key, unknown known marker, noninteger count, mismatch rows/count, overflow. Component faults labelled controlled, not HTTP provenance.",
+      "expected": "UNKNOWN_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F09",
+      "name": "global_not_current_revision_scope",
+      "arrangement": "Historic effects from older preparation material revision/current offer or receipt generation; none current. Query entire same preparation lifetime.",
+      "expected": "STARTED_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F10",
+      "name": "committed_delete_ABA",
+      "arrangement": "Owned-PG fault commits legal-order inserts and deletes, restores all eight empty/visible columns. Marker remains monotonic/evertrue; any marker reset impossible or invalid.",
+      "expected": "STARTED_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F11",
+      "name": "rolledback_effect",
+      "arrangement": "Real isolated transaction inserts original effect then raises/rolls back. Both effect and marker increments rollback; compare exact before/after; rollback is not committed history.",
+      "expected": "UNCHANGED_ELIGIBILITY_IF_STILL_ALL_VALID",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F12",
+      "name": "late_offer_after_preview",
+      "arrangement": "Preview eligible; real reviewer OFFER commits before PROPOSE.",
+      "expected": "STALE_OR_STARTED_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F13",
+      "name": "late_offer_after_propose",
+      "arrangement": "Eligible new proposal; real OFFER commits before APPROVE.",
+      "expected": "APPROVE_REFUSE_NO_CONSUME",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F14",
+      "name": "late_offer_after_approve",
+      "arrangement": "Eligible approved proposal; real OFFER commits before COMMIT.",
+      "expected": "COMMIT_REFUSE_NO_RESOURCE_LINK_OR_CONSUME",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F15",
+      "name": "concurrent_parent_fence",
+      "arrangement": "Two actual PG connections with barriers: new COMMIT holds prep UPDATE vs original OFFER/CREATE/P4/P5; both commit orders. Prove no successful replacement observes pre-frontier proof while old side effect committed first. Deadline/lock timeout failure stays failure.",
+      "expected": "SERIALIZED_OR_REFUSED_NO_PARTIAL_EFFECTS",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F16",
+      "name": "parent_share_upgrade_deadlock",
+      "arrangement": "Two original P4 writers obtain prep SHARE and compete on effect row while tracker wants parent UPDATE; confirm bounded safe error or coherent serialization; no hanging or orphan marker/effects.",
+      "expected": "BOUND_LOCK_ORDER_RISK_ACTUAL_PROBE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F17",
+      "name": "trigger_missing_disabled_changed",
+      "arrangement": "Each table trigger absent/disabled/wrong timing/wrong event/wrong function owner/body/search_path/securitydefiner or unexpected duplicate trigger. Same-name object not authority.",
+      "expected": "UNKNOWN_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F18",
+      "name": "truncate",
+      "arrangement": "Statement TRUNCATE each watched table under controlled fixture owner (foreign-key requirements honored). Must reject transaction or persist irreversible loss-of-qualification; row triggers alone fail this oracle.",
+      "expected": "NO_FALSE_ZERO_ELIGIBILITY",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F19",
+      "name": "trigger_disabled_ABA",
+      "arrangement": "Controlled fixture owner disables tracker, writes/restores effects, reenables. If outside trusted-owner model, explicitly label out-of-scope; do not claim DDL tamper detection from current schema alone. If claimed supported, require real durable trusted generation detects it.",
+      "expected": "EXPLICIT_THREAT_BOUNDARY_OR_REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F20",
+      "name": "scope_reparent_update",
+      "arrangement": "Controlled scoped old/new parent IDs: capture both OLD/NEW or reject scope migration; no clean parent receives untracked history.",
+      "expected": "BOTH_SCOPES_TAINTED_OR_WRITE_REFUSED",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F21",
+      "name": "owner_tenant_run",
+      "arrangement": "Other owner same org, other org/park, changed Run, copied expected_previous_plan_id/marker/snapshot. Original read/write authorization denies, and owner inference absent.",
+      "expected": "DENIED_NO_EFFECTS",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F22",
+      "name": "revocation",
+      "arrangement": "Revoke original READ/EXECUTE/PREPARE/HOLD or assigned reviewer/run access between stages; old key cold GET obeys current authorization. Distinct actor/capability nodes retained.",
+      "expected": "DENIED_OR_CONFLICT_NO_REVIVAL",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F23",
+      "name": "real_grant_ABA",
+      "arrangement": "Two committed active false then true original grant transitions; same current permission different revision/xmin must invalidate prior live approval.",
+      "expected": "STALE_REFUSE_FRESH_PREVIEW_REQUIRED",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F24",
+      "name": "lost_receipt_original_key",
+      "arrangement": "Commit actually succeeds, discard response; cold original-key GET proves exact committed receipt/consume/link/capacity once; UI unknown state does not autoPOST.",
+      "expected": "GET_ONLY_RECOVERY_NO_DUPLICATE_EFFECT",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F25",
+      "name": "idempotency_conflict",
+      "arrangement": "Same key replay identical returns exact event; changed previous/current plan/marker or members/reason conflicts; count effects unchanged.",
+      "expected": "REPLAY_OR_CONFLICT_NO_DUPLICATES",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F26",
+      "name": "original_completed_path",
+      "arrangement": "Original old five VERIFY/evidence-current complete chain remains allowed under existing completed contract with no invented frontier requirement.",
+      "expected": "EXISTING_PATH_POSITIVE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F27",
+      "name": "frontier_initial_p1_p2_forgery",
+      "arrangement": "Only PENDING or state label VERIFIED without original verification proof/source/hash/approval delivery-anchor/receipt ledger; P1only, P2 fake, old unapproved resource link.",
+      "expected": "REFUSE",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F28",
+      "name": "new_goal_integrity",
+      "arrangement": "Six exact original goals/P1-P5/registry/source pairs/owner/request and human locks/notes/history preserved. No material UNKNOWN, cancellation or withdrawn source revived by frontier.",
+      "expected": "ORIGINAL_GATES_UNCHANGED",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F29",
+      "name": "fault_atomic_delivery",
+      "arrangement": "Real PG trigger faults original confirm/link/CONSUME tables during replacement; both approval ledger/resource effects and marker/qualifier proof remain transactionally coherent.",
+      "expected": "ROLLBACK_ALL_ORIGINAL_EFFECTS",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "F30",
+      "name": "postconsumption_history",
+      "arrangement": "After successful new actual P3/P4/P5 tracker is nonzero; consumed immutable delivery cold GET/P2/Approval GET/goal reads validate saved initial proof rather than demand present epoch0. New unconsumed replay cannot use historical branch.",
+      "expected": "HISTORICAL_FACT_VALID_LIVE_AUTHORITY_CURRENT",
+      "status": "NOT_RUN"
+    }
+  ],
+  "evidence_levels": [
+    "static source review",
+    "controlled component fault",
+    "actual owned PG product function",
+    "ASGI TestClient HTTP",
+    "native network HTTP",
+    "actual browser"
+  ],
+  "rule": "Do not promote lower evidence level to another or count this design as PASS."
+}

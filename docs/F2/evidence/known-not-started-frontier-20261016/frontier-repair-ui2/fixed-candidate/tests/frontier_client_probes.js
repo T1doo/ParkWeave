@@ -1,0 +1,21 @@
+'use strict';
+// Controlled shipped-page functions only. This is not an HTTP/browser test.
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');
+const html=fs.readFileSync('src/parkweave/web.html','utf8'),mode=process.argv[2];
+function section(a,b){const start=html.indexOf(a),end=html.indexOf(b,start+1);assert(start>=0&&end>start);return html.slice(start,end);}
+let checks=0;const check=(value,msg)=>{assert(value,msg);checks++;};
+if(mode==='selection_aba'){
+ const nodes=new Map(),context={deliveryGeneration:0,deliveryQuote:{},planApprovalView:{},planApprovalSelected:{},combinationSelection:new Map(),resourceContext:()=>({}),resourceCurrent:()=>true,bundleControls:()=>{},$:id=>{if(!nodes.has(id))nodes.set(id,{value:'',checked:false,replaceChildren(){}});return nodes.get(id);}};
+ vm.createContext(context);vm.runInContext(section('function deliveryContext(){','async function deliveryCall('),context);
+ for(const marker of ["$('delivery-case').oninput=","$('delivery-reapproval').onchange=","$('delivery-plan-replacement').onchange=","$('delivery-frontier').onchange="]){const start=html.indexOf(marker);assert(start>=0);vm.runInContext(html.slice(start,html.indexOf('\n',start)),context);}
+ context.$('delivery-case').value='case-a';context.$('delivery-plan-replacement').checked=true;let original=context.deliveryContext();check(original.frontierProfile===null,'new finite profile is not selected implicitly');context.$('delivery-frontier').checked=true;context.$('delivery-frontier').onchange();check(context.deliveryContext().frontierProfile==='KNOWN_NOT_STARTED_V1','only explicit finite option selects profile');check(!context.deliveryCurrent(original),'finite profile choice invalidates old quote context');check(context.deliveryQuote===null&&context.planApprovalSelected===null,'qualification choice clears available quote and approval');context.$('delivery-frontier').checked=false;context.$('delivery-frontier').onchange();check(!context.deliveryCurrent(original),'profile A-B-A cannot restore old request');
+ context.$('delivery-frontier').checked=true;context.$('delivery-frontier').onchange();original=context.deliveryContext();context.$('delivery-plan-replacement').checked=false;context.$('delivery-plan-replacement').onchange();check(!context.$('delivery-frontier').checked,'leaving replacement clears finite option');context.$('delivery-plan-replacement').checked=true;context.$('delivery-plan-replacement').onchange();check(!context.deliveryCurrent(original),'replacement ABA cannot revive finite quote');
+ context.$('delivery-frontier').checked=true;context.$('delivery-frontier').onchange();context.$('delivery-reapproval').checked=true;context.$('delivery-reapproval').onchange();check(!context.$('delivery-frontier').checked&&!context.$('delivery-plan-replacement').checked,'source mode cannot retain finite profile');
+ original=context.deliveryContext();context.$('delivery-case').value='case-b';context.$('delivery-case').oninput();context.$('delivery-case').value='case-a';context.$('delivery-case').oninput();check(!context.deliveryCurrent(original),'Case ABA still rejects late context');
+}else if(mode==='body_identity'){
+ const context={};vm.createContext(context);vm.runInContext(section('function approvalSameDelivery(', 'function planApprovalControls('),context);
+ const body={members:[],expected_preparation_revision:1,expected_plan_revision:2,expected_source_sha256:'a'.repeat(64),valid_until:'2099-01-01T00:00:00Z',reason:'explicit request',expected_link_revision:1,expected_previous_plan_id:'previous',replacement_frontier_profile:'KNOWN_NOT_STARTED_V1'};
+ check(context.approvalSameDelivery(body,structuredClone(body)),'same explicitly requested profile remains same original body');
+ for(const mutate of [x=>delete x.replacement_frontier_profile,x=>x.replacement_frontier_profile='UNKNOWN',x=>x.expected_previous_plan_id='other',x=>x.expected_source_sha256='b'.repeat(64)]){const copy=structuredClone(body);mutate(copy);check(!context.approvalSameDelivery(body,copy),'profile, old-plan or current-source changes cannot reuse approval');}
+}else throw Error('unknown probe mode');
+console.log(JSON.stringify({scope:'ACTUAL_SHIPPED_CLIENT_FUNCTIONS_CONTROLLED_DATA',mode,checks,actual_http:false,real_browser:'NOT_RUN',qualification_contract:'NOT_EVALUATED_IN_THIS_PROBE'}));

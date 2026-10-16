@@ -1,0 +1,49 @@
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert(value)
+
+    at check (/workspace/ParkWeave/.runtime/frontier-ui/baseline-control/tests/pending_receipt_handoff_offline.js:17:70)
+    at /workspace/ParkWeave/.runtime/frontier-ui/baseline-control/tests/pending_receipt_handoff_offline.js:19:47
+    at Object.<anonymous> (/workspace/ParkWeave/.runtime/frontier-ui/baseline-control/tests/pending_receipt_handoff_offline.js:48:3)
+    at Module._compile (node:internal/modules/cjs/loader:1872:14)
+    at Object..js (node:internal/modules/cjs/loader:2003:10)
+    at Module.load (node:internal/modules/cjs/loader:1594:32)
+    at Module._load (node:internal/modules/cjs/loader:1396:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+evalmachine.<anonymous>:11
+  let response,x;try{response=await entryFetch(path,{method,headers,cache:'no-store',body:body?JSON.stringify(body):undefined});x=await response.json();}catch(e){requireDispatch(c);const error=Error('分派操作结果尚未确认，请使用原操作重试；不要重新填写或另建操作。');error.status=response?.status;error.dispatchContext=c;throw error;}
+                                                                                                                                                                                                 ^
+
+Error: 分派操作结果尚未确认，请使用原操作重试；不要重新填写或另建操作。
+    at dispatchCall (evalmachine.<anonymous>:11:194)
+    at sendHandoff (evalmachine.<anonymous>:87:986)
+    at dispatchWrite (evalmachine.<anonymous>:68:50)
+    at evalmachine.<anonymous>:1:1
+    at Script.runInContext (node:vm:149:12)
+    at Object.runInContext (node:vm:301:6)
+    at Object.evalCode (/workspace/ParkWeave/.runtime/frontier-ui/baseline-control/tests/pending_receipt_handoff_offline.js:12:57)
+    at /workspace/ParkWeave/.runtime/frontier-ui/baseline-control/tests/pending_receipt_handoff_offline.js:19:12
+    at Object.<anonymous> (/workspace/ParkWeave/.runtime/frontier-ui/baseline-control/tests/pending_receipt_handoff_offline.js:48:3)
+    at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+  status: undefined,
+  dispatchContext: {
+    generation: 0,
+    token: 'PRIVATE_TOKEN_A',
+    preparationId: '10000000-0000-0000-0000-000000000001',
+    id: '20000000-0000-0000-0000-000000000001',
+    revision: 2,
+    preparationRevision: 4,
+    offerId: '30000000-0000-0000-0000-000000000001'
+  }
+}
+
+Node.js v24.19.0

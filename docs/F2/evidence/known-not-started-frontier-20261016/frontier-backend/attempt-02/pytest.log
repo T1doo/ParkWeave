@@ -1,0 +1,81 @@
+E
+==================================== ERRORS ====================================
+_ ERROR at setup of test_frontier_new_approval_original_tail_and_historical_fact _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-75/test_frontier_new_approval_ori0')
+
+    @pytest.fixture
+    def frontier_case(capability_resource_catalog,tmp_path):
+     a=capability_resource_catalog;f=a['f']
+     out=Path(os.environ.get('FRONTIER_ARTIFACT_ROOT','.runtime/frontier-fixture/artifacts'));out.mkdir(parents=True,exist_ok=True)
+     fd=os.open(out/('fixture-'+uuid4().hex+'.private.json'),os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+     with os.fdopen(fd,'w') as stream:stream.write(json.dumps(sorted(f[2].values()))+'\n')
+     protocol=bf.KnownNotStartedFrontier(f[1],f[1]._case_fact_fixture_receipt,enabled_for_isolated_tests=True)
+>    protocol.attach_store(f[0]);oldpairs=bind_all(a)
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/frontier_fixture_support.py:30: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/business_frontier.py:180: in attach_store
+    with store.connect() as c:self.check(c)
+                              ^^^^^^^^^^^^^
+src/parkweave/business_frontier.py:139: in check
+    if (c.info.host,c.info.port)!=self.endpoint or facts._migration_identity(c)['database_oid']!=self.proof.database_oid:raise Denied('same issued frontier connection required')
+                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/case_fact_clarifications.py:476: in _migration_identity
+    return connection.cursor(row_factory=psycopg.rows.dict_row).execute("""SELECT d.oid database_oid,d.datname database_name,
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Cursor [no result] [BAD] at 0x7f2e825f2bd0>
+query = 'SELECT d.oid database_oid,d.datname database_name,\n        pg_get_userbyid(d.datdba) owner_name,current_user current...ifier::text FROM pg_control_system()) system_identifier\n        FROM pg_database d WHERE d.datname=current_database()'
+params = None, prepare = None, binary = None
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool | None = None,
+    ) -> Self:
+        """
+        Execute a query or command to the database.
+        """
+        try:
+            with self._conn.lock:
+                self._conn.wait(
+                    self._execute_gen(query, params, prepare=prepare, binary=binary)
+                )
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied to examine "data_directory"
+E           DETAIL:  Only roles with privileges of the "pg_read_all_settings" role may examine this parameter.
+
+../../../.venv/lib/python3.12/site-packages/psycopg/cursor.py:117: InsufficientPrivilege
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../../../.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; frontier_fixture_support
+    self.import_plugin(import_spec)
+
+tests/test_frontier_core.py::test_frontier_new_approval_original_tail_and_historical_fact
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_frontier_core.py::test_frontier_new_approval_original_tail_and_historical_fact
+  /workspace/ParkWeave/.runtime/frontier-backend/candidate/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_frontier_core.py::test_frontier_new_approval_original_tail_and_historical_fact
+  /workspace/ParkWeave/.runtime/frontier-backend/candidate/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_frontier_core.py::test_frontier_new_approval_original_tail_and_historical_fact
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+5 warnings, 1 error in 4.28s

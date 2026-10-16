@@ -1,0 +1,91 @@
+{
+  "status": "DESIGN_ONLY_NOT_EXECUTED",
+  "actual_tests": 0,
+  "baseline_sha": "c2263edd889c2b9b4ada9f502b3a41b32eb9341f",
+  "rows": [
+    {
+      "id": "LI01",
+      "variant": "original_offer_before_rereview",
+      "arrange": "Old material revision request after REOPEN/REVIEW/CONFIRM",
+      "expected": "Original material revision refusal; control only",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI02",
+      "variant": "review_after_before_adopt",
+      "arrange": "Save original body at r/root0 after CONFIRM and before fullADOPT; send after newCOMMIT/P2VERIFY",
+      "expected": "Mandatory protocol missing/old plan fence refused; zero effects",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI03",
+      "variant": "commit_before_p2_then_after_p2",
+      "arrange": "Same stale original intent before newP2VERIFY and again after newP2VERIFY with original key",
+      "expected": "No delayed readiness window revives old intent",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI04",
+      "variant": "newplan_before_commit_intent",
+      "arrange": "Newplan fence captured before newCOMMIT/P2VERIFY",
+      "expected": "If in scope, delivery/P2 generation rejects; plan_id alone insufficient",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI05",
+      "variant": "old_writer_first",
+      "arrange": "Actual original OFFER commits before newqualifier",
+      "expected": "New qualification refuses STARTED and no replacement consumption",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI06",
+      "variant": "new_writer_first",
+      "arrange": "NewCOMMIT holds parent UPDATE; stale OFFER queued and evaluated after current newP2 readiness",
+      "expected": "Old fence refused, no newoffer",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI07",
+      "variant": "fresh_explicit_offer",
+      "arrange": "After currentnewP2, freshGET newfence and explicit original OFFER",
+      "expected": "200/201 actual original effect; original downstream chain works",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI08",
+      "variant": "missing_or_partial_fence",
+      "arrange": "Tracked scope original legacy body/malformed/newfield partial",
+      "expected": "Failclosed; legacy untracked scope separately compatible",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI09",
+      "variant": "samekey_different_fence",
+      "arrange": "Real committed current command then changed fence samekey",
+      "expected": "Conflict no duplicate effects",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI10",
+      "variant": "lost_offer_response_cold_get",
+      "arrange": "Original currentfenced OFFER actually committed, response lost",
+      "expected": "Original-key read exactreceipt; no automatic newPOST",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI11",
+      "variant": "sameappearance_generation_ABA",
+      "arrange": "Current equivalent fields restored through actual committed generation changes",
+      "expected": "Old generation refuses even matching visible revisions",
+      "status": "NOT_RUN"
+    },
+    {
+      "id": "LI12",
+      "variant": "scope_copy",
+      "arrange": "Copied fence other prep/Case/owner/tenant/run/issuer",
+      "expected": "Current authorization/scope denies without effects",
+      "status": "NOT_RUN"
+    }
+  ]
+}

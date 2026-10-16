@@ -1,0 +1,13 @@
+# source-v2 / UI-v3 最后预冻结静态复核
+
+状态：STATIC_ONLY_NOT_TESTED。实际main与backend17文件（14产品+3tests）manifest逐字17/17匹配；精确manifest/web hashes见prefreeze-source-v2-check.json。仅私有本报告/哈希写入，无新增测试、无src/Git修改。
+
+此前确定阻断均已静态修复：七writer和三取消新写前捕获fence；原同key历史回放先行，全部新fence参与request指纹；None仅正常请求省略，raw保存事件有该字段时historical_fields严格要求canonical五字段dict。local REOPEN恢复也在通用payload校验处先调用historical_fields，保留原ignored optional SHA不重建fp语义（最初局部疑点已读上文撤销）。取消ACCEPT/CREATE、receipt、local prefix和保存cancel request精确重建使用统一helper；lifecycle preview artifact.body/fp同步helper，未放宽原event等值校验。
+
+tracked P4写路径先判不可变出生标记、再父UPDATE、后step UPDATE；legacy保留原SHARE。默认原五步完整VERIFY分支独立保留；新资格无法降级混入原schema1。当前schema catalog固定全部原trigger/constraint、19 ALWAYS frontiertrigger、owner/functionOID/xmin，固定列shape，当前9表plain/noinheritance/nopartition；不声称未登记owner隐形DDL历史可完全检测。
+
+native消费锚beforeguard与原实际SQL link/receipt/approval deferred约束未削弱；消费前后精确live资格重建。历史从原锚返回并核birth/protocol/原P1/P2proof，后续合法P3marker非零不抹掉消费事实；不得把纯probe替代真实SQL证明。
+
+UI读取观测值后Object.freeze精确五字段；不在submit时重新抓fence；原await上下文/身份版本规则保留。新拒绝专用清除写状态分支仅精确取消path、409原fence错误、WeakMap原请求options/frozenmetadata/body字段一致才启用，不能把一般409当已知无效果。原schema33 afteraccept取消/对账仍由ORDINARY_MANUAL_CASE_REQUIRED拒绝，UI受控展示不代表该PG路径可办。
+
+结论：本范围暂未发现剩余确定blocking，不能称冻结LIMITED_PASS。尚须实际冻结source/hash审查、完整32pure和客户端模块、原完整受影响回归/真实PG并发和页面；开发PASS不迁移。旧Windows/正式AT/真实模型/生产和schema33afteraccept取消边界继续保留。

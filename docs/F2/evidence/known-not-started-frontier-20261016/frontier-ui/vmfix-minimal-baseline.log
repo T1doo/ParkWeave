@@ -1,0 +1,21 @@
+........F                                                                [100%]
+=================================== FAILURES ===================================
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[current_recovery_403_keeps_original_handle] _
+
+mode = 'current_recovery_403_keeps_original_handle'
+
+    @pytest.mark.parametrize('mode',['explicit_success','lost_response_cold_get_only','storage_failure','duplicate_click','identity_aba_delayed_json','late_403_new_identity','wrong_recovery_proof','bounded_handles','current_recovery_403_keeps_original_handle'])
+    def test_pending_manual_handoff_actual_js_under_offline_doubles(mode):
+     p=subprocess.run(['node',str(Path(__file__).with_name('pending_receipt_handoff_offline.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: ReferenceError: clearReceiptHistory is not defined
+E          at dispatchError (evalmachine.<anonymous>:51:274)
+E          at async /workspace/ParkWeave/.runtime/frontier-ui/vmfix-minimal-baseline/tests/pending_receipt_handoff_offline.js:53:123
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/.runtime/frontier-ui/vmfix-minimal-baseline/tests/pending_receipt...nc /workspace/ParkWeave/.runtime/frontier-ui/vmfix-minimal-baseline/tests/pending_receipt_handoff_offline.js:53:123\n').returncode
+
+tests/test_pending_receipt_handoff_offline.py:10: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[current_recovery_403_keeps_original_handle]
+1 failed, 8 passed in 0.53s

@@ -1,0 +1,12 @@
+{
+  "classification": "DETERMINISTIC_EXISTING_UI_403_BRANCH_WITHOUT_DENIAL_TEXT",
+  "baseline_c226_has_exact_same_branch": true,
+  "frozen_b1_has_exact_same_branch": true,
+  "original_branch": "if(response.status===403){clearDeniedPrivateViews();return;}const x=await response.json();",
+  "baseline_and_frozen_clear_receipt_history_empties_error": true,
+  "actual_chromium_frozen_before": "browser-before.log:1FAIL empty denial text",
+  "actual_baseline_chromium": "NOT_RUN; baseline source branch equality evidence only",
+  "candidate_fix": "After synchronous private-view clearing, show explicit unreadable denial text; no new GET/POST, permission restoration, state or opaque-handle change.",
+  "late_case_failure_classification": "Original full open_page setup invokes a deliberately forbidden bounded-read while original POST active; component setup scope corrected without changing UNKNOWN guards.",
+  "controlled_case_navigation_boundary": "loadPlan(other) is an original real GET used only as controlled component setup, not evidence that UI navigation is permitted during UNKNOWN."
+}

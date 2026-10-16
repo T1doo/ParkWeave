@@ -1,0 +1,38 @@
+{
+  "status": "PREPARED_NOT_RUN_WAITING_ACTUAL_V2_FREEZE",
+  "utc": "2026-10-16T11:45:32.681562+00:00",
+  "previous_source_sha": "b1b3824ff24f788193824b18e8f3744547fc5171",
+  "future_freeze": ".runtime/frontier-root/v2/freeze.json",
+  "future_review": ".runtime/frontier-review-v2/frozen-v1/review-result.json",
+  "pure_modules": [
+    "tests/test_frontier_review_pure.py"
+  ],
+  "client_modules": [
+    "tests/test_frontier_client.py",
+    "tests/test_frontier_business_client.py",
+    "tests/test_frontier_cancel_client.py",
+    "tests/test_frontier_qualification_client.py",
+    "tests/test_frontier_cancel_nullguard.py",
+    "tests/test_plan_replacement_client.py",
+    "tests/test_plan_reapproval_client.py",
+    "tests/test_pending_receipt_handoff_offline.py"
+  ],
+  "prior_counts_reference_only": {
+    "pure": 32,
+    "client": 82
+  },
+  "do_not_migrate_prior_scores": true,
+  "additional_static_targets": [
+    "tests/dispatch_notice_page_offline.js actual VM imports and transitive globals",
+    "receipt history current403 error preservation/late identity guard",
+    "two browser Case input helpers preserving readonly UNKNOWN until original recovery resolves"
+  ],
+  "affected_complete_modules": [
+    "tests/test_dispatch_notice_page_offline.py",
+    "tests/test_receipt_history_recovery_browser.py",
+    "tests/test_dispatch_execution_preview_browser.py",
+    "tests/test_receipt_execution_preview_browser.py"
+  ],
+  "additional_test_execution": "No PG/browser added by review until root explicitly selects; root full169 regression handles complete affected modules; reviewer selects controlled client module plus guards after actual freeze",
+  "scope": "old five roots/old review seals remain readonly; new source SHA/manifest required before actual test"
+}

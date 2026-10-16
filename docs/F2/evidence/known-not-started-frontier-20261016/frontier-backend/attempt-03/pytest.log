@@ -1,0 +1,67 @@
+E
+==================================== ERRORS ====================================
+_ ERROR at setup of test_frontier_new_approval_original_tail_and_historical_fact _
+
+[REDACTED_SYNTHETIC_FIXTURE_REPR]
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-76/test_frontier_new_approval_ori0')
+
+    @pytest.fixture
+    def frontier_case(capability_resource_catalog,tmp_path):
+     a=capability_resource_catalog;f=a['f']
+     out=Path(os.environ.get('FRONTIER_ARTIFACT_ROOT','.runtime/frontier-fixture/artifacts'));out.mkdir(parents=True,exist_ok=True)
+     fd=os.open(out/('fixture-'+uuid4().hex+'.private.json'),os.O_WRONLY|os.O_CREAT|os.O_EXCL,0o600)
+     with os.fdopen(fd,'w') as stream:stream.write(json.dumps(sorted(f[2].values()))+'\n')
+     protocol=bf.KnownNotStartedFrontier(f[1],f[1]._case_fact_fixture_receipt,enabled_for_isolated_tests=True)
+     protocol.attach_store(f[0]);oldpairs=bind_all(a)
+     p=ready(f);r=save(f,p,goals=ALL_GOALS);assert r.status_code==200,r.text;p={**p,'revision':r.json()['revision']}
+     for action,actor in (('REVIEW','prep-specialist-fixture-a'),('CONFIRM','fixture-a')):
+      r=command(f,p,action,actor,reason='SYNTHETIC original frontier material '+action);assert r.status_code==200,r.text;p=r.json()
+     generate(a,p);verified(f,p,'P1')
+     checker=pf.ServiceReleasePreflight(a['catalog'],ConsumerRepository(tmp_path/'frontier-preflight.consumer.candidate.sqlite3'),enabled_for_isolated_tests=True)
+     bridge=enable(f,p,enabled_for_source_reapproval_tests=True,enabled_for_plan_replacement_tests=True,plan_replacement_preflight=checker,
+      enabled_for_known_not_started_tests=True,known_not_started_frontier=protocol)
+     holds,b=bundle(f);d=quoted(f,p,b);item,_=approved(f,p,d)
+     response=submit(f,p,{**d,'approval_id':item['id']});assert response.status_code==201,response.text;oldreceipt=response.json()
+     verified(f,p,'P2')
+     with f[1].connect() as c:old=deepcopy(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['service_case_plan'])
+     a['published']=publication(a,goals=a['published']['snapshot']['definition']['required_goals'],source='1',name='SYNTHETIC explicit known-not-started compatible replacement')
+     newpairs=bind_all(a,2)
+     for release,_ in oldpairs:
+      with a['catalog'].connection() as c:revision=catalogs.proof(catalogs.row(c,'park-a'))['revision']
+      a['catalog'].withdraw_release('park-a',uuid4().hex,release['release_id'],revision,'SYNTHETIC original superseded release retirement')
+     old_preflights=[checker.preview(f[2]['fixture-a'],UUID(p['preparation_id']),original_release_id=r['release_id'],original_instance_id=i['instance_id'],target_instance_id=ni['instance_id']) for (r,i),(_,ni) in zip(oldpairs,newpairs)]
+     assert all(q['classification']=='UNKNOWN' for q in old_preflights)
+     for action,actor in (('REOPEN','fixture-a'),('REVIEW','prep-specialist-fixture-a'),('CONFIRM','fixture-a')):
+      r=command(f,p,action,actor,reason='SYNTHETIC fresh frontier catalog review '+action);assert r.status_code==200,r.text;p=r.json()
+     old_dispatch_reply=f[3].get('/api/preparations/'+p['preparation_id']+'/dispatch',headers=headers(f[2],'prep-specialist-fixture-a'))
+>    assert old_dispatch_reply.status_code==200,old_dispatch_reply.text
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    AssertionError: {"detail":"record unavailable or authorization denied"}
+
+tests/frontier_fixture_support.py:52: AssertionError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../../../.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/_pytest/config/__init__.py:885: PytestAssertRewriteWarning: Module already imported so cannot be rewritten; frontier_fixture_support
+    self.import_plugin(import_spec)
+
+tests/test_frontier_core.py::test_frontier_new_approval_original_tail_and_historical_fact
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_frontier_core.py::test_frontier_new_approval_original_tail_and_historical_fact
+  /workspace/ParkWeave/.runtime/frontier-backend/candidate/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_frontier_core.py::test_frontier_new_approval_original_tail_and_historical_fact
+  /workspace/ParkWeave/.runtime/frontier-backend/candidate/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR tests/test_frontier_core.py::test_frontier_new_approval_original_tail_and_historical_fact
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+5 warnings, 1 error in 15.39s

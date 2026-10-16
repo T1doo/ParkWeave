@@ -1,0 +1,617 @@
+{
+  "scope": "All tests/**/*.py parsed; every test function containing held or wait_held retained, not only browser modules. Opening helper/direct load variants manually reviewed in source. Static inventory is not PASS evidence.",
+  "held_functions": [
+    {
+      "path": "tests/test_account_rate.py",
+      "function": "test_held_and_inflight_do_not_expire_delayed_send_cooldown_from_finish",
+      "line": 59,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "20b9524b93da6a545460720e765f2f425ac1cd19a83440166cf24e6cc3aa2b9f",
+      "source": "def test_held_and_inflight_do_not_expire_delayed_send_cooldown_from_finish(fixture):\n    store,owner=setup(fixture,1);b=budget(store,'held');r=b.reserve();b.hold_rate(r)\n    clock(owner,120)\n    with pytest.raises(AccountRateLimited):send(store,'blocked-held')\n    b.dispatch(r);clock(owner,150)\n    with pytest.raises(AccountRateLimited):send(store,'blocked-inflight')\n    b.finish(r,'TIMEOUT_OUTCOME_UNKNOWN');clock(owner,209.999999)\n    with pytest.raises(AccountRateLimited):send(store,'blocked-cooldown')\n    clock(owner,210);send(store,'free')\n    with pytest.raises(ModelBoundaryError,match='PREVIOUS_ATTEMPT_NO_RESEND'):budget(store,'held').reserve()\n    assert account(owner)['tokens']==2*8192",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_account_rate.py",
+      "function": "test_release_unsent_held_slot_once_no_refund_sent_or_unknown",
+      "line": 71,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "f9c3edb2db18e68329acfe11f276c20253b8bac9058ef9ba371c71549684ad6f",
+      "source": "def test_release_unsent_held_slot_once_no_refund_sent_or_unknown(fixture):\n    store,owner=setup(fixture,1);b=budget(store,'held');r=b.reserve();b.hold_rate(r);b.release(r);b.release(r)\n    assert account(owner)['calls']==0 and account(owner)['tokens']==0\n    with pytest.raises(ModelBoundaryError):b.dispatch(r)\n    fresh,r2=send(store,'fresh');fresh.finish(r2,'TIMEOUT_OUTCOME_UNKNOWN')\n    with pytest.raises(ModelBoundaryError):fresh.release(r2)\n    assert account(owner)['calls']==1 and account(owner)['tokens']==8192",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_account_rate.py",
+      "function": "test_lowered_rate_rechecked_at_dispatch_and_zero_disables",
+      "line": 89,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "b25742dd7d23a3e5811516d4ee2269b1c2cfd6443d733be5e424cb00f3cb7c4a",
+      "source": "def test_lowered_rate_rechecked_at_dispatch_and_zero_disables(fixture):\n    store,owner=setup(fixture,2);b=budget(store,'held');r=b.reserve();b.hold_rate(r);other=budget(store,'other');r2=other.reserve();other.hold_rate(r2)\n    clock(owner,rate=1)\n    with pytest.raises(ModelBoundaryError):b.dispatch(r)\n    other.release(r2);b.dispatch(r);b.finish(r,'VALIDATED',USAGE)\n    clock(owner,60,rate=0)\n    with pytest.raises(AccountRateLimited):send(store,'disabled')",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_case_fact_bundle_browser.py",
+      "function": "test_late_post_success_preserves_new_context_or_draft_and_opaque_handle",
+      "line": 82,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "d9d2edcef961a995923f201230f16e9c53de152b8be80f8360a22132b2a01d0f",
+      "source": "def test_late_post_success_preserves_new_context_or_draft_and_opaque_handle(bundle_page,target):\n f,page,_=bundle_page;p=setup(f);open_case(page,f,p);fill_source(page);held=[]\n def delay(route):held.append((route,route.fetch()))\n page.route('**/api/preparations/'+p['preparation_id']+'/fact-bundle/commands',delay);page.locator('#fb-save').click();end=time.monotonic()+10\n while not held and time.monotonic()<end:page.wait_for_timeout(20)\n assert held\n if target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input');page.locator('#fb-status').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW_IDENTITY\"')\n elif target=='case':p2=setup(f);page.evaluate('(id)=>loadPreparation(id,{role:\"enterprise_operator\"})',p2['preparation_id']);page.locator('#fb-read').click();settled(page);page.locator('#fb-status').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW_CASE\"')\n else:page.locator('#fb-reason').fill('SYNTHETIC NEW_DRAFT')\n route,r=held[0];route.fulfill(response=r);page.wait_for_timeout(150);assert page.evaluate('fbHandles().length')==1\n if target=='draft':assert page.locator('#fb-reason').input_value()=='SYNTHETIC NEW_DRAFT'\n else:assert 'SYNTHETIC NEW_' in page.locator('#fb-status').inner_text()",
+      "local_helper_sources": {
+        "open_case": "def open_case(page,f,p):\n page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadPreparation(id,{role:\"enterprise_operator\"})',p['preparation_id']);page.locator('#fb-read').click();page.wait_for_function('()=>fbView!==null&&!fbBusy')"
+      }
+    },
+    {
+      "path": "tests/test_case_fact_bundle_browser.py",
+      "function": "test_late_recovery_or_denial_does_not_clear_new_draft",
+      "line": 113,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "b7ea1f9b6841a5d2f48dc3f744ba0c5f523d5dd4a87e551350dc702cd90ad682",
+      "source": "def test_late_recovery_or_denial_does_not_clear_new_draft(bundle_page,denied):\n f,page,_=bundle_page;p=setup(f);path=unknown(f,page,p);page.unroute(path);held=[]\n def delay(route):held.append((route,route.fetch()))\n page.route('**/api/preparations/'+p['preparation_id']+'/fact-bundle/recovery/*',delay);page.locator('#fb-recover').click();end=time.monotonic()+10\n while not held and time.monotonic()<end:page.wait_for_timeout(20)\n assert held;page.locator('#fb-reason').fill('SYNTHETIC NEW_DRAFT_AFTER_GET');route,r=held[0]\n if denied:route.fulfill(status=403,json={'detail':'SYNTHETIC old denial'})\n else:route.fulfill(response=r)\n settled(page);assert page.locator('#fb-reason').input_value()=='SYNTHETIC NEW_DRAFT_AFTER_GET';assert page.evaluate('fbHandles().length')==1 and page.locator('#fb-entries').count()==1 and page.locator('#fb-save').is_disabled()",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_case_goal_results_browser.py",
+      "function": "test_late_actual_get_or_denial_preserves_new_identity_case_draft_or_plan",
+      "line": 58,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "eb2664378f9997272d085c66c202b7ff2c911eb4135a9d57d148e76ee24ccf67",
+      "source": "def test_late_actual_get_or_denial_preserves_new_identity_case_draft_or_plan(goal_page,target,denied):\n f,page,_=goal_page;p=start(f);open_case(page,f,p);held=[]\n def delay(route):held.append((route,route.fetch()))\n path='**/api/preparations/'+p['preparation_id']+'/goal-results';page.route(path,delay);page.locator('#goal-results-read').click();wait_held(page,held)\n if target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n elif target=='case':p2=start(f);open_case(page,f,p2)\n elif target=='plan':verified(f,p,'P1');page.evaluate('(id)=>loadServiceCasePlan(id)',p['preparation_id']);page.wait_for_function('()=>servicePlanView.steps[0].state===\"VERIFIED\"')\n else:page.locator('#service-plan-reason').fill('SYNTHETIC newer draft')\n page.locator('#goal-results-status').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW_CONTEXT\"');before=snapshot(f);route,r=held[0]\n if denied:route.fulfill(status=403,json={'detail':'SYNTHETIC prior denial'})\n else:route.fulfill(response=r)\n page.wait_for_timeout(150);assert page.locator('#goal-results-status').inner_text()=='SYNTHETIC NEW_CONTEXT' and page.evaluate('goalResultView') is None and snapshot(f)==before\n if target=='draft':assert page.locator('#service-plan-reason').input_value()=='SYNTHETIC newer draft';settle(page)",
+      "local_helper_sources": {
+        "open_case": "def open_case(page,f,p):\n page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadServiceCasePlan(id)',p['preparation_id']);page.wait_for_function('()=>servicePlanView!==null');assert page.locator('#goal-results-panel').is_visible()"
+      }
+    },
+    {
+      "path": "tests/test_case_goal_results_browser.py",
+      "function": "test_late_first_reader_cannot_replace_newer_read",
+      "line": 72,
+      "literal_case_in_body": false,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "ac74346d235735fc73b2314c4b9db11c9363ecedb1e1012bcace6f1611eb0050",
+      "source": "def test_late_first_reader_cannot_replace_newer_read(goal_page):\n f,page,_=goal_page;p=start(f);open_case(page,f,p);held=[];path='**/api/preparations/'+p['preparation_id']+'/goal-results'\n def delay(route):\n  response=route.fetch()\n  if not held:held.append((route,response))\n  else:route.fulfill(response=response)\n page.route(path,delay);page.locator('#goal-results-read').click();wait_held(page,held);page.evaluate('()=>readGoalResults()');settle(page);page.wait_for_function('()=>goalResultView!==null');current=page.evaluate('goalResultView');before=snapshot(f)\n held[0][0].fulfill(status=403,json={'detail':'SYNTHETIC old reader denial'});page.wait_for_timeout(150);assert page.evaluate('goalResultView')==current and snapshot(f)==before",
+      "local_helper_sources": {
+        "open_case": "def open_case(page,f,p):\n page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadServiceCasePlan(id)',p['preparation_id']);page.wait_for_function('()=>servicePlanView!==null');assert page.locator('#goal-results-panel').is_visible()"
+      }
+    },
+    {
+      "path": "tests/test_case_goal_results_browser.py",
+      "function": "test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle",
+      "line": 118,
+      "literal_case_in_body": false,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "a60ded1e9981b652b223075424a1b80127ec220161f364b730112b6226435d86",
+      "source": "def test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle(goal_page,kind,denied):\n f,page,errors=goal_page;p=start(f);verified(f,p,'P1');open_case(page,f,p);read_page(page);page.evaluate(\"async()=>{await servicePlanOpen('materials')}\");page.wait_for_function('()=>objectionView!==null&&preparationView!==null')\n assert page.locator('#goal-results-panel').is_visible();held=[]\n def delay(route):held.append((route,None if denied else route.fetch()))\n page.route('**/api/preparations/'+p['preparation_id']+'/goal-results',delay);page.locator('#goal-results-read').click();wait_held(page,held)\n def lose(route):\n  if route.request.method!='POST':route.continue_();return\n  response=route.fetch();assert response.status==200;route.abort('failed')\n suffix='/material-objections' if kind=='objection' else '/commands';page.route('**/api/preparations/'+p['preparation_id']+suffix,lose)\n if kind=='objection':\n  page.locator('#objection-reason').fill('SYNTHETIC PRIVATE_INTERLEAVED_OBJECTION');page.locator('#objection-raise').click();page.wait_for_function('()=>objectionPending!==null&&!objectionBusy')\n else:\n  page.locator('#prep-slot').select_option('material_outline');page.locator('#prep-text').fill('SYNTHETIC PRIVATE_INTERLEAVED_MATERIAL');page.locator('#prep-source-label').fill('SYNTHETIC interleaved v2');page.locator('#prep-evidence button').click();page.wait_for_function('()=>prepCommandPending?.state===\"UNKNOWN\"')\n stored=page.evaluate('JSON.stringify({...localStorage})');assert stored!='{}' and 'PRIVATE_INTERLEAVED' not in stored and f[2]['fixture-a'] not in stored\n if denied:\n  with f[1].connect() as c:\n   f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute(\"UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND capability='READ'\")\n before=snapshot(f);route,response=held[0]\n if denied:response=route.fetch();assert response.status==403\n else:assert response.status==200 and response.json()['state']=='LOCAL_OUTPUTS_VERIFIED'\n route.fulfill(response=response);page.wait_for_timeout(150);assert page.evaluate('goalResultView') is None and not errors and snapshot(f)==before\n assert page.evaluate('JSON.stringify({...localStorage})')==stored\n if denied:\n  assert page.evaluate('preparationView===null&&objectionView===null&&prepCommandPending===null&&objectionPending===null') and page.locator('#prep-detail').is_hidden() and page.locator('#goal-results-panel').is_hidden();assert page.locator('#objection-reason').input_value()=='' and page.locator('#prep-text').input_value()=='' and '\u8bbf\u95ee\u6743\u5df2\u5931\u6548' in page.locator('#page-feedback').inner_text()\n else:\n  assert page.locator('#goal-results-items').inner_text()=='' and '\u4fdd\u6301\u672a\u6838\u9a8c' in page.locator('#goal-results-error').inner_text() and page.locator('#prep-detail').is_visible()\n  if kind=='objection':assert page.evaluate('objectionPending!==null') and 'PRIVATE_INTERLEAVED_OBJECTION' in page.locator('#objection-reason').input_value()\n  else:assert page.evaluate('prepCommandPending?.state===\"UNKNOWN\"') and 'PRIVATE_INTERLEAVED_MATERIAL' in page.locator('#prep-text').input_value()\n if kind=='material':\n  handle=next(iter(json.loads(stored).values()));handle=json.loads(handle);assert set(handle)=={'v','id','key','revision','expires'}\n  assert page.evaluate('(expires)=>expires>Date.now()&&expires<=Date.now()+86400000',handle['expires'])\n  if denied:\n   with f[1].connect() as c:\n    f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute(\"UPDATE capability_grants SET active=true,revision=revision+1 WHERE principal_id='fixture-a' AND capability='READ'\")\n  before=snapshot(f);requests=[];recoveries=[];page.on('request',lambda r:requests.append(r.method));page.on('response',lambda r:recoveries.append(r.json()) if r.url.endswith('/command-recovery') and r.status==200 else None)\n  page.reload();assert page.locator('#token').input_value()=='';assert page.evaluate('preparationView===null&&prepCommandPending===null')\n  page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadPreparation(id,{role:\"enterprise_operator\"})',p['preparation_id']);page.wait_for_function('()=>prepRecoveryHandle?.observed&&!prepRecoveryChecking')\n  assert page.evaluate('prepRecoveryHandle.key')==handle['key'] and page.evaluate('prepRecoveryHandle.expires')==handle['expires'] and page.evaluate('JSON.stringify({...localStorage})')==stored\n  assert recoveries and recoveries[-1]['status']=='COMMITTED' and recoveries[-1]['event']['action']=='ADD_EVIDENCE' and recoveries[-1]['event']['revision']==handle['revision']+1\n  assert page.evaluate('preparationView.current_materials.find(x=>x.slot===\"material_outline\").version')==2 and requests and set(requests)=={'GET'} and snapshot(f)==before and not errors\n  page.locator('#prep-text').fill('SYNTHETIC newer unsent draft');page.locator('#prep-recovery-read').click();page.wait_for_function('()=>!prepRecoveryChecking');assert page.locator('#prep-text').input_value()=='SYNTHETIC newer unsent draft' and snapshot(f)==before\n  page.locator('#prep-recovery-release').click();assert page.evaluate('JSON.stringify({...localStorage})')=='{}' and page.locator('#prep-text').input_value()=='SYNTHETIC newer unsent draft' and snapshot(f)==before",
+      "local_helper_sources": {
+        "open_case": "def open_case(page,f,p):\n page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadServiceCasePlan(id)',p['preparation_id']);page.wait_for_function('()=>servicePlanView!==null');assert page.locator('#goal-results-panel').is_visible()"
+      }
+    },
+    {
+      "path": "tests/test_case_lifecycle_recovery_browser.py",
+      "function": "test_late_denial_does_not_clear_new_case_private_view",
+      "line": 150,
+      "literal_case_in_body": false,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "4040aab235f9631e2869c0299664fc51bf6ced7a4132e60ad132087fb4df0ec9",
+      "source": "def test_late_denial_does_not_clear_new_case_private_view(lifecycle_page):\n f,page,_=lifecycle_page;p,g,d,s=built(f);open_case(page,f,p);page.locator('#local-case-reason').fill('SYNTHETIC original action');held=[]\n def reject(route):held.append(route)\n page.route('**/api/preparations/'+p['preparation_id']+'/local-case/commands',reject);page.locator('#local-case-validate').click()\n end=time.monotonic()+5\n while not held and time.monotonic()<end:page.wait_for_timeout(20)\n assert held;page.locator('#local-case-reason').fill('SYNTHETIC current draft');before=page.locator('#local-case-summary').inner_text();held.pop().fulfill(status=403,content_type='application/json',body='{\"detail\":\"SYNTHETIC original request denied\"}');settled(page);page.wait_for_timeout(100)\n assert page.locator('#local-case-summary').inner_text()==before and page.locator('#local-case-reason').input_value()=='SYNTHETIC current draft' and page.evaluate('localCaseHandles().length')==1 and counts(f)==[0,0]",
+      "local_helper_sources": {
+        "open_case": "def open_case(page,f,p,user='fixture-a'):\n page.locator('#token').fill(f[2][user]);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadLocalCase(id)',p['preparation_id']);page.wait_for_function('()=>localCaseView!==null')"
+      }
+    },
+    {
+      "path": "tests/test_case_opportunities_browser.py",
+      "function": "test_late_committed_reply_never_fills_new_identity_case_or_draft",
+      "line": 81,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "a7f3b66d91f9afec2b546abcd0440db54c1252c9bd2ec2afe73d8300d64a0037",
+      "source": "def test_late_committed_reply_never_fills_new_identity_case_or_draft(opportunity_page,target):\n f,page,_=opportunity_page;p=filled(f);open_case(page,f,p);fill_import(page);held=[]\n def delay(route):held.append((route,route.fetch()))\n page.route('**/api/preparations/'+p['preparation_id']+'/opportunities/commands',delay);page.locator('#opp-import-save').click();end=time.monotonic()+10\n while not held and time.monotonic()<end:page.wait_for_timeout(20)\n assert held\n if target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n elif target=='case':p2=filled(f);page.evaluate('(id)=>loadPreparation(id,{role:\"enterprise_operator\"})',p2['preparation_id']);page.locator('#opp-read').click();settled(page)\n else:page.locator('#opp-note').fill('SYNTHETIC new current private draft')\n before=page.locator('#prep-summary').inner_text();cards=page.locator('#opp-cards').inner_text();r,x=held.pop();r.fulfill(response=x);settled(page);page.wait_for_timeout(100);assert page.locator('#prep-summary').inner_text()==before and page.locator('#opp-cards').inner_text()==cards and page.evaluate('oppHandles().length')==1\n if target=='draft':assert page.locator('#opp-note').input_value()=='SYNTHETIC new current private draft'",
+      "local_helper_sources": {
+        "open_case": "def open_case(page,f,p):\n page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadPreparation(id,{role:\"enterprise_operator\"})',p['preparation_id']);page.locator('#opp-read').click();page.wait_for_function('()=>oppView!==null&&!oppBusy')"
+      }
+    },
+    {
+      "path": "tests/test_case_opportunities_browser.py",
+      "function": "test_late_recovery_or_denial_preserves_new_draft_and_original_handle",
+      "line": 107,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "b7a13a73db2540e18c6b70498539ed1071db8e8348299868413d0541614a6206",
+      "source": "def test_late_recovery_or_denial_preserves_new_draft_and_original_handle(opportunity_page):\n f,page,_=opportunity_page;p=filled(f);unknown_import(f,page,p);held=[];path='**/api/preparations/'+p['preparation_id']+'/opportunities/recovery/*'\n def delay(route):held.append(route)\n page.route(path,delay);page.locator('#opp-recover').click();end=time.monotonic()+10\n while not held and time.monotonic()<end:page.wait_for_timeout(20)\n assert held;page.locator('#opp-note').fill('SYNTHETIC different current draft');before=page.locator('#prep-summary').inner_text();held.pop().fulfill(status=403,content_type='application/json',body='{\"detail\":\"SYNTHETIC original denial\"}');settled(page);page.wait_for_timeout(100);assert page.locator('#prep-summary').inner_text()==before and page.locator('#opp-note').input_value()=='SYNTHETIC different current draft' and page.evaluate('oppHandles().length')==1",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_descriptor_readonly_probe.py",
+      "function": "test_cli_rejects_private_malformed_input_without_echo",
+      "line": 99,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "067ffcb3ff4cc639377abc4b62dbeadfc141a6dcf2dcc6b80a86cf13591c6b56",
+      "source": "def test_cli_rejects_private_malformed_input_without_echo(capsys):\n    from scripts.windows.descriptor_readonly_probe import main\n    assert main(['--held-handle','PRIVATE_PATH_TOKEN'])==1\n    assert 'PRIVATE' not in capsys.readouterr().out",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_dispatch_execution_preview_browser.py",
+      "function": "test_late_response_cannot_restore_changed_context",
+      "line": 60,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "change_case_with_pending_preview",
+        "open_page"
+      ],
+      "helper_contains_bounded_click": true,
+      "source_sha256": "dc6baa9430ef4e9ee107fc135598f248a5fee99ffa22ba2b7d2f735d573979e9",
+      "source": "def test_late_response_cannot_restore_changed_context(dispatch_page,tmp_path,target):\n    f,p,e,page,errors=dispatch_page;open_page(page,f,p);other,_,_,_=setup(f,tmp_path);held=[]\n    def hold(route):\n        if route.request.method!='POST':route.continue_();return\n        r=route.fetch();assert r.status==201;held.append((route,r))\n    page.route('**/api/preparations/'+p['preparation_id']+'/dispatch-execution-preview',hold)\n    page.locator('#dispatch-execution-preview-run').click();wait_held(page,held)\n    if target=='case':change_case_with_pending_preview(page,other,'dispatch')\n    elif target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n    else:page.locator('#request-current').fill('SYNTHETIC NEW DRAFT');page.locator('#request-current').dispatch_event('input')\n    page.locator('#dispatch-execution-preview-result').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW CONTEXT\"');before=snapshot(f)\n    held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(150)\n    assert page.locator('#dispatch-execution-preview-result').inner_text()=='SYNTHETIC NEW CONTEXT' and snapshot(f)==before and not errors",
+      "local_helper_sources": {
+        "open_page": "def open_page(page,f,p):\n    page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input')\n    page.evaluate('(id)=>loadPlan(id)',p['preparation_id']);page.wait_for_function('()=>planView!==null')\n    page.locator('#bounded-planning-read').click();page.wait_for_function('()=>dispatchExecutionPreviewView!==null')\n    assert page.locator('#dispatch-execution-preview-panel').is_visible()"
+      }
+    },
+    {
+      "path": "tests/test_handling_deadline_browser.py",
+      "function": "test_late_old_deadline_cannot_publish_into_new_identity_or_case",
+      "line": 56,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_prep"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "4dbb3c98beaacc4293943aa3fb380f99ef16c9c8f7d243a47d27ee253d45972c",
+      "source": "def test_late_old_deadline_cannot_publish_into_new_identity_or_case(deadline_http,switch):\n    f,_=deadline_http;p=filled(f);other,_,_=create(f);attach(f,p);held=[];before=snapshot(f)\n    with browser_run() as pw:\n        browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);ctx,page=page_for(browser,f)\n        open_prep(page,p)\n        page.route('**/handling-deadline',lambda route:held.append((route,route.fetch())))\n        page.locator('#handling-deadline-read').click();page.wait_for_function('()=>document.querySelector(\"#handling-deadline-read\").disabled')\n        limit=time.monotonic()+3\n        while not held and time.monotonic()<limit:page.wait_for_timeout(20)\n        assert len(held)==1\n        if switch=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('change')\n        else:open_prep(page,other)\n        route,response=held[0];route.fulfill(response=response);page.wait_for_timeout(150)\n        assert page.evaluate('deadlineView===null') and page.locator('#handling-deadline-result').inner_text()==''\n        assert page.locator('#handling-deadline-status').inner_text()=='\u529e\u7406\u671f\u9650\u5f85\u786e\u8ba4\u3002'\n        ctx.close();browser.close()\n    assert snapshot(f)==before",
+      "local_helper_sources": {
+        "open_prep": "def open_prep(page,p,role='enterprise_operator'):\n    page.evaluate('(x)=>loadPreparation(x.id,{role:x.role})',dict(id=p['preparation_id'],role=role))\n    page.wait_for_function('()=>preparationView!==null')"
+      }
+    },
+    {
+      "path": "tests/test_independent_catalog_runtime.py",
+      "function": "test_standalone_catalog_get_under_pg_share_avoids_source_writer_inversion",
+      "line": 94,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "a6ae3c77a0827a58f058a9407f6e7abd2f01b2341356ef95f66033f65e16d01d",
+      "source": "def test_standalone_catalog_get_under_pg_share_avoids_source_writer_inversion(capability_catalog):\n    a=capability_catalog;release=register(a)['release'];instance=material_instance(release)\n    a['catalog'].bind_instance('park-a',uuid4().hex,instance);p,_,_=create(a['f'])\n    acquired_source=threading.Event()\n    def source_writer():\n        with a['catalog'].owner_connection() as c:\n            acquired_source.set()\n            lock(c,'park-a',True)\n    with ThreadPoolExecutor(max_workers=1) as pool:\n        with a['f'][1].connect() as c:\n            lock(c,'park-a')\n            pid=c.execute('SELECT pg_backend_pid() pid').fetchone()['pid']\n            future=pool.submit(source_writer)\n            assert acquired_source.wait(2)\n            waiters=wait_for_pg_blocker(a['f'][1],pid)\n            parent=c.execute('SELECT * FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()\n            result=a['catalog'].snapshot(c,parent)\n            assert result['releases'] and result['instances'] and not future.done()\n            Path('.runtime/service-capability-selection-20261014/source-lease-get-inversion.json').write_text(json.dumps(dict(blocker_pid=pid,waiters=waiters,readonly_get_returned=True,sqlite_writer_gate_held=True),indent=2)+'\\n')\n        future.result(timeout=5)",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_independent_catalog_runtime.py",
+      "function": "test_bind_resource_wait_does_not_hold_collection_exclusive",
+      "line": 208,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "8d8836190c77283931d69e744cbc1244683f5d35aaacacc859a6456a0243844c",
+      "source": "def test_bind_resource_wait_does_not_hold_collection_exclusive(capability_resource_catalog):\n    from parkweave import resource_holds as rh\n    a=capability_resource_catalog;release=register(a,service='synthetic-resource-coordination')['release'];instance=coordination_instance(release)\n    owner=a['f'][1]\n    with ThreadPoolExecutor(max_workers=1) as pool:\n        with owner.connect() as blocker:\n            rh._lock(blocker,rh.RESOURCE_ID)\n            pid=blocker.execute('SELECT pg_backend_pid() AS pid').fetchone()['pid']\n            future=pool.submit(a['catalog'].bind_instance,'park-a',uuid4().hex,instance)\n            waiters=wait_for_pg_blocker(owner,pid)\n            assert waiters and not future.done()\n            # This is the real business resource-X -> collection-S order.\n            # A preexisting writer collection-X would make this time out.\n            blocker.execute(\"SET LOCAL lock_timeout='1000ms'\")\n            lock(blocker,'park-a')\n            Path('.runtime/service-capability-selection-20261014/resource-collection-order.json').write_text(json.dumps(dict(blocker_pid=pid,waiters=waiters,resource_exclusive_held=True,collection_shared_acquired=True,writer_pending=True,sqlite_used_for_pg_acceptance=False),indent=2)+'\\n')\n        assert future.result(timeout=5)['instance']==instance",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_independent_selection_integration.py",
+      "function": "test_actual_adoption_parent_wait_holds_original_source_lease_until_commit",
+      "line": 68,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "4ce69eb890dd746c147987cc9db14e58fe694ff83883faf9666279c114c512e9",
+      "source": "def test_actual_adoption_parent_wait_holds_original_source_lease_until_commit(capability_catalog,monkeypatch):\n    a=capability_catalog;f,p,v,data=generate(a);entered=Event();proceed=Event();original=a['catalog'].source_lease\n    @contextmanager\n    def held():\n        with original() as connection:\n            entered.set();assert proceed.wait(5)\n            yield connection\n    monkeypatch.setattr(a['catalog'],'source_lease',held)\n    second=TemplateEngine(a['engine'].config,a['engine'].repository,a['engine'].clock);cmd=withdrawal(a,second)\n    with ThreadPoolExecutor(max_workers=2) as pool:\n        future=pool.submit(steps.adopt,f[0],f[2]['fixture-a'],UUID(p['preparation_id']),uuid4().hex,data)\n        assert entered.wait(5)\n        with f[1].connect() as blocker:\n            blocker.execute('SELECT id FROM preparations WHERE id=%s FOR UPDATE',(p['preparation_id'],));pid=blocker.execute('SELECT pg_backend_pid() pid').fetchone()['pid']\n            proceed.set();waiters=wait_for_pg_blocker(f[1],pid)\n            with sqlite3.connect(a['engine'].repository.path,timeout=0) as probe:\n                with pytest.raises(sqlite3.OperationalError,match='locked'):probe.execute('BEGIN IMMEDIATE')\n            withdraw=pool.submit(second.command,'template-publisher',a['scope'],uuid4().hex,cmd)\n            assert not future.done() and not withdraw.done()\n            Path('.runtime/service-capability-selection-20261014/adopt-source-pg-wait.json').write_text(json.dumps(dict(blocker_pid=pid,waiters=waiters,sqlite_source_gate_locked=True,withdrawal_pending=True),indent=2)+'\\n')\n        assert future.result(timeout=5)['candidate_consumption']['verification_basis']['validator_version']==4\n        assert withdraw.result(timeout=5)['state']=='WITHDRAWN'",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_isolated_execution_preview.py",
+      "function": "test_actual_sqlite_lock_unavailable_then_get_and_explicit_attempt_no_formal_write",
+      "line": 140,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "a7ba1661bf03edac335647c7df05054e54b9dbfabc7c05f7c182e409dd14975d",
+      "source": "def test_actual_sqlite_lock_unavailable_then_get_and_explicit_attempt_no_formal_write(preparation_fixture,tmp_path):\n    f=preparation_fixture;p,e=setup(f,tmp_path);b=body(f,p);key=uuid4().hex;before=snapshot(f)\n    with sqlite3.connect(e.path) as held:\n        held.execute('BEGIN EXCLUSIVE')\n        r=execute(f,p,b,key);assert r.status_code==503 and snapshot(f)==before\n        held.rollback()\n    assert read(f,p,key).json()['status']=='NOT_OBSERVED' and snapshot(f)==before\n    assert execute(f,p,b,key).status_code==201 and snapshot(f)==before",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_isolated_execution_preview_browser.py",
+      "function": "test_late_actual_execution_never_replaces_new_context",
+      "line": 59,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_page"
+      ],
+      "helper_contains_bounded_click": true,
+      "source_sha256": "858ac89c0c8b2c471664d49ee95ab4e2002b920a7f32672a67eeb83fc3568a75",
+      "source": "def test_late_actual_execution_never_replaces_new_context(preview_page,tmp_path,target):\n f,p,e,page,errors=preview_page;open_page(page,f,p);p2,_=setup_other(f);held=[]\n def hold(route):\n  if route.request.method!='POST':route.continue_();return\n  r=route.fetch();assert r.status==201;held.append((route,r))\n page.route('**/api/preparations/'+p['preparation_id']+'/execution-preview',hold);page.locator('#execution-preview-run').click();wait_held(page,held)\n if target=='case':open_page(page,f,p2)\n elif target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n else:page.locator('#request-current').fill('SYNTHETIC NEW PREVIEW DRAFT');page.locator('#request-current').dispatch_event('input')\n page.locator('#execution-preview-result').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW PREVIEW CONTEXT\"');before=snapshot(f);held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(150)\n assert page.locator('#execution-preview-result').inner_text()=='SYNTHETIC NEW PREVIEW CONTEXT' and snapshot(f)==before and not errors\n if target=='case':assert page.evaluate('executionPreviewView.preparation_id')==p2['preparation_id']",
+      "local_helper_sources": {
+        "open_page": "def open_page(page,f,p):\n page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadPlan(id)',p['preparation_id']);page.wait_for_function('()=>planView!==null');page.locator('#bounded-planning-read').click();page.wait_for_function('()=>executionPreviewView!==null');assert page.locator('#execution-preview-panel').is_visible()"
+      }
+    },
+    {
+      "path": "tests/test_isolated_execution_preview_browser.py",
+      "function": "test_persisted_handle_and_ttl_rechecked_after_actual_reply",
+      "line": 151,
+      "literal_case_in_body": false,
+      "opening_calls": [
+        "open_page"
+      ],
+      "helper_contains_bounded_click": true,
+      "source_sha256": "03071a8213ce8d8ee9d6febf5b986cb79d8e70aee3c23b240fa54f44aa931a15",
+      "source": "def test_persisted_handle_and_ttl_rechecked_after_actual_reply(preview_page,method,damage):\n f,p,e,page,errors=preview_page;open_page(page,f,p);held=[]\n if method=='GET':lost(page,f,p)\n def hold(route):\n  if route.request.method!=method:route.continue_();return\n  r=route.fetch();assert r.status==(200 if method=='GET' else 201);held.append((route,r))\n page.route('**/execution-preview'+('/recovery/*' if method=='GET' else ''),hold)\n page.locator('#execution-preview-recover' if method=='GET' else '#execution-preview-run').click();wait_held(page,held);h=page.evaluate('executionPreviewHandle');before=snapshot(f)\n if damage=='changed':\n  h['source']='0'*64;page.evaluate('(h)=>localStorage.setItem(executionPreviewStorage,JSON.stringify([h]))',h)\n else:page.evaluate('(expiry)=>{Date.now=()=>expiry+1}',h['expires'])\n held[0][0].fulfill(response=held[0][1]);page.wait_for_function('()=>!executionPreviewSubmitting&&document.getElementById(\"execution-preview-error\").textContent!==\"\"')\n assert '\u5df2\u6301\u4e45\u4fdd\u5b58' not in page.locator('#execution-preview-error').inner_text() and 'hash ' not in page.locator('#execution-preview-result').inner_text() and page.locator('#execution-preview-run').is_disabled() and snapshot(f)==before and not errors\n if damage=='changed':\n  saved=page.evaluate('localStorage.getItem(executionPreviewStorage)');page.locator('#execution-preview-release').click();page.wait_for_function('()=>document.getElementById(\"page-feedback\").textContent.includes(\"\u53e5\u67c4\u6216\u671f\u9650\u5df2\u53d8\u5316\")');assert page.evaluate('localStorage.getItem(executionPreviewStorage)')==saved",
+      "local_helper_sources": {
+        "open_page": "def open_page(page,f,p):\n page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadPlan(id)',p['preparation_id']);page.wait_for_function('()=>planView!==null');page.locator('#bounded-planning-read').click();page.wait_for_function('()=>executionPreviewView!==null');assert page.locator('#execution-preview-panel').is_visible()"
+      }
+    },
+    {
+      "path": "tests/test_isolated_execution_preview_browser.py",
+      "function": "test_late_actual_forbidden_recovery_never_clears_new_identity_context",
+      "line": 176,
+      "literal_case_in_body": false,
+      "opening_calls": [
+        "open_page"
+      ],
+      "helper_contains_bounded_click": true,
+      "source_sha256": "39dbefab694f2bf4d8dca4855743e7f79fd113248e5f71a04c7419637c70ec46",
+      "source": "def test_late_actual_forbidden_recovery_never_clears_new_identity_context(preview_page):\n f,p,e,page,errors=preview_page;open_page(page,f,p);storage,post=lost(page,f,p)\n with f[1].connect() as c:\n  f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute(\"UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'\")\n held=[]\n def hold(route):\n  r=route.fetch();assert r.status==403;held.append((route,r))\n page.route('**/execution-preview/recovery/*',hold);page.locator('#execution-preview-recover').click();wait_held(page,held);page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input');page.locator('#execution-preview-result').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW IDENTITY VIEW\"');before=snapshot(f)\n held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(150);assert page.locator('#execution-preview-result').inner_text()=='SYNTHETIC NEW IDENTITY VIEW' and page.evaluate('JSON.stringify({...localStorage})')==storage and snapshot(f)==before and not errors",
+      "local_helper_sources": {
+        "open_page": "def open_page(page,f,p):\n page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadPlan(id)',p['preparation_id']);page.wait_for_function('()=>planView!==null');page.locator('#bounded-planning-read').click();page.wait_for_function('()=>executionPreviewView!==null');assert page.locator('#execution-preview-panel').is_visible()"
+      }
+    },
+    {
+      "path": "tests/test_launcher_lifecycle.py",
+      "function": "test_stop_holds_pins_and_verifies_chain_before_child_signal",
+      "line": 62,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "a2007d0609d6654eab47d7de74fb73f8dbf65c275d4a29b102a36f557ab88f04",
+      "source": "def test_stop_holds_pins_and_verifies_chain_before_child_signal(tmp_path,monkeypatch,matched):\n    import server_identity\n    events=[];held=set()\n    class Pin:\n        def __init__(self,pid,*args):self.pid=pid\n        def __enter__(self):held.add(self.pid);return self\n        def __exit__(self,*args):held.remove(self.pid)\n        alive=True\n        def verify(self,**kwargs):assert self.pid in held\n    monkeypatch.setattr(server_identity,'PinnedProcess',Pin)\n    monkeypatch.setattr(lifecycle,'identify_process',lambda *args:True)\n    monkeypatch.setattr(lifecycle,'saved_child_matches',lambda *args:matched)\n    def stop_root():\n        assert held=={1,2};events.append('root-stop')\n    root=SimpleNamespace(terminate=stop_root,wait=lambda **kw:events.append('root-wait'))\n    def stop_child():\n        assert held=={1,2};events.append('child-stop')\n    child=SimpleNamespace(terminate=stop_child,wait=lambda **kw:events.append('child-wait'))\n    record={'pid':1,'created':1,'server':{'pid':2,'created':1.01}}\n    result=lifecycle.stop_record(record,tmp_path,lambda pid:root if pid==1 else child)\n    assert result==('STOPPED' if matched else 'FOREIGN_REFUSED') and not held\n    assert events==(['child-stop','child-wait','root-stop','root-wait'] if matched else [])",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_launcher_lifecycle.py",
+      "function": "test_native_root_paths_pin_until_signal_and_bound_failure_children",
+      "line": 96,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "39dc795cecdc84296c516f843b62739465690848687a9007ffbf52f927909b30",
+      "source": "def test_native_root_paths_pin_until_signal_and_bound_failure_children(tmp_path,monkeypatch,relation):\n    import psutil,server_identity\n    held=set();signals=[]\n    class Pin:\n        alive=True\n        def __init__(self,pid,*args):self.pid=pid\n        def __enter__(self):held.add(self.pid);return self\n        def __exit__(self,*args):held.remove(self.pid)\n        def verify(self,**kwargs):assert self.pid in held\n    class Process:\n        def __init__(self,pid):self.pid=pid\n        def children(self,recursive=False):\n            assert recursive is False\n            return [] if relation=='NONE' else [Process(2),Process(3)] if relation=='AMBIGUOUS' else [Process(2)]\n        def terminate(self):\n            assert 1 in held and (self.pid==1 or self.pid in held);signals.append(self.pid)\n        def wait(self,**kwargs):assert 1 in held\n    monkeypatch.setattr(psutil,'Process',Process)\n    monkeypatch.setattr(server_identity,'PinnedProcess',Pin)\n    monkeypatch.setattr(lifecycle,'native_binding_enabled',lambda:True)\n    monkeypatch.setattr(lifecycle,'identify_process',lambda *args:True)\n    monkeypatch.setattr(lifecycle,'saved_child_matches',lambda *args:True)\n    monkeypatch.setattr(lifecycle,'bind_execution',lambda *args:{'relation':'REFUSED' if relation=='REFUSED' else 'DIRECT_CHILD','server':{'pid':2,'created':1.01}})\n    result=lifecycle.stop_record({'pid':1,'created':1},tmp_path,Process)\n    assert result==('STOPPED' if relation in ('NONE','UNIQUE') else 'FOREIGN_REFUSED')\n    assert signals==([] if relation in ('AMBIGUOUS','REFUSED') else [1] if relation=='NONE' else [2,1])\n    assert not held",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_lifecycle_execution_preview_browser.py",
+      "function": "test_late_real_success_does_not_fill_changed_identity_or_draft",
+      "line": 73,
+      "literal_case_in_body": false,
+      "opening_calls": [
+        "open_page"
+      ],
+      "helper_contains_bounded_click": true,
+      "source_sha256": "c2242ff496b5a0a19280c1915bf1464b62b8bd3bc3f6348432104ee3c76e8dd7",
+      "source": "def test_late_real_success_does_not_fill_changed_identity_or_draft(lifecycle_page,change):\n    f,p,e,page,errors,a=lifecycle_page;open_page(page,f,p);held=[]\n    def hold(route):\n        if route.request.method!='POST':route.continue_();return\n        response=route.fetch();assert response.status==201;held.append((route,response))\n    page.route('**/api/preparations/'+p['preparation_id']+'/lifecycle-execution-preview',hold);page.locator('#lifecycle-execution-preview-run').click();wait_held(page,held)\n    if change=='token':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n    else:page.locator('#request-current').fill('SYNTHETIC new draft');page.locator('#request-current').dispatch_event('input')\n    route,response=held[0];route.fulfill(response=response);page.wait_for_timeout(200)\n    assert page.evaluate('lifecycleExecutionPreviewView') is None and page.locator('#lifecycle-execution-preview-result').inner_text()==''\n    assert page.evaluate('lifecycleExecutionPreviewHandles().length')==1",
+      "local_helper_sources": {
+        "open_page": "def open_page(page,f,p):\n    page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadPlan(id)',p['preparation_id']);page.wait_for_function('()=>planView!==null');page.locator('#bounded-planning-read').click();page.wait_for_function('()=>lifecycleExecutionPreviewView!==null')\n    assert page.locator('#lifecycle-execution-preview-panel').is_visible()"
+      }
+    },
+    {
+      "path": "tests/test_material_objections_browser.py",
+      "function": "test_late_post_after_identity_or_case_switch_cannot_show_old_private_content",
+      "line": 75,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_page"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "011f7a3b7eae6ea7b1706c7d735afe6b6241ec86856e808ffc310fae34397a32",
+      "source": "def test_late_post_after_identity_or_case_switch_cannot_show_old_private_content(browser_page,target):\n    f,page,_=browser_page;p=ready(f);open_page(page,f,p);held=[]\n    def hold(route):held.append((route,route.fetch()))\n    page.route('**'+url(p),lambda r:hold(r) if r.request.method=='POST' else r.continue_())\n    page.locator('#objection-reason').fill('PRIVATE original case');page.locator('#objection-raise').click()\n    for _ in range(100):\n        page.wait_for_timeout(20)\n        if held:break\n    assert len(held)==1\n    if target=='identity':\n        other,_,_=create(f,user='fixture-b');open_page(page,f,other,'fixture-b')\n    else:\n        other,_,_=create(f);open_page(page,f,other)\n    held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(150)\n    assert page.evaluate('preparationId')==other['preparation_id']\n    assert 'PRIVATE' not in page.locator('#objection-panel').inner_text() and page.locator('#objection-reason').input_value()==''\n    assert checked(get(f,p))['items'][0]['state']=='OPEN'",
+      "local_helper_sources": {
+        "open_page": "def open_page(page,f,p,user='fixture-a'):\n    page.locator('#token').fill(f[2][user]);page.locator('#token').dispatch_event('change')\n    page.evaluate('async id=>{await loadPreparation(id)}',p['preparation_id'])\n    page.wait_for_function('()=>objectionView!==null')"
+      }
+    },
+    {
+      "path": "tests/test_material_objections_browser.py",
+      "function": "test_http_concurrent_material_version_change_refuses_stale_owner_decision",
+      "line": 105,
+      "literal_case_in_body": false,
+      "opening_calls": [
+        "open_page"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "ac040004564a81826ade41ea6c0f45d2a6d47c69398b723a93ece4255919a3dc",
+      "source": "def test_http_concurrent_material_version_change_refuses_stale_owner_decision(browser_page):\n    f,page,_=browser_page;p=ready(f);act(f,p);response=act(f,p,'RESPOND',SPECIALIST);open_page(page,f,p)\n    newer=checked(add(f,response,text='SYNTHETIC material changed while browser held old view'))\n    before=rows(f);page.locator('#objection-reason').fill('SYNTHETIC stale review')\n    page.locator('[data-objection-action=\"ACCEPT_RESPONSE\"]').click()\n    page.wait_for_function('()=>!objectionBusy&&!objectionPending')\n    assert rows(f)==before and checked(get(f,p))['items'][0]['state']=='STALE'\n    newer=checked(command(f,newer,'REVIEW',SPECIALIST,reason='SYNTHETIC new material independent review'))\n    open_page(page,f,p);submit(page,'REBIND');assert checked(get(f,p))['items'][0]['state']=='OPEN'",
+      "local_helper_sources": {
+        "open_page": "def open_page(page,f,p,user='fixture-a'):\n    page.locator('#token').fill(f[2][user]);page.locator('#token').dispatch_event('change')\n    page.evaluate('async id=>{await loadPreparation(id)}',p['preparation_id'])\n    page.wait_for_function('()=>objectionView!==null')"
+      }
+    },
+    {
+      "path": "tests/test_material_objections_browser.py",
+      "function": "test_late_read_cannot_restore_other_identity_or_case_private_feedback",
+      "line": 165,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_page"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "3b672e248ddd3a3f9ebe357dbac80b93836b5db6451e47a7085768c93fd40241",
+      "source": "def test_late_read_cannot_restore_other_identity_or_case_private_feedback(browser_page,target):\n    f,page,_=browser_page;p=ready(f);act(f,p,reason='PRIVATE delayed ledger');open_page(page,f,p);held=[]\n    def hold(route):\n        if not held:held.append((route,route.fetch()))\n        else:route.continue_()\n    page.route('**'+url(p),hold)\n    page.evaluate('window.objectionReadTask=loadObjections(preparationContext);void 0')\n    for _ in range(100):\n        page.wait_for_timeout(20)\n        if held:break\n    assert len(held)==1\n    other,_,_=create(f,user='fixture-b' if target=='identity' else 'fixture-a')\n    open_page(page,f,other,'fixture-b' if target=='identity' else 'fixture-a')\n    held[0][0].fulfill(response=held[0][1]);page.evaluate('async()=>{await window.objectionReadTask}')\n    assert page.evaluate('objectionView.preparation_id')==other['preparation_id']\n    assert 'PRIVATE' not in page.locator('#objection-panel').inner_text()",
+      "local_helper_sources": {
+        "open_page": "def open_page(page,f,p,user='fixture-a'):\n    page.locator('#token').fill(f[2][user]);page.locator('#token').dispatch_event('change')\n    page.evaluate('async id=>{await loadPreparation(id)}',p['preparation_id'])\n    page.wait_for_function('()=>objectionView!==null')"
+      }
+    },
+    {
+      "path": "tests/test_native_creation_invariants.py",
+      "function": "test_ntcreate_uses_held_root_exact_rights_no_security_descriptor_and_async_file_options",
+      "line": 361,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "59c3ba8a915285f0226ff970d151fd42ace94146c28e31bcdd7675e197a13d1c",
+      "source": "def test_ntcreate_uses_held_root_exact_rights_no_security_descriptor_and_async_file_options():\n    api = bare_api()\n    calls = []\n    def create(out, access, oa_ptr, ios_ptr, allocation, attributes, share, disposition, options, ea, ea_length):\n        oa = C.cast(oa_ptr, C.POINTER(wh.ObjectAttributes)).contents\n        name = oa.ObjectName.contents\n        calls.append((access, oa.RootDirectory, C.string_at(name.Buffer, name.Length).decode('utf-16-le'), oa.Attributes,\n                      oa.SecurityDescriptor, oa.SecurityQualityOfService, allocation, attributes, share, disposition, options, ea, ea_length))\n        C.cast(out, C.POINTER(wh.PTR))[0] = 901\n        C.cast(ios_ptr, C.POINTER(wh.IOStatus)).contents.Information = 2\n        return 0\n    api.ntcreate = create\n    assert api.relative(701, 'windows-services.log', access=0x20082, disposition=2, share=0) == 901\n    assert calls == [(0x20082, 701, 'windows-services.log', 0x40, None, None, None, 0x80, 0, 2, 0x200040, None, 0)]",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_native_creation_invariants.py",
+      "function": "test_every_held_ancestor_reparse_is_rejected_without_file_creation_or_unclosed_handles",
+      "line": 533,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "73283357c3351ae19dd361da216256799c2261f8a2fb7d083c5958b0c136ed71",
+      "source": "def test_every_held_ancestor_reparse_is_rejected_without_file_creation_or_unclosed_handles(ancestor):\n    api = ObjectModel()\n    node = api.root if ancestor == 'root' else api.root['children']['repo'] if ancestor == 'repo' else api.runtime\n    node['info'] = replace(node['info'], attributes=0x410)\n    with pytest.raises(old.CandidateRefused): adapter(api)\n    assert not any(e[0] == 'relative' and e[4] == 2 for e in api.events)\n    assert set(api.handles) == api.closed",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_partial_service_plan.py",
+      "function": "test_partial_adoption_waits_for_actual_pg_parent_mutation_and_refuses_stale_preview",
+      "line": 219,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "91d9e1aaaef67a79f211299aa309fc61aa206f511d66e54ea6165e2a4e6655a6",
+      "source": "def test_partial_adoption_waits_for_actual_pg_parent_mutation_and_refuses_stale_preview(link_fixture,monkeypatch):\n    from concurrent.futures import ThreadPoolExecutor\n    from threading import Event\n    import time,json\n    from pathlib import Path\n    from parkweave import preparation as prep\n    f=link_fixture;p=setup_partial(f)\n    p=prep_command(f,p,'REOPEN',reason='SYNTHETIC reopen before reviewer correction').json()\n    body=adopt_body(f,p,partial_adoption=True)\n    entered=Event();release=Event();original=prep.event\n    def held_event(c,actor,row,key,fp,action,*args,**kwargs):\n        result=original(c,actor,row,key,fp,action,*args,**kwargs)\n        if action=='REQUEST_CHANGES':\n            entered.set();assert release.wait(5),'owned writer release deadline exceeded'\n        return result\n    monkeypatch.setattr(prep,'event',held_event);waiting=False\n    with ThreadPoolExecutor(max_workers=2) as pool:\n        writer=pool.submit(prep_command,f,p,'REQUEST_CHANGES',REVIEWER,reason='SYNTHETIC actual source correction during partial adoption')\n        assert entered.wait(3)\n        pending=pool.submit(adopt,f,p,body)\n        try:\n            with f[1].connect() as monitor:\n                until=time.monotonic()+2\n                while time.monotonic()<until:\n                    monitor.execute('SELECT pg_stat_clear_snapshot()')\n                    waiting=monitor.execute(\"SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query ILIKE '%%FROM preparations%%FOR UPDATE%%') AS waiting\").fetchone()['waiting']\n                    if waiting:break\n                    time.sleep(.01)\n            assert waiting,'adoption did not reach the actual PostgreSQL parent row lock'\n        finally:release.set()\n        assert writer.result(5).status_code==200\n        r=pending.result(5);assert r.status_code==409,r.text\n    assert read(f,p).json()['plan_id'] is None\n    Path('.runtime/partial-plan-20261013/actual-pg-wait.json').write_text(json.dumps(dict(actual_parent_lock_wait=waiting,original_writer='REQUEST_CHANGES',writer_status=200,stale_adoption_status=409,plan_saved=False),indent=2)+'\\n')",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_receipt_execution_preview_browser.py",
+      "function": "test_late_response_cannot_restore_changed_context",
+      "line": 70,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "change_case_with_pending_preview",
+        "open_page"
+      ],
+      "helper_contains_bounded_click": true,
+      "source_sha256": "f520708da2a928893bf2ed6c366aaa94ebdc227e52fc79a8518988335f1cafd0",
+      "source": "def test_late_response_cannot_restore_changed_context(receipt_page,tmp_path,target):\n    f,p,e,page,errors,a=receipt_page;open_page(page,f,p);other,_,_=p2_setup(f,tmp_path);approved((f,other,a[2],a[3],a[4]));held=[]\n    def hold(route):\n        if route.request.method!='POST':route.continue_();return\n        r=route.fetch();assert r.status==201;held.append((route,r))\n    page.route('**/api/preparations/'+p['preparation_id']+'/receipt-execution-preview',hold)\n    page.locator('#receipt-execution-preview-run').click();wait_held(page,held)\n    if target=='case':change_case_with_pending_preview(page,other,'receipt')\n    elif target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n    else:page.locator('#request-current').fill('SYNTHETIC NEW DRAFT');page.locator('#request-current').dispatch_event('input')\n    page.locator('#receipt-execution-preview-result').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW CONTEXT\"');before=snapshot(f)\n    held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(150)\n    assert page.locator('#receipt-execution-preview-result').inner_text()=='SYNTHETIC NEW CONTEXT' and snapshot(f)==before and not errors",
+      "local_helper_sources": {
+        "open_page": "def open_page(page,f,p):\n    page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input')\n    page.evaluate('(id)=>loadPlan(id)',p['preparation_id']);page.wait_for_function('()=>planView!==null')\n    page.locator('#bounded-planning-read').click();page.wait_for_function('()=>receiptExecutionPreviewView!==null')\n    assert page.locator('#receipt-execution-preview-panel').is_visible()"
+      }
+    },
+    {
+      "path": "tests/test_receipt_history_recovery_browser.py",
+      "function": "test_original_page_current_revoke_and_late_identity_clear",
+      "line": 67,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "4b12ef999b40d313d786c2c8457f6913dcaaa4e6307fd11c53cbf322695810b4",
+      "source": "def test_original_page_current_revoke_and_late_identity_clear(issuer):\n    _,d,_,case=issuer;errors=[]\n    with api_process(issuer) as (client,_,port,_),sync_playwright() as pw:\n        browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);context=browser.new_context();page=context.new_page();page.on('pageerror',lambda x:errors.append(str(x)))\n        try:\n            page.goto(f'http://127.0.0.1:{port}/');fill(page,d);assert page.locator('#receipt-history-result').inner_text()\n            held=[]\n            def hold(route):response=route.fetch();held.append((route,response))\n            page.route('**/receipt-execution-history/recovery/*',hold);page.locator('#receipt-history-read').click()\n            for _ in range(200):\n                if held:break\n                page.wait_for_timeout(20)\n            assert held;page.locator('#token').fill(d['tokens']['fixture-b']);held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(100)\n            assert page.locator('#receipt-history-result').inner_text()==''\n            page.unroute('**/receipt-execution-history/recovery/*',hold)\n            with Store(d['owner_dsn']).connect() as c:c.execute(\"UPDATE capability_grants SET active=false WHERE principal_id='executor-a' AND capability='READ'\")\n            saved=bytes_all(d);before=business(d);fill(page,d);assert '\u4e0d\u53ef\u8bfb' in page.locator('#receipt-history-error').inner_text() and page.locator('#receipt-history-result').inner_text()==''\n            assert business(d)==before and bytes_all(d)==saved and not errors\n        finally:context.close();browser.close()",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_registered_local_revision_browser.py",
+      "function": "test_late_actual_local_adoption_response_never_replaces_new_context",
+      "line": 47,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "6c9693e0eb5d86a86b3a9ab4a39a2b159ee43847706743c26ad3946cdb10abe8",
+      "source": "def test_late_actual_local_adoption_response_never_replaces_new_context(goal_page,target):\n    f,page,errors=goal_page;p,g,d,s=complete(f);p2=setup(f,GOALS[0]);changed(f,p);open_case(page,f,p);held=[]\n    def hold(route):\n        if route.request.method!='POST':route.continue_();return\n        r=route.fetch();assert r.status==201;held.append((route,r))\n    page.route('**/api/preparations/'+p['preparation_id']+'/service-case-plan',hold)\n    page.locator('#service-plan-reason').fill('SYNTHETIC PRIVATE_LATE_LOCAL_PATCH');page.locator('#service-plan-adopt').click();wait_held(page,held)\n    storage=page.evaluate('JSON.stringify({...localStorage})')\n    if target=='case':open_case(page,f,p2)\n    else:page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n    page.locator('#page-feedback').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW_PATCH_CONTEXT\"');before=snapshot(f)\n    held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(150)\n    assert page.locator('#page-feedback').inner_text()=='SYNTHETIC NEW_PATCH_CONTEXT' and snapshot(f)==before and page.evaluate('JSON.stringify({...localStorage})')==storage\n    if target=='case':assert page.evaluate('servicePlanView.preparation_id')==p2['preparation_id']\n    assert not errors",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_resource_alternative_times.py",
+      "function": "test_expired_held_does_not_write_cleanup_and_confirmed_still_counts",
+      "line": 100,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "51eab6d8c207ea17961ea879f67b9fecaf4156b10017aee750a8aa286e0fe429",
+      "source": "def test_expired_held_does_not_write_cleanup_and_confirmed_still_counts(resource_fixture):\n    f = resource_fixture\n    configure(f, capacity=1, buffer_seconds=0)\n    data = body(f); h = hold(f, data, user='fixture-b').json()['hold']\n    with f[1].connect() as c:\n        c.execute(\"UPDATE synthetic_resource_holds SET created_at=clock_timestamp()-interval '1 day',expires_at=clock_timestamp()-interval '1 hour' WHERE id=%s\", (UUID(h['id']),))\n    before = counts(f)\n    assert search(f, search_body(data)).json()['items'][0]['starts_at'] == data['starts_at']\n    with f[1].connect() as c:\n        assert c.execute('SELECT state FROM synthetic_resource_holds WHERE id=%s', (UUID(h['id']),)).fetchone()['state'] == 'HELD'\n        c.execute(\"UPDATE synthetic_resource_holds SET state='CONFIRMED' WHERE id=%s\", (UUID(h['id']),))\n    assert search(f, search_body(data)).json()['items'][0]['starts_at'] == data['ends_at']\n    assert counts(f) == before",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_resource_bundles_browser.py",
+      "function": "test_late_commit_never_fills_new_context_and_handle_survives",
+      "line": 91,
+      "literal_case_in_body": false,
+      "opening_calls": [
+        "open_resources"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "d97de72da15f265beae4a9ca811066f82402d1c824805ab7bb31f74654da567c",
+      "source": "def test_late_commit_never_fills_new_context_and_handle_survives(bundle_page,target):\n    f,page,_=bundle_page;hs,d=bundle(f);open_resources(page,f);choose(page,hs);held=[]\n    def delay(route):\n        if route.request.method=='POST':held.append((route,route.fetch()))\n        else:route.continue_()\n    page.route('**/api/resource-bundles',delay);page.locator('#bundle-confirm').click()\n    for _ in range(100):\n        page.wait_for_timeout(20)\n        if held:break\n    assert held\n    if target=='identity':open_resources(page,f,'fixture-b')\n    else:page.locator('#resource-purpose').fill('SYNTHETIC changed draft')\n    held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(100)\n    assert page.locator('.combination-result').count()==0 and page.evaluate('bundleHandles().length')==1\n    assert states(f,hs)==['CONFIRMED']*3\n    if target=='draft':assert page.locator('#bundle-recover').is_enabled()",
+      "local_helper_sources": {
+        "open_resources": "def open_resources(page,f,user='fixture-a'):\n    page.locator('#token').fill(f[2][user]);page.locator('#token').dispatch_event('change')\n    page.locator('[data-tab=\"resource\"]').click();page.locator('#resource-catalog').click()\n    page.wait_for_function('()=>bundleActor!==null')"
+      }
+    },
+    {
+      "path": "tests/test_resource_execution_preview_browser.py",
+      "function": "test_late_response_cannot_restore_changed_context",
+      "line": 59,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_page"
+      ],
+      "helper_contains_bounded_click": true,
+      "source_sha256": "deef564c6d4323895c24a1e9a856997b80fa7fca6f816c2b6bc7f67e2663fc1c",
+      "source": "def test_late_response_cannot_restore_changed_context(resource_page,tmp_path,target):\n    f,p,e,page,errors=resource_page;open_page(page,f,p);other,_,_=setup(f,tmp_path);held=[]\n    def hold(route):\n        if route.request.method!='POST':route.continue_();return\n        r=route.fetch();assert r.status==201;held.append((route,r))\n    page.route('**/api/preparations/'+p['preparation_id']+'/resource-execution-preview',hold)\n    page.locator('#resource-execution-preview-run').click();wait_held(page,held)\n    if target=='case':open_page(page,f,other)\n    elif target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n    else:page.locator('#request-current').fill('SYNTHETIC NEW DRAFT');page.locator('#request-current').dispatch_event('input')\n    page.locator('#resource-execution-preview-result').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW CONTEXT\"');before=snapshot(f)\n    held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(150)\n    assert page.locator('#resource-execution-preview-result').inner_text()=='SYNTHETIC NEW CONTEXT' and snapshot(f)==before and not errors",
+      "local_helper_sources": {
+        "open_page": "def open_page(page,f,p):\n    page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input')\n    page.evaluate('(id)=>loadPlan(id)',p['preparation_id']);page.wait_for_function('()=>planView!==null')\n    page.locator('#bounded-planning-read').click();page.wait_for_function('()=>resourceExecutionPreviewView!==null')\n    assert page.locator('#resource-execution-preview-panel').is_visible()"
+      }
+    },
+    {
+      "path": "tests/test_run_directory_browser.py",
+      "function": "test_late_real_directory_response_never_returns_after_context_switch",
+      "line": 75,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "0f19b6e3cbcc882c40e6787fc8248d85f47e6a5bff7c3cfc11f4b6c768f61030",
+      "source": "def test_late_real_directory_response_never_returns_after_context_switch(fixture,tmp_path,switch):\n    f=fixture;run=created(f);before=snapshot(f[1])\n    with original_page(f,tmp_path) as (page,requests,errors):\n        page.locator('#token').fill(f[2]['fixture-a']);held=[]\n        def hold(route):held.append((route,route.fetch()))\n        page.route('**/api/runs?limit=20',hold);page.locator('#record-directory-read').click()\n        wait(lambda:page.wait_for_timeout(20) or held)\n        if switch=='identity':page.locator('#token').fill(f[2]['fixture-b'])\n        elif switch=='run':page.locator('#run').fill(str(uuid4()))\n        else:page.locator('[data-tab=\"service\"]').click()\n        held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(100)\n        assert run not in page.locator('#record-directory-items').inner_text()\n        assert page.locator('#record-directory-items').inner_text()=='' and snapshot(f[1])==before",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_run_directory_browser.py",
+      "function": "test_current_403_clears_directory_and_run_before_late_old_200",
+      "line": 90,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "8f970e63e97a8740a37ae3caf9b2ef21536ad9c5337b04f7487f9e7d0e7e98fb",
+      "source": "def test_current_403_clears_directory_and_run_before_late_old_200(fixture,tmp_path):\n    f=fixture;run=created(f)\n    with original_page(f,tmp_path) as (page,requests,errors):\n        list_records(page,f[2]['fixture-a']);page.locator('#record-directory-items button').click()\n        page.locator('details.engineering-record > summary').click()\n        wait(lambda:'LOCAL_CASE_CREATED' in page.locator('#result').inner_text())\n        held=[]\n        def hold(route):\n            if held:route.continue_()\n            else:held.append((route,route.fetch()))\n        page.route('**/api/runs?limit=20',hold);page.locator('#record-directory-read').click();wait(lambda:page.wait_for_timeout(20) or held)\n        f[1].revoke_capability('fixture-a','READ');before=snapshot(f[1])\n        # Start a new explicit read through the actual handler while the old GET is pending.\n        page.evaluate(\"document.getElementById('record-directory-read').disabled=false\")\n        page.locator('#record-directory-read').click()\n        wait(lambda:'\u4e0d\u53ef\u8bfb' in page.locator('#result').inner_text())\n        held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(100)\n        assert page.locator('#record-directory-items').inner_text()==''\n        assert 'LOCAL_CASE_CREATED' not in page.locator('#result').inner_text()\n        assert run not in page.locator('#result').inner_text() and snapshot(f[1])==before",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_run_directory_browser.py",
+      "function": "test_original_run_403_invalidates_inflight_directory_200",
+      "line": 112,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "541c8c8042750a60ba2fe36cbae904c0bbe79bd6ee5ffe07cbe70e086230c250",
+      "source": "def test_original_run_403_invalidates_inflight_directory_200(fixture,tmp_path):\n    f=fixture;run=created(f)\n    with original_page(f,tmp_path) as (page,requests,errors):\n        page.locator('#token').fill(f[2]['fixture-a']);page.locator('#run').fill(run)\n        page.locator('#refresh').click();page.locator('details.engineering-record > summary').click()\n        wait(lambda:'LOCAL_CASE_CREATED' in page.locator('#result').inner_text())\n        held=[]\n        def hold(route):held.append((route,route.fetch()))\n        page.route('**/api/runs?limit=20',hold);page.locator('#record-directory-read').click()\n        wait(lambda:page.wait_for_timeout(20) or held)\n        f[1].revoke_capability('fixture-a','READ');before=snapshot(f[1])\n        page.locator('#refresh').click();wait(lambda:'\u8bf7\u6c42\u672a\u5b8c\u6210' in page.locator('#result').inner_text())\n        held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(100)\n        assert page.locator('#record-directory-items').inner_text()==''\n        assert page.locator('#record-directory-next').is_hidden()\n        assert 'LOCAL_CASE_CREATED' not in page.locator('#result').inner_text() and snapshot(f[1])==before",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_service_plan_candidates.py",
+      "function": "test_owned_pg_parent_wait_fixture_revision_change_wins_current_source_cas",
+      "line": 196,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "9cb73cb5922f215090bdfb26865abc2f33801cf983f8ef6f70e6e484fbb78fa9",
+      "source": "def test_owned_pg_parent_wait_fixture_revision_change_wins_current_source_cas(preparation_fixture,stage):\n    import time\n    from concurrent.futures import ThreadPoolExecutor\n    from test_preparation import add\n    f=preparation_fixture;p=setup(f,[GOAL]);v=generate(f,p).json();data=adoption(f,p,v)\n    current=f[3].get('/api/preparations/'+p['preparation_id']+'/planning-preview',headers=headers(f[2])).json()['current'];genbody=dict(expected_preparation_revision=current['preparation_revision'],expected_source_sha256=current['source_sha256'])\n    with f[1].connect() as c,ThreadPoolExecutor(max_workers=1) as pool:\n        c.execute('SELECT id FROM preparations WHERE id=%s FOR UPDATE',(p['preparation_id'],))\n        future=pool.submit(lambda:generate(f,p,data=genbody) if stage=='generation' else adopt(f,p,v,data=data))\n        end=time.monotonic()+10\n        while time.monotonic()<end:\n            with f[1].connect() as observer:\n                waits=observer.execute(\"SELECT pid FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%%preparations%%FOR UPDATE%%'\").fetchall()\n            if waits:break\n            time.sleep(.01)\n        assert waits,'actual PostgreSQL lock wait was not observed'\n        # Use the original ADD_EVIDENCE implementation on the same owned connection\n        # is impossible across its independent transaction; commit the same material\n        # update via existing API after releasing this lock, serialized ahead of old\n        # request by holding its key guard is not deterministic. Instead mutate this\n        # fixture revision under the real held parent lock to invalidate the original\n        # recorded CAS, without claiming actual user material workflow.\n        c.execute('UPDATE preparations SET revision=revision+1 WHERE id=%s',(p['preparation_id'],));c.commit()\n        r=future.result(timeout=15);assert r.status_code==409,r.text\n    with f[1].connect() as c:\n        row=c.execute('SELECT planning_previews,service_case_plan FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone();assert len(row['planning_previews'])==1 and row['service_case_plan'] is None",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_service_plan_manual_lock_browser.py",
+      "function": "test_late_original_lock_post_does_not_replace_new_context",
+      "line": 49,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "76bca989371d90ac16c7ddc471188b95956cfa2c0931de19267f0e15de0ae8be",
+      "source": "def test_late_original_lock_post_does_not_replace_new_context(goal_page,action,target):\n    f,page,errors=goal_page;p=start(f);p2=start(f)\n    if action=='UNLOCK':assert lock(f,p).status_code==200\n    open_case(page,f,p);held=[]\n    def hold(route):\n        if route.request.method!='POST':route.continue_();return\n        r=route.fetch();assert r.status==200;held.append((route,r))\n    page.route('**/service-case-plan/commands',hold);page.locator('#service-plan-reason').fill('SYNTHETIC PRIVATE_LOCK_POST');page.locator('[data-service-action=\"'+action+'\"]').click();wait_held(page,held)\n    storage=page.evaluate('JSON.stringify({...localStorage})')\n    if target=='case':open_case(page,f,p2)\n    else:page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n    page.locator('#page-feedback').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW_LOCK_CONTEXT\"');before=snapshot(f);held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(150)\n    assert page.locator('#page-feedback').inner_text()=='SYNTHETIC NEW_LOCK_CONTEXT' and page.evaluate('JSON.stringify({...localStorage})')==storage and snapshot(f)==before and not errors\n    if target=='case':assert page.evaluate('servicePlanView.preparation_id')==p2['preparation_id']",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_service_plan_recovery.py",
+      "function": "test_read_waits_for_original_uncommitted_write_then_no_duplicate_event",
+      "line": 100,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "48012c1f3cd8a77d85bcb4805c11d6f611c0480a20b8c23fe1437625e14a67a5",
+      "source": "def test_read_waits_for_original_uncommitted_write_then_no_duplicate_event(link_fixture,monkeypatch):\n import threading\n f=link_fixture;p=setup(f,GOALS[0]);row=adopt(f,p).json();key=str(uuid4());held=threading.Event();release=threading.Event();save_real=plans._save\n def save_wait(c,parent,plan):save_real(c,parent,plan);held.set();assert release.wait(5)\n monkeypatch.setattr(plans,'_save',save_wait)\n with ThreadPoolExecutor(2) as pool:\n  write=pool.submit(command,f,p,'P1','BEGIN',row=row,key=key);assert held.wait(5);read_pending=pool.submit(recover,f,p,key)\n  time.sleep(.05);assert not read_pending.done();release.set();posted=write.result(5);r=read_pending.result(5)\n assert posted.status_code==200 and r.status_code==200 and r.json()['status']=='COMMITTED';before=snapshot(f);assert recover(f,p,key).json()['event']['id']==posted.json()['command_receipt']['id'] and snapshot(f)==before\n with f[1].connect() as c:assert len(c.execute('SELECT service_case_plan FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['service_case_plan']['events'])==2",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_service_plan_recovery_browser.py",
+      "function": "test_late_actual_recovery200_or403_does_not_clear_new_identity_or_case",
+      "line": 64,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "4010a6e97b2961092e6b455b09d4a11d1473b28d506a419b33e45d69243fbd4d",
+      "source": "def test_late_actual_recovery200_or403_does_not_clear_new_identity_or_case(goal_page,target,denied):\n f,page,errors=goal_page;p=prep(f,'VERIFY');p2=prep(f,'BEGIN');open_case(page,f,p);h,stored,_=lost(page,f,p,'VERIFY');held=[]\n def hold(route):\n  if not route.request.headers.get('idempotency-key'):route.continue_();return\n  held.append((route,None if denied else route.fetch()))\n page.route('**/service-case-plan/command-recovery',hold);page.locator('#service-plan-retry').click();wait_held(page,held)\n if target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n else:open_case(page,f,p2)\n page.locator('#page-feedback').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW_CONTEXT\"')\n if denied:\n  with f[1].connect() as c:f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute(\"UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'\")\n before=snapshot(f);route,r=held[0]\n if denied:r=route.fetch();assert r.status==403\n else:assert r.status==200\n route.fulfill(response=r);page.wait_for_timeout(150);assert page.locator('#page-feedback').inner_text()=='SYNTHETIC NEW_CONTEXT' and snapshot(f)==before and page.evaluate('JSON.stringify({...localStorage})')==stored and not errors\n if target=='case':assert page.evaluate('servicePlanView.preparation_id')==p2['preparation_id']",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_service_plan_recovery_browser.py",
+      "function": "test_late_actual_original_post200_or403_keeps_new_context_and_original_cold_handle",
+      "line": 151,
+      "literal_case_in_body": true,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "66ba7e8a9cd9beb5ad2277ba2350406942ec017dc299aa59f8206afe78f53d97",
+      "source": "def test_late_actual_original_post200_or403_keeps_new_context_and_original_cold_handle(goal_page,target,denied):\n f,page,errors=goal_page;p=prep(f,'BEGIN');p2=prep(f,'BEGIN');open_case(page,f,p);held=[]\n def hold(route):\n  if route.request.method!='POST':route.continue_();return\n  held.append((route,None if denied else route.fetch()))\n page.route('**/service-case-plan/commands',hold);page.locator('#service-plan-reason').fill('SYNTHETIC PRIVATE_LATE_POST');page.locator('[data-service-action=\"BEGIN\"]').click();wait_held(page,held);assert page.evaluate('servicePlanPending.stage')=='SUBMITTING';stored=page.evaluate('JSON.stringify({...localStorage})');assert 'PRIVATE_' not in stored\n if target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')\n else:open_case(page,f,p2)\n page.locator('#page-feedback').evaluate('(e)=>e.textContent=\"SYNTHETIC NEW_POST_CONTEXT\"')\n if denied:\n  with f[1].connect() as c:f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute(\"UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'\")\n before=snapshot(f);route,r=held[0]\n if denied:r=route.fetch();assert r.status==403\n else:assert r.status==200\n route.fulfill(response=r);page.wait_for_timeout(150);assert page.locator('#page-feedback').inner_text()=='SYNTHETIC NEW_POST_CONTEXT' and snapshot(f)==before and page.evaluate('JSON.stringify({...localStorage})')==stored and not errors\n if target=='case':assert page.evaluate('servicePlanView.preparation_id')==p2['preparation_id']",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_service_plan_recovery_browser.py",
+      "function": "test_real_inflight_recovery_or_original_post_revalidates_handle_before_accepting200",
+      "line": 202,
+      "literal_case_in_body": false,
+      "opening_calls": [
+        "open_case"
+      ],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "ed03327db146531faa686b18e6fda13fdfa4b17f62c4b974dc2ebfed5c88b4ca",
+      "source": "def test_real_inflight_recovery_or_original_post_revalidates_handle_before_accepting200(goal_page,kind,method):\n f,page,errors=goal_page;p=prep(f,'BEGIN');open_case(page,f,p);held=[]\n if method=='GET':h,_,_=lost(page,f,p,'BEGIN')\n def hold(route):\n  if route.request.method!=method or (method=='GET' and not route.request.headers.get('idempotency-key')):route.continue_();return\n  r=route.fetch();assert r.status==200;held.append((route,r))\n page.route('**/service-case-plan/'+('command-recovery' if method=='GET' else 'commands'),hold)\n if method=='GET':page.locator('#service-plan-retry').click()\n else:page.locator('#service-plan-reason').fill('SYNTHETIC PRIVATE_INFLIGHT_POST');page.locator('[data-service-action=\"BEGIN\"]').click()\n wait_held(page,held)\n if method=='POST':h=page.evaluate('servicePlanRecoveryHandle')\n draft='SYNTHETIC keep changed unsent draft';page.evaluate('(draft)=>document.getElementById(\"service-plan-reason\").value=draft',draft);damage_handle(page,h,kind);stored=page.evaluate('JSON.stringify({...localStorage})');before=snapshot(f);requests=[];page.on('request',lambda r:requests.append(r.method));route,r=held[0];route.fulfill(response=r);assert_handle_refused(page,f,before,draft);assert requests==[] and page.evaluate('JSON.stringify({...localStorage})')==(stored if kind=='changed' else '{}') and not errors",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_service_resource_change_replay.py",
+      "function": "test_proposal_capacity_and_buffer_oracle_no_hidden_fallback",
+      "line": 114,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "eec50566435d0f9496e7c1932bb0907ef89b0020f9e6126cb8c132491b5c727a",
+      "source": "def test_proposal_capacity_and_buffer_oracle_no_hidden_fallback(replay):\n    from test_service_selection_replay_acceptance import all_public_rows\n    r=replay;f=r['f'];p,_,_=prepare_changed(r,'AT33-C-CAPACITY');api=f[3];tokens=f[2]\n    with f[1].connect() as c:now=c.execute('SELECT clock_timestamp() t').fetchone()['t']\n    start=(now+timedelta(hours=5)).isoformat();end=(now+timedelta(hours=6)).isoformat()\n    params=dict(search_from=start,search_until=end)\n    first=ok(proposal_get(r,p,**params));assert first['state']=='AVAILABLE' and len(first['items'])==1\n    rid=first['items'][0]['members'][0]['resource_id']\n    held=ok(api.post('/api/synthetic-resources/'+rid+'/holds',headers=headers(tokens,'fixture-c',uuid4().hex),json=dict(starts_at=start,ends_at=end,quantity=2,expected_revision=1,ttl_seconds=300,purpose='SYNTHETIC competing owner reservation')),201)['hold']\n    before=all_public_rows(f[1]);second=ok(proposal_get(r,p,**params));assert all_public_rows(f[1])==before\n    assert second['state']=='NO_SOLUTION' and second['items']==[] and second['available_candidates']==0\n    assert second['source_sha256']!=first['source_sha256']\n    # Even a slot ending exactly at the other hold's start conflicts with its\n    # original five-minute buffers; no unbuffered fallback is manufactured.\n    buffered=ok(proposal_get(r,p,search_from=(now+timedelta(hours=4)).isoformat(),search_until=start))\n    assert buffered['state']=='NO_SOLUTION' and buffered['items']==[]\n    ok(api.post('/api/resource-holds/'+held['id']+'/release',headers=headers(tokens,'fixture-c',uuid4().hex),json={}))\n    third=ok(proposal_get(r,p,**params));assert third['state']=='AVAILABLE'",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_template_hold.py",
+      "function": "test_revocation_after_preliminary_proof_before_held_guard_prevents_cas",
+      "line": 70,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "aa27e2f95e73ccc46aa1a7621b1165033816b99afbeed9aeaa44791aa72c699f",
+      "source": "def test_revocation_after_preliminary_proof_before_held_guard_prevents_cas(template_consumption,monkeypatch,capability):\n    f=template_consumption;row,_,_=unknown(f,monkeypatch);proof=recover(f,row,'terminal-original').json();before=journal(f)\n    checked=Event();release=Event();original=f['consumer']._auth\n    def pause(token,connection=None):\n        if connection is not None:\n            checked.set();assert release.wait(8),'held authority guard release deadline'\n        return original(token,connection=connection)\n    monkeypatch.setattr(f['consumer'],'_auth',pause)\n    with ThreadPoolExecutor(max_workers=1) as pool:\n        response=pool.submit(finish,f,row,'terminal-original',finish_body(proof));assert checked.wait(4)\n        try:\n            with f['owner'].connect() as c:\n                f['owner'].lock_principal(c,ENTERPRISES[0],exclusive=True)\n                table='preparation_grants' if capability=='PREPARE' else 'capability_grants'\n                c.execute('UPDATE '+table+' SET active=false WHERE principal_id=%s AND capability=%s',(ENTERPRISES[0],capability))\n        finally:release.set()\n        r=response.result(8);assert r.status_code==403,r.text\n    assert journal(f)==before",
+      "local_helper_sources": {}
+    },
+    {
+      "path": "tests/test_template_terminal.py",
+      "function": "test_real_pg_source_wait_then_terminal_cas_beats_delayed_old_raw_send",
+      "line": 124,
+      "literal_case_in_body": false,
+      "opening_calls": [],
+      "helper_contains_bounded_click": false,
+      "source_sha256": "6b96d2191b15a0d301a6e90f064986da992fd6c1546bc50e080bf42151812958",
+      "source": "def test_real_pg_source_wait_then_terminal_cas_beats_delayed_old_raw_send(template_consumption,monkeypatch):\n    import time,json\n    from threading import Event\n    from concurrent.futures import ThreadPoolExecutor\n    from pathlib import Path\n    from parkweave import preparation\n    f=template_consumption;row,v,data=unknown(f,monkeypatch,commit=False);p=recover(f,row,'terminal-original').json();entered=Event();release=Event();original=preparation.event\n    def held(c,actor,parent,key,fp,action,*a,**kw):\n        result=original(c,actor,parent,key,fp,action,*a,**kw)\n        if action=='ADD_EVIDENCE':entered.set();assert release.wait(8),'owned source writer release deadline'\n        return result\n    monkeypatch.setattr(preparation,'event',held);waiting=False\n    with ThreadPoolExecutor(max_workers=3) as pool:\n        writer=pool.submit(advance,f,row,v);assert entered.wait(4)\n        finalizer=pool.submit(finish,f,row,'terminal-original',finish_body(p))\n        raw=pool.submit(f['client'].post,'/api/preparations/'+row['preparation_id']+'/service-case-plan',headers=headers(f,key=p['original_request_key']),json=data)\n        try:\n            with f['owner'].connect() as monitor:\n                until=time.monotonic()+3\n                while time.monotonic()<until:\n                    monitor.execute('SELECT pg_stat_clear_snapshot()')\n                    waiting=monitor.execute(\"SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query ILIKE '%%FROM preparations%%FOR UPDATE%%') AS waiting\").fetchone()['waiting']\n                    if waiting:break\n                    time.sleep(.01)\n            assert waiting,'original recovery/delayed send did not wait for actual owned PG parent lock'\n        finally:release.set()\n        assert writer.result(8).status_code==200\n        rejected=raw.result(8);assert rejected.status_code==409,rejected.text\n        result=finalizer.result(8);assert result.status_code==200,result.text\n    proof=recover(f,row,'terminal-original').json();assert proof['journal_terminal'] and proof['status']=='NOT_COMMITTED_FINAL' and proof['instance']['plan_id'] is None\n    Path('.runtime/template-terminal-20261014/actual-pg-cas-race.json').write_text(json.dumps(dict(actual_pg_parent_lock_wait=waiting,writer='ADD_EVIDENCE',writer_status=200,delayed_raw_original_key_status=409,finalizer_status=200,journal_state=proof['journal_state'],plan_saved=False),indent=2)+'\\n')",
+      "local_helper_sources": {}
+    }
+  ]
+}

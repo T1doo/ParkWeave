@@ -1,0 +1,123 @@
+{
+  "status": "STATIC_ONLY",
+  "files_scanned": 117,
+  "constructor_sites": [
+    {
+      "path": "src/parkweave/case_cancellation_before_receipt.py",
+      "line": 54,
+      "target": "service_dispatches.Command",
+      "constructor": "sd.Command(action='ACCEPT',expected_revision=e['revision']-1,reason=e['payload']['reason'])",
+      "function": "_manual_lineage",
+      "model_dumps_in_same_function": [
+        {
+          "line": 55,
+          "text": "request.model_dump(mode='json')"
+        }
+      ]
+    },
+    {
+      "path": "src/parkweave/case_cancellation_reconciliation.py",
+      "line": 147,
+      "target": "case_lifecycle.Command",
+      "constructor": "lc.Command(action='REVALIDATE',expected_revision=old['revision']-1,expected_cycle=1,\n                reason=payload['reason'],expected_snapshot_sha256=lc._sha(snapshot,1))",
+      "function": "_phase",
+      "model_dumps_in_same_function": [
+        {
+          "line": 151,
+          "text": "original.model_dump(mode='json')"
+        }
+      ]
+    },
+    {
+      "path": "src/parkweave/case_cancellation_reconciliation.py",
+      "line": 78,
+      "target": "executor_receipts.Command",
+      "constructor": "er.Command(action='SUBMIT',expected_revision=revision-1,text=receipt['text'],source_kind='SYNTHETIC',source_label=receipt['source_label'])",
+      "function": "_ledger",
+      "model_dumps_in_same_function": [
+        {
+          "line": 93,
+          "text": "request.model_dump(mode='json')"
+        }
+      ]
+    },
+    {
+      "path": "src/parkweave/case_cancellation_reconciliation.py",
+      "line": 87,
+      "target": "executor_receipts.Command",
+      "constructor": "er.Command(action=action,expected_revision=revision-1,receipt_sha256=current['source_sha256'],reason=payload['reason'])",
+      "function": "_ledger",
+      "model_dumps_in_same_function": [
+        {
+          "line": 93,
+          "text": "request.model_dump(mode='json')"
+        }
+      ]
+    },
+    {
+      "path": "src/parkweave/dispatch_execution_preview.py",
+      "line": 153,
+      "target": "service_dispatches.Offer",
+      "constructor": "sd.Offer(expected_preparation_revision=p1['revision'],expected_dispatch_revision=0,executor_id=executor,reason='SYNTHETIC PREVIEW simulated reviewer only')",
+      "function": "_execute",
+      "model_dumps_in_same_function": []
+    },
+    {
+      "path": "src/parkweave/dispatch_execution_preview.py",
+      "line": 154,
+      "target": "service_dispatches.Command",
+      "constructor": "sd.Command(action=decision,expected_revision=offered['revision'],reason='SYNTHETIC PREVIEW executor own simulated token')",
+      "function": "_execute",
+      "model_dumps_in_same_function": []
+    },
+    {
+      "path": "src/parkweave/lifecycle_execution_preview.py",
+      "line": 79,
+      "target": "case_lifecycle.Command",
+      "constructor": "lc.Command(action=action,expected_revision=before['revision'],expected_cycle=before['cycle'],expected_snapshot_sha256=before['current_snapshot_sha256'] if action!='REOPEN' else None,reason='SYNTHETIC simulated enterprise explicit '+action)",
+      "function": "_after_receipt",
+      "model_dumps_in_same_function": [
+        {
+          "line": 80,
+          "text": "body.model_dump(mode='json')"
+        },
+        {
+          "line": 80,
+          "text": "body.model_dump(mode='json')"
+        }
+      ]
+    },
+    {
+      "path": "src/parkweave/receipt_execution_preview.py",
+      "line": 190,
+      "target": "service_dispatches.Offer",
+      "constructor": "sd.Offer(expected_preparation_revision=p1['revision'],expected_dispatch_revision=0,executor_id=executor,reason='SYNTHETIC PREVIEW simulated reviewer only')",
+      "function": "_execute",
+      "model_dumps_in_same_function": []
+    },
+    {
+      "path": "src/parkweave/receipt_execution_preview.py",
+      "line": 191,
+      "target": "service_dispatches.Command",
+      "constructor": "sd.Command(action='ACCEPT',expected_revision=offered['revision'],reason='SYNTHETIC PREVIEW executor own simulated token')",
+      "function": "_execute",
+      "model_dumps_in_same_function": []
+    },
+    {
+      "path": "src/parkweave/receipt_execution_preview.py",
+      "line": 200,
+      "target": "isolated_local_execution.ExecuteLocal",
+      "constructor": "local.ExecuteLocal(expected_revision=step['revision'],reason='SYNTHETIC P4 actual original local adapter execution')",
+      "function": "_execute",
+      "model_dumps_in_same_function": []
+    },
+    {
+      "path": "src/parkweave/receipt_execution_preview.py",
+      "line": 202,
+      "target": "executor_receipts.Command",
+      "constructor": "er.Command(action=review_decision,expected_revision=submitted['step']['revision'],receipt_sha256=receipt['source_sha256'],reason='SYNTHETIC simulated enterprise explicit '+review_decision)",
+      "function": "_execute",
+      "model_dumps_in_same_function": []
+    }
+  ]
+}

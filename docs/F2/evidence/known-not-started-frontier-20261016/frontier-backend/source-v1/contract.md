@@ -1,0 +1,19 @@
+# Owned new-birth frontier candidate contract
+
+Base HEAD: c2263edd889c2b9b4ada9f502b3a41b32eb9341f. Only private frontier-backend files changed by this agent.
+
+Default off; original full-five-VERIFY compatibility remains the independent schema1 profile. New request explicitly names KNOWN_NOT_STARTED_V1 and original previous plan ID. New compatibility schema2 has original14 compatibility fields plus qualification (exact16 keys); top-level replacement proof remains original14 keys. No optional null is added to legacy body fingerprints.
+
+Installation is limited to original issued, private, owner-created fixture before all preparation births and before any of the eight business relations have rows. It reuses original Approval schema-only implementation before freezing the complete trigger/constraint catalog. No existing preparation backfill, role/GRANT or production installer is supplied.
+
+P1/P2 original VERIFY event and source hashes must be authentic. P3/P4/P5 lack of rows alone never qualifies: immutable INSERT-born identity, installed generation, complete fixed trigger/function OID/owner/definition/xmin snapshot, zero monotonic marker and complete eight empty collections are mandatory. Insert/update/delete advance marker irreversibly within parent UPDATE; rollback leaves no committed effect. TRUNCATE on parent/eight effects is rejected. ALWAYS effects cannot be bypassed by replica mode (app checks origin as well).
+
+Original business GET emits exact five-field captured CAS: generation/preparation_id/plan_id UUID, plan_revision1..64, epoch0..4096. All seven business DTOs carry expected_business_frontier. Tracked requests missing or changing a captured fence refuse; no server auto-fill. Same-key original fingerprint replay occurs before current fence check. New P4 tracked paths take parent UPDATE before effect lock; legacy retains its original SHARE/limited SQL preview behavior.
+
+At consumption, after original approval/hold confirmation and comparison, exact live qualification is rebuilt; anchor append trigger independently requires original marker0 plus all eight empty. Anchor is append-only and bound to actual original request/fingerprint/newplan/revision/approval/link/combination; an ALWAYS deferred trigger demands the actual original immutable link and receipt in the same transaction. Last read check rebuilds live qualification again. Historical qualification comes from this native immutable anchor, checked against original birth/prefix/catalog and original SQL receipt/link/approval ledger. Future P3 effects do not manufacture or erase historical zero-time facts.
+
+Boundary: this is a finite trusted issued-owner fixture protocol. Committed disable/enable and function-definition restore are detected through fixed catalog xmin. It does not claim protection against arbitrary superuser direct system-catalog fabrication or an unrestricted adversary who can perform invisible create/drop/rollback DDL outside the issued continuity contract. Normal trigger/constraint metadata maintenance changes conservatively revoke qualification. Manual monotonic invalidation can only refuse; it cannot create birth, reset zero, replace prefix or append an authorizing zero anchor together with invalidation.
+
+Actual evidence: attempt06 core1 PASS26.320s; attempt07 core+original receipt_execution_preview/service_plan_approval/case_lifecycle126PASS159.55s. Attempt08 checks the final added consumption rechecks. No failed-window results are carried as passes of a later source version. Failed attempts01–05 and exact diagnostic evidence remain sealed locally.
+
+Remaining parent validation: final integrated frozen full regression, independent33 frontier/epoch probes (including real P4 concurrency), independent review, actual HTML/ASGI/ownedPG and browser windows, archive/push. Windows/formal AT/real model/production remain unexecuted.

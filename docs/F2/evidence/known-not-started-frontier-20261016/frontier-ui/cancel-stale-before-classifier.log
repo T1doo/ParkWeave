@@ -1,0 +1,90 @@
+FFFFF                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_cancel_capture_original_fence_and_preserve_unknown[stale_retry-before_accept] _
+
+route = 'before_accept', variant = 'stale_retry'
+
+    @pytest.mark.parametrize('route',['before_accept','before_receipt','reconcile_request','reconcile_record','reconcile_finish'])
+    @pytest.mark.parametrize('variant',['captured','ordinary','stale_context','stale_source','malformed','stale_retry','other_conflict','unknown'])
+    def test_cancel_capture_original_fence_and_preserve_unknown(route,variant):
+     p=subprocess.run(['node','tests/frontier_cancel_client_probes.js',route+':'+variant],cwd=ROOT,capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: {"message":"The expression evaluated to a falsy value:\n\n  assert(v)\n","stack":"AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(v)\n\n    at check (/workspace/ParkWeave/.runtime/frontier-ui/cancel-candidate/tests/frontier_cancel_client_probes.js:5:26)\n    at /workspace/ParkWeave/.runtime/frontier-ui/cancel-candidate/tests/frontier_cancel_client_probes.js:67:119","calls":[{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation","method":"GET"},{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation","method":"POST","body":"{\"case_id\":\"00000000-0000-4000-8000-000000000001\",\"expected_preparation_revision\":4,\"expected_lifecycle_revision\":0,\"expected_source_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"confirm_cancel\":true,\"reason\":\"SYNTHETIC explicit cancellation\",\"expected_business_frontier\":{\"generation\":\"00000000-0000-4000-8000-000000000090\",\"preparation_id\":\"00000000-0000-4000-8000-000000000003\",\"plan_id\":\"00000000-0000-4000-8000-000000000080\",\"plan_revision\":3,\"epoch\":2}}"}]}
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', 'tests/frontier_cancel_client_probes.js', 'before_accept:stale_retry'], returncode=1, s...-000000000003\\",\\"plan_id\\":\\"00000000-0000-4000-8000-000000000080\\",\\"plan_revision\\":3,\\"epoch\\":2}}"}]}\n').returncode
+
+tests/test_frontier_cancel_client.py:10: AssertionError
+_ test_cancel_capture_original_fence_and_preserve_unknown[stale_retry-before_receipt] _
+
+route = 'before_receipt', variant = 'stale_retry'
+
+    @pytest.mark.parametrize('route',['before_accept','before_receipt','reconcile_request','reconcile_record','reconcile_finish'])
+    @pytest.mark.parametrize('variant',['captured','ordinary','stale_context','stale_source','malformed','stale_retry','other_conflict','unknown'])
+    def test_cancel_capture_original_fence_and_preserve_unknown(route,variant):
+     p=subprocess.run(['node','tests/frontier_cancel_client_probes.js',route+':'+variant],cwd=ROOT,capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: {"message":"The expression evaluated to a falsy value:\n\n  assert(v)\n","stack":"AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(v)\n\n    at check (/workspace/ParkWeave/.runtime/frontier-ui/cancel-candidate/tests/frontier_cancel_client_probes.js:5:26)\n    at /workspace/ParkWeave/.runtime/frontier-ui/cancel-candidate/tests/frontier_cancel_client_probes.js:67:119","calls":[{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation","method":"GET"},{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation-before-receipt","method":"GET"},{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation-before-receipt","method":"POST","body":"{\"case_id\":\"00000000-0000-4000-8000-000000000001\",\"expected_preparation_revision\":4,\"expected_lifecycle_revision\":0,\"expected_source_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"confirm_cancel\":true,\"reason\":\"SYNTHETIC explicit cancellation\",\"expected_business_frontier\":{\"generation\":\"00000000-0000-4000-8000-000000000090\",\"preparation_id\":\"00000000-0000-4000-8000-000000000003\",\"plan_id\":\"00000000-0000-4000-8000-000000000080\",\"plan_revision\":3,\"epoch\":2}}"}]}
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', 'tests/frontier_cancel_client_probes.js', 'before_receipt:stale_retry'], returncode=1, ...-000000000003\\",\\"plan_id\\":\\"00000000-0000-4000-8000-000000000080\\",\\"plan_revision\\":3,\\"epoch\\":2}}"}]}\n').returncode
+
+tests/test_frontier_cancel_client.py:10: AssertionError
+_ test_cancel_capture_original_fence_and_preserve_unknown[stale_retry-reconcile_request] _
+
+route = 'reconcile_request', variant = 'stale_retry'
+
+    @pytest.mark.parametrize('route',['before_accept','before_receipt','reconcile_request','reconcile_record','reconcile_finish'])
+    @pytest.mark.parametrize('variant',['captured','ordinary','stale_context','stale_source','malformed','stale_retry','other_conflict','unknown'])
+    def test_cancel_capture_original_fence_and_preserve_unknown(route,variant):
+     p=subprocess.run(['node','tests/frontier_cancel_client_probes.js',route+':'+variant],cwd=ROOT,capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: {"message":"The expression evaluated to a falsy value:\n\n  assert(v)\n","stack":"AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(v)\n\n    at check (/workspace/ParkWeave/.runtime/frontier-ui/cancel-candidate/tests/frontier_cancel_client_probes.js:5:26)\n    at /workspace/ParkWeave/.runtime/frontier-ui/cancel-candidate/tests/frontier_cancel_client_probes.js:67:119","calls":[{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation-reconciliation","method":"GET"},{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation-reconciliation","method":"POST","body":"{\"action\":\"REQUEST_CANCEL\",\"case_id\":\"00000000-0000-4000-8000-000000000001\",\"expected_preparation_revision\":4,\"expected_lifecycle_revision\":0,\"expected_source_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"confirm\":true,\"reason\":\"SYNTHETIC explicit cancellation review\",\"expected_business_frontier\":{\"generation\":\"00000000-0000-4000-8000-000000000090\",\"preparation_id\":\"00000000-0000-4000-8000-000000000003\",\"plan_id\":\"00000000-0000-4000-8000-000000000080\",\"plan_revision\":3,\"epoch\":2}}"}]}
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', 'tests/frontier_cancel_client_probes.js', 'reconcile_request:stale_retry'], returncode=...-000000000003\\",\\"plan_id\\":\\"00000000-0000-4000-8000-000000000080\\",\\"plan_revision\\":3,\\"epoch\\":2}}"}]}\n').returncode
+
+tests/test_frontier_cancel_client.py:10: AssertionError
+_ test_cancel_capture_original_fence_and_preserve_unknown[stale_retry-reconcile_record] _
+
+route = 'reconcile_record', variant = 'stale_retry'
+
+    @pytest.mark.parametrize('route',['before_accept','before_receipt','reconcile_request','reconcile_record','reconcile_finish'])
+    @pytest.mark.parametrize('variant',['captured','ordinary','stale_context','stale_source','malformed','stale_retry','other_conflict','unknown'])
+    def test_cancel_capture_original_fence_and_preserve_unknown(route,variant):
+     p=subprocess.run(['node','tests/frontier_cancel_client_probes.js',route+':'+variant],cwd=ROOT,capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: {"message":"The expression evaluated to a falsy value:\n\n  assert(v)\n","stack":"AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(v)\n\n    at check (/workspace/ParkWeave/.runtime/frontier-ui/cancel-candidate/tests/frontier_cancel_client_probes.js:5:26)\n    at /workspace/ParkWeave/.runtime/frontier-ui/cancel-candidate/tests/frontier_cancel_client_probes.js:67:119","calls":[{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation-reconciliation","method":"GET"},{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation-reconciliation","method":"POST","body":"{\"action\":\"RECONCILE\",\"case_id\":\"00000000-0000-4000-8000-000000000001\",\"expected_preparation_revision\":4,\"expected_lifecycle_revision\":0,\"expected_source_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"confirm\":true,\"reason\":\"SYNTHETIC explicit cancellation review\",\"expected_business_frontier\":{\"generation\":\"00000000-0000-4000-8000-000000000090\",\"preparation_id\":\"00000000-0000-4000-8000-000000000003\",\"plan_id\":\"00000000-0000-4000-8000-000000000080\",\"plan_revision\":3,\"epoch\":2},\"request_event_id\":\"00000000-0000-4000-8000-000000000020\",\"receipts\":[{\"step_id\":\"00000000-0000-4000-8000-000000000004\",\"receipt_id\":\"00000000-0000-4000-8000-000000000005\",\"version\":1,\"receipt_sha256\":\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\",\"outcome\":\"KNOWN_LOCAL_RESULT\"}]}"}]}
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', 'tests/frontier_cancel_client_probes.js', 'reconcile_record:stale_retry'], returncode=1...\"cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\\",\\"outcome\\":\\"KNOWN_LOCAL_RESULT\\"}]}"}]}\n').returncode
+
+tests/test_frontier_cancel_client.py:10: AssertionError
+_ test_cancel_capture_original_fence_and_preserve_unknown[stale_retry-reconcile_finish] _
+
+route = 'reconcile_finish', variant = 'stale_retry'
+
+    @pytest.mark.parametrize('route',['before_accept','before_receipt','reconcile_request','reconcile_record','reconcile_finish'])
+    @pytest.mark.parametrize('variant',['captured','ordinary','stale_context','stale_source','malformed','stale_retry','other_conflict','unknown'])
+    def test_cancel_capture_original_fence_and_preserve_unknown(route,variant):
+     p=subprocess.run(['node','tests/frontier_cancel_client_probes.js',route+':'+variant],cwd=ROOT,capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: {"message":"The expression evaluated to a falsy value:\n\n  assert(v)\n","stack":"AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(v)\n\n    at check (/workspace/ParkWeave/.runtime/frontier-ui/cancel-candidate/tests/frontier_cancel_client_probes.js:5:26)\n    at /workspace/ParkWeave/.runtime/frontier-ui/cancel-candidate/tests/frontier_cancel_client_probes.js:67:119","calls":[{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation-reconciliation","method":"GET"},{"path":"/api/preparations/00000000-0000-4000-8000-000000000003/case-cancellation-reconciliation","method":"POST","body":"{\"action\":\"CONFIRM_CANCEL\",\"case_id\":\"00000000-0000-4000-8000-000000000001\",\"expected_preparation_revision\":4,\"expected_lifecycle_revision\":0,\"expected_source_sha256\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"confirm\":true,\"reason\":\"SYNTHETIC explicit cancellation review\",\"expected_business_frontier\":{\"generation\":\"00000000-0000-4000-8000-000000000090\",\"preparation_id\":\"00000000-0000-4000-8000-000000000003\",\"plan_id\":\"00000000-0000-4000-8000-000000000080\",\"plan_revision\":3,\"epoch\":2},\"request_event_id\":\"00000000-0000-4000-8000-000000000020\",\"reconciliation_event_id\":\"00000000-0000-4000-8000-000000000021\"}"}]}
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', 'tests/frontier_cancel_client_probes.js', 'reconcile_finish:stale_retry'], returncode=1...000000-0000-4000-8000-000000000020\\",\\"reconciliation_event_id\\":\\"00000000-0000-4000-8000-000000000021\\"}"}]}\n').returncode
+
+tests/test_frontier_cancel_client.py:10: AssertionError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_frontier_cancel_client.py::test_cancel_capture_original_fence_and_preserve_unknown[stale_retry-before_accept]
+FAILED tests/test_frontier_cancel_client.py::test_cancel_capture_original_fence_and_preserve_unknown[stale_retry-before_receipt]
+FAILED tests/test_frontier_cancel_client.py::test_cancel_capture_original_fence_and_preserve_unknown[stale_retry-reconcile_request]
+FAILED tests/test_frontier_cancel_client.py::test_cancel_capture_original_fence_and_preserve_unknown[stale_retry-reconcile_record]
+FAILED tests/test_frontier_cancel_client.py::test_cancel_capture_original_fence_and_preserve_unknown[stale_retry-reconcile_finish]
+5 failed, 35 deselected, 1 warning in 1.04s

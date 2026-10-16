@@ -1,0 +1,11 @@
+--- a/src/parkweave/web.html
++++ b/src/parkweave/web.html
+@@ -869,7 +869,7 @@
+ const caseReconScope='SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION',caseReconStorage='parkweave.case-reconcile.v1.',caseReconPhases=new Map();
+ function caseReconPhase(caseId){return caseReconPhases.get($('token').value+'|'+caseId)||null;}
+ function caseReconRemember(caseId,state){if(!['RECONCILING','CANCELLED'].includes(state))return;const k=$('token').value+'|'+caseId;if(caseReconPhases.get(k)!=='CANCELLED')caseReconPhases.set(k,state);}
+-function caseReconBlocked(caseId){return !!caseReconPhase(caseId)||(preparationView?.preparation.case_id===caseId&&(preparationView.case_write_blocked||preparationView.case_reconciling||preparationView.case_cancelled));}
++function caseReconBlocked(caseId){return typeof caseId==='string'&&!!caseId&&(!!caseReconPhase(caseId)||!!(preparationView?.preparation?.case_id===caseId&&(preparationView.case_write_blocked||preparationView.case_reconciling||preparationView.case_cancelled)));}
+ function clearCaseReconciliation(){caseReconGeneration++;caseReconView=null;caseReconReadContext=null;caseReconHandle=null;caseReconBusy=false;caseReconChoices=[];$('case-reconcile-form').hidden=true;$('case-reconcile-recover').hidden=true;$('case-reconcile-receipts').replaceChildren();$('case-reconcile-status').textContent='';$('case-reconcile-reason').value='';$('case-reconcile-confirm').checked=false;}
+ function caseReconHydrate(p){try{caseReconHandle=caseReconHandles().find(h=>h.id===p.id&&h.actor===p.owner_id)||null;}catch(e){caseReconHandle={invalid:true};$('case-reconcile-status').textContent=e.message;}caseReconRemember(p.case_id,preparationView?.case_cancelled?'CANCELLED':preparationView?.case_reconciling?'RECONCILING':null);}
+ function caseReconContext(){return {...prepContext(),reconcileGeneration:caseReconGeneration};}

@@ -1,0 +1,112 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_original_cancellation_blocking_has_explicit_case_identity[null_identity-42] _
+
+mode = 'null_identity', checks = 42
+
+    @pytest.mark.parametrize('mode,checks',[('null_identity',42),('view_flags',13),('known_phase',15)])
+    def test_original_cancellation_blocking_has_explicit_case_identity(mode,checks):
+     p=subprocess.run(['node','tests/frontier_cancel_nullguard_probes.js',mode],cwd=ROOT,capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: evalmachine.<anonymous>:3
+E      function caseReconBlocked(caseId){return !!caseReconPhase(caseId)||(preparationView?.preparation.case_id===caseId&&(preparationView.case_write_blocked||preparationView.case_reconciling||preparationView.case_cancelled));}
+E                                                                                                                                          ^
+E      
+E      TypeError: Cannot read properties of null (reading 'case_write_blocked')
+E          at Object.caseReconBlocked (evalmachine.<anonymous>:3:133)
+E          at Object.<anonymous> (/workspace/ParkWeave/.runtime/frontier-ui/nullguard-candidate/tests/frontier_cancel_nullguard_probes.js:14:55)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E          at Module._load (node:internal/modules/cjs/loader:1396:12)
+E          at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E          at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E          at node:internal/main/run_main_module:33:47
+E      
+E      Node.js v24.19.0
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', 'tests/frontier_cancel_nullguard_probes.js', 'null_identity'], returncode=1, stdout='',...unMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n\nNode.js v24.19.0\n").returncode
+
+.runtime/frontier-ui/nullguard-candidate/tests/test_frontier_cancel_nullguard.py:9: AssertionError
+_ test_original_cancellation_blocking_has_explicit_case_identity[view_flags-13] _
+
+mode = 'view_flags', checks = 13
+
+    @pytest.mark.parametrize('mode,checks',[('null_identity',42),('view_flags',13),('known_phase',15)])
+    def test_original_cancellation_blocking_has_explicit_case_identity(mode,checks):
+     p=subprocess.run(['node','tests/frontier_cancel_nullguard_probes.js',mode],cwd=ROOT,capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: node:assert:152
+E        throw new AssertionError(obj);
+E        ^
+E      
+E      AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+E      + actual - expected
+E      
+E      + undefined
+E      - false
+E      
+E          at check (/workspace/ParkWeave/.runtime/frontier-ui/nullguard-candidate/tests/frontier_cancel_nullguard_probes.js:9:53)
+E          at Object.<anonymous> (/workspace/ParkWeave/.runtime/frontier-ui/nullguard-candidate/tests/frontier_cancel_nullguard_probes.js:20:33)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E          at Module._load (node:internal/modules/cjs/loader:1396:12)
+E          at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E          at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E          at node:internal/main/run_main_module:33:47 {
+E        generatedMessage: true,
+E        code: 'ERR_ASSERTION',
+E        actual: undefined,
+E        expected: false,
+E        operator: 'strictEqual',
+E        diff: 'simple'
+E      }
+E      
+E      Node.js v24.19.0
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', 'tests/frontier_cancel_nullguard_probes.js', 'view_flags'], returncode=1, stdout='', st...ON',\n  actual: undefined,\n  expected: false,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n").returncode
+
+.runtime/frontier-ui/nullguard-candidate/tests/test_frontier_cancel_nullguard.py:9: AssertionError
+_ test_original_cancellation_blocking_has_explicit_case_identity[known_phase-15] _
+
+mode = 'known_phase', checks = 15
+
+    @pytest.mark.parametrize('mode,checks',[('null_identity',42),('view_flags',13),('known_phase',15)])
+    def test_original_cancellation_blocking_has_explicit_case_identity(mode,checks):
+     p=subprocess.run(['node','tests/frontier_cancel_nullguard_probes.js',mode],cwd=ROOT,capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: evalmachine.<anonymous>:3
+E      function caseReconBlocked(caseId){return !!caseReconPhase(caseId)||(preparationView?.preparation.case_id===caseId&&(preparationView.case_write_blocked||preparationView.case_reconciling||preparationView.case_cancelled));}
+E                                                                                                                                          ^
+E      
+E      TypeError: Cannot read properties of null (reading 'case_write_blocked')
+E          at Object.caseReconBlocked (evalmachine.<anonymous>:3:133)
+E          at Object.<anonymous> (/workspace/ParkWeave/.runtime/frontier-ui/nullguard-candidate/tests/frontier_cancel_nullguard_probes.js:25:158)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E          at Module._load (node:internal/modules/cjs/loader:1396:12)
+E          at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E          at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E          at node:internal/main/run_main_module:33:47
+E      
+E      Node.js v24.19.0
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', 'tests/frontier_cancel_nullguard_probes.js', 'known_phase'], returncode=1, stdout='', s...unMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n\nNode.js v24.19.0\n").returncode
+
+.runtime/frontier-ui/nullguard-candidate/tests/test_frontier_cancel_nullguard.py:9: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED .runtime/frontier-ui/nullguard-candidate/tests/test_frontier_cancel_nullguard.py::test_original_cancellation_blocking_has_explicit_case_identity[null_identity-42]
+FAILED .runtime/frontier-ui/nullguard-candidate/tests/test_frontier_cancel_nullguard.py::test_original_cancellation_blocking_has_explicit_case_identity[view_flags-13]
+FAILED .runtime/frontier-ui/nullguard-candidate/tests/test_frontier_cancel_nullguard.py::test_original_cancellation_blocking_has_explicit_case_identity[known_phase-15]
+3 failed, 1 warning in 0.45s

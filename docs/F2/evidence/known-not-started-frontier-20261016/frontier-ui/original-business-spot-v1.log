@@ -1,0 +1,105 @@
+.....FF..                                                                [100%]
+=================================== FAILURES ===================================
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[explicit_success] _
+
+mode = 'explicit_success'
+
+    @pytest.mark.parametrize('mode',['explicit_success','lost_response_cold_get_only','storage_failure','duplicate_click','identity_aba_delayed_json','late_403_new_identity','wrong_recovery_proof','bounded_handles','current_recovery_403_keeps_original_handle'])
+    def test_pending_manual_handoff_actual_js_under_offline_doubles(mode):
+     p=subprocess.run(['node',str(Path(__file__).with_name('pending_receipt_handoff_offline.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E      
+E        assert(value)
+E      
+E          at check (/workspace/ParkWeave/.runtime/frontier-ui/candidate/tests/pending_receipt_handoff_offline.js:17:70)
+E          at /workspace/ParkWeave/.runtime/frontier-ui/candidate/tests/pending_receipt_handoff_offline.js:19:47
+E          at Object.<anonymous> (/workspace/ParkWeave/.runtime/frontier-ui/candidate/tests/pending_receipt_handoff_offline.js:48:3)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E          at Module._load (node:internal/modules/cjs/loader:1396:12)
+E          at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E          at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E          at node:internal/main/run_main_module:33:47 {
+E        generatedMessage: true,
+E        code: 'ERR_ASSERTION',
+E        actual: false,
+E        expected: true,
+E        operator: '==',
+E        diff: 'simple'
+E      }
+E      evalmachine.<anonymous>:11
+E        let response,x;try{response=await entryFetch(path,{method,headers,cache:'no-store',body:body?JSON.stringify(body):undefined});x=await response.json();}catch(e){requireDispatch(c);const error=Error('分派操作结果尚未确认，请使用原操作重试；不要重新填写或另建操作。');error.status=response?.status;error.dispatchContext=c;throw error;}
+E                                                                                                                                                                                                       ^
+E      
+E      Error: 分派操作结果尚未确认，请使用原操作重试；不要重新填写或另建操作。
+E          at dispatchCall (evalmachine.<anonymous>:11:194)
+E          at sendHandoff (evalmachine.<anonymous>:89:1073)
+E          at dispatchWrite (evalmachine.<anonymous>:70:50)
+E          at evalmachine.<anonymous>:1:1
+E          at Script.runInContext (node:vm:149:12)
+E          at Object.runInContext (node:vm:301:6)
+E          at Object.evalCode (/workspace/ParkWeave/.runtime/frontier-ui/candidate/tests/pending_receipt_handoff_offline.js:12:57)
+E          at /workspace/ParkWeave/.runtime/frontier-ui/candidate/tests/pending_receipt_handoff_offline.js:19:12
+E          at Object.<anonymous> (/workspace/ParkWeave/.runtime/frontier-ui/candidate/tests/pending_receipt_handoff_offline.js:48:3)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14) {
+E        status: undefined,
+E        dispatchContext: {
+E          generation: 0,
+E          token: 'PRIVATE_TOKEN_A',
+E          preparationId: '10000000-0000-0000-0000-000000000001',
+E          id: '20000000-0000-0000-0000-000000000001',
+E          revision: 2,
+E          preparationRevision: 4,
+E          offerId: '30000000-0000-0000-0000-000000000001'
+E        }
+E      }
+E      
+E      Node.js v24.19.0
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/.runtime/frontier-ui/candidate/tests/pending_receipt_handoff_offl...n: 2,\n    preparationRevision: 4,\n    offerId: '30000000-0000-0000-0000-000000000001'\n  }\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_pending_receipt_handoff_offline.py:10: AssertionError
+_ test_pending_manual_handoff_actual_js_under_offline_doubles[identity_aba_delayed_json] _
+
+mode = 'identity_aba_delayed_json'
+
+    @pytest.mark.parametrize('mode',['explicit_success','lost_response_cold_get_only','storage_failure','duplicate_click','identity_aba_delayed_json','late_403_new_identity','wrong_recovery_proof','bounded_handles','current_recovery_403_keeps_original_handle'])
+    def test_pending_manual_handoff_actual_js_under_offline_doubles(mode):
+     p=subprocess.run(['node',str(Path(__file__).with_name('pending_receipt_handoff_offline.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=15)
+>    assert p.returncode==0,p.stderr
+E    AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E          at /workspace/ParkWeave/.runtime/frontier-ui/candidate/tests/pending_receipt_handoff_offline.js:34:99
+E          at Object.<anonymous> (/workspace/ParkWeave/.runtime/frontier-ui/candidate/tests/pending_receipt_handoff_offline.js:48:3)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E          at Module._load (node:internal/modules/cjs/loader:1396:12)
+E          at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E          at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E          at node:internal/main/run_main_module:33:47
+E      evalmachine.<anonymous>:14
+E      function dispatchError(e){if(e.staleDispatch||(e.dispatchContext&&!dispatchCurrent(e.dispatchContext)))return;failCurrentEntryRead(e);if(e.status!==403&&e.dispatchContext?.draft&&e.dispatchContext.draft!==dispatchDraft())return;if(e.status===403){clearEntryWriteRequests();clearReceiptHistory();}if(e.status===403)clearDispatch();$('dispatch-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+E                                                                                                                    ^
+E      
+E      ReferenceError: failCurrentEntryRead is not defined
+E          at dispatchError (evalmachine.<anonymous>:14:111)
+E      
+E      Node.js v24.19.0
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/.runtime/frontier-ui/candidate/tests/pending_receipt_handoff_offl...ror: failCurrentEntryRead is not defined\n    at dispatchError (evalmachine.<anonymous>:14:111)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_pending_receipt_handoff_offline.py:10: AssertionError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[explicit_success]
+FAILED tests/test_pending_receipt_handoff_offline.py::test_pending_manual_handoff_actual_js_under_offline_doubles[identity_aba_delayed_json]
+2 failed, 7 passed, 1 warning in 1.40s
