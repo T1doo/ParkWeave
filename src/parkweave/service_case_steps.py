@@ -36,6 +36,7 @@ class Adopt(BaseModel):
     partial_adoption:Literal[True]|None=None
     opportunity_proof:OpportunityProof|None=None
     fact_provenance_scope:Literal['EMPLOYEES_USER_ASSERTION_V1']|None=None
+    dependency_scope:Literal['BOUNDED_MULTI_SOURCE_V1']|None=None
 
     candidate_id:str|None=Field(default=None,pattern='^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$')
     expected_candidate_sha256:str|None=Field(default=None,pattern='^[a-f0-9]{64}$')
@@ -43,6 +44,7 @@ class Adopt(BaseModel):
 
     @model_validator(mode='after')
     def paired_candidate(self):
+        if self.dependency_scope is not None and (self.fact_provenance_scope is not None or self.local_revision is not True or self.opportunity_proof is None):raise ValueError('unified dependencies require a unique explicit opportunity local revision')
         if self.fact_provenance_scope is not None and (self.local_revision is not True or self.opportunity_proof is None):raise ValueError("fact provenance requires explicit opportunity local revision")
         values=(self.candidate_id,self.expected_candidate_sha256,self.expected_verification_sha256)
         if self.opportunity_proof is not None and (self.local_revision is not True or self.partial_adoption is not None):raise ValueError('opportunity proof requires explicit original local revision')
@@ -59,6 +61,10 @@ class Adopt(BaseModel):
 def _adopt_request(data):
     # Missing optional extension must preserve every historical fingerprint.
     return data.model_dump(exclude_none=True)
+
+
+def _source_scope(data):
+    return {name:getattr(data,name) for name in ('fact_provenance_scope','dependency_scope') if getattr(data,name) is not None}
 
 
 class Command(BaseModel):
@@ -724,7 +730,7 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
             source_change=None
             if data.opportunity_proof is not None:
                 from .source_change_adoption import build
-                opportunity_preview,source_change,basis,affected=build(store,c,p,parent,data.opportunity_proof.card_id,current=current,**({"fact_provenance_scope":data.fact_provenance_scope} if data.fact_provenance_scope is not None else {}))
+                opportunity_preview,source_change,basis,affected=build(store,c,p,parent,data.opportunity_proof.card_id,current=current,**_source_scope(data))
                 if not opportunity_preview['can_adopt'] or opportunity_preview['adoption']['opportunity_proof']!=data.opportunity_proof.model_dump():
                     raise Conflict('current opportunity source-change preview required')
             else:basis,affected,unknown=dependency_impact(store,c,parent,prior)
@@ -736,7 +742,7 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
             if source_change is not None:
                 # Re-read actual sources, original card/ledger and proposal after
                 # source locks/waits, immediately before the single plan write.
-                final_preview,final_change,final_basis,final_affected=build(store,c,p,parent,data.opportunity_proof.card_id,**({"fact_provenance_scope":data.fact_provenance_scope} if data.fact_provenance_scope is not None else {}))
+                final_preview,final_change,final_basis,final_affected=build(store,c,p,parent,data.opportunity_proof.card_id,**_source_scope(data))
                 if (not final_preview['can_adopt'] or final_change!=source_change or final_basis!=basis or final_affected!=affected):
                     raise Conflict('opportunity source changed during explicit adoption')
             before=prior.get('dependency_manifest')

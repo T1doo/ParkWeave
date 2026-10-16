@@ -149,9 +149,9 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         return opportunities.recover(store,token(authorization),preparation_id,resource_key(request_key))
     # Preserve every existing recovery key before the dynamic card route.
     @app.get('/api/preparations/{preparation_id}/opportunities/{card_id}/plan-revision')
-    def opportunity_plan_revision(preparation_id: UUID,card_id: UUID,authorization: str | None=Header(default=None)):
+    def opportunity_plan_revision(preparation_id: UUID,card_id: UUID,dependency_scope:Literal['BOUNDED_MULTI_SOURCE_V1']|None=Query(default=None),authorization: str | None=Header(default=None)):
         from . import source_change_adoption
-        return source_change_adoption.read(store,token(authorization),preparation_id,card_id)
+        return source_change_adoption.read(store,token(authorization),preparation_id,card_id,**({'dependency_scope':dependency_scope} if dependency_scope is not None else {}))
 
     @app.get('/api/preparations/{preparation_id}/source-impact')
     def case_source_impact(preparation_id: UUID,authorization: str | None=Header(default=None)):

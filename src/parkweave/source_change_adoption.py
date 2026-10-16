@@ -109,7 +109,9 @@ def current_card(parent,card_id,value=None):
     return value,card
 
 
-def build(store,c,p,parent,card_id,*,current=None,fact_provenance_scope=None):
+def build(store,c,p,parent,card_id,*,current=None,fact_provenance_scope=None,dependency_scope=None):
+    if dependency_scope is not None and (dependency_scope!='BOUNDED_MULTI_SOURCE_V1' or fact_provenance_scope is not None):
+        raise Conflict('unique supported dependency scope required')
     from . import service_case_steps as service
     plan=deepcopy(parent.get('service_case_plan'))
     if not plan:raise Conflict('existing registered plan required')
@@ -180,11 +182,14 @@ def build(store,c,p,parent,card_id,*,current=None,fact_provenance_scope=None):
         from . import employees_fact_provenance as fact_provenance
         if fact_provenance_scope!=fact_provenance.SCOPE:raise Conflict("unsupported fact provenance scope")
         result,change,affected=fact_provenance.enhance(c,parent,result,change,affected)
+    if dependency_scope is not None:
+        from . import unified_dependency_propagation
+        result,change,affected=unified_dependency_propagation.enhance(c,parent,result,change,affected)
     return result,change,dependency_basis,affected
 
 
 @er.bounded
-def read(store,token,id,card_id):
+def read(store,token,id,card_id,*,dependency_scope=None):
     with store.connect() as c:
         # Obtain the original plan's parent UPDATE lock up front to avoid SHARE
         # upgrades when reading the original source adapters. No UPDATE follows.
@@ -192,16 +197,21 @@ def read(store,token,id,card_id):
         p,parent=_context(store,c,token,id)
         if p['role']!='enterprise_operator':raise Denied('original Case owner required')
         if parent['service_id']!=prep.SERVICE or 'opportunities' not in parent:raise Denied('existing synthetic opportunity Case required')
-        return build(store,c,p,parent,card_id)[0]
+        return build(store,c,p,parent,card_id,**({'dependency_scope':dependency_scope} if dependency_scope is not None else {}))[0]
 
 
 def validate_history(parent,plan,event,previous_dependencies,current_dependencies):
     """Prove the saved source patch against immutable original ledger prefixes."""
+    if isinstance(event.get('local_revision',{}).get('source_change'),dict) and event['local_revision']['source_change'].get('version')==4:
+        from .unified_dependency_propagation import validate_history as validate_unified_history
+        return validate_unified_history(parent,plan,event,previous_dependencies,current_dependencies)
     if isinstance(event.get("local_revision",{}).get("source_change"),dict) and event["local_revision"]["source_change"].get("version")==3:
         from .employees_fact_provenance import validate_history as validate_fact_history
         return validate_fact_history(parent,plan,event,previous_dependencies,current_dependencies)
     from .service_case_steps import Adopt
     patch=event['local_revision'];request=Adopt.model_validate(patch['request']);proof=request.opportunity_proof
+    if request.dependency_scope is not None:
+        raise ValueError('unified dependency scope requires source-change version 4')
     if request.fact_provenance_scope is not None:
         raise ValueError('fact provenance scope requires source-change version 3')
     change=patch['source_change']
