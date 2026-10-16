@@ -66,6 +66,32 @@ END
 """
 
 
+def _install_schema(c):
+    """Schema only; callers must already prove the original issued fixture owner."""
+    column = c.execute("SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='preparations' AND column_name=%s", (COL,)).fetchone()
+    if column is None:
+        c.execute('ALTER TABLE preparations ADD COLUMN candidate_plan_approvals jsonb CHECK(candidate_plan_approvals IS NULL OR jsonb_typeof(candidate_plan_approvals)=\'object\'), ADD COLUMN candidate_plan_approval_head jsonb CHECK(candidate_plan_approval_head IS NULL OR jsonb_typeof(candidate_plan_approval_head)=\'object\')')
+        c.execute(SQL('CREATE FUNCTION candidate_plan_approval_prefix() RETURNS trigger LANGUAGE plpgsql AS {}').format(SQLLiteral(TRIGGER_BODY)))
+        c.execute('CREATE TRIGGER candidate_plan_approval_prefix BEFORE UPDATE OF candidate_plan_approvals,candidate_plan_approval_head ON preparations FOR EACH ROW EXECUTE FUNCTION candidate_plan_approval_prefix()')
+    elif column['data_type'] != 'jsonb': raise Denied('foreign candidate Approval column refused')
+    _approval_schema(c)
+
+
+def _approval_schema(c):
+    row = c.execute("""SELECT f.prosrc,t.tgenabled,t.tgtype,
+        t.tgattr::text=a.attnum::text||' '||h.attnum::text correct_column, f.proowner=r.relowner correct_owner,
+        f.prosecdef, f.proconfig, l.lanname
+        FROM pg_trigger t JOIN pg_proc f ON f.oid=t.tgfoid JOIN pg_class r ON r.oid=t.tgrelid
+        JOIN pg_attribute a ON a.attrelid=r.oid AND a.attname='candidate_plan_approvals'
+        JOIN pg_attribute h ON h.attrelid=r.oid AND h.attname='candidate_plan_approval_head'
+        JOIN pg_language l ON l.oid=f.prolang
+        WHERE t.tgrelid='preparations'::regclass AND t.tgname='candidate_plan_approval_prefix' AND NOT t.tgisinternal""").fetchone()
+    if (not row or row['prosrc'] != TRIGGER_BODY or row['tgenabled'] != 'O' or row['tgtype'] != 19
+        or not row['correct_column'] or not row['correct_owner'] or row['prosecdef']
+        or row['proconfig'] is not None or row['lanname']!='plpgsql'):
+        raise Denied('immutable candidate Approval schema required')
+
+
 class Proposal(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True)
     expected_revision: int = Field(ge=0, le=LIMIT)
@@ -200,11 +226,17 @@ def _ledger(parent):
 
 
 class IsolatedPlanApproval:
-    def __init__(self, owner_store=None, fixture_proof=None, *, preparation_ids=(), enabled_for_isolated_tests=False, enabled_for_source_reapproval_tests=False, enabled_for_plan_replacement_tests=False, plan_replacement_preflight=None):
+    def __init__(self, owner_store=None, fixture_proof=None, *, preparation_ids=(), enabled_for_isolated_tests=False, enabled_for_source_reapproval_tests=False, enabled_for_plan_replacement_tests=False, plan_replacement_preflight=None, enabled_for_known_not_started_tests=False, known_not_started_frontier=None):
         self.enabled = enabled_for_isolated_tests is True
         self.source_reapproval_enabled=enabled_for_source_reapproval_tests is True
         self.plan_replacement_enabled=enabled_for_plan_replacement_tests is True
         self.plan_replacement_preflight=plan_replacement_preflight
+        self.known_not_started_enabled=enabled_for_known_not_started_tests is True
+        self.known_not_started_frontier=known_not_started_frontier
+        if self.known_not_started_enabled:
+            from .business_frontier import KnownNotStartedFrontier
+            if not self.plan_replacement_enabled or type(known_not_started_frontier) is not KnownNotStartedFrontier:
+                raise Denied('explicit original frontier and replacement scope required')
         if self.plan_replacement_enabled:
             from .service_release_preflight import ServiceReleasePreflight
             if (type(plan_replacement_preflight) is not ServiceReleasePreflight
@@ -227,12 +259,7 @@ class IsolatedPlanApproval:
                     raise Denied('existing synthetic resource owner required')
                 owner_store.check_capability(c,p,'READ'); owner_store.check_capability(c,p,'EXECUTE')
                 prep.grant(owner_store,c,p,'PREPARE')
-            column = c.execute("SELECT data_type FROM information_schema.columns WHERE table_schema='public' AND table_name='preparations' AND column_name=%s", (COL,)).fetchone()
-            if column is None:
-                c.execute('ALTER TABLE preparations ADD COLUMN candidate_plan_approvals jsonb CHECK(candidate_plan_approvals IS NULL OR jsonb_typeof(candidate_plan_approvals)=\'object\'), ADD COLUMN candidate_plan_approval_head jsonb CHECK(candidate_plan_approval_head IS NULL OR jsonb_typeof(candidate_plan_approval_head)=\'object\')')
-                c.execute(SQL('CREATE FUNCTION candidate_plan_approval_prefix() RETURNS trigger LANGUAGE plpgsql AS {}').format(SQLLiteral(TRIGGER_BODY)))
-                c.execute('CREATE TRIGGER candidate_plan_approval_prefix BEFORE UPDATE OF candidate_plan_approvals,candidate_plan_approval_head ON preparations FOR EACH ROW EXECUTE FUNCTION candidate_plan_approval_prefix()')
-            elif column['data_type'] != 'jsonb': raise Denied('foreign candidate Approval column refused')
+            _install_schema(c)
             self._schema(c)
 
     def _issued(self):
@@ -252,18 +279,7 @@ class IsolatedPlanApproval:
             raise Denied('Approval fixture owner mismatch')
 
     def _schema(self,c):
-        row = c.execute("""SELECT f.prosrc,t.tgenabled,t.tgtype,
-            t.tgattr::text=a.attnum::text||' '||h.attnum::text correct_column, f.proowner=r.relowner correct_owner,
-            f.prosecdef, f.proconfig, l.lanname
-            FROM pg_trigger t JOIN pg_proc f ON f.oid=t.tgfoid JOIN pg_class r ON r.oid=t.tgrelid
-            JOIN pg_attribute a ON a.attrelid=r.oid AND a.attname='candidate_plan_approvals'
-            JOIN pg_attribute h ON h.attrelid=r.oid AND h.attname='candidate_plan_approval_head'
-            JOIN pg_language l ON l.oid=f.prolang
-            WHERE t.tgrelid='preparations'::regclass AND t.tgname='candidate_plan_approval_prefix' AND NOT t.tgisinternal""").fetchone()
-        if (not row or row['prosrc'] != TRIGGER_BODY or row['tgenabled'] != 'O' or row['tgtype'] != 19
-            or not row['correct_column'] or not row['correct_owner'] or row['prosecdef']
-            or row['proconfig'] is not None or row['lanname']!='plpgsql'):
-            raise Denied('immutable candidate Approval schema required')
+        _approval_schema(c)
 
     def _connection(self,c):
         p = self._issued()
@@ -279,6 +295,8 @@ class IsolatedPlanApproval:
             raise Denied('same original preflight store required')
         with self.owner.connect() as c: self._owner_proof(c)
         with store.connect() as c: self._connection(c)
+        if self.known_not_started_enabled and getattr(store,'_known_not_started_frontier',None) is not self.known_not_started_frontier:
+            raise Denied('same original issued frontier store required')
         store._isolated_plan_approval = self
         return store
 

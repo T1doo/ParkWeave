@@ -1,3 +1,4 @@
+from .business_frontier_types import BusinessFrontierFence,request as frontier_request,historical_fields
 """Bounded closure of local synthetic records, never fulfillment of the Case goal."""
 import json
 import re
@@ -15,6 +16,7 @@ RECHECKS = ('MATERIAL_REVIEW','ACCEPTANCE_RECHECK','RECEIPT_RECHECK','RESOURCE_R
 
 
 class Command(BaseModel):
+    expected_business_frontier: BusinessFrontierFence | None = None
     model_config = ConfigDict(extra='forbid', strict=True, str_strip_whitespace=True)
     action: Literal['REVALIDATE','CLOSE_LOCAL_RECORD','REOPEN']
     expected_revision: int = Field(ge=0, le=64)
@@ -133,7 +135,8 @@ def _view(c,p,parent,case,row,issues=None,snapshot=None,event=None):
     if not owner:
         history=[{k:v for k,v in e.items() if k!='payload'} for e in history];event=None
     state=row['state'] if row else 'NOT_STARTED'
-    return dict(scope=SCOPE,actor_id=p['id'],role=p['role'],preparation_id=parent['id'],case_id=parent['case_id'],run_id=parent['run_id'],preparation_revision=parent['revision'],goal=parent['goal'],case_state=case['state'],
+    from .business_frontier import view as frontier_view
+    return dict(**frontier_view(c,parent),scope=SCOPE,actor_id=p['id'],role=p['role'],preparation_id=parent['id'],case_id=parent['case_id'],run_id=parent['run_id'],preparation_revision=parent['revision'],goal=parent['goal'],case_state=case['state'],
         local_record_state=state,revision=row['revision'] if row else 0,cycle=cycle,
         verification_current=current,current_snapshot_sha256=current_sha if owner else None,
         verified_snapshot_sha256=row['verified_sha256'] if owner and row else None,
@@ -190,6 +193,8 @@ def recover(store,token,id,key):
             any(payload.get(k)!=old[k] for k in ('action','revision','cycle','actor_id')) or payload.get('scope')!=SCOPE or
             (payload.get('local_record_state'),payload.get('case_state'))!=states[action]):
             raise Conflict('original local Case event proof mismatch')
+        try:historical_fields(payload)
+        except (TypeError,ValueError):raise Conflict('original local Case request proof mismatch') from None
         if action=='REOPEN':
             if snapshot is not None or payload.get('verified_snapshot_sha256') is not None:
                 raise Conflict('original reopened Case proof mismatch')
@@ -203,8 +208,9 @@ def recover(store,token,id,key):
             # so its complete original body cannot be reconstructed here.
             try:
                 original=Command(action=action,expected_revision=old['revision']-1,expected_cycle=old['cycle'],
-                    reason=payload['reason'],expected_snapshot_sha256=payload['verified_snapshot_sha256'])
-                fp=digest(prep.canonical({'preparation_id':str(id),**original.model_dump(mode='json')}))
+                    reason=payload['reason'],expected_snapshot_sha256=payload['verified_snapshot_sha256'],
+                    **historical_fields(payload))
+                fp=digest(prep.canonical({'preparation_id':str(id),**frontier_request(original)}))
                 if fp!=old['fingerprint']:raise ValueError()
             except (KeyError,TypeError,ValueError):raise Conflict('original local Case request proof mismatch')
         try:_recovery_read_scope(c,p,parent,snapshot)
@@ -222,13 +228,16 @@ def recover(store,token,id,key):
 
 @er.bounded
 def command(store,token,id,key,data):
-    fp=digest(prep.canonical({'preparation_id':str(id),**data.model_dump(mode='json')}))
+    fp=digest(prep.canonical({'preparation_id':str(id),**frontier_request(data)}))
     with store.connect() as c:
         p,parent=_auth(store,c,token,id,write=True)
         c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('case-local-key:'+p['id']+':'+key,))
         # Reopen and historical replay must not depend on obsolete resource grants.
         old=c.execute('SELECT * FROM case_local_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
         if old and (old['fingerprint']!=fp or old['preparation_id']!=id):raise Conflict('local Case request key fingerprint mismatch')
+        if not old:
+            from .business_frontier import check_fence
+            check_fence(c,parent,data)
         if data.action!='REOPEN' and not old:
             from .material_objections import gate
             gate(store,c,parent)
@@ -267,6 +276,8 @@ def command(store,token,id,key,data):
         case=c.execute('UPDATE cases SET state=%s WHERE id=%s RETURNING *',(case_state,parent['case_id'])).fetchone()
         payload=dict(action=data.action,revision=row['revision'],cycle=cycle,local_record_state=state,case_state=case_state,
                      actor_id=p['id'],reason=data.reason,verified_snapshot_sha256=sha,scope=SCOPE)
+        from .business_frontier import event_fence
+        payload.update(event_fence(c))
         c.execute('INSERT INTO case_local_events(id,preparation_id,actor_id,request_key,fingerprint,revision,cycle,action,payload,snapshot) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)',(uuid4(),id,p['id'],key,fp,row['revision'],cycle,data.action,Jsonb(payload),Jsonb(snapshot) if snapshot else None))
         # Return no new resource reads/locks after Case lock. Reopen explicitly invalidates checks.
         return _view(c,p,parent,case,row,sources[0] if sources else None,snapshot,event=payload)

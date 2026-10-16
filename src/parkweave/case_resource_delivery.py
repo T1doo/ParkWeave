@@ -1,6 +1,7 @@
 """First same-Case local capacity delivery; no formal Release or Approval."""
 from datetime import timedelta, timezone
 from uuid import UUID
+from typing import Literal
 
 from pydantic import AwareDatetime, Field, field_validator, model_validator
 
@@ -20,11 +21,14 @@ def _boundary(**extra):
 class PreviewBundle(rb.Bundle):
     expected_link_revision: int | None = Field(default=None, ge=1, le=64)
     expected_previous_plan_id: UUID | None = Field(default=None, strict=False)
+    replacement_frontier_profile: Literal['KNOWN_NOT_STARTED_V1'] | None = None
 
     @model_validator(mode='after')
     def replacement_requires_original_link(self):
         if self.expected_previous_plan_id is not None and self.expected_link_revision is None:
             raise ValueError('replacement requires exact original association revision')
+        if self.replacement_frontier_profile is not None and self.expected_previous_plan_id is None:
+            raise ValueError('explicit previous plan required for frontier profile')
         return self
 
 
@@ -128,7 +132,7 @@ def _source_reapproval(store,c,p,parent,data,context,*,consumed=None,historical=
         raise Conflict('exact original approved association required')
     if replacement:
         from .plan_replacement_compatibility import binding as replacement_binding
-        return dict(context,plan_replacement=replacement_binding(store,c,p,parent,data,anchor,prior,historical=historical))
+        return dict(context,plan_replacement=replacement_binding(store,c,p,parent,data,anchor,prior,historical=historical,consumption_key=consumption_key))
     current_plan=parent['service_case_plan'];plan=current_plan
     if historical:
         matches=[x for x in [current_plan,*current_plan.get('history',[])] if x['id']==prior['context'].get('plan_id')]
@@ -203,7 +207,8 @@ def preview(store, token, id, data):
             members=[rh._public(h, now) for h in hs], formal_approval='NOT_IMPLEMENTED', formal_release=False,
             synthetic_plan_approval_required=getattr(store,'_isolated_plan_approval',None) is not None,
             **({'expected_link_revision':data.expected_link_revision} if getattr(data,'expected_link_revision',None) is not None else {}),
-            **({'expected_previous_plan_id':str(data.expected_previous_plan_id)} if data.expected_previous_plan_id is not None else {}))
+            **({'expected_previous_plan_id':str(data.expected_previous_plan_id)} if data.expected_previous_plan_id is not None else {}),
+            **({'replacement_frontier_profile':data.replacement_frontier_profile} if data.replacement_frontier_profile is not None else {}))
 
 
 def _verify(store, c, p, parent, receipt):
@@ -309,6 +314,8 @@ def deliver(store, token, id, key, data):
         if not comparison['can_confirm']: raise Conflict(';'.join(comparison['blockers']))
         link_data = cr.Bind(combination_id=gid,expected_preparation_revision=parent['revision'],expected_link_revision=data.expected_link_revision or 0,
             reason=data.reason,expected_comparison_sha256=comparison['sha256'])
+        from .business_frontier import record_consumption
+        record_consumption(store,c,parent,data,key,fp,result['receipt'],proof)
         # Existing binder owns claim, strict catalogue decision and immutable link.
         cr._bind_locked(store,c,p,parent,id,key,link_data,fp,delivery_binding=proof,plan_approval=approval_proof)
         # Snapshot is INSERT-only: the binder receives the proof before insertion.
@@ -319,6 +326,8 @@ def deliver(store, token, id, key, data):
         # holds. This is still a first write: expired consent must roll it all
         # back. Historical replay and GET returned above deliberately retain
         # their original event, rather than re-executing an expired hold.
+        from .business_frontier import final_consumption_check
+        final_consumption_check(store,c,parent,data,proof)
         if rh._now(c) >= data.valid_until:
             raise Conflict('delivery preview expired during final Case binding; refresh required')
         return current

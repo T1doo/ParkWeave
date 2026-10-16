@@ -1,3 +1,5 @@
+from .business_frontier_types import BusinessFrontierFence,request as frontier_request,historical_fields
+from .business_frontier import view as frontier_view,check_fence
 """Owner cancellation of an ordinary synthetic Case before any actual acceptance.
 
 The parent lock serializes absence of a dispatch/receipt against their creation.
@@ -22,6 +24,7 @@ class Cancel(BaseModel):
     expected_source_sha256: str=Field(pattern='^[a-f0-9]{64}$')
     confirm_cancel: Literal[True]
     reason: str=Field(min_length=1,max_length=1000)
+    expected_business_frontier: BusinessFrontierFence | None = None
 
     @field_validator('confirm_cancel',mode='before')
     @classmethod
@@ -100,7 +103,7 @@ def _view(store,c,p,parent,root,case,local):
     allowed=True
     try:store.check_capability(c,p,'EXECUTE')
     except Denied:allowed=False
-    return dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(parent['id']),case_id=str(parent['case_id']),
+    return dict(**frontier_view(c,parent),scope=SCOPE,actor_id=p['id'],preparation_id=str(parent['id']),case_id=str(parent['case_id']),
         case_state=case['state'],preparation_revision=parent['revision'],lifecycle_revision=local['revision'] if local else 0,
         source_sha256=digest(prep.canonical(source)),source=source,blockers=issues,
         can_cancel=allowed and not issues,resource_release_automatic=False,restore_supported=False,
@@ -113,7 +116,7 @@ def _original(c,p,parent,key,*,scope=SCOPE,action=ACTION):
     if not old:return None
     if old['preparation_id']!=parent['id'] or old['action']!=action:raise Conflict('original cancellation request scope mismatch')
     try:
-        event=old['payload'];data=Cancel.model_validate(event['request']);snapshot=old['snapshot']
+        event=old['payload'];historical_fields(event['request']);data=Cancel.model_validate(event['request']);snapshot=old['snapshot']
         if (event['scope']!=scope or event['actor_id']!=p['id'] or event['request_key']!=key or
             event['preparation_id']!=str(parent['id']) or event['case_id']!=str(parent['case_id']) or
             event['revision']!=old['revision'] or event['cycle']!=old['cycle'] or
@@ -122,7 +125,7 @@ def _original(c,p,parent,key,*,scope=SCOPE,action=ACTION):
             snapshot['lifecycle_cycle']!=old['cycle'] or snapshot['case_id']!=str(parent['case_id']) or
             snapshot['preparation_id']!=str(parent['id']) or snapshot['preparation_revision']!=data.expected_preparation_revision or
             digest(prep.canonical(snapshot))!=data.expected_source_sha256 or
-            digest(prep.canonical(dict(preparation_id=str(parent['id']),**data.model_dump(mode='json'))))!=old['fingerprint']):
+            digest(prep.canonical(dict(preparation_id=str(parent['id']),**frontier_request(data))))!=old['fingerprint']):
             raise ValueError()
     except (KeyError,TypeError,ValueError):raise Conflict('original cancellation proof mismatch') from None
     return old
@@ -158,7 +161,7 @@ def recover(store,token,id,key):
 
 @er.bounded
 def cancel(store,token,id,key,data):
-    fp=digest(prep.canonical(dict(preparation_id=str(id),**data.model_dump(mode='json'))))
+    fp=digest(prep.canonical(dict(preparation_id=str(id),**frontier_request(data))))
     with store.connect() as c:
         p,parent=_context(store,c,token,id,True)
         c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('case-local-key:'+p['id']+':'+key,))
@@ -168,6 +171,7 @@ def cancel(store,token,id,key,data):
             if old['fingerprint']!=fp:raise Conflict('cancellation key fingerprint mismatch')
             _committed_state(case,local,old)
             return _result(old)
+        check_fence(c,parent,data)
         if not c.execute('SELECT 1 FROM schema_version WHERE version=30').fetchone():raise Conflict('owned synthetic cancellation increment not installed')
         source,issues=_source(c,parent,root,case,local)
         if issues:raise Conflict(';'.join(issues))
@@ -186,7 +190,7 @@ def _commit(c,p,parent,local,key,data,fp,source,*,scope=SCOPE,action=ACTION):
         local=c.execute("INSERT INTO case_local_lifecycles(preparation_id,case_id,revision,cycle,state) VALUES(%s,%s,1,1,'CANCELLED') RETURNING *",(id,parent['case_id'])).fetchone()
     c.execute("UPDATE cases SET state='CANCELLED' WHERE id=%s",(parent['case_id'],))
     event=dict(scope=scope,action=action,actor_id=p['id'],request_key=key,preparation_id=str(id),case_id=str(parent['case_id']),
-        revision=local['revision'],cycle=cycle,case_state='CANCELLED',resource_release_automatic=False,request=data.model_dump(mode='json'))
+        revision=local['revision'],cycle=cycle,case_state='CANCELLED',resource_release_automatic=False,request=frontier_request(data))
     old=c.execute('INSERT INTO case_local_events(id,preparation_id,actor_id,request_key,fingerprint,revision,cycle,action,payload,snapshot) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *',
         (uuid4(),id,p['id'],key,fp,local['revision'],cycle,action,Jsonb(event),Jsonb(source))).fetchone()
     return _result(old)

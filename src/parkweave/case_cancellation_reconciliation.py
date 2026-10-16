@@ -1,3 +1,5 @@
+from .business_frontier_types import BusinessFrontierFence,request as frontier_request,historical_fields
+from .business_frontier import view as frontier_view,check_fence
 """Explicit cancellation intent and owner reconciliation of existing manual facts.
 
 No receipt is created or changed. The common parent lock freezes all business
@@ -25,6 +27,7 @@ class Outcome(BaseModel):
 
 class Command(BaseModel):
     model_config=ConfigDict(extra='forbid',strict=True,str_strip_whitespace=True)
+    expected_business_frontier: BusinessFrontierFence | None = None
     action: Literal['REQUEST_CANCEL','RECONCILE','CONFIRM_CANCEL']
     case_id: UUID=Field(strict=False)
     expected_preparation_revision: int=Field(ge=1,le=64)
@@ -75,7 +78,8 @@ def _ledger(c,parent,lineage):
                         or receipt['id'] in bound or receipt['step_id']!=step['id'] or receipt['version']!=version
                         or receipt['actor_id']!=step['executor_id'] or receipt['source_kind']!='SYNTHETIC'
                         or receipt.get('adapter_execution') is not None or digest(receipt['text'])!=receipt['source_sha256']):raise ValueError()
-                    request=er.Command(action='SUBMIT',expected_revision=revision-1,text=receipt['text'],source_kind='SYNTHETIC',source_label=receipt['source_label'])
+                    request=er.Command(action='SUBMIT',expected_revision=revision-1,text=receipt['text'],source_kind='SYNTHETIC',source_label=receipt['source_label'],
+                        **historical_fields(payload))
                     current=receipt;state='RECEIPT_RECORDED';bound.add(receipt['id'])
                     heads.append(dict(step_id=str(step['id']),receipt_id=str(receipt['id']),version=version,receipt_sha256=receipt['source_sha256'],
                         submit_event_id=str(event['id']),submit_revision=revision,submit_fingerprint=event['fingerprint']))
@@ -84,13 +88,15 @@ def _ledger(c,parent,lineage):
                     if not current or action not in ('ACKNOWLEDGE','REQUEST_CHANGES','REOPEN'):raise ValueError()
                     if action in ('ACKNOWLEDGE','REQUEST_CHANGES') and state!='RECEIPT_RECORDED':raise ValueError()
                     if action=='REOPEN' and state not in ('RECEIPT_RECORDED','LOCAL_ACKNOWLEDGED'):raise ValueError()
-                    request=er.Command(action=action,expected_revision=revision-1,receipt_sha256=current['source_sha256'],reason=payload['reason'])
+                    request=er.Command(action=action,expected_revision=revision-1,receipt_sha256=current['source_sha256'],reason=payload['reason'],
+                        **historical_fields(payload))
                     state={'ACKNOWLEDGE':'LOCAL_ACKNOWLEDGED','REQUEST_CHANGES':'CHANGES_REQUESTED','REOPEN':'AWAITING_RECEIPT'}[action]
                     actor=parent['owner_id']
                 expected=dict(step_id=str(step['id']),revision=revision,state=state,action=action,actor_id=actor,scope=er.SCOPE,
                     receipt_id=str(current['id']),receipt_sha256=current['source_sha256'],reason=request.reason)
+                if 'expected_business_frontier' in payload:expected['expected_business_frontier']=frontier_request(request)['expected_business_frontier']
                 if (event['actor_id']!=actor or set(payload)!=set(expected) or not cb.sd._typed_fields_equal(payload,expected)
-                    or digest(prep.canonical(dict(step_id=str(step['id']),**request.model_dump(mode='json'))))!=event['fingerprint']):raise ValueError()
+                    or digest(prep.canonical(dict(step_id=str(step['id']),**frontier_request(request))))!=event['fingerprint']):raise ValueError()
             if (step['revision']!=revision or step['state']!=state or step['current_receipt_id']!=(current['id'] if current else None)
                 or revision>64):raise ValueError()
         except (KeyError,TypeError,ValueError):issues.append('EXACT_MANUAL_SUBMISSION_AND_DECISION_PROOF_REQUIRED')
@@ -98,18 +104,19 @@ def _ledger(c,parent,lineage):
     return dict(steps=cb._json(steps),events=cb._json(events),receipts=cb._json(receipts),heads=heads),issues
 
 
-def _fingerprint(id,data):return digest(prep.canonical(dict(preparation_id=str(id),**data.model_dump(mode='json'))))
+def _fingerprint(id,data):return digest(prep.canonical(dict(preparation_id=str(id),**frontier_request(data))))
 
 
 def _record(event,parent):
     try:
         payload=event['payload'];snapshot=event['snapshot']
         if not isinstance(payload,dict) or not isinstance(snapshot,dict):raise ValueError()
+        historical_fields(payload['request'])
         data=Command.model_validate(payload['request'])
         expected=dict(scope=SCOPE,action=data.action,actor_id=parent['owner_id'],request_key=event['request_key'],
             preparation_id=str(parent['id']),case_id=str(parent['case_id']),revision=event['revision'],cycle=event['cycle'],
             case_state='CANCELLED' if data.action=='CONFIRM_CANCEL' else 'RECONCILING',resource_release_automatic=False,
-            request=data.model_dump(mode='json'))
+            request=frontier_request(data))
         if (event['preparation_id']!=parent['id'] or event['actor_id']!=parent['owner_id'] or event['action']!=data.action
             or set(payload)!=set(expected) or prep.canonical(payload)!=prep.canonical(expected)
             or data.case_id!=parent['case_id'] or data.expected_preparation_revision!=snapshot['preparation_revision']
@@ -145,10 +152,12 @@ def _phase(c,parent,case,local,base,immutable,immutable_sha,heads):
             payload=old['payload'];snapshot=old['snapshot']
             if not isinstance(payload,dict) or not isinstance(snapshot,dict) or old['actor_id']!=parent['owner_id'] or old['cycle']!=1:raise ValueError()
             original=lc.Command(action='REVALIDATE',expected_revision=old['revision']-1,expected_cycle=1,
-                reason=payload['reason'],expected_snapshot_sha256=lc._sha(snapshot,1))
+                reason=payload['reason'],expected_snapshot_sha256=lc._sha(snapshot,1),
+                **historical_fields(payload))
             expected=dict(action='REVALIDATE',revision=old['revision'],cycle=1,local_record_state='READY',case_state='WAITING_CONFIRMATION',
                 actor_id=parent['owner_id'],reason=original.reason,verified_snapshot_sha256=original.expected_snapshot_sha256,scope=lc.SCOPE)
-            if prep.canonical(payload)!=prep.canonical(expected) or old['fingerprint']!=digest(prep.canonical(dict(preparation_id=str(parent['id']),**original.model_dump(mode='json')))):raise ValueError()
+            if 'expected_business_frontier' in payload:expected['expected_business_frontier']=frontier_request(original)['expected_business_frontier']
+            if prep.canonical(payload)!=prep.canonical(expected) or old['fingerprint']!=digest(prep.canonical(dict(preparation_id=str(parent['id']),**frontier_request(original)))):raise ValueError()
             if any(snapshot.get(k)!=str(parent[v]) for k,v in (('preparation_id','id'),('case_id','case_id'),('run_id','run_id'))):raise ValueError()
         prefix=[row for row in global_rows if row['action']=='REVALIDATE']
         initial_case_state='WAITING_CONFIRMATION' if prefix else 'NEEDS_INPUT'
@@ -226,7 +235,7 @@ def _view(store,c,p,parent,root,case,local):
     public_source=source if not issues else {**source,'immutable_source':{
         **source['immutable_source'],'manual_lineage':{'proof_unavailable':True},
         'manual_ledger':{'proof_unavailable':True,'heads':[],'receipts':[]}}}
-    return dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(parent['id']),case_id=str(parent['case_id']),case_state=case['state'],
+    return dict(**frontier_view(c,parent),scope=SCOPE,actor_id=p['id'],preparation_id=str(parent['id']),case_id=str(parent['case_id']),case_state=case['state'],
         preparation_revision=parent['revision'],lifecycle_revision=revision,source_sha256=digest(prep.canonical(public_source)),source=public_source,
         blockers=issues,can_request=allowed and not issues and not request and revision<=61,
         can_reconcile=allowed and not issues and bool(request) and not terminal and revision<63,
@@ -278,6 +287,7 @@ def command(store,token,id,key,data):
             if old['fingerprint']!=fp or old['action']!=data.action:raise Conflict('original reconciliation request key fingerprint mismatch')
             if issues or old['id'] not in {e['id'] for e in rows}:raise Conflict('current cancellation phase proof mismatch')
             return _result(old)
+        check_fence(c,parent,data)
         if issues:raise Conflict(';'.join(issues))
         if (data.case_id!=parent['case_id'] or data.expected_preparation_revision!=parent['revision']
             or data.expected_lifecycle_revision!=(local['revision'] if local else 0) or data.expected_source_sha256!=digest(prep.canonical(source))):
@@ -298,7 +308,7 @@ def command(store,token,id,key,data):
         else:local=c.execute('INSERT INTO case_local_lifecycles(preparation_id,case_id,revision,cycle,state) VALUES(%s,%s,1,1,%s) RETURNING *',(id,parent['case_id'],target)).fetchone()
         c.execute('UPDATE cases SET state=%s WHERE id=%s',(target,parent['case_id']))
         payload=dict(scope=SCOPE,action=data.action,actor_id=p['id'],request_key=key,preparation_id=str(id),case_id=str(parent['case_id']),
-            revision=local['revision'],cycle=cycle,case_state=target,resource_release_automatic=False,request=data.model_dump(mode='json'))
+            revision=local['revision'],cycle=cycle,case_state=target,resource_release_automatic=False,request=frontier_request(data))
         event=c.execute('''INSERT INTO case_local_events(id,preparation_id,actor_id,request_key,fingerprint,revision,cycle,action,payload,snapshot)
             VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s) RETURNING *''',(uuid4(),id,p['id'],key,fp,local['revision'],cycle,data.action,Jsonb(payload),Jsonb(source))).fetchone()
         return _result(event)

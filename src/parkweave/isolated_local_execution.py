@@ -1,3 +1,4 @@
+from .business_frontier_types import BusinessFrontierFence,request as frontier_request
 """Dormant owned-fixture local report generation, never business fulfillment.
 
 The report is the actual local software output. Its receipt and execution event
@@ -16,6 +17,7 @@ EFFECT = 'LOCAL_SYNTHETIC_HANDOFF_REPORT_CREATED'
 
 
 class ExecuteLocal(BaseModel):
+    expected_business_frontier: BusinessFrontierFence | None = None
     model_config = ConfigDict(extra='forbid', strict=True, str_strip_whitespace=True)
     expected_revision: int = Field(ge=1, le=62)
     reason: str = Field(min_length=1, max_length=1000)

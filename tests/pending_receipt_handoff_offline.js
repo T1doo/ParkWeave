@@ -1,7 +1,17 @@
 // Actual dispatch/handoff code in Node VM. No browser, listener or external fetch.
 const fs=require('fs'),vm=require('vm'),assert=require('assert');
 const source=fs.readFileSync('src/parkweave/web.html','utf8');
-const actual=source.slice(source.indexOf('let dispatchView=null'),source.indexOf('// Narrow assigned-executor receipts;'));
+// Exact original transport/read-failure dependencies for this original narrow
+// dispatch/handoff function scope. No permission or context guard is replaced.
+function originalBlock(start,end){const at=source.indexOf(start),until=source.indexOf(end,at+1);assert(at>=0&&until>at);return source.slice(at,until);}
+function originalLine(marker){const line=source.split('\n').find(s=>s.startsWith(marker));assert(line,marker);return line+'\n';}
+const dependencies=originalLine('const deniedOperationReferences=')+originalLine('const entryWriteRequests=')+
+ originalLine('function clearEntryWriteRequests(')+originalLine('function failCurrentEntryRead(')+
+ originalLine('let receiptHistoryGeneration=')+originalLine('function clearReceiptHistory(')+
+ originalBlock('function receiptCommandExplicitlyRejected(', 'function runEntryReadProof(')+
+ originalBlock('async function entryFetch(', 'function retainDeniedOperationReference(')+
+ originalBlock('function retainDeniedOperationReference(', 'function clearDeniedPrivateViews(');
+const actual=dependencies+source.slice(source.indexOf('let dispatchView=null'),source.indexOf('// Narrow assigned-executor receipts;'));
 const mode=process.argv[2],pid='10000000-0000-0000-0000-000000000001',did='20000000-0000-0000-0000-000000000001',oid='30000000-0000-0000-0000-000000000001',sid='40000000-0000-0000-0000-000000000001';
 const root={scope:'SYNTHETIC_INTERNAL_DISPATCH_ONLY',role:'park_specialist',preparation_id:pid,dispatch_id:did,preparation_revision:4,revision:2,goal:'SYNTHETIC pending work',current_offer:{id:oid,executor_id:'executor-a',state:'ACCEPTED',reason:'SYNTHETIC original'},dependency:'CURRENT',is_current_offer:true,current_receipt_step_id:sid,history:[]};
 const cat={preparation_revision:4,dispatch_revision:2,ready:false,can_reassign:true,reassignment_actor_id:'reviewer-a',executors:[{id:'executor-a'},{id:'executor-new'}],reassignment_executors:[{id:'executor-new'}],reassignment_predecessor:{handoff_kind:'PENDING_MANUAL_RECEIPT',predecessor_offer_id:oid,predecessor_receipt_step_id:sid,predecessor_receipt_revision:1},has_receipt_step:true};

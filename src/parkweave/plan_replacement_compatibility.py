@@ -39,7 +39,7 @@ def _pairs(parent,plan,checker):
     except (KeyError,ValueError,TypeError,AttributeError):raise Conflict('original immutable V4 selected pairs required') from None
 
 
-def compare(store,c,p,parent,previous,current,*,historical=False,approved_revision=None):
+def compare(store,c,p,parent,previous,current,*,historical=False,approved_revision=None,frontier_profile=None,consumption_key=None):
     from .service_release_preflight import ServiceReleasePreflight,compare_v1
     from . import service_selection as refs
     bridge=getattr(store,'_isolated_plan_approval',None)
@@ -75,20 +75,29 @@ def compare(store,c,p,parent,previous,current,*,historical=False,approved_revisi
         # compatibility. The predecessor is immutable after the full ADOPT;
         # prove its original VERIFY events, not current readiness of a retired
         # catalog/source or an observation's later invalidation flag.
-        from .case_goal_results import verification
-        for step in previous['steps']:
-            if (step.get('coordination_state')!='VERIFIED'
-                or type(step.get('verified_sha256')) is not str
-                or re.fullmatch('[a-f0-9]{64}',step['verified_sha256']) is None
-                or type(step.get('verified_sources')) is not dict
-                or step['verified_sha256']!=cp._hash(step['verified_sources'])
-                or verification(parent,previous,step) is None):
-                raise Conflict('original complete verified five-step replacement predecessor required')
+        qualification=None
+        if frontier_profile is None:
+            from .case_goal_results import verification
+            for step in previous['steps']:
+                if (step.get('coordination_state')!='VERIFIED'
+                    or type(step.get('verified_sha256')) is not str
+                    or re.fullmatch('[a-f0-9]{64}',step['verified_sha256']) is None
+                    or type(step.get('verified_sources')) is not dict
+                    or step['verified_sha256']!=cp._hash(step['verified_sources'])
+                    or verification(parent,previous,step) is None):
+                    raise Conflict('original complete verified five-step replacement predecessor required')
+        else:
+            from .business_frontier import KnownNotStartedFrontier
+            protocol=getattr(bridge,'known_not_started_frontier',None)
+            if (frontier_profile!='KNOWN_NOT_STARTED_V1' or not getattr(bridge,'known_not_started_enabled',False)
+                or type(protocol) is not KnownNotStartedFrontier or getattr(store,'_known_not_started_frontier',None) is not protocol):
+                raise Denied('explicit issued known-not-started scope required')
+            qualification=protocol.qualify(c,parent,previous,historical=historical,consumption_key=consumption_key)
         # Original request and registry remain the same; only original catalog /
         # selected release instance source may have required the full ADOPT.
         for key in ('request_intent','original_goal','service_id','service_version','registry'):
             if previous['binding'][key]!=current['binding'][key]:raise ValueError()
-        if not historical:
+        if not historical and frontier_profile is None:
             # Reuse the original preflight's finite current-known gate against
             # the actual parent/root. Catalog binding changes require recheck;
             # missing authority, expired/cancelled evidence or unknown source
@@ -109,6 +118,14 @@ def compare(store,c,p,parent,previous,current,*,historical=False,approved_revisi
                 and re.fullmatch('[a-f0-9]{64}',graph['sha256']) is not None)
             if not valid or any(adoption.unavailable_sources().intersection(value) for value in issues.values()):
                 raise Conflict('original current known replacement source graph required')
+        if not historical and frontier_profile is not None:
+            from .source_change_adoption import unavailable_sources
+            issues,source_values,_=steps.current_sources(store,c,parent,previous)
+            basis,_,unknown=steps.dependency_impact(store,c,parent,previous)
+            if (unknown or any(not value['known'] for value in basis['collections'].values())
+                or any(unavailable_sources().intersection(issues[adapter]) for adapter in ('P1','P2'))
+                or any(type(source_values.get(adapter)) is not dict or not source_values[adapter] for adapter in ('P1','P2'))):
+                raise Conflict('known original P1/P2 sources and complete empty tail required')
         old_record,old_pairs=_pairs(parent,previous,checker);new_record,new_pairs=_pairs(parent,current,checker)
         if old_record['frozen_registry']!=new_record['frozen_registry']:raise ValueError()
         kinds={'synthetic-material-preparation','synthetic-resource-coordination','synthetic-local-record-recheck'}
@@ -138,17 +155,19 @@ def compare(store,c,p,parent,previous,current,*,historical=False,approved_revisi
             for instance_id,ref,version in targets:
                 release,instance,_,source_version=checker._target(c,parent,instance_id)
                 if refs.selection_ref(release,instance)!=ref or cp._hash(source_version)!=version:raise ValueError()
-        return dict(schema=SCHEMA,profile=PROFILE,classification='NEEDS_RECHECK',
+        result=dict(schema=SCHEMA,profile=PROFILE,classification='NEEDS_RECHECK',
             previous_candidate_id=old_record['id'],replacement_candidate_id=new_record['id'],
             previous_candidate_sha256=old_record['candidate_sha256'],replacement_candidate_sha256=new_record['candidate_sha256'],
             frozen_registry_sha256=cp._hash(old_record['frozen_registry']),pairs=reports,
             affected=[s['id'] for s in current['steps']],preserved=[],
             automatic_adoption=False,automatic_approval=False,automatic_release=False)
+        if qualification is not None:result.update(schema=2,profile='ORIGINAL_V4_SERVICE_RELEASE_KNOWN_NOT_STARTED_V1',qualification=qualification)
+        return result
     except (KeyError,TypeError,ValueError,AttributeError):
         raise Conflict('known nonbreaking original V4 replacement preflight required') from None
 
 
-def binding(store,c,p,parent,data,anchor,prior,*,historical=False):
+def binding(store,c,p,parent,data,anchor,prior,*,historical=False,consumption_key=None):
     root=parent['service_case_plan'];plans=[*root.get('history',[]),root]
     old_id=str(data.expected_previous_plan_id)
     matches=[i for i,plan in enumerate(plans) if plan['id']==old_id]
@@ -162,7 +181,7 @@ def binding(store,c,p,parent,data,anchor,prior,*,historical=False):
         or event['actor_id']!=parent['owner_id'] or event.get('local_revision') is not None
         or not 1<=approved<=current['revision'] or any(e['action']=='ADOPT' and 1<e['revision']<=approved for e in current['events'])):
         raise Conflict('explicit original full replacement adoption required')
-    comparison=compare(store,c,p,parent,previous,current,historical=historical,approved_revision=approved)
+    comparison=compare(store,c,p,parent,previous,current,historical=historical,approved_revision=approved,frontier_profile=data.replacement_frontier_profile,consumption_key=consumption_key)
     return dict(link_id=str(anchor['id']),link_revision=anchor['revision'],snapshot_sha256=cp._hash(anchor['snapshot']),
         previous_delivery_context=prior['context'],previous_approved_plan_revision=prior['approved_plan_revision'],
         approved_plan_revision=approved,previous_plan_id=old_id,replacement_plan_id=current['id'],
@@ -171,7 +190,7 @@ def binding(store,c,p,parent,data,anchor,prior,*,historical=False):
         compatibility=comparison,compatibility_sha256=cp._hash(comparison))
 
 
-def validate_binding(value,data,context):
+def _validate_complete_binding(value,data,context):
     from .service_release_preflight import Reference
     def sha(v):return type(v) is str and re.fullmatch('[a-f0-9]{64}',v) is not None
     def uuid(v):
@@ -295,7 +314,7 @@ def verify_history(store,c,parent,link,receipt):
             raise Conflict('original descending replacement receipt proof changed')
         if name=='plan_replacement':
             if item['proposal']['binding']['purpose']!=REPLACEMENT_PURPOSE:raise Conflict('original replacement purpose required')
-            actual=binding(store,c,p,parent,data,old,prior,historical=True)
+            actual=binding(store,c,p,parent,data,old,prior,historical=True,consumption_key=proof['request_key'])
             if actual!=anchor:raise Conflict('original replacement immutable profile changed')
         else:
             if item['proposal']['binding']['purpose']!=REAPPROVAL_PURPOSE:raise Conflict('original source continuation purpose required')
@@ -315,3 +334,19 @@ def verify_history(store,c,parent,link,receipt):
             if actual!=anchor:raise Conflict('original source continuation immutable profile changed')
         link=old;receipt=old_receipt['payload']
     raise Conflict('bounded original replacement history required')
+
+
+def validate_binding(value,data,context):
+    if data.replacement_frontier_profile is None:return _validate_complete_binding(value,data,context)
+    from .business_frontier import validate_qualification
+    if type(value) is not dict or set(value)!=KEYS:raise ValueError('strict original replacement proof required')
+    report=value.get('compatibility')
+    original_keys={'schema','profile','classification','previous_candidate_id','replacement_candidate_id','previous_candidate_sha256',
+        'replacement_candidate_sha256','frozen_registry_sha256','pairs','affected','preserved','automatic_adoption','automatic_approval','automatic_release'}
+    if (type(report) is not dict or set(report)!=original_keys|{'qualification'} or type(report['schema']) is not int or report['schema']!=2
+        or report['profile']!='ORIGINAL_V4_SERVICE_RELEASE_KNOWN_NOT_STARTED_V1' or value['compatibility_sha256']!=cp._hash(report)):
+        raise ValueError('strict versioned known-not-started replacement required')
+    validate_qualification(report['qualification'],data,context)
+    old_report={k:v for k,v in report.items() if k!='qualification'};old_report.update(schema=SCHEMA,profile=PROFILE)
+    old_value=dict(value,compatibility=old_report,compatibility_sha256=cp._hash(old_report))
+    return _validate_complete_binding(old_value,data,context)

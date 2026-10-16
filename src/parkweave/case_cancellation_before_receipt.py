@@ -1,3 +1,5 @@
+from .business_frontier_types import BusinessFrontierFence,request as frontier_request,historical_fields
+from .business_frontier import view as frontier_view,check_fence
 """Ordinary accepted manual Case cancellation before any historical receipt.
 
 No effects are undone: every ACCEPT and its initial receipt step stay immutable.
@@ -51,8 +53,9 @@ def _manual_lineage(store,c,parent,root,*,allow_manual_receipts=False):
                 revision=e['revision'],action='ACCEPT',state='ACCEPTED',actor_id=s['executor_id'],executor_id=s['executor_id'])
             if not sd._typed_fields_equal(e['payload'],expected) or e['revision']>root['revision']:
                 raise ValueError()
-            request=sd.Command(action='ACCEPT',expected_revision=e['revision']-1,reason=e['payload']['reason'])
-            fp=digest(prep.canonical(dict(dispatch_id=str(root['id']),**request.model_dump(mode='json'))))
+            request=sd.Command(action='ACCEPT',expected_revision=e['revision']-1,reason=e['payload']['reason'],
+                **historical_fields(e['payload']))
+            fp=digest(prep.canonical(dict(dispatch_id=str(root['id']),**frontier_request(request))))
             creates=[x for x in events if x['step_id']==s['id'] and (not allow_manual_receipts or x['action']=='CREATE')]
             fields=('preparation_id','run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
             if (s['id'] in bound or any(s[k]!=parent['id' if k=='preparation_id' else k] for k in fields)
@@ -68,12 +71,14 @@ def _manual_lineage(store,c,parent,root,*,allow_manual_receipts=False):
             if (create['action']!='CREATE' or create['revision']!=1 or create['actor_id']!=s['executor_id']
                 or create['request_key']!='dispatch-accept:'+str(o['id']) or create['fingerprint']!=fp
                 or not sd._typed_fields_equal(create['payload'],expected_create)):raise ValueError()
-            extras={k:v for k,v in e['payload'].items() if k not in {*expected,'reason'}}
-            create_extras={k:v for k,v in create['payload'].items() if k not in expected_create}
+            if historical_fields(e['payload'])!=historical_fields(create['payload']):raise ValueError()
+            extras={k:v for k,v in e['payload'].items() if k not in {*expected,'reason','expected_business_frontier'}}
+            create_extras={k:v for k,v in create['payload'].items() if k not in {*expected_create,'expected_business_frontier'}}
             if prep.canonical(extras)!=prep.canonical(create_extras):raise ValueError()
             offered=c.execute("SELECT payload FROM service_dispatch_events WHERE offer_id=%s AND action IN ('OFFER','REOFFER') ORDER BY revision LIMIT 1",(o['id'],)).fetchone()
             if not offered or not isinstance(offered['payload'],dict):raise ValueError()
-            offered_extras={k:v for k,v in offered['payload'].items() if k not in {*expected,'reason'}}
+            historical_fields(offered['payload'])
+            offered_extras={k:v for k,v in offered['payload'].items() if k not in {*expected,'reason','expected_business_frontier'}}
             if prep.canonical(extras)!=prep.canonical(offered_extras):raise ValueError()
             # A later acceptance cannot become an initial one by stripping the
             # same lineage fields from both ACCEPT and CREATE (or REOFFER).
@@ -123,7 +128,7 @@ def _view(store,c,p,parent,root,case,local):
     allowed=True
     try:store.check_capability(c,p,'EXECUTE')
     except Denied:allowed=False
-    return dict(scope=SCOPE,actor_id=p['id'],preparation_id=str(parent['id']),case_id=str(parent['case_id']),
+    return dict(**frontier_view(c,parent),scope=SCOPE,actor_id=p['id'],preparation_id=str(parent['id']),case_id=str(parent['case_id']),
         case_state=case['state'],preparation_revision=parent['revision'],lifecycle_revision=local['revision'] if local else 0,
         source_sha256=digest(prep.canonical(source)),source=source,blockers=issues,can_cancel=allowed and not issues,
         resource_release_automatic=False,restore_supported=False,run_state=source['run_state'],case_goal_completed=False)
@@ -150,7 +155,7 @@ def recover(store,token,id,key):
 
 @er.bounded
 def cancel(store,token,id,key,data):
-    fp=digest(prep.canonical(dict(preparation_id=str(id),**data.model_dump(mode='json'))))
+    fp=digest(prep.canonical(dict(preparation_id=str(id),**frontier_request(data))))
     with store.connect() as c:
         p,parent=cc._context(store,c,token,id,True)
         c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('case-local-key:'+p['id']+':'+key,))
@@ -160,6 +165,7 @@ def cancel(store,token,id,key,data):
             if old['fingerprint']!=fp:raise Conflict('cancellation key fingerprint mismatch')
             cc._committed_state(case,local,old)
             return cc._result(old)
+        check_fence(c,parent,data)
         source,issues=_source(store,c,parent,root,case,local)
         if issues:raise Conflict(';'.join(issues))
         if (data.case_id!=parent['case_id'] or data.expected_preparation_revision!=parent['revision']

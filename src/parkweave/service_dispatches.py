@@ -1,3 +1,4 @@
+from .business_frontier_types import BusinessFrontierFence,request as frontier_request
 """Internal synthetic offers; never grants or external fulfillment."""
 from typing import Literal
 from uuid import UUID, uuid4
@@ -10,6 +11,7 @@ SCOPE = 'SYNTHETIC_INTERNAL_DISPATCH_ONLY'
 
 
 class Offer(BaseModel):
+    expected_business_frontier: BusinessFrontierFence | None = None
     model_config = ConfigDict(extra='forbid', strict=True, str_strip_whitespace=True)
     expected_preparation_revision: int = Field(ge=1)
     expected_dispatch_revision: int = Field(ge=0, le=64)
@@ -19,6 +21,7 @@ class Offer(BaseModel):
 
 
 class Command(BaseModel):
+    expected_business_frontier: BusinessFrontierFence | None = None
     model_config = ConfigDict(extra='forbid', strict=True, str_strip_whitespace=True)
     action: Literal['ACCEPT', 'DECLINE', 'WITHDRAW']
     expected_revision: int = Field(ge=1, le=64)
@@ -26,6 +29,7 @@ class Command(BaseModel):
 
 
 class Reassign(BaseModel):
+    expected_business_frontier: BusinessFrontierFence | None = None
     model_config = ConfigDict(extra='forbid', strict=True, str_strip_whitespace=True)
     expected_preparation_revision: int = Field(ge=1, le=64)
     expected_dispatch_revision: int = Field(ge=1, le=62)
@@ -186,6 +190,8 @@ def _event(c, p, root, offer, key, fp, action, reason, **extra):
     payload = dict(dispatch_id=str(root['id']), offer_id=str(offer['id']), revision=root['revision'],
                    action=action, state=offer['state'], actor_id=p['id'], executor_id=offer['executor_id'],
                    reason=reason, receipt_step_id=str(offer['receipt_step_id']) if offer['receipt_step_id'] else None, **extra)
+    from .business_frontier import event_fence
+    payload.update(event_fence(c))
     event_id=uuid4()
     c.execute('INSERT INTO service_dispatch_events(id,dispatch_id,offer_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s)',
               (event_id, root['id'], offer['id'], p['id'], key, fp, root['revision'], action, Jsonb(payload)))
@@ -206,6 +212,8 @@ def _view(c, p, parent, root, event=None,store=None):
                   current_receipt_step_id=None,can_reoffer=False,reoffer_kind=None,recovery_receipt_step_id=None,
                   qualification='NOT_EVALUATED', external_acceptance='NOT_SUBMITTED',
                   offline_fulfillment='NO_EVIDENCE', case_goal_completed=False)
+    from .business_frontier import view as frontier_view
+    result.update(frontier_view(c,parent))
     if not root: return result
     offer = _own_offer(c, p, root)
     if not offer: raise Denied('own offered dispatch required')
@@ -242,7 +250,8 @@ def catalog(store, token, id):
         if recovery:rows=[r for r in rows if r['id']==recovery['executor_id']]
         handoff=_handoff_predecessor(store,c,parent,root)
         handoff_rows=[r for r in rows if handoff and r['id']!=handoff[0]['executor_id']]
-        return dict(scope=SCOPE, preparation_revision=parent['revision'], dispatch_revision=root['revision'] if root else 0,
+        from .business_frontier import view as frontier_view
+        return dict(**frontier_view(c,parent),scope=SCOPE, preparation_revision=parent['revision'], dispatch_revision=root['revision'] if root else 0,
                     case_cancelled=prep.case_cancelled(c,parent),case_reconciling=prep.case_state(c,parent)=='RECONCILING',case_write_blocked=prep.case_write_blocked(c,parent),ready=ready and bool(rows) and not prep.case_write_blocked(c,parent), executors=rows, has_receipt_step=existing, history_limit_reached=limited,
                     can_reassign=bool(handoff_rows) and not prep.case_write_blocked(c,parent),reassignment_executors=handoff_rows,
                     reassignment_actor_id=p['id'],
@@ -271,7 +280,7 @@ def read(store, token, id):
 def reassign(store, token, id, key, data):
     if type(data) is not Reassign:raise Denied('typed reassignment required')
     fp=digest(prep.canonical(dict(dispatch_id=str(id),type='PENDING_RECEIPT_HANDOFF',
-                                 **data.model_dump(mode='json'))))
+                                 **frontier_request(data))))
     with store.connect() as c:
         p=_auth(store,c,token)
         if p['role']!='park_specialist':raise Denied('assigned preparation reviewer required')
@@ -285,6 +294,8 @@ def reassign(store, token, id, key, data):
         _party(store,c,parent,parent['owner_id'],'PREPARE')
         old=_replay(c,p,key,fp,root)
         if old:return _view(c,p,parent,root,old,store)
+        from .business_frontier import check_fence
+        check_fence(c,parent,data)
         from .controlled_plans import gate
         gate(store,c,parent,2)
         if parent['revision']!=data.expected_preparation_revision or root['revision']!=data.expected_dispatch_revision:
@@ -323,7 +334,7 @@ def recover_reassignment(store, token, id, key):
 
 @receipts.bounded
 def offer(store, token, id, key, data):
-    body=data.model_dump(mode='json')
+    body=frontier_request(data)
     if data.recovery_receipt_step_id is None:body.pop('recovery_receipt_step_id')
     fp = digest(prep.canonical(dict(preparation_id=str(id), **body)))
     with store.connect() as c:
@@ -335,6 +346,8 @@ def offer(store, token, id, key, data):
         _party(store, c, parent, parent['owner_id'], 'PREPARE')
         old = _replay(c, p, key, fp, root)
         if old: return _view(c, p, parent, root, old,store)
+        from .business_frontier import check_fence
+        check_fence(c,parent,data)
         from .controlled_plans import gate
         gate(store,c,parent,2)
         if not receipts.material_current(c,parent,store) or parent['revision'] != data.expected_preparation_revision:
@@ -366,7 +379,7 @@ def offer(store, token, id, key, data):
 
 @receipts.bounded
 def command(store, token, id, key, data):
-    fp = digest(prep.canonical(dict(dispatch_id=str(id), **data.model_dump(mode='json'))))
+    fp = digest(prep.canonical(dict(dispatch_id=str(id), **frontier_request(data))))
     with store.connect() as c:
         p = _auth(store, c, token)
         if p['role'] != ('park_specialist' if data.action == 'WITHDRAW' else 'service_executor'):
@@ -382,6 +395,8 @@ def command(store, token, id, key, data):
             _party(store, c, parent, parent['owner_id'], 'PREPARE')
         old = _replay(c, p, key, fp, root)
         if old: return _view(c, p, parent, root, old,store)
+        from .business_frontier import check_fence
+        check_fence(c,parent,data)
         if own['id'] != root['current_offer_id'] or own['state'] != 'OFFERED':
             raise Conflict('current offered dispatch required')
         if root['revision'] != data.expected_revision: raise Conflict('stale dispatch revision; refresh required')

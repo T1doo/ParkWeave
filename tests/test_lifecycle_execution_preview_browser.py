@@ -18,7 +18,11 @@ def lifecycle_page(lifecycle_fixture):
         with sync_playwright() as pw:
             browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox']);context=browser.new_context();page=context.new_page();errors=[];page.on('pageerror',lambda x:errors.append(str(x)));page.goto(f'http://127.0.0.1:{port}/')
             try:yield f,p,e,page,errors,a
-            finally:context.close();browser.close()
+            finally:
+                # Finish intercepted recovery replies before their context
+                # disposes the response objects. Handler errors still surface.
+                page.unroute_all(behavior='wait');context.unroute_all(behavior='wait')
+                context.close();browser.close()
         assert not errors,errors
     finally:server.should_exit=True;thread.join(10);listener.close();assert not thread.is_alive()
 def open_page(page,f,p):

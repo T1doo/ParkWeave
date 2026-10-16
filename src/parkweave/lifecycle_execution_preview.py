@@ -1,3 +1,4 @@
+from .business_frontier_types import request as frontier_request
 """Explicit original local Case commands on the existing discarded P4 shadow."""
 from typing import Literal
 from uuid import uuid4
@@ -77,7 +78,7 @@ class LifecycleExecutionPreview(p4.ReceiptExecutionPreview):
         for action in SEQUENCES[sequence]:
             before=lc.read(private,token,id)
             body=lc.Command(action=action,expected_revision=before['revision'],expected_cycle=before['cycle'],expected_snapshot_sha256=before['current_snapshot_sha256'] if action!='REOPEN' else None,reason='SYNTHETIC simulated enterprise explicit '+action)
-            key=uuid4().hex;attempt=dict(request_key=key,body=body.model_dump(mode='json'),fingerprint=digest(prep.canonical({'preparation_id':str(id),**body.model_dump(mode='json')})),before=ep._normal(before))
+            key=uuid4().hex;attempt=dict(request_key=key,body=frontier_request(body),fingerprint=digest(prep.canonical({'preparation_id':str(id),**frontier_request(body)})),before=ep._normal(before))
             artifact['lifecycle_attempts'].append(attempt)
             try:attempt['result']=ep._normal(lc.command(private,token,id,key,body))
             except Conflict:

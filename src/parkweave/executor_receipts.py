@@ -1,3 +1,4 @@
+from .business_frontier_types import BusinessFrontierFence,request as frontier_request
 """Assigned executor's local synthetic receipt, never physical fulfillment."""
 from functools import wraps
 from typing import Literal
@@ -32,12 +33,14 @@ def bounded(fn):
         finally:OBSERVATIONS.reset(context)
     return call
 class Create(BaseModel):
+    expected_business_frontier: BusinessFrontierFence | None = None
     model_config=ConfigDict(extra='forbid',strict=True)
     preparation_id: UUID=Field(strict=False)
     expected_preparation_revision: int=Field(ge=1)
     executor_id: str=Field(min_length=1,max_length=100)
 
 class Command(BaseModel):
+    expected_business_frontier: BusinessFrontierFence | None = None
     model_config=ConfigDict(extra='forbid',strict=True,str_strip_whitespace=True)
     action: Literal['SUBMIT','ACKNOWLEDGE','REQUEST_CHANGES','REOPEN']
     expected_revision: int=Field(ge=1)
@@ -76,8 +79,12 @@ def _base(store,c,p,id):
     store.scoped_run(c,p,row['run_id'])
     return row
 
-def _parent(c,row):
-    return c.execute('SELECT * FROM preparations WHERE id=%s FOR SHARE',(row['preparation_id'],)).fetchone()
+def _parent(c,row,write=False):
+    # Birth is immutable. Decide before taking any parent SHARE lock so new
+    # tracked writers never upgrade SHARE after acquiring a child UPDATE lock.
+    parent=c.execute('SELECT * FROM preparations WHERE id=%s',(row['preparation_id'],)).fetchone() if write else None
+    tracked=bool(parent and parent.get('candidate_frontier_birth') is not None)
+    return c.execute('SELECT * FROM preparations WHERE id=%s '+('FOR UPDATE' if write and tracked else 'FOR SHARE'),(row['preparation_id'],)).fetchone()
 
 def current_step(c,parent):
     """The current accepted offer selects its receipt generation; history never does."""
@@ -134,6 +141,8 @@ def _replay(c,p,key,fp):
 
 def _event(c,p,row,key,fp,action,**extra):
     payload={'step_id':str(row['id']),'revision':row['revision'],'state':row['state'],'action':action,'actor_id':p['id'],'scope':SCOPE,**extra}
+    from .business_frontier import event_fence
+    payload.update(event_fence(c))
     c.execute('INSERT INTO service_receipt_events(id,step_id,actor_id,request_key,fingerprint,revision,action,payload) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',(uuid4(),row['id'],p['id'],key,fp,row['revision'],action,Jsonb(payload)))
     return payload
 
@@ -146,7 +155,8 @@ def _view(c,p,row,parent,event=None,store=None):
     execution=execution_view(store,c,p,row,parent,receipt,is_current)
     blocked=prep.case_write_blocked(c,parent) if parent else False
     if blocked:execution={**execution,'can_execute':False}
-    return dict(scope=SCOPE,role=p['role'],step=row,current_receipt=receipt,case_cancelled=cancelled,case_reconciling=bool(parent and prep.case_state(c,parent)=='RECONCILING'),case_write_blocked=blocked,
+    from .business_frontier import view as frontier_view
+    return dict(**frontier_view(c,parent),scope=SCOPE,role=p['role'],step=row,current_receipt=receipt,case_cancelled=cancelled,case_reconciling=bool(parent and prep.case_state(c,parent)=='RECONCILING'),case_write_blocked=blocked,
         local_execution=execution,
         history=c.execute('SELECT revision,action,payload,created_at FROM service_receipt_events WHERE step_id=%s ORDER BY revision',(row['id'],)).fetchall(),
         receipt_history=c.execute('SELECT * FROM service_step_receipts WHERE step_id=%s ORDER BY version',(row['id'],)).fetchall(),
@@ -163,7 +173,8 @@ def catalog(store,token,id):
         row=prep.scoped(store,c,p,id);store.check_capability(c,p,'EXECUTE')
         rows = store.assigned_executors(c,row['run_id'],p['park_id'],p['org_id'])
         cancelled=prep.case_cancelled(c,row)
-        return dict(scope=SCOPE,preparation_revision=row['revision'],case_cancelled=cancelled,case_reconciling=prep.case_state(c,row)=='RECONCILING',case_write_blocked=prep.case_write_blocked(c,row),ready=row['state']=='LOCAL_CONFIRMED' and not prep.case_write_blocked(c,row),executors=rows)
+        from .business_frontier import view as frontier_view
+        return dict(**frontier_view(c,row),scope=SCOPE,preparation_revision=row['revision'],case_cancelled=cancelled,case_reconciling=prep.case_state(c,row)=='RECONCILING',case_write_blocked=prep.case_write_blocked(c,row),ready=row['state']=='LOCAL_CONFIRMED' and not prep.case_write_blocked(c,row),executors=rows)
 
 def _insert_step(c,parent,executor_id):
     return c.execute("""INSERT INTO service_receipt_steps(id,preparation_id,run_id,case_id,owner_id,executor_id,park_id,org_id,service_id,service_version,
@@ -172,7 +183,7 @@ def _insert_step(c,parent,executor_id):
 
 @bounded
 def create(store,token,key,data):
-    fp=digest(prep.canonical({'action':'CREATE',**data.model_dump(mode='json')}))
+    fp=digest(prep.canonical({'action':'CREATE',**frontier_request(data)}))
     with store.connect() as c:
         p=_auth(store,c,token)
         if p['role']!='enterprise_operator':raise Denied('enterprise owner required')
@@ -183,6 +194,8 @@ def create(store,token,key,data):
         if old:
             row=_base(store,c,p,UUID(old['step_id']));row=_locked(c,row['id'])
             return _view(c,p,row,parent,old,store)
+        from .business_frontier import check_fence
+        check_fence(c,parent,data)
         from .controlled_plans import gate
         gate(store,c,parent,3)
         if parent['revision']!=data.expected_preparation_revision or not material_current(c,parent,store):raise Conflict('current locally confirmed preparation required')
@@ -210,7 +223,7 @@ def command(store,token,id,key,data):
     if not execute and type(data) is not Command:raise Denied('typed receipt command required')
     if execute and provider(store) is None:raise Denied('isolated local execution disabled')
     action='SUBMIT' if execute else data.action
-    fp=digest(prep.canonical({'step_id':str(id),**data.model_dump(mode='json'),**({'action':'EXECUTE_LOCAL'} if execute else {})}))
+    fp=digest(prep.canonical({'step_id':str(id),**frontier_request(data),**({'action':'EXECUTE_LOCAL'} if execute else {})}))
     with store.connect() as c:
         p=_auth(store,c,token)
         if action=='SUBMIT':
@@ -220,7 +233,7 @@ def command(store,token,id,key,data):
             store.check_capability(c,p,'EXECUTE')
         _key(c,p,key);row=_base(store,c,p,id)
         if p['role']=='enterprise_operator':_executor(store,c,row['executor_id'],row['run_id'])
-        parent=_parent(c,row);prep.case_write_guard(c,parent);row=_locked(c,id,write=True);old=_replay(c,p,key,fp)
+        parent=_parent(c,row,write=True);prep.case_write_guard(c,parent);row=_locked(c,id,write=True);old=_replay(c,p,key,fp)
         if old:
             if execute and (not _fresh(row,parent,c,store) or
                             old.get('receipt_id')!=str(row['current_receipt_id']) or
@@ -230,6 +243,8 @@ def command(store,token,id,key,data):
                     old.get('receipt_id')!=str(row['current_receipt_id'])):
                 raise Conflict('local execution no longer current')
             return _view(c,p,row,parent,old,store)
+        from .business_frontier import check_fence
+        check_fence(c,parent,data)
         selected=current_step(c,parent)
         if not selected or selected['id']!=row['id']:raise Conflict('historical receipt generation is read-only; current executor acceptance required')
         if action=='SUBMIT' and not execute and _requires_local(c,row):
