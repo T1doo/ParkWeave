@@ -637,10 +637,51 @@ class Store:
                        Jsonb(data.source_ref.model_dump()),data.source_excerpt,data.validity.valid_from,data.validity.valid_until,key,fingerprint,p['id']))
             return str(fact_id)
 
-    def facts_query(self, c, p, fields):
-        return c.execute('SELECT id,evidence_id,field_name,value,unit,source_ref,source_kind,source_excerpt,valid_from,valid_until,'
+    def facts_query(self, c, p, fields, *, with_time=False):
+        sql = ('SELECT id,evidence_id,field_name,value,unit,source_ref,source_kind,source_excerpt,valid_from,valid_until,'
                          'revision,fingerprint,confirmed_by FROM fact_assertions WHERE principal_id=%s AND park_id=%s AND org_id=%s '
-                         'AND field_name=ANY(%s) ORDER BY id',(p['id'],p['park_id'],p['org_id'],fields)).fetchall()
+                         'AND field_name=ANY(%s) ORDER BY id')
+        if with_time:
+            # One statement snapshot and server timestamp, including zero rows.
+            sql = ('WITH scoped AS (' + sql + ') SELECT statement_timestamp() observed_at, scoped.* '
+                   'FROM (SELECT 1) anchor LEFT JOIN scoped ON true ORDER BY scoped.id')
+        rows = c.execute(sql, (p['id'],p['park_id'],p['org_id'],fields)).fetchall()
+        if with_time:
+            return rows[0]['observed_at'], [{k:v for k,v in row.items() if k != 'observed_at'}
+                                          for row in rows if row['id'] is not None]
+        return rows
+
+    def read_fact_comparison(self, token, run_id):
+        from .fact_consistency import results, next_conditions, changes
+        with self.connect() as c:
+            c.execute('SET TRANSACTION READ ONLY')
+            p = self.auth(c, token, lock=True)
+            r = self.scoped_run(c, p, run_id)
+            if p['role'] != 'enterprise_operator' or r['input'].get('action') != 'facts.assess':
+                raise Denied('owner fact assessment required')
+            try:
+                data = Intake.model_validate(r['input'])
+            except ValueError:
+                raise Conflict('historical fact assessment input unavailable') from None
+            self.check_fields(c, p, data.fact_fields, 'READ')
+            op = c.execute('SELECT action,state,receipt FROM operations WHERE run_id=%s', (run_id,)).fetchone()
+            if (data.candidate_review or r['state'] != 'SUCCEEDED' or not op or op['action'] != 'facts.assess'
+                    or op['state'] != 'VERIFIED' or not isinstance(op['receipt'], dict)
+                    or op['receipt'].get('source') != 'LOCAL_FACT_ASSESSMENT'):
+                raise Conflict('completed original fact assessment required')
+            now, rows = self.facts_query(c, p, data.fact_fields, with_time=True)
+            current = results(data.fact_fields, rows, now)
+            try:
+                delta = changes(op['receipt'], current, data.fact_fields, now)
+            except (KeyError, TypeError, ValueError):
+                raise Conflict('historical fact evidence unavailable; no automatic reconstruction') from None
+            return dict(run_id=str(run_id), read_only=True, automatically_replayed=False,
+                historical_receipt=op['receipt'], historical_preserved=True,
+                current=dict(observed_at=now.isoformat(), persisted=False, results=current,
+                             next_step_conditions=next_conditions(current)), changes=delta,
+                source_changes_observed=any(item['changed'] for item in delta),
+                requires_explicit_reassessment=any(item['changed'] for item in delta),
+                new_assessment_created=False, verification='UNVERIFIED', qualification_decision='NOT_EVALUATED')
 
     def read_facts(self, token, fields, fact_id=None):
         with self.connect() as c:
@@ -662,6 +703,7 @@ class Store:
         self.event(c,r['id'])
 
     def assess_facts(self, claim):
+        from .fact_consistency import results as project_results, next_conditions
         with self.connect() as c:
             p,r,op=self.locked_execution(c,claim)
             if op['action']!='facts.assess' or op['state']!='PREPARED':raise Conflict('not a prepared assessment')
@@ -672,28 +714,10 @@ class Store:
             except Denied:self.safe_failure(c,r,op,'AUTHORIZATION_REVOKED');return
             rows=self.facts_query(c,p,data.fact_fields)
             now=c.execute('SELECT clock_timestamp() now').fetchone()['now']
-            results=[]
-            for field in data.fact_fields:
-                all_rows=[row for row in rows if row['field_name']==field]
-                valid=[row for row in all_rows if row['valid_from']<=now<row['valid_until']]
-                values={json.dumps([row['value'],row['unit']],ensure_ascii=False) for row in valid}
-                reason='MISSING_EVIDENCE' if not all_rows else 'EXPIRED_OR_NOT_YET_VALID' if not valid else 'CONFLICTING_EVIDENCE' if len(values)>1 else 'CONSISTENT_EVIDENCE'
-                results.append({'field':field,'state':'KNOWN' if reason=='CONSISTENT_EVIDENCE' else 'UNKNOWN','reason':reason,
-                                'evidence':[{'id':str(row['evidence_id']),'fact_id':str(row['id']),'source_ref':row['source_ref'],
-                                             'value':row['value'],'unit':row['unit'],'valid_from':row['valid_from'].isoformat(),
-                                             'valid_until':row['valid_until'].isoformat(),'applicable_at_assessment':row in valid,
-                                             'source_excerpt':row['source_excerpt'],
-                                             'revision':row['revision'],'fingerprint':row['fingerprint'],
-                                             'source_kind':row['source_kind']} for row in all_rows]})
+            results=project_results(data.fact_fields, rows, now)
             receipt={'source':'LOCAL_FACT_ASSESSMENT','assessed_at':now.isoformat(),'purpose':'SERVICE_PREPARATION',
                      'assessment_goal':data.goal,'results':results,'qualification_decision':'NOT_EVALUATED',
-                     'verification':'UNVERIFIED','next_step_conditions':[
-                         {'field':item['field'],'condition':{
-                             'MISSING_EVIDENCE':'PROVIDE_SOURCED_EVIDENCE',
-                             'EXPIRED_OR_NOT_YET_VALID':'PROVIDE_CURRENT_SOURCED_EVIDENCE',
-                             'CONFLICTING_EVIDENCE':'RESOLVE_CONFLICT_WITH_SOURCED_EVIDENCE',
-                             'CONSISTENT_EVIDENCE':'AUTHORITATIVE_VERIFICATION_REQUIRED',
-                         }[item['reason']]} for item in results]}
+                     'verification':'UNVERIFIED','next_step_conditions':next_conditions(results)}
             c.execute("UPDATE operations SET state='VERIFIED',receipt=%s WHERE id=%s",(Jsonb(receipt),op['id']))
             c.execute("UPDATE runs SET state='SUCCEEDED',success_scope='FACT_EVIDENCE_ASSESSED',lease_until=NULL,revision=revision+1 WHERE id=%s",(r['id'],))
             self.event(c,r['id'])

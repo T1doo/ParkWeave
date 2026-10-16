@@ -333,6 +333,10 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         from .fact_review_store import read
         return read(store,token(authorization),run_id)
 
+    @app.get('/api/runs/{run_id}/fact-comparison')
+    def fact_comparison(run_id: UUID, authorization: str | None=Header(default=None)):
+        return store.read_fact_comparison(token(authorization), run_id)
+
     @app.post('/api/runs/{run_id}/clarifications',status_code=202)
     def clarification(run_id: UUID,data: ClarificationInput,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         if not re.fullmatch(r'[A-Za-z0-9_-]{1,100}',idempotency_key):raise HTTPException(422,'invalid request key')
