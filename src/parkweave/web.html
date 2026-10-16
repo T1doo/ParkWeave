@@ -2248,7 +2248,7 @@ $('receipt-history-read').onclick=async()=>{
  $('receipt-history-result').replaceChildren();$('receipt-history-error').textContent='';$('receipt-history-read').disabled=true;
  try{
   if(!c.token||!/^[0-9a-f-]{36}$/i.test(c.id)||!c.key)throw Error('请填写当前身份、原资料事项编号和原请求编号。');
-  const response=await entryFetch('/api/preparations/'+encodeURIComponent(c.id)+'/receipt-execution-history/recovery/'+encodeURIComponent(c.key),{headers:{Authorization:'Bearer '+c.token}});if(!current())return;if(response.status===403){clearDeniedPrivateViews();return;}const x=await response.json();
+  const response=await entryFetch('/api/preparations/'+encodeURIComponent(c.id)+'/receipt-execution-history/recovery/'+encodeURIComponent(c.key),{headers:{Authorization:'Bearer '+c.token}});if(!current())return;if(response.status===403){clearDeniedPrivateViews();$('receipt-history-error').textContent='当前原授权不可用，历史保持不可读。';return;}const x=await response.json();
   if(!current())return;
   if(!response.ok)throw Error(response.status===403?'当前原授权不可用，历史保持不可读。':response.status===409?'原历史证明无法核对，保持未知。':'只读核对暂不可用，请检查原服务后再次读取。');
   if(x.read_only!==true||x.history_transport!=='ISOLATED_P4_LIVE_ISSUER_HISTORY_GET_V1'||x.preparation_id!==c.id||x.scope!=='ISOLATED_REGISTERED_P4_RECEIPT_EXECUTION_PREVIEW'||x.formal_writes!==0||x.automatically_replayed!==false)throw Error('原历史响应无法核对。');

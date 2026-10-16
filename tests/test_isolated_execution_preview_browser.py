@@ -182,3 +182,30 @@ def test_late_actual_forbidden_recovery_never_clears_new_identity_context(previe
   r=route.fetch();assert r.status==403;held.append((route,r))
  page.route('**/execution-preview/recovery/*',hold);page.locator('#execution-preview-recover').click();wait_held(page,held);page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input');page.locator('#execution-preview-result').evaluate('(e)=>e.textContent="SYNTHETIC NEW IDENTITY VIEW"');before=snapshot(f)
  held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(150);assert page.locator('#execution-preview-result').inner_text()=='SYNTHETIC NEW IDENTITY VIEW' and page.evaluate('JSON.stringify({...localStorage})')==storage and snapshot(f)==before and not errors
+
+
+def change_case_with_pending_preview(page,p,kind):
+ # Controlled component setup via the same original loadPlan GET used by open_page.
+ # This does not claim UNKNOWN UI navigation is allowed: the bounded-read click
+ # must still be refused, and the exact original flow/opaque storage retained.
+ storage=page.evaluate('JSON.stringify({...localStorage})')
+ assert storage!='{}'
+ flow=page.evaluate_handle('activeEntryWriteFlow')
+ assert page.evaluate('(flow)=>flow!==null&&activeEntryWriteFlow===flow',flow)
+ page.evaluate('(id)=>loadPlan(id)',p['preparation_id'])
+ page.wait_for_function('(id)=>planView!==null&&planId===id',arg=p['preparation_id'])
+ assert page.evaluate("entryReadAllowed('bounded-planning-read')") is False
+ assert page.evaluate('(flow)=>activeEntryWriteFlow===flow',flow)
+ assert page.evaluate('JSON.stringify({...localStorage})')==storage
+ requests=[]
+ def observe(request):requests.append(request.method+' '+request.url)
+ page.on('request',observe)
+ try:
+  page.locator('#bounded-planning-read').click()
+  assert page.evaluate("entryReadAllowed('bounded-planning-read')") is False
+  assert page.evaluate('(flow)=>activeEntryWriteFlow===flow',flow)
+  assert page.evaluate('JSON.stringify({...localStorage})')==storage
+  assert page.evaluate(kind+'ExecutionPreviewView===null')
+  assert '尚未确定' in page.locator('#page-feedback').inner_text()
+  assert requests==[]
+ finally:page.remove_listener('request',observe);flow.dispose()

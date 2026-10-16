@@ -7,7 +7,7 @@ from parkweave.api import create_app
 from test_receipt_execution_preview import receipt_preview_fixture,access_fixture,receipt_fixture,preparation_fixture,snapshot,read,execute,body
 from test_resource_execution_preview import setup as p2_setup
 from test_isolated_run_access import approved
-from test_isolated_execution_preview_browser import wait_held
+from test_isolated_execution_preview_browser import wait_held,change_case_with_pending_preview
 OUT=Path('.runtime/p4-receipt-execution-preview/browser')
 @pytest.fixture
 def receipt_page(receipt_preview_fixture):
@@ -74,7 +74,7 @@ def test_late_response_cannot_restore_changed_context(receipt_page,tmp_path,targ
         r=route.fetch();assert r.status==201;held.append((route,r))
     page.route('**/api/preparations/'+p['preparation_id']+'/receipt-execution-preview',hold)
     page.locator('#receipt-execution-preview-run').click();wait_held(page,held)
-    if target=='case':open_page(page,f,other)
+    if target=='case':change_case_with_pending_preview(page,other,'receipt')
     elif target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')
     else:page.locator('#request-current').fill('SYNTHETIC NEW DRAFT');page.locator('#request-current').dispatch_event('input')
     page.locator('#receipt-execution-preview-result').evaluate('(e)=>e.textContent="SYNTHETIC NEW CONTEXT"');before=snapshot(f)

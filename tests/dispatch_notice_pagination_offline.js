@@ -3,6 +3,17 @@ const fs=require('fs'),vm=require('vm');
 const html=fs.readFileSync(process.argv[2],'utf8'),mode=process.argv[3];
 const start=html.indexOf('let noticeGeneration='),end=html.indexOf('// Durable registered adapter instances.',start);
 if(start<0||end<0||!html.includes('id="notice-next" class="secondary" hidden disabled'))throw Error('Missing original notification section');
+// Pull the real original transport and read-failure dependencies from each tested
+// page. No authorization/context predicate or original assertion is replaced.
+function originalBlock(a,b){const at=html.indexOf(a),end=html.indexOf(b,at+1);if(at<0||end<=at)throw Error('Missing original helper '+a);return html.slice(at,end);}
+function originalLine(marker){const line=html.split('\n').find(s=>s.startsWith(marker));if(!line)throw Error('Missing original helper '+marker);return line+'\n';}
+const dependencies=originalLine('const deniedOperationReferences=')+originalLine('const entryWriteRequests=')+
+ (html.includes('const capturedCancelFrontierRequests=')?originalLine('const capturedCancelFrontierRequests='):'')+
+ originalLine('function clearEntryWriteRequests(')+originalLine('function failCurrentEntryRead(')+
+ originalLine('let receiptHistoryGeneration=')+originalLine('function clearReceiptHistory(')+
+ originalBlock('function receiptCommandExplicitlyRejected(', 'function runEntryReadProof(')+
+ originalBlock('async function entryFetch(', 'function retainDeniedOperationReference(')+
+ originalBlock('function retainDeniedOperationReference(', 'function clearDeniedPrivateViews(');
 const prefix=`
 class Element {
  constructor(tag='div',text=''){this.tag=tag;this.children=[];this._text=text;this.dataset={};this.hidden=false;this.disabled=false;this.value='';}
@@ -77,4 +88,4 @@ const probe=`
  return JSON.stringify({mode,checks,scope:'NODE_VM_WITH_DOM_AND_FETCH_DOUBLES_ONLY'});
 })()
 `;
-Promise.resolve(vm.runInNewContext(prefix+html.slice(start,end)+probe,{mode,setImmediate},{timeout:5000})).then(x=>process.stdout.write(x+'\n')).catch(e=>{process.stderr.write(String(e)+'\n');process.exitCode=1;});
+Promise.resolve(vm.runInNewContext(prefix+dependencies+html.slice(start,end)+probe,{mode,setImmediate},{timeout:5000})).then(x=>process.stdout.write(x+'\n')).catch(e=>{process.stderr.write(String(e)+'\n');process.exitCode=1;});

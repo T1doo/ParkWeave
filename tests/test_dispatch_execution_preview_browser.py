@@ -3,7 +3,7 @@ import json,os,socket,subprocess,sys,time
 from pathlib import Path
 from parkweave.process_env import minimal_environment
 import pytest
-from test_isolated_execution_preview_browser import preview_page,wait_held
+from test_isolated_execution_preview_browser import preview_page,wait_held,change_case_with_pending_preview
 OUT=Path('.runtime/p2-dispatch-execution-preview/browser')
 from test_dispatch_execution_preview import preparation_fixture,setup,snapshot,read,execute,body
 
@@ -64,7 +64,7 @@ def test_late_response_cannot_restore_changed_context(dispatch_page,tmp_path,tar
         r=route.fetch();assert r.status==201;held.append((route,r))
     page.route('**/api/preparations/'+p['preparation_id']+'/dispatch-execution-preview',hold)
     page.locator('#dispatch-execution-preview-run').click();wait_held(page,held)
-    if target=='case':open_page(page,f,other)
+    if target=='case':change_case_with_pending_preview(page,other,'dispatch')
     elif target=='identity':page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').dispatch_event('input')
     else:page.locator('#request-current').fill('SYNTHETIC NEW DRAFT');page.locator('#request-current').dispatch_event('input')
     page.locator('#dispatch-execution-preview-result').evaluate('(e)=>e.textContent="SYNTHETIC NEW CONTEXT"');before=snapshot(f)
