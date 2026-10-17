@@ -1,0 +1,49 @@
+[
+  {
+    "window": "target-v1",
+    "result": "6 PASS19.65s;230 connects/close/PG correlations, no timeout reproduced"
+  },
+  {
+    "window": "target-v2",
+    "result": "6 PASS23.252s;231 connects/close, no timeout reproduced; sample close reporting added"
+  },
+  {
+    "window": "full-v1",
+    "source_sha": "55bb74ef14f3df254703ccc83869a1d599253eab",
+    "result": "INCOMPLETE32 testcases0FAIL0ERROR before own verified SIGINT; process exit1 due diagnostic fixture teardown BadFD after sessionfinish",
+    "stop_reason": "static discovery: original manual pg.__wrapped__(tmp_path_factory) signature incompatible, second owned cluster needs independent context",
+    "introduced_diagnostic_bug": "plugin sessionfinish closed fd before builtin runner fixture teardown on SIGINT; actual BadFD traceback preserved",
+    "fix": "restore original pg signature and use opt-in global diagnostics, register multiple newly owned PG contexts as strings/paths only, trylast finish after builtin runner teardown, forward lifecycle-only records and report failed observer connection closure as unknown",
+    "original_connection_timeout_cause": "NOT_ESTABLISHED; no product lifecycle fix, no changed original assertions/budgets"
+  },
+  {
+    "window": "target-v3",
+    "result": "6 PASS23.826s;231 connects/close/PG correlations; no timeout reproduced",
+    "files": "target-v3-files.json equals final freeze changed-file hashes",
+    "source_commit_after_window": "8ff6f34ad68c36c0c529957a6edaf2c25e5bbb38",
+    "scope": "two prior failed nodes and two immediate predecessors each, original order; no passes added to427"
+  },
+  {
+    "window": "full-v2",
+    "source_sha": "8ff6f34ad68c36c0c529957a6edaf2c25e5bbb38",
+    "result": {
+      "unique": 427,
+      "elements": 427,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "seconds": 677.502
+    },
+    "exit": 0,
+    "scope": "same original13 modules427 unique nodes/order; complete same frozen716 files; no target or prior scores added",
+    "historical_cause": "NOT_ESTABLISHED; no ConnectionTimeout reproduced; no product source fix",
+    "diagnostic_failure_sampler": "not naturally triggered in this successful window; not claimed positive execution"
+  },
+  {
+    "window": "evidence-export-v1",
+    "result": "pair verification failed for self-changing exporter completion log only",
+    "test_or_diagnostic_original_changed": false,
+    "first_archive_retained": ".runtime/runtime-read-diagnostics/export-v1-self-log-check-failed",
+    "correction": "exclude live exporter logs, fresh archive, no test rerun"
+  }
+]

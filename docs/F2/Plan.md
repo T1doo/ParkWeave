@@ -1,3 +1,11 @@
+## 2026-10-17：自有连接诊断后原427项完整通过，历史超时根因未定
+
+基线 `96b37e1d9fd53e005bcb8a06c6e8df62f2a90ab0`，新冻结 `8ff6f34ad68c36c0c529957a6edaf2c25e5bbb38`。仅自有pytest夹具增加单调起止/节点阶段/进程线程/application_name、连接close、PG连接断开及writer退出回收诊断；失败时每fixture一次有界只读pg_stat_activity，无常驻观察连接、token/DSN/凭据/query正文或RPC载荷。产品src不变，原两失败用例断言AST、2秒预算、403回滚/离线恢复与清理断言保持。
+
+按原序两失败节点及各两个紧邻前驱，三开发窗各6PASS，不累加；第三窗变更文件hash与新冻结一致。新冻结原13完整模块427唯一项427PASS、0FAIL/ERROR/SKIP，JUnit677.502秒、4原警告；8750受测连接全部close并精确关联PG授权/断开，最长约437.455毫秒。原32PASS不完整窗因诊断手动pg调用契约/多集群问题受控SIGINT，实际BadFD清理输出保留；恢复原签名、分别登记自有集群并调整诊断finish顺序后重新冻结，不把这些诊断修正当作历史超时修复。
+
+716输入及27289继承证据hash零差异；完整节点与原顺序一致，父线程此前仅局部认可36项只读接线，新诊断片独审仍待。未重现历史ConnectionTimeout，单次失败采样未触发，无法补关联旧残留session或判定环境致因；插桩会扰动调度，未插桩重复及修后SIGINT亦未验。普通资源Approval契约/真实运行合法输入仍缺，Windows、正式AT/AT35、真实业务/模型、生产host正向和部署均未验；完整项目未完成。无Actions、main/强推、真实授权/凭据/费用、安全网络权限变化或未知锁/进程/session清理。[实现、完整JUnit、诊断和全部失败窗口](OwnedConnectionDiagnostics-20261017.md)。下方历史原字节保留。
+
 ## 2026-10-17：普通运行时既有授权读取接线（验证门未通过）
 
 基线 `fb09abafc2e56a446cc372e6a4ce46afcd64571d`，冻结源码 `6ab25aa0d10dda48fa3d12184a235a6e50fcccea`。普通 configured_app 显式配置只读加载原受保护 public binding，复用原签名历史、实际数据库/角色与既有有效assignment的Run权限链；同preparation/Case/Run、服务精确版本、目录hash/xmin校验接入原提交复核。资料页进入原Run/分派/Run READ访问批准面板和精确目录，决定/激活命令关闭；普通资源方案批准契约仍缺，不用IsolatedPlanApproval替代。无真实授权材料补建。
