@@ -1,0 +1,110 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7fdb1f168770>, <parkweave.store.Store object at 0x7fdb1f168710>, {'fixture-a': 'd...atabase': {'name': 'fixture_dfd2d8eb4f1b40ea8f184986f90fe0d6', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-4/test_existing_ordinary_page_ne0')
+width = 1200
+
+    @pytest.mark.parametrize('width',[1200,320])
+    def test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data(demo_inputs,tmp_path,width):
+        f,cfg,pack,journal=demo_inputs
+        baseline=authority_snapshot(f[1])
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n']==0 for t in
+                ('runs','cases','preparations','preparation_evidence','preparation_events','run_assignments'))
+        goal='SYNTHETIC new ordinary DOM request '+str(width)
+        materials={'need_summary':'SYNTHETIC fresh DOM need '+str(width),
+                   'material_outline':'SYNTHETIC fresh DOM outline '+str(width)+' <script>window.demoInjection=true</script>'}
+        traffic=[];errors=[];contexts=[]
+        with ordinary_demo(f,tmp_path/'first') as api,ordinary_worker(f,tmp_path/'worker') as worker,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            def role(actor):
+                context=browser.new_context(viewport=dict(width=width,height=1000));contexts.append(context);page=context.new_page()
+                page.on('pageerror',lambda error:errors.append(str(error)))
+                def observed(response):
+                    request=response.request
+                    if request.method=='POST':
+                        traffic.append(dict(actor=actor,method=request.method,path=urlsplit(request.url).path,status=response.status,body=request.post_data_json))
+                page.on('response',observed);login(page,api,f,actor);return page
+            try:
+                owner=role('fixture-a')
+                owner.locator('#prep-catalog').click();expect(owner.locator('#prep-create')).to_be_visible()
+                owner.locator('#prep-reviewer').select_option(pack['roles']['park_specialist'])
+                owner.locator('#prep-goal').fill(goal);owner.locator('#prep-create button').click()
+                expect(owner.locator('#prep-summary')).to_contain_text(goal,timeout=20000)
+                assert worker.poll() is None
+                parent_id=owner.evaluate('preparationId')  # Read-only observation, never JS navigation.
+                assert parent_id
+                # The original request editor is reachable before any old plan exists.
+                owner.locator('#plan-prepare').click();expect(owner.locator('#request-intent-form')).to_be_visible()
+                owner.locator('#request-current').fill(goal)
+                owner.locator('#request-local-goal').uncheck();owner.locator('#plan-required-goals').fill('\n'.join(GOALS))
+>               owner.locator('#request-intent-form button').click()
+
+tests/test_demo_original_page_intake_browser.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:17876: in click
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:165: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:593: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7fdb1d3b9010>
+cb = <function Channel.send.<locals>.<lambda> at 0x7fdb1d3a4ae0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: Locator.click: Error: strict mode violation: locator("#request-intent-form button") resolved to 6 elements:
+E               1) <button type="button" class="secondary">本地材料准备</button> aka get_by_role("button", name="本地材料准备")
+E               2) <button type="button" class="secondary">此Case资源关联</button> aka get_by_role("button", name="此Case资源关联")
+E               3) <button type="button" class="secondary">已有授权本人接单</button> aka get_by_role("button", name="已有授权本人接单")
+E               4) <button type="button" class="secondary">合成回执核对</button> aka get_by_role("button", name="合成回执核对")
+E               5) <button type="button" class="secondary">本地记录重验</button> aka get_by_role("button", name="本地记录重验")
+E               6) <button id="request-save">保存诉求与必需目标</button> aka get_by_role("button", name="保存诉求与必需目标")
+E           
+E           Call log:
+E             - waiting for locator("#request-intent-form button")
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_demo_original_page_intake_browser.py::test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_demo_original_page_intake_browser.py::test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_demo_original_page_intake_browser.py::test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200]
+1 failed, 4 warnings in 12.77s

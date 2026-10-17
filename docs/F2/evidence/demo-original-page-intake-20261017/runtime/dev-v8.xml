@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="71.089" timestamp="2026-10-17T13:12:12.229731+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_demo_original_page_intake_browser" name="test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200]" time="69.930"><failure message="playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.">demo_inputs = ((&lt;parkweave.store.Store object at 0x7f5d5772b350&gt;, &lt;parkweave.store.Store object at 0x7f5d5772b560&gt;, {'fixture-a': 'h...atabase': {'name': 'fixture_148feb8380da446896c71de87bf7df44', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-11/test_existing_ordinary_page_ne0')
+width = 1200
+
+    @pytest.mark.parametrize('width',[1200,320])
+    def test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data(demo_inputs,tmp_path,width):
+        f,cfg,pack,journal=demo_inputs
+        baseline=authority_snapshot(f[1])
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n']==0 for t in
+                ('runs','cases','preparations','preparation_evidence','preparation_events','run_assignments'))
+        goal='SYNTHETIC new ordinary DOM request '+str(width)
+        materials={'need_summary':'SYNTHETIC fresh DOM need '+str(width),
+                   'material_outline':'SYNTHETIC fresh DOM outline '+str(width)+' &lt;script&gt;window.demoInjection=true&lt;/script&gt;'}
+        traffic=[];network=[];errors=[];contexts=[]
+        with ordinary_demo(f,tmp_path/'first') as api,ordinary_worker(f,tmp_path/'worker') as worker,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            def role(actor):
+                context=browser.new_context(viewport=dict(width=width,height=1000));contexts.append(context);page=context.new_page()
+                page.on('pageerror',lambda error:errors.append(str(error)))
+                def observed(response):
+                    request=response.request
+                    network.append(dict(actor=actor,method=request.method,path=urlsplit(request.url).path,status=response.status))
+                    if request.method=='POST':
+                        traffic.append(dict(actor=actor,method=request.method,path=urlsplit(request.url).path,status=response.status,body=request.post_data_json))
+                page.on('response',observed);login(page,api,f,actor);return page
+            try:
+                owner=role('fixture-a')
+                owner.locator('#prep-catalog').click();expect(owner.locator('#prep-create')).to_be_visible()
+                owner.locator('#prep-reviewer').select_option(pack['roles']['park_specialist'])
+                owner.locator('#prep-goal').fill(goal);owner.locator('#prep-create button').click()
+                expect(owner.locator('#prep-summary')).to_contain_text(goal,timeout=20000)
+                settled(owner,preparation=True)
+                assert worker.poll() is None
+                parent_id=owner.evaluate('preparationId')  # Read-only observation, never JS navigation.
+                assert parent_id
+                # The original request editor is reachable before any old plan exists.
+                owner.locator('#plan-prepare').click();expect(owner.locator('#request-intent-form')).to_be_visible()
+                owner.locator('#request-current').fill(goal)
+                owner.locator('#request-local-goal').uncheck();owner.locator('#plan-required-goals').fill('\n'.join(GOALS))
+                owner.locator('#request-save').click()
+                expect(owner.locator('#request-intent-status')).to_contain_text('已保存诉求/目标版本',timeout=15000)
+                settled(owner)
+                owner.locator('#plan-materials').click();expect(owner.locator('#prep-detail')).to_be_visible()
+                settled(owner,preparation=True)
+                for slot,text in materials.items():
+                    owner.locator('#prep-slot').select_option(slot);owner.locator('#prep-text').fill(text)
+                    owner.locator('#prep-source-kind').select_option('USER_STATEMENT')
+                    owner.locator('#prep-source-label').fill('SYNTHETIC new DOM source '+slot)
+                    expect(owner.locator('#prep-text')).to_have_value(text)
+                    expect(owner.locator('#prep-source-label')).to_have_value('SYNTHETIC new DOM source '+slot)
+                    owner.locator('#prep-evidence button').click()
+                    expect(owner.locator('#prep-materials')).to_contain_text(text,timeout=15000)
+                    expect(owner.locator('#prep-command-feedback')).to_contain_text('已核对原操作保存事件',timeout=15000)
+                    settled(owner,preparation=True)
+                assert not owner.evaluate('Boolean(window.demoInjection)')
+                reviewer=role(pack['roles']['park_specialist']);open_from_list(reviewer,goal)
+                reviewer.locator('#prep-reason').fill('SYNTHETIC mapped specialist independently reviews new two slots')
+                reviewer.locator('#prep-review').click();expect(reviewer.locator('#prep-summary')).to_contain_text('待企业确认',timeout=15000)
+                settled(reviewer,preparation=True)
+                owner.locator('#prep-refresh').click();expect(owner.locator('#prep-summary')).to_contain_text('待企业确认',timeout=15000)
+                settled(owner,preparation=True)
+                owner.locator('#prep-reason').fill('SYNTHETIC owner independently confirms new reviewed inputs')
+                owner.locator('#prep-confirm').click();expect(owner.locator('#prep-summary')).to_contain_text('本地资料准备已确认',timeout=15000)
+                settled(owner,preparation=True)
+                owner.locator('#service-plan-prepare').click();expect(owner.locator('#service-selection-read')).to_be_visible()
+                owner.locator('#service-selection-read').click();expect(owner.locator('#service-selection-catalog')).to_contain_text('LOCAL_SYNTHETIC_DEMO',timeout=15000)
+                catalog=owner.evaluate('serviceSelectionCatalog')
+                assert catalog['selection_oracle']['state']=='UNIQUE'
+                assert all(i['park_id']==pack['park_id'] for i in catalog['catalog_snapshot']['instances'])
+                assert set().union(*(set(i['resources'].values()) for i in catalog['catalog_snapshot']['instances']))==set(pack['resources'].values())
+                owner.locator('#service-selection-generate').click()
+                owner.wait_for_function('()=&gt;serviceSelectionView!==null&amp;&amp;!serviceSelectionBusy')
+                assert owner.evaluate('serviceSelectionView.producer.mode')=='NO_MODEL'
+                owner.locator('#service-selection-confirm').check()
+                owner.locator('#service-plan-reason').fill('SYNTHETIC explicit new DOM selection adoption')
+                owner.locator('#service-plan-adopt').click();owner.wait_for_function('()=&gt;!!servicePlanView?.plan_id&amp;&amp;!servicePlanPending')
+                settled(owner)
+                verify(owner,'P1')
+                # Existing resource workspace uses the already configured resource IDs.
+                owner.locator('[data-tab="resource"]').click();owner.locator('#resource-catalog').click()
+                expect(owner.locator('#resource-form')).to_be_visible()
+                starts=datetime.now(timezone.utc)+timedelta(hours=1);ends=starts+timedelta(hours=1)
+                for resource in pack['resources'].values():
+                    owner.locator('#resource-select').select_option(resource)
+                    owner.locator('#resource-start').fill(starts.strftime('%Y-%m-%dT%H:%M'))
+                    owner.locator('#resource-end').fill(ends.strftime('%Y-%m-%dT%H:%M'))
+                    owner.locator('#resource-quantity').fill('1');owner.locator('#resource-ttl').fill('300')
+                    owner.locator('#resource-purpose').fill('SYNTHETIC new DOM selected Case resource')
+                    owner.locator('#resource-preview').click();expect(owner.locator('#resource-hold')).to_be_enabled()
+                    owner.locator('#resource-hold').click();expect(owner.locator('#resource-preview-result')).to_contain_text('占位已核对',timeout=15000)
+                    settled(owner)
+                owner.locator('#resource-mine').click();checks=owner.locator('[data-combination-hold]');expect(checks).to_have_count(2)
+                for check in checks.all():check.check()
+                owner.locator('#combination-confirm').click();expect(owner.locator('#combination-feedback')).to_contain_text('确认',timeout=15000)
+                settled(owner)
+                open_from_list(owner,goal);owner.locator('#case-resource-load').click()
+                expect(owner.locator('#case-resource-form')).to_be_visible();owner.locator('#case-resource-reason').fill('SYNTHETIC explicit new DOM Case resource association')
+                owner.locator('#case-resource-form button').click();expect(owner.locator('#case-resource-summary')).to_contain_text('当前资料版本与资源关联有效',timeout=15000)
+                settled(owner)
+                verify(owner,'P2')
+                # No test or loader assigns this newly created Run. Original page refuses.
+                open_from_list(reviewer,goal);reviewer.locator('#dispatch-prepare').click()
+                expect(reviewer.locator('#dispatch-current')).to_contain_text('此Run当前没有可分派的既有合法执行者',timeout=15000)
+                expect(reviewer.locator('#dispatch-offer')).to_be_hidden()
+                with f[1].connect() as c:
+                    parent=c.execute('SELECT * FROM preparations WHERE id=%s',(parent_id,)).fetchone()
+                    evidence=c.execute('SELECT slot,text FROM preparation_evidence WHERE preparation_id=%s',(parent_id,)).fetchall()
+                    events=c.execute('SELECT action,payload FROM preparation_events WHERE preparation_id=%s ORDER BY revision',(parent_id,)).fetchall()
+                    assert dict((e['slot'],e['text']) for e in evidence)==materials
+                    assert parent['reviewer_id']==pack['roles']['park_specialist'] and parent['namespace']=='SYNTHETIC'
+                    assert [e['action'] for e in events]==['CREATE','UPDATE_REQUEST','ADD_EVIDENCE','ADD_EVIDENCE','REVIEW','CONFIRM']
+                    assert not c.execute('SELECT 1 FROM run_assignments WHERE run_id=%s',(parent['run_id'],)).fetchone()
+                    assert not c.execute('SELECT 1 FROM service_dispatch_offers').fetchone()
+                assert authority_snapshot(f[1])==baseline
+                assert len([t for t in traffic if t['path']=='/api/runs'])==1
+                assert len([t for t in traffic if t['path']=='/api/preparations'])==1
+                assert all(t['status']&lt;300 for t in traffic)
+                assert not any(t['path'].startswith('/api/service-instance-cold-inputs') for t in traffic)
+                owner.locator('#service-plan-read').click();owner.locator('#goal-results-read').click()
+&gt;               owner.wait_for_function('()=&gt;goalResultView!==null');result=owner.evaluate('goalResultView')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_demo_original_page_intake_browser.py:185: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;playwright._impl._connection.Connection object at 0x7f5d568c9040&gt;
+cb = &lt;function Channel.send.&lt;locals&gt;.&lt;lambda&gt; at 0x7f5d571ed580&gt;
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -&gt; Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+&gt;           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError</failure></testcase></testsuite></testsuites>

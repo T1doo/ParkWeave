@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="35.615" timestamp="2026-10-17T13:06:54.023826+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_demo_original_page_intake_browser" name="test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200]" time="34.833"><failure message="AssertionError: Locator expected to contain text 'SYNTHETIC fresh DOM need 1200'&#10;Actual value:  &#10;Call log:&#10;  - Expect &quot;to_contain_text&quot; with timeout 15000ms&#10;  - waiting for locator(&quot;#prep-materials&quot;)&#10;    32 × locator resolved to &lt;div id=&quot;prep-materials&quot;&gt;&lt;/div&gt;&#10;       - unexpected value &quot;&quot;&#10;&#10;Aria snapshot:&#10;- text: 尚未追加材料。补充有来源的资料后再进行人工核对。">demo_inputs = ((&lt;parkweave.store.Store object at 0x7fe63fa4d8b0&gt;, &lt;parkweave.store.Store object at 0x7fe63fa4ff80&gt;, {'fixture-a': 'O...atabase': {'name': 'fixture_c12a24569489496ba006c3ac64f41092', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-7/test_existing_ordinary_page_ne0')
+width = 1200
+
+    @pytest.mark.parametrize('width',[1200,320])
+    def test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data(demo_inputs,tmp_path,width):
+        f,cfg,pack,journal=demo_inputs
+        baseline=authority_snapshot(f[1])
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n']==0 for t in
+                ('runs','cases','preparations','preparation_evidence','preparation_events','run_assignments'))
+        goal='SYNTHETIC new ordinary DOM request '+str(width)
+        materials={'need_summary':'SYNTHETIC fresh DOM need '+str(width),
+                   'material_outline':'SYNTHETIC fresh DOM outline '+str(width)+' &lt;script&gt;window.demoInjection=true&lt;/script&gt;'}
+        traffic=[];errors=[];contexts=[]
+        with ordinary_demo(f,tmp_path/'first') as api,ordinary_worker(f,tmp_path/'worker') as worker,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            def role(actor):
+                context=browser.new_context(viewport=dict(width=width,height=1000));contexts.append(context);page=context.new_page()
+                page.on('pageerror',lambda error:errors.append(str(error)))
+                def observed(response):
+                    request=response.request
+                    if request.method=='POST':
+                        traffic.append(dict(actor=actor,method=request.method,path=urlsplit(request.url).path,status=response.status,body=request.post_data_json))
+                page.on('response',observed);login(page,api,f,actor);return page
+            try:
+                owner=role('fixture-a')
+                owner.locator('#prep-catalog').click();expect(owner.locator('#prep-create')).to_be_visible()
+                owner.locator('#prep-reviewer').select_option(pack['roles']['park_specialist'])
+                owner.locator('#prep-goal').fill(goal);owner.locator('#prep-create button').click()
+                expect(owner.locator('#prep-summary')).to_contain_text(goal,timeout=20000)
+                settled(owner)
+                assert worker.poll() is None
+                parent_id=owner.evaluate('preparationId')  # Read-only observation, never JS navigation.
+                assert parent_id
+                # The original request editor is reachable before any old plan exists.
+                owner.locator('#plan-prepare').click();expect(owner.locator('#request-intent-form')).to_be_visible()
+                owner.locator('#request-current').fill(goal)
+                owner.locator('#request-local-goal').uncheck();owner.locator('#plan-required-goals').fill('\n'.join(GOALS))
+                owner.locator('#request-save').click()
+                expect(owner.locator('#request-intent-status')).to_contain_text('已保存诉求/目标版本',timeout=15000)
+                settled(owner)
+                owner.locator('#plan-materials').click();expect(owner.locator('#prep-detail')).to_be_visible()
+                settled(owner)
+                for slot,text in materials.items():
+                    owner.locator('#prep-slot').select_option(slot);owner.locator('#prep-text').fill(text)
+                    owner.locator('#prep-source-kind').select_option('USER_STATEMENT')
+                    owner.locator('#prep-source-label').fill('SYNTHETIC new DOM source '+slot)
+                    owner.locator('#prep-evidence button').click()
+&gt;                   expect(owner.locator('#prep-materials')).to_contain_text(text,timeout=15000)
+E                   AssertionError: Locator expected to contain text 'SYNTHETIC fresh DOM need 1200'
+E                   Actual value:  
+E                   Call log:
+E                     - Expect "to_contain_text" with timeout 15000ms
+E                     - waiting for locator("#prep-materials")
+E                       32 × locator resolved to &lt;div id="prep-materials"&gt;&lt;/div&gt;
+E                          - unexpected value ""
+E                   
+E                   Aria snapshot:
+E                   - text: 尚未追加材料。补充有来源的资料后再进行人工核对。
+
+tests/test_demo_original_page_intake_browser.py:112: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,115 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7fe11bc8c980>, <parkweave.store.Store object at 0x7fe11bc8c7d0>, {'fixture-a': 'g...atabase': {'name': 'fixture_7f917534426d446787b7be822a14a247', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-6/test_existing_ordinary_page_ne0')
+width = 1200
+
+    @pytest.mark.parametrize('width',[1200,320])
+    def test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data(demo_inputs,tmp_path,width):
+        f,cfg,pack,journal=demo_inputs
+        baseline=authority_snapshot(f[1])
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n']==0 for t in
+                ('runs','cases','preparations','preparation_evidence','preparation_events','run_assignments'))
+        goal='SYNTHETIC new ordinary DOM request '+str(width)
+        materials={'need_summary':'SYNTHETIC fresh DOM need '+str(width),
+                   'material_outline':'SYNTHETIC fresh DOM outline '+str(width)+' <script>window.demoInjection=true</script>'}
+        traffic=[];errors=[];contexts=[]
+        with ordinary_demo(f,tmp_path/'first') as api,ordinary_worker(f,tmp_path/'worker') as worker,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            def role(actor):
+                context=browser.new_context(viewport=dict(width=width,height=1000));contexts.append(context);page=context.new_page()
+                page.on('pageerror',lambda error:errors.append(str(error)))
+                def observed(response):
+                    request=response.request
+                    if request.method=='POST':
+                        traffic.append(dict(actor=actor,method=request.method,path=urlsplit(request.url).path,status=response.status,body=request.post_data_json))
+                page.on('response',observed);login(page,api,f,actor);return page
+            try:
+                owner=role('fixture-a')
+                owner.locator('#prep-catalog').click();expect(owner.locator('#prep-create')).to_be_visible()
+                owner.locator('#prep-reviewer').select_option(pack['roles']['park_specialist'])
+                owner.locator('#prep-goal').fill(goal);owner.locator('#prep-create button').click()
+                expect(owner.locator('#prep-summary')).to_contain_text(goal,timeout=20000)
+                settled(owner)
+                assert worker.poll() is None
+                parent_id=owner.evaluate('preparationId')  # Read-only observation, never JS navigation.
+                assert parent_id
+                # The original request editor is reachable before any old plan exists.
+                owner.locator('#plan-prepare').click();expect(owner.locator('#request-intent-form')).to_be_visible()
+                owner.locator('#request-current').fill(goal)
+                owner.locator('#request-local-goal').uncheck();owner.locator('#plan-required-goals').fill('\n'.join(GOALS))
+                owner.locator('#request-save').click()
+                expect(owner.locator('#request-intent-status')).to_contain_text('已保存诉求/目标版本',timeout=15000)
+                settled(owner)
+                owner.locator('#plan-materials').click();expect(owner.locator('#prep-detail')).to_be_visible()
+                for slot,text in materials.items():
+                    owner.locator('#prep-slot').select_option(slot);owner.locator('#prep-text').fill(text)
+                    owner.locator('#prep-source-kind').select_option('USER_STATEMENT')
+                    owner.locator('#prep-source-label').fill('SYNTHETIC new DOM source '+slot)
+                    owner.locator('#prep-evidence button').click()
+                    expect(owner.locator('#prep-materials')).to_contain_text(text,timeout=15000)
+                    expect(owner.locator('#prep-command-feedback')).to_contain_text('已核对原操作保存事件',timeout=15000)
+>                   settled(owner)
+
+tests/test_demo_original_page_intake_browser.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_demo_original_page_intake_browser.py:43: in settled
+    page.wait_for_function('()=>!activeEntryWriteFlow&&entryWriteRequests.size===0&&!originalStoredWritePending()')
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7fe11a1d5b20>
+cb = <function Channel.send.<locals>.<lambda> at 0x7fe119ebf880>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_demo_original_page_intake_browser.py::test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_demo_original_page_intake_browser.py::test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_demo_original_page_intake_browser.py::test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200]
+1 failed, 4 warnings in 46.46s

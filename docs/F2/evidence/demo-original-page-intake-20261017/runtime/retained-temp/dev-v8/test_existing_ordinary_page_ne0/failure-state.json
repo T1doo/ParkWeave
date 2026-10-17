@@ -1,0 +1,1027 @@
+[
+  {
+    "flow": null,
+    "pending": [],
+    "stored": false,
+    "cancelBusy": false,
+    "reconBusy": false,
+    "prepCurrent": true,
+    "alerts": [
+      {
+        "id": "case-cancel-status",
+        "text": "尚无任何实际接单或回执，可由企业本人确认取消。取消后本片不支持恢复。"
+      },
+      {
+        "id": "case-reconcile-status",
+        "text": "当前不能请求：ACTUAL_ACCEPTANCE_REQUIRED、CURRENT_DISPATCH_LINEAGE_REQUIRED、HISTORICAL_MANUAL_SUBMISSION_REQUIRED"
+      },
+      {
+        "id": "case-fact-status",
+        "text": "尚未声明本次用途 · 用途版本 0"
+      }
+    ]
+  },
+  {
+    "flow": null,
+    "pending": [],
+    "stored": false,
+    "cancelBusy": false,
+    "reconBusy": false,
+    "prepCurrent": null,
+    "alerts": []
+  },
+  {
+    "traffic": [
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/runs",
+        "status": 202,
+        "body": {
+          "goal": "SYNTHETIC new ordinary DOM request 1200"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations",
+        "status": 201,
+        "body": {
+          "run_id": "1d438479-0f91-49e1-b337-87d813d64c31",
+          "service_id": "synthetic-material-preparation",
+          "service_version": 1,
+          "reviewer_id": "prep-specialist-fixture-a"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/request-intent",
+        "status": 200,
+        "body": {
+          "expected_preparation_revision": 1,
+          "request_text": "SYNTHETIC new ordinary DOM request 1200",
+          "required_goals": [
+            "LOCAL_MATERIAL_PREPARATION",
+            "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "LOCAL_INTERNAL_ACCEPTANCE",
+            "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "LOCAL_SYNTHETIC_COORDINATION_RECORDS",
+            "LOCAL_CASE_RECORD_RECHECK"
+          ]
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/commands",
+        "status": 200,
+        "body": {
+          "action": "ADD_EVIDENCE",
+          "expected_revision": 2,
+          "slot": "need_summary",
+          "text": "SYNTHETIC fresh DOM need 1200",
+          "source_kind": "USER_STATEMENT",
+          "source_label": "SYNTHETIC new DOM source need_summary"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/commands",
+        "status": 200,
+        "body": {
+          "action": "ADD_EVIDENCE",
+          "expected_revision": 3,
+          "slot": "material_outline",
+          "text": "SYNTHETIC fresh DOM outline 1200 <script>window.demoInjection=true</script>",
+          "source_kind": "USER_STATEMENT",
+          "source_label": "SYNTHETIC new DOM source material_outline"
+        }
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/commands",
+        "status": 200,
+        "body": {
+          "action": "REVIEW",
+          "expected_revision": 4,
+          "reason": "SYNTHETIC mapped specialist independently reviews new two slots"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/commands",
+        "status": 200,
+        "body": {
+          "action": "CONFIRM",
+          "expected_revision": 5,
+          "reason": "SYNTHETIC owner independently confirms new reviewed inputs"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-selections",
+        "status": 201,
+        "body": {
+          "expected_preparation_revision": 6,
+          "expected_source_sha256": "17195d271b6c3b612d9fdaf06ae9ce8656a13397e8c4f197496f2317f2e1a94a",
+          "expected_capability_catalog_sha256": "ab0dd7bc9d6d75fcbc544e7944505a9b9aecbea8807a1cbcd6db3ca400bdba00"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan",
+        "status": 201,
+        "body": {
+          "expected_preparation_revision": 6,
+          "expected_request_revision": 2,
+          "expected_plan_revision": 0,
+          "expected_source_sha256": "17195d271b6c3b612d9fdaf06ae9ce8656a13397e8c4f197496f2317f2e1a94a",
+          "required_goals": [
+            "LOCAL_MATERIAL_PREPARATION",
+            "LOCAL_CASE_RESOURCE_ASSOCIATION",
+            "LOCAL_INTERNAL_ACCEPTANCE",
+            "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+            "LOCAL_SYNTHETIC_COORDINATION_RECORDS",
+            "LOCAL_CASE_RECORD_RECHECK"
+          ],
+          "reason": "SYNTHETIC explicit new DOM selection adoption",
+          "candidate_id": "4e961cc3-e1cf-41c0-b954-bcfd0adf53c2",
+          "expected_candidate_sha256": "f7a68f7b1ee1aead3cf529cffb5534baf021b7f3e9963a2b26fe988cc55f34af",
+          "expected_verification_sha256": "e13ae7d4bf3c1f53c4eb0729da34376095f6d599ab0352308cd3a5f870c39894"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan/commands",
+        "status": 200,
+        "body": {
+          "action": "VERIFY",
+          "step_id": "651b60b0-50d9-4fd9-baf4-4672c2631475",
+          "expected_revision": 1,
+          "reason": "SYNTHETIC explicit DOM checks P1",
+          "expected_source_sha256": "bba12230e0c9905e058265598817b994d38b88220dd47343e4afc8d67ba89146"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview",
+        "status": 200,
+        "body": {
+          "starts_at": "2026-10-17T14:12:00Z",
+          "ends_at": "2026-10-17T15:12:00Z",
+          "quantity": 1
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/holds",
+        "status": 201,
+        "body": {
+          "starts_at": "2026-10-17T14:12:00Z",
+          "ends_at": "2026-10-17T15:12:00Z",
+          "quantity": 1,
+          "expected_revision": 1,
+          "ttl_seconds": 300,
+          "purpose": "SYNTHETIC new DOM selected Case resource"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/synthetic-resources/fb161ea0-b665-4ec5-b345-a070bfec764d/preview",
+        "status": 200,
+        "body": {
+          "starts_at": "2026-10-17T14:12:00Z",
+          "ends_at": "2026-10-17T15:12:00Z",
+          "quantity": 1
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/synthetic-resources/fb161ea0-b665-4ec5-b345-a070bfec764d/holds",
+        "status": 201,
+        "body": {
+          "starts_at": "2026-10-17T14:12:00Z",
+          "ends_at": "2026-10-17T15:12:00Z",
+          "quantity": 1,
+          "expected_revision": 1,
+          "ttl_seconds": 300,
+          "purpose": "SYNTHETIC new DOM selected Case resource"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/resource-combinations",
+        "status": 201,
+        "body": {
+          "members": [
+            {
+              "hold_id": "142e4e33-2244-4e2e-9c9b-f725aa0c1634",
+              "expected_revision": 1
+            },
+            {
+              "hold_id": "b30e1aa2-c45d-4492-8b4f-c226481bcafb",
+              "expected_revision": 1
+            }
+          ]
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/resource-link",
+        "status": 201,
+        "body": {
+          "combination_id": "ca0a51c8-1d09-4278-957f-ed524c016c53",
+          "expected_preparation_revision": 6,
+          "expected_link_revision": 0,
+          "reason": "SYNTHETIC explicit new DOM Case resource association"
+        }
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan/commands",
+        "status": 200,
+        "body": {
+          "action": "VERIFY",
+          "step_id": "a8d35834-a265-46dc-816d-a6bf11da8a7a",
+          "expected_revision": 2,
+          "reason": "SYNTHETIC explicit DOM checks P2",
+          "expected_source_sha256": "ea98a35077366a15bdcd577272e71c135995e46f25c92d359e3d5d94ef2635d4"
+        }
+      }
+    ],
+    "network": [
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparation-catalog",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/run-access/status",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/runs",
+        "status": 202
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/runs/1d438479-0f91-49e1-b337-87d813d64c31",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/runs/1d438479-0f91-49e1-b337-87d813d64c31",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/runs/1d438479-0f91-49e1-b337-87d813d64c31",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/runs/1d438479-0f91-49e1-b337-87d813d64c31",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations",
+        "status": 201
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/readiness",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-corrections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-objections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-reuse",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/fact-clarifications",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation-reconciliation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/controlled-plan",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/request-intent",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/controlled-plan",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/readiness",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-corrections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-objections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-reuse",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/fact-clarifications",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation-reconciliation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/commands",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/readiness",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-corrections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-objections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-reuse",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/fact-clarifications",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation-reconciliation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/commands",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/readiness",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-corrections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-objections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-reuse",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/fact-clarifications",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation-reconciliation",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/run-access/status",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/readiness",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-corrections",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-objections",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/commands",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/readiness",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-corrections",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-objections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/readiness",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-corrections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-objections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-reuse",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/fact-clarifications",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation-reconciliation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/commands",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/readiness",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-corrections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-objections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-reuse",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/fact-clarifications",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation-reconciliation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan/command-recovery",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-capabilities",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-selections",
+        "status": 201
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-selections/recovery",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-selections/4e961cc3-e1cf-41c0-b954-bcfd0adf53c2/preview",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan",
+        "status": 201
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan/command-recovery",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan/commands",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/synthetic-resources",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/plan-approval/status",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/resource-bundles",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/holds",
+        "status": 201
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/synthetic-resources/fb161ea0-b665-4ec5-b345-a070bfec764d/preview",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/synthetic-resources/fb161ea0-b665-4ec5-b345-a070bfec764d/holds",
+        "status": 201
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/resource-holds",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/resource-combinations",
+        "status": 201
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/readiness",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-corrections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-objections",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-reuse",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/fact-clarifications",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/case-cancellation-reconciliation",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/resource-link",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/resource-link-candidates",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/resource-link",
+        "status": 201
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/resource-link",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/resource-link-candidates",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan/command-recovery",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "POST",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan/commands",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/readiness",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-corrections",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/material-objections",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/dispatch",
+        "status": 200
+      },
+      {
+        "actor": "prep-specialist-fixture-a",
+        "method": "GET",
+        "path": "/api/service-dispatches/catalog",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan/command-recovery",
+        "status": 200
+      },
+      {
+        "actor": "fixture-a",
+        "method": "GET",
+        "path": "/api/preparations/7f71ad77-cc32-4a9d-a6f5-eb70e28cfbce/service-case-plan",
+        "status": 200
+      }
+    ],
+    "page_errors": [],
+    "form": [
+      {
+        "id": "prep-slot",
+        "value": "need_summary",
+        "disabled": false,
+        "valid": true,
+        "message": ""
+      },
+      {
+        "id": "prep-text",
+        "value": "",
+        "disabled": false,
+        "valid": false,
+        "message": "Please fill out this field."
+      },
+      {
+        "id": "prep-source-kind",
+        "value": "USER_STATEMENT",
+        "disabled": false,
+        "valid": true,
+        "message": ""
+      },
+      {
+        "id": "prep-source-label",
+        "value": "",
+        "disabled": false,
+        "valid": false,
+        "message": "Please fill out this field."
+      },
+      {
+        "id": "",
+        "value": "",
+        "disabled": false,
+        "valid": true,
+        "message": ""
+      }
+    ]
+  }
+]
