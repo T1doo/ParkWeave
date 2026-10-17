@@ -56,7 +56,7 @@ def test_ordinary_navigation_original_run_dispatch_exact_catalog_and_missing_app
         expect(page.locator('#result')).to_contain_text(p['case_id'])
         page.locator('#runtime-catalog-read').click()
         expect(page.locator('#runtime-catalog-result')).to_contain_text('synthetic-material-preparation / v1')
-        expect(page.locator('#runtime-catalog-result')).to_contain_text('普通资源方案批准读取契约尚未提供')
+        expect(page.locator('#runtime-catalog-result')).to_contain_text('目录不构成资源方案批准')
         page.locator('#runtime-access-read').click()
         expect(page.locator('#runtime-entry-status')).to_contain_text('缺少普通只读 provider')
         page.locator('#runtime-dispatch-read').click()

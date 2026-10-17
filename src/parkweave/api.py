@@ -12,7 +12,11 @@ from .run_access_candidate import RunCommand
 from .native_run_access import RunCommand as NativeRunCommand
 
 
-def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None) -> FastAPI:
+    from . import resource_plan_approval_read as resource_approval
+    resource_approval.validate_provider(resource_plan_approval_provider)
+    if resource_plan_approval_provider is not None and getattr(store,'_isolated_plan_approval',None) is not None:
+        raise Denied('ordinary resource approval reader cannot be combined with isolated plan Approval')
     if synthetic_rule_readiness is not None:
         from .synthetic_rule_readiness import SyntheticRuleReadiness
         if type(synthetic_rule_readiness) is not SyntheticRuleReadiness or synthetic_rule_readiness.store is not store:
@@ -427,6 +431,18 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     @app.get('/api/preparations/{preparation_id}/runtime/catalog')
     def preparation_runtime_catalog(preparation_id: UUID, selection: Annotated[runtime_read.Selection, Query()], authorization: str | None=Header(default=None)):
         return runtime_read.read_catalog(store,token(authorization),preparation_id,selection)
+
+    @app.get('/api/preparations/{preparation_id}/runtime/resource-plan-approval-context')
+    def resource_approval_context(preparation_id: UUID, selection: Annotated[runtime_read.Selection, Query()], authorization: str | None=Header(default=None)):
+        return resource_approval.context(store,token(authorization),preparation_id,selection,resource_plan_approval_provider)
+
+    @app.get('/api/preparations/{preparation_id}/runtime/resource-plan-approval')
+    def resource_approval_existing(preparation_id: UUID, selection: Annotated[resource_approval.Selection, Query()], authorization: str | None=Header(default=None)):
+        return resource_approval.read(store,token(authorization),preparation_id,selection,resource_plan_approval_provider)
+
+    @app.get('/api/preparations/{preparation_id}/runtime/resource-plan-approval/records/{approval_id}')
+    def resource_approval_original(preparation_id: UUID, approval_id: UUID, selection: Annotated[resource_approval.Selection, Query()], authorization: str | None=Header(default=None)):
+        return resource_approval.read(store,token(authorization),preparation_id,selection,resource_plan_approval_provider,approval_id)
 
     @app.get('/api/preparations/{preparation_id}/handling-deadline')
     def handling_deadline_read(preparation_id: UUID,request: Request,authorization: str | None=Header(default=None)):
@@ -1037,11 +1053,11 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     return app
 
 
-def configured_app():
+def configured_app(*, resource_plan_approval_provider=None):
     dsn = os.environ.get("PARKWEAVE_DSN")
     if not dsn:
         raise RuntimeError("PARKWEAVE_DSN required; no credential discovery")
     store=Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL"),file_root=os.environ.get("PARKWEAVE_FILE_ROOT"))
     from .ordinary_runtime_read import configure
     configure(store,os.environ.get('PARKWEAVE_RUNTIME_READ_CONFIG'))
-    return create_app(store)
+    return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider)

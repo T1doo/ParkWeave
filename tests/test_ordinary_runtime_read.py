@@ -87,7 +87,7 @@ def test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses(
         x=get(api,f,p,'catalog').json()
         assert x['catalog']['version']==1 and not x['provider_configured']
         assert not x['resource_plan_approval_available']
-        assert x['resource_plan_approval_reason']=='ORDINARY_RESOURCE_PLAN_APPROVAL_CONTRACT_UNAVAILABLE'
+        assert x['resource_plan_approval_reason']=='RESOURCE_PLAN_APPROVAL_SEPARATE_READ_REQUIRED'
         denied=get(api,f,p,'access-approval');assert denied.status_code==409
         assert denied.json()['detail']=='ordinary runtime read provider not configured; existing protected binding required'
         assert api.get('/api/plan-approval/status',headers=headers(f[2])).json()['enabled'] is False

@@ -2,8 +2,8 @@
 
 An explicit config only narrows a previously protected host binding. The original
 writer verifies signed history and existing effective assignments; its command
-channel remains closed in this API. Resource-plan Approval has no ordinary
-contract and is never substituted with IsolatedPlanApproval.
+channel remains closed in this API. Resource-plan Approval uses its separate
+read-only source contract and is never substituted with IsolatedPlanApproval.
 """
 from contextlib import contextmanager
 from pathlib import Path
@@ -186,5 +186,5 @@ def read_catalog(store, token, preparation_id, selection):
                     catalog=visible, catalog_source_visible=source_visible,catalog_sha256=catalog_hash(service), read_only=True,
                     provider_configured=bridge is not None and getattr(bridge, 'runtime_read_binding', None) is not None,
                     resource_plan_approval_available=False,
-                    resource_plan_approval_reason='ORDINARY_RESOURCE_PLAN_APPROVAL_CONTRACT_UNAVAILABLE',
+                    resource_plan_approval_reason='RESOURCE_PLAN_APPROVAL_SEPARATE_READ_REQUIRED',
                     access_approval_purpose='RUN_READ_ACCESS_ONLY', qualification='NOT_EVALUATED')
