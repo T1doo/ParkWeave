@@ -40,9 +40,10 @@ def login(page,api,f,actor):
 def settled(page,preparation=False):
     # Rendered summary text precedes awaited authoritative readback. Observe
     # completion; never clear handles, unlock controls, or call application code.
-    page.wait_for_load_state('networkidle')
     if preparation:
-        page.wait_for_function('()=>!caseCancelBusy&&!caseReconBusy&&!caseFactLoading&&!materialReuseLoading&&(prepRole!=="enterprise_operator"||caseReconView?.preparation_revision===preparationView?.preparation.revision)')
+        expect(page.locator('#prep-read-status')).to_contain_text('已就绪',timeout=30000)
+        return
+    page.wait_for_load_state('networkidle')
     page.wait_for_function('()=>!activeEntryWriteFlow&&entryWriteRequests.size===0&&!originalStoredWritePending()')
 
 
