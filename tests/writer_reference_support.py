@@ -53,10 +53,14 @@ class Harness:
 
     def observe(self,kind,**data):
         self.observations.append(dict(kind=kind,recorded_utc=datetime.now(timezone.utc).isoformat(),**data))
+        from owned_connection_diagnostics import emit
+        emit(kind,**data)
 
     def start_writer(self):
         root=self.directory/('writer-'+str(len(self.processes)));root.mkdir(mode=0o700)
         bootstrap={**self.bootstrap,'boot_id':str(uuid4())}
+        from owned_connection_diagnostics import writer_dsn
+        bootstrap['writer_dsn']=writer_dsn(bootstrap['writer_dsn'],str(len(self.processes)))
         path=root/'private.json';write_private(path,bootstrap)
         command,verify=str(root/'c.sock'),str(root/'v.sock')
         output=root/'stdout.log';error=root/'stderr.log'
@@ -87,8 +91,10 @@ class Harness:
     def a(self):return self.f,self.parent,self.bridge,self.before
 
     def stop(self,process):
+        self.observe('OWNED_PROCESS_STOP_BEGIN',pid=process.pid,already_exited=process.poll() is not None)
         if process.poll() is None:
             process.send_signal(signal.SIGINT)
+            self.observe('OWNED_PROCESS_SIGINT_SENT',pid=process.pid)
             try:process.wait(timeout=8)
             except subprocess.TimeoutExpired:
                 process.terminate();process.wait(timeout=5)

@@ -514,14 +514,24 @@ def test_unsigned_original_get_is_explicitly_unverified_and_never_repairs(writer
 
 
 def test_verified_recovery_becomes_unverified_when_writer_offline_without_changing_history(writer_fixture):
-    h=writer_fixture;request,_=approve(h);assert activate(h.a).status_code==200
+    from owned_connection_diagnostics import stage
+    h=writer_fixture
+    with stage('RECOVERY_ORIGINAL_APPROVE'):
+        request,_=approve(h)
+    with stage('RECOVERY_ORIGINAL_ACTIVATE'):
+        assert activate(h.a).status_code==200
     assert request['writer_command']['confirm_request'] is True and request['writer_command']['target_id']=='executor-a'
     recovered=h.bridge.recover(h.f[2]['fixture-a'],UUID(h.parent['run_id']),'writer-request')
     assert recovered['receipt']==request and recovered['writer_receipt_verified'] is True
-    h.stop(h.writer_process);before=business(h.a)
-    recovered=h.bridge.recover(h.f[2]['fixture-a'],UUID(h.parent['run_id']),'writer-request')
-    assert recovered['receipt']==request and recovered['writer_receipt_verified'] is False
-    assert business(h.a)==before
+    with stage('RECOVERY_STOP_AND_REAP_WRITER'):
+        h.stop(h.writer_process)
+    with stage('RECOVERY_OFFLINE_BEFORE_SNAPSHOT'):
+        before=business(h.a)
+    with stage('RECOVERY_OFFLINE_ORIGINAL_KEY'):
+        recovered=h.bridge.recover(h.f[2]['fixture-a'],UUID(h.parent['run_id']),'writer-request')
+        assert recovered['receipt']==request and recovered['writer_receipt_verified'] is False
+    with stage('RECOVERY_OFFLINE_UNCHANGED_SNAPSHOT'):
+        assert business(h.a)==before
 
 
 def test_pre_writer_default_null_confirmation_preserves_original_command_fingerprint(native_fixture):

@@ -334,14 +334,18 @@ def test_expiry_after_real_parent_lock_wait_refuses_activation(activation_fixtur
 
 @pytest.mark.parametrize('activation_fixture',[3],indirect=True)
 def test_real_expiry_during_receipt_endpoint_rolls_back_all_business_writes(activation_fixture):
+    from owned_connection_diagnostics import stage
     a=activation_fixture;f,_,_,_=a;d=accepted(a)
     step=f[3].get('/api/executor-receipts/'+d['receipt_step_id'],headers=headers(f[2],'executor-a')).json();before=business(a)
     with f[1].connect() as c:
         c.execute('CREATE FUNCTION receipt_expire() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_sleep(3.1); RETURN NEW; END $$')
         c.execute('CREATE TRIGGER receipt_expire BEFORE INSERT ON service_receipt_events FOR EACH ROW EXECUTE FUNCTION receipt_expire()')
-    r=receipt_command(f,step,'SUBMIT');assert r.status_code==403,r.text
-    assert business(a)==before
-    assert f[3].get(path(a)+'/commands/absent',headers=headers(f[2])).json()['actual_run_access'] is False
+    with stage('EXPIRED_RECEIPT_SUBMIT_403'):
+        r=receipt_command(f,step,'SUBMIT');assert r.status_code==403,r.text
+    with stage('POST_403_OWNER_BUSINESS_SNAPSHOT'):
+        assert business(a)==before
+    with stage('POST_403_ACTUAL_ACCESS_REFUSED'):
+        assert f[3].get(path(a)+'/commands/absent',headers=headers(f[2])).json()['actual_run_access'] is False
 
 
 def test_active_legacy_receipt_create_and_submit_use_native_scope(activation_fixture):

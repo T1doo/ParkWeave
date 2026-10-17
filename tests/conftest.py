@@ -9,9 +9,10 @@ from fastapi.testclient import TestClient
 from parkweave.store import Store
 from parkweave.api import create_app
 
+pytest_plugins = ['owned_connection_diagnostics']
 
 @pytest.fixture(scope="session")
-def pg(tmp_path_factory):
+def pg(tmp_path_factory,request):
     if os.name=='nt':
         dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
         if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
@@ -19,6 +20,8 @@ def pg(tmp_path_factory):
     import pgserver  # Linux evidence only; native Windows uses an installed service.
     data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
     server = pgserver.get_server(data, cleanup_mode='delete')
+    diagnostic=getattr(request.config,'_owned_connection_diagnostics',None)
+    if diagnostic:diagnostic.bind_owned_server(server,data)
     from parkweave.case_fact_clarifications import capture_fixture_cluster
     server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
     with psycopg.connect(server.get_uri(), autocommit=True) as c:
@@ -39,6 +42,10 @@ def drop_owned_fixture_database(pg,db):
 def fixture_progress(request,stage):
     # Existing optional pytest plugin only; no credentials or SQL enter the record.
     if request is None:return
+    diagnostic=getattr(request.config,'_owned_connection_diagnostics',None)
+    if diagnostic:
+        diagnostic.stage=stage
+        diagnostic.emit('fixture_stage')
     try:
         plugin=request.config.pluginmanager.get_plugin('scripts.windows_ci.regression_plugin')
         if plugin is not None:plugin.fixture_stage(request,stage)
@@ -48,6 +55,8 @@ def fixture_progress(request,stage):
 @pytest.fixture
 def fixture(pg,request):
     db = 'fixture_' + uuid.uuid4().hex
+    diagnostic=getattr(request.config,'_owned_connection_diagnostics',None)
+    if diagnostic:diagnostic.database_nodes[db]=request.node.nodeid
     created=False
     try:
         fixture_progress(request,'CREATE_DB')
