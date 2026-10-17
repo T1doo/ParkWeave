@@ -75,7 +75,9 @@ def parse(file_name,content_base64):
     try:text=raw.decode('utf-8-sig')
     except UnicodeError:raise FileCandidateError('UTF8_TEXT_REQUIRED') from None
     if any(ord(c)<32 and c not in '\r\n\t' for c in text):raise FileCandidateError('PLAIN_TEXT_REQUIRED')
-    text=text.replace('\r\n','\n').replace('\r','\n')
+    # CSV record separators may be normalized by the writer, but quoted field
+    # CRLF/CR bytes are data. Let csv.reader(newline='') distinguish them.
+    if suffix!='.csv':text=text.replace('\r\n','\n').replace('\r','\n')
     if suffix=='.json':
         def unique(pairs):
             result={}
