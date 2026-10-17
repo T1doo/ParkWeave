@@ -1,0 +1,106 @@
+diff --git a/src/parkweave/api.py b/src/parkweave/api.py
+index a19cdc8a..dc9243e6 100644
+--- a/src/parkweave/api.py
++++ b/src/parkweave/api.py
+@@ -12,7 +12,9 @@ from .run_access_candidate import RunCommand
+ from .native_run_access import RunCommand as NativeRunCommand
+ 
+ 
+-def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None) -> FastAPI:
++def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None) -> FastAPI:
++    from . import formal_preparation_entry as formal_entry
++    formal_dependencies=formal_entry.dependencies(formal_read_config,formal_source_reader,formal_provenance_verifier)
+     from . import resource_plan_approval_read as resource_approval
+     resource_approval.validate_provider(resource_plan_approval_provider)
+     if resource_plan_approval_provider is not None and getattr(store,'_isolated_plan_approval',None) is not None:
+@@ -414,6 +416,17 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
+     def preparation_entry(preparation_id: UUID,authorization: str | None=Header(default=None)):
+         return preparation.entry(store,token(authorization),preparation_id)
+ 
++    @app.get('/api/formal-preparations/entry-status')
++    def formal_preparation_status(request: Request,authorization: str | None=Header(default=None)):
++        if request.query_params:raise HTTPException(422,'formal entry status takes no source declarations')
++        return formal_entry.preflight(store,token(authorization),None,formal_dependencies)
++
++    @app.get('/api/formal-preparations/entry')
++    def formal_preparation_preflight(request: Request,selection: Annotated[formal_entry.Selection,Query()],authorization: str | None=Header(default=None)):
++        keys=[key for key,_ in request.query_params.multi_items()]
++        if len(keys)!=len(set(keys)):raise HTTPException(422,'unambiguous formal source selection required')
++        return formal_entry.preflight(store,token(authorization),selection,formal_dependencies)
++
+     from . import ordinary_runtime_read as runtime_read
+ 
+     @app.get('/api/preparations/{preparation_id}/runtime/run')
+@@ -1053,11 +1066,13 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
+     return app
+ 
+ 
+-def configured_app(*, resource_plan_approval_provider=None):
++def configured_app(*, resource_plan_approval_provider=None, formal_source_reader=None, formal_provenance_verifier=None):
+     dsn = os.environ.get("PARKWEAVE_DSN")
+     if not dsn:
+         raise RuntimeError("PARKWEAVE_DSN required; no credential discovery")
+     store=Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL"),file_root=os.environ.get("PARKWEAVE_FILE_ROOT"))
+     from .ordinary_runtime_read import configure
+     configure(store,os.environ.get('PARKWEAVE_RUNTIME_READ_CONFIG'))
+-    return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider)
++    return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider,
++        formal_read_config=os.environ.get('PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG'),
++        formal_source_reader=formal_source_reader,formal_provenance_verifier=formal_provenance_verifier)
+diff --git a/src/parkweave/web.html b/src/parkweave/web.html
+index e7d4fbcd..67066d34 100644
+--- a/src/parkweave/web.html
++++ b/src/parkweave/web.html
+@@ -10,7 +10,8 @@
+ <nav class="workspace-nav" aria-label="工作区"><button data-tab="service" aria-current="page">服务</button><button data-tab="collaboration">协同</button><button data-tab="resource">资源</button></nav>
+ <section class="session-panel"><label>合成身份会话<input id="token" type="password" autocomplete="off" placeholder="输入本机测试会话"></label><small>仅用于本机合成测试。会话只保存在当前页面内存；切换身份会清空当前界面。</small></section>
+ <p id="page-feedback" role="status" aria-live="polite"></p>
+-<section id="existing-preparation-entry"><h2>读取已有资料准备记录</h2><p>输入当前会话及原资料准备编号。只读核对本人或获派范围、当前专员和目录，再进入原材料与来源修订入口。读取不会创建记录、分派或批准。</p><form id="existing-preparation-form"><label>原资料准备编号<input id="existing-preparation-id" maxlength="36" autocomplete="off" required></label><button id="existing-preparation-read">只读打开已有记录</button></form><p id="existing-preparation-status" role="status" aria-live="polite"></p></section>
++<section id="existing-preparation-entry"><h2>读取已有资料准备记录</h2><p>输入当前会话及原资料准备编号。只读核对本人或获派范围、当前专员和目录，再进入原材料与来源修订入口。此入口只接受本地合成资料；读取不会创建记录、分派或批准。</p><form id="existing-preparation-form"><label>原资料准备编号<input id="existing-preparation-id" maxlength="36" autocomplete="off" required></label><button id="existing-preparation-read">只读打开已有记录</button></form><p id="existing-preparation-status" role="status" aria-live="polite"></p></section>
++<section id="formal-preparation-entry"><h2>正式资料来源 · 入口条件</h2><p>核对当前已有会话的只读权限和正式来源接线条件。正式来源须独立证明资料、Case、Run、已采纳方案及当前主体授权；合成资料编号、批准或签名不能代替这些证明。</p><button id="formal-preparation-check" type="button">只读核对正式入口条件</button><p id="formal-preparation-status" role="status" aria-live="polite"></p><div id="formal-preparation-result"></div></section>
+ <section id="template-instance-entry" hidden><h2>模板新事项的办理计划</h2><p>输入当前合成身份后，明确读取此实例的当前计划。链接不提供访问权，也不会继续建单或自动办理。</p><label>原模板实例编号<input id="template-instance-id" readonly></label><button id="template-instance-read" type="button">核对此事项计划</button><p id="template-instance-status" role="status"></p></section>
+ <section id="service"><p class="eyebrow">SERVICE · 服务</p><h2>从一件企业诉求开始</h2><p class="subtitle">描述目标，准备材料，核对每一步的本地记录。</p><article id="cold-entry"><h3>按当前服务配置准备新事项</h3><p>此入口由服务端单独启用。只准备原请求；每一步由你另行确认提交。不会自动选择方案、采用或办理，也不会释放资源。</p><button id="cold-directory-read" type="button" class="secondary">读取本人当前服务配置</button><button id="cold-recover" type="button" class="secondary">仅GET核对原新事项请求</button><p id="cold-status" role="status"></p><div id="cold-form" hidden><label>精确服务配置<select id="cold-instance"></select></label><p id="cold-binding"></p><label>本次诉求<textarea id="cold-goal" maxlength="2000"></textarea></label><div id="cold-goals"></div><label>额外必需目标（每行一项，全部目标最多8项；不支持的目标仍保留）<textarea id="cold-extra" maxlength="1280"></textarea></label><label>新诉求材料<textarea id="cold-need" maxlength="4000"></textarea></label><label>新资料清单<textarea id="cold-outline" maxlength="4000"></textarea></label><label>本次明确原因<textarea id="cold-reason" maxlength="1000"></textarea></label><label><input id="cold-prepare-confirm" type="checkbox">我确认仅保存这次新输入及原命令描述，不发送建单或后续业务请求。</label><button id="cold-prepare" type="button">只准备新事项原请求</button></div><div id="cold-current" hidden><details id="cold-saved-input"><summary>只读核对这次已保存的新输入</summary><div id="cold-input-history"></div></details><p id="cold-observations"></p><label>下一项明确操作<select id="cold-stage"></select></label><button id="cold-stage-prepare" type="button" class="secondary">只准备所选阶段原命令</button><pre id="cold-command"></pre><label><input id="cold-send-confirm" type="checkbox">我已核对上方原路径、请求键和正文，确认只提交这一条原命令。</label><button id="cold-stage-send" type="button">提交这一条原命令</button><button id="cold-open" type="button" class="secondary">进入当前新事项办理入口</button><button id="cold-new" type="button" class="secondary">结束已核实输入，另行读取新配置</button></div></article><h3>提出服务诉求</h3><form id="intake"><label for="goal">本次目标</label><textarea id="goal" maxlength="2000" required placeholder="描述本次测试目标"></textarea><button>创建本地办理记录</button></form><p>本增量仅建立待补件记录，不代表外部受理或线下履约。</p><hr><h2>服务资料准备</h2><p>合成服务：企业资料整理。提交带来源的资料，由获派专员人工核对后，企业确认本地资料包。资格未判定，外部服务未受理。</p><button id="prep-catalog">查看可选服务与专员</button><div id="prep-catalog-view"></div><form id="prep-create" hidden><label>本次资料整理目标<textarea id="prep-goal" maxlength="2000" required></textarea></label><label>核对专员<select id="prep-reviewer" required></select></label><button>开始资料准备</button><small>创建新的Case和运行，不复制上一事项材料。</small></form></section>
+ <section id="collaboration" hidden><p class="eyebrow">COLLABORATION · 协同</p><h2>需要你推进的事项</h2><p class="subtitle">补交材料、人工核对与本地确认，在同一事项中保留记录。</p><button id="prep-tasks">刷新我的资料准备待办</button><p>待办来自本地资料记录，办理后请刷新；材料齐全不代表真实性或资格满足。</p><p id="prep-task-status" role="status"></p><button id="prep-tasks-next" class="secondary" hidden>检查更早的待办事项</button><div id="prep-task-items"></div><button id="prep-list">我的资料准备事项</button><div id="prep-items"></div><hr><h3>内部分派与接单</h3><p>专员从已有合法执行者中分派，执行者本人接受或拒绝；未接单事项可说明原因撤回。这里只记录本地协作。</p><button id="dispatch-list" class="secondary">刷新我的分派事项</button><div id="dispatch-items" class="actions"></div><hr><h3>获派执行者合成回执</h3><p>执行者记录本事项的合成回执，企业核对、要求纠错或重开。这里只保留本地记录，外部未受理，无线下履约证据。</p><button id="receipt-list" class="secondary">刷新我的回执事项</button><div id="receipt-items" class="actions"></div><hr><button id="run-access-open" class="secondary" type="button" hidden>单 Run 访问状态与审批</button><section id="run-access-panel" hidden><h3>单个运行的协作访问</h3><p>仅在服务端明确启用且当前身份有对应权限时显示。申请或批准只管理限定的单个 Run、READ 能力与期限；它不代表接单、资料核对、资格通过或履约。</p><label>精确运行编号<input id="run-access-id" autocomplete="off" maxlength="80"></label><button id="run-access-read" class="secondary" type="button">读取此 Run 的访问状态</button><p id="run-access-summary" class="status" aria-live="polite"></p><div id="run-access-scope"></div><form id="run-access-request" hidden><h4>申请限定访问</h4><label>已有合法执行者<select id="run-access-target" required></select></label><label>开始时间（明确 UTC ISO 时间，例如 2026-10-07T12:00:00Z）<input id="run-access-valid-from" maxlength="40" required></label><label>结束时间（不超过当前服务端上限）<input id="run-access-valid-until" maxlength="40" required></label><label>申请原因<textarea id="run-access-reason" maxlength="1000" required></textarea></label><label id="run-access-confirm-label" hidden><input id="run-access-confirm" type="checkbox">我确认向当前选定执行者申请此 Run 的 READ 与上述 UTC 期限；这不会接单或释放资源。</label><button>提交单 Run READ 申请</button></form><form id="run-access-decision" hidden><h4>独立审核当前访问申请</h4><label>批准开始时间（UTC ISO）<input id="run-access-approved-from" maxlength="40" required></label><label>批准结束时间（不得超过申请范围）<input id="run-access-approved-until" maxlength="40" required></label><label>审核或撤销说明<textarea id="run-access-decision-reason" maxlength="1000" required></textarea></label><div class="actions"><button id="run-access-approve" type="button">批准限定访问</button><button id="run-access-reject" type="button" class="secondary">拒绝申请</button><button id="run-access-revoke" type="button" class="secondary">撤销当前访问</button><button id="run-access-cancel" type="button" class="secondary">申请人取消待审申请</button></div></form><button id="run-access-retry" hidden type="button" class="secondary">使用原请求重试并核对结果</button><div id="run-access-history"></div><p id="run-access-error" role="alert" aria-live="polite"></p></section><h3>平台内分派通知</h3><p>平台通知可供本人收取，打开请求与本人明确已读分别记录；均不代表履约。当前只覆盖新分派事件。</p><button id="notice-list" class="secondary">刷新我的站内通知</button><div id="notice-items"></div><button id="notice-next" class="secondary" hidden disabled>继续查较早通知</button><p id="notice-list-summary" aria-live="polite"></p><section id="notice-detail" hidden><p id="notice-summary" class="status"></p><p>打开已记录表示你请求打开通知，当前事项须另行读取；已读仅是本人确认。</p><button id="notice-open">打开当前分派事项</button><button id="notice-read">我已读此通知</button><button id="notice-back" class="secondary">返回通知列表</button></section><p id="notice-error" role="alert" aria-live="polite"></p><section id="case-worklist"><h3>我的事项办理进度</h3><p>查看本人当前有权读取的合成事项、录得的等待环节及原办理入口。这里只整理已保存状态，未验证材料、资格或真实履约；撤销事项不自动释放资源。</p><button id="case-worklist-read" type="button" class="secondary">读取我的事项进度</button><p id="case-worklist-status" role="status" aria-live="polite"></p><div id="case-worklist-items"></div><section id="case-source-impact" hidden><h4>此事项的实际来源与影响</h4><p id="case-source-impact-status" role="status"></p><div id="case-source-impact-items"></div><button id="case-source-impact-open" type="button" class="secondary">打开此事项的原材料与机会入口</button><div id="case-shared-source-cases" hidden><h3>这一共享来源还关联哪些本人事项</h3><p>手动核对当前有权范围；提示不能代替逐事项预览、明确采纳和核验。</p><label>要核对的共享来源<select id="case-shared-source-kind"><option value="OWNER_RESOURCE_QUERY_SET">本人当前可选资源集合</option><option value="SERVICE_CATALOG_REFERENCE">此园区服务目录引用</option></select></label><button id="case-shared-source-read" class="secondary">只读定位相关事项</button><button id="case-shared-source-next" class="secondary" hidden>读取下一页</button><p id="case-shared-source-status" role="status" aria-live="polite"></p><div id="case-shared-source-items"></div></div></section><button id="case-worklist-next" type="button" class="secondary" hidden>下一页事项</button></section><div class="collaboration-controls"><h3>本地运行核对</h3><p>重新打开后，输入原合成会话，只读找回本人已有的本地建单记录。选择记录不会继续办理或重复建单。</p><button id="record-directory-read" type="button" class="secondary">找回我的本地办理记录</button><p id="record-directory-status" role="status" aria-live="polite"></p><div id="record-directory-items" class="actions"></div><button id="record-directory-next" type="button" class="secondary" hidden>下一页记录</button><label>运行编号<input id="run"></label><div class="actions"><button id="refresh">查看持久状态</button><button data-control="pause">暂停</button><button data-control="resume">继续</button><button data-control="cancel">取消</button><button data-control="reconcile">核对结果</button></div></div></section>
+@@ -748,6 +749,7 @@ let existingPreparationGeneration=0;
+ function clearExistingPreparationEntry(){existingPreparationGeneration++;$('existing-preparation-status').textContent='';}
+ function existingPreparationBlocked(){return originalStoredWritePending()||prepCommandPending||prepRecoveryHandle||prepRecoveryChecking||caseFactPending||materialReusePending;}
+ async function openExistingPreparation(){
++ clearFormalPreparationEntry();
+  if(existingPreparationBlocked()){$('existing-preparation-status').textContent='请先在原入口只读核对尚未确认的操作。';return;}
+  const id=$('existing-preparation-id').value.trim().toLowerCase(),token=$('token').value;
+  const generation=++existingPreparationGeneration;
+@@ -771,6 +773,25 @@ async function openExistingPreparation(){
+ $('existing-preparation-form').onsubmit=e=>{e.preventDefault();return openExistingPreparation();};
+ for(const id of ['existing-preparation-id','token'])$(id).addEventListener('input',()=>{if(id==='existing-preparation-id'&&preparationId&&existingPreparationBlocked()){$(id).value=preparationId;$('existing-preparation-status').textContent='请先在原事项只读核对尚未确认的操作。';return;}clearExistingPreparationEntry();if(id==='existing-preparation-id'&&preparationId)clearPreparation();});
+ document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',clearExistingPreparationEntry));
++let formalPreparationGeneration=0;
++function clearFormalPreparationEntry(){formalPreparationGeneration++;$('formal-preparation-status').textContent='';$('formal-preparation-result').replaceChildren();}
++async function checkFormalPreparationEntry(){
++ if(existingPreparationBlocked()){$('formal-preparation-status').textContent='请先在原入口核对尚未确认的操作。';return;}
++ clearFormalPreparationEntry();clearExistingPreparationEntry();clearPreparation();clearGeneric();
++ const generation=formalPreparationGeneration,token=$('token').value,current=()=>generation===formalPreparationGeneration&&token===$('token').value;
++ try{
++  if(!token)throw Error('请填写当前已有会话。');
++  $('formal-preparation-status').textContent='正在只读核对正式入口条件…';
++  const x=await prepCall('/api/formal-preparations/entry-status','GET',undefined,undefined,prepContext());if(!current())return;
++  if(x.contract!=='parkweave-formal-preparation-entry-preflight/1'||x.state!=='UNAVAILABLE'||x.read_only!==true||x.entry_available!==false||x.source_access_attempted!==false||x.source_proofs_verified!==false||x.current_source_subject_authority_verified!==false||x.business_record_read!==false||x.approval_granted!==false||x.resource_plan_approval_available!==false||x.execution_authorized!==false||x.decision_writes_enabled!==false)throw Error('正式来源入口响应不匹配。');
++  const reasons={FORMAL_SOURCE_CONFIG_NOT_PROVIDED:'未提供已有正式来源的绑定配置。',FORMAL_SOURCE_READER_NOT_PROVIDED:'未提供对应的只读来源适配器。',FORMAL_SOURCE_TYPE_REFUSED:'合成或公开来源不能作为授权正式业务来源。',FORMAL_SOURCE_READER_BINDING_REFUSED:'来源适配器与指定源域或来源编号不一致。',INDEPENDENT_FORMAL_PROVENANCE_NOT_PROVIDED:'未提供独立的既有来源证明核验器。',INDEPENDENT_FORMAL_PROVENANCE_BINDING_REFUSED:'独立核验器与指定源域或证明合同不一致。',FORMAL_PROVENANCE_CONTRACT_NOT_IMPLEMENTED:'此来源的独立证明合同尚未实现。'};
++  $('formal-preparation-status').textContent='正式来源入口当前不可用。'+(reasons[x.reason]||'缺少合法的来源证明条件。');
++  $('formal-preparation-result').append(textElement('p','尚缺产品实现：来源专用的独立证明核验、正式方案来源精确绑定及资源批准映射。'),textElement('p','尚缺外部输入：有权使用的来源结构与既有记录、当前授权合同、既有信任与当前版本/撤销机制、获准只读宿主接线。'),textElement('p','本次没有访问外部来源、读取正式记录、授予权限或执行业务。合成契约测试不代表真实来源验收。'));
++ }catch(e){if(!current()||e.stalePreparation)return;clearFormalPreparationEntry();$('formal-preparation-status').textContent=e.message;}
++}
++$('formal-preparation-check').onclick=()=>checkFormalPreparationEntry();
++$('token').addEventListener('input',clearFormalPreparationEntry);
++document.querySelectorAll('[data-tab]').forEach(b=>b.addEventListener('click',clearFormalPreparationEntry));
+ if(typeof location!=='undefined'){const ids=new URLSearchParams(location.search).getAll('preparation_id');if(ids.length===1&&uuidHandle(ids[0]))$('existing-preparation-id').value=ids[0];}
+ $('prep-list').onclick=async()=>{clearPreparation();const context=prepContext();try{const x=await prepCall('/api/preparations','GET',undefined,undefined,context);prepRole=x.role;$('prep-items').replaceChildren();for(const p of x.items){const button=textElement('button',p.goal+' · '+prepLabels[p.state]);button.onclick=()=>loadPreparation(p.id).catch(prepError);$('prep-items').append(button);}if(!x.items.length)$('prep-items').append(textElement('p','当前身份暂无资料准备事项。'));}catch(e){prepError(e);}};
+ var prepTaskGeneration=0,prepTaskBefore=null;
+@@ -821,7 +842,7 @@ $('prep-evidence').onsubmit=e=>{e.preventDefault();return prepCommand('ADD_EVIDE
+ for(const [id,action] of [['prep-correction','REQUEST_CHANGES'],['prep-review','REVIEW'],['prep-confirm','CONFIRM'],['prep-reopen','REOPEN']])$(id).onclick=()=>prepCommand(action).catch(prepError);
+ $('prep-refresh').onclick=()=>loadPreparation(preparationId).catch(prepError);
+ $('plan-material-cancel').onclick=()=>{const c=planMaterialNavigation;if(!c||!prepCurrent(c)||c.planGeneration!==planGeneration)return;const id=c.id;clearPreparation();loadPlan(id).catch(planError);};
+-$('token').oninput=()=>{coldClear();const factUncertain=!!caseFactPending||!!prepCommandPending;clearRunAccess(true);clearGeneric(true);$('page-feedback').textContent='';clearPreparation(false,false,true);clearReceipts();clearResources();currentReview=null;lastClarification=null;$('questions').replaceChildren();$('clarifications').hidden=true;if(factUncertain)$('page-feedback').textContent='已清除原身份私有视图。原用途操作可能已提交；请回原身份、原事项读取历史后核对，勿重复新建操作。';};
++$('token').oninput=()=>{clearFormalPreparationEntry();coldClear();const factUncertain=!!caseFactPending||!!prepCommandPending;clearRunAccess(true);clearGeneric(true);$('page-feedback').textContent='';clearPreparation(false,false,true);clearReceipts();clearResources();currentReview=null;lastClarification=null;$('questions').replaceChildren();$('clarifications').hidden=true;if(factUncertain)$('page-feedback').textContent='已清除原身份私有视图。原用途操作可能已提交；请回原身份、原事项读取历史后核对，勿重复新建操作。';};
+ 
+ window.addEventListener('pagehide',()=>{$('token').value='';$('token').oninput();});
+ window.addEventListener('pageshow',e=>{if(e.persisted){$('token').value='';$('token').oninput();}});

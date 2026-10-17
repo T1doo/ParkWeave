@@ -1,0 +1,175 @@
+"""Closed formal-source entry preflight, separate from local synthetic records.
+
+No real source schema or independent provenance adapter has been supplied. These
+interfaces describe required dependencies, not evidence that they exist. This
+module deliberately has NO successful business-record read branch. In particular
+neither a provider's REAL/verified label nor a callback can open the gate.
+"""
+from dataclasses import dataclass
+import json
+from typing import Callable, Literal
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from . import preparation as prep
+from .store import Conflict, Denied
+
+CONTRACT = 'parkweave-formal-preparation-entry-preflight/1'
+PROOFS = ('EXISTING_PREPARATION', 'EXISTING_CASE', 'EXISTING_RUN',
+          'EXISTING_ADOPTED_PLAN', 'CURRENT_SOURCE_SUBJECT_AUTHORITY')
+KEY = r'^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,199}$'
+
+
+class SourceReference(BaseModel):
+    """An ID only has meaning inside its source domain and object type."""
+    model_config = ConfigDict(extra='forbid', strict=True, frozen=True)
+    source_domain: str = Field(pattern=KEY)
+    object_type: Literal['PREPARATION', 'CASE', 'RUN', 'ADOPTED_PLAN']
+    record_id: str = Field(pattern=KEY)
+
+
+class Selection(BaseModel):
+    model_config = ConfigDict(extra='forbid', frozen=True)
+    source_domain: str = Field(pattern=KEY)
+    preparation_id: str = Field(pattern=KEY)
+    case_id: str = Field(pattern=KEY)
+    run_id: str = Field(pattern=KEY)
+    plan_id: str = Field(pattern=KEY)
+    preparation_revision: int = Field(ge=1)
+    plan_revision: int = Field(ge=1)
+    service_id: str = Field(pattern=KEY)
+    service_version: int = Field(ge=1)
+    source_revision_sha256: str = Field(pattern=r'^[a-f0-9]{64}$')
+
+    def references(self):
+        return tuple(SourceReference(source_domain=self.source_domain, object_type=kind, record_id=value)
+                     for kind, value in (('PREPARATION', self.preparation_id), ('CASE', self.case_id),
+                                         ('RUN', self.run_id), ('ADOPTED_PLAN', self.plan_id)))
+
+
+class ReadConfig(BaseModel):
+    """Public narrowing configuration; never credentials, a Grant, or a proof."""
+    model_config = ConfigDict(extra='forbid', strict=True, frozen=True)
+    schema_version: Literal['parkweave-formal-preparation-read-config/1']
+    source_kind: Literal['AUTHORIZED_BUSINESS']
+    source_id: str = Field(pattern=KEY)
+    provenance_contract_id: str = Field(pattern=KEY)
+    park_id: str = Field(pattern=KEY)
+    org_id: str = Field(pattern=KEY)
+    binding: Selection
+
+
+@dataclass(frozen=True)
+class FormalSourceReader:
+    """Trusted-host read interface only; no transport/backend is installed.
+
+    Classification is explicit so synthetic/public readers can be refused. An
+    AUTHORIZED_BUSINESS declaration itself proves neither provenance nor access.
+    read_existing is never called until a source-specific contract is implemented.
+    """
+    source_id: str
+    source_domain: str
+    source_kind: Literal['AUTHORIZED_BUSINESS', 'SYNTHETIC_CONTRACT_FIXTURE', 'PUBLIC']
+    read_existing: Callable[[tuple[SourceReference, ...]], bytes | None]
+
+
+@dataclass(frozen=True)
+class IndependentProvenanceVerifier:
+    """Required independent source-proof interface, with no concrete adapter.
+
+    A future source-specific implementation must authenticate all five PROOFS,
+    current head/revocation and exact domain-qualified references independently
+    of the reader. A Boolean callback or old signature alone cannot satisfy it.
+    No verifier registration/activation mechanism exists in this slice.
+    """
+    source_domain: str
+    contract_id: str
+    verify_existing: Callable[[tuple[SourceReference, ...], bytes], object]
+
+
+def _key(value):
+    import re
+    return type(value) is str and re.fullmatch(KEY, value) is not None
+
+
+def dependencies(raw, reader, verifier):
+    """Validate host-only composition without reading files, network or secrets."""
+    if reader is not None and (type(reader) is not FormalSourceReader or
+            not all(_key(v) for v in (reader.source_id, reader.source_domain)) or
+            reader.source_kind not in ('AUTHORIZED_BUSINESS', 'SYNTHETIC_CONTRACT_FIXTURE', 'PUBLIC') or
+            not callable(reader.read_existing)):
+        raise Denied('explicit formal source reader interface required')
+    if verifier is not None and (type(verifier) is not IndependentProvenanceVerifier or
+            not all(_key(v) for v in (verifier.source_domain, verifier.contract_id)) or
+            not callable(verifier.verify_existing)):
+        raise Denied('independent source-specific provenance verifier required')
+    if reader is not None and verifier is not None and reader.read_existing is verifier.verify_existing:
+        raise Denied('reader cannot serve as independent provenance verifier')
+    if raw is None:
+        return None, reader, verifier
+    try:
+        if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+            raise ValueError()
+        def unique(pairs):
+            result = {}
+            for key, value in pairs:
+                if key in result: raise ValueError('duplicate key')
+                result[key] = value
+            return result
+        cfg = ReadConfig.model_validate(json.loads(raw, object_pairs_hook=unique))
+    except (ValueError, TypeError):
+        raise Denied('invalid public formal read configuration; values not echoed') from None
+    return cfg, reader, verifier
+
+
+def _closed(reason, *, local_read_checked=True):
+    return dict(contract=CONTRACT, state='UNAVAILABLE', reason=reason, read_only=True,
+                local_session_and_preparation_grant_checked=local_read_checked,
+                current_source_subject_authority_verified=False, source_proofs_verified=False,
+                source_access_attempted=False, business_record_read=False, entry_available=False,
+                approval_granted=False, resource_plan_approval_available=False,
+                execution_authorized=False, decision_writes_enabled=False,
+                unimplemented_source_contracts=list(PROOFS),
+                unimplemented_integration=['SOURCE_SPECIFIC_PROVENANCE_ADAPTER',
+                    'FORMAL_EXACT_PLAN_SOURCE_BINDING', 'FORMAL_RESOURCE_APPROVAL_SOURCE_MAPPING'],
+                external_inputs_required=['EXISTING_AUTHORIZED_SOURCE_STRUCTURE_AND_RECORDS',
+                    'EXISTING_SOURCE_TRUST_AND_CURRENT_HEAD_REVOCATION',
+                    'EXISTING_SOURCE_SUBJECT_AUTHORITY_CONTRACT', 'APPROVED_READ_ONLY_HOST_COMPOSITION'],
+                original_synthetic_entry_unchanged=True,
+                synthetic_contract_tests_are_real_source_acceptance=False)
+
+
+def preflight(store, token, selection, configured):
+    """Only local authorization and exact public configuration are inspected.
+
+    Do not query synthetic preparations/runs/catalog, or reuse their IDs, history,
+    success receipts, NativeRunAccess signatures or resource Approval Scope.
+    Unknown formal provenance remains an implementation gap, not a missing key.
+    """
+    if selection is not None and type(selection) is not Selection:
+        raise Denied('typed domain-qualified formal selection required')
+    cfg, reader, verifier = configured
+    with store.connect() as c:
+        c.execute('SET TRANSACTION READ ONLY')
+        principal = store.auth(c, token, lock=True)
+        prep.grant(store, c, principal, 'PREPARE' if principal['role'] == 'enterprise_operator' else 'REVIEW_ASSIGNED')
+        if cfg is not None and (principal['park_id'], principal['org_id']) != (cfg.park_id, cfg.org_id):
+            raise Denied('formal source scope unavailable or authorization denied')
+        if reader is not None and reader.source_kind != 'AUTHORIZED_BUSINESS':
+            return _closed('FORMAL_SOURCE_TYPE_REFUSED')
+        if cfg is None:
+            return _closed('FORMAL_SOURCE_CONFIG_NOT_PROVIDED')
+        if selection is not None and selection != cfg.binding:
+            raise Conflict('formal source domain or exact reference selection changed')
+        if reader is None:
+            return _closed('FORMAL_SOURCE_READER_NOT_PROVIDED')
+        if (reader.source_id, reader.source_domain) != (cfg.source_id, cfg.binding.source_domain):
+            return _closed('FORMAL_SOURCE_READER_BINDING_REFUSED')
+        if verifier is None:
+            return _closed('INDEPENDENT_FORMAL_PROVENANCE_NOT_PROVIDED')
+        if (verifier.source_domain, verifier.contract_id) != (cfg.binding.source_domain, cfg.provenance_contract_id):
+            return _closed('INDEPENDENT_FORMAL_PROVENANCE_BINDING_REFUSED')
+        # No source-specific real schema/proof protocol has been supplied. There
+        # is intentionally no callback invocation, success projection, Boolean
+        # enable flag, environment module loader, or registration escape hatch.
+        return _closed('FORMAL_PROVENANCE_CONTRACT_NOT_IMPLEMENTED')
