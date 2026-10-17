@@ -1,0 +1,513 @@
+........................................................................ [ 16%]
+........................................................................ [ 33%]
+................................FE...................................... [ 50%]
+........................FE.............................................. [ 66%]
+........................................................................ [ 83%]
+.....................................................................    [100%]
+==================================== ERRORS ====================================
+_ ERROR at teardown of test_real_expiry_during_receipt_endpoint_rolls_back_all_business_writes[3] _
+
+pg = <pgserver.postgres_server.PostgresServer object at 0x7f8b08850170>
+request = <SubRequest 'fixture' for <Function test_real_expiry_during_receipt_endpoint_rolls_back_all_business_writes[3]>>
+
+    @pytest.fixture
+    def fixture(pg,request):
+        db = 'fixture_' + uuid.uuid4().hex
+        created=False
+        try:
+            fixture_progress(request,'CREATE_DB')
+            with psycopg.connect(pg.get_uri(), autocommit=True) as c:
+                c.execute(psycopg.sql.SQL('CREATE DATABASE {}').format(psycopg.sql.Identifier(db)))
+                created=True
+            owner = Store(make_conninfo(pg.get_uri(), dbname=db))
+            with owner.connect() as c:
+                owner._case_fact_fixture_receipt=pg._case_fact_fixture_cluster.record_created_database(c)
+            fixture_progress(request,'MIGRATE');owner.migrate()
+            tokens = {k: secrets.token_urlsafe(32) for k in ('fixture-a','fixture-b','fixture-c')}
+            fixture_progress(request,'SEED');owner.seed(tokens)
+            fixture_progress(request,'GRANTS')
+            with owner.connect() as c:
+                c.execute('GRANT USAGE ON SCHEMA public TO parkweave_app')
+                c.execute('GRANT SELECT ON schema_version,principals,field_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON fact_assertions TO parkweave_app')
+                c.execute('GRANT SELECT ON capability_grants,run_assignments,file_resources TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON deliveries TO parkweave_app')
+                c.execute('GRANT SELECT ON action_grants TO parkweave_app')
+                c.execute('GRANT INSERT ON authorization_audit TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON runs,operations,cases,outbox,run_projection,model_steps TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON model_plans TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON fact_reviews,fact_followups TO parkweave_app')
+                c.execute('GRANT SELECT ON preparation_catalog,preparation_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON preparations TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON preparation_evidence,preparation_events TO parkweave_app')
+                c.execute('GRANT SELECT ON synthetic_resources,synthetic_resource_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON synthetic_resource_holds,synthetic_resource_receipts TO parkweave_app')
+                c.execute('GRANT UPDATE(state) ON synthetic_resource_holds TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON synthetic_resource_combinations,synthetic_resource_combination_members,synthetic_resource_combination_receipts TO parkweave_app')
+                c.execute('GRANT UPDATE(state) ON synthetic_resource_combinations TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON service_receipt_steps,service_step_receipts,service_receipt_events TO parkweave_app')
+                c.execute('GRANT UPDATE(state,revision,current_receipt_id) ON service_receipt_steps TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON resource_case_claims,case_resource_links TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON service_dispatches,service_dispatch_offers,service_dispatch_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,current_offer_id) ON service_dispatches TO parkweave_app')
+                c.execute('GRANT UPDATE(state,receipt_step_id) ON service_dispatch_offers TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON case_local_lifecycles,case_local_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,cycle,state,verified_snapshot,verified_sha256) ON case_local_lifecycles TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON dispatch_notice_outbox,dispatch_notices TO parkweave_app')
+                c.execute('GRANT UPDATE(state,consumed_at) ON dispatch_notice_outbox TO parkweave_app')
+                c.execute('GRANT UPDATE(seen_at,read_at) ON dispatch_notices TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON controlled_plans,controlled_plan_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,checked,invalidated_from,invalidated_at) ON controlled_plans TO parkweave_app')
+            store = Store(make_conninfo(owner.dsn, user='parkweave_app'))
+            fixture_progress(request,'CLIENT')
+            with TestClient(create_app(store)) as client:
+                yield store, owner, tokens, client
+                fixture_progress(request,'CLIENT_EXIT')
+        except BaseException as primary:
+            if created:
+                try:
+                    fixture_progress(request,'DROP_DB');drop_owned_fixture_database(pg,db);fixture_progress(request,'DONE')
+                except Exception as cleanup:
+                    primary.add_note('Owned fixture cleanup failed: '+type(cleanup).__name__)
+            raise
+        else:
+            if created:
+>               fixture_progress(request,'DROP_DB');drop_owned_fixture_database(pg,db);fixture_progress(request,'DONE')
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:36: in drop_owned_fixture_database
+    c.execute(psycopg.sql.SQL('DROP DATABASE {}').format(psycopg.sql.Identifier(db)))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f8b041ea810>
+query = Composed([SQL('DROP DATABASE '), Identifier('fixture_d06625f3a96d47f9a0115f7abeb2065b')])
+params = None, prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.QueryCanceled: canceling statement due to statement timeout
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: QueryCanceled
+_ ERROR at teardown of test_verified_recovery_becomes_unverified_when_writer_offline_without_changing_history _
+
+pg = <pgserver.postgres_server.PostgresServer object at 0x7f8b08850170>
+request = <SubRequest 'fixture' for <Function test_verified_recovery_becomes_unverified_when_writer_offline_without_changing_history>>
+
+    @pytest.fixture
+    def fixture(pg,request):
+        db = 'fixture_' + uuid.uuid4().hex
+        created=False
+        try:
+            fixture_progress(request,'CREATE_DB')
+            with psycopg.connect(pg.get_uri(), autocommit=True) as c:
+                c.execute(psycopg.sql.SQL('CREATE DATABASE {}').format(psycopg.sql.Identifier(db)))
+                created=True
+            owner = Store(make_conninfo(pg.get_uri(), dbname=db))
+            with owner.connect() as c:
+                owner._case_fact_fixture_receipt=pg._case_fact_fixture_cluster.record_created_database(c)
+            fixture_progress(request,'MIGRATE');owner.migrate()
+            tokens = {k: secrets.token_urlsafe(32) for k in ('fixture-a','fixture-b','fixture-c')}
+            fixture_progress(request,'SEED');owner.seed(tokens)
+            fixture_progress(request,'GRANTS')
+            with owner.connect() as c:
+                c.execute('GRANT USAGE ON SCHEMA public TO parkweave_app')
+                c.execute('GRANT SELECT ON schema_version,principals,field_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON fact_assertions TO parkweave_app')
+                c.execute('GRANT SELECT ON capability_grants,run_assignments,file_resources TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON deliveries TO parkweave_app')
+                c.execute('GRANT SELECT ON action_grants TO parkweave_app')
+                c.execute('GRANT INSERT ON authorization_audit TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON runs,operations,cases,outbox,run_projection,model_steps TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON model_plans TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON fact_reviews,fact_followups TO parkweave_app')
+                c.execute('GRANT SELECT ON preparation_catalog,preparation_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON preparations TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON preparation_evidence,preparation_events TO parkweave_app')
+                c.execute('GRANT SELECT ON synthetic_resources,synthetic_resource_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON synthetic_resource_holds,synthetic_resource_receipts TO parkweave_app')
+                c.execute('GRANT UPDATE(state) ON synthetic_resource_holds TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON synthetic_resource_combinations,synthetic_resource_combination_members,synthetic_resource_combination_receipts TO parkweave_app')
+                c.execute('GRANT UPDATE(state) ON synthetic_resource_combinations TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON service_receipt_steps,service_step_receipts,service_receipt_events TO parkweave_app')
+                c.execute('GRANT UPDATE(state,revision,current_receipt_id) ON service_receipt_steps TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON resource_case_claims,case_resource_links TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON service_dispatches,service_dispatch_offers,service_dispatch_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,current_offer_id) ON service_dispatches TO parkweave_app')
+                c.execute('GRANT UPDATE(state,receipt_step_id) ON service_dispatch_offers TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON case_local_lifecycles,case_local_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,cycle,state,verified_snapshot,verified_sha256) ON case_local_lifecycles TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON dispatch_notice_outbox,dispatch_notices TO parkweave_app')
+                c.execute('GRANT UPDATE(state,consumed_at) ON dispatch_notice_outbox TO parkweave_app')
+                c.execute('GRANT UPDATE(seen_at,read_at) ON dispatch_notices TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON controlled_plans,controlled_plan_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,checked,invalidated_from,invalidated_at) ON controlled_plans TO parkweave_app')
+            store = Store(make_conninfo(owner.dsn, user='parkweave_app'))
+            fixture_progress(request,'CLIENT')
+            with TestClient(create_app(store)) as client:
+                yield store, owner, tokens, client
+                fixture_progress(request,'CLIENT_EXIT')
+        except BaseException as primary:
+            if created:
+                try:
+                    fixture_progress(request,'DROP_DB');drop_owned_fixture_database(pg,db);fixture_progress(request,'DONE')
+                except Exception as cleanup:
+                    primary.add_note('Owned fixture cleanup failed: '+type(cleanup).__name__)
+            raise
+        else:
+            if created:
+>               fixture_progress(request,'DROP_DB');drop_owned_fixture_database(pg,db);fixture_progress(request,'DONE')
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:36: in drop_owned_fixture_database
+    c.execute(psycopg.sql.SQL('DROP DATABASE {}').format(psycopg.sql.Identifier(db)))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f8b042b1280>
+query = Composed([SQL('DROP DATABASE '), Identifier('fixture_0d4653c33d564e649d849d8541fbb913')])
+params = None, prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.ObjectInUse: database "fixture_0d4653c33d564e649d849d8541fbb913" is being accessed by other users
+E           DETAIL:  There is 1 other session using the database.
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: ObjectInUse
+=================================== FAILURES ===================================
+__ test_real_expiry_during_receipt_endpoint_rolls_back_all_business_writes[3] __
+
+activation_fixture = ((<parkweave.store.Store object at 0x7f8b04a31340>, <parkweave.store.Store object at 0x7f8b04a327e0>, {'fixture-a': 'V...{'row': {'principal_id': 'fixture-b', 'action': 'fault.record', 'active': True, 'park_id': 'park-a', ...}}, ...], ...})
+
+    @pytest.mark.parametrize('activation_fixture',[3],indirect=True)
+    def test_real_expiry_during_receipt_endpoint_rolls_back_all_business_writes(activation_fixture):
+        a=activation_fixture;f,_,_,_=a;d=accepted(a)
+        step=f[3].get('/api/executor-receipts/'+d['receipt_step_id'],headers=headers(f[2],'executor-a')).json();before=business(a)
+        with f[1].connect() as c:
+            c.execute('CREATE FUNCTION receipt_expire() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN PERFORM pg_sleep(3.1); RETURN NEW; END $$')
+            c.execute('CREATE TRIGGER receipt_expire BEFORE INSERT ON service_receipt_events FOR EACH ROW EXECUTE FUNCTION receipt_expire()')
+        r=receipt_command(f,step,'SUBMIT');assert r.status_code==403,r.text
+>       assert business(a)==before
+               ^^^^^^^^^^^
+
+tests/test_native_run_access_activation.py:343: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_native_run_access_activation.py:109: in business
+    with a[0][1].connect() as c:
+         ^^^^^^^^^^^^^^^^^
+src/parkweave/store.py:86: in connect
+    return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'psycopg.Connection'>
+conninfo = 'user=postgres dbname=fixture_d06625f3a96d47f9a0115f7abeb2065b host=/tmp/parkweave-runtime-read-final-v3/parkweave-pg0/data connect_timeout=2'
+autocommit = False, prepare_threshold = 5, context = None
+row_factory = <function dict_row at 0x7f8b0a950b80>, cursor_factory = None
+kwargs = {'connect_timeout': 2}
+
+    @classmethod
+    def connect(
+        cls,
+        conninfo: str = "",
+        *,
+        autocommit: bool = False,
+        prepare_threshold: int | None = 5,
+        context: AdaptContext | None = None,
+        row_factory: RowFactory[Row] | None = None,
+        cursor_factory: type[Cursor[Row]] | None = None,
+        **kwargs: ConnParam,
+    ) -> Self:
+        """
+        Connect to a database server and return a new `Connection` instance.
+        """
+    
+        params = cls._get_connection_params(conninfo, **kwargs)
+        timeout = timeout_from_conninfo(params)
+        rv = None
+        attempts = conninfo_attempts(params)
+        conn_errors: list[tuple[e.Error, str]] = []
+        for attempt in attempts:
+            tdescr = (attempt.get("host"), attempt.get("port"), attempt.get("hostaddr"))
+            descr = "host: %r, port: %r, hostaddr: %r" % tdescr
+            logger.debug("connection attempt: %s", descr)
+            try:
+                conninfo = make_conninfo("", **attempt)
+                gen = cls._connect_gen(conninfo)
+                rv = waiting.wait_conn(gen, interval=_WAIT_INTERVAL, timeout=timeout)
+            except e._WaitTimeout:
+                tex = e.ConnectionTimeout("connection timeout expired")
+                logger.debug("connection failed: %s: %s", descr, str(tex))
+                conn_errors.append((tex, descr))
+            except e.Error as ex:
+                logger.debug("connection failed: %s: %s", descr, str(ex))
+                conn_errors.append((ex, descr))
+            except e._NO_TRACEBACK as ex:
+                raise ex.with_traceback(None)
+            else:
+                logger.debug("connection succeeded: %s", descr)
+                break
+    
+        if not rv:
+            last_ex = conn_errors[-1][0]
+            if len(conn_errors) == 1:
+>               raise last_ex.with_traceback(None)
+E               psycopg.errors.ConnectionTimeout: connection timeout expired
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:126: ConnectionTimeout
+_ test_verified_recovery_becomes_unverified_when_writer_offline_without_changing_history _
+
+writer_fixture = <writer_reference_support.Harness object at 0x7f8b04a52600>
+
+    def test_verified_recovery_becomes_unverified_when_writer_offline_without_changing_history(writer_fixture):
+>       h=writer_fixture;request,_=approve(h);assert activate(h.a).status_code==200
+                                                     ^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:517: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_native_run_access_activation.py:98: in activate
+    return a[0][3].post(path(a)+'/activate',headers=headers(a[0][2],user,key or uuid4().hex),json=data or activation_body(a))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:463: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:360: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:357: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:340: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:265: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1215: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py:151: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:197: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/api.py:189: in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:173: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:149: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:676: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:2786: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:1310: in handle
+    await super().handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:282: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:165: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:151: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:727: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:362: in run_endpoint_function
+    return await run_in_threadpool(
+.venv/lib/python3.12/site-packages/starlette/concurrency.py:34: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/anyio/to_thread.py:65: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2706: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1100: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py:240: in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/api.py:325: in run_access_activate
+    return access_bridge().activate(token(authorization),run_id,idempotency_key,data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/native_run_access.py:142: in activate
+    return activate(self,token,run_id,key,data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/native_run_access.py:52: in call
+    return fn(*args,**kwargs)
+           ^^^^^^^^^^^^^^^^^^
+src/parkweave/native_run_access_activation.py:268: in activate
+    return invoke(bridge,'ACTIVATE',token,run_id,key,data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/native_run_access_writer.py:442: in invoke
+    return WriterClient.invoke(value, operation, token, run_id, key, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/native_run_access_writer.py:256: in invoke
+    with self.store._guarded_connect() as c:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/store.py:90: in _guarded_connect
+    c = _AccessConnection.connect(dsn or self.dsn, row_factory=dict_row, connect_timeout=2)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'parkweave.store._AccessConnection'>
+conninfo = 'user=parkweave_app dbname=fixture_0d4653c33d564e649d849d8541fbb913 host=/tmp/parkweave-runtime-read-final-v3/parkweave-pg0/data connect_timeout=2'
+autocommit = False, prepare_threshold = 5, context = None
+row_factory = <function dict_row at 0x7f8b0a950b80>, cursor_factory = None
+kwargs = {'connect_timeout': 2}
+
+    @classmethod
+    def connect(
+        cls,
+        conninfo: str = "",
+        *,
+        autocommit: bool = False,
+        prepare_threshold: int | None = 5,
+        context: AdaptContext | None = None,
+        row_factory: RowFactory[Row] | None = None,
+        cursor_factory: type[Cursor[Row]] | None = None,
+        **kwargs: ConnParam,
+    ) -> Self:
+        """
+        Connect to a database server and return a new `Connection` instance.
+        """
+    
+        params = cls._get_connection_params(conninfo, **kwargs)
+        timeout = timeout_from_conninfo(params)
+        rv = None
+        attempts = conninfo_attempts(params)
+        conn_errors: list[tuple[e.Error, str]] = []
+        for attempt in attempts:
+            tdescr = (attempt.get("host"), attempt.get("port"), attempt.get("hostaddr"))
+            descr = "host: %r, port: %r, hostaddr: %r" % tdescr
+            logger.debug("connection attempt: %s", descr)
+            try:
+                conninfo = make_conninfo("", **attempt)
+                gen = cls._connect_gen(conninfo)
+                rv = waiting.wait_conn(gen, interval=_WAIT_INTERVAL, timeout=timeout)
+            except e._WaitTimeout:
+                tex = e.ConnectionTimeout("connection timeout expired")
+                logger.debug("connection failed: %s: %s", descr, str(tex))
+                conn_errors.append((tex, descr))
+            except e.Error as ex:
+                logger.debug("connection failed: %s: %s", descr, str(ex))
+                conn_errors.append((ex, descr))
+            except e._NO_TRACEBACK as ex:
+                raise ex.with_traceback(None)
+            else:
+                logger.debug("connection succeeded: %s", descr)
+                break
+    
+        if not rv:
+            last_ex = conn_errors[-1][0]
+            if len(conn_errors) == 1:
+>               raise last_ex.with_traceback(None)
+E               psycopg.errors.ConnectionTimeout: connection timeout expired
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:126: ConnectionTimeout
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_ordinary_runtime_read.py::test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_ordinary_runtime_read.py::test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_native_run_access_activation.py::test_real_expiry_during_receipt_endpoint_rolls_back_all_business_writes[3]
+FAILED tests/test_native_run_access_writer.py::test_verified_recovery_becomes_unverified_when_writer_offline_without_changing_history
+ERROR tests/test_native_run_access_activation.py::test_real_expiry_during_receipt_endpoint_rolls_back_all_business_writes[3]
+ERROR tests/test_native_run_access_writer.py::test_verified_recovery_becomes_unverified_when_writer_offline_without_changing_history
+2 failed, 425 passed, 4 warnings, 2 errors in 860.77s (0:14:20)

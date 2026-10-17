@@ -1,0 +1,243 @@
+......................................................FE................ [ 16%]
+.......................................................
+==================================== ERRORS ====================================
+_ ERROR at teardown of test_entry_id_aba_and_late_reply_cannot_replace_current_view[200] _
+
+pg = <pgserver.postgres_server.PostgresServer object at 0x7f5c2f903ad0>
+request = <SubRequest 'fixture' for <Function test_entry_id_aba_and_late_reply_cannot_replace_current_view[200]>>
+
+    @pytest.fixture
+    def fixture(pg,request):
+        db = 'fixture_' + uuid.uuid4().hex
+        created=False
+        try:
+            fixture_progress(request,'CREATE_DB')
+            with psycopg.connect(pg.get_uri(), autocommit=True) as c:
+                c.execute(psycopg.sql.SQL('CREATE DATABASE {}').format(psycopg.sql.Identifier(db)))
+                created=True
+            owner = Store(make_conninfo(pg.get_uri(), dbname=db))
+            with owner.connect() as c:
+                owner._case_fact_fixture_receipt=pg._case_fact_fixture_cluster.record_created_database(c)
+            fixture_progress(request,'MIGRATE');owner.migrate()
+            tokens = {k: secrets.token_urlsafe(32) for k in ('fixture-a','fixture-b','fixture-c')}
+            fixture_progress(request,'SEED');owner.seed(tokens)
+            fixture_progress(request,'GRANTS')
+            with owner.connect() as c:
+                c.execute('GRANT USAGE ON SCHEMA public TO parkweave_app')
+                c.execute('GRANT SELECT ON schema_version,principals,field_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON fact_assertions TO parkweave_app')
+                c.execute('GRANT SELECT ON capability_grants,run_assignments,file_resources TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON deliveries TO parkweave_app')
+                c.execute('GRANT SELECT ON action_grants TO parkweave_app')
+                c.execute('GRANT INSERT ON authorization_audit TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON runs,operations,cases,outbox,run_projection,model_steps TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON model_plans TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON fact_reviews,fact_followups TO parkweave_app')
+                c.execute('GRANT SELECT ON preparation_catalog,preparation_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON preparations TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON preparation_evidence,preparation_events TO parkweave_app')
+                c.execute('GRANT SELECT ON synthetic_resources,synthetic_resource_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON synthetic_resource_holds,synthetic_resource_receipts TO parkweave_app')
+                c.execute('GRANT UPDATE(state) ON synthetic_resource_holds TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON synthetic_resource_combinations,synthetic_resource_combination_members,synthetic_resource_combination_receipts TO parkweave_app')
+                c.execute('GRANT UPDATE(state) ON synthetic_resource_combinations TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON service_receipt_steps,service_step_receipts,service_receipt_events TO parkweave_app')
+                c.execute('GRANT UPDATE(state,revision,current_receipt_id) ON service_receipt_steps TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON resource_case_claims,case_resource_links TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON service_dispatches,service_dispatch_offers,service_dispatch_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,current_offer_id) ON service_dispatches TO parkweave_app')
+                c.execute('GRANT UPDATE(state,receipt_step_id) ON service_dispatch_offers TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON case_local_lifecycles,case_local_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,cycle,state,verified_snapshot,verified_sha256) ON case_local_lifecycles TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON dispatch_notice_outbox,dispatch_notices TO parkweave_app')
+                c.execute('GRANT UPDATE(state,consumed_at) ON dispatch_notice_outbox TO parkweave_app')
+                c.execute('GRANT UPDATE(seen_at,read_at) ON dispatch_notices TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON controlled_plans,controlled_plan_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,checked,invalidated_from,invalidated_at) ON controlled_plans TO parkweave_app')
+            store = Store(make_conninfo(owner.dsn, user='parkweave_app'))
+            fixture_progress(request,'CLIENT')
+            with TestClient(create_app(store)) as client:
+                yield store, owner, tokens, client
+                fixture_progress(request,'CLIENT_EXIT')
+        except BaseException as primary:
+            if created:
+                try:
+                    fixture_progress(request,'DROP_DB');drop_owned_fixture_database(pg,db);fixture_progress(request,'DONE')
+                except Exception as cleanup:
+                    primary.add_note('Owned fixture cleanup failed: '+type(cleanup).__name__)
+            raise
+        else:
+            if created:
+>               fixture_progress(request,'DROP_DB');drop_owned_fixture_database(pg,db);fixture_progress(request,'DONE')
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:36: in drop_owned_fixture_database
+    c.execute(psycopg.sql.SQL('DROP DATABASE {}').format(psycopg.sql.Identifier(db)))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f5c1fb81340>
+query = Composed([SQL('DROP DATABASE '), Identifier('fixture_997ae3701be14bb9ae41390c6c42b849')])
+params = None, prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.ObjectInUse: database "fixture_997ae3701be14bb9ae41390c6c42b849" is being accessed by other users
+E           DETAIL:  There is 1 other session using the database.
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: ObjectInUse
+=================================== FAILURES ===================================
+______ test_entry_id_aba_and_late_reply_cannot_replace_current_view[200] _______
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f5c1f4bbc50>, <parkweave.store.Store object at 0x7f5c1fcaf0e0>, {'fixture-a': 'p-...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f5c2d24d640>)
+tmp_path = PosixPath('/tmp/parkweave-runtime-read-final-v1/test_entry_id_aba_and_late_rep0')
+late_status = 200
+
+    @pytest.mark.parametrize('late_status', [200, 403])
+    def test_entry_id_aba_and_late_reply_cannot_replace_current_view(preparation_fixture, tmp_path, late_status):
+        f = preparation_fixture
+        p = filled(f)
+        before = snapshot(f[1])
+        with ordinary_process(f, tmp_path) as api, sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path='/usr/bin/chromium', headless=True, args=['--no-sandbox'])
+            page = browser.new_page()
+            pending = []
+            requests = []
+            page.on('request', lambda r: requests.append(r.method))
+            def hold_first(route):
+                if pending: route.continue_(); return
+                pending.append((route, route.fetch()))
+            page.route('**/api/preparations/*/entry', hold_first)
+            page.goto(str(api.base_url))
+            page.locator('#token').fill(f[2]['fixture-a'])
+            page.locator('#existing-preparation-id').fill(p['preparation_id'])
+            page.locator('#existing-preparation-read').click()
+            deadline = time.monotonic()+5
+            while not pending and time.monotonic() < deadline: page.wait_for_timeout(20)
+            assert pending
+            page.locator('#existing-preparation-id').fill(str(uuid4()))
+            page.locator('#existing-preparation-id').fill(p['preparation_id'])
+            page.locator('#existing-preparation-read').click()
+            expect(page.locator('#existing-preparation-status')).to_contain_text('已读取原资料记录')
+            route, response = pending[0]
+            if late_status == 200: route.fulfill(response=response)
+            else: route.fulfill(status=403, json={'detail':'record unavailable or authorization denied'})
+            page.wait_for_timeout(150)
+            expect(page.locator('#prep-materials')).to_contain_text('SYNTHETIC source text')
+            expect(page.locator('#existing-preparation-status')).to_contain_text('已读取原资料记录')
+>           assert all(method == 'GET' for method in requests) and snapshot(f[1]) == before
+                                                                   ^^^^^^^^^^^^^^
+
+tests/test_native_preparation_entry_browser.py:181: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_native_preparation_entry.py:26: in snapshot
+    with owner.connect() as c:
+         ^^^^^^^^^^^^^^^
+src/parkweave/store.py:86: in connect
+    return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'psycopg.Connection'>
+conninfo = 'user=postgres dbname=fixture_997ae3701be14bb9ae41390c6c42b849 host=/tmp/parkweave-runtime-read-final-v1/parkweave-pg0/data connect_timeout=2'
+autocommit = False, prepare_threshold = 5, context = None
+row_factory = <function dict_row at 0x7f5c32113240>, cursor_factory = None
+kwargs = {'connect_timeout': 2}
+
+    @classmethod
+    def connect(
+        cls,
+        conninfo: str = "",
+        *,
+        autocommit: bool = False,
+        prepare_threshold: int | None = 5,
+        context: AdaptContext | None = None,
+        row_factory: RowFactory[Row] | None = None,
+        cursor_factory: type[Cursor[Row]] | None = None,
+        **kwargs: ConnParam,
+    ) -> Self:
+        """
+        Connect to a database server and return a new `Connection` instance.
+        """
+    
+        params = cls._get_connection_params(conninfo, **kwargs)
+        timeout = timeout_from_conninfo(params)
+        rv = None
+        attempts = conninfo_attempts(params)
+        conn_errors: list[tuple[e.Error, str]] = []
+        for attempt in attempts:
+            tdescr = (attempt.get("host"), attempt.get("port"), attempt.get("hostaddr"))
+            descr = "host: %r, port: %r, hostaddr: %r" % tdescr
+            logger.debug("connection attempt: %s", descr)
+            try:
+                conninfo = make_conninfo("", **attempt)
+                gen = cls._connect_gen(conninfo)
+                rv = waiting.wait_conn(gen, interval=_WAIT_INTERVAL, timeout=timeout)
+            except e._WaitTimeout:
+                tex = e.ConnectionTimeout("connection timeout expired")
+                logger.debug("connection failed: %s: %s", descr, str(tex))
+                conn_errors.append((tex, descr))
+            except e.Error as ex:
+                logger.debug("connection failed: %s: %s", descr, str(ex))
+                conn_errors.append((ex, descr))
+            except e._NO_TRACEBACK as ex:
+                raise ex.with_traceback(None)
+            else:
+                logger.debug("connection succeeded: %s", descr)
+                break
+    
+        if not rv:
+            last_ex = conn_errors[-1][0]
+            if len(conn_errors) == 1:
+>               raise last_ex.with_traceback(None)
+E               psycopg.errors.ConnectionTimeout: connection timeout expired
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:126: ConnectionTimeout
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_ordinary_runtime_read.py::test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_ordinary_runtime_read.py::test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_native_preparation_entry_browser.py::test_entry_id_aba_and_late_reply_cannot_replace_current_view[200]
+ERROR tests/test_native_preparation_entry_browser.py::test_entry_id_aba_and_late_reply_cannot_replace_current_view[200]
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/_internal/_generate_schema.py:906: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+1 failed, 125 passed, 4 warnings, 1 error in 410.51s (0:06:50)

@@ -1,0 +1,980 @@
+{
+  "test_id": "tests/test_native_run_access_writer.py::test_actual_writer_concurrent_keys_and_original_recovery[False]",
+  "scope": "OWNED_SYNTHETIC_REFERENCE_WRITER",
+  "policy_sha256": "ab620a39142b91db9331bce54d071be1a32fb3e3e064198ae837d578327a81b5",
+  "observations": [
+    {
+      "kind": "WRITER_PROCESS_READY",
+      "recorded_utc": "2026-10-17T01:11:40.851405+00:00",
+      "pid": 36441,
+      "boot_id": "21834062-04f8-4eb0-9656-e16d23faf5f8",
+      "policy_sha256": "ab620a39142b91db9331bce54d071be1a32fb3e3e064198ae837d578327a81b5"
+    },
+    {
+      "kind": "CONCURRENT_KEYS",
+      "recorded_utc": "2026-10-17T01:11:42.166623+00:00",
+      "same_key": false,
+      "statuses": [
+        200,
+        409
+      ]
+    },
+    {
+      "kind": "OWNED_PROCESS_EXITED",
+      "recorded_utc": "2026-10-17T01:11:42.282888+00:00",
+      "pid": 36441,
+      "exit_code": -2
+    }
+  ],
+  "run": {
+    "id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+    "state": "SUCCEEDED",
+    "revision": 2,
+    "native_run_access_protocol": {
+      "state": "APPROVED",
+      "events": [
+        {
+          "state": "REQUESTED",
+          "action": "REQUEST",
+          "reason": "SYNTHETIC explicit REQUEST",
+          "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+          "request": {
+            "source": {
+              "org_id": "org-a",
+              "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+              "case_id": "fa2792dd-3eb9-42f7-8ed7-4940210f217b",
+              "park_id": "park-a",
+              "owner_id": "fixture-a",
+              "case_state": "NEEDS_INPUT",
+              "run_revision": 2,
+              "review_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+              "preparation_id": "3c549ee3-ab12-4177-8963-664908350782",
+              "material_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+              "input_fingerprint": "e7d73ca4d8b9beca7d1cc711c57fc0730fcdf400d0cb6f013935d7111922b7fc",
+              "preparation_state": "LOCAL_CONFIRMED",
+              "preparation_revision": 5
+            },
+            "authority": {
+              "grants": [
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "READ",
+                  "generation": "4948",
+                  "principal_id": "executor-a"
+                },
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "EXECUTE",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                },
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "READ",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                }
+              ],
+              "principals": [
+                {
+                  "id": "executor-a",
+                  "role": "service_executor",
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4948"
+                },
+                {
+                  "id": "fixture-a",
+                  "role": "enterprise_operator",
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4945"
+                }
+              ],
+              "preparation": [
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4947",
+                  "principal_id": "fixture-a"
+                }
+              ]
+            },
+            "target_id": "executor-a",
+            "capability": "READ",
+            "request_id": "63ee2bd3-7901-4ebc-85cd-ac699dbf7768",
+            "target_role": "service_executor",
+            "requester_id": "fixture-a",
+            "requested_validity": {
+              "timezone": "UTC",
+              "valid_from": "2026-10-17T01:11:40.853906+00:00",
+              "valid_until": "2026-10-17T01:13:40.853906+00:00"
+            }
+          },
+          "actor_id": "fixture-a",
+          "lease_id": null,
+          "revision": 1,
+          "namespace": "ORDINARY_PG_RUN_ACCESS_DECISION_V1",
+          "fingerprint": "d3d834757135ebc9f8b6ac2206269e48d8fa3505cd3f145dadb2d7e897900a1f",
+          "recorded_at": "2026-10-17T01:11:41.039289+00:00",
+          "request_key": "writer-request",
+          "writer_proof": {
+            "key_id": "b6b770a4f61024c146638b4c2ab6dfc0c136be57715e489d8cf79b5397f294c1",
+            "scheme": "ORDINARY_PG_SCOPED_WRITER_V1",
+            "hmac_sha256": "f8dd8b0a604015a72a030460b4b35d568d9b056abe6ad58ff4a2714e0d170299",
+            "policy_sha256": "ab620a39142b91db9331bce54d071be1a32fb3e3e064198ae837d578327a81b5"
+          },
+          "writer_command": {
+            "action": "REQUEST",
+            "reason": "SYNTHETIC explicit REQUEST",
+            "target_id": "executor-a",
+            "capability": "READ",
+            "target_role": "service_executor",
+            "confirm_request": true,
+            "approved_validity": null,
+            "expected_revision": 0,
+            "requested_validity": {
+              "timezone": "UTC",
+              "valid_from": "2026-10-17T01:11:40.853906+00:00",
+              "valid_until": "2026-10-17T01:13:40.853906+00:00"
+            },
+            "expected_run_revision": 2,
+            "expected_authority_sha256": "6b599c294a3f562140acbae615ec244daf06f687499e93b799b8d73f32240aa6"
+          },
+          "projection_state": "NON_EFFECTIVE",
+          "actual_run_access": false,
+          "actual_assignment_written": false
+        },
+        {
+          "state": "APPROVED",
+          "action": "APPROVE",
+          "reason": "SYNTHETIC explicit APPROVE",
+          "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+          "request": {
+            "source": {
+              "org_id": "org-a",
+              "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+              "case_id": "fa2792dd-3eb9-42f7-8ed7-4940210f217b",
+              "park_id": "park-a",
+              "owner_id": "fixture-a",
+              "case_state": "NEEDS_INPUT",
+              "run_revision": 2,
+              "review_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+              "preparation_id": "3c549ee3-ab12-4177-8963-664908350782",
+              "material_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+              "input_fingerprint": "e7d73ca4d8b9beca7d1cc711c57fc0730fcdf400d0cb6f013935d7111922b7fc",
+              "preparation_state": "LOCAL_CONFIRMED",
+              "preparation_revision": 5
+            },
+            "authority": {
+              "grants": [
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "READ",
+                  "generation": "4948",
+                  "principal_id": "executor-a"
+                },
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "EXECUTE",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                },
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "READ",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                }
+              ],
+              "principals": [
+                {
+                  "id": "executor-a",
+                  "role": "service_executor",
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4948"
+                },
+                {
+                  "id": "fixture-a",
+                  "role": "enterprise_operator",
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4945"
+                }
+              ],
+              "preparation": [
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4947",
+                  "principal_id": "fixture-a"
+                }
+              ]
+            },
+            "target_id": "executor-a",
+            "capability": "READ",
+            "request_id": "63ee2bd3-7901-4ebc-85cd-ac699dbf7768",
+            "approver_id": "prep-specialist-fixture-a",
+            "target_role": "service_executor",
+            "requester_id": "fixture-a",
+            "approved_validity": {
+              "timezone": "UTC",
+              "valid_from": "2026-10-17T01:11:40.853906+00:00",
+              "valid_until": "2026-10-17T01:13:40.853906+00:00"
+            },
+            "approver_authority": {
+              "grants": [
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "EXECUTE",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                },
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "READ",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                },
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "READ",
+                  "generation": "4947",
+                  "principal_id": "prep-specialist-fixture-a"
+                }
+              ],
+              "principals": [
+                {
+                  "id": "fixture-a",
+                  "role": "enterprise_operator",
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4945"
+                },
+                {
+                  "id": "prep-specialist-fixture-a",
+                  "role": "park_specialist",
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4947"
+                }
+              ],
+              "preparation": [
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4947",
+                  "principal_id": "fixture-a"
+                }
+              ]
+            },
+            "requested_validity": {
+              "timezone": "UTC",
+              "valid_from": "2026-10-17T01:11:40.853906+00:00",
+              "valid_until": "2026-10-17T01:13:40.853906+00:00"
+            }
+          },
+          "actor_id": "prep-specialist-fixture-a",
+          "lease_id": "0762284b-476b-428e-a5b6-cfb169308da8",
+          "revision": 2,
+          "namespace": "ORDINARY_PG_RUN_ACCESS_DECISION_V1",
+          "fingerprint": "4b213e622ded0de5028117934da97da0daac2b7114d4930691b17f8aafa7db2f",
+          "recorded_at": "2026-10-17T01:11:41.211285+00:00",
+          "request_key": "writer-approve",
+          "writer_proof": {
+            "key_id": "b6b770a4f61024c146638b4c2ab6dfc0c136be57715e489d8cf79b5397f294c1",
+            "scheme": "ORDINARY_PG_SCOPED_WRITER_V1",
+            "hmac_sha256": "8e0957fe6972c5a254775e23e76f262b8bc7cf1089b7fae45a48c039eaae507a",
+            "policy_sha256": "ab620a39142b91db9331bce54d071be1a32fb3e3e064198ae837d578327a81b5"
+          },
+          "writer_command": {
+            "action": "APPROVE",
+            "reason": "SYNTHETIC explicit APPROVE",
+            "target_id": null,
+            "capability": null,
+            "target_role": null,
+            "confirm_request": null,
+            "approved_validity": {
+              "timezone": "UTC",
+              "valid_from": "2026-10-17T01:11:40.853906+00:00",
+              "valid_until": "2026-10-17T01:13:40.853906+00:00"
+            },
+            "expected_revision": 1,
+            "requested_validity": null,
+            "expected_run_revision": 2,
+            "expected_authority_sha256": "add0a4cbbe38a41c3b60f15c70c56dac6e233283fb98ba01ef4706ecfba86529"
+          },
+          "projection_state": "NON_EFFECTIVE",
+          "actual_run_access": false,
+          "actual_assignment_written": false
+        }
+      ],
+      "leases": [
+        {
+          "id": "0762284b-476b-428e-a5b6-cfb169308da8",
+          "state": "NON_EFFECTIVE",
+          "source": {
+            "org_id": "org-a",
+            "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+            "case_id": "fa2792dd-3eb9-42f7-8ed7-4940210f217b",
+            "park_id": "park-a",
+            "owner_id": "fixture-a",
+            "case_state": "NEEDS_INPUT",
+            "run_revision": 2,
+            "review_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+            "preparation_id": "3c549ee3-ab12-4177-8963-664908350782",
+            "material_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+            "input_fingerprint": "e7d73ca4d8b9beca7d1cc711c57fc0730fcdf400d0cb6f013935d7111922b7fc",
+            "preparation_state": "LOCAL_CONFIRMED",
+            "preparation_revision": 5
+          },
+          "validity": {
+            "timezone": "UTC",
+            "valid_from": "2026-10-17T01:11:40.853906+00:00",
+            "valid_until": "2026-10-17T01:13:40.853906+00:00"
+          },
+          "request_id": "63ee2bd3-7901-4ebc-85cd-ac699dbf7768"
+        }
+      ],
+      "request": {
+        "source": {
+          "org_id": "org-a",
+          "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+          "case_id": "fa2792dd-3eb9-42f7-8ed7-4940210f217b",
+          "park_id": "park-a",
+          "owner_id": "fixture-a",
+          "case_state": "NEEDS_INPUT",
+          "run_revision": 2,
+          "review_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+          "preparation_id": "3c549ee3-ab12-4177-8963-664908350782",
+          "material_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+          "input_fingerprint": "e7d73ca4d8b9beca7d1cc711c57fc0730fcdf400d0cb6f013935d7111922b7fc",
+          "preparation_state": "LOCAL_CONFIRMED",
+          "preparation_revision": 5
+        },
+        "authority": {
+          "grants": [
+            {
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "revision": 1,
+              "capability": "READ",
+              "generation": "4948",
+              "principal_id": "executor-a"
+            },
+            {
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "revision": 1,
+              "capability": "EXECUTE",
+              "generation": "4945",
+              "principal_id": "fixture-a"
+            },
+            {
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "revision": 1,
+              "capability": "READ",
+              "generation": "4945",
+              "principal_id": "fixture-a"
+            }
+          ],
+          "principals": [
+            {
+              "id": "executor-a",
+              "role": "service_executor",
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "generation": "4948"
+            },
+            {
+              "id": "fixture-a",
+              "role": "enterprise_operator",
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "generation": "4945"
+            }
+          ],
+          "preparation": [
+            {
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "generation": "4947",
+              "principal_id": "fixture-a"
+            }
+          ]
+        },
+        "target_id": "executor-a",
+        "capability": "READ",
+        "request_id": "63ee2bd3-7901-4ebc-85cd-ac699dbf7768",
+        "approver_id": "prep-specialist-fixture-a",
+        "target_role": "service_executor",
+        "requester_id": "fixture-a",
+        "approved_validity": {
+          "timezone": "UTC",
+          "valid_from": "2026-10-17T01:11:40.853906+00:00",
+          "valid_until": "2026-10-17T01:13:40.853906+00:00"
+        },
+        "approver_authority": {
+          "grants": [
+            {
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "revision": 1,
+              "capability": "EXECUTE",
+              "generation": "4945",
+              "principal_id": "fixture-a"
+            },
+            {
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "revision": 1,
+              "capability": "READ",
+              "generation": "4945",
+              "principal_id": "fixture-a"
+            },
+            {
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "revision": 1,
+              "capability": "READ",
+              "generation": "4947",
+              "principal_id": "prep-specialist-fixture-a"
+            }
+          ],
+          "principals": [
+            {
+              "id": "fixture-a",
+              "role": "enterprise_operator",
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "generation": "4945"
+            },
+            {
+              "id": "prep-specialist-fixture-a",
+              "role": "park_specialist",
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "generation": "4947"
+            }
+          ],
+          "preparation": [
+            {
+              "active": true,
+              "org_id": "org-a",
+              "park_id": "park-a",
+              "generation": "4947",
+              "principal_id": "fixture-a"
+            }
+          ]
+        },
+        "requested_validity": {
+          "timezone": "UTC",
+          "valid_from": "2026-10-17T01:11:40.853906+00:00",
+          "valid_until": "2026-10-17T01:13:40.853906+00:00"
+        }
+      },
+      "lease_id": "0762284b-476b-428e-a5b6-cfb169308da8",
+      "revision": 2,
+      "namespace": "ORDINARY_PG_RUN_ACCESS_DECISION_V1"
+    },
+    "native_run_access_activation": {
+      "events": [
+        {
+          "state": "ACTIVATED",
+          "action": "ACTIVATE",
+          "reason": "SYNTHETIC owner activates exact explicitly approved test lease",
+          "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+          "binding": {
+            "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+            "source": {
+              "org_id": "org-a",
+              "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+              "case_id": "fa2792dd-3eb9-42f7-8ed7-4940210f217b",
+              "park_id": "park-a",
+              "owner_id": "fixture-a",
+              "case_state": "NEEDS_INPUT",
+              "run_revision": 2,
+              "review_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+              "preparation_id": "3c549ee3-ab12-4177-8963-664908350782",
+              "material_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+              "input_fingerprint": "e7d73ca4d8b9beca7d1cc711c57fc0730fcdf400d0cb6f013935d7111922b7fc",
+              "preparation_state": "LOCAL_CONFIRMED",
+              "preparation_revision": 5
+            },
+            "lease_id": "0762284b-476b-428e-a5b6-cfb169308da8",
+            "owner_id": "fixture-a",
+            "validity": {
+              "timezone": "UTC",
+              "valid_from": "2026-10-17T01:11:40.853906+00:00",
+              "valid_until": "2026-10-17T01:13:40.853906+00:00"
+            },
+            "authority": {
+              "grants": [
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "READ",
+                  "generation": "4948",
+                  "principal_id": "executor-a"
+                },
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "EXECUTE",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                },
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "READ",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                }
+              ],
+              "principals": [
+                {
+                  "id": "executor-a",
+                  "role": "service_executor",
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4948"
+                },
+                {
+                  "id": "fixture-a",
+                  "role": "enterprise_operator",
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4945"
+                }
+              ],
+              "preparation": [
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4947",
+                  "principal_id": "fixture-a"
+                }
+              ]
+            },
+            "namespace": "ORDINARY_PG_RUN_ACCESS_ACTIVATION_V1",
+            "capability": "READ",
+            "request_id": "63ee2bd3-7901-4ebc-85cd-ac699dbf7768",
+            "approver_id": "prep-specialist-fixture-a",
+            "executor_id": "executor-a",
+            "protocol_revision": 2,
+            "approver_authority": {
+              "grants": [
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "EXECUTE",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                },
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "READ",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                },
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "revision": 1,
+                  "capability": "READ",
+                  "generation": "4947",
+                  "principal_id": "prep-specialist-fixture-a"
+                }
+              ],
+              "principals": [
+                {
+                  "id": "fixture-a",
+                  "role": "enterprise_operator",
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4945"
+                },
+                {
+                  "id": "prep-specialist-fixture-a",
+                  "role": "park_specialist",
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4947"
+                }
+              ],
+              "preparation": [
+                {
+                  "active": true,
+                  "org_id": "org-a",
+                  "park_id": "park-a",
+                  "generation": "4947",
+                  "principal_id": "fixture-a"
+                }
+              ]
+            },
+            "authority_generations": {
+              "principals": [
+                {
+                  "id": "executor-a",
+                  "generation": "4948"
+                },
+                {
+                  "id": "fixture-a",
+                  "generation": "4945"
+                },
+                {
+                  "id": "prep-specialist-fixture-a",
+                  "generation": "4947"
+                }
+              ],
+              "preparation": [
+                {
+                  "capability": "PREPARE",
+                  "generation": "4947",
+                  "principal_id": "fixture-a"
+                }
+              ],
+              "capabilities": [
+                {
+                  "capability": "READ",
+                  "generation": "4948",
+                  "principal_id": "executor-a"
+                },
+                {
+                  "capability": "EXECUTE",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                },
+                {
+                  "capability": "READ",
+                  "generation": "4945",
+                  "principal_id": "fixture-a"
+                },
+                {
+                  "capability": "READ",
+                  "generation": "4947",
+                  "principal_id": "prep-specialist-fixture-a"
+                }
+              ]
+            }
+          },
+          "actor_id": "fixture-a",
+          "lease_id": "0762284b-476b-428e-a5b6-cfb169308da8",
+          "revision": 1,
+          "namespace": "ORDINARY_PG_RUN_ACCESS_ACTIVATION_V1",
+          "fingerprint": "a7bcada2763086c4b0fc9e9c8408e137993bb0af550c0224f6901ee06a025a9b",
+          "recorded_at": "2026-10-17T01:11:41.491505+00:00",
+          "request_key": "same-key",
+          "writer_proof": {
+            "key_id": "b6b770a4f61024c146638b4c2ab6dfc0c136be57715e489d8cf79b5397f294c1",
+            "scheme": "ORDINARY_PG_SCOPED_WRITER_V1",
+            "hmac_sha256": "f4a76926e774d82958b881ca113e59704e117851079441b15e44fc4a0f3b9d08",
+            "policy_sha256": "ab620a39142b91db9331bce54d071be1a32fb3e3e064198ae837d578327a81b5"
+          },
+          "activation_id": "084f38f9-38ba-4211-9de6-3cf4a726d9b9",
+          "policy_sha256": "ab620a39142b91db9331bce54d071be1a32fb3e3e064198ae837d578327a81b5",
+          "writer_command": {
+            "action": "ACTIVATE",
+            "reason": "SYNTHETIC owner activates exact explicitly approved test lease",
+            "lease_id": "0762284b-476b-428e-a5b6-cfb169308da8",
+            "confirm_activate": true,
+            "expected_revision": 2,
+            "expected_run_revision": 2,
+            "activation_policy_sha256": "ab620a39142b91db9331bce54d071be1a32fb3e3e064198ae837d578327a81b5",
+            "expected_authority_sha256": "dbb7188207ce3ef89ee0288a6289461e564759ede4b1d995ceddc73600c13d37",
+            "expected_activation_revision": 0
+          },
+          "projection_state": "ACTIVE_SYNTHETIC_FIXTURE",
+          "actual_run_access": true,
+          "actual_assignment_written": true,
+          "production_policy_adopted": false
+        }
+      ],
+      "revision": 1,
+      "namespace": "ORDINARY_PG_RUN_ACCESS_ACTIVATION_V1",
+      "activation_id": "084f38f9-38ba-4211-9de6-3cf4a726d9b9"
+    }
+  },
+  "assignments": [
+    {
+      "principal_id": "executor-a",
+      "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+      "park_id": "park-a",
+      "org_id": "org-a",
+      "active": true,
+      "native_access": {
+        "binding": {
+          "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+          "source": {
+            "org_id": "org-a",
+            "run_id": "f29cc7b7-da8b-43a8-8cd3-5a3d3eb68816",
+            "case_id": "fa2792dd-3eb9-42f7-8ed7-4940210f217b",
+            "park_id": "park-a",
+            "owner_id": "fixture-a",
+            "case_state": "NEEDS_INPUT",
+            "run_revision": 2,
+            "review_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+            "preparation_id": "3c549ee3-ab12-4177-8963-664908350782",
+            "material_sha256": "3c1488d8f6e3dfb34a3a8f23f265b7dd43c1338f46a9b8a4008357a5f7ce8ff4",
+            "input_fingerprint": "e7d73ca4d8b9beca7d1cc711c57fc0730fcdf400d0cb6f013935d7111922b7fc",
+            "preparation_state": "LOCAL_CONFIRMED",
+            "preparation_revision": 5
+          },
+          "lease_id": "0762284b-476b-428e-a5b6-cfb169308da8",
+          "owner_id": "fixture-a",
+          "validity": {
+            "timezone": "UTC",
+            "valid_from": "2026-10-17T01:11:40.853906+00:00",
+            "valid_until": "2026-10-17T01:13:40.853906+00:00"
+          },
+          "authority": {
+            "grants": [
+              {
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "revision": 1,
+                "capability": "READ",
+                "generation": "4948",
+                "principal_id": "executor-a"
+              },
+              {
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "revision": 1,
+                "capability": "EXECUTE",
+                "generation": "4945",
+                "principal_id": "fixture-a"
+              },
+              {
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "revision": 1,
+                "capability": "READ",
+                "generation": "4945",
+                "principal_id": "fixture-a"
+              }
+            ],
+            "principals": [
+              {
+                "id": "executor-a",
+                "role": "service_executor",
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "generation": "4948"
+              },
+              {
+                "id": "fixture-a",
+                "role": "enterprise_operator",
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "generation": "4945"
+              }
+            ],
+            "preparation": [
+              {
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "generation": "4947",
+                "principal_id": "fixture-a"
+              }
+            ]
+          },
+          "namespace": "ORDINARY_PG_RUN_ACCESS_ACTIVATION_V1",
+          "capability": "READ",
+          "request_id": "63ee2bd3-7901-4ebc-85cd-ac699dbf7768",
+          "approver_id": "prep-specialist-fixture-a",
+          "executor_id": "executor-a",
+          "protocol_revision": 2,
+          "approver_authority": {
+            "grants": [
+              {
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "revision": 1,
+                "capability": "EXECUTE",
+                "generation": "4945",
+                "principal_id": "fixture-a"
+              },
+              {
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "revision": 1,
+                "capability": "READ",
+                "generation": "4945",
+                "principal_id": "fixture-a"
+              },
+              {
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "revision": 1,
+                "capability": "READ",
+                "generation": "4947",
+                "principal_id": "prep-specialist-fixture-a"
+              }
+            ],
+            "principals": [
+              {
+                "id": "fixture-a",
+                "role": "enterprise_operator",
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "generation": "4945"
+              },
+              {
+                "id": "prep-specialist-fixture-a",
+                "role": "park_specialist",
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "generation": "4947"
+              }
+            ],
+            "preparation": [
+              {
+                "active": true,
+                "org_id": "org-a",
+                "park_id": "park-a",
+                "generation": "4947",
+                "principal_id": "fixture-a"
+              }
+            ]
+          },
+          "authority_generations": {
+            "principals": [
+              {
+                "id": "executor-a",
+                "generation": "4948"
+              },
+              {
+                "id": "fixture-a",
+                "generation": "4945"
+              },
+              {
+                "id": "prep-specialist-fixture-a",
+                "generation": "4947"
+              }
+            ],
+            "preparation": [
+              {
+                "capability": "PREPARE",
+                "generation": "4947",
+                "principal_id": "fixture-a"
+              }
+            ],
+            "capabilities": [
+              {
+                "capability": "READ",
+                "generation": "4948",
+                "principal_id": "executor-a"
+              },
+              {
+                "capability": "EXECUTE",
+                "generation": "4945",
+                "principal_id": "fixture-a"
+              },
+              {
+                "capability": "READ",
+                "generation": "4945",
+                "principal_id": "fixture-a"
+              },
+              {
+                "capability": "READ",
+                "generation": "4947",
+                "principal_id": "prep-specialist-fixture-a"
+              }
+            ]
+          }
+        },
+        "lease_id": "0762284b-476b-428e-a5b6-cfb169308da8",
+        "namespace": "ORDINARY_PG_RUN_ACCESS_ACTIVATION_V1",
+        "activation_id": "084f38f9-38ba-4211-9de6-3cf4a726d9b9",
+        "policy_sha256": "ab620a39142b91db9331bce54d071be1a32fb3e3e064198ae837d578327a81b5"
+      }
+    }
+  ],
+  "application": {
+    "app_role": "parkweave_app",
+    "assignment_write": false
+  },
+  "actual_production_installation": false,
+  "production_permission_changes": false,
+  "browser_attempts": 0,
+  "formal_AT35": false
+}

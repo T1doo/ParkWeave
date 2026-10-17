@@ -1,0 +1,105 @@
+................F..........                                              [100%]
+=================================== FAILURES ===================================
+_ test_real_signed_existing_assignment_survives_factory_restart_but_commands_stay_closed _
+
+writer_fixture = <writer_reference_support.Harness object at 0x7f3d716ea180>
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f3d71a1f410>
+
+    def test_real_signed_existing_assignment_survives_factory_restart_but_commands_stay_closed(writer_fixture,monkeypatch):
+        h=writer_fixture;approve(h);assert activate(h.a).status_code==200
+        r,_,_=offer(h.f,h.parent);assert r.status_code==201,r.text
+        before=snapshot(h.f[1]);app,bridges,cfg=reference_factory(h,monkeypatch)
+        original_rpc=writer.WriterClient.rpc;operations=[]
+        def observe(client,operation,**data):
+            operations.append(operation);assert operation in ('VALIDATE','VERIFY')
+            return original_rpc(client,operation,**data)
+        monkeypatch.setattr(writer.WriterClient,'rpc',observe)
+        for application in (app,configured_app()):
+            with TestClient(application) as api:
+                assert api.get('/api/runs/'+h.parent['run_id'],headers=headers(h.f[2],'executor-a')).status_code==200
+                status=api.get('/api/run-access/status',headers=headers(h.f[2])).json()
+                assert status['read_only'] and not status['enabled'] and not status['can_approve']
+                access=get(api,h.f,h.parent,'access-approval');assert access.status_code==200,access.text
+                x=access.json();assert x['writer_history_verified'] and x['actual_run_access'] and x['read_only']
+                assert not any(x[k] for k in ('can_request','can_approve','can_reject','can_cancel','can_revoke','can_activate','activation_enabled'))
+                assert get(api,h.f,h.parent,'dispatch').json()['dispatch_id']==r.json()['dispatch_id']
+                assert get(api,h.f,h.parent,'catalog').json()['provider_configured']
+>               denied=api.post('/api/runs/'+h.parent['run_id']+'/access/commands',headers=headers(h.f[2],key='readonly-command'),json=body(h.a,'REVOKE'))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_ordinary_runtime_read.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:463: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:812: in request
+    request = self.build_request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:378: in build_request
+    return Request(
+.venv/lib/python3.12/site-packages/httpx/_models.py:408: in __init__
+    headers, stream = encode_request(
+.venv/lib/python3.12/site-packages/httpx/_content.py:216: in encode_request
+    return encode_json(json)
+           ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_content.py:177: in encode_json
+    body = json_dumps(
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <json.encoder.JSONEncoder object at 0x7f3d71916f00>
+o = RunCommand(action='REVOKE', expected_revision=2, expected_run_revision=2, expected_authority_sha256='f4035c100b13398a3...bility=None, requested_validity=None, approved_validity=None, reason='SYNTHETIC explicit REVOKE', confirm_request=None)
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+>       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type RunCommand is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_ordinary_runtime_read.py::test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_ordinary_runtime_read.py::test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_ordinary_runtime_read.py::test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_ordinary_runtime_read.py::test_real_signed_existing_assignment_survives_factory_restart_but_commands_stay_closed
+1 failed, 26 passed, 4 warnings in 45.71s

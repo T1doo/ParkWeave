@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="27" time="45.714" timestamp="2026-10-17T00:39:37.759235+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_ordinary_runtime_read" name="test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses" time="3.301" /><testcase classname="tests.test_ordinary_runtime_read" name="test_wrong_exact_selection_refuses_every_bound_original_read[expected_case_id-c1921c0d-2fed-4437-a0bc-7e0c3e28ae18]" time="1.624" /><testcase classname="tests.test_ordinary_runtime_read" name="test_wrong_exact_selection_refuses_every_bound_original_read[expected_run_id-51a8aa0c-5f62-40c7-8eca-bf99eb310a66]" time="1.850" /><testcase classname="tests.test_ordinary_runtime_read" name="test_wrong_exact_selection_refuses_every_bound_original_read[expected_service_version-2]" time="1.354" /><testcase classname="tests.test_ordinary_runtime_read" name="test_wrong_exact_selection_refuses_every_bound_original_read[expected_service_id-SYNTHETIC-other-service]" time="1.373" /><testcase classname="tests.test_ordinary_runtime_read" name="test_current_tenant_and_preparation_assignment_still_required[fixture-b]" time="1.463" /><testcase classname="tests.test_ordinary_runtime_read" name="test_current_tenant_and_preparation_assignment_still_required[fixture-c]" time="1.264" /><testcase classname="tests.test_ordinary_runtime_read" name="test_current_tenant_and_preparation_assignment_still_required[prep-specialist-fixture-b]" time="1.569" /><testcase classname="tests.test_ordinary_runtime_read" name="test_invalid_factory_config_never_reaches_host_or_database[empty]" time="0.002" /><testcase classname="tests.test_ordinary_runtime_read" name="test_invalid_factory_config_never_reaches_host_or_database[json]" time="0.001" /><testcase classname="tests.test_ordinary_runtime_read" name="test_invalid_factory_config_never_reaches_host_or_database[extra]" time="0.002" /><testcase classname="tests.test_ordinary_runtime_read" name="test_invalid_factory_config_never_reaches_host_or_database[relative]" time="0.001" /><testcase classname="tests.test_ordinary_runtime_read" name="test_invalid_factory_config_never_reaches_host_or_database[sha]" time="0.001" /><testcase classname="tests.test_ordinary_runtime_read" name="test_invalid_factory_config_never_reaches_host_or_database[bool-version]" time="0.001" /><testcase classname="tests.test_ordinary_runtime_read" name="test_invalid_factory_config_never_reaches_host_or_database[missing]" time="0.002" /><testcase classname="tests.test_ordinary_runtime_read" name="test_actual_unprotected_or_missing_pin_is_not_a_startup_authority" time="0.001" /><testcase classname="tests.test_ordinary_runtime_read" name="test_real_signed_existing_assignment_survives_factory_restart_but_commands_stay_closed" time="3.725"><failure message="TypeError: Object of type RunCommand is not JSON serializable">writer_fixture = &lt;writer_reference_support.Harness object at 0x7f3d716ea180&gt;
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3d71a1f410&gt;
+
+    def test_real_signed_existing_assignment_survives_factory_restart_but_commands_stay_closed(writer_fixture,monkeypatch):
+        h=writer_fixture;approve(h);assert activate(h.a).status_code==200
+        r,_,_=offer(h.f,h.parent);assert r.status_code==201,r.text
+        before=snapshot(h.f[1]);app,bridges,cfg=reference_factory(h,monkeypatch)
+        original_rpc=writer.WriterClient.rpc;operations=[]
+        def observe(client,operation,**data):
+            operations.append(operation);assert operation in ('VALIDATE','VERIFY')
+            return original_rpc(client,operation,**data)
+        monkeypatch.setattr(writer.WriterClient,'rpc',observe)
+        for application in (app,configured_app()):
+            with TestClient(application) as api:
+                assert api.get('/api/runs/'+h.parent['run_id'],headers=headers(h.f[2],'executor-a')).status_code==200
+                status=api.get('/api/run-access/status',headers=headers(h.f[2])).json()
+                assert status['read_only'] and not status['enabled'] and not status['can_approve']
+                access=get(api,h.f,h.parent,'access-approval');assert access.status_code==200,access.text
+                x=access.json();assert x['writer_history_verified'] and x['actual_run_access'] and x['read_only']
+                assert not any(x[k] for k in ('can_request','can_approve','can_reject','can_cancel','can_revoke','can_activate','activation_enabled'))
+                assert get(api,h.f,h.parent,'dispatch').json()['dispatch_id']==r.json()['dispatch_id']
+                assert get(api,h.f,h.parent,'catalog').json()['provider_configured']
+&gt;               denied=api.post('/api/runs/'+h.parent['run_id']+'/access/commands',headers=headers(h.f[2],key='readonly-command'),json=body(h.a,'REVOKE'))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_ordinary_runtime_read.py:168: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:463: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:812: in request
+    request = self.build_request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:378: in build_request
+    return Request(
+.venv/lib/python3.12/site-packages/httpx/_models.py:408: in __init__
+    headers, stream = encode_request(
+.venv/lib/python3.12/site-packages/httpx/_content.py:216: in encode_request
+    return encode_json(json)
+           ^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_content.py:177: in encode_json
+    body = json_dumps(
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f3d71916f00&gt;
+o = RunCommand(action='REVOKE', expected_revision=2, expected_run_revision=2, expected_authority_sha256='f4035c100b13398a3...bility=None, requested_validity=None, approved_validity=None, reason='SYNTHETIC explicit REVOKE', confirm_request=None)
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type RunCommand is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_ordinary_runtime_read" name="test_current_revocation_and_catalog_generation_deny_after_restart[owner-read]" time="3.388" /><testcase classname="tests.test_ordinary_runtime_read" name="test_current_revocation_and_catalog_generation_deny_after_restart[prepare]" time="3.062" /><testcase classname="tests.test_ordinary_runtime_read" name="test_current_revocation_and_catalog_generation_deny_after_restart[reviewer]" time="3.398" /><testcase classname="tests.test_ordinary_runtime_read" name="test_current_revocation_and_catalog_generation_deny_after_restart[assignment]" time="3.457" /><testcase classname="tests.test_ordinary_runtime_read" name="test_current_revocation_and_catalog_generation_deny_after_restart[catalog-aba]" time="3.377" /><testcase classname="tests.test_ordinary_runtime_read" name="test_provider_config_cannot_substitute_foreign_binding[case]" time="1.629" /><testcase classname="tests.test_ordinary_runtime_read" name="test_provider_config_cannot_substitute_foreign_binding[run]" time="1.880" /><testcase classname="tests.test_ordinary_runtime_read" name="test_provider_config_cannot_substitute_foreign_binding[preparation]" time="1.990" /><testcase classname="tests.test_ordinary_runtime_read" name="test_provider_config_cannot_substitute_foreign_binding[service-version]" time="1.909" /><testcase classname="tests.test_ordinary_runtime_read" name="test_provider_config_cannot_substitute_foreign_binding[catalog-hash]" time="2.040" /></testsuite></testsuites>

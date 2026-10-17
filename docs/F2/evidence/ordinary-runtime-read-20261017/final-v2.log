@@ -1,0 +1,409 @@
+........................................................................ [ 16%]
+..............................EE........................................ [ 33%]
+.........................................F.............................. [ 50%]
+...............F........................................................ [ 67%]
+........................................................................ [ 84%]
+....................................................................     [100%]
+==================================== ERRORS ====================================
+_ ERROR at setup of test_recovery_does_not_reactivate_generated_brief_after_source_change _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1c05498fe0>, <parkweave.store.Store object at 0x7f1c040ea510>, {'fixture-a': '_3...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f1bf7408ad0>)
+
+    @pytest.fixture
+    def draft_fixture(preparation_fixture):
+        f=preparation_fixture; parent,_,_=create(f,goal='SYNTHETIC 准备园区咨询的企业诉求摘要')
+>       selected=seed_facts_through_original_api(f)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_preparation_drafts.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_case_fact_clarifications_integration.py:107: in seed_facts_through_original_api
+    post_fact(f, 'region', 'PRIVATE_CONFLICTING_REGION', 'competing-region')
+tests/test_case_fact_clarifications_integration.py:96: in post_fact
+    response = f[3].post('/api/facts', headers=headers(f[2], user, uuid4().hex),
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:463: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:360: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:357: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:340: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:265: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1215: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py:151: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:197: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/api.py:189: in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:173: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:149: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:676: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:2786: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:1310: in handle
+    await super().handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:282: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:165: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:151: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:727: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:362: in run_endpoint_function
+    return await run_in_threadpool(
+.venv/lib/python3.12/site-packages/starlette/concurrency.py:34: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/anyio/to_thread.py:65: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2706: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1100: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py:240: in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/api.py:355: in save_fact
+    return {'fact_id':store.save_fact(token(authorization),idempotency_key,data),'source':'USER_ASSERTED_SYNTHETIC'}
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/store.py:622: in save_fact
+    with self.connect() as c:
+         ^^^^^^^^^^^^^^
+src/parkweave/store.py:86: in connect
+    return psycopg.connect(self.dsn, row_factory=dict_row, connect_timeout=2)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+cls = <class 'psycopg.Connection'>
+conninfo = 'user=parkweave_app dbname=fixture_13ed4cdde9904b58895f8f95ad52e9fb host=/tmp/parkweave-runtime-read-final-v2/parkweave-pg0/data connect_timeout=2'
+autocommit = False, prepare_threshold = 5, context = None
+row_factory = <function dict_row at 0x7f1c0a313240>, cursor_factory = None
+kwargs = {'connect_timeout': 2}
+
+    @classmethod
+    def connect(
+        cls,
+        conninfo: str = "",
+        *,
+        autocommit: bool = False,
+        prepare_threshold: int | None = 5,
+        context: AdaptContext | None = None,
+        row_factory: RowFactory[Row] | None = None,
+        cursor_factory: type[Cursor[Row]] | None = None,
+        **kwargs: ConnParam,
+    ) -> Self:
+        """
+        Connect to a database server and return a new `Connection` instance.
+        """
+    
+        params = cls._get_connection_params(conninfo, **kwargs)
+        timeout = timeout_from_conninfo(params)
+        rv = None
+        attempts = conninfo_attempts(params)
+        conn_errors: list[tuple[e.Error, str]] = []
+        for attempt in attempts:
+            tdescr = (attempt.get("host"), attempt.get("port"), attempt.get("hostaddr"))
+            descr = "host: %r, port: %r, hostaddr: %r" % tdescr
+            logger.debug("connection attempt: %s", descr)
+            try:
+                conninfo = make_conninfo("", **attempt)
+                gen = cls._connect_gen(conninfo)
+                rv = waiting.wait_conn(gen, interval=_WAIT_INTERVAL, timeout=timeout)
+            except e._WaitTimeout:
+                tex = e.ConnectionTimeout("connection timeout expired")
+                logger.debug("connection failed: %s: %s", descr, str(tex))
+                conn_errors.append((tex, descr))
+            except e.Error as ex:
+                logger.debug("connection failed: %s: %s", descr, str(ex))
+                conn_errors.append((ex, descr))
+            except e._NO_TRACEBACK as ex:
+                raise ex.with_traceback(None)
+            else:
+                logger.debug("connection succeeded: %s", descr)
+                break
+    
+        if not rv:
+            last_ex = conn_errors[-1][0]
+            if len(conn_errors) == 1:
+>               raise last_ex.with_traceback(None)
+E               psycopg.errors.ConnectionTimeout: connection timeout expired
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:126: ConnectionTimeout
+_ ERROR at teardown of test_recovery_does_not_reactivate_generated_brief_after_source_change _
+
+pg = <pgserver.postgres_server.PostgresServer object at 0x7f1c07b03d40>
+request = <SubRequest 'fixture' for <Function test_recovery_does_not_reactivate_generated_brief_after_source_change>>
+
+    @pytest.fixture
+    def fixture(pg,request):
+        db = 'fixture_' + uuid.uuid4().hex
+        created=False
+        try:
+            fixture_progress(request,'CREATE_DB')
+            with psycopg.connect(pg.get_uri(), autocommit=True) as c:
+                c.execute(psycopg.sql.SQL('CREATE DATABASE {}').format(psycopg.sql.Identifier(db)))
+                created=True
+            owner = Store(make_conninfo(pg.get_uri(), dbname=db))
+            with owner.connect() as c:
+                owner._case_fact_fixture_receipt=pg._case_fact_fixture_cluster.record_created_database(c)
+            fixture_progress(request,'MIGRATE');owner.migrate()
+            tokens = {k: secrets.token_urlsafe(32) for k in ('fixture-a','fixture-b','fixture-c')}
+            fixture_progress(request,'SEED');owner.seed(tokens)
+            fixture_progress(request,'GRANTS')
+            with owner.connect() as c:
+                c.execute('GRANT USAGE ON SCHEMA public TO parkweave_app')
+                c.execute('GRANT SELECT ON schema_version,principals,field_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON fact_assertions TO parkweave_app')
+                c.execute('GRANT SELECT ON capability_grants,run_assignments,file_resources TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON deliveries TO parkweave_app')
+                c.execute('GRANT SELECT ON action_grants TO parkweave_app')
+                c.execute('GRANT INSERT ON authorization_audit TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON runs,operations,cases,outbox,run_projection,model_steps TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON model_plans TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON fact_reviews,fact_followups TO parkweave_app')
+                c.execute('GRANT SELECT ON preparation_catalog,preparation_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT,UPDATE ON preparations TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON preparation_evidence,preparation_events TO parkweave_app')
+                c.execute('GRANT SELECT ON synthetic_resources,synthetic_resource_grants TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON synthetic_resource_holds,synthetic_resource_receipts TO parkweave_app')
+                c.execute('GRANT UPDATE(state) ON synthetic_resource_holds TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON synthetic_resource_combinations,synthetic_resource_combination_members,synthetic_resource_combination_receipts TO parkweave_app')
+                c.execute('GRANT UPDATE(state) ON synthetic_resource_combinations TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON service_receipt_steps,service_step_receipts,service_receipt_events TO parkweave_app')
+                c.execute('GRANT UPDATE(state,revision,current_receipt_id) ON service_receipt_steps TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON resource_case_claims,case_resource_links TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON service_dispatches,service_dispatch_offers,service_dispatch_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,current_offer_id) ON service_dispatches TO parkweave_app')
+                c.execute('GRANT UPDATE(state,receipt_step_id) ON service_dispatch_offers TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON case_local_lifecycles,case_local_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,cycle,state,verified_snapshot,verified_sha256) ON case_local_lifecycles TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON dispatch_notice_outbox,dispatch_notices TO parkweave_app')
+                c.execute('GRANT UPDATE(state,consumed_at) ON dispatch_notice_outbox TO parkweave_app')
+                c.execute('GRANT UPDATE(seen_at,read_at) ON dispatch_notices TO parkweave_app')
+                c.execute('GRANT SELECT,INSERT ON controlled_plans,controlled_plan_events TO parkweave_app')
+                c.execute('GRANT UPDATE(revision,checked,invalidated_from,invalidated_at) ON controlled_plans TO parkweave_app')
+            store = Store(make_conninfo(owner.dsn, user='parkweave_app'))
+            fixture_progress(request,'CLIENT')
+            with TestClient(create_app(store)) as client:
+                yield store, owner, tokens, client
+                fixture_progress(request,'CLIENT_EXIT')
+        except BaseException as primary:
+            if created:
+                try:
+                    fixture_progress(request,'DROP_DB');drop_owned_fixture_database(pg,db);fixture_progress(request,'DONE')
+                except Exception as cleanup:
+                    primary.add_note('Owned fixture cleanup failed: '+type(cleanup).__name__)
+            raise
+        else:
+            if created:
+>               fixture_progress(request,'DROP_DB');drop_owned_fixture_database(pg,db);fixture_progress(request,'DONE')
+                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:110: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/conftest.py:36: in drop_owned_fixture_database
+    c.execute(psycopg.sql.SQL('DROP DATABASE {}').format(psycopg.sql.Identifier(db)))
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <psycopg.Connection [BAD] at 0x7f1bf6cc9ee0>
+query = Composed([SQL('DROP DATABASE '), Identifier('fixture_13ed4cdde9904b58895f8f95ad52e9fb')])
+params = None, prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -> Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+>           raise ex.with_traceback(None)
+E           psycopg.errors.ObjectInUse: database "fixture_13ed4cdde9904b58895f8f95ad52e9fb" is being accessed by other users
+E           DETAIL:  There is 1 other session using the database.
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: ObjectInUse
+=================================== FAILURES ===================================
+____ test_whole_ordinary_chain_uses_activation_then_explicit_plan_revision _____
+
+link_fixture = (<parkweave.store.Store object at 0x7f1bf7e7ef60>, <parkweave.store.Store object at 0x7f1bf7e7fc80>, {'fixture-a': 'ZU...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f1bf7ade900>)
+
+    def test_whole_ordinary_chain_uses_activation_then_explicit_plan_revision(link_fixture):
+        f=link_fixture
+        native.install_owned_test_storage(f[1],f[1]._case_fact_fixture_receipt)
+        activation.install_owned_test_activation_storage(f[1],f[1]._case_fact_fixture_receipt)
+        permit=native.issue_decision_test_permit(f[1],f[1]._case_fact_fixture_receipt,approver_ids={APPROVER})
+        bridge=native.NativeRunAccess(f[0],test_permit=permit);f[0]._native_run_access=bridge
+>       u=Chain(f,f[3],'native-effective-whole-chain');p=u.prepared('native-effective',assigned=False)
+                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_activation.py:432: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_f2_t07_full_chain.py:141: in prepared
+    p = self.new(label, assigned)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:108: in new
+    self.worker()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <T07 ordinary API/PG synthetic chain; no credentials in repr>
+
+    def worker(self):
+        argv = [sys.executable, '-m', 'parkweave.worker', '--once']
+        env = minimal_environment(os.environ, PARKWEAVE_DSN=self.f[0].dsn, PARKWEAVE_MODE='LOCAL')
+        started = datetime.now(timezone.utc).isoformat()
+        p = subprocess.Popen(argv, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        timed_out = False
+        try: stdout, stderr = p.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            p.terminate()
+            try: stdout, stderr = p.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                p.kill(); stdout, stderr = p.communicate(timeout=5)
+        self.workers.append(dict(argv=argv, pid=p.pid, started_utc=started,
+                                 ended_utc=datetime.now(timezone.utc).isoformat(),
+                                 exit_code=p.returncode, stdout=stdout, stderr=stderr,
+                                 mode='LOCAL', mock=False, DSN_recorded=False, timed_out=timed_out))
+>       assert p.returncode == 0 and not timed_out, (stdout, stderr)
+E       AssertionError: ('', "/workspace/ParkWeave/.venv/bin/python: Error while finding module specification for 'parkweave.worker' (ModuleNotFoundError: No module named 'parkweave')
+E         ")
+E       assert (1 == 0)
+E        +  where 1 = <Popen: returncode: 1 args: ['/workspace/ParkWeave/.venv/bin/python', '-m', ...>.returncode
+
+tests/test_f2_t07_full_chain.py:85: AssertionError
+_________ test_reference_writer_full_chain_with_explicit_plan_revision _________
+
+link_fixture = (<parkweave.store.Store object at 0x7f1bf7924aa0>, <parkweave.store.Store object at 0x7f1c05369eb0>, {'fixture-a': 'le...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f1c06b73cb0>)
+request = <FixtureRequest for <Function test_reference_writer_full_chain_with_explicit_plan_revision>>
+
+    def test_reference_writer_full_chain_with_explicit_plan_revision(link_fixture,request):
+>       f=link_fixture;u=Chain(f,f[3],'separate-writer-whole-chain');p=u.prepared('separate-writer',assigned=False)
+                                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_run_access_writer.py:384: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_f2_t07_full_chain.py:141: in prepared
+    p = self.new(label, assigned)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_f2_t07_full_chain.py:108: in new
+    self.worker()
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <T07 ordinary API/PG synthetic chain; no credentials in repr>
+
+    def worker(self):
+        argv = [sys.executable, '-m', 'parkweave.worker', '--once']
+        env = minimal_environment(os.environ, PARKWEAVE_DSN=self.f[0].dsn, PARKWEAVE_MODE='LOCAL')
+        started = datetime.now(timezone.utc).isoformat()
+        p = subprocess.Popen(argv, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        timed_out = False
+        try: stdout, stderr = p.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            timed_out = True
+            p.terminate()
+            try: stdout, stderr = p.communicate(timeout=5)
+            except subprocess.TimeoutExpired:
+                p.kill(); stdout, stderr = p.communicate(timeout=5)
+        self.workers.append(dict(argv=argv, pid=p.pid, started_utc=started,
+                                 ended_utc=datetime.now(timezone.utc).isoformat(),
+                                 exit_code=p.returncode, stdout=stdout, stderr=stderr,
+                                 mode='LOCAL', mock=False, DSN_recorded=False, timed_out=timed_out))
+>       assert p.returncode == 0 and not timed_out, (stdout, stderr)
+E       AssertionError: ('', "/workspace/ParkWeave/.venv/bin/python: Error while finding module specification for 'parkweave.worker' (ModuleNotFoundError: No module named 'parkweave')
+E         ")
+E       assert (1 == 0)
+E        +  where 1 = <Popen: returncode: 1 args: ['/workspace/ParkWeave/.venv/bin/python', '-m', ...>.returncode
+
+tests/test_f2_t07_full_chain.py:85: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_ordinary_runtime_read.py::test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_ordinary_runtime_read.py::test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_native_run_access_activation.py::test_whole_ordinary_chain_uses_activation_then_explicit_plan_revision
+FAILED tests/test_native_run_access_writer.py::test_reference_writer_full_chain_with_explicit_plan_revision
+ERROR tests/test_preparation_command_recovery.py::test_recovery_does_not_reactivate_generated_brief_after_source_change
+ERROR tests/test_preparation_command_recovery.py::test_recovery_does_not_reactivate_generated_brief_after_source_change
+2 failed, 424 passed, 4 warnings, 2 errors in 886.28s (0:14:46)

@@ -1,3 +1,11 @@
+## 2026-10-17：普通运行时既有授权读取接线（验证门未通过）
+
+基线 `fb09abafc2e56a446cc372e6a4ce46afcd64571d`，冻结源码 `6ab25aa0d10dda48fa3d12184a235a6e50fcccea`。普通 configured_app 显式配置只读加载原受保护 public binding，复用原签名历史、实际数据库/角色与既有有效assignment的Run权限链；同preparation/Case/Run、服务精确版本、目录hash/xmin校验接入原提交复核。资料页进入原Run/分派/Run READ访问批准面板和精确目录，决定/激活命令关闭；普通资源方案批准契约仍缺，不用IsolatedPlanApproval替代。无真实授权材料补建。
+
+最终同冻结13完整模块427唯一项：425PASS/2FAIL/2teardown ERROR/0SKIP，JUnit860.76秒，新增36项含内全PASS。失败是旧激活模块403之后owner快照及旧writer激活RPC之前app预检的2秒握手超时，清理分别statement timeout与1残留session；致因未确立，整批门未通过。前窗未完成125P1F1ERROR、第二完整窗424P2F2ERROR及开发/安装失败均保留。两条原worker导入失败经补齐README要求的editable安装后本窗PASS；不改源码、原期限、超时或子进程白名单，不跨窗累加，不再盲目重跑整批。
+
+715冻结输入和26657旧证据hash零差异。真实受保护host正向/独立UID、Windows、正式AT/AT35、真实业务/来源/批准/模型、部署、全仓均未验。新片仅自审、独审待执行；当前候选不称完整项目或正式批准完成。缺已有合法会话/READ/PREPARE或REVIEW_ASSIGNED、原记录与精确目录、受保护public binding、现有角色ACL/Native存储、签名批准及已激活assignment/当前独立核验通道即拒绝。CI遵从此前API403停止，未查询或换路径；无main/强推/部署/新费用/真实凭据/安全网络权限/未知锁进程清理。[本片实现、失败台账与精确输入](OrdinaryRuntimeReadWiring-20261017.md)。下方历史原字节保留。
+
 ## 2026-10-17：普通启动读取已有资料准备记录
 
 冻结源码 `5e287545dcf178053574cafeee092041689eb51e`，基线 `db1084100a2477bbff3da8b49287c755dbc83c1b`。普通 configured_app 页面按已有会话和 preparation 编号，复用原当前身份/本人或获派范围、专员权限及精确目录检查进入原资料页，再用原来源预检和明确 ADOPT；不补建身份、Grant、分派、目录或批准。新增入口GET事务只读；原计划GET保存既有失效观测的合同保留，原算法不重做。
