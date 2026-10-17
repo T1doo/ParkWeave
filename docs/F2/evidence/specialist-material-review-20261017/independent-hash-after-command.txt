@@ -1,0 +1,16 @@
+REVIEW_PHASE=POST PYTHONDONTWRITEBYTECODE=1 python -B - <<'PY'
+from pathlib import Path
+import hashlib,json,os,subprocess
+root=Path.cwd();manifest=Path('.runtime/specialist-material-review/freeze.json');m=json.loads(manifest.read_text())
+head=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip();branch=subprocess.check_output(['git','symbolic-ref','--short','HEAD'],text=True).strip()
+assert head==m['source_sha']=='0c6e060b9661797b9bce0d1280274d3769b264ed'
+assert branch==m['branch']=='dev/f2-specialist-material-review-20261017'
+assert len(m['files'])==732
+bad=[p for p,want in m['files'].items() if not Path(p).is_file() or hashlib.sha256(Path(p).read_bytes()).hexdigest()!=want]
+contract=Path('docs/F2/SpecialistMaterialReviewContract-20261017.md');contract_hash=hashlib.sha256(contract.read_bytes()).hexdigest()
+assert not bad,bad;assert contract_hash==m['contract_sha256']
+print('phase='+os.environ['REVIEW_PHASE']);print('source_sha='+head);print('branch='+branch);print('manifest_sha256='+hashlib.sha256(manifest.read_bytes()).hexdigest());print('verified_inputs=732 mismatches=0');print('input_map_sha256='+hashlib.sha256(json.dumps(m['files'],sort_keys=True,separators=(',',':')).encode()).hexdigest());print('contract_sha256='+contract_hash+' matches=true')
+for p in ('src/parkweave/api.py','src/parkweave/web.html','src/parkweave/material_review_comparison.py','tests/test_material_review_comparison.py','tests/test_material_review_comparison_browser.py',str(contract)):
+ print(p+' '+hashlib.sha256(Path(p).read_bytes()).hexdigest())
+print('PASS frozen-input check')
+PY

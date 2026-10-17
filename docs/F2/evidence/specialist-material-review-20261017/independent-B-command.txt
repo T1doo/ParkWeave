@@ -1,0 +1,103 @@
+PYTHONDONTWRITEBYTECODE=1 node <<'JS'
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),{webcrypto}=require('node:crypto');
+const html=fs.readFileSync('src/parkweave/web.html','utf8'),lines=html.split('\n');
+function line(prefix){const matches=lines.filter(l=>l.startsWith(prefix));assert.equal(matches.length,1,prefix);return matches[0]+'\n';}
+function block(start,end){const a=html.indexOf(start),b=html.indexOf(end,a);assert(a>=0&&b>a,start);return html.slice(a,b+end.length)+'\n';}
+const actual=[
+ line('function prepCurrent('),line('function requirePrepCurrent('),line('function failCurrentEntryRead('),line('function prepError('),line('async function prepCall('),
+ line('function materialFileLocked('),line('function existingPreparationBlocked('),line('function objectionLock('),line('async function materialFileSha('),
+ line('function uuidHandle('),line('function receiptHistoryCanonical('),
+ block('function materialVersionLines(', '\n}'),
+ block('let materialReviewGeneration=', "$('material-review-read').onclick=()=>readMaterialReviewCompare();"),
+ line('async function prepCommand('),block('function trackedEntryFunction(', '\n};}')
+].join('\n');
+const fixture={"scope":"SYNTHETIC_ASSIGNED_MATERIAL_REVIEW_COMPARISON","read_only":true,"role":"park_specialist","reviewer_id":"synthetic-specialist","preparation_id":"11111111-1111-1111-1111-111111111111","case_id":"22222222-2222-2222-2222-222222222222","run_id":"33333333-3333-3333-3333-333333333333","preparation_revision":12,"service_id":"synthetic-material-preparation","service_version":1,"reader_source_sha256":"0516d42126217e01992291b89f3567935e7b166dfc88800ea710afcf992064b5","current_snapshot_sha256":"03162c540ec9bfd29bb2be504e0472963587aa3271e719f1fe65d1853abd7ee2","baseline_state":"MATCHED","review_event":{"id":"99999999-9999-9999-9999-999999999999","revision":4,"actor_id":"synthetic-specialist","created_at":"2026-10-17T00:00:00+00:00","snapshot_sha256":"7e181b437b7e110348edca065595bdac2c312dd019935a079c4bd3531ecc86e2"},"slots":[{"slot":"need_summary","baseline":{"id":"55555555-5555-5555-5555-555555555555","slot":"need_summary","version":1,"text":"SYNTHETIC need one\n","source_kind":"DOCUMENT_EXCERPT","source_label":"SYNTHETIC source","source_sha256":"68d832b66ce62246e7447e073e92acf97aea4276efc7ec40cedd23b6353cf1a3","authenticity":"UNVERIFIED"},"current":{"id":"88888888-8888-8888-8888-888888888888","slot":"need_summary","version":2,"text":"SYNTHETIC need one\n","source_kind":"DOCUMENT_EXCERPT","source_label":"SYNTHETIC source","source_sha256":"68d832b66ce62246e7447e073e92acf97aea4276efc7ec40cedd23b6353cf1a3","authenticity":"UNVERIFIED"}},{"slot":"material_outline","baseline":{"id":"44444444-4444-4444-4444-444444444444","slot":"material_outline","version":1,"text":"SYNTHETIC old\r\nA\rB\n字面\\r😀","source_kind":"DOCUMENT_EXCERPT","source_label":"SYNTHETIC source","source_sha256":"626b0eb3fc5ee4b629856bbf7b4e485da4d2f112043ec49561f3fc6d062c519c","authenticity":"UNVERIFIED"},"current":{"id":"77777777-7777-7777-7777-777777777777","slot":"material_outline","version":3,"text":"SYNTHETIC current\r\n甲\n<script>globalThis.pwned=1</script>","source_kind":"DOCUMENT_EXCERPT","source_label":"SYNTHETIC source","source_sha256":"40cd8f563546d057c8128028ba4e86c2141f9a8779c5596ae5b0de9c4ca52820","authenticity":"UNVERIFIED"}}],"qualification":"NOT_EVALUATED","authenticity":"UNVERIFIED","external_acceptance":"NOT_SUBMITTED","offline_fulfillment":"NO_EVIDENCE","case_goal_completed":false,"review_performed":false,"correction_sufficiency":"NOT_EVALUATED","facts_adopted":false,"comparison_sha256":"6263ca425e5b91e9cecdaf8c7a9080f76f16be47d7f79082aa6152c10d1d9ab4"};
+const prelude=String.raw`
+const WIRE=__INNER_WIRE__,nodes=new Map(),copy=x=>JSON.parse(JSON.stringify(x));
+function node(tag='div'){return {tag,textContent:'',hidden:false,disabled:false,value:'',dataset:{},style:{},children:[],replaceChildren(...xs){this.children=xs;},append(...xs){this.children.push(...xs);}};}
+function $(id){if(!nodes.has(id))nodes.set(id,node());return nodes.get(id);}
+function textElement(tag,text){const n=node(tag);n.textContent=text;return n;}
+const document={querySelectorAll:()=>[]},entryWriteRequests=new Map(),prepRetries=new Map(),capturedCancelFrontierRequests=new WeakMap();
+let activeEntryWriteFlow=null,templateEntryGeneration=0,prepGeneration=0,preparationId=null,prepRole=null,preparationContext=null,preparationView=null;
+let prepCommandPending=null,prepRecoveryHandle=null,prepRecoveryChecking=false,caseFactPending=null,materialReusePending=null,objectionPending=null,objectionBusy=false;
+let calls=[],writerCalls=[],denials=0,clearPrivateCalls=0,mode='stable',comparisonReads=0,held=null;
+function originalStoredWritePending(){return false;}
+function materialPackagePending(){return false;}
+function planSourceConflictPending(){return false;}
+function coldUnresolved(){return false;}
+function serviceSelectionHandles(){return [];}
+function originalWriteOwnerRetains(){return false;}
+function entryWriteDomain(){return 'other';}
+function pageError(e){throw e;}
+function preparationDraft(){return 'SYNTHETIC unchanged draft';}
+function prepContext(){return preparationContext;}
+function clearEntryWriteRequests(){entryWriteRequests.clear();}
+function clearReceiptHistory(){}
+function clearPreparation(){clearPrivateCalls++;clearMaterialReviewCompare();prepGeneration++;preparationId=null;preparationContext=null;preparationView=null;prepRole=null;prepCommandPending=null;$('prep-detail').hidden=true;}
+function sendPrepCommand(pending){writerCalls.push(pending);return Promise.resolve({writer_stub:true});}
+function reset(nextMode='stable'){
+ nodes.clear();prepGeneration++;preparationId=WIRE.preparation_id;prepRole='park_specialist';$('token').value='synthetic-token';
+ preparationContext={generation:prepGeneration,token:$('token').value,id:preparationId,caseId:WIRE.case_id,revision:WIRE.preparation_revision};
+ preparationView={preparation:{id:WIRE.preparation_id,case_id:WIRE.case_id,run_id:WIRE.run_id,revision:WIRE.preparation_revision,service_id:WIRE.service_id,service_version:WIRE.service_version,owner_id:'synthetic-owner',reviewer_id:WIRE.reviewer_id},snapshot_sha256:WIRE.current_snapshot_sha256};
+ prepCommandPending=null;prepRecoveryHandle=null;prepRecoveryChecking=false;caseFactPending=null;materialReusePending=null;objectionPending=null;objectionBusy=false;activeEntryWriteFlow=null;entryWriteRequests.clear();prepRetries.clear();
+ calls=[];writerCalls=[];denials=0;clearPrivateCalls=0;comparisonReads=0;held=null;mode=nextMode;$('prep-detail').hidden=false;clearMaterialReviewCompare();
+}
+function response(status,body){return {status,ok:status>=200&&status<300,json:async()=>copy(body)};}
+async function entryFetch(path,options){
+ assert.equal(options.method,'GET');calls.push(path);
+ if(path.endsWith('/entry'))return response(200,{preparation_id:WIRE.preparation_id,case_id:WIRE.case_id,run_id:WIRE.run_id,revision:WIRE.preparation_revision,role:'park_specialist',service_id:WIRE.service_id,service_version:WIRE.service_version,scope:'SYNTHETIC_LOCAL_PREPARATION_ONLY',read_only:true,approval_granted:false});
+ if(path.endsWith('/material-corrections'))return response(200,{scope:'SYNTHETIC_SLOT_MATERIAL_CORRECTIONS',role:'park_specialist',preparation_id:WIRE.preparation_id,case_id:WIRE.case_id,run_id:WIRE.run_id,preparation_revision:WIRE.preparation_revision,active_targets:[{id:'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',request_id:'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',slot:'material_outline',status:'SUBMITTED_FOR_REVIEW',reason:'SYNTHETIC current correction',current_version:3,current_source_sha256:WIRE.slots[1].current.source_sha256}]});
+ assert(path.endsWith('/material-review-comparison'));comparisonReads++;
+ if(mode==='hold'&&comparisonReads===1)return await new Promise(resolve=>{held={resolve};});
+ const x=copy(WIRE);
+ if(mode==='epoch_change'&&comparisonReads===2){x.reader_source_sha256='a'.repeat(64);const {comparison_sha256,...projection}=x;x.comparison_sha256=await materialFileSha(new TextEncoder().encode(receiptHistoryCanonical(projection)));}
+ return response(200,x);
+}
+async function waitHeld(){for(let i=0;i<100;i++){if(held)return;await new Promise(setImmediate);}throw Error('synthetic GET was not captured');}
+function capture(){return {context:preparationContext,generation:materialReviewGeneration,reviewerId:WIRE.reviewer_id,runId:WIRE.run_id};}
+function pres(n,out=[]){if(n.tag==='pre')out.push(n.textContent);for(const c of n.children||[])if(c&&typeof c==='object')pres(c,out);return out;}
+`;
+const checks=String.raw`
+(async()=>{
+ reset();await materialReviewValidate(copy(WIRE),capture());
+ const {comparison_sha256,...projection}=WIRE;
+ assert.equal(await materialFileSha(new TextEncoder().encode(receiptHistoryCanonical(projection))),comparison_sha256);
+ console.log('PASS actual_frontend_validation_and_cross_language_SHA '+comparison_sha256);
+ await readMaterialReviewCompare();assert.equal(calls.length,5);assert.equal(comparisonReads,2);assert.equal(materialReviewView.data.comparison_sha256,WIRE.comparison_sha256);assert.equal($('material-review-output').hidden,false);assert.equal($('material-review-read').disabled,false);
+ assert(pres($('material-review-output')).includes(JSON.stringify(WIRE.slots[1].baseline.text)));assert.equal(globalThis.pwned,undefined);
+ console.log('PASS stable_5_GET_protocol: exact two-slot historical/current projection rendered as text');
+ reset('epoch_change');await readMaterialReviewCompare();assert.equal(calls.length,4);assert.equal(materialReviewView,null);assert.equal($('material-review-output').hidden,true);assert.match($('material-review-status').textContent,/已变化/);assert.equal(denials,0);
+ console.log('PASS second_GET_reader_epoch_change: old projection discarded without write');
+ reset('hold');const unknownRead=readMaterialReviewCompare();await waitHeld();const releaseUnknown=held.resolve;
+ const pending={state:'UNKNOWN',key:'synthetic-original-key',body:{action:'REVIEW',expected_revision:12,reason:'SYNTHETIC original reason'}};prepCommandPending=pending;entryWriteRequests.set('original',{key:pending.key});renderMaterialReviewControls();releaseUnknown(response(200,WIRE));await unknownRead;
+ assert.equal(materialReviewView,null);assert.equal(prepCommandPending,pending);assert.equal(entryWriteRequests.size,1);assert.equal(pending.key,'synthetic-original-key');assert.equal(clearPrivateCalls,0);assert.equal(writerCalls.length,0);
+ console.log('PASS UNKNOWN_with_old_200: original pending body/key/registry preserved, comparison hidden');
+ reset('hold');const deniedRead=readMaterialReviewCompare();await waitHeld();prepCommandPending={state:'UNKNOWN',key:'synthetic-denied-key'};const releaseDenied=held.resolve;releaseDenied(response(403,{detail:'denied'}));await deniedRead;
+ assert.equal(clearPrivateCalls,1);assert.equal(materialReviewView,null);assert.equal(preparationView,null);assert.equal($('prep-detail').hidden,true);assert.equal($('prep-error').textContent,'当前身份无此事项或操作权限。');
+ console.log('PASS current_403_during_UNKNOWN: actual prepCall/catch/prepError invoke private-clear boundary');
+ for(const status of [200,403]){
+  reset('hold');const oldRead=readMaterialReviewCompare();await waitHeld();const releaseOld=held.resolve;reset();materialReviewView={data:{sentinel:'fresh-context'}};$('material-review-output').hidden=false;
+  releaseOld(response(status,status===200?WIRE:{detail:'denied'}));await oldRead;assert.equal(materialReviewView.data.sentinel,'fresh-context');assert.equal(clearPrivateCalls,0);assert.equal($('material-review-output').hidden,false);
+ }
+ console.log('PASS stale_context_200_and_403: newer private view retained');
+ reset();const bad=copy(WIRE);bad.slots[1].current.text+=' changed';await assert.rejects(()=>materialReviewValidate(bad,capture()),/正文/);
+ const invalidBaseline=copy(WIRE);invalidBaseline.baseline_state='UNVERIFIED';await assert.rejects(()=>materialReviewValidate(invalidBaseline,capture()),/历史材料/);
+ console.log('PASS frontend_body_digest_and_unverified_baseline_rejections');
+ for(const [a,b] of [['A\r\nB\r尾😀','A\r\nX\n尾😀'],['','首\r\n'],['字面\\r\n','字面\\r\r\n']]){
+  const d=materialVersionLines(a,b);assert.equal(d.bounded,false);assert.equal(d.rows.filter(r=>r[0]!=='+').map(r=>r[1]).join(''),a);assert.equal(d.rows.filter(r=>r[0]!=='−').map(r=>r[1]).join(''),b);
+ }
+ const large=materialVersionLines('A\r\n'.repeat(1000)+'尾😀','B\r'.repeat(1000)+'尾😀');assert.equal(large.bounded,true);assert.equal(large.rows.length,0);
+ console.log('PASS actual_bounded_diff: 3 exact CRLF/literal/non-BMP reconstructions + large-line fallback');
+ reset();$('prep-reason').value='SYNTHETIC original manual REVIEW';
+ assert.equal(materialReviewView,null);await prepCommand('REVIEW');assert.equal(writerCalls.length,1);assert.equal(writerCalls[0].body.action,'REVIEW');assert.equal(writerCalls[0].body.expected_revision,12);assert.equal(calls.length,0);
+ reset();prepCommandPending={state:'UNKNOWN'};await assert.rejects(()=>prepCommand('REVIEW'),/未知操作/);assert.equal(writerCalls.length,0);
+ console.log('PASS actual_original_REVIEW: no comparison prerequisite; original UNKNOWN gate retained; send stub only');
+ reset();const tracked=trackedEntryFunction(async()=>{renderMaterialReviewControls();assert.equal($('material-review-read').disabled,true);return 'synthetic-complete';},'synthetic-flow',new Set());
+ assert.equal(await tracked(),'synthetic-complete');assert.equal(activeEntryWriteFlow,null);assert.equal($('material-review-read').disabled,false);
+ console.log('PASS actual_flow_finally_hook: read button reenabled after original flow release');
+ console.log('PASS pure Node probe; transport=synthetic GET only; real_business_POST=0; DB/API/browser/network=0');
+})()
+`;
+const program=prelude.replace('__INNER_WIRE__',JSON.stringify(fixture))+'\n'+actual+'\n'+checks;
+(async()=>{await vm.runInNewContext(program,{assert,console,crypto:webcrypto,TextEncoder,setImmediate},{filename:'actual-source-memory-probe.js'});})().catch(e=>{console.error(e.stack);process.exitCode=1;});
+JS

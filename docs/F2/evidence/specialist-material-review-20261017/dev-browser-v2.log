@@ -1,0 +1,50 @@
+.........F......                                                         [100%]
+=================================== FAILURES ===================================
+__ test_concurrent_actual_original_add_invalidates_comparison_before_display ___
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fe7f39be060>, <parkweave.store.Store object at 0x7fe8021b4290>, {'fixture-a': '4H...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7fe7f3dda3c0>)
+tmp_path = PosixPath('/tmp/parkweave-specialist-review-dev-browser-v2/test_concurrent_actual_origina0')
+
+    def test_concurrent_actual_original_add_invalidates_comparison_before_display(preparation_fixture,tmp_path):
+        f=preparation_fixture;p,old=submitted(f)
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p,REVIEWER);held=[]
+            def hold(route):held.append((route,route.fetch()))
+            page.route('**/material-review-comparison',hold);page.locator('#material-review-read').click();wait_held(page,held);checked(add(f,p,'need_summary',text='SYNTHETIC concurrent current material'))
+>           before=snapshot(f[1]);route,response=held[0];route.fulfill(response=response);expect(page.locator('#material-review-status')).to_contain_text('已变化');expect(page.locator('#material-review-output')).to_be_hidden();assert snapshot(f[1])==before;context.close();b.close()
+                                                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Locator expected to contain text '已变化'
+E           Actual value: 当前补正与对照材料不匹配。 
+E           Call log:
+E             - Expect "to_contain_text" with timeout 5000ms
+E             - waiting for locator("#material-review-status")
+E               2 × locator resolved to <p role="status" aria-live="polite" id="material-review-status">正在重新核对原专员、最近审核与当前材料…</p>
+E                 - unexpected value "正在重新核对原专员、最近审核与当前材料…"
+E               12 × locator resolved to <p role="status" aria-live="polite" id="material-review-status">当前补正与对照材料不匹配。</p>
+E                  - unexpected value "当前补正与对照材料不匹配。"
+E           
+E           Aria snapshot:
+E           - status: 当前补正与对照材料不匹配。
+
+tests/test_material_review_comparison_browser.py:101: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_review_comparison_browser.py::test_ordinary_owner_corrects_specialist_reads_exact_old_review_then_original_review_confirm_restart
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_review_comparison_browser.py::test_ordinary_owner_corrects_specialist_reads_exact_old_review_then_original_review_confirm_restart
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_review_comparison_browser.py::test_concurrent_actual_original_add_invalidates_comparison_before_display
+1 failed, 15 passed, 4 warnings in 205.93s (0:03:25)
