@@ -4,6 +4,7 @@ No production protected pin is supplied in these tests. Existing legacy dispatch
 preconditions are isolated synthetic data; missing signed provider is rejected.
 """
 from uuid import uuid4
+import time
 
 import pytest
 from playwright.sync_api import sync_playwright, expect
@@ -107,7 +108,8 @@ def test_old_bound_catalog_reply_after_preparation_aba_cannot_replace_current_vi
         page.route('**/runtime/catalog?*',delayed)
         open_record(page,api,f,p)
         page.locator('#runtime-catalog-read').click()
-        page.wait_for_timeout(80)
+        deadline=time.monotonic()+5
+        while not pending and time.monotonic()<deadline:page.wait_for_timeout(20)
         assert pending
         page.locator('#existing-preparation-id').fill(str(uuid4()))
         page.locator('#existing-preparation-id').fill(p['preparation_id'])

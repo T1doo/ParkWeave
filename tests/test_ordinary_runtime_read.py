@@ -95,7 +95,7 @@ def test_original_run_dispatch_catalog_routes_work_and_missing_provider_refuses(
 
 
 @pytest.mark.parametrize('field,value', [('expected_case_id',str(uuid4())),('expected_run_id',str(uuid4())),
-    ('expected_service_version',2),('expected_service_id','SYNTHETIC-other-service')])
+    ('expected_service_version',2),('expected_service_id','SYNTHETIC-other-service')],ids=['case','run','service-version','service-id'])
 def test_wrong_exact_selection_refuses_every_bound_original_read(preparation_fixture,monkeypatch,field,value):
     f=preparation_fixture;p=filled(f);before=snapshot(f[1])
     with TestClient(ordinary(f,monkeypatch)) as api:
