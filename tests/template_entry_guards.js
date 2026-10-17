@@ -4,12 +4,13 @@ const code=fs.readFileSync(process.argv[3]||'src/parkweave/web.html','utf8').mat
 const mode=process.argv[2],id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');let checks=0,nextNonce=1300;
 const check=v=>{checks++;assert(v);};
 class Element{
- constructor(tag='div'){this.id='';this.tagName=tag;this.children=[];const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.options=[];this.listeners={};}
+ constructor(tag='div'){this.id='';this.tagName=tag;this.children=[];const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.options=[];this.listeners={};this.className='';const tokens=()=>new Set(this.className.split(/\s+/).filter(Boolean));this.classList={add:(...names)=>{const t=tokens();for(const n of names)t.add(n);this.className=[...t].join(' ');},remove:(...names)=>{const t=tokens();for(const n of names)t.delete(n);this.className=[...t].join(' ');},contains:n=>tokens().has(n)};}
  append(...x){for(const e of x)if(e&&typeof e==='object')e.parentElement=this;this.children.push(...x);}replaceChildren(...x){this.children=x;this.textContent='';}
  reset(){}addEventListener(n,f){this.listeners[n]=f;}setAttribute(){}removeAttribute(){}
  closest(selector){let e=this;while(e){for(const part of selector.split(',')){const t=part.trim();if((t.startsWith('#')&&e.id===t.slice(1))||['button','form','a'].includes(t)&&e.tagName.toLowerCase()===t)return e;}e=e.parentElement;}return null;}querySelectorAll(){return [];}scrollIntoView(){this.scrolled=true;}
  get firstElementChild(){return this.children[0];}focus(){}select(){}remove(){}click(){return this.onclick?.();}
 }
+const classProbe=new Element();classProbe.className='keep';classProbe.classList.add('case-cancel-recovery-only','keep');check(classProbe.classList.contains('keep')&&classProbe.classList.contains('case-cancel-recovery-only'));classProbe.classList.remove('case-cancel-recovery-only');check(classProbe.className==='keep');
 const elements=new Map(),$=name=>{if(!elements.has(name))elements.set(name,new Element());elements.get(name).id=name;return elements.get(name);};
 const store={},calls=[],events=[];
 const storage=new Proxy({getItem:n=>store[n]??null,setItem:(n,v)=>store[n]=v,removeItem:n=>delete store[n]},
@@ -19,7 +20,7 @@ const context=vm.createContext({console,Date,JSON,Map,Set,WeakMap,Number,String,
  Element,document:{getElementById:$,createElement:t=>new Element(t),querySelectorAll:()=>[],body:new Element('body'),addEventListener:(...a)=>events.push(a),execCommand:()=>false},
  window:{addEventListener:(...a)=>events.push(a)},
  fetch:(path,options)=>new Promise((resolve,reject)=>calls.push({path,options,resolve,reject}))});
-vm.runInContext(code,context);$('token').value='SYNTHETIC_SESSION_A';
+vm.runInContext(code,context);$('token').value='SYNTHETIC_SESSION_A';$('prep-detail').classList.add('keep','case-cancel-recovery-only');
 const run=s=>vm.runInContext(s,context),tick=()=>new Promise(r=>setImmediate(r));
 function finish(call,status,value){call.resolve({status,ok:status>=200&&status<300,json:async()=>value});}
 function plan(p=id(3),c=id(1),r=id(2)){return {preparation_id:p,case_id:c,run_id:r,plan_id:id(9),actor_ref:'a'.repeat(64),role:'enterprise_operator',state:'ACTIVE',revision:1,preparation_revision:1,request_revision:1,steps:[],history:[],required_goals:['LOCAL_MATERIAL_PREPARATION'],can_adopt:false,read_only:false};}
@@ -46,5 +47,6 @@ async function originalPlan(){const x=plan(),load=run("loadServiceCasePlan('"+id
  }else if(mode==='wrong_binding'){
   const handoff=$('template-instance-read').onclick();const bad=instance();bad.case_id=id(8);finish(calls.at(-1),200,bad);await handoff;check(run('servicePlanView===null'));check($('result').textContent==='');check($('template-instance-status').textContent.includes('绑定'));
  }else throw Error('unknown mode');
+ check($('prep-detail').classList.contains('keep'));check($('prep-detail').classList.contains('case-cancel-recovery-only')===(mode==='pending_preserved'));
  console.log(JSON.stringify({mode,checks,result:'PASS',scope:'FULL_ORIGINAL_HTML_REAL_HANDLERS_HTTPDOM_NO_PENDING_OR_ENTRY_MOCK'}));
 })().catch(e=>{console.error(e.stack);process.exitCode=1;});
