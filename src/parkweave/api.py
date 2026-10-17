@@ -116,6 +116,8 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         if getattr(route,'path',None)=='/api/preparations/{preparation_id}/plan-material-package/commands':
             # Bad UTF-8 input must not be echoed by the default error encoder.
             return JSONResponse(status_code=422,content={'detail':'invalid bounded material package request'})
+        if getattr(route,'path',None)=='/api/preparations/{preparation_id}/material-file-candidate':
+            return JSONResponse(status_code=422,content={'detail':'invalid bounded material file request'})
         return await request_validation_exception_handler(request,error)
 
     @app.get('/api/preparations/{preparation_id}/plan-source-conflicts')
@@ -411,6 +413,13 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     @app.get('/api/preparations/{preparation_id}')
     def preparation_record(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return preparation.read(store,token(authorization),preparation_id)
+
+    from . import material_file_import
+
+    @app.post('/api/preparations/{preparation_id}/material-file-candidate')
+    def material_file_candidate(preparation_id: UUID,data: material_file_import.Request,authorization: str | None=Header(default=None)):
+        try:return material_file_import.candidate(store,token(authorization),preparation_id,data)
+        except material_file_import.FileCandidateError as exc:raise HTTPException(422,str(exc)) from None
 
     @app.get('/api/preparations/{preparation_id}/entry')
     def preparation_entry(preparation_id: UUID,authorization: str | None=Header(default=None)):
