@@ -91,4 +91,6 @@
 
 首版封存完整性校验发现：开发三窗中同一个43字符参数组合 `expected_service_id-SYNTHETIC-other-service` 被误当会话脱敏，正式三窗节点名均未改变。首版封存移到本实例私有 `export-v1-node-id-check-failed/` 保留，原测试日志/XML不改；将该明确由源码字段与SYNTHETIC服务常量组成的参数名加入精确保留名单，重新生成公开副本，复核六窗原件/公开JUnit节点序列与逐件hash。这是封存修正，没有重跑测试或更改成绩；[首版校验记录](evidence/ordinary-runtime-read-20261017/export-v1-validation.json)与两个版本的导出脚本一并公开。
 
+源码和说明文档的 `git diff --check` 通过；不排除证据时该检查退出2，诊断全部来自8份封存pytest失败日志/XML的原有行尾空白。保留这些字节及已配对hash，不为了格式检查改写失败证据；[格式检查记录](evidence/ordinary-runtime-read-20261017/format-check.json)列明检查提交和范围。
+
 上片CI运行列表已被GitHub API403拒绝，本片遵从停止指令，没有再查询，也未换其它路径获取。仅正常Git分支读取/推送；CI状态未知。Windows/Win11原生、正式AT/AT35、真实身份/来源/批准、真实模型、现实履约、受保护生产安装/部署、完整项目与全仓回归均未验收。无main修改、强推、新费用、凭据、安全网络权限或未知锁/进程清理。
