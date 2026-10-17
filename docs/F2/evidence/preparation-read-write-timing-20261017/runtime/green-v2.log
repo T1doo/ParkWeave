@@ -1,0 +1,330 @@
+.......FFFF                                                              [100%]
+=================================== FAILURES ===================================
+_ test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery[lost_reply] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fae1813e8a0>, <parkweave.store.Store object at 0x7fae13f750a0>, {'fixture-a': 'VG...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7fae19b7b890>)
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-15/test_own_unknown_write_keeps_o0')
+fault = 'lost_reply'
+
+    @pytest.mark.parametrize('fault',['lost_reply','wrong_exact_event'])
+    def test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery(preparation_fixture,tmp_path,fault):
+        f=preparation_fixture;p,_,_=create(f);writes=[];faults=[];recovery=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw);open_record(page,api,f,p)
+            def command(route):
+                writes.append(dict(key=route.request.headers['idempotency-key'],body=route.request.post_data_json))
+                if len(writes)==1 and fault=='lost_reply':
+                    response=route.fetch();assert response.status==200;faults.append('committed reply lost');route.abort('failed')
+                else:route.continue_()
+            def read(route):
+                if fault=='wrong_exact_event' and writes and not faults:
+                    response=route.fetch();value=response.json();value['history']=[];faults.append('current revision with missing original event');route.fulfill(response=response,json=value)
+                else:route.continue_()
+            page.route('**/commands',command);page.route('**/api/preparations/'+p['preparation_id'],read)
+            page.on('request',lambda req:recovery.append(req.headers.get('idempotency-key')) if req.method=='GET' and req.url.endswith('/command-recovery') else None)
+            draft(page,'need_summary','SYNTHETIC original immutable body '+fault);page.locator('#prep-evidence button').click()
+            expect(page.locator('#prep-command-retry')).to_be_visible();expect(page.locator('#prep-read-status')).to_contain_text('待核对')
+            expect(page.locator('#prep-evidence button')).to_be_disabled();assert len(writes)==1
+>           page.locator('#prep-text').fill('SYNTHETIC unsent edited draft must survive GET recovery')
+
+tests/test_preparation_read_write_timing_browser.py:166: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:18242: in fill
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:219: in fill
+    return await self._frame.fill(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:636: in fill
+    await self._fill(**locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:648: in _fill
+    await self._channel.send("fill", self._timeout, locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7fae18437e60>
+cb = <function Channel.send.<locals>.<lambda> at 0x7fae18269c60>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for locator("#prep-text")
+E               - locator resolved to <textarea disabled required="" id="prep-text" maxlength="4000"></textarea>
+E               - fill("SYNTHETIC unsent edited draft must survive GET recovery")
+E             - attempting fill action
+E               2 × waiting for element to be visible, enabled and editable
+E                 - element is not enabled
+E               - retrying fill action
+E               - waiting 20ms
+E               2 × waiting for element to be visible, enabled and editable
+E                 - element is not enabled
+E               - retrying fill action
+E                 - waiting 100ms
+E               58 × waiting for element to be visible, enabled and editable
+E                  - element is not enabled
+E                - retrying fill action
+E                  - waiting 500ms
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_ test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery[wrong_exact_event] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fae13fe9940>, <parkweave.store.Store object at 0x7fae18206780>, {'fixture-a': '-0...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7fae19bcdf40>)
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-15/test_own_unknown_write_keeps_o1')
+fault = 'wrong_exact_event'
+
+    @pytest.mark.parametrize('fault',['lost_reply','wrong_exact_event'])
+    def test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery(preparation_fixture,tmp_path,fault):
+        f=preparation_fixture;p,_,_=create(f);writes=[];faults=[];recovery=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw);open_record(page,api,f,p)
+            def command(route):
+                writes.append(dict(key=route.request.headers['idempotency-key'],body=route.request.post_data_json))
+                if len(writes)==1 and fault=='lost_reply':
+                    response=route.fetch();assert response.status==200;faults.append('committed reply lost');route.abort('failed')
+                else:route.continue_()
+            def read(route):
+                if fault=='wrong_exact_event' and writes and not faults:
+                    response=route.fetch();value=response.json();value['history']=[];faults.append('current revision with missing original event');route.fulfill(response=response,json=value)
+                else:route.continue_()
+            page.route('**/commands',command);page.route('**/api/preparations/'+p['preparation_id'],read)
+            page.on('request',lambda req:recovery.append(req.headers.get('idempotency-key')) if req.method=='GET' and req.url.endswith('/command-recovery') else None)
+            draft(page,'need_summary','SYNTHETIC original immutable body '+fault);page.locator('#prep-evidence button').click()
+            expect(page.locator('#prep-command-retry')).to_be_visible();expect(page.locator('#prep-read-status')).to_contain_text('待核对')
+            expect(page.locator('#prep-evidence button')).to_be_disabled();assert len(writes)==1
+>           page.locator('#prep-text').fill('SYNTHETIC unsent edited draft must survive GET recovery')
+
+tests/test_preparation_read_write_timing_browser.py:166: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:18242: in fill
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:219: in fill
+    return await self._frame.fill(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:636: in fill
+    await self._fill(**locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:648: in _fill
+    await self._channel.send("fill", self._timeout, locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7fae1813cfe0>
+cb = <function Channel.send.<locals>.<lambda> at 0x7fae13dd3600>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for locator("#prep-text")
+E               - locator resolved to <textarea disabled required="" id="prep-text" maxlength="4000"></textarea>
+E               - fill("SYNTHETIC unsent edited draft must survive GET recovery")
+E             - attempting fill action
+E               2 × waiting for element to be visible, enabled and editable
+E                 - element is not enabled
+E               - retrying fill action
+E               - waiting 20ms
+E               2 × waiting for element to be visible, enabled and editable
+E                 - element is not enabled
+E               - retrying fill action
+E                 - waiting 100ms
+E               53 × waiting for element to be visible, enabled and editable
+E                  - element is not enabled
+E                - retrying fill action
+E                  - waiting 500ms
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_ test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7fae183eade0>, <parkweave.store.Store object at 0x7fae18206300>, {'fixture-a': 'S...atabase': {'name': 'fixture_8f03139a1391476496d299432ab1958f', 'oid': 25133, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-15/test_existing_ordinary_page_ne0')
+width = 1200
+
+    @pytest.mark.parametrize('width',[1200,320])
+    def test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data(demo_inputs,tmp_path,width):
+        f,cfg,pack,journal=demo_inputs
+        baseline=authority_snapshot(f[1])
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n']==0 for t in
+                ('runs','cases','preparations','preparation_evidence','preparation_events','run_assignments'))
+        goal='SYNTHETIC new ordinary DOM request '+str(width)
+        materials={'need_summary':'SYNTHETIC fresh DOM need '+str(width),
+                   'material_outline':'SYNTHETIC fresh DOM outline '+str(width)+' <script>window.demoInjection=true</script>'}
+        traffic=[];network=[];errors=[];contexts=[]
+        with ordinary_demo(f,tmp_path/'first') as api,ordinary_worker(f,tmp_path/'worker') as worker,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            def role(actor):
+                context=browser.new_context(viewport=dict(width=width,height=1000));contexts.append(context);page=context.new_page()
+                page.on('pageerror',lambda error:errors.append(str(error)))
+                def observed(response):
+                    request=response.request
+                    network.append(dict(actor=actor,method=request.method,path=urlsplit(request.url).path,status=response.status))
+                    if request.method=='POST':
+                        traffic.append(dict(actor=actor,method=request.method,path=urlsplit(request.url).path,status=response.status,body=request.post_data_json))
+                page.on('response',observed);login(page,api,f,actor);return page
+            try:
+                owner=role('fixture-a')
+                owner.locator('#prep-catalog').click();expect(owner.locator('#prep-create')).to_be_visible()
+                owner.locator('#prep-reviewer').select_option(pack['roles']['park_specialist'])
+                owner.locator('#prep-goal').fill(goal);owner.locator('#prep-create button').click()
+                expect(owner.locator('#prep-summary')).to_contain_text(goal,timeout=20000)
+                settled(owner,preparation=True)
+                assert worker.poll() is None
+                parent_id=owner.evaluate('preparationId')  # Read-only observation, never JS navigation.
+                assert parent_id
+                # The original request editor is reachable before any old plan exists.
+                owner.locator('#plan-prepare').click();expect(owner.locator('#request-intent-form')).to_be_visible()
+                owner.locator('#request-current').fill(goal)
+                owner.locator('#request-local-goal').uncheck();owner.locator('#plan-required-goals').fill('\n'.join(GOALS))
+                owner.locator('#request-save').click()
+                expect(owner.locator('#request-intent-status')).to_contain_text('已保存诉求/目标版本',timeout=15000)
+                settled(owner)
+                owner.locator('#plan-materials').click();expect(owner.locator('#prep-detail')).to_be_visible()
+>               settled(owner,preparation=True)
+
+tests/test_demo_original_page_intake_browser.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://127.0.0.1:48839/'>, preparation = True
+
+    def settled(page,preparation=False):
+        # Rendered summary text precedes awaited authoritative readback. Observe
+        # completion; never clear handles, unlock controls, or call application code.
+        if preparation:
+>           expect(page.locator('#prep-read-status')).to_contain_text('已就绪',timeout=30000)
+E           AssertionError: Locator expected to contain text '已就绪'
+E           Actual value: 正在核对当前资料、权限与办理条件；草稿可编辑，新提交暂不可用。 
+E           Call log:
+E             - Expect "to_contain_text" with timeout 30000ms
+E             - waiting for locator("#prep-read-status")
+E               60 × locator resolved to <p role="status" class="status" aria-live="polite" data-state="LOADING" id="prep-read-status">正在核对当前资料、权限与办理条件；草稿可编辑，新提交暂不可用。</p>
+E                  - unexpected value "正在核对当前资料、权限与办理条件；草稿可编辑，新提交暂不可用。"
+E           
+E           Aria snapshot:
+E           - status: 正在核对当前资料、权限与办理条件；草稿可编辑，新提交暂不可用。
+
+tests/test_demo_original_page_intake_browser.py:44: AssertionError
+_ test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[320] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7fae13e23c50>, <parkweave.store.Store object at 0x7fae13e4b650>, {'fixture-a': 'W...atabase': {'name': 'fixture_cbea42992c444229a794e9018c5e338d', 'oid': 26106, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-15/test_existing_ordinary_page_ne1')
+width = 320
+
+    @pytest.mark.parametrize('width',[1200,320])
+    def test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data(demo_inputs,tmp_path,width):
+        f,cfg,pack,journal=demo_inputs
+        baseline=authority_snapshot(f[1])
+        with f[1].connect() as c:
+            assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n']==0 for t in
+                ('runs','cases','preparations','preparation_evidence','preparation_events','run_assignments'))
+        goal='SYNTHETIC new ordinary DOM request '+str(width)
+        materials={'need_summary':'SYNTHETIC fresh DOM need '+str(width),
+                   'material_outline':'SYNTHETIC fresh DOM outline '+str(width)+' <script>window.demoInjection=true</script>'}
+        traffic=[];network=[];errors=[];contexts=[]
+        with ordinary_demo(f,tmp_path/'first') as api,ordinary_worker(f,tmp_path/'worker') as worker,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            def role(actor):
+                context=browser.new_context(viewport=dict(width=width,height=1000));contexts.append(context);page=context.new_page()
+                page.on('pageerror',lambda error:errors.append(str(error)))
+                def observed(response):
+                    request=response.request
+                    network.append(dict(actor=actor,method=request.method,path=urlsplit(request.url).path,status=response.status))
+                    if request.method=='POST':
+                        traffic.append(dict(actor=actor,method=request.method,path=urlsplit(request.url).path,status=response.status,body=request.post_data_json))
+                page.on('response',observed);login(page,api,f,actor);return page
+            try:
+                owner=role('fixture-a')
+                owner.locator('#prep-catalog').click();expect(owner.locator('#prep-create')).to_be_visible()
+                owner.locator('#prep-reviewer').select_option(pack['roles']['park_specialist'])
+                owner.locator('#prep-goal').fill(goal);owner.locator('#prep-create button').click()
+                expect(owner.locator('#prep-summary')).to_contain_text(goal,timeout=20000)
+                settled(owner,preparation=True)
+                assert worker.poll() is None
+                parent_id=owner.evaluate('preparationId')  # Read-only observation, never JS navigation.
+                assert parent_id
+                # The original request editor is reachable before any old plan exists.
+                owner.locator('#plan-prepare').click();expect(owner.locator('#request-intent-form')).to_be_visible()
+                owner.locator('#request-current').fill(goal)
+                owner.locator('#request-local-goal').uncheck();owner.locator('#plan-required-goals').fill('\n'.join(GOALS))
+                owner.locator('#request-save').click()
+                expect(owner.locator('#request-intent-status')).to_contain_text('已保存诉求/目标版本',timeout=15000)
+                settled(owner)
+                owner.locator('#plan-materials').click();expect(owner.locator('#prep-detail')).to_be_visible()
+>               settled(owner,preparation=True)
+
+tests/test_demo_original_page_intake_browser.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://127.0.0.1:48597/'>, preparation = True
+
+    def settled(page,preparation=False):
+        # Rendered summary text precedes awaited authoritative readback. Observe
+        # completion; never clear handles, unlock controls, or call application code.
+        if preparation:
+>           expect(page.locator('#prep-read-status')).to_contain_text('已就绪',timeout=30000)
+E           AssertionError: Locator expected to contain text '已就绪'
+E           Actual value: 正在核对当前资料、权限与办理条件；草稿可编辑，新提交暂不可用。 
+E           Call log:
+E             - Expect "to_contain_text" with timeout 30000ms
+E             - waiting for locator("#prep-read-status")
+E               62 × locator resolved to <p role="status" class="status" aria-live="polite" data-state="LOADING" id="prep-read-status">正在核对当前资料、权限与办理条件；草稿可编辑，新提交暂不可用。</p>
+E                  - unexpected value "正在核对当前资料、权限与办理条件；草稿可编辑，新提交暂不可用。"
+E           
+E           Aria snapshot:
+E           - status: 正在核对当前资料、权限与办理条件；草稿可编辑，新提交暂不可用。
+
+tests/test_demo_original_page_intake_browser.py:44: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_preparation_read_write_timing_browser.py::test_visible_material_submit_waits_for_current_safety_reads
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_preparation_read_write_timing_browser.py::test_visible_material_submit_waits_for_current_safety_reads
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_preparation_read_write_timing_browser.py::test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery[lost_reply]
+FAILED tests/test_preparation_read_write_timing_browser.py::test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery[wrong_exact_event]
+FAILED tests/test_demo_original_page_intake_browser.py::test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[1200]
+FAILED tests/test_demo_original_page_intake_browser.py::test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[320]
+4 failed, 7 passed, 4 warnings in 276.84s (0:04:36)

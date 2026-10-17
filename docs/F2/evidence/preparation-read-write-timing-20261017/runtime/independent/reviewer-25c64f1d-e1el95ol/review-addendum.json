@@ -1,0 +1,110 @@
+{
+  "source_sha": "25c64f1dd4bb2ca9a79be88650d3a1b410c4bef5",
+  "base_sha": "175918d440bb06d3749cb5fc1de5b79c0a4e9b0f",
+  "scope": "Read-only static source/Git and closed root failure artifacts; only this evidence JSON written",
+  "root_closed_result": {
+    "provenance": "parent-reported; closed failure-details read by reviewer",
+    "unique": 284,
+    "passed": 267,
+    "failed": 17,
+    "errors": 0,
+    "skipped": 0,
+    "acceptance": "NOT_PASS; development checkpoint only"
+  },
+  "previous_independent_run": {
+    "tests": 7,
+    "passed": 7,
+    "provenance": "reviewer actually executed once in exact-byte independent mirror; scope unchanged",
+    "adds_to_root_unique": false,
+    "does_not_override_root_17_failures": true
+  },
+  "new_execution": {
+    "pytest": false,
+    "Node": false,
+    "DB": false,
+    "API": false,
+    "browser": false,
+    "baseline_execution": false
+  },
+  "input_count": 738,
+  "input_drift": [],
+  "file_comparisons": {
+    "tests/template_entry_guards.js": {
+      "base_equals_frozen": true,
+      "sha256": "2281cc391ba4f87d304f588d18d571af8c77925928da6a847932f839ac6e5995"
+    },
+    "tests/template_plan_continuity.js": {
+      "base_equals_frozen": true,
+      "sha256": "de9fd34168ed6976965cd1defa93ecd0df0e92c76f26d7c0fe5976dcdb84e9a3"
+    },
+    "tests/test_template_plan_continuity.py": {
+      "base_equals_frozen": true,
+      "sha256": "b7761d4421c873f691db092900e8f7f6b8bf7bd763d35ba79d4ecf6cef36590d"
+    }
+  },
+  "source_block_comparisons": [
+    {
+      "prefix": "function clearCaseCancellation()",
+      "base_line": 1085,
+      "frozen_line": 1125,
+      "span": 1,
+      "base_equals_frozen": true,
+      "sha256": "d4b722be74585460f4af2e11b2aba8cc41cf405b7db1006cf1bf87fff830146d"
+    },
+    {
+      "prefix": "function beginCaseWorklistEntry()",
+      "base_line": 197,
+      "frozen_line": 202,
+      "span": 6,
+      "base_equals_frozen": true,
+      "sha256": "76fbedadd30bac6f33d97defd1b80b5addcd1ca415f69c247808dd973182fddd"
+    },
+    {
+      "prefix": "$('template-instance-read').onclick=async()=>{",
+      "base_line": 2739,
+      "frozen_line": 2781,
+      "span": 25,
+      "base_equals_frozen": true,
+      "sha256": "20a971b18247d05622b7fdb6155126d3b6d26ce061cabbbe257f0e31b2adeeb1"
+    },
+    {
+      "prefix": "function readServicePlanHandle(",
+      "base_line": 1914,
+      "frozen_line": 1956,
+      "span": 1,
+      "base_equals_frozen": true,
+      "sha256": "d285e2f9fdcfe94f763aa02069101d8647dd398fc9f6d84755623a3654cb674c"
+    }
+  ],
+  "template_failures": [
+    "test_new_request_template_link_plan_material_work_and_invalid_input",
+    "test_original_template_handoff_rejects_unverified_or_late_navigation[late_catalog]",
+    "test_original_template_handoff_rejects_unverified_or_late_navigation[late_error_new_plan]",
+    "test_original_template_handoff_rejects_unverified_or_late_navigation[late403_new_plan]",
+    "test_original_template_handoff_rejects_unverified_or_late_navigation[identity_aba]",
+    "test_original_template_handoff_rejects_unverified_or_late_navigation[terminal_wrong_plan]",
+    "test_original_template_handoff_rejects_unverified_or_late_navigation[denied403]",
+    "test_original_template_handoff_rejects_unverified_or_late_navigation[wrong_binding]"
+  ],
+  "static_template_diagnosis": {
+    "stub_missing": "Both Element constructors have dataset and setAttribute, but neither has classList",
+    "shared_pre_fetch_path": "template-instance-read web:2783 -> beginCaseWorklistEntry web:202 -> clearPreparation web:398 -> clearCaseCancellation web:1125 -> prep-detail.classList.remove",
+    "observed_direct_trace": "identity_aba throws classList.remove during token.oninput clear",
+    "observed_secondary_symptoms": "Six other guard modes expect calls created after entry clear, but fail old.path or finish(undefined).resolve; API bridge checks absent servicePlanView after handler catches entry-clear exception",
+    "increment_attribution": "All three relevant test files and quoted old production blocks are byte-identical to 175918; new preparation read renderer follows the failing clear and is not reached on this path",
+    "certainty_limit": "Static path explains observed symptoms; no baseline execution or patched harness execution performed, and further failures after fixture repair cannot be excluded"
+  },
+  "minimal_fixture_repair": {
+    "change": "Only add stateful classList.add/remove/contains synchronized with className in both Element surrogates, following existing tests/multi_goal_overview_actual.js pattern",
+    "selfcheck": "Preserve unrelated keep class while adding/removing case-cancel-recovery-only; assert contains and resulting className",
+    "preserve": "All original request order, late-response/403/identity/unknown guards and negative assertions; no product clearers disabled, stubbed or weakened",
+    "verification_pending": "Parent-authorized future repair window must rerun existing exact affected nodes; none started now"
+  },
+  "inherited_ttl": {
+    "reader": "web:1956 identical to base:1914 and contains zero expires checks",
+    "old_repaired_source": "23f9a2f9285366a9cd6f3192ec159fc148d84f21 web:883 includes finite/current-time/24h upper-bound checks",
+    "minimal_fix": "Restore reader TTL clauses; preserve eleven fields, old key/expiry, invalid readonly projection, no automatic replay, current403 and stale-context priorities",
+    "status": "Known product defect retained in frozen checkpoint; nine root failures are not waived"
+  },
+  "conclusion": "NOT_ACCEPTED_AS_COMPLETE: 9 inherited TTL failures plus 8 unresolved template fixture failures retained; static diagnosis is not baseline runtime proof"
+}

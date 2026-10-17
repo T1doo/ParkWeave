@@ -1,0 +1,96 @@
+FF                                                                       [100%]
+=================================== FAILURES ===================================
+_________ test_visible_material_submit_waits_for_current_safety_reads __________
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f03556a6180>, <parkweave.store.Store object at 0x7f03556a60f0>, {'fixture-a': 'ZO...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f03554f0140>)
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_visible_material_submit_w0')
+
+    def test_visible_material_submit_waits_for_current_safety_reads(preparation_fixture,tmp_path):
+        f=preparation_fixture;p,_,_=create(f);pending=[];posts=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw)
+            def hold(route):
+                pending.append((route,route.fetch()))
+            page.route('**/case-cancellation-reconciliation',hold)
+            page.on('request',lambda req:posts.append(req.url) if req.method=='POST' else None)
+            page.goto(str(api.base_url)+'?preparation_id='+p['preparation_id'])
+            page.locator('#token').fill(f[2]['fixture-a']);page.locator('#existing-preparation-read').click()
+            received(page,pending);expect(page.locator('#prep-detail')).to_be_visible()
+            try:
+>               expect(page.locator('#prep-evidence button')).to_be_disabled()
+E               AssertionError: Locator expected to be disabled
+E               Actual value: enabled 
+E               Call log:
+E                 - Expect "to_be_disabled" with timeout 5000ms
+E                 - waiting for locator("#prep-evidence button")
+E                   13 × locator resolved to <button>追加材料版本</button>
+E                      - unexpected value "enabled"
+E               
+E               Aria snapshot:
+E               - button "追加材料版本"
+
+tests/test_preparation_read_write_timing_browser.py:49: AssertionError
+_____ test_unrelated_old_plan_read_failure_does_not_poison_material_write ______
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f03556a5b80>, <parkweave.store.Store object at 0x7f03546cf9e0>, {'fixture-a': '9S...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f03542154c0>)
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-13/test_unrelated_old_plan_read_f0')
+
+    def test_unrelated_old_plan_read_failure_does_not_poison_material_write(preparation_fixture,tmp_path):
+        f=preparation_fixture;p,_,_=create(f);old_read=[];write=[];posts=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw);open_record(page,api,f,p)
+            def hold_read(route):old_read.append((route,route.fetch()))
+            def hold_first_write(route):
+                if write:route.continue_();return
+                write.append((route,route.fetch()))
+            page.route('**/controlled-plan',hold_read);page.route('**/commands',hold_first_write)
+            page.on('request',lambda req:posts.append(req.post_data_json) if req.method=='POST' else None)
+            try:
+                page.locator('#plan-prepare').click();received(page,old_read)
+                draft(page,'need_summary','SYNTHETIC first material with independent delayed plan read')
+                page.locator('#prep-evidence button').click();received(page,write)
+                assert write[0][1].status==200
+                route,_=old_read.pop();route.fulfill(status=500,json={'detail':'SYNTHETIC unrelated old plan read failed'})
+                expect(page.locator('#plan-error')).not_to_be_empty()
+                # Diagnostic only: never used to unlock or wait for a private flag.
+                diagnostic=page.evaluate('()=>({active:!!activeEntryWriteFlow,failed:activeEntryWriteFlow?.failed})')
+                (tmp_path/'cross-read-diagnostic.json').write_text(json.dumps(diagnostic)+'\n')
+                route,response=write[0];route.fulfill(response=response)
+                expect(page.locator('#prep-command-feedback')).to_contain_text('已核对原操作保存事件',timeout=15000)
+                draft(page,'material_outline','SYNTHETIC second material must remain usable')
+                page.locator('#prep-evidence button').click()
+>               expect(page.locator('#prep-materials')).to_contain_text('SYNTHETIC second material must remain usable',timeout=15000)
+E               AssertionError: Locator expected to contain text 'SYNTHETIC second material must remain usable'
+E               Actual value:  
+E               Call log:
+E                 - Expect "to_contain_text" with timeout 15000ms
+E                 - waiting for locator("#prep-materials")
+E                   33 × locator resolved to <div id="prep-materials"></div>
+E                      - unexpected value ""
+E               
+E               Aria snapshot:
+E               - text: 尚未追加材料。补充有来源的资料后再进行人工核对。
+
+tests/test_preparation_read_write_timing_browser.py:88: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_preparation_read_write_timing_browser.py::test_visible_material_submit_waits_for_current_safety_reads
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_preparation_read_write_timing_browser.py::test_visible_material_submit_waits_for_current_safety_reads
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_preparation_read_write_timing_browser.py::test_visible_material_submit_waits_for_current_safety_reads
+FAILED tests/test_preparation_read_write_timing_browser.py::test_unrelated_old_plan_read_failure_does_not_poison_material_write
+2 failed, 4 warnings in 52.86s

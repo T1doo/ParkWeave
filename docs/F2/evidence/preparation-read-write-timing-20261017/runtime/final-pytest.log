@@ -1,0 +1,664 @@
+........................................................................ [ 25%]
+............................................FF.....................F...F [ 50%]
+...F...F...F...FF......F.FFFFFFF........................................ [ 76%]
+....................................................................     [100%]
+=================================== FAILURES ===================================
+_____ test_expired_or_malformed_handle_not_used_for_cold_recovery[expired] _____
+
+goal_page = ((<parkweave.store.Store object at 0x7faf3cfe2d80>, <parkweave.store.Store object at 0x7faf3e199f70>, {'fixture-a': 'W...cUZUPCLc', ...}, <starlette.testclient.TestClient object at 0x7faf3dd0d3d0>), <Page url='http://127.0.0.1:50799/'>, [])
+damage = 'expired'
+
+    @pytest.mark.parametrize('damage',['expired','future','extra','missing','oversized'])
+    def test_expired_or_malformed_handle_not_used_for_cold_recovery(goal_page,damage):
+     f,page,errors=goal_page;p=prep(f,'VERIFY');open_case(page,f,p);h,stored,_=lost(page,f,p,'VERIFY')
+     name=next(iter(json.loads(stored)))
+     if damage=='expired':h['expires']=0
+     elif damage=='future':h['expires']=999999999999999
+     elif damage=='extra':h['body']='SYNTHETIC private forbidden'
+     elif damage=='missing':del h['expires']
+>    raw='x'*641 if damage=='oversized' else json.dumps(h);page.evaluate('([name,raw])=>localStorage.setItem(name,raw)',[name,raw]);before=snapshot(f);page.reload();requests=[];page.on('request',lambda r:requests.append(r.headers.get('idempotency-key')));open_case(page,f,p);assert page.evaluate('servicePlanRecoveryHandle') is None and page.evaluate('JSON.stringify({...localStorage})')=='{}' and h['key'] not in requests and snapshot(f)==before and not errors
+                                                                                                                                                                                                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    AssertionError: assert ({'v': 1, 'id': '62f51876-741b-4680-979a-86a4df371f52', 'key': '37de91cd-3db7-4621-92de-c926faf3e70f', 'actor': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', ...} is None)
+E     +  where {'v': 1, 'id': '62f51876-741b-4680-979a-86a4df371f52', 'key': '37de91cd-3db7-4621-92de-c926faf3e70f', 'actor': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', ...} = evaluate('servicePlanRecoveryHandle')
+E     +    where evaluate = <Page url='http://127.0.0.1:50799/'>.evaluate
+
+tests/test_service_plan_recovery_browser.py:89: AssertionError
+_____ test_expired_or_malformed_handle_not_used_for_cold_recovery[future] ______
+
+goal_page = ((<parkweave.store.Store object at 0x7faf3f056a50>, <parkweave.store.Store object at 0x7faf3d52a8a0>, {'fixture-a': '4...jye3bum0', ...}, <starlette.testclient.TestClient object at 0x7faf3db10ad0>), <Page url='http://127.0.0.1:37997/'>, [])
+damage = 'future'
+
+    @pytest.mark.parametrize('damage',['expired','future','extra','missing','oversized'])
+    def test_expired_or_malformed_handle_not_used_for_cold_recovery(goal_page,damage):
+     f,page,errors=goal_page;p=prep(f,'VERIFY');open_case(page,f,p);h,stored,_=lost(page,f,p,'VERIFY')
+     name=next(iter(json.loads(stored)))
+     if damage=='expired':h['expires']=0
+     elif damage=='future':h['expires']=999999999999999
+     elif damage=='extra':h['body']='SYNTHETIC private forbidden'
+     elif damage=='missing':del h['expires']
+>    raw='x'*641 if damage=='oversized' else json.dumps(h);page.evaluate('([name,raw])=>localStorage.setItem(name,raw)',[name,raw]);before=snapshot(f);page.reload();requests=[];page.on('request',lambda r:requests.append(r.headers.get('idempotency-key')));open_case(page,f,p);assert page.evaluate('servicePlanRecoveryHandle') is None and page.evaluate('JSON.stringify({...localStorage})')=='{}' and h['key'] not in requests and snapshot(f)==before and not errors
+                                                                                                                                                                                                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    AssertionError: assert ({'v': 1, 'id': 'ba3136f6-7878-44d7-9922-bdaa36031cf3', 'key': 'e7779f3e-fd87-4486-a5bf-9d156fa5b893', 'actor': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', ...} is None)
+E     +  where {'v': 1, 'id': 'ba3136f6-7878-44d7-9922-bdaa36031cf3', 'key': 'e7779f3e-fd87-4486-a5bf-9d156fa5b893', 'actor': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db', ...} = evaluate('servicePlanRecoveryHandle')
+E     +    where evaluate = <Page url='http://127.0.0.1:37997/'>.evaluate
+
+tests/test_service_plan_recovery_browser.py:89: AssertionError
+_ test_hot_strict_handle_revalidation_before_get_or_release_no_requests[button-expired] _
+
+goal_page = ((<parkweave.store.Store object at 0x7faf3d7f7ad0>, <parkweave.store.Store object at 0x7faf3d7f5760>, {'fixture-a': 'x...AJ0-9j-s', ...}, <starlette.testclient.TestClient object at 0x7faf3d5d30b0>), <Page url='http://127.0.0.1:52031/'>, [])
+kind = 'expired', entry = 'button'
+
+    @pytest.mark.parametrize('kind',['expired','missing','malformed','changed'])
+    @pytest.mark.parametrize('entry',['button','write_guard','release'])
+    def test_hot_strict_handle_revalidation_before_get_or_release_no_requests(goal_page,kind,entry):
+     f,page,errors=goal_page;p=prep(f,'BEGIN');open_case(page,f,p);h,_,_=lost(page,f,p,'BEGIN')
+     if entry=='release':page.locator('#service-plan-retry').click();wait_recovered(page)
+     draft='SYNTHETIC new unsent safe draft';page.evaluate('(draft)=>document.getElementById("service-plan-reason").value=draft',draft);damage_handle(page,h,kind);stored=page.evaluate('JSON.stringify({...localStorage})');before=snapshot(f);requests=[];page.on('request',lambda r:requests.append((r.method,r.headers.get('idempotency-key'))))
+     if entry=='button':page.locator('#service-plan-retry').click()
+     elif entry=='release':page.locator('#service-plan-release').click()
+     else:page.evaluate('()=>servicePlanWrite("BEGIN",servicePlanView.steps[0].id)')
+>    assert_handle_refused(page,f,before,draft);assert requests==[] and not errors
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_plan_recovery_browser.py:195: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_plan_recovery_browser.py:184: in assert_handle_refused
+    page.wait_for_function('()=>servicePlanRecoveryHandle===null&&!servicePlanRecoveryChecking&&servicePlanPending===null');assert page.evaluate('servicePlanView.read_only') and page.locator('[data-service-action]').count()==0 and page.locator('#goal-results-read').is_disabled() and page.locator('#service-plan-reason').input_value()==draft and snapshot(f)==before;assert '原提交结果仍待人工核对' in page.locator('#service-plan-feedback').inner_text()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7faf3f65a810>
+cb = <function Channel.send.<locals>.<lambda> at 0x7faf3d1b1760>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_ test_hot_strict_handle_revalidation_before_get_or_release_no_requests[write_guard-expired] _
+
+goal_page = ((<parkweave.store.Store object at 0x7faf3c3f8140>, <parkweave.store.Store object at 0x7faf3d99e0c0>, {'fixture-a': 'S...bfWKBsS4', ...}, <starlette.testclient.TestClient object at 0x7faf3d55b0b0>), <Page url='http://127.0.0.1:54927/'>, [])
+kind = 'expired', entry = 'write_guard'
+
+    @pytest.mark.parametrize('kind',['expired','missing','malformed','changed'])
+    @pytest.mark.parametrize('entry',['button','write_guard','release'])
+    def test_hot_strict_handle_revalidation_before_get_or_release_no_requests(goal_page,kind,entry):
+     f,page,errors=goal_page;p=prep(f,'BEGIN');open_case(page,f,p);h,_,_=lost(page,f,p,'BEGIN')
+     if entry=='release':page.locator('#service-plan-retry').click();wait_recovered(page)
+     draft='SYNTHETIC new unsent safe draft';page.evaluate('(draft)=>document.getElementById("service-plan-reason").value=draft',draft);damage_handle(page,h,kind);stored=page.evaluate('JSON.stringify({...localStorage})');before=snapshot(f);requests=[];page.on('request',lambda r:requests.append((r.method,r.headers.get('idempotency-key'))))
+     if entry=='button':page.locator('#service-plan-retry').click()
+     elif entry=='release':page.locator('#service-plan-release').click()
+     else:page.evaluate('()=>servicePlanWrite("BEGIN",servicePlanView.steps[0].id)')
+>    assert_handle_refused(page,f,before,draft);assert requests==[] and not errors
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_plan_recovery_browser.py:195: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_plan_recovery_browser.py:184: in assert_handle_refused
+    page.wait_for_function('()=>servicePlanRecoveryHandle===null&&!servicePlanRecoveryChecking&&servicePlanPending===null');assert page.evaluate('servicePlanView.read_only') and page.locator('[data-service-action]').count()==0 and page.locator('#goal-results-read').is_disabled() and page.locator('#service-plan-reason').input_value()==draft and snapshot(f)==before;assert '原提交结果仍待人工核对' in page.locator('#service-plan-feedback').inner_text()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7faf3d1485c0>
+cb = <function Channel.send.<locals>.<lambda> at 0x7faf3d920c20>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_ test_hot_strict_handle_revalidation_before_get_or_release_no_requests[release-expired] _
+
+goal_page = ((<parkweave.store.Store object at 0x7faf3cfdc380>, <parkweave.store.Store object at 0x7faf3dd7cbc0>, {'fixture-a': 'a...e2Lq73LE', ...}, <starlette.testclient.TestClient object at 0x7faf3d65ab70>), <Page url='http://127.0.0.1:56131/'>, [])
+kind = 'expired', entry = 'release'
+
+    @pytest.mark.parametrize('kind',['expired','missing','malformed','changed'])
+    @pytest.mark.parametrize('entry',['button','write_guard','release'])
+    def test_hot_strict_handle_revalidation_before_get_or_release_no_requests(goal_page,kind,entry):
+     f,page,errors=goal_page;p=prep(f,'BEGIN');open_case(page,f,p);h,_,_=lost(page,f,p,'BEGIN')
+     if entry=='release':page.locator('#service-plan-retry').click();wait_recovered(page)
+     draft='SYNTHETIC new unsent safe draft';page.evaluate('(draft)=>document.getElementById("service-plan-reason").value=draft',draft);damage_handle(page,h,kind);stored=page.evaluate('JSON.stringify({...localStorage})');before=snapshot(f);requests=[];page.on('request',lambda r:requests.append((r.method,r.headers.get('idempotency-key'))))
+     if entry=='button':page.locator('#service-plan-retry').click()
+     elif entry=='release':page.locator('#service-plan-release').click()
+     else:page.evaluate('()=>servicePlanWrite("BEGIN",servicePlanView.steps[0].id)')
+>    assert_handle_refused(page,f,before,draft);assert requests==[] and not errors
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_plan_recovery_browser.py:195: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_plan_recovery_browser.py:184: in assert_handle_refused
+    page.wait_for_function('()=>servicePlanRecoveryHandle===null&&!servicePlanRecoveryChecking&&servicePlanPending===null');assert page.evaluate('servicePlanView.read_only') and page.locator('[data-service-action]').count()==0 and page.locator('#goal-results-read').is_disabled() and page.locator('#service-plan-reason').input_value()==draft and snapshot(f)==before;assert '原提交结果仍待人工核对' in page.locator('#service-plan-feedback').inner_text()
+                                                                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:9385: in evaluate
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:472: in evaluate
+    return await self._main_frame.evaluate(expression, arg)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:345: in evaluate
+    await self._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7faf3f8f7ec0>
+cb = <function Channel.send.<locals>.<lambda> at 0x7faf3d4c2c00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: Page.evaluate: TypeError: Cannot read properties of null (reading 'read_only')
+E               at eval (eval at evaluate (:311:30), <anonymous>:1:17)
+E               at eval (<anonymous>)
+E               at UtilityScript.evaluate (<anonymous>:311:30)
+E               at UtilityScript.<anonymous> (<anonymous>:1:44)
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+_ test_real_inflight_recovery_or_original_post_revalidates_handle_before_accepting200[GET-expired] _
+
+goal_page = ((<parkweave.store.Store object at 0x7faf3df19d90>, <parkweave.store.Store object at 0x7faf3db76c60>, {'fixture-a': 'l...gDQkMX1U', ...}, <starlette.testclient.TestClient object at 0x7faf3d061490>), <Page url='http://127.0.0.1:57477/'>, [])
+kind = 'expired', method = 'GET'
+
+    @pytest.mark.parametrize('kind',['expired','missing','malformed','changed'])
+    @pytest.mark.parametrize('method',['GET','POST'])
+    def test_real_inflight_recovery_or_original_post_revalidates_handle_before_accepting200(goal_page,kind,method):
+     f,page,errors=goal_page;p=prep(f,'BEGIN');open_case(page,f,p);held=[]
+     if method=='GET':h,_,_=lost(page,f,p,'BEGIN')
+     def hold(route):
+      if route.request.method!=method or (method=='GET' and not route.request.headers.get('idempotency-key')):route.continue_();return
+      r=route.fetch();assert r.status==200;held.append((route,r))
+     page.route('**/service-case-plan/'+('command-recovery' if method=='GET' else 'commands'),hold)
+     if method=='GET':page.locator('#service-plan-retry').click()
+     else:page.locator('#service-plan-reason').fill('SYNTHETIC PRIVATE_INFLIGHT_POST');page.locator('[data-service-action="BEGIN"]').click()
+     wait_held(page,held)
+     if method=='POST':h=page.evaluate('servicePlanRecoveryHandle')
+>    draft='SYNTHETIC keep changed unsent draft';page.evaluate('(draft)=>document.getElementById("service-plan-reason").value=draft',draft);damage_handle(page,h,kind);stored=page.evaluate('JSON.stringify({...localStorage})');before=snapshot(f);requests=[];page.on('request',lambda r:requests.append(r.method));route,r=held[0];route.fulfill(response=r);assert_handle_refused(page,f,before,draft);assert requests==[] and page.evaluate('JSON.stringify({...localStorage})')==(stored if kind=='changed' else '{}') and not errors
+                                                                                                                                                                                                                                                                                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_plan_recovery_browser.py:213: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_plan_recovery_browser.py:184: in assert_handle_refused
+    page.wait_for_function('()=>servicePlanRecoveryHandle===null&&!servicePlanRecoveryChecking&&servicePlanPending===null');assert page.evaluate('servicePlanView.read_only') and page.locator('[data-service-action]').count()==0 and page.locator('#goal-results-read').is_disabled() and page.locator('#service-plan-reason').input_value()==draft and snapshot(f)==before;assert '原提交结果仍待人工核对' in page.locator('#service-plan-feedback').inner_text()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7faf3d7aa1e0>
+cb = <function Channel.send.<locals>.<lambda> at 0x7faf3c271940>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_ test_real_inflight_recovery_or_original_post_revalidates_handle_before_accepting200[POST-expired] _
+
+goal_page = ((<parkweave.store.Store object at 0x7faf3cdbd610>, <parkweave.store.Store object at 0x7faf3da5cbf0>, {'fixture-a': 'b...bNDIaBVA', ...}, <starlette.testclient.TestClient object at 0x7faf3dc12720>), <Page url='http://127.0.0.1:42599/'>, [])
+kind = 'expired', method = 'POST'
+
+    @pytest.mark.parametrize('kind',['expired','missing','malformed','changed'])
+    @pytest.mark.parametrize('method',['GET','POST'])
+    def test_real_inflight_recovery_or_original_post_revalidates_handle_before_accepting200(goal_page,kind,method):
+     f,page,errors=goal_page;p=prep(f,'BEGIN');open_case(page,f,p);held=[]
+     if method=='GET':h,_,_=lost(page,f,p,'BEGIN')
+     def hold(route):
+      if route.request.method!=method or (method=='GET' and not route.request.headers.get('idempotency-key')):route.continue_();return
+      r=route.fetch();assert r.status==200;held.append((route,r))
+     page.route('**/service-case-plan/'+('command-recovery' if method=='GET' else 'commands'),hold)
+     if method=='GET':page.locator('#service-plan-retry').click()
+     else:page.locator('#service-plan-reason').fill('SYNTHETIC PRIVATE_INFLIGHT_POST');page.locator('[data-service-action="BEGIN"]').click()
+     wait_held(page,held)
+     if method=='POST':h=page.evaluate('servicePlanRecoveryHandle')
+>    draft='SYNTHETIC keep changed unsent draft';page.evaluate('(draft)=>document.getElementById("service-plan-reason").value=draft',draft);damage_handle(page,h,kind);stored=page.evaluate('JSON.stringify({...localStorage})');before=snapshot(f);requests=[];page.on('request',lambda r:requests.append(r.method));route,r=held[0];route.fulfill(response=r);assert_handle_refused(page,f,before,draft);assert requests==[] and page.evaluate('JSON.stringify({...localStorage})')==(stored if kind=='changed' else '{}') and not errors
+                                                                                                                                                                                                                                                                                                                                                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_plan_recovery_browser.py:213: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = <Page url='http://127.0.0.1:42599/'>
+f = (<parkweave.store.Store object at 0x7faf3cdbd610>, <parkweave.store.Store object at 0x7faf3da5cbf0>, {'fixture-a': 'bv...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7faf3dc12720>)
+before = {'preparations': [{'id': UUID('1c058886-a998-4fff-bd2a-ce6fd4c35943'), 'run_id': UUID('b2c93ef2-8294-4cfe-b5ee-4aff894...D('1c058886-a998-4fff-bd2a-ce6fd4c35943'), 'slot': 'material_outline', 'version': 1, ...}], 'fact_assertions': [], ...}
+draft = 'SYNTHETIC keep changed unsent draft'
+
+    def assert_handle_refused(page,f,before,draft):
+>    page.wait_for_function('()=>servicePlanRecoveryHandle===null&&!servicePlanRecoveryChecking&&servicePlanPending===null');assert page.evaluate('servicePlanView.read_only') and page.locator('[data-service-action]').count()==0 and page.locator('#goal-results-read').is_disabled() and page.locator('#service-plan-reason').input_value()==draft and snapshot(f)==before;assert '原提交结果仍待人工核对' in page.locator('#service-plan-feedback').inner_text()
+                                                                                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E    AssertionError: assert (None)
+E     +  where None = evaluate('servicePlanView.read_only')
+E     +    where evaluate = <Page url='http://127.0.0.1:42599/'>.evaluate
+
+tests/test_service_plan_recovery_browser.py:184: AssertionError
+_ test_previous_actual_success_event_reason_and_sources_removed_from_invalid_recovery_view[expired-BEGIN] _
+
+goal_page = ((<parkweave.store.Store object at 0x7faf3d792e10>, <parkweave.store.Store object at 0x7faf3d9e37a0>, {'fixture-a': 'f...zZU9Ch0c', ...}, <starlette.testclient.TestClient object at 0x7faf3c3adbb0>), <Page url='http://127.0.0.1:56183/'>, [])
+previous = 'BEGIN', damage = 'expired'
+
+    @pytest.mark.parametrize('previous',['BEGIN','VERIFY'])
+    @pytest.mark.parametrize('damage',['expired','missing','malformed','changed'])
+    def test_previous_actual_success_event_reason_and_sources_removed_from_invalid_recovery_view(goal_page,previous,damage):
+     f,page,errors=goal_page;p=setup(f,GOALS[1]);assert adopt(f,p).status_code==201;open_case(page,f,p)
+     page.locator('#service-plan-reason').fill('SYNTHETIC PRIVATE_PREVIOUS_SUCCESS_'+previous);page.locator('[data-service-adapter="P1"] [data-service-action="'+previous+'"]').click();page.wait_for_function('(action)=>servicePlanPending===null&&servicePlanView.event?.action===action',arg=previous);prior=page.evaluate('servicePlanView.event');assert 'PRIVATE_PREVIOUS_SUCCESS_' in prior['reason']
+     if previous=='VERIFY':assert prior['sources'] is not None
+>    h,_,_=lost(page,f,p,'REPORT_FAILURE' if previous=='BEGIN' else 'BEGIN');draft='SYNTHETIC preserve unsent replacement draft';page.evaluate('(draft)=>document.getElementById("service-plan-reason").value=draft',draft);damage_handle(page,h,damage);stored=page.evaluate('JSON.stringify({...localStorage})');before=snapshot(f);requests=[];page.on('request',lambda r:requests.append(r.method));page.locator('#service-plan-retry').click();assert_handle_refused(page,f,before,draft);view=page.evaluate('servicePlanView');assert view['event'] is None and view['command_receipt'] is None and view['binding'] is None and view['current_preview'] is None;assert 'PRIVATE_' not in json.dumps(view) and 'PRIVATE_PREVIOUS_SUCCESS_' not in page.locator('#service-plan-history').inner_text();assert all(set(e)=={'id','revision','action','step_id'} for e in view['events']) and all(set(e)=={'id','revision'} for e in view['history']) and all(s['verified_sources'] is None and s['source_sha256'] is None and not s['allowed_actions'] for s in view['steps']);assert requests==[] and page.evaluate('JSON.stringify({...localStorage})')==(stored if damage=='changed' else '{}') and not errors
+                                                                                                                                                                                                                                                                                                                                                                                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_plan_recovery_browser.py:221: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_plan_recovery_browser.py:184: in assert_handle_refused
+    page.wait_for_function('()=>servicePlanRecoveryHandle===null&&!servicePlanRecoveryChecking&&servicePlanPending===null');assert page.evaluate('servicePlanView.read_only') and page.locator('[data-service-action]').count()==0 and page.locator('#goal-results-read').is_disabled() and page.locator('#service-plan-reason').input_value()==draft and snapshot(f)==before;assert '原提交结果仍待人工核对' in page.locator('#service-plan-feedback').inner_text()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7faf3ddbff50>
+cb = <function Channel.send.<locals>.<lambda> at 0x7faf3dd10900>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_ test_previous_actual_success_event_reason_and_sources_removed_from_invalid_recovery_view[expired-VERIFY] _
+
+goal_page = ((<parkweave.store.Store object at 0x7faf3db844d0>, <parkweave.store.Store object at 0x7faf3ddbdaf0>, {'fixture-a': 'r...nlcCurY0', ...}, <starlette.testclient.TestClient object at 0x7faf3da89670>), <Page url='http://127.0.0.1:46541/'>, [])
+previous = 'VERIFY', damage = 'expired'
+
+    @pytest.mark.parametrize('previous',['BEGIN','VERIFY'])
+    @pytest.mark.parametrize('damage',['expired','missing','malformed','changed'])
+    def test_previous_actual_success_event_reason_and_sources_removed_from_invalid_recovery_view(goal_page,previous,damage):
+     f,page,errors=goal_page;p=setup(f,GOALS[1]);assert adopt(f,p).status_code==201;open_case(page,f,p)
+     page.locator('#service-plan-reason').fill('SYNTHETIC PRIVATE_PREVIOUS_SUCCESS_'+previous);page.locator('[data-service-adapter="P1"] [data-service-action="'+previous+'"]').click();page.wait_for_function('(action)=>servicePlanPending===null&&servicePlanView.event?.action===action',arg=previous);prior=page.evaluate('servicePlanView.event');assert 'PRIVATE_PREVIOUS_SUCCESS_' in prior['reason']
+     if previous=='VERIFY':assert prior['sources'] is not None
+>    h,_,_=lost(page,f,p,'REPORT_FAILURE' if previous=='BEGIN' else 'BEGIN');draft='SYNTHETIC preserve unsent replacement draft';page.evaluate('(draft)=>document.getElementById("service-plan-reason").value=draft',draft);damage_handle(page,h,damage);stored=page.evaluate('JSON.stringify({...localStorage})');before=snapshot(f);requests=[];page.on('request',lambda r:requests.append(r.method));page.locator('#service-plan-retry').click();assert_handle_refused(page,f,before,draft);view=page.evaluate('servicePlanView');assert view['event'] is None and view['command_receipt'] is None and view['binding'] is None and view['current_preview'] is None;assert 'PRIVATE_' not in json.dumps(view) and 'PRIVATE_PREVIOUS_SUCCESS_' not in page.locator('#service-plan-history').inner_text();assert all(set(e)=={'id','revision','action','step_id'} for e in view['events']) and all(set(e)=={'id','revision'} for e in view['history']) and all(s['verified_sources'] is None and s['source_sha256'] is None and not s['allowed_actions'] for s in view['steps']);assert requests==[] and page.evaluate('JSON.stringify({...localStorage})')==(stored if damage=='changed' else '{}') and not errors
+                                                                                                                                                                                                                                                                                                                                                                                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_service_plan_recovery_browser.py:221: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_service_plan_recovery_browser.py:184: in assert_handle_refused
+    page.wait_for_function('()=>servicePlanRecoveryHandle===null&&!servicePlanRecoveryChecking&&servicePlanPending===null');assert page.evaluate('servicePlanView.read_only') and page.locator('[data-service-action]').count()==0 and page.locator('#goal-results-read').is_disabled() and page.locator('#service-plan-reason').input_value()==draft and snapshot(f)==before;assert '原提交结果仍待人工核对' in page.locator('#service-plan-feedback').inner_text()
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:12761: in wait_for_function
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:1151: in wait_for_function
+    return await self._main_frame.wait_for_function(**locals_to_params(locals()))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:940: in wait_for_function
+    await self._channel.send("waitForFunction", self._timeout, params)
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7faf3d7ddc70>
+cb = <function Channel.send.<locals>.<lambda> at 0x7faf3e1fd260>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Page.wait_for_function: Timeout 30000ms exceeded.
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_____ test_new_request_template_link_plan_material_work_and_invalid_input ______
+
+preparation_fixture = (<parkweave.store.Store object at 0x7faf3cfe1370>, <parkweave.store.Store object at 0x7faf3da8a240>, {'fixture-a': 'q2...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7faf3c268110>)
+tmp_path = PosixPath('/tmp/pw-preparation-timing-final-b1_06z2q/pytest/test_new_request_template_link0')
+
+    def test_new_request_template_link_plan_material_work_and_invalid_input(preparation_fixture,tmp_path):
+        f=preparation_fixture;permissions=permission_snapshot(f[1]);cfg=template_config().model_dump()
+        for permit in cfg['permits']:permit['scope']['park_id']='park-a'
+        engine=TemplateEngine(TemplateConfig.model_validate(cfg),TemplateRepository(tmp_path/'continuity.template.candidate.sqlite3'))
+        consumer=TemplateConsumer(f[0],engine,ConsumerConfig(enabled_for_isolated_tests=True,
+            allowed_database_names=[conninfo_to_dict(f[0].dsn)['dbname']],allowed_orgs=[{'park_id':'park-a','org_id':'org-a'}]),
+            ConsumerRepository(tmp_path/'continuity.consumer.candidate.sqlite3'))
+        with TestClient(create_isolated_template_app(f[0],engine,consumer)) as client:
+            # Existing approved synthetic release, prepared through original commands.
+            path='/api/template-candidate/park-a/new-enterprise-material-template'
+            for action,actor in [('SAVE_DRAFT','template-author'),('SUBMIT','template-author'),('REVIEW','template-reviewer'),('CANDIDATE_PUBLISH','template-publisher')]:
+                h={'X-Isolated-Template-Actor':actor,'Idempotency-Key':uuid4().hex};view=client.get(path,headers=h).json()
+                body={'action':action,'expected_revision':view['revision'],'expected_definition_sha256':view['definition_sha256'],'reason':'SYNTHETIC existing reviewed release '+action}
+                if action=='SAVE_DRAFT':body['draft']=definition().model_dump(mode='json')
+                if action=='CANDIDATE_PUBLISH':body['validity']=VALID
+                r=client.post(path+'/commands',headers=h,json=body);assert r.status_code==200,r.text
+            proc=subprocess.Popen(['node',str(Path(__file__).with_name('template_plan_continuity.js')),'template_plan_continuity'],
+                cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0)
+            selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ);requests=[];summary=None;invalid_seen=False
+            try:
+                while True:
+                    assert selector.select(timeout=15),'Template continuity bridge made no progress within15 seconds'
+                    line=proc.stdout.readline()
+                    if not line:break
+                    message=json.loads(line)
+                    if 'request' not in message:summary=message;break
+                    r=message['request'];o=r['options'];method=o.get('method','GET');body=json.loads(o['body']) if o.get('body') else None
+                    actor=o.get('headers',{}).get('Authorization','Bearer SYNTHETIC_fixture-a').removeprefix('Bearer SYNTHETIC_')
+                    response=client.request(method,r['path'],headers=headers(f[2],actor,key=o.get('headers',{}).get('Idempotency-Key')),json=body)
+                    requests.append({'method':method,'path':r['path'],'status':response.status_code,'actor':actor})
+                    if response.status_code==422:
+                        assert r['path']=='/api/template-consumer/instances' and body['materials'][0]['text']=='';invalid_seen=True
+                        with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==0
+                    else:assert response.status_code<400,(method,r['path'],response.status_code,response.json())
+                    if method=='POST' and r['path']=='/api/template-consumer/instances' and response.status_code==201:
+                        f[0].finish(f[0].claim('template-continuity-original-worker'))
+                    proc.stdin.write((json.dumps({'status':response.status_code,'body':response.json()})+'\n').encode());proc.stdin.flush()
+>               assert proc.wait(timeout=15)==0,proc.stderr.read().decode()
+E               AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E                 
+E                   assert(v)
+E                 
+E                     at check (/workspace/ParkWeave/tests/template_plan_continuity.js:4:26)
+E                     at /workspace/ParkWeave/tests/template_plan_continuity.js:32:365
+E                     at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E                 
+E               assert 1 == 0
+E                +  where 1 = wait(timeout=15)
+E                +    where wait = <Popen: returncode: 1 args: ['node', '/workspace/ParkWeave/tests/template_pl...>.wait
+
+tests/test_template_plan_continuity.py:55: AssertionError
+_ test_original_template_handoff_rejects_unverified_or_late_navigation[late_catalog] _
+
+mode = 'late_catalog'
+
+    @pytest.mark.parametrize("mode",["pending_preserved","late_catalog","late_error_new_plan","late403_new_plan","identity_aba","terminal_wrong_plan","denied403","wrong_binding"])
+    def test_original_template_handoff_rejects_unverified_or_late_navigation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_entry_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'path')
+E             at /workspace/ParkWeave/tests/template_entry_guards.js:35:82
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/template_entry_guards.js:50:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/template_entry_guards.js', 'late_catalog'], returncode=1, s...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_template_plan_continuity.py:71: AssertionError
+_ test_original_template_handoff_rejects_unverified_or_late_navigation[late_error_new_plan] _
+
+mode = 'late_error_new_plan'
+
+    @pytest.mark.parametrize("mode",["pending_preserved","late_catalog","late_error_new_plan","late403_new_plan","identity_aba","terminal_wrong_plan","denied403","wrong_binding"])
+    def test_original_template_handoff_rejects_unverified_or_late_navigation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_entry_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/ParkWeave/tests/template_entry_guards.js:24:41)
+E             at /workspace/ParkWeave/tests/template_entry_guards.js:37:139
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/template_entry_guards.js', 'late_error_new_plan'], returnco.../ParkWeave/tests/template_entry_guards.js:24:41)\n    at /workspace/ParkWeave/tests/template_entry_guards.js:37:139\n").returncode
+
+tests/test_template_plan_continuity.py:71: AssertionError
+_ test_original_template_handoff_rejects_unverified_or_late_navigation[late403_new_plan] _
+
+mode = 'late403_new_plan'
+
+    @pytest.mark.parametrize("mode",["pending_preserved","late_catalog","late_error_new_plan","late403_new_plan","identity_aba","terminal_wrong_plan","denied403","wrong_binding"])
+    def test_original_template_handoff_rejects_unverified_or_late_navigation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_entry_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/ParkWeave/tests/template_entry_guards.js:24:41)
+E             at /workspace/ParkWeave/tests/template_entry_guards.js:39:139
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/template_entry_guards.js', 'late403_new_plan'], returncode=.../ParkWeave/tests/template_entry_guards.js:24:41)\n    at /workspace/ParkWeave/tests/template_entry_guards.js:39:139\n").returncode
+
+tests/test_template_plan_continuity.py:71: AssertionError
+_ test_original_template_handoff_rejects_unverified_or_late_navigation[identity_aba] _
+
+mode = 'identity_aba'
+
+    @pytest.mark.parametrize("mode",["pending_preserved","late_catalog","late_error_new_plan","late403_new_plan","identity_aba","terminal_wrong_plan","denied403","wrong_binding"])
+    def test_original_template_handoff_rejects_unverified_or_late_navigation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_entry_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'remove')
+E             at clearCaseCancellation (evalmachine.<anonymous>:1091:166)
+E             at clearPreparation (evalmachine.<anonymous>:364:154)
+E             at $.oninput (evalmachine.<anonymous>:1026:201)
+E             at /workspace/ParkWeave/tests/template_entry_guards.js:41:165
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/template_entry_guards.js:50:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/template_entry_guards.js', 'identity_aba'], returncode=1, s...e._load (node:internal/modules/cjs/loader:1396:12)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)\n").returncode
+
+tests/test_template_plan_continuity.py:71: AssertionError
+_ test_original_template_handoff_rejects_unverified_or_late_navigation[terminal_wrong_plan] _
+
+mode = 'terminal_wrong_plan'
+
+    @pytest.mark.parametrize("mode",["pending_preserved","late_catalog","late_error_new_plan","late403_new_plan","identity_aba","terminal_wrong_plan","denied403","wrong_binding"])
+    def test_original_template_handoff_rejects_unverified_or_late_navigation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_entry_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/ParkWeave/tests/template_entry_guards.js:24:41)
+E             at /workspace/ParkWeave/tests/template_entry_guards.js:43:55
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/template_entry_guards.js:50:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/template_entry_guards.js', 'terminal_wrong_plan'], returnco...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_template_plan_continuity.py:71: AssertionError
+_ test_original_template_handoff_rejects_unverified_or_late_navigation[denied403] _
+
+mode = 'denied403'
+
+    @pytest.mark.parametrize("mode",["pending_preserved","late_catalog","late_error_new_plan","late403_new_plan","identity_aba","terminal_wrong_plan","denied403","wrong_binding"])
+    def test_original_template_handoff_rejects_unverified_or_late_navigation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_entry_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/ParkWeave/tests/template_entry_guards.js:24:41)
+E             at /workspace/ParkWeave/tests/template_entry_guards.js:45:55
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/template_entry_guards.js:50:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/template_entry_guards.js', 'denied403'], returncode=1, stdo...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_template_plan_continuity.py:71: AssertionError
+_ test_original_template_handoff_rejects_unverified_or_late_navigation[wrong_binding] _
+
+mode = 'wrong_binding'
+
+    @pytest.mark.parametrize("mode",["pending_preserved","late_catalog","late_error_new_plan","late403_new_plan","identity_aba","terminal_wrong_plan","denied403","wrong_binding"])
+    def test_original_template_handoff_rejects_unverified_or_late_navigation(mode):
+        result=subprocess.run(["node",str(Path(__file__).with_name("template_entry_guards.js")),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=20)
+>       assert result.returncode==0,result.stderr
+E       AssertionError: TypeError: Cannot read properties of undefined (reading 'resolve')
+E             at finish (/workspace/ParkWeave/tests/template_entry_guards.js:24:41)
+E             at /workspace/ParkWeave/tests/template_entry_guards.js:47:94
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/template_entry_guards.js:50:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/template_entry_guards.js', 'wrong_binding'], returncode=1, ...UserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)\n    at node:internal/main/run_main_module:33:47\n").returncode
+
+tests/test_template_plan_continuity.py:71: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_preparation_read_write_timing_browser.py::test_visible_material_submit_waits_for_current_safety_reads
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_preparation_read_write_timing_browser.py::test_visible_material_submit_waits_for_current_safety_reads
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_service_plan_recovery_browser.py::test_expired_or_malformed_handle_not_used_for_cold_recovery[expired]
+FAILED tests/test_service_plan_recovery_browser.py::test_expired_or_malformed_handle_not_used_for_cold_recovery[future]
+FAILED tests/test_service_plan_recovery_browser.py::test_hot_strict_handle_revalidation_before_get_or_release_no_requests[button-expired]
+FAILED tests/test_service_plan_recovery_browser.py::test_hot_strict_handle_revalidation_before_get_or_release_no_requests[write_guard-expired]
+FAILED tests/test_service_plan_recovery_browser.py::test_hot_strict_handle_revalidation_before_get_or_release_no_requests[release-expired]
+FAILED tests/test_service_plan_recovery_browser.py::test_real_inflight_recovery_or_original_post_revalidates_handle_before_accepting200[GET-expired]
+FAILED tests/test_service_plan_recovery_browser.py::test_real_inflight_recovery_or_original_post_revalidates_handle_before_accepting200[POST-expired]
+FAILED tests/test_service_plan_recovery_browser.py::test_previous_actual_success_event_reason_and_sources_removed_from_invalid_recovery_view[expired-BEGIN]
+FAILED tests/test_service_plan_recovery_browser.py::test_previous_actual_success_event_reason_and_sources_removed_from_invalid_recovery_view[expired-VERIFY]
+FAILED tests/test_template_plan_continuity.py::test_new_request_template_link_plan_material_work_and_invalid_input
+FAILED tests/test_template_plan_continuity.py::test_original_template_handoff_rejects_unverified_or_late_navigation[late_catalog]
+FAILED tests/test_template_plan_continuity.py::test_original_template_handoff_rejects_unverified_or_late_navigation[late_error_new_plan]
+FAILED tests/test_template_plan_continuity.py::test_original_template_handoff_rejects_unverified_or_late_navigation[late403_new_plan]
+FAILED tests/test_template_plan_continuity.py::test_original_template_handoff_rejects_unverified_or_late_navigation[identity_aba]
+FAILED tests/test_template_plan_continuity.py::test_original_template_handoff_rejects_unverified_or_late_navigation[terminal_wrong_plan]
+FAILED tests/test_template_plan_continuity.py::test_original_template_handoff_rejects_unverified_or_late_navigation[denied403]
+FAILED tests/test_template_plan_continuity.py::test_original_template_handoff_rejects_unverified_or_late_navigation[wrong_binding]
+17 failed, 267 passed, 4 warnings in 2437.52s (0:40:37)

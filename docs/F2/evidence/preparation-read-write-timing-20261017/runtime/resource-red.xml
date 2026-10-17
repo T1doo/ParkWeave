@@ -1,0 +1,305 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="5" time="70.707" timestamp="2026-10-17T13:56:27.278832+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_resource_response_binding_browser" name="test_invalid_resource_binding_retains_original_key_until_explicit_retry[hold]" time="18.254"><failure message="AssertionError: assert (2 == 2 and {'path': '/ap...ion': 1, ...}} == {'path': '/ap...ion': 1, ...}}&#10; +  where 2 = len([{'path': '/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/holds', 'key': '2f78a09d-39bb-4c57-9293-de77b... {'starts_at': '2026-10-17T14:56:00Z', 'ends_at': '2026-10-17T15:56:00Z', 'quantity': 1, 'expected_revision': 1, ...}}])&#10;  &#10;  Omitting 2 identical items, use -vv to show&#10;  Differing items:&#10;  {'key': '2f78a09d-39bb-4c57-9293-de77b1b019e4'} != {'key': '7290a877-a178-4003-8339-6df53f976338'}&#10;  Use -v to get more diff)">pair_fixture = (&lt;parkweave.store.Store object at 0x7ffa5acb6840&gt;, &lt;parkweave.store.Store object at 0x7ffa5acb6a80&gt;, {'fixture-a': 'OT...fixture-c': 'REDACTED_TEMPORARY_SESSION_CANDIDATE'}, &lt;starlette.testclient.TestClient object at 0x7ffa5e191550&gt;)
+tmp_path = PosixPath('/tmp/pw-resource-binding-red-eim9negh/pytest/test_invalid_resource_binding_0')
+action = 'hold'
+
+    @pytest.mark.parametrize('action',['hold','confirm','release','combination','cancel'])
+    def test_invalid_resource_binding_retains_original_key_until_explicit_retry(pair_fixture,tmp_path,action):
+        f=pair_fixture;hs=[];g=None
+        if action!='hold':
+            hs,body=pair(f)
+            if action=='cancel':
+                result=write(f,body);assert result.status_code==201
+                g=result.json()['combination']
+        posts=[];fault=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw)
+            page.goto(str(api.base_url));page.locator('#token').fill(f[2]['fixture-a'])
+            page.locator('[data-tab="resource"]').click();page.locator('#resource-catalog').click()
+            expect(page.locator('#resource-form')).to_be_visible()
+            if action=='hold':
+                page.locator('#resource-purpose').fill('SYNTHETIC original binding retry')
+                page.locator('#resource-preview').click();expect(page.locator('#resource-hold')).to_be_enabled()
+                button=page.locator('#resource-hold');path='/api/synthetic-resources/'+page.locator('#resource-select').input_value()+'/holds'
+            elif action in ('confirm','release'):
+                page.locator('#resource-mine').click()
+                button=page.locator('[data-hold-id="'+hs[0]['id']+'"] [data-resource-action="'+action+'"]')
+                expect(button).to_be_visible();path='/api/resource-holds/'+hs[0]['id']+'/'+action
+            elif action=='combination':
+                page.locator('#resource-mine').click()
+                for h in hs:page.locator('[data-combination-hold="'+h['id']+'"]').check()
+                button=page.locator('#combination-confirm');path='/api/resource-combinations'
+            else:
+                page.locator('#combination-mine').click()
+                button=page.locator('[data-combination-cancel="'+g['id']+'"]')
+                expect(button).to_be_visible();path='/api/resource-combinations/'+g['id']+'/cancel'
+            def corrupt_first_response(route):
+                if route.request.method!='POST':route.continue_();return
+                posts.append({'path':urlparse(route.request.url).path,'key':route.request.headers['idempotency-key'],
+                              'body':route.request.post_data_json})
+                response=route.fetch();assert response.status in (200,201)
+                if fault:route.fulfill(response=response);return
+                x=response.json();fault.append(response.status)
+                if action=='hold':x['hold']['resource_id']=str(uuid4())
+                elif action in ('confirm','release'):x['hold']['id']=str(uuid4())
+                elif action=='combination':x['combination']['members'][0]['id']=str(uuid4())
+                else:x['combination']['id']=str(uuid4())
+                route.fulfill(response=response,json=x)
+            page.route('**'+path,corrupt_first_response)
+            button.click();expect(page.locator('#resource-error')).to_contain_text('响应不匹配')
+            expect(button).to_be_enabled();button.click()
+            # Retry the original visible action, never a new operation or a JS unlock.
+            expect(page.locator('#resource-error')).to_be_empty()
+&gt;           assert len(posts)==2 and posts[0]==posts[1]
+E           AssertionError: assert (2 == 2 and {'path': '/ap...ion': 1, ...}} == {'path': '/ap...ion': 1, ...}}
+E            +  where 2 = len([{'path': '/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/holds', 'key': '2f78a09d-39bb-4c57-9293-de77b... {'starts_at': '2026-10-17T14:56:00Z', 'ends_at': '2026-10-17T15:56:00Z', 'quantity': 1, 'expected_revision': 1, ...}}])
+E             
+E             Omitting 2 identical items, use -vv to show
+E             Differing items:
+E             {'key': '2f78a09d-39bb-4c57-9293-de77b1b019e4'} != {'key': '7290a877-a178-4003-8339-6df53f976338'}
+E             Use -v to get more diff)
+
+tests/test_resource_response_binding_browser.py:65: AssertionError</failure></testcase><testcase classname="tests.test_resource_response_binding_browser" name="test_invalid_resource_binding_retains_original_key_until_explicit_retry[confirm]" time="15.844"><failure message="AssertionError: Locator expected to be empty&#10;Actual value: notEmpty &#10;Call log:&#10;  - Expect &quot;to_be_empty&quot; with timeout 5000ms&#10;  - waiting for locator(&quot;#resource-error&quot;)&#10;    14 × locator resolved to &lt;p role=&quot;alert&quot; id=&quot;resource-error&quot;&gt;占位响应不匹配，请刷新核对&lt;/p&gt;&#10;       - unexpected value &quot;notEmpty&quot;&#10;&#10;Aria snapshot:&#10;- alert: 占位响应不匹配，请刷新核对">pair_fixture = (&lt;parkweave.store.Store object at 0x7ffa5a5c26c0&gt;, &lt;parkweave.store.Store object at 0x7ffa5ae97950&gt;, {'fixture-a': 'dt...fixture-c': 'REDACTED_TEMPORARY_SESSION_CANDIDATE'}, &lt;starlette.testclient.TestClient object at 0x7ffa597cfec0&gt;)
+tmp_path = PosixPath('/tmp/pw-resource-binding-red-eim9negh/pytest/test_invalid_resource_binding_1')
+action = 'confirm'
+
+    @pytest.mark.parametrize('action',['hold','confirm','release','combination','cancel'])
+    def test_invalid_resource_binding_retains_original_key_until_explicit_retry(pair_fixture,tmp_path,action):
+        f=pair_fixture;hs=[];g=None
+        if action!='hold':
+            hs,body=pair(f)
+            if action=='cancel':
+                result=write(f,body);assert result.status_code==201
+                g=result.json()['combination']
+        posts=[];fault=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw)
+            page.goto(str(api.base_url));page.locator('#token').fill(f[2]['fixture-a'])
+            page.locator('[data-tab="resource"]').click();page.locator('#resource-catalog').click()
+            expect(page.locator('#resource-form')).to_be_visible()
+            if action=='hold':
+                page.locator('#resource-purpose').fill('SYNTHETIC original binding retry')
+                page.locator('#resource-preview').click();expect(page.locator('#resource-hold')).to_be_enabled()
+                button=page.locator('#resource-hold');path='/api/synthetic-resources/'+page.locator('#resource-select').input_value()+'/holds'
+            elif action in ('confirm','release'):
+                page.locator('#resource-mine').click()
+                button=page.locator('[data-hold-id="'+hs[0]['id']+'"] [data-resource-action="'+action+'"]')
+                expect(button).to_be_visible();path='/api/resource-holds/'+hs[0]['id']+'/'+action
+            elif action=='combination':
+                page.locator('#resource-mine').click()
+                for h in hs:page.locator('[data-combination-hold="'+h['id']+'"]').check()
+                button=page.locator('#combination-confirm');path='/api/resource-combinations'
+            else:
+                page.locator('#combination-mine').click()
+                button=page.locator('[data-combination-cancel="'+g['id']+'"]')
+                expect(button).to_be_visible();path='/api/resource-combinations/'+g['id']+'/cancel'
+            def corrupt_first_response(route):
+                if route.request.method!='POST':route.continue_();return
+                posts.append({'path':urlparse(route.request.url).path,'key':route.request.headers['idempotency-key'],
+                              'body':route.request.post_data_json})
+                response=route.fetch();assert response.status in (200,201)
+                if fault:route.fulfill(response=response);return
+                x=response.json();fault.append(response.status)
+                if action=='hold':x['hold']['resource_id']=str(uuid4())
+                elif action in ('confirm','release'):x['hold']['id']=str(uuid4())
+                elif action=='combination':x['combination']['members'][0]['id']=str(uuid4())
+                else:x['combination']['id']=str(uuid4())
+                route.fulfill(response=response,json=x)
+            page.route('**'+path,corrupt_first_response)
+            button.click();expect(page.locator('#resource-error')).to_contain_text('响应不匹配')
+            expect(button).to_be_enabled();button.click()
+            # Retry the original visible action, never a new operation or a JS unlock.
+&gt;           expect(page.locator('#resource-error')).to_be_empty()
+E           AssertionError: Locator expected to be empty
+E           Actual value: notEmpty 
+E           Call log:
+E             - Expect "to_be_empty" with timeout 5000ms
+E             - waiting for locator("#resource-error")
+E               14 × locator resolved to &lt;p role="alert" id="resource-error"&gt;占位响应不匹配，请刷新核对&lt;/p&gt;
+E                  - unexpected value "notEmpty"
+E           
+E           Aria snapshot:
+E           - alert: 占位响应不匹配，请刷新核对
+
+tests/test_resource_response_binding_browser.py:64: AssertionError</failure></testcase><testcase classname="tests.test_resource_response_binding_browser" name="test_invalid_resource_binding_retains_original_key_until_explicit_retry[release]" time="9.687"><failure message="AssertionError: assert (2 == 2 and {'path': '/ap...', 'body': {}} == {'path': '/ap...', 'body': {}}&#10; +  where 2 = len([{'path': '/api/resource-holds/df3d6eab-1704-467e-adf4-fa4bfbe84e57/release', 'key': 'a38cab4f-cfca-4b32-b87d-73151aab...source-holds/df3d6eab-1704-467e-adf4-fa4bfbe84e57/release', 'key': 'a4923d7f-d33a-4a11-9650-11b58b596dcd', 'body': {}}])&#10;  &#10;  Omitting 2 identical items, use -vv to show&#10;  Differing items:&#10;  {'key': 'a38cab4f-cfca-4b32-b87d-73151aaba6e9'} != {'key': 'a4923d7f-d33a-4a11-9650-11b58b596dcd'}&#10;  Use -v to get more diff)">pair_fixture = (&lt;parkweave.store.Store object at 0x7ffa596a4320&gt;, &lt;parkweave.store.Store object at 0x7ffa59c971d0&gt;, {'fixture-a': '-8...fixture-c': 'REDACTED_TEMPORARY_SESSION_CANDIDATE'}, &lt;starlette.testclient.TestClient object at 0x7ffa58b6dee0&gt;)
+tmp_path = PosixPath('/tmp/pw-resource-binding-red-eim9negh/pytest/test_invalid_resource_binding_2')
+action = 'release'
+
+    @pytest.mark.parametrize('action',['hold','confirm','release','combination','cancel'])
+    def test_invalid_resource_binding_retains_original_key_until_explicit_retry(pair_fixture,tmp_path,action):
+        f=pair_fixture;hs=[];g=None
+        if action!='hold':
+            hs,body=pair(f)
+            if action=='cancel':
+                result=write(f,body);assert result.status_code==201
+                g=result.json()['combination']
+        posts=[];fault=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw)
+            page.goto(str(api.base_url));page.locator('#token').fill(f[2]['fixture-a'])
+            page.locator('[data-tab="resource"]').click();page.locator('#resource-catalog').click()
+            expect(page.locator('#resource-form')).to_be_visible()
+            if action=='hold':
+                page.locator('#resource-purpose').fill('SYNTHETIC original binding retry')
+                page.locator('#resource-preview').click();expect(page.locator('#resource-hold')).to_be_enabled()
+                button=page.locator('#resource-hold');path='/api/synthetic-resources/'+page.locator('#resource-select').input_value()+'/holds'
+            elif action in ('confirm','release'):
+                page.locator('#resource-mine').click()
+                button=page.locator('[data-hold-id="'+hs[0]['id']+'"] [data-resource-action="'+action+'"]')
+                expect(button).to_be_visible();path='/api/resource-holds/'+hs[0]['id']+'/'+action
+            elif action=='combination':
+                page.locator('#resource-mine').click()
+                for h in hs:page.locator('[data-combination-hold="'+h['id']+'"]').check()
+                button=page.locator('#combination-confirm');path='/api/resource-combinations'
+            else:
+                page.locator('#combination-mine').click()
+                button=page.locator('[data-combination-cancel="'+g['id']+'"]')
+                expect(button).to_be_visible();path='/api/resource-combinations/'+g['id']+'/cancel'
+            def corrupt_first_response(route):
+                if route.request.method!='POST':route.continue_();return
+                posts.append({'path':urlparse(route.request.url).path,'key':route.request.headers['idempotency-key'],
+                              'body':route.request.post_data_json})
+                response=route.fetch();assert response.status in (200,201)
+                if fault:route.fulfill(response=response);return
+                x=response.json();fault.append(response.status)
+                if action=='hold':x['hold']['resource_id']=str(uuid4())
+                elif action in ('confirm','release'):x['hold']['id']=str(uuid4())
+                elif action=='combination':x['combination']['members'][0]['id']=str(uuid4())
+                else:x['combination']['id']=str(uuid4())
+                route.fulfill(response=response,json=x)
+            page.route('**'+path,corrupt_first_response)
+            button.click();expect(page.locator('#resource-error')).to_contain_text('响应不匹配')
+            expect(button).to_be_enabled();button.click()
+            # Retry the original visible action, never a new operation or a JS unlock.
+            expect(page.locator('#resource-error')).to_be_empty()
+&gt;           assert len(posts)==2 and posts[0]==posts[1]
+E           AssertionError: assert (2 == 2 and {'path': '/ap...', 'body': {}} == {'path': '/ap...', 'body': {}}
+E            +  where 2 = len([{'path': '/api/resource-holds/df3d6eab-1704-467e-adf4-fa4bfbe84e57/release', 'key': 'a38cab4f-cfca-4b32-b87d-73151aab...source-holds/df3d6eab-1704-467e-adf4-fa4bfbe84e57/release', 'key': 'a4923d7f-d33a-4a11-9650-11b58b596dcd', 'body': {}}])
+E             
+E             Omitting 2 identical items, use -vv to show
+E             Differing items:
+E             {'key': 'a38cab4f-cfca-4b32-b87d-73151aaba6e9'} != {'key': 'a4923d7f-d33a-4a11-9650-11b58b596dcd'}
+E             Use -v to get more diff)
+
+tests/test_resource_response_binding_browser.py:65: AssertionError</failure></testcase><testcase classname="tests.test_resource_response_binding_browser" name="test_invalid_resource_binding_retains_original_key_until_explicit_retry[combination]" time="17.502"><failure message="AssertionError: Locator expected to be empty&#10;Actual value: notEmpty &#10;Call log:&#10;  - Expect &quot;to_be_empty&quot; with timeout 5000ms&#10;  - waiting for locator(&quot;#resource-error&quot;)&#10;    13 × locator resolved to &lt;p role=&quot;alert&quot; id=&quot;resource-error&quot;&gt;组合响应不匹配，请刷新&lt;/p&gt;&#10;       - unexpected value &quot;notEmpty&quot;&#10;&#10;Aria snapshot:&#10;- alert: 组合响应不匹配，请刷新">pair_fixture = (&lt;parkweave.store.Store object at 0x7ffa58db9910&gt;, &lt;parkweave.store.Store object at 0x7ffa5aa89fd0&gt;, {'fixture-a': 'VZ...fixture-c': 'REDACTED_TEMPORARY_SESSION_CANDIDATE'}, &lt;starlette.testclient.TestClient object at 0x7ffa5a936f30&gt;)
+tmp_path = PosixPath('/tmp/pw-resource-binding-red-eim9negh/pytest/test_invalid_resource_binding_3')
+action = 'combination'
+
+    @pytest.mark.parametrize('action',['hold','confirm','release','combination','cancel'])
+    def test_invalid_resource_binding_retains_original_key_until_explicit_retry(pair_fixture,tmp_path,action):
+        f=pair_fixture;hs=[];g=None
+        if action!='hold':
+            hs,body=pair(f)
+            if action=='cancel':
+                result=write(f,body);assert result.status_code==201
+                g=result.json()['combination']
+        posts=[];fault=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw)
+            page.goto(str(api.base_url));page.locator('#token').fill(f[2]['fixture-a'])
+            page.locator('[data-tab="resource"]').click();page.locator('#resource-catalog').click()
+            expect(page.locator('#resource-form')).to_be_visible()
+            if action=='hold':
+                page.locator('#resource-purpose').fill('SYNTHETIC original binding retry')
+                page.locator('#resource-preview').click();expect(page.locator('#resource-hold')).to_be_enabled()
+                button=page.locator('#resource-hold');path='/api/synthetic-resources/'+page.locator('#resource-select').input_value()+'/holds'
+            elif action in ('confirm','release'):
+                page.locator('#resource-mine').click()
+                button=page.locator('[data-hold-id="'+hs[0]['id']+'"] [data-resource-action="'+action+'"]')
+                expect(button).to_be_visible();path='/api/resource-holds/'+hs[0]['id']+'/'+action
+            elif action=='combination':
+                page.locator('#resource-mine').click()
+                for h in hs:page.locator('[data-combination-hold="'+h['id']+'"]').check()
+                button=page.locator('#combination-confirm');path='/api/resource-combinations'
+            else:
+                page.locator('#combination-mine').click()
+                button=page.locator('[data-combination-cancel="'+g['id']+'"]')
+                expect(button).to_be_visible();path='/api/resource-combinations/'+g['id']+'/cancel'
+            def corrupt_first_response(route):
+                if route.request.method!='POST':route.continue_();return
+                posts.append({'path':urlparse(route.request.url).path,'key':route.request.headers['idempotency-key'],
+                              'body':route.request.post_data_json})
+                response=route.fetch();assert response.status in (200,201)
+                if fault:route.fulfill(response=response);return
+                x=response.json();fault.append(response.status)
+                if action=='hold':x['hold']['resource_id']=str(uuid4())
+                elif action in ('confirm','release'):x['hold']['id']=str(uuid4())
+                elif action=='combination':x['combination']['members'][0]['id']=str(uuid4())
+                else:x['combination']['id']=str(uuid4())
+                route.fulfill(response=response,json=x)
+            page.route('**'+path,corrupt_first_response)
+            button.click();expect(page.locator('#resource-error')).to_contain_text('响应不匹配')
+            expect(button).to_be_enabled();button.click()
+            # Retry the original visible action, never a new operation or a JS unlock.
+&gt;           expect(page.locator('#resource-error')).to_be_empty()
+E           AssertionError: Locator expected to be empty
+E           Actual value: notEmpty 
+E           Call log:
+E             - Expect "to_be_empty" with timeout 5000ms
+E             - waiting for locator("#resource-error")
+E               13 × locator resolved to &lt;p role="alert" id="resource-error"&gt;组合响应不匹配，请刷新&lt;/p&gt;
+E                  - unexpected value "notEmpty"
+E           
+E           Aria snapshot:
+E           - alert: 组合响应不匹配，请刷新
+
+tests/test_resource_response_binding_browser.py:64: AssertionError</failure></testcase><testcase classname="tests.test_resource_response_binding_browser" name="test_invalid_resource_binding_retains_original_key_until_explicit_retry[cancel]" time="8.708"><failure message="AssertionError: assert (2 == 2 and {'path': '/ap...', 'body': {}} == {'path': '/ap...', 'body': {}}&#10; +  where 2 = len([{'path': '/api/resource-combinations/300c4c33-6f53-455d-bb8b-8b6bd39692ec/cancel', 'key': '9592fba9-5dab-467d-b149-bf...-combinations/300c4c33-6f53-455d-bb8b-8b6bd39692ec/cancel', 'key': 'da2ce56d-6d19-4a8c-857b-f48080336ac3', 'body': {}}])&#10;  &#10;  Omitting 2 identical items, use -vv to show&#10;  Differing items:&#10;  {'key': '9592fba9-5dab-467d-b149-bfb816906a6a'} != {'key': 'da2ce56d-6d19-4a8c-857b-f48080336ac3'}&#10;  Use -v to get more diff)">pair_fixture = (&lt;parkweave.store.Store object at 0x7ffa59c74b90&gt;, &lt;parkweave.store.Store object at 0x7ffa5a85e3f0&gt;, {'fixture-a': 'eR...fixture-c': 'REDACTED_TEMPORARY_SESSION_CANDIDATE'}, &lt;starlette.testclient.TestClient object at 0x7ffa58925760&gt;)
+tmp_path = PosixPath('/tmp/pw-resource-binding-red-eim9negh/pytest/test_invalid_resource_binding_4')
+action = 'cancel'
+
+    @pytest.mark.parametrize('action',['hold','confirm','release','combination','cancel'])
+    def test_invalid_resource_binding_retains_original_key_until_explicit_retry(pair_fixture,tmp_path,action):
+        f=pair_fixture;hs=[];g=None
+        if action!='hold':
+            hs,body=pair(f)
+            if action=='cancel':
+                result=write(f,body);assert result.status_code==201
+                g=result.json()['combination']
+        posts=[];fault=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw)
+            page.goto(str(api.base_url));page.locator('#token').fill(f[2]['fixture-a'])
+            page.locator('[data-tab="resource"]').click();page.locator('#resource-catalog').click()
+            expect(page.locator('#resource-form')).to_be_visible()
+            if action=='hold':
+                page.locator('#resource-purpose').fill('SYNTHETIC original binding retry')
+                page.locator('#resource-preview').click();expect(page.locator('#resource-hold')).to_be_enabled()
+                button=page.locator('#resource-hold');path='/api/synthetic-resources/'+page.locator('#resource-select').input_value()+'/holds'
+            elif action in ('confirm','release'):
+                page.locator('#resource-mine').click()
+                button=page.locator('[data-hold-id="'+hs[0]['id']+'"] [data-resource-action="'+action+'"]')
+                expect(button).to_be_visible();path='/api/resource-holds/'+hs[0]['id']+'/'+action
+            elif action=='combination':
+                page.locator('#resource-mine').click()
+                for h in hs:page.locator('[data-combination-hold="'+h['id']+'"]').check()
+                button=page.locator('#combination-confirm');path='/api/resource-combinations'
+            else:
+                page.locator('#combination-mine').click()
+                button=page.locator('[data-combination-cancel="'+g['id']+'"]')
+                expect(button).to_be_visible();path='/api/resource-combinations/'+g['id']+'/cancel'
+            def corrupt_first_response(route):
+                if route.request.method!='POST':route.continue_();return
+                posts.append({'path':urlparse(route.request.url).path,'key':route.request.headers['idempotency-key'],
+                              'body':route.request.post_data_json})
+                response=route.fetch();assert response.status in (200,201)
+                if fault:route.fulfill(response=response);return
+                x=response.json();fault.append(response.status)
+                if action=='hold':x['hold']['resource_id']=str(uuid4())
+                elif action in ('confirm','release'):x['hold']['id']=str(uuid4())
+                elif action=='combination':x['combination']['members'][0]['id']=str(uuid4())
+                else:x['combination']['id']=str(uuid4())
+                route.fulfill(response=response,json=x)
+            page.route('**'+path,corrupt_first_response)
+            button.click();expect(page.locator('#resource-error')).to_contain_text('响应不匹配')
+            expect(button).to_be_enabled();button.click()
+            # Retry the original visible action, never a new operation or a JS unlock.
+            expect(page.locator('#resource-error')).to_be_empty()
+&gt;           assert len(posts)==2 and posts[0]==posts[1]
+E           AssertionError: assert (2 == 2 and {'path': '/ap...', 'body': {}} == {'path': '/ap...', 'body': {}}
+E            +  where 2 = len([{'path': '/api/resource-combinations/300c4c33-6f53-455d-bb8b-8b6bd39692ec/cancel', 'key': '9592fba9-5dab-467d-b149-bf...-combinations/300c4c33-6f53-455d-bb8b-8b6bd39692ec/cancel', 'key': 'da2ce56d-6d19-4a8c-857b-f48080336ac3', 'body': {}}])
+E             
+E             Omitting 2 identical items, use -vv to show
+E             Differing items:
+E             {'key': '9592fba9-5dab-467d-b149-bfb816906a6a'} != {'key': 'da2ce56d-6d19-4a8c-857b-f48080336ac3'}
+E             Use -v to get more diff)
+
+tests/test_resource_response_binding_browser.py:65: AssertionError</failure></testcase></testsuite></testsuites>
