@@ -1,0 +1,9 @@
+// Independently executed by /root/review_material_import; exit0.
+// cd /workspace/ParkWeave; node -
+const fs=require('fs');
+const line=fs.readFileSync('src/parkweave/web.html','utf8').split('\n').find(x=>x.includes('const purePreview='));
+const matches=new Function('path','return '+line.match(/const purePreview=(.*);$/)[1]);
+const id='00000000-0000-0000-0000-000000000001';
+const cases=[['material-file-candidate',true],['commands',false],['material-file-candidate/commands',false],['material-file-candidate?x=1',false],['controlled-plan/preview',true],['resource-delivery',false]];
+for(const [suffix,expected] of cases){const path=`/api/preparations/${id}/${suffix}`;const actual=matches(path);if(actual!==expected)throw Error(path);console.log(JSON.stringify({path,purePreview:actual}));}
+console.log('EXACT_PREVIEW_CLASSIFICATION_PASS');

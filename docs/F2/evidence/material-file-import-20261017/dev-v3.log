@@ -1,0 +1,44 @@
+.............................................F.........................  [100%]
+=================================== FAILURES ===================================
+_ test_actual_http_invalid_input_has_stable_422_without_private_echo[invalid-utf8] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd00c2a2e40>, <parkweave.store.Store object at 0x7fd00d906030>, {'fixture-a': 'xg...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7fcfffe52930>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fd00c332300>
+damage = 'invalid-utf8'
+
+    @pytest.mark.parametrize('damage',['filename-surrogate','filename-overlong-surrogate','invalid-utf8','classification-surrogate','extra-private-input'])
+    def test_actual_http_invalid_input_has_stable_422_without_private_echo(preparation_fixture,monkeypatch,damage):
+        f=preparation_fixture;p,_,_=create(f);before=snapshot(f[1]);data=body(p)
+        if damage=='filename-surrogate':data['file_name']='\ud800.txt'
+        elif damage=='filename-overlong-surrogate':data['file_name']='x'*100+'\ud800'
+        elif damage=='classification-surrogate':data['data_classification']='\ud800'
+        elif damage=='extra-private-input':data['private']='SYNTHETIC-private-marker'
+        raw=json.dumps(data).encode() if damage!='invalid-utf8' else b'{"file_name":"\xff"}'
+        with TestClient(ordinary(f,monkeypatch)) as api:
+            r=api.post(path(p),content=raw,headers={**headers(f[2]),'Content-Type':'application/json'})
+>           assert r.status_code==422 and r.json()=={'detail':'invalid bounded material file request'}
+E           assert (400 == 422)
+E            +  where 400 = <Response [400 Bad Request]>.status_code
+
+tests/test_material_file_import.py:109: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_file_import.py::test_actual_http_raw_file_boundary_fits_unchanged_global_body_cap
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_file_import.py::test_actual_http_raw_file_boundary_fits_unchanged_global_body_cap
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_file_import.py::test_actual_http_invalid_input_has_stable_422_without_private_echo[invalid-utf8]
+1 failed, 70 passed, 4 warnings in 119.76s (0:01:59)

@@ -1,0 +1,55 @@
+# Independently executed by /root/review_material_import; exit0.
+# cd /workspace/ParkWeave
+# PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python -
+import ast,asyncio,base64,csv,hashlib,io,json
+from pathlib import Path
+from types import SimpleNamespace
+from pydantic import ValidationError
+from fastapi import Request as HttpRequest
+from fastapi.exceptions import RequestValidationError
+from fastapi.exception_handlers import request_validation_exception_handler
+from starlette.responses import JSONResponse
+from parkweave.material_file_import import parse,Request,FileCandidateError,units
+from parkweave.preparation import PreparationCommand
+
+def encoded(raw):return base64.b64encode(raw).decode()
+def rejected(name,raw,code):
+ try:parse(name,encoded(raw))
+ except FileCandidateError as e:assert str(e)==code,(str(e),code);return code
+ raise AssertionError('unexpected acceptance')
+
+manifest=json.loads(Path('.runtime/material-file-import/freeze.json').read_text())
+mismatches=[p for p,h in manifest['files'].items() if not Path(p).is_file() or hashlib.sha256(Path(p).read_bytes()).hexdigest()!=h]
+assert not mismatches
+print(json.dumps({'freeze_paths_checked':len(manifest['files']),'mismatches':mismatches,'source_sha':manifest['source_sha']}))
+raw=b' '*8183+b'SYNTHETIC'
+x=parse('SYNTHETIC.txt',encoded(raw));assert x['file_bytes']==8192 and x['candidate_text']=='SYNTHETIC'
+body=dict(expected_preparation_revision=64,expected_case_id='00000000-0000-0000-0000-000000000001',expected_run_id='00000000-0000-0000-0000-000000000002',data_classification='SYNTHETIC_SAMPLE',file_name='文'*76+'.txt',content_base64=encoded(raw))
+Request(**body)
+size=len(json.dumps(body,ensure_ascii=False,separators=(',',':')).encode());assert size<16384
+print(json.dumps({'8192_byte_file':'ACCEPT','8193_byte_file':rejected('SYNTHETIC.txt',raw+b' ','FILE_BYTE_LIMIT'),'long_name_browser_request_bytes':size,'global_limit':16384}))
+nums=[b'{"n":1e-999}',b'{"n":1e999}',b'{"n":1.23456789012345678901234567890123456789}',b'{"n":-0.0,"i":12345678901234567890123456789}',b'{"n":1e999999999999999999999999999999}',b'{"n":1e-999999999999999999999999999999}']
+for raw in nums:assert parse('SYNTHETIC.json',encoded(raw))['candidate_text']==raw.decode()
+print(json.dumps({'json_exact_numeric_lexemes':len(nums),'extreme_positive_exponent':'PRESERVED','extreme_negative_exponent':'PRESERVED'}))
+rows=[b'h,v\nSYNTHETIC,tail  \n',b' h ,v\n lead , tail \n',b'h,v\nSYNTHETIC,"line1\nline2 "\n']
+for raw in rows:
+ x=parse('SYNTHETIC.csv',encoded(raw));cmd=PreparationCommand(action='ADD_EVIDENCE',expected_revision=1,slot='need_summary',text=x['candidate_text'],source_kind=x['source_kind'],source_label=x['source_label'])
+ assert cmd.text==x['candidate_text']
+ assert list(csv.reader(io.StringIO(cmd.text)))==list(csv.reader(io.StringIO(raw.decode())))
+print(json.dumps({'csv_field_roundtrips_through_original_command':len(rows),'edge_spaces':'PRESERVED'}))
+assert units(parse('SYNTHETIC.txt',encoded(('😀'*2000).encode()))['candidate_text'])==4000
+codes=[rejected('SYNTHETIC.txt',('😀'*2001).encode(),'CANDIDATE_TEXT_LIMIT'),rejected('../secret.txt',b'x','SAFE_FILE_NAME_REQUIRED'),rejected('SYNTHETIC.txt',b'\xff','UTF8_TEXT_REQUIRED'),rejected('SYNTHETIC.json',b'{"x":1,"x":2}','JSON_DUPLICATE_FIELD'),rejected('SYNTHETIC.json',b'{"x":NaN}','JSON_FINITE_VALUES_REQUIRED'),rejected('SYNTHETIC.json',b'{"x":"\\ud800"}','UTF8_TEXT_REQUIRED')]
+print(json.dumps({'utf16_4000_units':'ACCEPT','negative_boundary_codes':codes}))
+source=ast.parse(Path('src/parkweave/api.py').read_text())
+node=next(n for n in ast.walk(source) if isinstance(n,ast.AsyncFunctionDef) and n.name=='material_package_request_validation');node.decorator_list=[]
+ns={'Request':HttpRequest,'RequestValidationError':RequestValidationError,'JSONResponse':JSONResponse,'request_validation_exception_handler':request_validation_exception_handler}
+exec(compile(ast.fix_missing_locations(ast.Module(body=[node],type_ignores=[])),'api.py:registered-validation-handler','exec'),ns)
+body['file_name']='\ud800.txt'
+try:Request(**body)
+except ValidationError as e:err=RequestValidationError(e.errors(include_url=False))
+else:raise AssertionError('surrogate accepted')
+request=SimpleNamespace(scope={'route':SimpleNamespace(path='/api/preparations/{preparation_id}/material-file-candidate')})
+response=asyncio.run(ns['material_package_request_validation'](request,err))
+assert response.status_code==422 and json.loads(response.body)=={'detail':'invalid bounded material file request'}
+print(json.dumps({'actual_source_validation_handler_status':response.status_code,'body':json.loads(response.body),'private_input_echo':False}))
+print('INDEPENDENT_MEMORY_PROBES_PASS')

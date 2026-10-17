@@ -1,0 +1,43 @@
+...................................................F.                    [100%]
+=================================== FAILURES ===================================
+_ test_candidate_fills_original_command_then_review_confirmation_and_key_recovery _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f5dd6dcf140>, <parkweave.store.Store object at 0x7f5dd6dcdfd0>, {'fixture-a': '59...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f5dd5bd6c30>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f5dd6dcd8b0>
+
+    def test_candidate_fills_original_command_then_review_confirmation_and_key_recovery(preparation_fixture,monkeypatch):
+        f=preparation_fixture;p,_,_=create(f);key=uuid4().hex
+        with TestClient(ordinary(f,monkeypatch)) as api:
+            result=api.post(path(p),json=body(p,'SYNTHETIC.json',b'{"need":"SYNTHETIC imported request"}'),headers=headers(f[2])).json()
+        data=dict(slot='need_summary',text=result['candidate_text'],source_kind=result['source_kind'],source_label=result['source_label'])
+        first=command(f,p,'ADD_EVIDENCE',key=key,**data);assert first.status_code==200,first.text
+        assert command(f,p,'ADD_EVIDENCE',key=key,**data).json()==first.json()
+        p=first.json();record=read(f,p).json();material=record['current_materials'][0]
+        assert material['text']==result['candidate_text'] and material['source_sha256']==result['candidate_sha256'] and material['authenticity']=='UNVERIFIED'
+        recovery=f[3].get('/api/preparations/'+p['preparation_id']+'/evidence-events/'+key,headers=headers(f[2]))
+>       assert recovery.status_code==200 and recovery.json()['status']=='COMMITTED'
+E       assert (404 == 200)
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/test_material_file_import.py:130: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_material_file_import.py::test_ordinary_api_candidate_only_reads_current_owner_scope_and_persists_nothing[SYNTHETIC.txt-first]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_file_import.py::test_ordinary_api_candidate_only_reads_current_owner_scope_and_persists_nothing[SYNTHETIC.txt-first]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_file_import.py::test_ordinary_api_candidate_only_reads_current_owner_scope_and_persists_nothing[SYNTHETIC.txt-first]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_file_import.py::test_candidate_fills_original_command_then_review_confirmation_and_key_recovery
+1 failed, 52 passed, 4 warnings in 28.59s

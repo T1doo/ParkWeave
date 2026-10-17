@@ -1,0 +1,66 @@
+{
+  "reviewer": "/root/review_material_import",
+  "mode": "read-only; root sole source/Git writer",
+  "source_sha": "650a2af1c495b8d9efe5daeb876138ac9cab41b8",
+  "blockers_remaining": 0,
+  "findings": [
+    {
+      "issue": "raw file16KiB exceeded unchanged global request16KiB after base64",
+      "severity": "P2",
+      "status": "CLOSED: raw8KiB/encoded10924; actual HTTP boundary and independent request11383B"
+    },
+    {
+      "issue": "JSON float parse/reencode changed numeric values",
+      "severity": "P2",
+      "status": "CLOSED: grammar validation retains numeric lexemes and original text"
+    },
+    {
+      "issue": "CSV outer strip removed edge field spaces",
+      "severity": "P2",
+      "status": "CLOSED: QUOTE_ALL and original command roundtrip"
+    },
+    {
+      "issue": "default validation echo of surrogate could raise encoder500",
+      "severity": "P2",
+      "status": "CLOSED: route-specific stable422 without input echo; raw invalidUTF8 fixed400 retained"
+    },
+    {
+      "issue": "Decimal extreme exponent raised uncaught InvalidOperation",
+      "severity": "P2",
+      "status": "CLOSED: parse_float=str no arithmetic; extreme positive/negative lexemes preserved"
+    }
+  ],
+  "independent_probes": {
+    "command_A": "independent-probes.py.txt",
+    "command_A_exit": 0,
+    "command_B": "independent-route-probes.js.txt",
+    "command_B_exit": 0,
+    "stdout": "independent-probes.stdout.txt",
+    "command_C": "PYTHONDONTWRITEBYTECODE=1 .venv/bin/python: read freeze.json; recompute726 SHA256 and assert no changed path",
+    "command_C_exit": 0,
+    "freeze_paths_checked_before_and_after": 726,
+    "hash_mismatches": [],
+    "sha256sum_command": "sha256sum src/parkweave/material_file_import.py src/parkweave/api.py src/parkweave/web.html tests/test_material_file_import.py tests/test_material_file_import_browser.py .runtime/material-file-import/freeze.json",
+    "sha256_before": {
+      "src/parkweave/material_file_import.py": "b36b00b6856105694086031de3e682fbdb6be0a82382faf63f582810a14e7acc",
+      "src/parkweave/api.py": "eea0b95a57984b622ad0e21305aeef1b228a9fe4560d8541c86fb0f1a5f41e41",
+      "src/parkweave/web.html": "2d663297551938ebbc9bb03baadd37e87f88a40049be2c0d031c4dce12f63b11",
+      "tests/test_material_file_import.py": "dbbd59986212d333f71a822cce48664439fe23137788d3ea088e041f8cc92c79",
+      "tests/test_material_file_import_browser.py": "7d106591a15d1ab562a9aa8b581620397c2913abd4de9f698e16aaf353956250",
+      ".runtime/material-file-import/freeze.json": "77fc03e976e360b15bb116a95dc47c4fe5b2793c4111b9d62aeb4031a09aca78"
+    },
+    "sha256_after": {
+      "src/parkweave/material_file_import.py": "b36b00b6856105694086031de3e682fbdb6be0a82382faf63f582810a14e7acc",
+      "src/parkweave/api.py": "eea0b95a57984b622ad0e21305aeef1b228a9fe4560d8541c86fb0f1a5f41e41",
+      "src/parkweave/web.html": "2d663297551938ebbc9bb03baadd37e87f88a40049be2c0d031c4dce12f63b11",
+      "tests/test_material_file_import.py": "dbbd59986212d333f71a822cce48664439fe23137788d3ea088e041f8cc92c79",
+      "tests/test_material_file_import_browser.py": "7d106591a15d1ab562a9aa8b581620397c2913abd4de9f698e16aaf353956250",
+      ".runtime/material-file-import/freeze.json": "77fc03e976e360b15bb116a95dc47c4fe5b2793c4111b9d62aeb4031a09aca78"
+    }
+  },
+  "independent_pytest_nodes_run": 0,
+  "independent_DB_browser_windows_run": 0,
+  "not_added_to197_unique": true,
+  "repo_or_git_written_by_reviewer": false,
+  "final_conclusion": "no remaining blockers found; original save/review/confirm/recovery/download algorithms unchanged"
+}
