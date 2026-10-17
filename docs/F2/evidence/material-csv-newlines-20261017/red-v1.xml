@@ -1,0 +1,62 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="4" time="22.744" timestamp="2026-10-17T08:38:08.639449+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_material_csv_newlines" name="test_csv_quoted_field_line_ending_is_data_not_a_record_separator[\r\n]" time="0.018"><failure message="AssertionError: assert [['h', 'v'], ...ne1\nline2 ']] == [['h', 'v'], ...1\r\nline2 ']]&#10;  &#10;  At index 1 diff: ['SYNTHETIC', 'line1\nline2 '] != ['SYNTHETIC', 'line1\r\nline2 ']&#10;  Use -v to get more diff">ending = b'\r\n'
+
+    @pytest.mark.parametrize('ending',[b'\r\n',b'\r'])
+    def test_csv_quoted_field_line_ending_is_data_not_a_record_separator(ending):
+        raw=b'h,v\r\nSYNTHETIC,"line1'+ending+b'line2 "\r\n'
+        candidate=files.parse('SYNTHETIC.csv',encoded(raw))['candidate_text']
+&gt;       assert cells(candidate)==cells(raw.decode())
+E       AssertionError: assert [['h', 'v'], ...ne1\nline2 ']] == [['h', 'v'], ...1\r\nline2 ']]
+E         
+E         At index 1 diff: ['SYNTHETIC', 'line1\nline2 '] != ['SYNTHETIC', 'line1\r\nline2 ']
+E         Use -v to get more diff
+
+tests/test_material_csv_newlines.py:24: AssertionError</failure></testcase><testcase classname="tests.test_material_csv_newlines" name="test_csv_quoted_field_line_ending_is_data_not_a_record_separator[\r]" time="0.017"><failure message="AssertionError: assert [['h', 'v'], ...ne1\nline2 ']] == [['h', 'v'], ...ne1\rline2 ']]&#10;  &#10;  At index 1 diff: ['SYNTHETIC', 'line1\nline2 '] != ['SYNTHETIC', 'line1\rline2 ']&#10;  Use -v to get more diff">ending = b'\r'
+
+    @pytest.mark.parametrize('ending',[b'\r\n',b'\r'])
+    def test_csv_quoted_field_line_ending_is_data_not_a_record_separator(ending):
+        raw=b'h,v\r\nSYNTHETIC,"line1'+ending+b'line2 "\r\n'
+        candidate=files.parse('SYNTHETIC.csv',encoded(raw))['candidate_text']
+&gt;       assert cells(candidate)==cells(raw.decode())
+E       AssertionError: assert [['h', 'v'], ...ne1\nline2 ']] == [['h', 'v'], ...ne1\rline2 ']]
+E         
+E         At index 1 diff: ['SYNTHETIC', 'line1\nline2 '] != ['SYNTHETIC', 'line1\rline2 ']
+E         Use -v to get more diff
+
+tests/test_material_csv_newlines.py:24: AssertionError</failure></testcase><testcase classname="tests.test_material_csv_newlines" name="test_csv_actual_api_original_add_and_factory_restart_preserve_all_field_values" time="7.378"><failure message="AssertionError: assert [['h', 'v'], ...ond\nthird ']] == [['h', 'v'], ...ond\rthird ']]&#10;  &#10;  At index 1 diff: ['SYNTHETIC', 'first\nsecond\nthird '] != ['SYNTHETIC', 'first\r\nsecond\rthird ']&#10;  Use -v to get more diff">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc46e2e69f0&gt;, &lt;parkweave.store.Store object at 0x7fc46e2e5bb0&gt;, {'fixture-a': 'eK...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc46df019a0&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fc46e2e6900&gt;
+
+    def test_csv_actual_api_original_add_and_factory_restart_preserve_all_field_values(preparation_fixture,monkeypatch):
+        f=preparation_fixture;p,_,_=create(f)
+        raw=b'h,v\r\nSYNTHETIC,"first\r\nsecond\rthird "\r\n'
+        with TestClient(ordinary(f,monkeypatch)) as api:
+            r=api.post(path(p),json=body(p,'SYNTHETIC.csv',raw),headers=headers(f[2]));assert r.status_code==200;x=r.json()
+        saved=command(f,p,'ADD_EVIDENCE',slot='need_summary',text=x['candidate_text'],source_kind=x['source_kind'],source_label=x['source_label'])
+        assert saved.status_code==200
+        with TestClient(ordinary(f,monkeypatch)) as restarted:
+            r=restarted.get('/api/preparations/'+p['preparation_id'],headers=headers(f[2]));assert r.status_code==200
+            material=r.json()['current_materials'][0]
+&gt;       assert cells(material['text'])==cells(raw.decode())
+E       AssertionError: assert [['h', 'v'], ...ond\nthird ']] == [['h', 'v'], ...ond\rthird ']]
+E         
+E         At index 1 diff: ['SYNTHETIC', 'first\nsecond\nthird '] != ['SYNTHETIC', 'first\r\nsecond\rthird ']
+E         Use -v to get more diff
+
+tests/test_material_csv_newlines.py:38: AssertionError</failure></testcase><testcase classname="tests.test_material_csv_newlines" name="test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr" time="13.409"><failure message="AssertionError: assert [['h', 'v'], ...ond\nthird ']] == [['h', 'v'], ...ond\rthird ']]&#10;  &#10;  At index 1 diff: ['SYNTHETIC', 'first\nsecond\nthird '] != ['SYNTHETIC', 'first\r\nsecond\rthird ']&#10;  Use -v to get more diff">preparation_fixture = (&lt;parkweave.store.Store object at 0x7fc46c810260&gt;, &lt;parkweave.store.Store object at 0x7fc46c623ec0&gt;, {'fixture-a': 'hm...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7fc46c39c380&gt;)
+tmp_path = PosixPath('/tmp/parkweave-material-csv-red-v1/test_csv_actual_file_chooser_o0')
+
+    def test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr(preparation_fixture,tmp_path):
+        f=preparation_fixture;p,_,_=create(f)
+        raw=b'h,v\r\nSYNTHETIC,"first\r\nsecond\rthird "\r\n';expected=cells(raw.decode())
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            select_file(page,'SYNTHETIC.csv',raw);save_candidate(page,'need_summary')
+            expect(page.locator('#prep-command-feedback')).to_contain_text('已核对原操作保存事件',timeout=15000)
+            material=api.get('/api/preparations/'+p['preparation_id'],headers=headers(f[2])).json()['current_materials'][0]
+&gt;           assert cells(material['text'])==expected
+E           AssertionError: assert [['h', 'v'], ...ond\nthird ']] == [['h', 'v'], ...ond\rthird ']]
+E             
+E             At index 1 diff: ['SYNTHETIC', 'first\nsecond\nthird '] != ['SYNTHETIC', 'first\r\nsecond\rthird ']
+E             Use -v to get more diff
+
+tests/test_material_csv_newlines.py:50: AssertionError</failure></testcase></testsuite></testsuites>

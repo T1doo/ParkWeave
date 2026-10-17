@@ -1,0 +1,98 @@
+FFFF                                                                     [100%]
+=================================== FAILURES ===================================
+____ test_csv_quoted_field_line_ending_is_data_not_a_record_separator[\r\n] ____
+
+ending = b'\r\n'
+
+    @pytest.mark.parametrize('ending',[b'\r\n',b'\r'])
+    def test_csv_quoted_field_line_ending_is_data_not_a_record_separator(ending):
+        raw=b'h,v\r\nSYNTHETIC,"line1'+ending+b'line2 "\r\n'
+        candidate=files.parse('SYNTHETIC.csv',encoded(raw))['candidate_text']
+>       assert cells(candidate)==cells(raw.decode())
+E       AssertionError: assert [['h', 'v'], ...ne1\nline2 ']] == [['h', 'v'], ...1\r\nline2 ']]
+E         
+E         At index 1 diff: ['SYNTHETIC', 'line1\nline2 '] != ['SYNTHETIC', 'line1\r\nline2 ']
+E         Use -v to get more diff
+
+tests/test_material_csv_newlines.py:24: AssertionError
+_____ test_csv_quoted_field_line_ending_is_data_not_a_record_separator[\r] _____
+
+ending = b'\r'
+
+    @pytest.mark.parametrize('ending',[b'\r\n',b'\r'])
+    def test_csv_quoted_field_line_ending_is_data_not_a_record_separator(ending):
+        raw=b'h,v\r\nSYNTHETIC,"line1'+ending+b'line2 "\r\n'
+        candidate=files.parse('SYNTHETIC.csv',encoded(raw))['candidate_text']
+>       assert cells(candidate)==cells(raw.decode())
+E       AssertionError: assert [['h', 'v'], ...ne1\nline2 ']] == [['h', 'v'], ...ne1\rline2 ']]
+E         
+E         At index 1 diff: ['SYNTHETIC', 'line1\nline2 '] != ['SYNTHETIC', 'line1\rline2 ']
+E         Use -v to get more diff
+
+tests/test_material_csv_newlines.py:24: AssertionError
+_ test_csv_actual_api_original_add_and_factory_restart_preserve_all_field_values _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fc46e2e69f0>, <parkweave.store.Store object at 0x7fc46e2e5bb0>, {'fixture-a': 'eK...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7fc46df019a0>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7fc46e2e6900>
+
+    def test_csv_actual_api_original_add_and_factory_restart_preserve_all_field_values(preparation_fixture,monkeypatch):
+        f=preparation_fixture;p,_,_=create(f)
+        raw=b'h,v\r\nSYNTHETIC,"first\r\nsecond\rthird "\r\n'
+        with TestClient(ordinary(f,monkeypatch)) as api:
+            r=api.post(path(p),json=body(p,'SYNTHETIC.csv',raw),headers=headers(f[2]));assert r.status_code==200;x=r.json()
+        saved=command(f,p,'ADD_EVIDENCE',slot='need_summary',text=x['candidate_text'],source_kind=x['source_kind'],source_label=x['source_label'])
+        assert saved.status_code==200
+        with TestClient(ordinary(f,monkeypatch)) as restarted:
+            r=restarted.get('/api/preparations/'+p['preparation_id'],headers=headers(f[2]));assert r.status_code==200
+            material=r.json()['current_materials'][0]
+>       assert cells(material['text'])==cells(raw.decode())
+E       AssertionError: assert [['h', 'v'], ...ond\nthird ']] == [['h', 'v'], ...ond\rthird ']]
+E         
+E         At index 1 diff: ['SYNTHETIC', 'first\nsecond\nthird '] != ['SYNTHETIC', 'first\r\nsecond\rthird ']
+E         Use -v to get more diff
+
+tests/test_material_csv_newlines.py:38: AssertionError
+_ test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fc46c810260>, <parkweave.store.Store object at 0x7fc46c623ec0>, {'fixture-a': 'hm...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7fc46c39c380>)
+tmp_path = PosixPath('/tmp/parkweave-material-csv-red-v1/test_csv_actual_file_chooser_o0')
+
+    def test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr(preparation_fixture,tmp_path):
+        f=preparation_fixture;p,_,_=create(f)
+        raw=b'h,v\r\nSYNTHETIC,"first\r\nsecond\rthird "\r\n';expected=cells(raw.decode())
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            select_file(page,'SYNTHETIC.csv',raw);save_candidate(page,'need_summary')
+            expect(page.locator('#prep-command-feedback')).to_contain_text('已核对原操作保存事件',timeout=15000)
+            material=api.get('/api/preparations/'+p['preparation_id'],headers=headers(f[2])).json()['current_materials'][0]
+>           assert cells(material['text'])==expected
+E           AssertionError: assert [['h', 'v'], ...ond\nthird ']] == [['h', 'v'], ...ond\rthird ']]
+E             
+E             At index 1 diff: ['SYNTHETIC', 'first\nsecond\nthird '] != ['SYNTHETIC', 'first\r\nsecond\rthird ']
+E             Use -v to get more diff
+
+tests/test_material_csv_newlines.py:50: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_csv_newlines.py::test_csv_actual_api_original_add_and_factory_restart_preserve_all_field_values
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_csv_newlines.py::test_csv_actual_api_original_add_and_factory_restart_preserve_all_field_values
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_csv_newlines.py::test_csv_quoted_field_line_ending_is_data_not_a_record_separator[\r\n]
+FAILED tests/test_material_csv_newlines.py::test_csv_quoted_field_line_ending_is_data_not_a_record_separator[\r]
+FAILED tests/test_material_csv_newlines.py::test_csv_actual_api_original_add_and_factory_restart_preserve_all_field_values
+FAILED tests/test_material_csv_newlines.py::test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr
+4 failed, 4 warnings in 22.75s

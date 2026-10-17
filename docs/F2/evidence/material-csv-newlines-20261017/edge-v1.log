@@ -1,0 +1,132 @@
+......F..F                                                               [100%]
+=================================== FAILURES ===================================
+_ test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr[lost-reply] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f673fd1a9f0>, <parkweave.store.Store object at 0x7f6745582b10>, {'fixture-a': 'jn...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f6748f43140>)
+tmp_path = PosixPath('/tmp/parkweave-material-csv-edge-v1/test_csv_actual_file_chooser_o2')
+variant = 'lost-reply'
+
+    @pytest.mark.parametrize('variant',['unchanged','edited','lost-reply','boundary'])
+    def test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr(preparation_fixture,tmp_path,variant):
+        f=preparation_fixture;p,_,_=create(f)
+        cell='first\r\nsecond\rthird\n字面\\r和"quote"与😀 '
+        if variant=='boundary':cell='x'*(4000-len('"h","v"\n"SYNTHETIC",""')-1)+'\r'
+        raw=('h,v\r\nSYNTHETIC,"'+cell.replace('"','""')+'"\r\n').encode();expected=cells(raw.decode())
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            select_file(page,'SYNTHETIC.csv',raw);page.locator('#material-file-use').click()
+            expect(page.locator('#material-file-editing')).to_be_visible()
+            editor=page.locator('#prep-text');display=editor.input_value();decoded=json.loads(display)
+            assert '\r' not in display and cells(decoded)==expected
+            if variant=='boundary':assert len(decoded)==4000
+            if variant=='edited':
+                display=display.replace('first','edited');editor.fill(display);expected[1][1]=expected[1][1].replace('first','edited')
+            expected_body=json.loads(display);sent=[];lost=[]
+            page.on('request',lambda r:sent.append((r.post_data_json,r.headers.get('idempotency-key'))) if r.method=='POST' and r.url.endswith('/commands') else None)
+            if variant=='lost-reply':
+                def lose(route):
+                    if lost:route.continue_();return
+                    lost.append(route.fetch());route.abort('failed')
+                page.route('**/api/preparations/*/commands',lose)
+            page.locator('#prep-evidence button').click()
+            if variant=='lost-reply':
+                expect(page.locator('#prep-command-retry')).to_be_visible();assert lost[0].status==200
+>               changed=display.replace('first','new draft only');editor.fill(changed)
+                                                                  ^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_csv_newlines.py:76: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:18242: in fill
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:219: in fill
+    return await self._frame.fill(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:636: in fill
+    await self._fill(**locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:648: in _fill
+    await self._channel.send("fill", self._timeout, locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f673e4ae300>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f673e4a5440>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.fill: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for locator("#prep-text")
+E               - locator resolved to <textarea disabled required="" id="prep-text" maxlength="24002"></textarea>
+E               - fill(""\"h\",\"v\"\n\"SYNTHETIC\",\"new draft only\r\nsecond\rthird\n字面\\r和\"\"quote\"\"与😀 \""")
+E             - attempting fill action
+E               2 × waiting for element to be visible, enabled and editable
+E                 - element is not enabled
+E               - retrying fill action
+E               - waiting 20ms
+E               2 × waiting for element to be visible, enabled and editable
+E                 - element is not enabled
+E               - retrying fill action
+E                 - waiting 100ms
+E               57 × waiting for element to be visible, enabled and editable
+E                  - element is not enabled
+E                - retrying fill action
+E                  - waiting 500ms
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_ test_escaped_csv_editor_refresh_identity_and_revocation_follow_original_draft_lifecycle _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f673e89e300>, <parkweave.store.Store object at 0x7f673e582c00>, {'fixture-a': 'rc...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f673e012150>)
+tmp_path = PosixPath('/tmp/parkweave-material-csv-edge-v1/test_escaped_csv_editor_refres0')
+
+    def test_escaped_csv_editor_refresh_identity_and_revocation_follow_original_draft_lifecycle(preparation_fixture,tmp_path):
+        f=preparation_fixture;p,_,_=create(f)
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            raw=b'h,v\nSYNTHETIC,"a\r\nb\rc"'
+            select_file(page,'SYNTHETIC.csv',raw);page.locator('#material-file-use').click();display=page.locator('#prep-text').input_value()
+            page.locator('#prep-refresh').click();expect(page.locator('#prep-detail')).to_be_visible()
+>           assert page.locator('#prep-text').input_value()==display;expect(page.locator('#material-file-editing')).to_be_visible()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           assert '"\\"h\\",\\"...r\\nb\\rc\\""' == ''
+E             
+E             + "\"h\",\"v\"\n\"SYNTHETIC\",\"a\r\nb\rc\""
+
+tests/test_material_csv_newlines.py:119: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_csv_newlines.py::test_csv_actual_api_original_add_and_factory_restart_preserve_all_field_values
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_csv_newlines.py::test_csv_actual_api_original_add_and_factory_restart_preserve_all_field_values
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_csv_newlines.py::test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr[lost-reply]
+FAILED tests/test_material_csv_newlines.py::test_escaped_csv_editor_refresh_identity_and_revocation_follow_original_draft_lifecycle
+2 failed, 8 passed, 4 warnings in 131.29s (0:02:11)

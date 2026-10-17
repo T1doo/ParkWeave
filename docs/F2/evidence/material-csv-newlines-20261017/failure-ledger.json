@@ -1,0 +1,73 @@
+[
+  {
+    "window": "red-v1",
+    "result": "4FAIL/4unique",
+    "seconds": 22.744,
+    "expected_red": true,
+    "cause": "CSV pre-parse global CR normalization changed quoted field values; actual browser textarea also normalizes CR",
+    "original_logs_retained": true,
+    "source_snapshot": "red-v1-source"
+  },
+  {
+    "window": "edge-v1",
+    "result": "8PASS/2FAIL/10unique",
+    "seconds": 131.288,
+    "source_snapshot": "edge-v1-source",
+    "failures": [
+      "test tried fill disabled editor during original UNKNOWN gate; retain gate and use explicit client fault injection to test immutable retry body",
+      "lifecycle test read editor before async use completed; await original filled status/mode first"
+    ],
+    "independent_review_hint": "runtime hint had two backslashes; reduce one source escape layer",
+    "product_parser_fidelity_passed": true
+  },
+  {
+    "action": "guarded source hint/preview replacement before edge-v2",
+    "result": "AssertionError before any source write",
+    "reason": "expected4 source backslashes absent; actual source2 -> runtime1 is already correct",
+    "followup": "source unchanged; edge-v2 launched with new preview assertions despite patch guard failure; preserve window, then apply preview-only patch",
+    "runtime_probe": {
+      "first_hint_codepoints": [
+        92,
+        114,
+        20195
+      ],
+      "one_backslash_correct": true
+    }
+  },
+  {
+    "window": "edge-v2",
+    "result": "5PASS/5FAIL/10unique",
+    "seconds": 59.465,
+    "source_snapshot": "edge-v2-source",
+    "failures": [
+      "4 new preview assertions red because guarded source replacement did not write; actual parser/form fidelity source unchanged",
+      "revoke test observed panel hidden at load start before HTTP403; await actual403 and private draft cleared"
+    ],
+    "no_gate_weakened": true
+  },
+  {
+    "action": "independent hint review adjudication",
+    "status": "FALSE_POSITIVE; no source hint modification",
+    "independent_reviewer": "/root/review_material_import",
+    "cause": "tool JSON representation escape layer mistaken for runtime characters",
+    "actual_runtime_first_three_codepoints": [
+      92,
+      114,
+      20195
+    ],
+    "actual_JS_source_prefix_codepoints": [
+      92,
+      92,
+      114
+    ],
+    "root_guard_preserved_correct_source": true
+  },
+  {
+    "action": "independent initial sha256sum",
+    "target": "tests/test_material_csv_newlines_browser.py",
+    "status": "exit1; nonexistent combined-module filename",
+    "completed": "other listed source hashes read normally; corrected actual module test_material_csv_newlines.py and full before/after hashes exit0",
+    "repo_modified": false,
+    "not_a_test_failure": true
+  }
+]

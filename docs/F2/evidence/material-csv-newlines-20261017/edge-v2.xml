@@ -1,0 +1,178 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="5" skipped="0" tests="10" time="59.465" timestamp="2026-10-17T08:44:47.145095+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_material_csv_newlines" name="test_csv_quoted_field_line_ending_is_data_not_a_record_separator[\r\n]" time="0.005" /><testcase classname="tests.test_material_csv_newlines" name="test_csv_quoted_field_line_ending_is_data_not_a_record_separator[\r]" time="0.002" /><testcase classname="tests.test_material_csv_newlines" name="test_csv_literal_backslashes_quotes_unicode_and_mixed_field_endings_are_not_double_decoded" time="0.001" /><testcase classname="tests.test_material_csv_newlines" name="test_csv_actual_api_original_add_and_factory_restart_preserve_all_field_values" time="3.528" /><testcase classname="tests.test_material_csv_newlines" name="test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr[unchanged]" time="10.691"><failure message="json.decoder.JSONDecodeError: Extra data: line 1 column 4 (char 3)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f6efc7305c0&gt;, &lt;parkweave.store.Store object at 0x7f6efd39c410&gt;, {'fixture-a': 'bn...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f6efc2dac00&gt;)
+tmp_path = PosixPath('/tmp/parkweave-material-csv-edge-v2/test_csv_actual_file_chooser_o0')
+variant = 'unchanged'
+
+    @pytest.mark.parametrize('variant',['unchanged','edited','lost-reply','boundary'])
+    def test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr(preparation_fixture,tmp_path,variant):
+        f=preparation_fixture;p,_,_=create(f)
+        cell='first\r\nsecond\rthird\n字面\\r和"quote"与😀 '
+        if variant=='boundary':cell='x'*(4000-len('"h","v"\n"SYNTHETIC",""')-1)+'\r'
+        raw=('h,v\r\nSYNTHETIC,"'+cell.replace('"','""')+'"\r\n').encode();expected=cells(raw.decode())
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            select_file(page,'SYNTHETIC.csv',raw)
+&gt;           assert cells(json.loads(page.locator('#material-file-text').input_value()))==expected
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_csv_newlines.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.decoder.JSONDecoder object at 0x7f6f01ddd850&gt;
+s = '"h","v"\n"SYNTHETIC","first\nsecond\nthird\n字面\\r和""quote""与😀 "'
+_w = &lt;built-in method match of re.Pattern object at 0x7f6f01f6eb50&gt;
+
+    def decode(self, s, _w=WHITESPACE.match):
+        """Return the Python representation of ``s`` (a ``str`` instance
+        containing a JSON document).
+    
+        """
+        obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+        end = _w(s, end).end()
+        if end != len(s):
+&gt;           raise JSONDecodeError("Extra data", s, end)
+E           json.decoder.JSONDecodeError: Extra data: line 1 column 4 (char 3)
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py:341: JSONDecodeError</failure></testcase><testcase classname="tests.test_material_csv_newlines" name="test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr[edited]" time="7.659"><failure message="json.decoder.JSONDecodeError: Extra data: line 1 column 4 (char 3)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f6efc335100&gt;, &lt;parkweave.store.Store object at 0x7f6efc3352b0&gt;, {'fixture-a': 'XJ...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f6efd00ac00&gt;)
+tmp_path = PosixPath('/tmp/parkweave-material-csv-edge-v2/test_csv_actual_file_chooser_o1')
+variant = 'edited'
+
+    @pytest.mark.parametrize('variant',['unchanged','edited','lost-reply','boundary'])
+    def test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr(preparation_fixture,tmp_path,variant):
+        f=preparation_fixture;p,_,_=create(f)
+        cell='first\r\nsecond\rthird\n字面\\r和"quote"与😀 '
+        if variant=='boundary':cell='x'*(4000-len('"h","v"\n"SYNTHETIC",""')-1)+'\r'
+        raw=('h,v\r\nSYNTHETIC,"'+cell.replace('"','""')+'"\r\n').encode();expected=cells(raw.decode())
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            select_file(page,'SYNTHETIC.csv',raw)
+&gt;           assert cells(json.loads(page.locator('#material-file-text').input_value()))==expected
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_csv_newlines.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.decoder.JSONDecoder object at 0x7f6f01ddd850&gt;
+s = '"h","v"\n"SYNTHETIC","first\nsecond\nthird\n字面\\r和""quote""与😀 "'
+_w = &lt;built-in method match of re.Pattern object at 0x7f6f01f6eb50&gt;
+
+    def decode(self, s, _w=WHITESPACE.match):
+        """Return the Python representation of ``s`` (a ``str`` instance
+        containing a JSON document).
+    
+        """
+        obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+        end = _w(s, end).end()
+        if end != len(s):
+&gt;           raise JSONDecodeError("Extra data", s, end)
+E           json.decoder.JSONDecodeError: Extra data: line 1 column 4 (char 3)
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py:341: JSONDecodeError</failure></testcase><testcase classname="tests.test_material_csv_newlines" name="test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr[lost-reply]" time="8.413"><failure message="json.decoder.JSONDecodeError: Extra data: line 1 column 4 (char 3)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f6efc306e10&gt;, &lt;parkweave.store.Store object at 0x7f6efc6c5b80&gt;, {'fixture-a': '0F...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f6efd22ffe0&gt;)
+tmp_path = PosixPath('/tmp/parkweave-material-csv-edge-v2/test_csv_actual_file_chooser_o2')
+variant = 'lost-reply'
+
+    @pytest.mark.parametrize('variant',['unchanged','edited','lost-reply','boundary'])
+    def test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr(preparation_fixture,tmp_path,variant):
+        f=preparation_fixture;p,_,_=create(f)
+        cell='first\r\nsecond\rthird\n字面\\r和"quote"与😀 '
+        if variant=='boundary':cell='x'*(4000-len('"h","v"\n"SYNTHETIC",""')-1)+'\r'
+        raw=('h,v\r\nSYNTHETIC,"'+cell.replace('"','""')+'"\r\n').encode();expected=cells(raw.decode())
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            select_file(page,'SYNTHETIC.csv',raw)
+&gt;           assert cells(json.loads(page.locator('#material-file-text').input_value()))==expected
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_csv_newlines.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.decoder.JSONDecoder object at 0x7f6f01ddd850&gt;
+s = '"h","v"\n"SYNTHETIC","first\nsecond\nthird\n字面\\r和""quote""与😀 "'
+_w = &lt;built-in method match of re.Pattern object at 0x7f6f01f6eb50&gt;
+
+    def decode(self, s, _w=WHITESPACE.match):
+        """Return the Python representation of ``s`` (a ``str`` instance
+        containing a JSON document).
+    
+        """
+        obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+        end = _w(s, end).end()
+        if end != len(s):
+&gt;           raise JSONDecodeError("Extra data", s, end)
+E           json.decoder.JSONDecodeError: Extra data: line 1 column 4 (char 3)
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py:341: JSONDecodeError</failure></testcase><testcase classname="tests.test_material_csv_newlines" name="test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr[boundary]" time="8.356"><failure message="json.decoder.JSONDecodeError: Extra data: line 1 column 4 (char 3)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f6efcf4aff0&gt;, &lt;parkweave.store.Store object at 0x7f6ef6408a40&gt;, {'fixture-a': 'i8...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f6efc6ff800&gt;)
+tmp_path = PosixPath('/tmp/parkweave-material-csv-edge-v2/test_csv_actual_file_chooser_o3')
+variant = 'boundary'
+
+    @pytest.mark.parametrize('variant',['unchanged','edited','lost-reply','boundary'])
+    def test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr(preparation_fixture,tmp_path,variant):
+        f=preparation_fixture;p,_,_=create(f)
+        cell='first\r\nsecond\rthird\n字面\\r和"quote"与😀 '
+        if variant=='boundary':cell='x'*(4000-len('"h","v"\n"SYNTHETIC",""')-1)+'\r'
+        raw=('h,v\r\nSYNTHETIC,"'+cell.replace('"','""')+'"\r\n').encode();expected=cells(raw.decode())
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            select_file(page,'SYNTHETIC.csv',raw)
+&gt;           assert cells(json.loads(page.locator('#material-file-text').input_value()))==expected
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_csv_newlines.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.decoder.JSONDecoder object at 0x7f6f01ddd850&gt;
+s = '"h","v"\n"SYNTHETIC","xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n"'
+_w = &lt;built-in method match of re.Pattern object at 0x7f6f01f6eb50&gt;
+
+    def decode(self, s, _w=WHITESPACE.match):
+        """Return the Python representation of ``s`` (a ``str`` instance
+        containing a JSON document).
+    
+        """
+        obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+        end = _w(s, end).end()
+        if end != len(s):
+&gt;           raise JSONDecodeError("Extra data", s, end)
+E           json.decoder.JSONDecodeError: Extra data: line 1 column 4 (char 3)
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py:341: JSONDecodeError</failure></testcase><testcase classname="tests.test_material_csv_newlines" name="test_bad_escaped_csv_edits_refuse_before_key_or_any_original_post" time="8.994" /><testcase classname="tests.test_material_csv_newlines" name="test_escaped_csv_editor_refresh_identity_and_revocation_follow_original_draft_lifecycle" time="11.044"><failure message="assert ('&quot;\\&quot;h\\&quot;,\\&quot;...r\\nb\\rc\\&quot;&quot;' == ''&#10;  &#10;  + &quot;\&quot;h\&quot;,\&quot;v\&quot;\n\&quot;SYNTHETIC\&quot;,\&quot;a\r\nb\rc\&quot;&quot;)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f6efc32aa20&gt;, &lt;parkweave.store.Store object at 0x7f6ef629e060&gt;, {'fixture-a': 'ym...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f6efc4f3b90&gt;)
+tmp_path = PosixPath('/tmp/parkweave-material-csv-edge-v2/test_escaped_csv_editor_refres0')
+
+    def test_escaped_csv_editor_refresh_identity_and_revocation_follow_original_draft_lifecycle(preparation_fixture,tmp_path):
+        f=preparation_fixture;p,_,_=create(f)
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            raw=b'h,v\nSYNTHETIC,"a\r\nb\rc"'
+            select_file(page,'SYNTHETIC.csv',raw);page.locator('#material-file-use').click()
+            expect(page.locator('#material-file-editing')).to_be_visible();display=page.locator('#prep-text').input_value()
+            page.locator('#prep-refresh').click();expect(page.locator('#prep-detail')).to_be_visible()
+            assert page.locator('#prep-text').input_value()==display;expect(page.locator('#material-file-editing')).to_be_visible()
+            page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').fill(f[2]['fixture-a'])
+            assert page.locator('#prep-text').input_value()=='' and page.locator('#prep-text').get_attribute('maxlength')=='4000'
+            expect(page.locator('#material-file-editing')).to_be_hidden()
+            open_record(page,api,f,p);select_file(page,'SYNTHETIC.csv',raw);page.locator('#material-file-use').click()
+            expect(page.locator('#material-file-editing')).to_be_visible()
+            with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+            before=snapshot(f[1]);page.locator('#prep-refresh').click();expect(page.locator('#prep-detail')).to_be_hidden()
+&gt;           assert page.locator('#prep-text').input_value()=='' and page.locator('#prep-text').get_attribute('maxlength')=='4000'
+E           assert ('"\\"h\\",\\"...r\\nb\\rc\\""' == ''
+E             
+E             + "\"h\",\"v\"\n\"SYNTHETIC\",\"a\r\nb\rc\"")
+
+tests/test_material_csv_newlines.py:151: AssertionError</failure></testcase></testsuite></testsuites>

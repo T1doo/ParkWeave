@@ -1,0 +1,30 @@
+// /root/review_material_import independently ran node - with exit0.
+// Actual source functions; memory DOM/transport, not browser/API validation.
+const fs=require('fs'),vm=require('vm');
+const source=fs.readFileSync('src/parkweave/web.html','utf8'),lines=source.split('\n');
+const helper=source.slice(source.indexOf('let materialFileGeneration='),source.indexOf('function clearMaterialFileImport('));
+const ids=['prep-text','material-file-editing','prep-slot','prep-source-kind','prep-source-label','prep-reason','prep-command-retry'];
+const els=Object.fromEntries(ids.map(id=>[id,{value:'',hidden:true,textContent:'',maxLength:4000}]));
+els['prep-slot'].value='need_summary';els['prep-source-kind'].value='DOCUMENT_EXCERPT';els['prep-source-label'].value='SYNTHETIC original';
+let keys=0,sends=0,last=null;
+const c={id:'00000000-0000-0000-0000-000000000001',caseId:'00000000-0000-0000-0000-000000000002',revision:1,token:'SYNTHETIC'};
+const env={$:id=>els[id],document:{querySelectorAll:()=>[]},objectionLock:()=>false,prepRecoveryHandle:null,prepRecoveryChecking:false,caseFactPending:null,materialReusePending:null,prepCommandPending:null,preparationView:{preparation:{id:c.id,case_id:c.caseId,revision:1}},preparationContext:c,requirePrepCurrent:()=>{},prepContext:()=>c,prepRetries:new Map(),crypto:{randomUUID:()=>{keys++;return 'independent-key';}},sendPrepCommand:async p=>{sends++;last=p;return p;},sendMaterialDraft:()=>{throw Error('unexpected material draft');},prepError:e=>{throw e;}};
+vm.createContext(env);vm.runInContext(helper+'\n'+lines.find(x=>x.startsWith('function preparationDraft()'))+'\n'+lines.find(x=>x.startsWith('async function prepCommand(action)'))+'\n'+lines.find(x=>x.startsWith("$('prep-command-retry').onclick=")),env);
+(async()=>{
+ env.setMaterialFileFormEncoding('CSV_JSON_STRING');
+ const exact='"h","v"\n"SYNTHETIC","line1\r\nline2\rlast\nend; literal \\r; quote """';
+ els['prep-text'].value=JSON.stringify(exact);await env.prepCommand('ADD_EVIDENCE');if(last.body.text!==exact)throw Error('exact body changed');
+ const pending=last,beforeDraft=env.preparationDraft();env.setMaterialFileFormEncoding('PLAIN');if(env.preparationDraft()===beforeDraft)throw Error('mode absent from draft');env.setMaterialFileFormEncoding('CSV_JSON_STRING');
+ const hint=els['material-file-editing'].textContent,at=hint.indexOf('代表CR'),codes=Array.from(hint.slice(at-2,at+1),x=>x.codePointAt(0));if(codes.join(',')!=='92,114,20195')throw Error('hint codepoints wrong');
+ const invalid=['broken JSON','{}','[]','""',JSON.stringify('x'.repeat(4001)),JSON.stringify('\u0000'),JSON.stringify('\ud800'),JSON.stringify('\u000b')];
+ const before={keys,sends,requests:env.prepRetries.size};let refused=0;
+ for(const value of invalid){els['prep-text'].value=value;try{await env.prepCommand('ADD_EVIDENCE');throw Error('invalid accepted');}catch(e){if(e.message==='invalid accepted')throw e;refused++;}}
+ if(keys!==before.keys||sends!==before.sends||env.prepRetries.size!==before.requests)throw Error('invalid edit made request');
+ env.prepCommandPending=pending;pending.state='UNKNOWN';els['prep-text'].value=JSON.stringify('new unsent draft\r\n');let gate='';try{await env.prepCommand('ADD_EVIDENCE');}catch(e){gate=e.message;}if(!gate.includes('未知操作'))throw Error('unknown gate failed');
+ const oldBody=JSON.stringify(pending.body),oldKey=pending.key;els['prep-command-retry'].onclick();await new Promise(setImmediate);if(last.key!==oldKey||JSON.stringify(last.body)!==oldBody||els['prep-text'].value!==JSON.stringify('new unsent draft\r\n'))throw Error('retry read new draft');
+ const maxEncoded=24002;els['prep-text'].value='"'+'\\u0061'.repeat(4000)+'"';if(els['prep-text'].value.length!==maxEncoded||env.materialFileSubmissionText()!=='a'.repeat(4000))throw Error('encoded boundary failed');
+ const preview=lines.find(x=>x.includes("materialFileView={...v,result:x};$('material-file-text').value="));if(!preview.includes('escaped?JSON.stringify(x.candidate_text):x.candidate_text'))throw Error('preview unescaped');
+ const match=new Function('path','return '+lines.find(x=>x.includes('const purePreview=')).match(/const purePreview=(.*);$/)[1]);if(!match('/api/preparations/'+c.id+'/material-file-candidate')||match('/api/preparations/'+c.id+'/commands'))throw Error('preview write classification changed');
+ console.log(JSON.stringify({exact_decoded_pending_body:true,mode_in_draft:true,invalid_edits_refused:refused,invalid_edit_new_keys:keys-before.keys,invalid_edit_new_sends:0,unknown_gate_preserved:true,retry_uses_original_body_and_key:true,new_unsent_draft_retained:true,encoded_24002_to_decoded_4000:true,preview_escaped:true,hint_first_three_codepoints:codes,hint_status:'FALSE_POSITIVE',exact_preview_classification:true}));
+ console.log('INDEPENDENT_NODE_PROBES_PASS');
+})().catch(e=>{console.error(e);process.exitCode=1});
