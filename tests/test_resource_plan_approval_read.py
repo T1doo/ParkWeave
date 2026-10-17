@@ -79,7 +79,7 @@ def test_existing_expiry_revocation_and_not_yet_valid_remain_invalid_after_resta
     assert snapshot(f[1])==before
 
 
-@pytest.mark.parametrize('damage',['signature','duplicate-key','run-read-purpose','extra-credential','absent'])
+@pytest.mark.parametrize('damage',['signature','duplicate-key','run-read-purpose','extra-credential','absent','blank-authority-reference'])
 def test_unverified_missing_or_wrong_contract_source_never_approves(receipt_fixture,tmp_path,monkeypatch,damage):
     f=receipt_fixture;p,source,app,query=seeded(f,tmp_path,monkeypatch);record=source.record()
     if damage=='signature':source.signature.write_text('0'*64)
@@ -92,7 +92,8 @@ def test_unverified_missing_or_wrong_contract_source_never_approves(receipt_fixt
         source.head.write_text(json.dumps({'sha256':hashlib.sha256(raw).hexdigest(),'record_revision':1}))
         with pytest.raises(ValueError,match='duplicate'):approval.strict_json(raw)
     else:
-        if damage=='run-read-purpose':record['purpose']='RUN_READ_ACCESS_ONLY'
+        if damage=='blank-authority-reference':record['authority_reference']='   '
+        elif damage=='run-read-purpose':record['purpose']='RUN_READ_ACCESS_ONLY'
         else:record['writer_dsn']='SYNTHETIC_DO_NOT_ACCEPT'
         source.write(record)
     with TestClient(app) as api:

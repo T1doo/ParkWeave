@@ -99,6 +99,13 @@ class ApprovalRecord(BaseModel):
     state: Literal['APPROVED', 'REVOKED']
     revoked_at: AwareDatetime | None = Field(default=None, strict=False)
 
+    @field_validator('original_record_id', 'authority_reference')
+    @classmethod
+    def nonblank_reference(cls, value):
+        if not value.strip():
+            raise ValueError('existing source reference required')
+        return value
+
     @field_validator('approved_at', 'valid_from', 'valid_until', 'revoked_at', mode='before')
     @classmethod
     def explicit_timestamp(cls, value):

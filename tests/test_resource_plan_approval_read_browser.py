@@ -60,6 +60,23 @@ def test_permission_revocation_clears_original_approval_and_expiry_timer_never_g
         assert all(x=='GET' for x in seen) and snapshot(f[1])==before;browser.close()
 
 
+def test_long_validity_rearms_browser_timer_until_actual_expiry(receipt_fixture,tmp_path,monkeypatch):
+    f=receipt_fixture;p,source,app,_=seeded(f,tmp_path,monkeypatch);now=datetime.now(timezone.utc)
+    record=source.record();record['valid_until']=(now+timedelta(days=30)).isoformat();source.write(record)
+    before=snapshot(f[1])
+    with actual_http(app) as (api,_),sync_playwright() as pw:
+        browser,page=browser_page(pw);page.clock.install(time=now);seen=[];page.on('request',lambda r:seen.append(r.method))
+        open_record(page,api,f,p);page.locator('#resource-plan-approval-read').click()
+        expect(page.locator('#resource-plan-approval-status')).to_contain_text('本次读取已核对已有资源方案批准')
+        # Installed Playwright coerces each jump to int32; cross the limit in two jumps.
+        page.clock.fast_forward(20*24*60*60*1000)
+        page.clock.fast_forward(5*24*60*60*1000)
+        expect(page.locator('#resource-plan-approval-status')).to_contain_text('本次读取已核对已有资源方案批准')
+        page.clock.fast_forward(6*24*60*60*1000)
+        expect(page.locator('#resource-plan-approval-status')).to_contain_text('已过有效期')
+        assert all(x=='GET' for x in seen) and snapshot(f[1])==before;browser.close()
+
+
 @pytest.mark.parametrize('late_status',[200,403])
 def test_late_old_approval_after_preparation_aba_cannot_replace_current_revoked_record(receipt_fixture,tmp_path,monkeypatch,late_status):
     f=receipt_fixture;p,source,app,_=seeded(f,tmp_path,monkeypatch);before=snapshot(f[1])

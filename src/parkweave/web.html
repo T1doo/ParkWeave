@@ -708,6 +708,12 @@ function clearResourceApprovalRead(){
  if(resourceApprovalExpiryTimer!==null)clearTimeout(resourceApprovalExpiryTimer);resourceApprovalExpiryTimer=null;resourceApprovalRead=null;
  $('resource-plan-approval-status').textContent='';$('resource-plan-approval-result').replaceChildren();$('resource-plan-approval-original').hidden=true;
 }
+function scheduleResourceApprovalExpiry(binding,approvalId,deadline){
+ if(!binding.current()||resourceApprovalRead?.approvalId!==approvalId)return;
+ const remaining=deadline-Date.now();
+ if(remaining<=0){resourceApprovalExpiryTimer=null;$('resource-plan-approval-status').textContent='已有批准已过有效期，请重新核对原记录。';return;}
+ resourceApprovalExpiryTimer=setTimeout(()=>scheduleResourceApprovalExpiry(binding,approvalId,deadline),Math.min(2147483647,remaining));
+}
 function renderResourceApprovalRead(x,binding,query){
  if(!binding.current())return;
  if((x.state==='VERIFIED')!==(x.verified_existing_approval===true)||x.state==='VERIFIED'&&!x.record||x.contract!=='parkweave-existing-resource-plan-approval/1'||x.purpose!=='RESOURCE_PLAN_APPROVAL'||x.read_only!==true||x.execution_authorized!==false||x.approval_consumable!==false||x.decision_writes_enabled!==false||x.run_read_access_granted!==false)throw Error('资源方案批准只读响应不匹配。');
@@ -720,14 +726,14 @@ function renderResourceApprovalRead(x,binding,query){
   out.append(textElement('p','原批准 '+r.approval_id+' / 原来源记录 '+r.original_record_id+' · '+r.source_id),textElement('p','方案 '+b.plan_id+' / v'+b.plan_revision),textElement('p','批准主体 '+r.approver_id+' · '+r.approver_role+' · 原权限来源 '+r.authority_reference),textElement('p','有效期 '+r.valid_from+' 至 '+r.valid_until),textElement('p','批准范围：此版本方案的P2资源关联与重新核对；这里只读核对，不执行。'),textElement('p','动作范围指纹 '+b.action_scope_sha256),textElement('p','来源指纹 '+b.source_sha256));
   if(x.approval_source_kind==='SYNTHETIC_CONTRACT_FIXTURE')out.append(textElement('p','合成契约样本，不证明真实批准。'));
   resourceApprovalRead={binding,query,approvalId:r.approval_id};$('resource-plan-approval-original').hidden=false;
-  if(x.state==='VERIFIED')resourceApprovalExpiryTimer=setTimeout(()=>{if(binding.current()&&resourceApprovalRead?.approvalId===r.approval_id)$('resource-plan-approval-status').textContent='已有批准已过有效期，请重新核对原记录。';},Math.min(2147483647,Math.max(0,Date.parse(r.valid_until)-Date.now())));
+  if(x.state==='VERIFIED')scheduleResourceApprovalExpiry(binding,r.approval_id,Date.parse(r.valid_until));
  }
 }
 async function readResourceApprovalRecord(original=false){
  let binding;try{
   if(existingPreparationBlocked()||runAccessPending||dispatchPending)throw Error('请先核对原入口尚未确认的操作。');
   let query,path;
-  if(original){const saved=resourceApprovalRead;if(!saved||!saved.binding.current())throw Error('原资料或方案选择已变化，请重新读取。');binding=saved.binding;query=saved.query;path='/api/preparations/'+encodeURIComponent(binding.id)+'/runtime/resource-plan-approval/records/'+encodeURIComponent(saved.approvalId)+'?'+new URLSearchParams(query);clearResourceApprovalRead();}
+  if(original){const saved=resourceApprovalRead;if(!saved||!saved.binding.current())throw Error('原资料或方案选择已变化，请重新读取。');binding=runtimeSelection();query=saved.query;path='/api/preparations/'+encodeURIComponent(binding.id)+'/runtime/resource-plan-approval/records/'+encodeURIComponent(saved.approvalId)+'?'+new URLSearchParams(query);clearResourceApprovalRead();}
   else{clearRuntimeNavigation();binding=runtimeSelection();const c=prepContext(),x=await prepCall(binding.path('resource-plan-approval-context'),'GET',undefined,undefined,c);if(!binding.current())return;
    if(x.state!=='READY_TO_READ'){renderResourceApprovalRead(x,binding,{});return;}
    const b=x.binding;if(!b||b.preparation_id!==binding.id||b.case_id!==binding.caseId||b.run_id!==binding.runId)throw Error('资源方案来源上下文不匹配。');
