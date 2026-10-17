@@ -1,5 +1,7 @@
 # 园合 ParkWeave
 
+2026-10-17 新增已有资源方案批准的独立只读契约及原资料页导航：精确核对原preparation/Case/Run、方案版本、动作/来源、批准主体和当前有效期/撤销，不创建或消费批准；与Run READ批准分开。六个相关完整模块143唯一项PASS（新增56含内），冻结 `5180e528c97018b556a8367960fa528aaf3cca40`，新片待独审。原资料/目录仍仅SYNTHETIC；普通启动缺合法provider时保持不可用，真实来源/业务/Windows/正式AT未验，完整项目未完成。[实现、全部窗口、证据和真实缺口](docs/F2/ResourcePlanApprovalRead-20261017.md)。
+
 2026-10-17 连接诊断收尾：同冻结关闭诊断，原顺序6项一次6PASS；独立自有pytest SIGINT冒烟预期退出2，连接、writer及sessionfinish清理校验通过，不能算第7项PASS。427插桩回归沿父线程独审准入，本批未重跑；历史超时根因仍未知，诊断至此结束。[收尾证据与边界](docs/F2/ConnectionDiagnosticsCloseout-20261017.md)。
 
 2026-10-17 新增自有夹具连接诊断：按原前驱顺序复验两失败节点后，新冻结原13模块427唯一项全部PASS，0FAIL/ERROR/SKIP；产品src未改。8,750次受测连接均关闭且与PG日志关联，历史握手超时未重现、根因仍未确立，失败采样未触发，不称产品连接问题已修复。[原始诊断、全部窗口与未证边界](docs/F2/OwnedConnectionDiagnostics-20261017.md)。

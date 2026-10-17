@@ -1,0 +1,47 @@
+.F....................................                                   [100%]
+=================================== FAILURES ===================================
+_ test_exact_signed_existing_source_read_and_original_navigation_are_read_only _
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f4afcf0e8a0>, <parkweave.store.Store object at 0x7f4aff388230>, {'fixture-a': '[SYNTHETIC_SESSION_REDACTED]': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f4afcbe70b0>)
+tmp_path = PosixPath('/tmp/parkweave-resource-approval-dev-v2/test_exact_signed_existing_sou0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f4afd002bd0>
+
+    def test_exact_signed_existing_source_read_and_original_navigation_are_read_only(receipt_fixture,tmp_path,monkeypatch):
+        f=receipt_fixture;p,source,app,query=seeded(f,tmp_path,monkeypatch);before=snapshot(f[1])
+        with TestClient(app) as api:
+            x=read(api,f,p,query).json();assert x['state']=='VERIFIED' and x['verified_existing_approval']
+            assert x['purpose']=='RESOURCE_PLAN_APPROVAL' and x['approval_source_kind']=='SYNTHETIC_CONTRACT_FIXTURE'
+            assert all(x[k] is False for k in ('execution_authorized','approval_consumable','decision_writes_enabled','run_read_access_granted'))
+>           record=source.record();assert x['record']==record and len(source.calls)==2
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: assert ({'schema_vers...d426d6b', ...} == {'approval_id...perator', ...}
+E             
+E             Omitting 12 identical items, use -vv to show
+E             Differing items:
+E             {'valid_until': '2026-10-17T03:03:49.860693Z'} != {'valid_until': '2026-10-17T03:03:49.860693+00:00'}
+E             {'approved_at': '2026-10-17T02:58:44.860693Z'} != {'approved_at': '2026-10-17T02:58:44.860693+00:00'}
+E             {'valid_from': '2026-10-17T02:58:48.860693Z'} != {'valid_from': '2026-10-17T02:58:48.860693+00:00'}
+E             Use -v to get more diff)
+
+tests/test_resource_plan_approval_read.py:37: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_resource_plan_approval_read.py::test_default_no_provider_or_source_does_not_infer_approval
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_resource_plan_approval_read.py::test_default_no_provider_or_source_does_not_infer_approval
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_resource_plan_approval_read.py::test_default_no_provider_or_source_does_not_infer_approval
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_resource_plan_approval_read.py::test_exact_signed_existing_source_read_and_original_navigation_are_read_only
+1 failed, 37 passed, 4 warnings in 101.19s (0:01:41)

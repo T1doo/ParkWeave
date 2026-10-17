@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="16.787" timestamp="2026-10-17T03:19:17.084752+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_resource_plan_approval_read" name="test_unverified_missing_or_wrong_contract_source_never_approves[blank-authority-reference]" time="4.602" /><testcase classname="tests.test_resource_plan_approval_read_browser" name="test_long_validity_rearms_browser_timer_until_actual_expiry" time="10.933"><failure message="playwright._impl._errors.Error: Clock.fast_forward: Error: Cannot fast-forward to the past&#10;    at ClockController._innerFastForwardTo (&lt;anonymous&gt;:202:13)&#10;    at &lt;anonymous&gt;:197:18&#10;    at ClockController._runWithDisabledRealTimeSync (&lt;anonymous&gt;:189:13)&#10;    at async ClockController.fastForward (&lt;anonymous&gt;:196:5)&#10;    at async &lt;anonymous&gt;:337:30">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f936acfa630&gt;, &lt;parkweave.store.Store object at 0x7f936aa3f110&gt;, {'fixture-a': '[SYNTHETIC_SESSION_REDACTED]': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f9369f4e9f0&gt;)
+tmp_path = PosixPath('/tmp/parkweave-resource-approval-fix-v1/test_long_validity_rearms_brow0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f93682ef770&gt;
+
+    def test_long_validity_rearms_browser_timer_until_actual_expiry(receipt_fixture,tmp_path,monkeypatch):
+        f=receipt_fixture;p,source,app,_=seeded(f,tmp_path,monkeypatch);now=datetime.now(timezone.utc)
+        record=source.record();record['valid_until']=(now+timedelta(days=30)).isoformat();source.write(record)
+        before=snapshot(f[1])
+        with actual_http(app) as (api,_),sync_playwright() as pw:
+            browser,page=browser_page(pw);page.clock.install(time=now);seen=[];page.on('request',lambda r:seen.append(r.method))
+            open_record(page,api,f,p);page.locator('#resource-plan-approval-read').click()
+            expect(page.locator('#resource-plan-approval-status')).to_contain_text('本次读取已核对已有资源方案批准')
+&gt;           page.clock.fast_forward(25*24*60*60*1000)
+
+tests/test_resource_plan_approval_read_browser.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:7359: in fast_forward
+    self._sync(self._impl_obj.fast_forward(ticks=ticks))
+.venv/lib/python3.12/site-packages/playwright/_impl/_clock.py:39: in fast_forward
+    await self._browser_context._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;playwright._impl._connection.Connection object at 0x7f936ad89190&gt;
+cb = &lt;function Channel.send.&lt;locals&gt;.&lt;lambda&gt; at 0x7f935bf54c20&gt;
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -&gt; Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+&gt;           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: Clock.fast_forward: Error: Cannot fast-forward to the past
+E               at ClockController._innerFastForwardTo (&lt;anonymous&gt;:202:13)
+E               at &lt;anonymous&gt;:197:18
+E               at ClockController._runWithDisabledRealTimeSync (&lt;anonymous&gt;:189:13)
+E               at async ClockController.fastForward (&lt;anonymous&gt;:196:5)
+E               at async &lt;anonymous&gt;:337:30
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error</failure></testcase></testsuite></testsuites>
