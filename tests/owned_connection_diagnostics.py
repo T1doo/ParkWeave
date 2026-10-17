@@ -21,6 +21,10 @@ import pytest
 _current = None
 
 
+def current():
+    return _current
+
+
 def emit(kind, **values):
     if _current is not None:
         _current.emit(kind, **values)
@@ -57,10 +61,9 @@ class Diagnostics:
         self.lock = threading.RLock()
         self.node, self.phase, self.stage = '', 'configure', 'NONE'
         self.sequence = 0
-        self.endpoint = None
-        self.maintenance = None
-        self.pg_log = None
+        self.servers = {}
         self.database_nodes = {}
+        self.database_servers = {}
         self.active = {}
         self.sampled = set()
         self.patch = pytest.MonkeyPatch()
@@ -86,20 +89,22 @@ class Diagnostics:
                 return diagnostic.original_connect(cls, conninfo, **kwargs)
             db = kwargs.get('dbname', params.get('dbname', 'postgres'))
             endpoint = (kwargs.get('host', params.get('host')), str(kwargs.get('port', params.get('port', '5432'))))
-            if endpoint != diagnostic.endpoint or not (db == 'postgres' or re.fullmatch(r'fixture_[a-f0-9]{32}', db)):
+            server = diagnostic.servers.get(endpoint)
+            if server is None or not (db == 'postgres' or re.fullmatch(r'fixture_[a-f0-9]{32}', db)):
                 return diagnostic.original_connect(cls, conninfo, **kwargs)
+            diagnostic.database_servers[db] = endpoint
             with diagnostic.lock:
                 diagnostic.sequence += 1
                 number = diagnostic.sequence
             node = diagnostic.database_nodes.get(db, diagnostic.node)
             name = 'pwdiag-' + sha256(node.encode()).hexdigest()[:10] + '-' + str(os.getpid()) + '-' + str(number)
-            meta = dict(attempt=number, application_name=name, database=db, fixture_node=node,
+            meta = dict(attempt=number, application_name=name, database=db, fixture_node=node, cluster=server['label'],
                         connection_class=cls.__name__, connect_timeout=kwargs.get('connect_timeout', params.get('connect_timeout')))
             frames = []
             frame = sys._getframe(1)
             while frame and len(frames) < 5:
                 path = Path(frame.f_code.co_filename)
-                if path.parts[:1] in (('src',), ('tests',)) or '/parkweave/' in str(path):
+                if any(part in ('src', 'tests') for part in path.parts) and path.is_relative_to(Path.cwd()):
                     frames.append(dict(file=str(path), function=frame.f_code.co_name, line=frame.f_lineno))
                 frame = frame.f_back
             del frame
@@ -135,11 +140,12 @@ class Diagnostics:
 
     def bind_owned_server(self, server, data):
         # Called only after this session creates the new fixture server.
-        self.maintenance = server.get_uri()
-        params = conninfo_to_dict(self.maintenance)
-        self.endpoint = (params.get('host'), params.get('port', '5432'))
-        self.pg_log = data / 'log'
-        with self.original_connect(psycopg.Connection, self.maintenance, connect_timeout=2, autocommit=True) as conn:
+        maintenance = server.get_uri()
+        params = conninfo_to_dict(maintenance)
+        endpoint = (params.get('host'), params.get('port', '5432'))
+        label = 'postgres' if not self.servers else 'postgres-' + str(len(self.servers)+1)
+        self.servers[endpoint] = dict(maintenance=maintenance, pg_log=data/'log', label=label)
+        with self.original_connect(psycopg.Connection, maintenance, connect_timeout=2, autocommit=True) as conn:
             actual = conn.execute('SHOW data_directory').fetchone()[0]
             assert Path(actual).resolve() == data.resolve(), 'diagnostic logging requires this newly owned PGDATA'
             for statement in (
@@ -150,20 +156,21 @@ class Diagnostics:
             ):
                 conn.execute(statement)
             conn.execute('SELECT pg_reload_conf()')
-        self.emit('owned_pg_logging_enabled', postmaster_pid=server.get_pid(),
+        self.emit('owned_pg_logging_enabled', postmaster_pid=server.get_pid(), cluster=label,
                   settings=['log_connections', 'log_disconnections', 'log_line_prefix', 'log_parameter_max_length_on_error'])
 
     def failure_sample(self, db, attempt):
         # One short maintenance connection per failing fixture database, never resident.
         with self.lock:
-            if db in self.sampled or self.maintenance is None:
+            server = self.servers.get(self.database_servers.get(db))
+            if db in self.sampled or server is None:
                 return
             self.sampled.add(db)
         self.emit('failure_sample_begin', failed_attempt=attempt, database=db)
         begin = time.monotonic_ns()
         conn = None
         try:
-            dsn = make_conninfo(self.maintenance, connect_timeout=2, application_name='pwdiag-failure-sample',
+            dsn = make_conninfo(server['maintenance'], connect_timeout=2, application_name='pwdiag-failure-sample',
                                options='-c statement_timeout=1000 -c lock_timeout=500')
             with self.original_connect(psycopg.Connection, dsn, autocommit=True, row_factory=dict_row) as conn:
                 rows = conn.execute('SELECT pid,application_name,datname,usename,state,wait_event_type,wait_event,'
@@ -176,12 +183,14 @@ class Diagnostics:
                       error_type=type(error).__name__, elapsed_ns=time.monotonic_ns()-begin)
         finally:
             self.emit('failure_sample_end', failed_attempt=attempt, connected=conn is not None,
-                      closed=conn is None or conn.closed, elapsed_ns=time.monotonic_ns()-begin)
+                      returned_connection_closed=conn.closed if conn is not None else None,
+                      elapsed_ns=time.monotonic_ns()-begin)
         self.save_pg_log()
 
     def save_pg_log(self):
-        if self.pg_log and self.pg_log.is_file():
-            (self.directory / 'postgres.log').write_bytes(self.pg_log.read_bytes())
+        for server in self.servers.values():
+            if server['pg_log'].is_file():
+                (self.directory / (server['label']+'.log')).write_bytes(server['pg_log'].read_bytes())
 
     def finish(self):
         self.save_pg_log()
@@ -225,6 +234,7 @@ def pytest_runtest_logreport(report):
             _current.save_pg_log()
 
 
+@pytest.hookimpl(trylast=True)
 def pytest_sessionfinish(session):
     global _current
     if _current is not None:

@@ -53,8 +53,9 @@ class Harness:
 
     def observe(self,kind,**data):
         self.observations.append(dict(kind=kind,recorded_utc=datetime.now(timezone.utc).isoformat(),**data))
-        from owned_connection_diagnostics import emit
-        emit(kind,**data)
+        if kind in {'WRITER_PROCESS_READY','OWNED_PROCESS_STOP_BEGIN','OWNED_PROCESS_SIGINT_SENT','OWNED_PROCESS_EXITED','API_PROCESS_READY'}:
+            from owned_connection_diagnostics import emit
+            emit(kind,**data)
 
     def start_writer(self):
         root=self.directory/('writer-'+str(len(self.processes)));root.mkdir(mode=0o700)

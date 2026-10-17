@@ -12,7 +12,7 @@ from parkweave.api import create_app
 pytest_plugins = ['owned_connection_diagnostics']
 
 @pytest.fixture(scope="session")
-def pg(tmp_path_factory,request):
+def pg(tmp_path_factory):
     if os.name=='nt':
         dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
         if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
@@ -20,13 +20,16 @@ def pg(tmp_path_factory,request):
     import pgserver  # Linux evidence only; native Windows uses an installed service.
     data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
     server = pgserver.get_server(data, cleanup_mode='delete')
-    diagnostic=getattr(request.config,'_owned_connection_diagnostics',None)
+    from owned_connection_diagnostics import current
+    diagnostic=current()
     if diagnostic:diagnostic.bind_owned_server(server,data)
     from parkweave.case_fact_clarifications import capture_fixture_cluster
     server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
     with psycopg.connect(server.get_uri(), autocommit=True) as c:
         c.execute("CREATE ROLE parkweave_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE")
-    yield server
+    try:yield server
+    finally:
+        if diagnostic:diagnostic.save_pg_log()
 
 
 def drop_owned_fixture_database(pg,db):
