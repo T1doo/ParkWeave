@@ -1,0 +1,657 @@
+.....F.FF.........FFFFFF..                                               [100%]
+=================================== FAILURES ===================================
+_ test_same_revision_source_change_refuses_old_download_then_new_read_keeps_history _
+
+record_page = ((<parkweave.store.Store object at 0x7fc3a8d4f290>, <parkweave.store.Store object at 0x7fc3a8d4fa70>, {'fixture-a': '4...1154d13d-00f7-491d-ab23-2b4c7abd815a'>, PosixPath('/tmp/parkweave-case-record-dev-v2/test_same_revision_source_chan0'))
+
+    def test_same_revision_source_change_refuses_old_download_then_new_read_keeps_history(record_page):
+        f, api, page, _ = record_page; p = start(f); verified(f, p, 'P1'); open_results(page, api, f, p)
+>       old = data_from_text(generate(page)); downloads = []; page.on('download', downloads.append)
+                                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_record_pack.py:166: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:8424: in on
+    return super().on(event=event, f=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:126: in on
+    self._impl_obj.on(event, self._wrap_handler(f))
+                             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:121: in _wrap_handler
+    return mapping.wrap_handler(handler)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._impl_to_api_mapping.ImplToApiMapping object at 0x7fc3abe50bc0>
+handler = <built-in method append of list object at 0x7fc3a9b1bc00>
+
+    def wrap_handler(self, handler: Callable[..., Any]) -> Callable[..., None]:
+        def wrapper_func(*args: Any) -> Any:
+            parameters = inspect.signature(handler).parameters
+            has_varargs = any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in parameters.values()
+            )
+            arg_count = (
+                len(args)
+                if has_varargs
+                else sum(
+                    parameter.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                    for parameter in parameters.values()
+                )
+            )
+            return handler(
+                *list(map(lambda a: self.from_maybe_impl(a), args))[:arg_count]
+            )
+    
+        if inspect.ismethod(handler):
+            wrapper = getattr(handler.__self__, IMPL_ATTR + handler.__name__, None)
+            if not wrapper:
+                wrapper = wrapper_func
+                setattr(
+                    handler.__self__,
+                    IMPL_ATTR + handler.__name__,
+                    wrapper,
+                )
+            return wrapper
+    
+        wrapper = getattr(handler, IMPL_ATTR, None)
+        if not wrapper:
+            wrapper = wrapper_func
+>           setattr(handler, IMPL_ATTR, wrapper)
+E           AttributeError: 'builtin_function_or_method' object has no attribute '_pw_impl_instance_'
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_impl_to_api_mapping.py:157: AttributeError
+____ test_actual_current_revoke_before_download_clears_private_memory[READ] ____
+
+record_page = ((<parkweave.store.Store object at 0x7fc3a851faa0>, <parkweave.store.Store object at 0x7fc3a851f4d0>, {'fixture-a': '3...8acee04b-dd79-49bd-82bb-df5c47b251f5'>, PosixPath('/tmp/parkweave-case-record-dev-v2/test_actual_current_revoke_bef0'))
+authority = 'READ'
+
+    @pytest.mark.parametrize('authority', ['READ', 'PREPARE'])
+    def test_actual_current_revoke_before_download_clears_private_memory(record_page, authority):
+        f, api, page, _ = record_page; p = start(f); open_results(page, api, f, p); generate(page)
+        with f[1].connect() as c:
+            table = 'capability_grants' if authority == 'READ' else 'preparation_grants'
+            c.execute('UPDATE '+table+' SET active=false WHERE principal_id=%s AND capability=%s', ('fixture-a', authority))
+        before = business(f); seen = []; downloads = []
+        page.on('response', lambda r: seen.append(r.status) if r.url.endswith('/goal-results') else None)
+>       page.on('download', downloads.append); page.locator('#case-record-pack-download').click()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_record_pack.py:203: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:8424: in on
+    return super().on(event=event, f=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:126: in on
+    self._impl_obj.on(event, self._wrap_handler(f))
+                             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:121: in _wrap_handler
+    return mapping.wrap_handler(handler)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._impl_to_api_mapping.ImplToApiMapping object at 0x7fc3abe50bc0>
+handler = <built-in method append of list object at 0x7fc3a91c9500>
+
+    def wrap_handler(self, handler: Callable[..., Any]) -> Callable[..., None]:
+        def wrapper_func(*args: Any) -> Any:
+            parameters = inspect.signature(handler).parameters
+            has_varargs = any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in parameters.values()
+            )
+            arg_count = (
+                len(args)
+                if has_varargs
+                else sum(
+                    parameter.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                    for parameter in parameters.values()
+                )
+            )
+            return handler(
+                *list(map(lambda a: self.from_maybe_impl(a), args))[:arg_count]
+            )
+    
+        if inspect.ismethod(handler):
+            wrapper = getattr(handler.__self__, IMPL_ATTR + handler.__name__, None)
+            if not wrapper:
+                wrapper = wrapper_func
+                setattr(
+                    handler.__self__,
+                    IMPL_ATTR + handler.__name__,
+                    wrapper,
+                )
+            return wrapper
+    
+        wrapper = getattr(handler, IMPL_ATTR, None)
+        if not wrapper:
+            wrapper = wrapper_func
+>           setattr(handler, IMPL_ATTR, wrapper)
+E           AttributeError: 'builtin_function_or_method' object has no attribute '_pw_impl_instance_'
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_impl_to_api_mapping.py:157: AttributeError
+__ test_actual_current_revoke_before_download_clears_private_memory[PREPARE] ___
+
+record_page = ((<parkweave.store.Store object at 0x7fc3a84bea20>, <parkweave.store.Store object at 0x7fc3a84be870>, {'fixture-a': 'U...06ab1214-d538-4b5a-a2c5-20a8f5486abe'>, PosixPath('/tmp/parkweave-case-record-dev-v2/test_actual_current_revoke_bef1'))
+authority = 'PREPARE'
+
+    @pytest.mark.parametrize('authority', ['READ', 'PREPARE'])
+    def test_actual_current_revoke_before_download_clears_private_memory(record_page, authority):
+        f, api, page, _ = record_page; p = start(f); open_results(page, api, f, p); generate(page)
+        with f[1].connect() as c:
+            table = 'capability_grants' if authority == 'READ' else 'preparation_grants'
+            c.execute('UPDATE '+table+' SET active=false WHERE principal_id=%s AND capability=%s', ('fixture-a', authority))
+        before = business(f); seen = []; downloads = []
+        page.on('response', lambda r: seen.append(r.status) if r.url.endswith('/goal-results') else None)
+>       page.on('download', downloads.append); page.locator('#case-record-pack-download').click()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_record_pack.py:203: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:8424: in on
+    return super().on(event=event, f=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:126: in on
+    self._impl_obj.on(event, self._wrap_handler(f))
+                             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:121: in _wrap_handler
+    return mapping.wrap_handler(handler)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._impl_to_api_mapping.ImplToApiMapping object at 0x7fc3abe50bc0>
+handler = <built-in method append of list object at 0x7fc3a8de1a80>
+
+    def wrap_handler(self, handler: Callable[..., Any]) -> Callable[..., None]:
+        def wrapper_func(*args: Any) -> Any:
+            parameters = inspect.signature(handler).parameters
+            has_varargs = any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in parameters.values()
+            )
+            arg_count = (
+                len(args)
+                if has_varargs
+                else sum(
+                    parameter.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                    for parameter in parameters.values()
+                )
+            )
+            return handler(
+                *list(map(lambda a: self.from_maybe_impl(a), args))[:arg_count]
+            )
+    
+        if inspect.ismethod(handler):
+            wrapper = getattr(handler.__self__, IMPL_ATTR + handler.__name__, None)
+            if not wrapper:
+                wrapper = wrapper_func
+                setattr(
+                    handler.__self__,
+                    IMPL_ATTR + handler.__name__,
+                    wrapper,
+                )
+            return wrapper
+    
+        wrapper = getattr(handler, IMPL_ATTR, None)
+        if not wrapper:
+            wrapper = wrapper_func
+>           setattr(handler, IMPL_ATTR, wrapper)
+E           AttributeError: 'builtin_function_or_method' object has no attribute '_pw_impl_instance_'
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_impl_to_api_mapping.py:157: AttributeError
+___ test_late_download_read_cannot_overwrite_new_context[False-identity-aba] ___
+
+record_page = ((<parkweave.store.Store object at 0x7fc3a9171040>, <parkweave.store.Store object at 0x7fc39ba5f9b0>, {'fixture-a': 'P...0804054c-10df-4960-b17c-96858851f3cc'>, PosixPath('/tmp/parkweave-case-record-dev-v2/test_late_download_read_cannot0'))
+target = 'identity-aba', denied = False
+
+    @pytest.mark.parametrize('target', ['identity-aba', 'case', 'draft'])
+    @pytest.mark.parametrize('denied', [False, True])
+    def test_late_download_read_cannot_overwrite_new_context(record_page, target, denied):
+        f, api, page, _ = record_page; p = start(f); other = start(f) if target == 'case' else None
+        open_results(page, api, f, p); generate(page); held = []; downloads = []
+>       page.on('download', downloads.append)
+
+tests/test_case_record_pack.py:240: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:8424: in on
+    return super().on(event=event, f=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:126: in on
+    self._impl_obj.on(event, self._wrap_handler(f))
+                             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:121: in _wrap_handler
+    return mapping.wrap_handler(handler)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._impl_to_api_mapping.ImplToApiMapping object at 0x7fc3abe50bc0>
+handler = <built-in method append of list object at 0x7fc3a8ba26c0>
+
+    def wrap_handler(self, handler: Callable[..., Any]) -> Callable[..., None]:
+        def wrapper_func(*args: Any) -> Any:
+            parameters = inspect.signature(handler).parameters
+            has_varargs = any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in parameters.values()
+            )
+            arg_count = (
+                len(args)
+                if has_varargs
+                else sum(
+                    parameter.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                    for parameter in parameters.values()
+                )
+            )
+            return handler(
+                *list(map(lambda a: self.from_maybe_impl(a), args))[:arg_count]
+            )
+    
+        if inspect.ismethod(handler):
+            wrapper = getattr(handler.__self__, IMPL_ATTR + handler.__name__, None)
+            if not wrapper:
+                wrapper = wrapper_func
+                setattr(
+                    handler.__self__,
+                    IMPL_ATTR + handler.__name__,
+                    wrapper,
+                )
+            return wrapper
+    
+        wrapper = getattr(handler, IMPL_ATTR, None)
+        if not wrapper:
+            wrapper = wrapper_func
+>           setattr(handler, IMPL_ATTR, wrapper)
+E           AttributeError: 'builtin_function_or_method' object has no attribute '_pw_impl_instance_'
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_impl_to_api_mapping.py:157: AttributeError
+_______ test_late_download_read_cannot_overwrite_new_context[False-case] _______
+
+record_page = ((<parkweave.store.Store object at 0x7fc3a817eed0>, <parkweave.store.Store object at 0x7fc3a8c2ae10>, {'fixture-a': 'c...75cf9a92-e44d-40ac-a84d-955e4bf0bd28'>, PosixPath('/tmp/parkweave-case-record-dev-v2/test_late_download_read_cannot1'))
+target = 'case', denied = False
+
+    @pytest.mark.parametrize('target', ['identity-aba', 'case', 'draft'])
+    @pytest.mark.parametrize('denied', [False, True])
+    def test_late_download_read_cannot_overwrite_new_context(record_page, target, denied):
+        f, api, page, _ = record_page; p = start(f); other = start(f) if target == 'case' else None
+        open_results(page, api, f, p); generate(page); held = []; downloads = []
+>       page.on('download', downloads.append)
+
+tests/test_case_record_pack.py:240: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:8424: in on
+    return super().on(event=event, f=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:126: in on
+    self._impl_obj.on(event, self._wrap_handler(f))
+                             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:121: in _wrap_handler
+    return mapping.wrap_handler(handler)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._impl_to_api_mapping.ImplToApiMapping object at 0x7fc3abe50bc0>
+handler = <built-in method append of list object at 0x7fc3a8528340>
+
+    def wrap_handler(self, handler: Callable[..., Any]) -> Callable[..., None]:
+        def wrapper_func(*args: Any) -> Any:
+            parameters = inspect.signature(handler).parameters
+            has_varargs = any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in parameters.values()
+            )
+            arg_count = (
+                len(args)
+                if has_varargs
+                else sum(
+                    parameter.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                    for parameter in parameters.values()
+                )
+            )
+            return handler(
+                *list(map(lambda a: self.from_maybe_impl(a), args))[:arg_count]
+            )
+    
+        if inspect.ismethod(handler):
+            wrapper = getattr(handler.__self__, IMPL_ATTR + handler.__name__, None)
+            if not wrapper:
+                wrapper = wrapper_func
+                setattr(
+                    handler.__self__,
+                    IMPL_ATTR + handler.__name__,
+                    wrapper,
+                )
+            return wrapper
+    
+        wrapper = getattr(handler, IMPL_ATTR, None)
+        if not wrapper:
+            wrapper = wrapper_func
+>           setattr(handler, IMPL_ATTR, wrapper)
+E           AttributeError: 'builtin_function_or_method' object has no attribute '_pw_impl_instance_'
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_impl_to_api_mapping.py:157: AttributeError
+______ test_late_download_read_cannot_overwrite_new_context[False-draft] _______
+
+record_page = ((<parkweave.store.Store object at 0x7fc3a8bd6300>, <parkweave.store.Store object at 0x7fc3a9172cf0>, {'fixture-a': 'l...5d6d5920-2800-4e2d-b12d-7267f82f057b'>, PosixPath('/tmp/parkweave-case-record-dev-v2/test_late_download_read_cannot2'))
+target = 'draft', denied = False
+
+    @pytest.mark.parametrize('target', ['identity-aba', 'case', 'draft'])
+    @pytest.mark.parametrize('denied', [False, True])
+    def test_late_download_read_cannot_overwrite_new_context(record_page, target, denied):
+        f, api, page, _ = record_page; p = start(f); other = start(f) if target == 'case' else None
+        open_results(page, api, f, p); generate(page); held = []; downloads = []
+>       page.on('download', downloads.append)
+
+tests/test_case_record_pack.py:240: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:8424: in on
+    return super().on(event=event, f=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:126: in on
+    self._impl_obj.on(event, self._wrap_handler(f))
+                             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:121: in _wrap_handler
+    return mapping.wrap_handler(handler)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._impl_to_api_mapping.ImplToApiMapping object at 0x7fc3abe50bc0>
+handler = <built-in method append of list object at 0x7fc39bcd6900>
+
+    def wrap_handler(self, handler: Callable[..., Any]) -> Callable[..., None]:
+        def wrapper_func(*args: Any) -> Any:
+            parameters = inspect.signature(handler).parameters
+            has_varargs = any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in parameters.values()
+            )
+            arg_count = (
+                len(args)
+                if has_varargs
+                else sum(
+                    parameter.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                    for parameter in parameters.values()
+                )
+            )
+            return handler(
+                *list(map(lambda a: self.from_maybe_impl(a), args))[:arg_count]
+            )
+    
+        if inspect.ismethod(handler):
+            wrapper = getattr(handler.__self__, IMPL_ATTR + handler.__name__, None)
+            if not wrapper:
+                wrapper = wrapper_func
+                setattr(
+                    handler.__self__,
+                    IMPL_ATTR + handler.__name__,
+                    wrapper,
+                )
+            return wrapper
+    
+        wrapper = getattr(handler, IMPL_ATTR, None)
+        if not wrapper:
+            wrapper = wrapper_func
+>           setattr(handler, IMPL_ATTR, wrapper)
+E           AttributeError: 'builtin_function_or_method' object has no attribute '_pw_impl_instance_'
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_impl_to_api_mapping.py:157: AttributeError
+___ test_late_download_read_cannot_overwrite_new_context[True-identity-aba] ____
+
+record_page = ((<parkweave.store.Store object at 0x7fc3a8c7c8f0>, <parkweave.store.Store object at 0x7fc3a91fcec0>, {'fixture-a': 'k...13aea0b4-b1f8-48c1-ac4b-5b893c71095a'>, PosixPath('/tmp/parkweave-case-record-dev-v2/test_late_download_read_cannot3'))
+target = 'identity-aba', denied = True
+
+    @pytest.mark.parametrize('target', ['identity-aba', 'case', 'draft'])
+    @pytest.mark.parametrize('denied', [False, True])
+    def test_late_download_read_cannot_overwrite_new_context(record_page, target, denied):
+        f, api, page, _ = record_page; p = start(f); other = start(f) if target == 'case' else None
+        open_results(page, api, f, p); generate(page); held = []; downloads = []
+>       page.on('download', downloads.append)
+
+tests/test_case_record_pack.py:240: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:8424: in on
+    return super().on(event=event, f=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:126: in on
+    self._impl_obj.on(event, self._wrap_handler(f))
+                             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:121: in _wrap_handler
+    return mapping.wrap_handler(handler)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._impl_to_api_mapping.ImplToApiMapping object at 0x7fc3abe50bc0>
+handler = <built-in method append of list object at 0x7fc3a85c2400>
+
+    def wrap_handler(self, handler: Callable[..., Any]) -> Callable[..., None]:
+        def wrapper_func(*args: Any) -> Any:
+            parameters = inspect.signature(handler).parameters
+            has_varargs = any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in parameters.values()
+            )
+            arg_count = (
+                len(args)
+                if has_varargs
+                else sum(
+                    parameter.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                    for parameter in parameters.values()
+                )
+            )
+            return handler(
+                *list(map(lambda a: self.from_maybe_impl(a), args))[:arg_count]
+            )
+    
+        if inspect.ismethod(handler):
+            wrapper = getattr(handler.__self__, IMPL_ATTR + handler.__name__, None)
+            if not wrapper:
+                wrapper = wrapper_func
+                setattr(
+                    handler.__self__,
+                    IMPL_ATTR + handler.__name__,
+                    wrapper,
+                )
+            return wrapper
+    
+        wrapper = getattr(handler, IMPL_ATTR, None)
+        if not wrapper:
+            wrapper = wrapper_func
+>           setattr(handler, IMPL_ATTR, wrapper)
+E           AttributeError: 'builtin_function_or_method' object has no attribute '_pw_impl_instance_'
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_impl_to_api_mapping.py:157: AttributeError
+_______ test_late_download_read_cannot_overwrite_new_context[True-case] ________
+
+record_page = ((<parkweave.store.Store object at 0x7fc39bdd3440>, <parkweave.store.Store object at 0x7fc3a91fe090>, {'fixture-a': 'g...7518be62-6861-4cf1-bac1-4e2ca83bb4b7'>, PosixPath('/tmp/parkweave-case-record-dev-v2/test_late_download_read_cannot4'))
+target = 'case', denied = True
+
+    @pytest.mark.parametrize('target', ['identity-aba', 'case', 'draft'])
+    @pytest.mark.parametrize('denied', [False, True])
+    def test_late_download_read_cannot_overwrite_new_context(record_page, target, denied):
+        f, api, page, _ = record_page; p = start(f); other = start(f) if target == 'case' else None
+        open_results(page, api, f, p); generate(page); held = []; downloads = []
+>       page.on('download', downloads.append)
+
+tests/test_case_record_pack.py:240: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:8424: in on
+    return super().on(event=event, f=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:126: in on
+    self._impl_obj.on(event, self._wrap_handler(f))
+                             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:121: in _wrap_handler
+    return mapping.wrap_handler(handler)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._impl_to_api_mapping.ImplToApiMapping object at 0x7fc3abe50bc0>
+handler = <built-in method append of list object at 0x7fc3a8184100>
+
+    def wrap_handler(self, handler: Callable[..., Any]) -> Callable[..., None]:
+        def wrapper_func(*args: Any) -> Any:
+            parameters = inspect.signature(handler).parameters
+            has_varargs = any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in parameters.values()
+            )
+            arg_count = (
+                len(args)
+                if has_varargs
+                else sum(
+                    parameter.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                    for parameter in parameters.values()
+                )
+            )
+            return handler(
+                *list(map(lambda a: self.from_maybe_impl(a), args))[:arg_count]
+            )
+    
+        if inspect.ismethod(handler):
+            wrapper = getattr(handler.__self__, IMPL_ATTR + handler.__name__, None)
+            if not wrapper:
+                wrapper = wrapper_func
+                setattr(
+                    handler.__self__,
+                    IMPL_ATTR + handler.__name__,
+                    wrapper,
+                )
+            return wrapper
+    
+        wrapper = getattr(handler, IMPL_ATTR, None)
+        if not wrapper:
+            wrapper = wrapper_func
+>           setattr(handler, IMPL_ATTR, wrapper)
+E           AttributeError: 'builtin_function_or_method' object has no attribute '_pw_impl_instance_'
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_impl_to_api_mapping.py:157: AttributeError
+_______ test_late_download_read_cannot_overwrite_new_context[True-draft] _______
+
+record_page = ((<parkweave.store.Store object at 0x7fc39bd93c80>, <parkweave.store.Store object at 0x7fc3a8e0ae40>, {'fixture-a': 'n...aaf0a8e3-ea7b-4df6-8afa-86f4bd60c00c'>, PosixPath('/tmp/parkweave-case-record-dev-v2/test_late_download_read_cannot5'))
+target = 'draft', denied = True
+
+    @pytest.mark.parametrize('target', ['identity-aba', 'case', 'draft'])
+    @pytest.mark.parametrize('denied', [False, True])
+    def test_late_download_read_cannot_overwrite_new_context(record_page, target, denied):
+        f, api, page, _ = record_page; p = start(f); other = start(f) if target == 'case' else None
+        open_results(page, api, f, p); generate(page); held = []; downloads = []
+>       page.on('download', downloads.append)
+
+tests/test_case_record_pack.py:240: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:8424: in on
+    return super().on(event=event, f=f)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:126: in on
+    self._impl_obj.on(event, self._wrap_handler(f))
+                             ^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:121: in _wrap_handler
+    return mapping.wrap_handler(handler)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._impl_to_api_mapping.ImplToApiMapping object at 0x7fc3abe50bc0>
+handler = <built-in method append of list object at 0x7fc3ab00a240>
+
+    def wrap_handler(self, handler: Callable[..., Any]) -> Callable[..., None]:
+        def wrapper_func(*args: Any) -> Any:
+            parameters = inspect.signature(handler).parameters
+            has_varargs = any(
+                parameter.kind == inspect.Parameter.VAR_POSITIONAL
+                for parameter in parameters.values()
+            )
+            arg_count = (
+                len(args)
+                if has_varargs
+                else sum(
+                    parameter.kind
+                    in (
+                        inspect.Parameter.POSITIONAL_ONLY,
+                        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    )
+                    for parameter in parameters.values()
+                )
+            )
+            return handler(
+                *list(map(lambda a: self.from_maybe_impl(a), args))[:arg_count]
+            )
+    
+        if inspect.ismethod(handler):
+            wrapper = getattr(handler.__self__, IMPL_ATTR + handler.__name__, None)
+            if not wrapper:
+                wrapper = wrapper_func
+                setattr(
+                    handler.__self__,
+                    IMPL_ATTR + handler.__name__,
+                    wrapper,
+                )
+            return wrapper
+    
+        wrapper = getattr(handler, IMPL_ATTR, None)
+        if not wrapper:
+            wrapper = wrapper_func
+>           setattr(handler, IMPL_ATTR, wrapper)
+E           AttributeError: 'builtin_function_or_method' object has no attribute '_pw_impl_instance_'
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_impl_to_api_mapping.py:157: AttributeError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_case_record_pack.py::test_actual_original_entry_all_outputs_download_and_restart
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_case_record_pack.py::test_actual_original_entry_all_outputs_download_and_restart
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_record_pack.py::test_same_revision_source_change_refuses_old_download_then_new_read_keeps_history
+FAILED tests/test_case_record_pack.py::test_actual_current_revoke_before_download_clears_private_memory[READ]
+FAILED tests/test_case_record_pack.py::test_actual_current_revoke_before_download_clears_private_memory[PREPARE]
+FAILED tests/test_case_record_pack.py::test_late_download_read_cannot_overwrite_new_context[False-identity-aba]
+FAILED tests/test_case_record_pack.py::test_late_download_read_cannot_overwrite_new_context[False-case]
+FAILED tests/test_case_record_pack.py::test_late_download_read_cannot_overwrite_new_context[False-draft]
+FAILED tests/test_case_record_pack.py::test_late_download_read_cannot_overwrite_new_context[True-identity-aba]
+FAILED tests/test_case_record_pack.py::test_late_download_read_cannot_overwrite_new_context[True-case]
+FAILED tests/test_case_record_pack.py::test_late_download_read_cannot_overwrite_new_context[True-draft]
+9 failed, 17 passed, 4 warnings in 330.76s (0:05:30)

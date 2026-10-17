@@ -1,0 +1,194 @@
+{
+  "windows": {
+    "dev-v1": {
+      "actual": {
+        "testcases": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 35.644
+      },
+      "description": "1 actual ordinary entry/generation/download/restart PASS before expanded test module; no frozen source claim"
+    },
+    "dev-v2": {
+      "actual": {
+        "testcases": 26,
+        "failures": 9,
+        "errors": 0,
+        "skipped": 0,
+        "seconds": 330.742
+      },
+      "description": "9 FAIL from registering built-in list.append as Playwright callback, before intended negative scenarios ran; observer changed to lambda; original failure and source snapshot retained"
+    },
+    "edge-v3": {
+      "testcases": 11,
+      "failures": 0,
+      "errors": 0,
+      "seconds": 133.557,
+      "description": "11 affected boundary cases PASS;17 deselected;development only"
+    },
+    "dev-v4": {
+      "testcases": 3,
+      "failures": 0,
+      "errors": 0,
+      "seconds": 55.267,
+      "description": "3 source/transport additional development cases PASS;28 deselected"
+    },
+    "final-v1": {
+      "source_sha": "637c66ab0bb06bd7ba4af674ea9eaf146b9180b2",
+      "testcases": 179,
+      "passed": 161,
+      "failures": 18,
+      "errors": 0,
+      "skipped": 0,
+      "pytest_seconds": 1229.22,
+      "description": "First complete frozen window; new31 allPASS; 15 old Node harness classList failures,2 material cold-recovery stale context errors,1 2s fixture expiry before intended lock wait",
+      "failures_detail": [
+        {
+          "classname": "tests.test_case_goal_results",
+          "name": "test_resource_window_expiry_during_actual_last_source_row_lock_wait",
+          "failure": "AssertionError: assert 'NEEDS_RECHECK' == 'VERIFIED'\n  \n  - VERIFIED\n  + NEEDS_RECHECK"
+        },
+        {
+          "classname": "tests.test_case_goal_results_browser",
+          "name": "test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle[False-material]",
+          "failure": "playwright._impl._errors.Error: Page.evaluate: Error: 已离开原事项\n    at requirePrepCurrent (http://127.0.0.1:47105/:345:72)\n    at loadPreparation (http://127.0.0.1:47105/:360:5911)\n    at async http://127.0.0.1:47105/:55:13\n    at async <anonymous>:337:30"
+        },
+        {
+          "classname": "tests.test_case_goal_results_browser",
+          "name": "test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle[True-material]",
+          "failure": "playwright._impl._errors.Error: Page.evaluate: Error: 已离开原事项\n    at requirePrepCurrent (http://127.0.0.1:49399/:345:72)\n    at loadPreparation (http://127.0.0.1:49399/:360:5911)\n    at async http://127.0.0.1:49399/:55:13\n    at async <anonymous>:337:30"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview",
+          "name": "test_original_page_second_unsupported_goal_opens_exact_selected_goal[supported]",
+          "failure": "AssertionError: evalmachine.<anonymous>:1\n  preparationView.preparation.case_id\n                  ^\n  \n  TypeError: Cannot read properties of null (reading 'preparation')\n      at evalmachine.<anonymous>:1:17\n      at Script.runInContext (node:vm:149:12)\n      at Object.runInContext (node:vm:301:6)\n      at Object.read (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:24:121)\n      at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:56:59\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n  \nassert 1 == 0\n +  where 1 = wait(timeout=15)\n +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview",
+          "name": "test_original_page_second_unsupported_goal_opens_exact_selected_goal[revoke]",
+          "failure": "AssertionError: TypeError: Cannot read properties of undefined (reading 'remove')\n      at clearCaseCancellation (evalmachine.<anonymous>:939:166)\n      at clearPreparation (evalmachine.<anonymous>:324:154)\n      at openGoalResult (evalmachine.<anonymous>:2007:52)\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n      at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:58:180\n  \nassert 1 == 0\n +  where 1 = wait(timeout=15)\n +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview",
+          "name": "test_original_page_second_unsupported_goal_opens_exact_selected_goal[late_aux]",
+          "failure": "AssertionError: Error: page response not ready\n      at waitFor (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:27:106)\n      at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:60:254\n  \nassert 1 == 0\n +  where 1 = wait(timeout=15)\n +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview",
+          "name": "test_original_page_second_unsupported_goal_opens_exact_selected_goal[resource]",
+          "failure": "AssertionError: evalmachine.<anonymous>:1\n  caseResourceView.case_id\n                   ^\n  \n  TypeError: Cannot read properties of null (reading 'case_id')\n      at evalmachine.<anonymous>:1:18\n      at Script.runInContext (node:vm:149:12)\n      at Object.runInContext (node:vm:301:6)\n      at Object.read (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:24:121)\n      at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:55:58\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n  \nassert 1 == 0\n +  where 1 = wait(timeout=15)\n +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview",
+          "name": "test_original_page_second_unsupported_goal_opens_exact_selected_goal[late_resource]",
+          "failure": "AssertionError: Error: page response not ready\n      at waitFor (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:27:106)\n      at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:60:254\n  \nassert 1 == 0\n +  where 1 = wait(timeout=15)\n +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview",
+          "name": "test_original_page_second_unsupported_goal_opens_exact_selected_goal[dispatch]",
+          "failure": "AssertionError: evalmachine.<anonymous>:1\n  dispatchView.case_id\n               ^\n  \n  TypeError: Cannot read properties of null (reading 'case_id')\n      at evalmachine.<anonymous>:1:14\n      at Script.runInContext (node:vm:149:12)\n      at Object.runInContext (node:vm:301:6)\n      at Object.read (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:24:121)\n      at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:52:58\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n  \nassert 1 == 0\n +  where 1 = wait(timeout=15)\n +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview",
+          "name": "test_original_page_second_unsupported_goal_opens_exact_selected_goal[receipt_blocked]",
+          "failure": "AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert(v)\n  \n      at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)\n      at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:54:93\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n  \nassert 1 == 0\n +  where 1 = wait(timeout=15)\n +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview_denied",
+          "name": "test_original_page_target_denial_clears_current_scope_only[manual_deny]",
+          "failure": "AssertionError: TypeError: Cannot read properties of undefined (reading 'remove')\n      at clearCaseCancellation (evalmachine.<anonymous>:939:166)\n      at clearPreparation (evalmachine.<anonymous>:324:154)\n      at openGoalResult (evalmachine.<anonymous>:2007:52)\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n      at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:45:332\n  \nassert 1 == 0"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview_denied",
+          "name": "test_original_page_target_denial_clears_current_scope_only[support_deny]",
+          "failure": "AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert(v)\n  \n      at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)\n      at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:46:4\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n  \nassert 1 == 0"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview_denied",
+          "name": "test_original_page_target_denial_clears_current_scope_only[support_deny_aux]",
+          "failure": "AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert(v)\n  \n      at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)\n      at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:46:4\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n  \nassert 1 == 0"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview_denied",
+          "name": "test_original_page_target_denial_clears_current_scope_only[support_deny_late]",
+          "failure": "AssertionError: Error: page response not ready\n      at waitFor (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:27:106)\n      at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:40:12\n  \nassert 1 == 0"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview_denied",
+          "name": "test_original_page_target_denial_clears_current_scope_only[support_deny_aux_late]",
+          "failure": "AssertionError: Error: page response not ready\n      at waitFor (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:27:106)\n      at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:40:12\n  \nassert 1 == 0"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview_denied",
+          "name": "test_original_page_target_denial_clears_current_scope_only[support_deny_fact]",
+          "failure": "AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert(v)\n  \n      at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)\n      at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:46:4\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n  \nassert 1 == 0"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview_denied",
+          "name": "test_original_page_target_denial_clears_current_scope_only[support_deny_fact_late]",
+          "failure": "AssertionError: Error: page response not ready\n      at waitFor (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:27:106)\n      at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:40:12\n  \nassert 1 == 0"
+        },
+        {
+          "classname": "tests.test_multi_goal_overview_denied",
+          "name": "test_original_page_target_denial_clears_current_scope_only[support_field_denied]",
+          "failure": "AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n  \n    assert(v)\n  \n      at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)\n      at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:45:136\n      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n  \nassert 1 == 0"
+        }
+      ]
+    },
+    "repair-v2": {
+      "testcases": 18,
+      "passed": 18,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "pytest_seconds": 103.14,
+      "description": "Exactly18 first-full-window failed nodes; production cold-recovery guard, faithful DOMclassList, actual expiry lock test stabilized; development scope/source snapshot retained"
+    },
+    "final-v2": {
+      "source_sha": "8842a38a65a2b558939a6f26a41b9b2c95c86c9a",
+      "testcases": 179,
+      "unique": 179,
+      "passed": 179,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "pytest_seconds": 1291.39,
+      "junit_seconds": 1291.378,
+      "new_unique_included": 31,
+      "source_drift": 0,
+      "description": "Same9 complete modules on tracked immutable repaired source; no added earlier-window or independent probe counts"
+    }
+  },
+  "review_found_before_freeze": [
+    "Unadopted unsupported goal had no human fields; export now preserves absence instead of inventing NOT_REQUESTED; partial structure still refuses",
+    "Original source trace SHA retained as original endpoint reference; full sanitized projection SHA is independently recomputable",
+    "case/late test switches original in-page preparation entry rather than a navigation that cancels the old request"
+  ],
+  "counts_never_added": true,
+  "uncommitted_diff_hash_excludes_new_untracked_test": "Development invocation metadata contains base HEAD/diff only; dev-v2 and edge-v3 source snapshots record actual untracked test and product files. Final source must be tracked/frozen.",
+  "helper_compile_failure": {
+    "file": "verify_delivery-before-syntax-fix.py.txt",
+    "details": "helper-compile-failure.json",
+    "description": "Extra bracket in private post-push verifier; compile-only failed before execution, fixed and compiled; no Git or remote operation attempted by bad helper"
+  },
+  "independent_review_auxiliary_failure": {
+    "reviewer": "/root/review_material_import",
+    "source_sha": "8842a38a65a2b558939a6f26a41b9b2c95c86c9a",
+    "kind": "review auxiliary diagnostic script KeyError, read-only, not product or test failure",
+    "exit_code": 1,
+    "exact_command": "independent-prepost-command.txt body before correction: replace final print(hashlib.sha256(Path(p).read_bytes()).hexdigest()+'  '+p) with print(observed[p]+'  '+p)",
+    "cause": "contract is separate from728manifest; indexed observed mapping for contract after successful728comparison",
+    "correction": "direct per-file hash when printing extra contract; corrected before exit0 then A/B exit0 then after exit0",
+    "no_source_or_evidence_written_by_reviewer": true,
+    "actual_tool_order": [
+      "38e0a4 initial aux exit1",
+      "02d851 corrected before exit0",
+      "b0a1dc A exit0",
+      "48912f B exit0",
+      "a4eb35 after exit0"
+    ],
+    "stdout_stderr_kind": "reviewer-reported merged output transcription",
+    "not_added_to179": true
+  }
+}

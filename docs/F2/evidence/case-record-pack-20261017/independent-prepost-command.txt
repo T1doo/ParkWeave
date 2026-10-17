@@ -1,0 +1,13 @@
+ROOT HEADER: Reviewer-reported actual before command. After command changed only phase literal before to after. No reexecution by root.
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python - <<'PY'
+import hashlib,json,subprocess
+from pathlib import Path
+m=Path('.runtime/case-record-pack/freeze.json'); manifest=json.loads(m.read_text()); expected='8842a38a65a2b558939a6f26a41b9b2c95c86c9a'
+assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==manifest['source_sha']==expected
+observed={p:hashlib.sha256(Path(p).read_bytes()).hexdigest() if Path(p).is_file() else None for p in manifest['files']}
+mismatches=[p for p,h in observed.items() if h!=manifest['files'][p]]
+assert len(observed)==728 and not mismatches
+print(json.dumps({'phase':'before','source_sha':expected,'paths_checked':len(observed),'mismatches':mismatches,'all_paths_hash_map_sha256':hashlib.sha256(json.dumps(observed,sort_keys=True,separators=(',',':')).encode()).hexdigest(),'manifest_sha256':hashlib.sha256(m.read_bytes()).hexdigest()}))
+for p in ['src/parkweave/web.html','src/parkweave/case_goal_results.py','tests/test_case_record_pack.py','tests/test_case_goal_results_browser.py','tests/multi_goal_overview_actual.js','tests/test_case_goal_results.py','docs/F2/CaseRecordPackContract-20261017.md']:
+ print(hashlib.sha256(Path(p).read_bytes()).hexdigest()+'  '+p)
+PY

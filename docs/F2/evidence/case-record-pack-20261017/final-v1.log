@@ -1,0 +1,953 @@
+........................................................................ [ 40%]
+..F........................F.F.....................F..F..F..FFF.FF...FFF [ 80%]
+FFFF...............................                                      [100%]
+=================================== FAILURES ===================================
+_____ test_resource_window_expiry_during_actual_last_source_row_lock_wait ______
+
+link_fixture = (<parkweave.store.Store object at 0x7fb4ea2da4b0>, <parkweave.store.Store object at 0x7fb4ea2daf00>, {'fixture-a': 'OQ...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7fb4e317af60>)
+
+    def test_resource_window_expiry_during_actual_last_source_row_lock_wait(link_fixture):
+     import time
+     f=link_fixture;p,g,d,s=complete(f,local=True)
+     with f[1].connect() as c:c.execute("UPDATE synthetic_resource_holds SET starts_at=clock_timestamp()-interval '1 minute',ends_at=clock_timestamp()+interval '2 seconds' WHERE id IN (SELECT hold_id FROM synthetic_resource_combination_members WHERE combination_id=%s)",(g['id'],))
+     for a in ('P2','P3','P4'):verified(f,p,a)
+>    assert local_act(f,p,local_read(f,p).json(),'REVALIDATE').status_code==200;verified(f,p,'P5');assert get(f,p).json()['state']=='LOCAL_OUTPUTS_VERIFIED';before=snapshot(f)
+                                                                                ^^^^^^^^^^^^^^^^^^
+
+tests/test_case_goal_results.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7fb4ea2da4b0>, <parkweave.store.Store object at 0x7fb4ea2daf00>, {'fixture-a': 'OQ...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7fb4e317af60>)
+p = {'preparation_id': '4996b2c5-d6d8-48c1-afc5-27751780b42f', 'case_id': 'a53a868e-c8d6-4a0d-b6e2-bc0f10fc4efa', 'run_id': '76bd4c12-8464-4a27-afd2-df56e713e776', 'revision': 11, ...}
+adapter = 'P5'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+        assert r.status_code == 200, r.text
+>       assert step(r.json(), adapter)['state'] == 'VERIFIED'
+E       AssertionError: assert 'NEEDS_RECHECK' == 'VERIFIED'
+E         
+E         - VERIFIED
+E         + NEEDS_RECHECK
+
+tests/test_service_case_steps.py:72: AssertionError
+_ test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle[False-material] _
+
+goal_page = ((<parkweave.store.Store object at 0x7fb4e2505ac0>, <parkweave.store.Store object at 0x7fb4e33ac6e0>, {'fixture-a': 'T...xQG3qZLQ', ...}, <starlette.testclient.TestClient object at 0x7fb4e3250e00>), <Page url='http://127.0.0.1:47105/'>, [])
+kind = 'material', denied = False
+
+    @pytest.mark.parametrize('kind',['objection','material'])
+    @pytest.mark.parametrize('denied',[False,True])
+    def test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle(goal_page,kind,denied):
+     f,page,errors=goal_page;p=start(f);verified(f,p,'P1');open_case(page,f,p);read_page(page);page.evaluate("async()=>{await servicePlanOpen('materials')}");page.wait_for_function('()=>objectionView!==null&&preparationView!==null')
+     assert page.locator('#goal-results-panel').is_visible();held=[]
+     def delay(route):held.append((route,None if denied else route.fetch()))
+     page.route('**/api/preparations/'+p['preparation_id']+'/goal-results',delay);page.locator('#goal-results-read').click();wait_held(page,held)
+     def lose(route):
+      if route.request.method!='POST':route.continue_();return
+      response=route.fetch();assert response.status==200;route.abort('failed')
+     suffix='/material-objections' if kind=='objection' else '/commands';page.route('**/api/preparations/'+p['preparation_id']+suffix,lose)
+     if kind=='objection':
+      page.locator('#objection-reason').fill('SYNTHETIC PRIVATE_INTERLEAVED_OBJECTION');page.locator('#objection-raise').click();page.wait_for_function('()=>objectionPending!==null&&!objectionBusy')
+     else:
+      page.locator('#prep-slot').select_option('material_outline');page.locator('#prep-text').fill('SYNTHETIC PRIVATE_INTERLEAVED_MATERIAL');page.locator('#prep-source-label').fill('SYNTHETIC interleaved v2');page.locator('#prep-evidence button').click();page.wait_for_function('()=>prepCommandPending?.state==="UNKNOWN"')
+     stored=page.evaluate('JSON.stringify({...localStorage})');assert stored!='{}' and 'PRIVATE_INTERLEAVED' not in stored and f[2]['fixture-a'] not in stored
+     if denied:
+      with f[1].connect() as c:
+       f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute("UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND capability='READ'")
+     before=snapshot(f);route,response=held[0]
+     if denied:response=route.fetch();assert response.status==403
+     else:assert response.status==200 and response.json()['state']=='LOCAL_OUTPUTS_VERIFIED'
+     route.fulfill(response=response);page.wait_for_timeout(150);assert page.evaluate('goalResultView') is None and not errors and snapshot(f)==before
+     assert page.evaluate('JSON.stringify({...localStorage})')==stored
+     if denied:
+      assert page.evaluate('preparationView===null&&objectionView===null&&prepCommandPending===null&&objectionPending===null') and page.locator('#prep-detail').is_hidden() and page.locator('#goal-results-panel').is_hidden();assert page.locator('#objection-reason').input_value()=='' and page.locator('#prep-text').input_value()=='' and '访问权已失效' in page.locator('#page-feedback').inner_text()
+     else:
+      assert page.locator('#goal-results-items').inner_text()=='' and '保持未核验' in page.locator('#goal-results-error').inner_text() and page.locator('#prep-detail').is_visible()
+      if kind=='objection':assert page.evaluate('objectionPending!==null') and 'PRIVATE_INTERLEAVED_OBJECTION' in page.locator('#objection-reason').input_value()
+      else:assert page.evaluate('prepCommandPending?.state==="UNKNOWN"') and 'PRIVATE_INTERLEAVED_MATERIAL' in page.locator('#prep-text').input_value()
+     if kind=='material':
+      handle=next(iter(json.loads(stored).values()));handle=json.loads(handle);assert set(handle)=={'v','id','key','revision','expires'}
+      assert page.evaluate('(expires)=>expires>Date.now()&&expires<=Date.now()+86400000',handle['expires'])
+      if denied:
+       with f[1].connect() as c:
+        f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute("UPDATE capability_grants SET active=true,revision=revision+1 WHERE principal_id='fixture-a' AND capability='READ'")
+      before=snapshot(f);requests=[];recoveries=[];page.on('request',lambda r:requests.append(r.method));page.on('response',lambda r:recoveries.append(r.json()) if r.url.endswith('/command-recovery') and r.status==200 else None)
+      page.reload();assert page.locator('#token').input_value()=='';assert page.evaluate('preparationView===null&&prepCommandPending===null')
+>     page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadPreparation(id,{role:"enterprise_operator"})',p['preparation_id']);page.wait_for_function('()=>prepRecoveryHandle?.observed&&!prepRecoveryChecking')
+                                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_goal_results_browser.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:9385: in evaluate
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:472: in evaluate
+    return await self._main_frame.evaluate(expression, arg)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:345: in evaluate
+    await self._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7fb4e34bd220>
+cb = <function Channel.send.<locals>.<lambda> at 0x7fb4e3e5c180>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: Page.evaluate: Error: 已离开原事项
+E               at requirePrepCurrent (http://127.0.0.1:47105/:345:72)
+E               at loadPreparation (http://127.0.0.1:47105/:360:5911)
+E               at async http://127.0.0.1:47105/:55:13
+E               at async <anonymous>:337:30
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+_ test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle[True-material] _
+
+goal_page = ((<parkweave.store.Store object at 0x7fb4e288d0d0>, <parkweave.store.Store object at 0x7fb4e28e9c10>, {'fixture-a': 'b...-XCqZZc4', ...}, <starlette.testclient.TestClient object at 0x7fb4e2d71dc0>), <Page url='http://127.0.0.1:49399/'>, [])
+kind = 'material', denied = True
+
+    @pytest.mark.parametrize('kind',['objection','material'])
+    @pytest.mark.parametrize('denied',[False,True])
+    def test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle(goal_page,kind,denied):
+     f,page,errors=goal_page;p=start(f);verified(f,p,'P1');open_case(page,f,p);read_page(page);page.evaluate("async()=>{await servicePlanOpen('materials')}");page.wait_for_function('()=>objectionView!==null&&preparationView!==null')
+     assert page.locator('#goal-results-panel').is_visible();held=[]
+     def delay(route):held.append((route,None if denied else route.fetch()))
+     page.route('**/api/preparations/'+p['preparation_id']+'/goal-results',delay);page.locator('#goal-results-read').click();wait_held(page,held)
+     def lose(route):
+      if route.request.method!='POST':route.continue_();return
+      response=route.fetch();assert response.status==200;route.abort('failed')
+     suffix='/material-objections' if kind=='objection' else '/commands';page.route('**/api/preparations/'+p['preparation_id']+suffix,lose)
+     if kind=='objection':
+      page.locator('#objection-reason').fill('SYNTHETIC PRIVATE_INTERLEAVED_OBJECTION');page.locator('#objection-raise').click();page.wait_for_function('()=>objectionPending!==null&&!objectionBusy')
+     else:
+      page.locator('#prep-slot').select_option('material_outline');page.locator('#prep-text').fill('SYNTHETIC PRIVATE_INTERLEAVED_MATERIAL');page.locator('#prep-source-label').fill('SYNTHETIC interleaved v2');page.locator('#prep-evidence button').click();page.wait_for_function('()=>prepCommandPending?.state==="UNKNOWN"')
+     stored=page.evaluate('JSON.stringify({...localStorage})');assert stored!='{}' and 'PRIVATE_INTERLEAVED' not in stored and f[2]['fixture-a'] not in stored
+     if denied:
+      with f[1].connect() as c:
+       f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute("UPDATE capability_grants SET active=false,revision=revision+1 WHERE principal_id='fixture-a' AND capability='READ'")
+     before=snapshot(f);route,response=held[0]
+     if denied:response=route.fetch();assert response.status==403
+     else:assert response.status==200 and response.json()['state']=='LOCAL_OUTPUTS_VERIFIED'
+     route.fulfill(response=response);page.wait_for_timeout(150);assert page.evaluate('goalResultView') is None and not errors and snapshot(f)==before
+     assert page.evaluate('JSON.stringify({...localStorage})')==stored
+     if denied:
+      assert page.evaluate('preparationView===null&&objectionView===null&&prepCommandPending===null&&objectionPending===null') and page.locator('#prep-detail').is_hidden() and page.locator('#goal-results-panel').is_hidden();assert page.locator('#objection-reason').input_value()=='' and page.locator('#prep-text').input_value()=='' and '访问权已失效' in page.locator('#page-feedback').inner_text()
+     else:
+      assert page.locator('#goal-results-items').inner_text()=='' and '保持未核验' in page.locator('#goal-results-error').inner_text() and page.locator('#prep-detail').is_visible()
+      if kind=='objection':assert page.evaluate('objectionPending!==null') and 'PRIVATE_INTERLEAVED_OBJECTION' in page.locator('#objection-reason').input_value()
+      else:assert page.evaluate('prepCommandPending?.state==="UNKNOWN"') and 'PRIVATE_INTERLEAVED_MATERIAL' in page.locator('#prep-text').input_value()
+     if kind=='material':
+      handle=next(iter(json.loads(stored).values()));handle=json.loads(handle);assert set(handle)=={'v','id','key','revision','expires'}
+      assert page.evaluate('(expires)=>expires>Date.now()&&expires<=Date.now()+86400000',handle['expires'])
+      if denied:
+       with f[1].connect() as c:
+        f[1].lock_principal(c,'fixture-a',exclusive=True);c.execute("UPDATE capability_grants SET active=true,revision=revision+1 WHERE principal_id='fixture-a' AND capability='READ'")
+      before=snapshot(f);requests=[];recoveries=[];page.on('request',lambda r:requests.append(r.method));page.on('response',lambda r:recoveries.append(r.json()) if r.url.endswith('/command-recovery') and r.status==200 else None)
+      page.reload();assert page.locator('#token').input_value()=='';assert page.evaluate('preparationView===null&&prepCommandPending===null')
+>     page.locator('#token').fill(f[2]['fixture-a']);page.locator('#token').dispatch_event('input');page.evaluate('(id)=>loadPreparation(id,{role:"enterprise_operator"})',p['preparation_id']);page.wait_for_function('()=>prepRecoveryHandle?.observed&&!prepRecoveryChecking')
+                                                                                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_goal_results_browser.py:154: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:9385: in evaluate
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_page.py:472: in evaluate
+    return await self._main_frame.evaluate(expression, arg)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:345: in evaluate
+    await self._channel.send(
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7fb4e85a8d10>
+cb = <function Channel.send.<locals>.<lambda> at 0x7fb4e2ae7600>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.Error: Page.evaluate: Error: 已离开原事项
+E               at requirePrepCurrent (http://127.0.0.1:49399/:345:72)
+E               at loadPreparation (http://127.0.0.1:49399/:360:5911)
+E               at async http://127.0.0.1:49399/:55:13
+E               at async <anonymous>:337:30
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: Error
+_ test_original_page_second_unsupported_goal_opens_exact_selected_goal[supported] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e8752450>, 'owner': <parkweave.store.Store object at 0x7fb4e3037e90>,...jVjbPIMkPylkLS0GArYjsQ_lgPj20'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e29db770>, ...}
+mode = 'supported'
+
+    @pytest.mark.parametrize('mode',['exact','supported','saved_button','source_switch','revoke','late_list','late_manual','late_aux','plan_switch','switch_goal','resource','late_resource','dispatch','localcase','receipt_blocked'])
+    def test_original_page_second_unsupported_goal_opens_exact_selected_goal(template_consumption,mode):
+        f=template_consumption
+        if mode in ('resource','late_resource','dispatch','localcase','receipt_blocked'):
+            from test_template_consumer import body as intake_body
+            from test_template_consumer_planning import ready,preview,adoption,post as adopt_post
+            data=intake_body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_CASE_RECORD_RECHECK',A,B] if mode in ('dispatch','localcase','receipt_blocked') else ['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION',A,B];row=ready(f,data);v=preview(f,row).json();assert adopt_post(f,row,'adopt',{**adoption(v),'partial_adoption':True},'resource-overview-adopt').status_code==200
+        else:row=private_case(f)
+        confirmed(f,row);baseline=products(f['owner'],True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg and 'result' not in msg:
+                    if msg.get('replace_plan'):
+                        from test_manual_goal_privacy import replace_plan
+                        replace_plan(f,row)
+                    elif msg.get('change_source'):
+                        act(f,row,'REQUEST',goal=B)
+                    elif msg.get('revoke'):
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    else:raise AssertionError(msg)
+                    baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET';r=f['client'].get(q['path'],headers=headers(f));assert r.status_code in (200,403),r.text;assert products(f['owner'])=={k:v for k,v in baseline.items() if k!='authorization_audit'}
+                messages.append(dict(path=q['path'],status=r.status_code));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: evalmachine.<anonymous>:1
+E             preparationView.preparation.case_id
+E                             ^
+E             
+E             TypeError: Cannot read properties of null (reading 'preparation')
+E                 at evalmachine.<anonymous>:1:17
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:24:121)
+E                 at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:56:59
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait
+
+tests/test_multi_goal_overview.py:83: AssertionError
+_ test_original_page_second_unsupported_goal_opens_exact_selected_goal[revoke] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e85ca180>, 'owner': <parkweave.store.Store object at 0x7fb4e2f72600>,...NTjO0GuRsvfJj1hY0vJtuQXW7bB9M'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e017b050>, ...}
+mode = 'revoke'
+
+    @pytest.mark.parametrize('mode',['exact','supported','saved_button','source_switch','revoke','late_list','late_manual','late_aux','plan_switch','switch_goal','resource','late_resource','dispatch','localcase','receipt_blocked'])
+    def test_original_page_second_unsupported_goal_opens_exact_selected_goal(template_consumption,mode):
+        f=template_consumption
+        if mode in ('resource','late_resource','dispatch','localcase','receipt_blocked'):
+            from test_template_consumer import body as intake_body
+            from test_template_consumer_planning import ready,preview,adoption,post as adopt_post
+            data=intake_body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_CASE_RECORD_RECHECK',A,B] if mode in ('dispatch','localcase','receipt_blocked') else ['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION',A,B];row=ready(f,data);v=preview(f,row).json();assert adopt_post(f,row,'adopt',{**adoption(v),'partial_adoption':True},'resource-overview-adopt').status_code==200
+        else:row=private_case(f)
+        confirmed(f,row);baseline=products(f['owner'],True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg and 'result' not in msg:
+                    if msg.get('replace_plan'):
+                        from test_manual_goal_privacy import replace_plan
+                        replace_plan(f,row)
+                    elif msg.get('change_source'):
+                        act(f,row,'REQUEST',goal=B)
+                    elif msg.get('revoke'):
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    else:raise AssertionError(msg)
+                    baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET';r=f['client'].get(q['path'],headers=headers(f));assert r.status_code in (200,403),r.text;assert products(f['owner'])=={k:v for k,v in baseline.items() if k!='authorization_audit'}
+                messages.append(dict(path=q['path'],status=r.status_code));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: TypeError: Cannot read properties of undefined (reading 'remove')
+E                 at clearCaseCancellation (evalmachine.<anonymous>:939:166)
+E                 at clearPreparation (evalmachine.<anonymous>:324:154)
+E                 at openGoalResult (evalmachine.<anonymous>:2007:52)
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E                 at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:58:180
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait
+
+tests/test_multi_goal_overview.py:83: AssertionError
+_ test_original_page_second_unsupported_goal_opens_exact_selected_goal[late_aux] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e313e1b0>, 'owner': <parkweave.store.Store object at 0x7fb4e2993620>,...xAJBKgsX_f0-6TI12fJKnVTPMrv4k'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e269b770>, ...}
+mode = 'late_aux'
+
+    @pytest.mark.parametrize('mode',['exact','supported','saved_button','source_switch','revoke','late_list','late_manual','late_aux','plan_switch','switch_goal','resource','late_resource','dispatch','localcase','receipt_blocked'])
+    def test_original_page_second_unsupported_goal_opens_exact_selected_goal(template_consumption,mode):
+        f=template_consumption
+        if mode in ('resource','late_resource','dispatch','localcase','receipt_blocked'):
+            from test_template_consumer import body as intake_body
+            from test_template_consumer_planning import ready,preview,adoption,post as adopt_post
+            data=intake_body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_CASE_RECORD_RECHECK',A,B] if mode in ('dispatch','localcase','receipt_blocked') else ['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION',A,B];row=ready(f,data);v=preview(f,row).json();assert adopt_post(f,row,'adopt',{**adoption(v),'partial_adoption':True},'resource-overview-adopt').status_code==200
+        else:row=private_case(f)
+        confirmed(f,row);baseline=products(f['owner'],True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg and 'result' not in msg:
+                    if msg.get('replace_plan'):
+                        from test_manual_goal_privacy import replace_plan
+                        replace_plan(f,row)
+                    elif msg.get('change_source'):
+                        act(f,row,'REQUEST',goal=B)
+                    elif msg.get('revoke'):
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    else:raise AssertionError(msg)
+                    baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET';r=f['client'].get(q['path'],headers=headers(f));assert r.status_code in (200,403),r.text;assert products(f['owner'])=={k:v for k,v in baseline.items() if k!='authorization_audit'}
+                messages.append(dict(path=q['path'],status=r.status_code));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Error: page response not ready
+E                 at waitFor (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:27:106)
+E                 at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:60:254
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait
+
+tests/test_multi_goal_overview.py:83: AssertionError
+_ test_original_page_second_unsupported_goal_opens_exact_selected_goal[resource] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e2a894c0>, 'owner': <parkweave.store.Store object at 0x7fb4e280b7a0>,...NXFWFv6Tg-Ql8ciA2AbAVDek61qyQ'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e3e3fb00>, ...}
+mode = 'resource'
+
+    @pytest.mark.parametrize('mode',['exact','supported','saved_button','source_switch','revoke','late_list','late_manual','late_aux','plan_switch','switch_goal','resource','late_resource','dispatch','localcase','receipt_blocked'])
+    def test_original_page_second_unsupported_goal_opens_exact_selected_goal(template_consumption,mode):
+        f=template_consumption
+        if mode in ('resource','late_resource','dispatch','localcase','receipt_blocked'):
+            from test_template_consumer import body as intake_body
+            from test_template_consumer_planning import ready,preview,adoption,post as adopt_post
+            data=intake_body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_CASE_RECORD_RECHECK',A,B] if mode in ('dispatch','localcase','receipt_blocked') else ['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION',A,B];row=ready(f,data);v=preview(f,row).json();assert adopt_post(f,row,'adopt',{**adoption(v),'partial_adoption':True},'resource-overview-adopt').status_code==200
+        else:row=private_case(f)
+        confirmed(f,row);baseline=products(f['owner'],True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg and 'result' not in msg:
+                    if msg.get('replace_plan'):
+                        from test_manual_goal_privacy import replace_plan
+                        replace_plan(f,row)
+                    elif msg.get('change_source'):
+                        act(f,row,'REQUEST',goal=B)
+                    elif msg.get('revoke'):
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    else:raise AssertionError(msg)
+                    baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET';r=f['client'].get(q['path'],headers=headers(f));assert r.status_code in (200,403),r.text;assert products(f['owner'])=={k:v for k,v in baseline.items() if k!='authorization_audit'}
+                messages.append(dict(path=q['path'],status=r.status_code));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: evalmachine.<anonymous>:1
+E             caseResourceView.case_id
+E                              ^
+E             
+E             TypeError: Cannot read properties of null (reading 'case_id')
+E                 at evalmachine.<anonymous>:1:18
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:24:121)
+E                 at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:55:58
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait
+
+tests/test_multi_goal_overview.py:83: AssertionError
+_ test_original_page_second_unsupported_goal_opens_exact_selected_goal[late_resource] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e84948c0>, 'owner': <parkweave.store.Store object at 0x7fb4e91c06e0>,...7xiF0MXwaHgm7bNbfYI_WL1pvPGEQ'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e2e124b0>, ...}
+mode = 'late_resource'
+
+    @pytest.mark.parametrize('mode',['exact','supported','saved_button','source_switch','revoke','late_list','late_manual','late_aux','plan_switch','switch_goal','resource','late_resource','dispatch','localcase','receipt_blocked'])
+    def test_original_page_second_unsupported_goal_opens_exact_selected_goal(template_consumption,mode):
+        f=template_consumption
+        if mode in ('resource','late_resource','dispatch','localcase','receipt_blocked'):
+            from test_template_consumer import body as intake_body
+            from test_template_consumer_planning import ready,preview,adoption,post as adopt_post
+            data=intake_body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_CASE_RECORD_RECHECK',A,B] if mode in ('dispatch','localcase','receipt_blocked') else ['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION',A,B];row=ready(f,data);v=preview(f,row).json();assert adopt_post(f,row,'adopt',{**adoption(v),'partial_adoption':True},'resource-overview-adopt').status_code==200
+        else:row=private_case(f)
+        confirmed(f,row);baseline=products(f['owner'],True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg and 'result' not in msg:
+                    if msg.get('replace_plan'):
+                        from test_manual_goal_privacy import replace_plan
+                        replace_plan(f,row)
+                    elif msg.get('change_source'):
+                        act(f,row,'REQUEST',goal=B)
+                    elif msg.get('revoke'):
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    else:raise AssertionError(msg)
+                    baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET';r=f['client'].get(q['path'],headers=headers(f));assert r.status_code in (200,403),r.text;assert products(f['owner'])=={k:v for k,v in baseline.items() if k!='authorization_audit'}
+                messages.append(dict(path=q['path'],status=r.status_code));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Error: page response not ready
+E                 at waitFor (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:27:106)
+E                 at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:60:254
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait
+
+tests/test_multi_goal_overview.py:83: AssertionError
+_ test_original_page_second_unsupported_goal_opens_exact_selected_goal[dispatch] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e26661b0>, 'owner': <parkweave.store.Store object at 0x7fb4e87daf60>,...F67yOwHEMT4SjHse1DJyj7E2yiQwc'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e2f0a900>, ...}
+mode = 'dispatch'
+
+    @pytest.mark.parametrize('mode',['exact','supported','saved_button','source_switch','revoke','late_list','late_manual','late_aux','plan_switch','switch_goal','resource','late_resource','dispatch','localcase','receipt_blocked'])
+    def test_original_page_second_unsupported_goal_opens_exact_selected_goal(template_consumption,mode):
+        f=template_consumption
+        if mode in ('resource','late_resource','dispatch','localcase','receipt_blocked'):
+            from test_template_consumer import body as intake_body
+            from test_template_consumer_planning import ready,preview,adoption,post as adopt_post
+            data=intake_body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_CASE_RECORD_RECHECK',A,B] if mode in ('dispatch','localcase','receipt_blocked') else ['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION',A,B];row=ready(f,data);v=preview(f,row).json();assert adopt_post(f,row,'adopt',{**adoption(v),'partial_adoption':True},'resource-overview-adopt').status_code==200
+        else:row=private_case(f)
+        confirmed(f,row);baseline=products(f['owner'],True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg and 'result' not in msg:
+                    if msg.get('replace_plan'):
+                        from test_manual_goal_privacy import replace_plan
+                        replace_plan(f,row)
+                    elif msg.get('change_source'):
+                        act(f,row,'REQUEST',goal=B)
+                    elif msg.get('revoke'):
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    else:raise AssertionError(msg)
+                    baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET';r=f['client'].get(q['path'],headers=headers(f));assert r.status_code in (200,403),r.text;assert products(f['owner'])=={k:v for k,v in baseline.items() if k!='authorization_audit'}
+                messages.append(dict(path=q['path'],status=r.status_code));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: evalmachine.<anonymous>:1
+E             dispatchView.case_id
+E                          ^
+E             
+E             TypeError: Cannot read properties of null (reading 'case_id')
+E                 at evalmachine.<anonymous>:1:14
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:24:121)
+E                 at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:52:58
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait
+
+tests/test_multi_goal_overview.py:83: AssertionError
+_ test_original_page_second_unsupported_goal_opens_exact_selected_goal[receipt_blocked] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e9662a80>, 'owner': <parkweave.store.Store object at 0x7fb4e354cec0>,...sO9mVsB_iIUFLmH5j6DeBSgnrTeV8'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e26b24b0>, ...}
+mode = 'receipt_blocked'
+
+    @pytest.mark.parametrize('mode',['exact','supported','saved_button','source_switch','revoke','late_list','late_manual','late_aux','plan_switch','switch_goal','resource','late_resource','dispatch','localcase','receipt_blocked'])
+    def test_original_page_second_unsupported_goal_opens_exact_selected_goal(template_consumption,mode):
+        f=template_consumption
+        if mode in ('resource','late_resource','dispatch','localcase','receipt_blocked'):
+            from test_template_consumer import body as intake_body
+            from test_template_consumer_planning import ready,preview,adoption,post as adopt_post
+            data=intake_body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION','LOCAL_INTERNAL_ACCEPTANCE','LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT','LOCAL_CASE_RECORD_RECHECK',A,B] if mode in ('dispatch','localcase','receipt_blocked') else ['LOCAL_MATERIAL_PREPARATION','LOCAL_CASE_RESOURCE_ASSOCIATION',A,B];row=ready(f,data);v=preview(f,row).json();assert adopt_post(f,row,'adopt',{**adoption(v),'partial_adoption':True},'resource-overview-adopt').status_code==200
+        else:row=private_case(f)
+        confirmed(f,row);baseline=products(f['owner'],True);messages=[];summary=None
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'request' not in msg and 'result' not in msg:
+                    if msg.get('replace_plan'):
+                        from test_manual_goal_privacy import replace_plan
+                        replace_plan(f,row)
+                    elif msg.get('change_source'):
+                        act(f,row,'REQUEST',goal=B)
+                    elif msg.get('revoke'):
+                        with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    else:raise AssertionError(msg)
+                    baseline=products(f['owner'],True);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'request' not in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET';r=f['client'].get(q['path'],headers=headers(f));assert r.status_code in (200,403),r.text;assert products(f['owner'])=={k:v for k,v in baseline.items() if k!='authorization_audit'}
+                messages.append(dict(path=q['path'],status=r.status_code));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           assert proc.wait(timeout=15)==0,proc.stderr.read().decode();assert summary and summary['posts']==0
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:54:93
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+E            +  where 1 = wait(timeout=15)
+E            +    where wait = <Popen: returncode: 1 args: ['node', 'tests/multi_goal_overview_actual.js', ...>.wait
+
+tests/test_multi_goal_overview.py:83: AssertionError
+___ test_original_page_target_denial_clears_current_scope_only[manual_deny] ____
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e3277740>, 'owner': <parkweave.store.Store object at 0x7fb4e91ab380>,...P3kw80FJb_K5N-AC_MUdP-UtFHNpc'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e243b890>, ...}
+mode = 'manual_deny'
+
+    @pytest.mark.parametrize('mode',MODES)
+    def test_original_page_target_denial_clears_current_scope_only(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST',goal=A)
+        baseline=products(f['owner']);resources=resource_state(f);grants=grant_snapshot(f['owner']);messages=[];summary=None;checkpoints=[];revoked=False;stderr=''
+        target='/api/preparations/'+row['preparation_id']+('/fact-clarifications' if 'fact' in mode or mode=='support_field_denied' else '/readiness' if 'aux' in mode else '' if mode.startswith('support') else '/manual-goal-requests')
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'denied overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'checkpoint' in msg:checkpoints.append(msg['checkpoint']);continue
+                if 'restore' in msg or 'restore_and_new_case' in msg:
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    reply={'actor':REVIEWERS[0]}
+                    if msg.get('restore_and_new_case'):
+                        from test_template_consumer import consume,finish,resume,body
+                        from test_template_consumer_planning import preview,adoption,post
+                        data=body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',A,B]
+                        new=consume(f,key='denial-new-case',data=data).json();finish(f);new=resume(f,new,key='denial-new-resume').json();v=preview(f,new).json();assert post(f,new,'adopt',{**adoption(v),'partial_adoption':True},'denial-new-adopt').status_code==200;confirmed(f,new);reply['preparation_id']=new['preparation_id'];assert reply['preparation_id']!=row['preparation_id'];baseline=products(f['owner']);resources=resource_state(f)
+                    grants=grant_snapshot(f['owner']);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET'
+                if q['path']==target and not revoked:
+                    assert messages[-1]['path'].endswith('/goal-results') or mode.startswith('support_deny_aux') or mode.startswith('support_deny_fact') or mode=='support_field_denied'
+                    with f['owner'].connect() as c:c.execute("UPDATE "+('field_grants' if mode=='support_field_denied' else 'capability_grants')+" SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    revoked=True;grants=grant_snapshot(f['owner'])
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][q['options']['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')]});assert r.status_code in (200,403),r.text
+                assert products(f['owner'])==baseline and resource_state(f)==resources and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code,authorization=q['options']['headers']['Authorization']));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['posts']==0 and revoked
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: TypeError: Cannot read properties of undefined (reading 'remove')
+E                 at clearCaseCancellation (evalmachine.<anonymous>:939:166)
+E                 at clearPreparation (evalmachine.<anonymous>:324:154)
+E                 at openGoalResult (evalmachine.<anonymous>:2007:52)
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E                 at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:45:332
+E             
+E           assert 1 == 0
+
+tests/test_multi_goal_overview_denied.py:43: AssertionError
+___ test_original_page_target_denial_clears_current_scope_only[support_deny] ___
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e86b5490>, 'owner': <parkweave.store.Store object at 0x7fb4e973e8d0>,...PLsPGswMKtvBRV4N9UYpQk7JX1XFc'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e27cb050>, ...}
+mode = 'support_deny'
+
+    @pytest.mark.parametrize('mode',MODES)
+    def test_original_page_target_denial_clears_current_scope_only(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST',goal=A)
+        baseline=products(f['owner']);resources=resource_state(f);grants=grant_snapshot(f['owner']);messages=[];summary=None;checkpoints=[];revoked=False;stderr=''
+        target='/api/preparations/'+row['preparation_id']+('/fact-clarifications' if 'fact' in mode or mode=='support_field_denied' else '/readiness' if 'aux' in mode else '' if mode.startswith('support') else '/manual-goal-requests')
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'denied overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'checkpoint' in msg:checkpoints.append(msg['checkpoint']);continue
+                if 'restore' in msg or 'restore_and_new_case' in msg:
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    reply={'actor':REVIEWERS[0]}
+                    if msg.get('restore_and_new_case'):
+                        from test_template_consumer import consume,finish,resume,body
+                        from test_template_consumer_planning import preview,adoption,post
+                        data=body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',A,B]
+                        new=consume(f,key='denial-new-case',data=data).json();finish(f);new=resume(f,new,key='denial-new-resume').json();v=preview(f,new).json();assert post(f,new,'adopt',{**adoption(v),'partial_adoption':True},'denial-new-adopt').status_code==200;confirmed(f,new);reply['preparation_id']=new['preparation_id'];assert reply['preparation_id']!=row['preparation_id'];baseline=products(f['owner']);resources=resource_state(f)
+                    grants=grant_snapshot(f['owner']);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET'
+                if q['path']==target and not revoked:
+                    assert messages[-1]['path'].endswith('/goal-results') or mode.startswith('support_deny_aux') or mode.startswith('support_deny_fact') or mode=='support_field_denied'
+                    with f['owner'].connect() as c:c.execute("UPDATE "+('field_grants' if mode=='support_field_denied' else 'capability_grants')+" SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    revoked=True;grants=grant_snapshot(f['owner'])
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][q['options']['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')]});assert r.status_code in (200,403),r.text
+                assert products(f['owner'])==baseline and resource_state(f)==resources and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code,authorization=q['options']['headers']['Authorization']));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['posts']==0 and revoked
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:46:4
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+
+tests/test_multi_goal_overview_denied.py:43: AssertionError
+_ test_original_page_target_denial_clears_current_scope_only[support_deny_aux] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e2a508c0>, 'owner': <parkweave.store.Store object at 0x7fb4e3561580>,...VwWa7yw7zBrSKP4yDx7VSYIR75goo'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e2d32360>, ...}
+mode = 'support_deny_aux'
+
+    @pytest.mark.parametrize('mode',MODES)
+    def test_original_page_target_denial_clears_current_scope_only(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST',goal=A)
+        baseline=products(f['owner']);resources=resource_state(f);grants=grant_snapshot(f['owner']);messages=[];summary=None;checkpoints=[];revoked=False;stderr=''
+        target='/api/preparations/'+row['preparation_id']+('/fact-clarifications' if 'fact' in mode or mode=='support_field_denied' else '/readiness' if 'aux' in mode else '' if mode.startswith('support') else '/manual-goal-requests')
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'denied overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'checkpoint' in msg:checkpoints.append(msg['checkpoint']);continue
+                if 'restore' in msg or 'restore_and_new_case' in msg:
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    reply={'actor':REVIEWERS[0]}
+                    if msg.get('restore_and_new_case'):
+                        from test_template_consumer import consume,finish,resume,body
+                        from test_template_consumer_planning import preview,adoption,post
+                        data=body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',A,B]
+                        new=consume(f,key='denial-new-case',data=data).json();finish(f);new=resume(f,new,key='denial-new-resume').json();v=preview(f,new).json();assert post(f,new,'adopt',{**adoption(v),'partial_adoption':True},'denial-new-adopt').status_code==200;confirmed(f,new);reply['preparation_id']=new['preparation_id'];assert reply['preparation_id']!=row['preparation_id'];baseline=products(f['owner']);resources=resource_state(f)
+                    grants=grant_snapshot(f['owner']);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET'
+                if q['path']==target and not revoked:
+                    assert messages[-1]['path'].endswith('/goal-results') or mode.startswith('support_deny_aux') or mode.startswith('support_deny_fact') or mode=='support_field_denied'
+                    with f['owner'].connect() as c:c.execute("UPDATE "+('field_grants' if mode=='support_field_denied' else 'capability_grants')+" SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    revoked=True;grants=grant_snapshot(f['owner'])
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][q['options']['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')]});assert r.status_code in (200,403),r.text
+                assert products(f['owner'])==baseline and resource_state(f)==resources and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code,authorization=q['options']['headers']['Authorization']));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['posts']==0 and revoked
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:46:4
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+
+tests/test_multi_goal_overview_denied.py:43: AssertionError
+_ test_original_page_target_denial_clears_current_scope_only[support_deny_late] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e86a35c0>, 'owner': <parkweave.store.Store object at 0x7fb4e86a33b0>,...DNoTcYPux6kfHfnH8aQ0E3GR0vjiA'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e87956d0>, ...}
+mode = 'support_deny_late'
+
+    @pytest.mark.parametrize('mode',MODES)
+    def test_original_page_target_denial_clears_current_scope_only(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST',goal=A)
+        baseline=products(f['owner']);resources=resource_state(f);grants=grant_snapshot(f['owner']);messages=[];summary=None;checkpoints=[];revoked=False;stderr=''
+        target='/api/preparations/'+row['preparation_id']+('/fact-clarifications' if 'fact' in mode or mode=='support_field_denied' else '/readiness' if 'aux' in mode else '' if mode.startswith('support') else '/manual-goal-requests')
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'denied overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'checkpoint' in msg:checkpoints.append(msg['checkpoint']);continue
+                if 'restore' in msg or 'restore_and_new_case' in msg:
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    reply={'actor':REVIEWERS[0]}
+                    if msg.get('restore_and_new_case'):
+                        from test_template_consumer import consume,finish,resume,body
+                        from test_template_consumer_planning import preview,adoption,post
+                        data=body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',A,B]
+                        new=consume(f,key='denial-new-case',data=data).json();finish(f);new=resume(f,new,key='denial-new-resume').json();v=preview(f,new).json();assert post(f,new,'adopt',{**adoption(v),'partial_adoption':True},'denial-new-adopt').status_code==200;confirmed(f,new);reply['preparation_id']=new['preparation_id'];assert reply['preparation_id']!=row['preparation_id'];baseline=products(f['owner']);resources=resource_state(f)
+                    grants=grant_snapshot(f['owner']);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET'
+                if q['path']==target and not revoked:
+                    assert messages[-1]['path'].endswith('/goal-results') or mode.startswith('support_deny_aux') or mode.startswith('support_deny_fact') or mode=='support_field_denied'
+                    with f['owner'].connect() as c:c.execute("UPDATE "+('field_grants' if mode=='support_field_denied' else 'capability_grants')+" SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    revoked=True;grants=grant_snapshot(f['owner'])
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][q['options']['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')]});assert r.status_code in (200,403),r.text
+                assert products(f['owner'])==baseline and resource_state(f)==resources and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code,authorization=q['options']['headers']['Authorization']));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['posts']==0 and revoked
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Error: page response not ready
+E                 at waitFor (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:27:106)
+E                 at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:40:12
+E             
+E           assert 1 == 0
+
+tests/test_multi_goal_overview_denied.py:43: AssertionError
+_ test_original_page_target_denial_clears_current_scope_only[support_deny_aux_late] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e2a520c0>, 'owner': <parkweave.store.Store object at 0x7fb4e34be0f0>,...69e9-XrcmDwbMb17UR7SqAvuogwVI'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e31296a0>, ...}
+mode = 'support_deny_aux_late'
+
+    @pytest.mark.parametrize('mode',MODES)
+    def test_original_page_target_denial_clears_current_scope_only(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST',goal=A)
+        baseline=products(f['owner']);resources=resource_state(f);grants=grant_snapshot(f['owner']);messages=[];summary=None;checkpoints=[];revoked=False;stderr=''
+        target='/api/preparations/'+row['preparation_id']+('/fact-clarifications' if 'fact' in mode or mode=='support_field_denied' else '/readiness' if 'aux' in mode else '' if mode.startswith('support') else '/manual-goal-requests')
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'denied overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'checkpoint' in msg:checkpoints.append(msg['checkpoint']);continue
+                if 'restore' in msg or 'restore_and_new_case' in msg:
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    reply={'actor':REVIEWERS[0]}
+                    if msg.get('restore_and_new_case'):
+                        from test_template_consumer import consume,finish,resume,body
+                        from test_template_consumer_planning import preview,adoption,post
+                        data=body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',A,B]
+                        new=consume(f,key='denial-new-case',data=data).json();finish(f);new=resume(f,new,key='denial-new-resume').json();v=preview(f,new).json();assert post(f,new,'adopt',{**adoption(v),'partial_adoption':True},'denial-new-adopt').status_code==200;confirmed(f,new);reply['preparation_id']=new['preparation_id'];assert reply['preparation_id']!=row['preparation_id'];baseline=products(f['owner']);resources=resource_state(f)
+                    grants=grant_snapshot(f['owner']);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET'
+                if q['path']==target and not revoked:
+                    assert messages[-1]['path'].endswith('/goal-results') or mode.startswith('support_deny_aux') or mode.startswith('support_deny_fact') or mode=='support_field_denied'
+                    with f['owner'].connect() as c:c.execute("UPDATE "+('field_grants' if mode=='support_field_denied' else 'capability_grants')+" SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    revoked=True;grants=grant_snapshot(f['owner'])
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][q['options']['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')]});assert r.status_code in (200,403),r.text
+                assert products(f['owner'])==baseline and resource_state(f)==resources and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code,authorization=q['options']['headers']['Authorization']));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['posts']==0 and revoked
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Error: page response not ready
+E                 at waitFor (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:27:106)
+E                 at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:40:12
+E             
+E           assert 1 == 0
+
+tests/test_multi_goal_overview_denied.py:43: AssertionError
+_ test_original_page_target_denial_clears_current_scope_only[support_deny_fact] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e2e5e1b0>, 'owner': <parkweave.store.Store object at 0x7fb4e85d2c30>,...ccptMWB5kT3W27UzMh3sIJ7V67gnY'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e35c3770>, ...}
+mode = 'support_deny_fact'
+
+    @pytest.mark.parametrize('mode',MODES)
+    def test_original_page_target_denial_clears_current_scope_only(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST',goal=A)
+        baseline=products(f['owner']);resources=resource_state(f);grants=grant_snapshot(f['owner']);messages=[];summary=None;checkpoints=[];revoked=False;stderr=''
+        target='/api/preparations/'+row['preparation_id']+('/fact-clarifications' if 'fact' in mode or mode=='support_field_denied' else '/readiness' if 'aux' in mode else '' if mode.startswith('support') else '/manual-goal-requests')
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'denied overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'checkpoint' in msg:checkpoints.append(msg['checkpoint']);continue
+                if 'restore' in msg or 'restore_and_new_case' in msg:
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    reply={'actor':REVIEWERS[0]}
+                    if msg.get('restore_and_new_case'):
+                        from test_template_consumer import consume,finish,resume,body
+                        from test_template_consumer_planning import preview,adoption,post
+                        data=body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',A,B]
+                        new=consume(f,key='denial-new-case',data=data).json();finish(f);new=resume(f,new,key='denial-new-resume').json();v=preview(f,new).json();assert post(f,new,'adopt',{**adoption(v),'partial_adoption':True},'denial-new-adopt').status_code==200;confirmed(f,new);reply['preparation_id']=new['preparation_id'];assert reply['preparation_id']!=row['preparation_id'];baseline=products(f['owner']);resources=resource_state(f)
+                    grants=grant_snapshot(f['owner']);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET'
+                if q['path']==target and not revoked:
+                    assert messages[-1]['path'].endswith('/goal-results') or mode.startswith('support_deny_aux') or mode.startswith('support_deny_fact') or mode=='support_field_denied'
+                    with f['owner'].connect() as c:c.execute("UPDATE "+('field_grants' if mode=='support_field_denied' else 'capability_grants')+" SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    revoked=True;grants=grant_snapshot(f['owner'])
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][q['options']['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')]});assert r.status_code in (200,403),r.text
+                assert products(f['owner'])==baseline and resource_state(f)==resources and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code,authorization=q['options']['headers']['Authorization']));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['posts']==0 and revoked
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:46:4
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+
+tests/test_multi_goal_overview_denied.py:43: AssertionError
+_ test_original_page_target_denial_clears_current_scope_only[support_deny_fact_late] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e9405cd0>, 'owner': <parkweave.store.Store object at 0x7fb4e9406ba0>,...UCEJw1hG2u2DDT4_1CUI3JY-b3EUI'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e9477920>, ...}
+mode = 'support_deny_fact_late'
+
+    @pytest.mark.parametrize('mode',MODES)
+    def test_original_page_target_denial_clears_current_scope_only(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST',goal=A)
+        baseline=products(f['owner']);resources=resource_state(f);grants=grant_snapshot(f['owner']);messages=[];summary=None;checkpoints=[];revoked=False;stderr=''
+        target='/api/preparations/'+row['preparation_id']+('/fact-clarifications' if 'fact' in mode or mode=='support_field_denied' else '/readiness' if 'aux' in mode else '' if mode.startswith('support') else '/manual-goal-requests')
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'denied overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'checkpoint' in msg:checkpoints.append(msg['checkpoint']);continue
+                if 'restore' in msg or 'restore_and_new_case' in msg:
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    reply={'actor':REVIEWERS[0]}
+                    if msg.get('restore_and_new_case'):
+                        from test_template_consumer import consume,finish,resume,body
+                        from test_template_consumer_planning import preview,adoption,post
+                        data=body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',A,B]
+                        new=consume(f,key='denial-new-case',data=data).json();finish(f);new=resume(f,new,key='denial-new-resume').json();v=preview(f,new).json();assert post(f,new,'adopt',{**adoption(v),'partial_adoption':True},'denial-new-adopt').status_code==200;confirmed(f,new);reply['preparation_id']=new['preparation_id'];assert reply['preparation_id']!=row['preparation_id'];baseline=products(f['owner']);resources=resource_state(f)
+                    grants=grant_snapshot(f['owner']);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET'
+                if q['path']==target and not revoked:
+                    assert messages[-1]['path'].endswith('/goal-results') or mode.startswith('support_deny_aux') or mode.startswith('support_deny_fact') or mode=='support_field_denied'
+                    with f['owner'].connect() as c:c.execute("UPDATE "+('field_grants' if mode=='support_field_denied' else 'capability_grants')+" SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    revoked=True;grants=grant_snapshot(f['owner'])
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][q['options']['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')]});assert r.status_code in (200,403),r.text
+                assert products(f['owner'])==baseline and resource_state(f)==resources and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code,authorization=q['options']['headers']['Authorization']));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['posts']==0 and revoked
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Error: page response not ready
+E                 at waitFor (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:27:106)
+E                 at async /workspace/ParkWeave/tests/multi_goal_overview_actual.js:40:12
+E             
+E           assert 1 == 0
+
+tests/test_multi_goal_overview_denied.py:43: AssertionError
+_ test_original_page_target_denial_clears_current_scope_only[support_field_denied] _
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7fb4e2f9cce0>, 'owner': <parkweave.store.Store object at 0x7fb4e2f9e0f0>,...gDWTAGsQnYCvqiWZekjUQhod1RcCY'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7fb4e24cb050>, ...}
+mode = 'support_field_denied'
+
+    @pytest.mark.parametrize('mode',MODES)
+    def test_original_page_target_denial_clears_current_scope_only(template_consumption,mode):
+        f=template_consumption;row=private_case(f);confirmed(f,row);act(f,row,'REQUEST',goal=A)
+        baseline=products(f['owner']);resources=resource_state(f);grants=grant_snapshot(f['owner']);messages=[];summary=None;checkpoints=[];revoked=False;stderr=''
+        target='/api/preparations/'+row['preparation_id']+('/fact-clarifications' if 'fact' in mode or mode=='support_field_denied' else '/readiness' if 'aux' in mode else '' if mode.startswith('support') else '/manual-goal-requests')
+        proc=subprocess.Popen(['node','tests/multi_goal_overview_actual.js',row['preparation_id'],ENTERPRISES[0],A,B,mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);sel=selectors.DefaultSelector();sel.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert sel.select(timeout=15),'denied overview bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if 'checkpoint' in msg:checkpoints.append(msg['checkpoint']);continue
+                if 'restore' in msg or 'restore_and_new_case' in msg:
+                    with f['owner'].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    reply={'actor':REVIEWERS[0]}
+                    if msg.get('restore_and_new_case'):
+                        from test_template_consumer import consume,finish,resume,body
+                        from test_template_consumer_planning import preview,adoption,post
+                        data=body(f);data['required_goals']=['LOCAL_MATERIAL_PREPARATION',A,B]
+                        new=consume(f,key='denial-new-case',data=data).json();finish(f);new=resume(f,new,key='denial-new-resume').json();v=preview(f,new).json();assert post(f,new,'adopt',{**adoption(v),'partial_adoption':True},'denial-new-adopt').status_code==200;confirmed(f,new);reply['preparation_id']=new['preparation_id'];assert reply['preparation_id']!=row['preparation_id'];baseline=products(f['owner']);resources=resource_state(f)
+                    grants=grant_snapshot(f['owner']);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];assert q['options'].get('method','GET')=='GET'
+                if q['path']==target and not revoked:
+                    assert messages[-1]['path'].endswith('/goal-results') or mode.startswith('support_deny_aux') or mode.startswith('support_deny_fact') or mode=='support_field_denied'
+                    with f['owner'].connect() as c:c.execute("UPDATE "+('field_grants' if mode=='support_field_denied' else 'capability_grants')+" SET active=false WHERE principal_id=%s AND capability='READ'",(ENTERPRISES[0],))
+                    revoked=True;grants=grant_snapshot(f['owner'])
+                r=f['client'].get(q['path'],headers={'Authorization':'Bearer '+f['tokens'][q['options']['headers']['Authorization'].removeprefix('Bearer SYNTHETIC_')]});assert r.status_code in (200,403),r.text
+                assert products(f['owner'])==baseline and resource_state(f)==resources and grant_snapshot(f['owner'])==grants
+                messages.append(dict(path=q['path'],status=r.status_code,authorization=q['options']['headers']['Authorization']));proc.stdin.write((json.dumps({'status':r.status_code,'body':r.json()})+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['posts']==0 and revoked
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+E             
+E               assert(v)
+E             
+E                 at check (/workspace/ParkWeave/tests/multi_goal_overview_actual.js:4:26)
+E                 at /workspace/ParkWeave/tests/multi_goal_overview_actual.js:45:136
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E             
+E           assert 1 == 0
+
+tests/test_multi_goal_overview_denied.py:43: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_case_record_pack.py::test_actual_original_entry_all_outputs_download_and_restart
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_case_record_pack.py::test_actual_original_entry_all_outputs_download_and_restart
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_goal_results.py::test_resource_window_expiry_during_actual_last_source_row_lock_wait
+FAILED tests/test_case_goal_results_browser.py::test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle[False-material]
+FAILED tests/test_case_goal_results_browser.py::test_inflight_goal_read_interleaved_with_committed_lost_material_write_preserves_opaque_handle[True-material]
+FAILED tests/test_multi_goal_overview.py::test_original_page_second_unsupported_goal_opens_exact_selected_goal[supported]
+FAILED tests/test_multi_goal_overview.py::test_original_page_second_unsupported_goal_opens_exact_selected_goal[revoke]
+FAILED tests/test_multi_goal_overview.py::test_original_page_second_unsupported_goal_opens_exact_selected_goal[late_aux]
+FAILED tests/test_multi_goal_overview.py::test_original_page_second_unsupported_goal_opens_exact_selected_goal[resource]
+FAILED tests/test_multi_goal_overview.py::test_original_page_second_unsupported_goal_opens_exact_selected_goal[late_resource]
+FAILED tests/test_multi_goal_overview.py::test_original_page_second_unsupported_goal_opens_exact_selected_goal[dispatch]
+FAILED tests/test_multi_goal_overview.py::test_original_page_second_unsupported_goal_opens_exact_selected_goal[receipt_blocked]
+FAILED tests/test_multi_goal_overview_denied.py::test_original_page_target_denial_clears_current_scope_only[manual_deny]
+FAILED tests/test_multi_goal_overview_denied.py::test_original_page_target_denial_clears_current_scope_only[support_deny]
+FAILED tests/test_multi_goal_overview_denied.py::test_original_page_target_denial_clears_current_scope_only[support_deny_aux]
+FAILED tests/test_multi_goal_overview_denied.py::test_original_page_target_denial_clears_current_scope_only[support_deny_late]
+FAILED tests/test_multi_goal_overview_denied.py::test_original_page_target_denial_clears_current_scope_only[support_deny_aux_late]
+FAILED tests/test_multi_goal_overview_denied.py::test_original_page_target_denial_clears_current_scope_only[support_deny_fact]
+FAILED tests/test_multi_goal_overview_denied.py::test_original_page_target_denial_clears_current_scope_only[support_deny_fact_late]
+FAILED tests/test_multi_goal_overview_denied.py::test_original_page_target_denial_clears_current_scope_only[support_field_denied]
+18 failed, 161 passed, 4 warnings in 1229.22s (0:20:29)

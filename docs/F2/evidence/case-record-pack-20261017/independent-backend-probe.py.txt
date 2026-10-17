@@ -1,0 +1,21 @@
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python - <<'PY'
+import ast,hashlib,json,subprocess
+from pathlib import Path
+from parkweave import controlled_plans as cp
+base='b0f3cb8d69f33413ff8ac06b4be03b39d2fe5da2'
+old=ast.parse(subprocess.check_output(['git','show',base+':src/parkweave/case_goal_results.py'],text=True))
+current=ast.parse(Path('src/parkweave/case_goal_results.py').read_text());removed=0
+for node in ast.walk(current):
+ if isinstance(node,ast.Call):
+  before=len(node.keywords);node.keywords=[k for k in node.keywords if k.arg!='current_required_goals'];removed+=before-len(node.keywords)
+assert removed==1 and ast.dump(old,include_attributes=False)==ast.dump(current,include_attributes=False)
+obj={'scope':'SYNTHETIC_CASE_RECORD_PACK_V1','current_required_goals':['G'+str(i) for i in range(6)]+['中文\r\n目标😀','<script>literal</script>'],'results':[{'goal':'中文\r\n目标😀','state':'UNSUPPORTED','actual_output':None,'historical_verification':{'revision':1,'current':False}}],'snapshot_limits':'NOT_A_SIGNATURE'}
+js="""const fs=require('fs'),vm=require('vm'),crypto=require('crypto');const input=JSON.parse(fs.readFileSync(0,'utf8')),lines=fs.readFileSync('src/parkweave/web.html','utf8').split('\\n');const env={TextEncoder,crypto:crypto.webcrypto};vm.createContext(env);vm.runInContext(lines.find(x=>x.startsWith('function coldCanonical('))+'\\n'+lines.find(x=>x.startsWith('async function coldDigest(')),env);env.coldDigest(input).then(x=>process.stdout.write(x));"""
+node=subprocess.run(['node','-e',js],input=json.dumps(obj,ensure_ascii=False),text=True,capture_output=True,check=True)
+expected=cp._hash(obj);assert node.stdout==expected
+manifest=json.loads(Path('.runtime/case-record-pack/freeze.json').read_text())
+changed=[p for p,h in manifest['files'].items() if not Path(p).is_file() or hashlib.sha256(Path(p).read_bytes()).hexdigest()!=h]
+assert not changed
+print(json.dumps({'backend_AST_delta_only_current_required_goals':True,'server_Python_SHA256':expected,'actual_frontend_Node_SHA256':node.stdout,'canonical_UTF8_cross_language_match':True,'post_review_freeze_paths_checked':len(manifest['files']),'mismatches':changed}))
+print('INDEPENDENT_PURE_HASH_AND_AST_PASS')
+PY
