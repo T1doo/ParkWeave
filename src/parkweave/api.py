@@ -425,6 +425,13 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     def preparation_entry(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return preparation.entry(store,token(authorization),preparation_id)
 
+    from . import material_review_comparison
+
+    @app.get('/api/preparations/{preparation_id}/material-review-comparison')
+    def material_review_comparison_read(request: Request,preparation_id: UUID,authorization: str | None=Header(default=None)):
+        if request.query_params:raise HTTPException(422,'material review comparison takes no source selections')
+        return material_review_comparison.read(store,token(authorization),preparation_id)
+
     @app.get('/api/formal-preparations/entry-status')
     def formal_preparation_status(request: Request,authorization: str | None=Header(default=None)):
         if request.query_params:raise HTTPException(422,'formal entry status takes no source declarations')
