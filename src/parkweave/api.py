@@ -406,6 +406,10 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     def preparation_record(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return preparation.read(store,token(authorization),preparation_id)
 
+    @app.get('/api/preparations/{preparation_id}/entry')
+    def preparation_entry(preparation_id: UUID,authorization: str | None=Header(default=None)):
+        return preparation.entry(store,token(authorization),preparation_id)
+
     @app.get('/api/preparations/{preparation_id}/handling-deadline')
     def handling_deadline_read(preparation_id: UUID,request: Request,authorization: str | None=Header(default=None)):
         from .handling_deadline import read
