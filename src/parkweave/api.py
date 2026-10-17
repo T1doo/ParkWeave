@@ -1,7 +1,7 @@
 import os
 import re
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 from fastapi import FastAPI, Header, HTTPException, Request, Query
 from fastapi.responses import HTMLResponse, JSONResponse, Response
@@ -409,6 +409,24 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     @app.get('/api/preparations/{preparation_id}/entry')
     def preparation_entry(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return preparation.entry(store,token(authorization),preparation_id)
+
+    from . import ordinary_runtime_read as runtime_read
+
+    @app.get('/api/preparations/{preparation_id}/runtime/run')
+    def preparation_runtime_run(preparation_id: UUID, selection: Annotated[runtime_read.Selection, Query()], authorization: str | None=Header(default=None)):
+        return runtime_read.read_run(store,token(authorization),preparation_id,selection)
+
+    @app.get('/api/preparations/{preparation_id}/runtime/dispatch')
+    def preparation_runtime_dispatch(preparation_id: UUID, selection: Annotated[runtime_read.Selection, Query()], authorization: str | None=Header(default=None)):
+        return runtime_read.read_dispatch(store,token(authorization),preparation_id,selection)
+
+    @app.get('/api/preparations/{preparation_id}/runtime/access-approval')
+    def preparation_runtime_access_approval(preparation_id: UUID, selection: Annotated[runtime_read.Selection, Query()], authorization: str | None=Header(default=None)):
+        return runtime_read.read_access_approval(store,token(authorization),preparation_id,selection)
+
+    @app.get('/api/preparations/{preparation_id}/runtime/catalog')
+    def preparation_runtime_catalog(preparation_id: UUID, selection: Annotated[runtime_read.Selection, Query()], authorization: str | None=Header(default=None)):
+        return runtime_read.read_catalog(store,token(authorization),preparation_id,selection)
 
     @app.get('/api/preparations/{preparation_id}/handling-deadline')
     def handling_deadline_read(preparation_id: UUID,request: Request,authorization: str | None=Header(default=None)):
@@ -1023,4 +1041,7 @@ def configured_app():
     dsn = os.environ.get("PARKWEAVE_DSN")
     if not dsn:
         raise RuntimeError("PARKWEAVE_DSN required; no credential discovery")
-    return create_app(Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL"),file_root=os.environ.get("PARKWEAVE_FILE_ROOT")))
+    store=Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL"),file_root=os.environ.get("PARKWEAVE_FILE_ROOT"))
+    from .ordinary_runtime_read import configure
+    configure(store,os.environ.get('PARKWEAVE_RUNTIME_READ_CONFIG'))
+    return create_app(store)

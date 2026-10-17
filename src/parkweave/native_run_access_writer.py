@@ -435,6 +435,7 @@ def binding(bridge, c, run_id):
 
 
 def invoke(bridge, operation, token, run_id, key, data):
+    if getattr(bridge,'read_only',False):raise Denied('ordinary provider is read-only; writer commands disabled')
     value = _writer(bridge)
     if type(value) is not WriterClient:
         raise Denied('API requires client channel, not private writer context')

@@ -116,21 +116,28 @@ def issue_decision_test_permit(owner, proof, *, approver_ids, seconds=600):
 
 
 class NativeRunAccess:
-    def __init__(self, store, *, test_permit=None, activation_permit=None, writer=None):
+    def __init__(self, store, *, test_permit=None, activation_permit=None, writer=None, read_only=False):
+        if type(read_only) is not bool:raise Denied('explicit native read-only mode required')
         if getattr(store, '_isolated_run_access', None) is not None:
             raise Denied('ordinary and isolated access providers cannot be combined')
         self.store, self.test_permit = store, test_permit
         self.activation_permit=activation_permit
         self.writer=writer
+        self.read_only=read_only
         if writer is not None:
             from .native_run_access_writer import _writer
             _writer(self)
 
     def assignment_allowed(self,c,p,run_id,assignment):
+        if getattr(self,'runtime_read_binding',None) is not None:
+            from .ordinary_runtime_read import check_binding
+            try:check_binding(self,c,run_id)
+            except (Denied,Conflict,ValueError,TypeError):return False
         from .native_run_access_activation import effective
         return effective(self,c,p,run_id,assignment)
 
     def activate(self,token,run_id,key,data):
+        if self.read_only:raise Denied('ordinary provider is read-only; activation disabled')
         from .native_run_access_activation import activate
         return activate(self,token,run_id,key,data)
 
@@ -158,6 +165,7 @@ class NativeRunAccess:
         c.execute('SELECT '+fn+'(hashtextextended(%s,0))',('native-effective-access:'+str(run_id),))
 
     def _permit(self, c):
+        if self.read_only:raise Denied('ordinary provider is read-only; decision writes disabled')
         if self.writer is not None:
             from .native_run_access_writer import permit
             return permit(self,c)
@@ -195,7 +203,7 @@ class NativeRunAccess:
             self.store.check_capability(c, p, 'READ')
             permit = self._live_permit(c)
             enabled = permit is not None
-            return dict(namespace=NAMESPACE, enabled=enabled, read_available=True,
+            return dict(namespace=NAMESPACE, enabled=enabled, read_available=True,read_only=self.read_only,
                         storage_available=self._storage(c), role=p['role'],
                         can_approve=enabled and p['id'] in permit.approver_ids,
                         can_revoke=enabled and (p['role']=='enterprise_operator' or
@@ -372,7 +380,9 @@ class NativeRunAccess:
                           writer_policy_scope='OWNED_SYNTHETIC_REFERENCE' if self.writer.policy.environment=='OWNED_SYNTHETIC_REFERENCE' else 'PRODUCTION_CONTRACT',
                           production_installation_verified=False)
         from .native_run_access_activation import augment_view
-        return augment_view(self,c,p,run,result)
+        result=augment_view(self,c,p,run,result)
+        if self.read_only:result.update(read_only=True,can_activate=False,activation_enabled=False)
+        return result
 
     @_bounded
     def read(self, token, run_id):
@@ -431,6 +441,7 @@ class NativeRunAccess:
 
     @_bounded
     def command(self, token, run_id, key, data):
+        if self.read_only:raise Denied('ordinary provider is read-only; decision writes disabled')
         self._key(key)
         data=RunCommand.model_validate(data.model_dump())
         if self.writer is not None:

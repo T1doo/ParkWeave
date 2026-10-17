@@ -286,25 +286,29 @@ def list_items(store,token):
         rows=c.execute(f'SELECT id,case_id,goal,state,revision FROM preparations WHERE {column}=%s AND park_id=%s AND org_id=%s ORDER BY created_at DESC LIMIT 100',(p['id'],p['park_id'],p['org_id'])).fetchall()
         return {'items':rows,'role':p['role'],'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY'}
 
+def entry_context(store,c,p,id):
+    row=scoped(store,c,p,id,read_only=True)
+    if row['namespace']!='SYNTHETIC':raise Denied('ordinary synthetic preparation required')
+    service=c.execute('SELECT service_id,version,name,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',
+                      (row['park_id'],row['service_id'],row['service_version'])).fetchone()
+    if (not service or service['namespace']!='SYNTHETIC' or not isinstance(service['source'],dict)
+            or service['source'].get('kind')!='SYNTHETIC'):
+        raise Conflict('current SYNTHETIC preparation catalog required')
+    store.lock_principal(c,row['reviewer_id'])
+    reviewer=c.execute('SELECT * FROM principals WHERE id=%s AND active',(row['reviewer_id'],)).fetchone()
+    if not reviewer or (reviewer['park_id'],reviewer['org_id'])!=(row['park_id'],row['org_id']):
+        raise Denied('current assigned preparation reviewer required')
+    try:grant(store,c,reviewer,'REVIEW_ASSIGNED')
+    except Denied:raise Denied('current assigned preparation reviewer required') from None
+    case_state(c,row)
+    return row,service
+
 def entry(store,token,id):
     """Read-only entry to an existing ordinary preparation; never provisions it."""
     with store.connect() as c:
         c.execute('SET TRANSACTION READ ONLY')
         p=store.auth(c,token,lock=True)
-        row=scoped(store,c,p,id,read_only=True)
-        if row['namespace']!='SYNTHETIC':raise Denied('ordinary synthetic preparation required')
-        service=c.execute('SELECT service_id,version,source,namespace FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',
-                          (row['park_id'],row['service_id'],row['service_version'])).fetchone()
-        if (not service or service['namespace']!='SYNTHETIC' or not isinstance(service['source'],dict)
-                or service['source'].get('kind')!='SYNTHETIC'):
-            raise Conflict('current SYNTHETIC preparation catalog required')
-        store.lock_principal(c,row['reviewer_id'])
-        reviewer=c.execute('SELECT * FROM principals WHERE id=%s AND active',(row['reviewer_id'],)).fetchone()
-        if not reviewer or (reviewer['park_id'],reviewer['org_id'])!=(row['park_id'],row['org_id']):
-            raise Denied('current assigned preparation reviewer required')
-        try:grant(store,c,reviewer,'REVIEW_ASSIGNED')
-        except Denied:raise Denied('current assigned preparation reviewer required') from None
-        case_state(c,row)
+        row,service=entry_context(store,c,p,id)
         return dict(preparation_id=str(row['id']),case_id=str(row['case_id']),run_id=str(row['run_id']),
                     revision=row['revision'],role=p['role'],service_id=service['service_id'],service_version=service['version'],
                     read_only=True,scope='SYNTHETIC_LOCAL_PREPARATION_ONLY',

@@ -496,7 +496,7 @@ def load_host_ticket(fd):
     return engine,authorization
 
 
-def bind_api(store,binding_path=None,expected_sha256=None):
+def bind_api(store,binding_path=None,expected_sha256=None,*,read_only=False):
     """Explicit protected public pin only; configured_app gains no auto binding."""
     if binding_path is None or expected_sha256 is None:
         raise Denied('explicit trusted public binding required')
@@ -516,6 +516,6 @@ def bind_api(store,binding_path=None,expected_sha256=None):
         extra=_additional_acl(c,[client.policy.application_role,client.policy.writer_role])
         if set(extra)!=EXTRA_CHECKS or any(v is not False for v in extra.values()):
             raise Denied('current API/writer role boundary unsafe')
-    bridge = native.NativeRunAccess(store,writer=client)
+    bridge = native.NativeRunAccess(store,writer=client,read_only=read_only)
     store._native_run_access = bridge
     return bridge

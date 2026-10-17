@@ -259,6 +259,7 @@ def augment_view(bridge,c,p,run,result):
 
 @_bounded
 def activate(bridge,token,run_id,key,data):
+    if getattr(bridge,'read_only',False):raise Denied('ordinary provider is read-only; activation disabled')
     bridge._key(key)
     data=Activate.model_validate(data.model_dump())
     if bridge.writer is not None:
