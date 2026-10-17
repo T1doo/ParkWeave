@@ -113,6 +113,9 @@ def _candidate_module(parent,id):
     records=[h for h in parent.get('planning_previews') or [] if h.get('id')==str(id)]
     if len(records)!=1:raise Conflict('exact original candidate required')
     record=records[0]
+    if record.get('profile')=='LOCAL_SYNTHETIC_DEMO' or record.get('document',{}).get('profile')=='LOCAL_SYNTHETIC_DEMO':
+        from . import local_demo_selections
+        return local_demo_selections
     if (record.get('profile')=='TRUSTED_SERVICE_SELECTION_V4' or record.get('producer',{}).get('version')==4 or
         record.get('document',{}).get('profile')=='TRUSTED_SERVICE_SELECTION_V4' or 'selection' in record):
         from . import service_selection_candidates
@@ -128,6 +131,22 @@ def _selection_catalog(store):
     return catalog
 
 
+def _catalog_for_profile(store,profile):
+    if profile=='LOCAL_SYNTHETIC_DEMO':
+        from .local_synthetic_demo import LocalDemoCatalog
+        catalog=getattr(store,'_local_synthetic_demo_catalog',None)
+        if type(catalog) is not LocalDemoCatalog or catalog.store is not store:
+            raise Denied('explicit independent local demo catalog required')
+        return catalog
+    if profile!='TRUSTED_SERVICE_SELECTION_V4':raise Denied('unknown service selection profile')
+    return _selection_catalog(store)
+
+
+def _selected_candidates(module):
+    from . import service_selection_candidates,local_demo_selections
+    return module in (service_selection_candidates,local_demo_selections)
+
+
 def _binding_issues(c,parent,plan,*,store=None):
     current=_binding(c,parent);saved=plan['binding']
     labels={'request_intent':'REQUEST_CHANGED','original_goal':'REQUEST_CHANGED',
@@ -137,9 +156,8 @@ def _binding_issues(c,parent,plan,*,store=None):
     if _selection_plan(plan):
         try:
             selected=saved['service_selection']
-            snapshot=_selection_catalog(store).snapshot(c,parent)
-            if (selected['profile']!='TRUSTED_SERVICE_SELECTION_V4' or
-                selected['capability_catalog_sha256']!=cp._hash(cp._normal(snapshot)) or snapshot['unknowns']):
+            snapshot=_catalog_for_profile(store,selected['profile']).snapshot(c,parent)
+            if (selected['capability_catalog_sha256']!=cp._hash(cp._normal(snapshot)) or snapshot['unknowns']):
                 issues.add('SERVICE_CAPABILITY_BINDING_CHANGED')
         except (KeyError,TypeError,ValueError,Denied,Conflict):issues.add('CURRENT_SERVICE_CAPABILITY_SOURCE_REQUIRED')
     return sorted(issues)
@@ -672,8 +690,9 @@ def _adoption_connection(store,token,id,key,data):
         if _replay(c,p,parent,key,fp):
             yield c
             return
-        selected=_candidate_module(parent,data.candidate_id).__name__.endswith('.service_selection_candidates')
-    with (_selection_catalog(store).connection() if selected else store.connect()) as c:yield c
+        module=_candidate_module(parent,data.candidate_id)
+        selected=_selected_candidates(module)
+    with (_catalog_for_profile(store,module.PROFILE).connection() if selected else store.connect()) as c:yield c
 
 
 @er.bounded
@@ -703,9 +722,9 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
             raise Conflict('explicit supported current request goals required')
         if parent['revision']!=data.expected_preparation_revision:raise Conflict('preparation revision changed')
         candidates=_candidate_module(parent,data.candidate_id) if data.candidate_id is not None else None
-        selected=candidates is not None and candidates.__name__.endswith('.service_selection_candidates')
+        selected=candidates is not None and _selected_candidates(candidates)
         if selected:
-            catalog=_selection_catalog(store)
+            catalog=_catalog_for_profile(store,candidates.PROFILE)
             record=candidates.find(parent,data.candidate_id)
             current=candidates.current(store,c,p,parent,catalog,record['selection'])
         else:current=planning._proposal(store,c,p,parent)

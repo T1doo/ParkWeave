@@ -176,7 +176,14 @@ def enumerate_solutions(releases, instances, request, *, now=None):
     """
     goals, constraints, states = _request(request)
     pairs = _catalog(releases, instances, request, now)
-    supported = set().union(*(set(r['supported_goals']) for r in releases))
+    return _enumerate_pairs(pairs, request, releases)
+
+
+def _enumerate_pairs(pairs, request, available_releases=None):
+    """Shared finite oracle; callers separately validate their source contract."""
+    goals, constraints, states = _request(request)
+    available_releases = [r for r, _ in pairs] if available_releases is None else available_releases
+    supported = set().union(*(set(r['supported_goals']) for r in available_releases))
     unsupported = [goal for goal in goals if goal not in supported]
     solutions, unknown_sets, unknowns = [], [], set()
     examined = 0
@@ -217,10 +224,16 @@ def rebuild_selection(selection, releases, instances, request, expected_binding,
     """Rebuild only trusted registered contracts after independent satisfiability."""
     parsed = parse_selection(json.dumps(selection, ensure_ascii=False, allow_nan=False), expected_binding)
     oracle = enumerate_solutions(releases, instances, request, now=now)
+    pairs = _catalog(releases, instances, request, now)
+    return _rebuild_pairs(parsed, pairs, request, expected_binding, oracle)
+
+
+def _rebuild_pairs(parsed, pairs, request, expected_binding, oracle, *, actions=None):
+    """Original registered graph reconstruction after source validation."""
     chosen = sorted(parsed['selections'], key=_identity)
+    actions = bp.ACTIONS if actions is None else actions
     if oracle['state'] not in ('UNIQUE', 'MULTIPLE') or not any(_equal(chosen, solution) for solution in oracle['minimal_solutions']):
         raise SelectionError()
-    pairs = _catalog(releases, instances, request, now)
     selected = [pair for pair in pairs if selection_ref(*pair) in chosen]
     by_node = {}
     for release, instance in selected:
@@ -236,7 +249,7 @@ def rebuild_selection(selection, releases, instances, request, expected_binding,
             raise SelectionError()
         for key in ready:
             step = by_node[key]
-            step.update(adapter_ref=step['adapter'], adapter_revision=step['revision'], actions=deepcopy(bp.ACTIONS[key]), executable=False)
+            step.update(adapter_ref=step['adapter'], adapter_revision=step['revision'], actions=deepcopy(actions[key]), executable=False)
             steps.append(step)
             done.add(key)
     coverage = [dict(goal=goal, status='SUPPORTED_PREVIEW', steps=sorted({step['id'] for release, _ in selected if goal in release['supported_goals'] for step in release['steps']})) for goal in request['required_goals']]

@@ -256,35 +256,7 @@ class IsolatedServiceCapabilityCatalog:
         return record
 
     def mapping_states(self,c,instance,parent=None):
-        states=dict(principals={},resources={},fields={})
-        roles=instance['roles']
-        for id in sorted(roles.values()):self.consumer.store.lock_principal(c,id)
-        owner=c.execute('SELECT * FROM principals WHERE id=%s',(roles['enterprise_operator'],)).fetchone()
-        if not owner or not owner['active'] or owner['park_id']!=instance['park_id'] or (instance['park_id'],owner['org_id']) not in self.orgs or parent and owner['id']!=parent['owner_id']:raise Denied('current instance enterprise reference unavailable')
-        for role,id in roles.items():
-            p=c.execute('SELECT * FROM principals WHERE id=%s',(id,)).fetchone()
-            if not p or not p['active'] or p['role']!=role or p['park_id']!=instance['park_id'] or role=='park_specialist' and p['org_id']!=owner['org_id']:raise Denied('current same-park role reference required')
-            self.consumer.store.check_capability(c,p,'READ')
-            if role in ('enterprise_operator','park_specialist'):
-                from . import preparation
-                preparation.grant(self.consumer.store,c,p,'PREPARE' if role=='enterprise_operator' else 'REVIEW_ASSIGNED')
-            if role=='enterprise_operator':self.consumer.store.check_capability(c,p,'EXECUTE')
-            if parent and role=='park_specialist' and id!=parent['reviewer_id']:raise Denied('current Case reviewer mapping required')
-            states['principals'][id]='TRUE'
-        from . import resource_holds
-        for id in sorted(instance['resources'].values()):
-            from uuid import UUID
-            try:
-                resource_id=UUID(id)
-                if id!=str(resource_id):raise ValueError()
-            except (ValueError,TypeError,AttributeError):raise Denied('existing exact resource UUID required') from None
-            resource_holds._lock(c,resource_id,shared=True)
-            resource=c.execute('SELECT * FROM synthetic_resources WHERE id=%s',(id,)).fetchone()
-            grants=c.execute("SELECT capability FROM synthetic_resource_grants WHERE principal_id=%s AND resource_id=%s AND park_id=%s AND org_id=%s AND active",(owner['id'],id,owner['park_id'],owner['org_id'])).fetchall()
-            if not resource or resource['park_id']!=instance['park_id'] or not resource['enabled'] or resource['namespace']!='SYNTHETIC' or not {'READ','HOLD'}<={v['capability'] for v in grants}:raise Denied('current own-park resource READ/HOLD required')
-            states['resources'][id]='TRUE'
-        for mapping in instance['fields'].values():states['fields'][mapping['input_field']]='TRUE'
-        return states
+        return current_mapping_states(self.consumer.store,self.orgs,c,instance,parent)
 
     def snapshot(self,c,parent):
         self._scope(parent['park_id'],parent['org_id']);lock(c,parent['park_id'])
@@ -332,3 +304,37 @@ class IsolatedServiceCapabilityCatalog:
 
     def withdraw_release(self,park_id,key,release_id,expected_revision,reason):return self._withdraw(park_id,key,release_id,expected_revision,reason,'WITHDRAW_RELEASE')
     def withdraw_instance(self,park_id,key,instance_id,expected_revision,reason):return self._withdraw(park_id,key,instance_id,expected_revision,reason,'WITHDRAW_INSTANCE')
+
+
+def current_mapping_states(store,orgs,c,instance,parent=None):
+    """Existing identity/resource intersection, shared without fixture authority."""
+    states=dict(principals={},resources={},fields={})
+    roles=instance['roles']
+    for id in sorted(roles.values()):store.lock_principal(c,id)
+    owner=c.execute('SELECT * FROM principals WHERE id=%s',(roles['enterprise_operator'],)).fetchone()
+    if not owner or not owner['active'] or owner['park_id']!=instance['park_id'] or (instance['park_id'],owner['org_id']) not in orgs or parent and owner['id']!=parent['owner_id']:raise Denied('current instance enterprise reference unavailable')
+    for role,id in roles.items():
+        p=c.execute('SELECT * FROM principals WHERE id=%s',(id,)).fetchone()
+        if not p or not p['active'] or p['role']!=role or p['park_id']!=instance['park_id'] or role=='park_specialist' and p['org_id']!=owner['org_id']:raise Denied('current same-park role reference required')
+        store.check_capability(c,p,'READ')
+        if role in ('enterprise_operator','park_specialist'):
+            from . import preparation
+            preparation.grant(store,c,p,'PREPARE' if role=='enterprise_operator' else 'REVIEW_ASSIGNED')
+        if role=='enterprise_operator':store.check_capability(c,p,'EXECUTE')
+        if parent and role=='park_specialist' and id!=parent['reviewer_id']:raise Denied('current Case reviewer mapping required')
+        states['principals'][id]='TRUE'
+    from . import resource_holds
+    for id in sorted(instance['resources'].values()):
+        from uuid import UUID
+        try:
+            resource_id=UUID(id)
+            if id!=str(resource_id):raise ValueError()
+        except (ValueError,TypeError,AttributeError):raise Denied('existing exact resource UUID required') from None
+        resource_holds._lock(c,resource_id,shared=True)
+        resource=c.execute('SELECT * FROM synthetic_resources WHERE id=%s',(id,)).fetchone()
+        grants=c.execute("SELECT capability FROM synthetic_resource_grants WHERE principal_id=%s AND resource_id=%s AND park_id=%s AND org_id=%s AND active",(owner['id'],id,owner['park_id'],owner['org_id'])).fetchall()
+        if not resource or resource['park_id']!=instance['park_id'] or not resource['enabled'] or resource['namespace']!='SYNTHETIC' or not {'READ','HOLD'}<={v['capability'] for v in grants}:raise Denied('current own-park resource READ/HOLD required')
+        states['resources'][id]='TRUE'
+    for mapping in instance['fields'].values():states['fields'][mapping['input_field']]='TRUE'
+    return states
+

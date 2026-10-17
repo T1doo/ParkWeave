@@ -12,11 +12,22 @@ from .run_access_candidate import RunCommand
 from .native_run_access import RunCommand as NativeRunCommand
 
 
-def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None, local_synthetic_demo=None) -> FastAPI:
     from . import formal_preparation_entry as formal_entry
     formal_dependencies=formal_entry.dependencies(formal_read_config,formal_source_reader,formal_provenance_verifier)
     from . import resource_plan_approval_read as resource_approval
     resource_approval.validate_provider(resource_plan_approval_provider)
+    if local_synthetic_demo is not None:
+        from .local_synthetic_demo import LocalSyntheticDemo, LocalDemoCatalog, LocalDemoSelector
+        if (type(local_synthetic_demo) is not LocalSyntheticDemo
+                or type(local_synthetic_demo.catalog) is not LocalDemoCatalog
+                or type(local_synthetic_demo.selector) is not LocalDemoSelector
+                or local_synthetic_demo.catalog.store is not store
+                or any(x is not None for x in (capability_catalog,selection_planner,instance_consumer,service_release_preflight,synthetic_rule_readiness,proposal_planner,resource_plan_approval_provider,formal_read_config,formal_source_reader,formal_provenance_verifier))
+                or any(getattr(store,n,None) is not None for n in ('_isolated_service_capability_catalog','_isolated_plan_approval','_isolated_run_access'))):
+            raise Denied('independent exact local demo providers cannot mix with isolated or formal providers')
+        with store.connect() as c: local_synthetic_demo.catalog.validate(c)
+        store._local_synthetic_demo_catalog=local_synthetic_demo.catalog
     if resource_plan_approval_provider is not None and getattr(store,'_isolated_plan_approval',None) is not None:
         raise Denied('ordinary resource approval reader cannot be combined with isolated plan Approval')
     if synthetic_rule_readiness is not None:
@@ -651,7 +662,12 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     from . import service_selection_candidates as selections
     from .service_instance_consumer import ColdInput
 
+    if local_synthetic_demo is not None:
+        from . import local_demo_selections as selections
+        selection_planner=local_synthetic_demo.selector
+
     def selected_catalog():
+        if local_synthetic_demo is not None:return local_synthetic_demo.catalog
         if capability_catalog is None:raise Denied('isolated service capability selection disabled')
         return capability_catalog
 
@@ -1089,6 +1105,9 @@ def configured_app(*, resource_plan_approval_provider=None, formal_source_reader
     store=Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL"),file_root=os.environ.get("PARKWEAVE_FILE_ROOT"))
     from .ordinary_runtime_read import configure
     configure(store,os.environ.get('PARKWEAVE_RUNTIME_READ_CONFIG'))
+    from .local_synthetic_demo import configure as configure_demo
+    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
     return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider,
         formal_read_config=os.environ.get('PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG'),
-        formal_source_reader=formal_source_reader,formal_provenance_verifier=formal_provenance_verifier)
+        formal_source_reader=formal_source_reader,formal_provenance_verifier=formal_provenance_verifier,
+        local_synthetic_demo=demo)

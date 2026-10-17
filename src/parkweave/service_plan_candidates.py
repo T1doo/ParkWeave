@@ -51,7 +51,7 @@ def document(current):
                 global_requirements=deepcopy(current['global_requirements']))
 
 
-def _records(parent):return [h for h in parent.get('planning_previews') or [] if 'candidate' in h and h.get('profile')!='TRUSTED_SERVICE_SELECTION_V4']
+def _records(parent):return [h for h in parent.get('planning_previews') or [] if 'candidate' in h and h.get('profile') not in ('TRUSTED_SERVICE_SELECTION_V4','LOCAL_SYNTHETIC_DEMO')]
 
 
 def _producer(record):

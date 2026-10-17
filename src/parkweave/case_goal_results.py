@@ -23,7 +23,7 @@ def source_trace(parent,plan):
     saved=plan['adoption_preview'];event=plan['events'][0];consumed=plan.get('candidate_consumption')
     candidate={k:deepcopy(consumed[k]) for k in ('candidate_id','candidate_sha256','verification_sha256')} if consumed else None
     if candidate is not None:candidate.update(validator_version=consumed['verification_basis']['validator_version'],accepted_at=consumed.get('accepted_at'),validity=deepcopy(consumed['verification_basis'].get('validity')))
-    if candidate is not None and consumed['verification_basis']['validator_version'] in (3,4):candidate['producer']=deepcopy(consumed['producer'])
+    if candidate is not None and consumed['verification_basis']['validator_version'] in (3,4,'LOCAL_SYNTHETIC_DEMO_V1'):candidate['producer']=deepcopy(consumed['producer'])
     trace=dict(scope='SYNTHETIC_ADOPTED_PLAN_SOURCE_TRACE',preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),
                plan_id=plan['id'],plan_revision=plan['revision'],origin='SYNTHETIC_UNTRUSTED_CANDIDATE' if consumed else 'ORIGINAL_REGISTERED_DETERMINISTIC_PLAN',
                adoption=dict(event_id=event['id'],event_revision=event['revision'],fingerprint=event['fingerprint'],preparation_revision=plan['adoption_preparation_revision'],
