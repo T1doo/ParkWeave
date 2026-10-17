@@ -1,3 +1,11 @@
+## 2026-10-17：连接诊断收尾，关闭诊断六项与自有SIGINT校验通过
+
+基线 `f26a09ecab71b6a277e9fee87f92f501ebf8e7a6`，原716输入冻结 `8ff6f34ad68c36c0c529957a6edaf2c25e5bbb38` 保持。关闭连接诊断及可选证据钩子，原序6项一次6PASS/0FAIL/ERROR/SKIP，JUnit17.702秒；只读见证确认选项/current为空、connect/close原身份不变，原2秒预算与断言保持。六项与父线程已独审准入的427完全重叠，本批没有重跑或叠加427。
+
+独立自有pytest在主线程等待点持有一条原app连接，由核验PID/cmdline/父PID/启动tick的控制器单独SIGINT。预期退出2，不能算一个pytest PASS；29条受测连接均close，测试finally后sessionfinish进入，原writer SIGINT/wait回收、fixture DONE均先于diagnostic_finish，随后current清空且fd关闭。pytest/writer的proc项消失，无BadFD；PG守护进程已退出为Z待PID1回收，不冒称由本进程wait回收，未做额外进程操作。
+
+716输入及27692继承证据逐件保持，原始日志/XML、信号/回收与单调事件封存。历史超时仍未知，失败采样路径、其他中断点/崩溃及Windows/正式AT/真实业务/生产host未验；普通资源Approval与真实合法运行输入缺口保持。诊断工作至此结束，供独审后接原产品主线。无Actions、main/强推、部署、模型、新费用或真实授权/凭据/安全网络权限变化，未知锁/进程/session未删除。[原始收尾证据](ConnectionDiagnosticsCloseout-20261017.md)。下方历史原字节保留。
+
 ## 2026-10-17：自有连接诊断后原427项完整通过，历史超时根因未定
 
 基线 `96b37e1d9fd53e005bcb8a06c6e8df62f2a90ab0`，新冻结 `8ff6f34ad68c36c0c529957a6edaf2c25e5bbb38`。仅自有pytest夹具增加单调起止/节点阶段/进程线程/application_name、连接close、PG连接断开及writer退出回收诊断；失败时每fixture一次有界只读pg_stat_activity，无常驻观察连接、token/DSN/凭据/query正文或RPC载荷。产品src不变，原两失败用例断言AST、2秒预算、403回滚/离线恢复与清理断言保持。

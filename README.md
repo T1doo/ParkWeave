@@ -1,5 +1,7 @@
 # 园合 ParkWeave
 
+2026-10-17 连接诊断收尾：同冻结关闭诊断，原顺序6项一次6PASS；独立自有pytest SIGINT冒烟预期退出2，连接、writer及sessionfinish清理校验通过，不能算第7项PASS。427插桩回归沿父线程独审准入，本批未重跑；历史超时根因仍未知，诊断至此结束。[收尾证据与边界](docs/F2/ConnectionDiagnosticsCloseout-20261017.md)。
+
 2026-10-17 新增自有夹具连接诊断：按原前驱顺序复验两失败节点后，新冻结原13模块427唯一项全部PASS，0FAIL/ERROR/SKIP；产品src未改。8,750次受测连接均关闭且与PG日志关联，历史握手超时未重现、根因仍未确立，失败采样未触发，不称产品连接问题已修复。[原始诊断、全部窗口与未证边界](docs/F2/OwnedConnectionDiagnostics-20261017.md)。
 
 2026-10-17 普通运行时已接入已有资料的原 Run、分派、精确目录和 Run READ 访问批准只读导航；显式配置复用原受保护 provider 与签名/当前权限核验，不创建或激活授权。**本片为待审候选，完整验证门未通过**：427唯一项425PASS/2FAIL/2teardown ERROR，新增36项含内全PASS；两处原2秒连接握手超时原因未明。普通资源方案批准契约仍缺。[范围、全部失败窗口与运行输入](docs/F2/OrdinaryRuntimeReadWiring-20261017.md)。
