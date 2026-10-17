@@ -12,7 +12,9 @@ from .run_access_candidate import RunCommand
 from .native_run_access import RunCommand as NativeRunCommand
 
 
-def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None) -> FastAPI:
+    from . import formal_preparation_entry as formal_entry
+    formal_dependencies=formal_entry.dependencies(formal_read_config,formal_source_reader,formal_provenance_verifier)
     from . import resource_plan_approval_read as resource_approval
     resource_approval.validate_provider(resource_plan_approval_provider)
     if resource_plan_approval_provider is not None and getattr(store,'_isolated_plan_approval',None) is not None:
@@ -413,6 +415,17 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     @app.get('/api/preparations/{preparation_id}/entry')
     def preparation_entry(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return preparation.entry(store,token(authorization),preparation_id)
+
+    @app.get('/api/formal-preparations/entry-status')
+    def formal_preparation_status(request: Request,authorization: str | None=Header(default=None)):
+        if request.query_params:raise HTTPException(422,'formal entry status takes no source declarations')
+        return formal_entry.preflight(store,token(authorization),None,formal_dependencies)
+
+    @app.get('/api/formal-preparations/entry')
+    def formal_preparation_preflight(request: Request,selection: Annotated[formal_entry.Selection,Query()],authorization: str | None=Header(default=None)):
+        keys=[key for key,_ in request.query_params.multi_items()]
+        if len(keys)!=len(set(keys)):raise HTTPException(422,'unambiguous formal source selection required')
+        return formal_entry.preflight(store,token(authorization),selection,formal_dependencies)
 
     from . import ordinary_runtime_read as runtime_read
 
@@ -1053,11 +1066,13 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     return app
 
 
-def configured_app(*, resource_plan_approval_provider=None):
+def configured_app(*, resource_plan_approval_provider=None, formal_source_reader=None, formal_provenance_verifier=None):
     dsn = os.environ.get("PARKWEAVE_DSN")
     if not dsn:
         raise RuntimeError("PARKWEAVE_DSN required; no credential discovery")
     store=Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL"),file_root=os.environ.get("PARKWEAVE_FILE_ROOT"))
     from .ordinary_runtime_read import configure
     configure(store,os.environ.get('PARKWEAVE_RUNTIME_READ_CONFIG'))
-    return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider)
+    return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider,
+        formal_read_config=os.environ.get('PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG'),
+        formal_source_reader=formal_source_reader,formal_provenance_verifier=formal_provenance_verifier)
