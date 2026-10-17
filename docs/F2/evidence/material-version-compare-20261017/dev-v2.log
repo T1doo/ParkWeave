@@ -1,0 +1,164 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_file_v2_compare_original_correction_review_confirm_and_cold_restart ___
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f059e2e8380>, <parkweave.store.Store object at 0x7f059ffb91f0>, {'fixture-a': 'PP...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f059da46930>)
+tmp_path = PosixPath('/tmp/parkweave-material-version-dev-v2/test_file_v2_compare_original_0')
+
+    def test_file_v2_compare_original_correction_review_confirm_and_cold_restart(preparation_fixture,tmp_path):
+        f=preparation_fixture;p=correction_case(f);auth=authority(f);before=checked(read(f,p));original=next(m for m in before['current_materials'] if m['slot']=='material_outline')
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));open_record(page,api,f,p)
+            text=fill_file(page);posts=[];page.on('request',lambda r:posts.append(r.post_data_json) if r.method=='POST' and r.url.endswith('/commands') else None)
+            unchanged=snapshot(f[1]);page.locator('#prep-evidence button').click();expect(page.locator('#prep-error')).to_contain_text('尚未核对');assert not posts and snapshot(f[1])==unchanged
+            compare_candidate(page);v=page.evaluate('materialVersionView.data');assert v['baseline']['id']==original['id'] and v['baseline']['version']==1 and v['baseline']['text']==original['text'];assert v['candidate']['text']==text and v['candidate']['text_sha256']==hashlib.sha256(text.encode()).hexdigest()
+            assert v['corrections'][0]['status']=='REQUESTED' and 'please correct' in v['corrections'][0]['reason'];assert snapshot(f[1])==unchanged
+            expect(page.locator('#material-version-output')).to_contain_text(original['text']);expect(page.locator('#material-version-output')).to_contain_text(text)
+            assert page.locator('#material-version-output script').count()==0 and not page.evaluate('window.versionInjection||false')
+            for width in (1200,390,320):
+                page.set_viewport_size({'width':width,'height':1000});page.locator('#material-version-panel').scroll_into_view_if_needed();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.screenshot(path=str(tmp_path/f'material-version-{width}.png'))
+>           page.locator('#prep-evidence button').click();expect(page.locator('#prep-command-feedback')).to_contain_text('已核对原操作保存事件',timeout=15000)
+                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Locator expected to contain text '已核对原操作保存事件'
+E           Actual value:  
+E           Call log:
+E             - Expect "to_contain_text" with timeout 15000ms
+E             - waiting for locator("#prep-command-feedback")
+E               33 × locator resolved to <p class="notice" aria-live="polite" id="prep-command-feedback"></p>
+E                  - unexpected value ""
+E           
+E           Aria snapshot:
+E           - paragraph
+
+tests/test_material_version_compare_browser.py:42: AssertionError
+_ test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr[unchanged] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f059c1a97f0>, <parkweave.store.Store object at 0x7f059c1a9b80>, {'fixture-a': 'jC...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f059c1c8740>)
+tmp_path = PosixPath('/tmp/parkweave-material-version-dev-v2/test_csv_actual_file_chooser_o0')
+variant = 'unchanged'
+
+    @pytest.mark.parametrize('variant',['unchanged','edited','lost-reply','boundary'])
+    def test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr(preparation_fixture,tmp_path,variant):
+        f=preparation_fixture;p,_,_=create(f)
+        cell='first\r\nsecond\rthird\n字面\\r和"quote"与😀 '
+        if variant=='boundary':cell='x'*(4000-len('"h","v"\n"SYNTHETIC",""')-1)+'\r'
+        raw=('h,v\r\nSYNTHETIC,"'+cell.replace('"','""')+'"\r\n').encode();expected=cells(raw.decode())
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            select_file(page,'SYNTHETIC.csv',raw)
+            assert cells(json.loads(page.locator('#material-file-text').input_value()))==expected
+            page.locator('#material-file-use').click()
+            expect(page.locator('#material-file-editing')).to_be_visible()
+            hint=page.locator('#material-file-editing').text_content()
+            assert r'\r代表CR、\n代表LF' in hint and r'\\r代表CR' not in hint
+            editor=page.locator('#prep-text');display=editor.input_value();decoded=json.loads(display)
+            assert '\r' not in display and cells(decoded)==expected
+            if variant=='boundary':assert len(decoded)==4000
+            if variant=='edited':
+                display=display.replace('first','edited');editor.fill(display);expected[1][1]=expected[1][1].replace('first','edited')
+            expected_body=json.loads(display);sent=[];lost=[]
+            page.on('request',lambda r:sent.append((r.post_data_json,r.headers.get('idempotency-key'))) if r.method=='POST' and r.url.endswith('/commands') else None)
+            if variant=='lost-reply':
+                def lose(route):
+                    if lost:route.continue_();return
+                    lost.append(route.fetch());route.abort('failed')
+                page.route('**/api/preparations/*/commands',lose)
+            compare_candidate(page)
+            page.locator('#prep-evidence button').click()
+            if variant=='lost-reply':
+                expect(page.locator('#prep-command-retry')).to_be_visible();assert lost[0].status==200
+                # Real controls stay disabled under the original UNKNOWN gate.
+                # Client-side fault injection cannot alter the immutable retry body.
+                expect(editor).to_be_disabled();changed=display.replace('first','new draft only')
+                editor.evaluate('(e,value)=>{e.value=value;}',changed)
+                page.locator('#prep-command-retry').click()
+>           expect(page.locator('#prep-command-feedback')).to_contain_text('已核对原操作保存事件',timeout=15000)
+E           AssertionError: Locator expected to contain text '已核对原操作保存事件'
+E           Actual value:  
+E           Call log:
+E             - Expect "to_contain_text" with timeout 15000ms
+E             - waiting for locator("#prep-command-feedback")
+E               33 × locator resolved to <p class="notice" aria-live="polite" id="prep-command-feedback"></p>
+E                  - unexpected value ""
+E           
+E           Aria snapshot:
+E           - paragraph
+
+tests/test_material_csv_newlines.py:87: AssertionError
+_ test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr[edited] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f059760a8d0>, <parkweave.store.Store object at 0x7f059772e120>, {'fixture-a': 'z5...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f059c1abb60>)
+tmp_path = PosixPath('/tmp/parkweave-material-version-dev-v2/test_csv_actual_file_chooser_o1')
+variant = 'edited'
+
+    @pytest.mark.parametrize('variant',['unchanged','edited','lost-reply','boundary'])
+    def test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr(preparation_fixture,tmp_path,variant):
+        f=preparation_fixture;p,_,_=create(f)
+        cell='first\r\nsecond\rthird\n字面\\r和"quote"与😀 '
+        if variant=='boundary':cell='x'*(4000-len('"h","v"\n"SYNTHETIC",""')-1)+'\r'
+        raw=('h,v\r\nSYNTHETIC,"'+cell.replace('"','""')+'"\r\n').encode();expected=cells(raw.decode())
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p)
+            select_file(page,'SYNTHETIC.csv',raw)
+            assert cells(json.loads(page.locator('#material-file-text').input_value()))==expected
+            page.locator('#material-file-use').click()
+            expect(page.locator('#material-file-editing')).to_be_visible()
+            hint=page.locator('#material-file-editing').text_content()
+            assert r'\r代表CR、\n代表LF' in hint and r'\\r代表CR' not in hint
+            editor=page.locator('#prep-text');display=editor.input_value();decoded=json.loads(display)
+            assert '\r' not in display and cells(decoded)==expected
+            if variant=='boundary':assert len(decoded)==4000
+            if variant=='edited':
+                display=display.replace('first','edited');editor.fill(display);expected[1][1]=expected[1][1].replace('first','edited')
+            expected_body=json.loads(display);sent=[];lost=[]
+            page.on('request',lambda r:sent.append((r.post_data_json,r.headers.get('idempotency-key'))) if r.method=='POST' and r.url.endswith('/commands') else None)
+            if variant=='lost-reply':
+                def lose(route):
+                    if lost:route.continue_();return
+                    lost.append(route.fetch());route.abort('failed')
+                page.route('**/api/preparations/*/commands',lose)
+            compare_candidate(page)
+            page.locator('#prep-evidence button').click()
+            if variant=='lost-reply':
+                expect(page.locator('#prep-command-retry')).to_be_visible();assert lost[0].status==200
+                # Real controls stay disabled under the original UNKNOWN gate.
+                # Client-side fault injection cannot alter the immutable retry body.
+                expect(editor).to_be_disabled();changed=display.replace('first','new draft only')
+                editor.evaluate('(e,value)=>{e.value=value;}',changed)
+                page.locator('#prep-command-retry').click()
+>           expect(page.locator('#prep-command-feedback')).to_contain_text('已核对原操作保存事件',timeout=15000)
+E           AssertionError: Locator expected to contain text '已核对原操作保存事件'
+E           Actual value:  
+E           Call log:
+E             - Expect "to_contain_text" with timeout 15000ms
+E             - waiting for locator("#prep-command-feedback")
+E               33 × locator resolved to <p class="notice" aria-live="polite" id="prep-command-feedback"></p>
+E                  - unexpected value ""
+E           
+E           Aria snapshot:
+E           - paragraph
+
+tests/test_material_csv_newlines.py:87: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+FAILED tests/test_material_csv_newlines.py::test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr[unchanged]
+FAILED tests/test_material_csv_newlines.py::test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_preserve_field_cr[edited]
+3 failed, 4 warnings in 78.36s (0:01:18)

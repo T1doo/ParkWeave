@@ -1,0 +1,42 @@
+PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=src .venv/bin/python - <<'PY'
+import hashlib,json,subprocess
+from pathlib import Path
+import pydantic,pydantic_core
+from parkweave.preparation import PreparationCommand
+node=r"""
+const fs=require('fs'),vm=require('vm');const input=JSON.parse(fs.readFileSync(0,'utf8')),source=fs.readFileSync('src/parkweave/web.html','utf8'),lines=source.split('\n'),values={};const env={$:id=>(values[id]??={value:''}),materialFileFormEncoding:'PLAIN'};vm.createContext(env);
+const stripLine=lines.find(x=>x.trimStart().startsWith('const strip=x=>'));if(!stripLine)throw Error('actual strip definition missing');vm.runInContext(stripLine.replace('const strip=','globalThis.actualStrip='),env);
+if(input.action==='scan'){const result=[];for(let n=0;n<=0x10ffff;n++){if(n>=0xd800&&n<=0xdfff)continue;const c=String.fromCodePoint(n);if(env.actualStrip(c+'X'+c)==='X')result.push(n);}process.stdout.write(JSON.stringify(result));}
+else{vm.runInContext(source.slice(source.indexOf('function materialFileSubmissionText('),source.indexOf('function clearMaterialFileImport('))+'\n'+source.slice(source.indexOf('function materialVersionBody('),source.indexOf('function materialVersionDraft(')),env);const result=input.cases.map(c=>{values['prep-slot']={value:'material_outline'};values['prep-text']={value:c.text};values['prep-source-kind']={value:'DOCUMENT_EXCERPT'};values['prep-source-label']={value:c.label};const r={id:c.id,strip_text:env.actualStrip(c.text),strip_label:env.actualStrip(c.label)};try{r.body=env.materialVersionBody();r.ok=true;}catch(e){r.ok=false;}return r;});process.stdout.write(JSON.stringify(result));}
+"""
+def run(data):
+ r=subprocess.run(['node','-e',node],input=json.dumps(data,ensure_ascii=True),text=True,capture_output=True,check=True)
+ return json.loads(r.stdout)
+js_ws=run({'action':'scan'})
+python_ws=[n for n in range(0x110000) if chr(n).isspace()]
+points=sorted(set(js_ws+python_ws+[0x180e,0x200b,0x2060,0xfeff,0x41]))
+cases=[dict(id=f'U+{n:04X}',text=chr(n)+'SYNTHETIC 文😀'+chr(n),label=chr(n)+'SYNTHETIC label'+chr(n)) for n in points]
+cases += [dict(id='BAD_NUL',text='SYNTHETIC',label='\0'),dict(id='BAD_SURROGATE',text='SYNTHETIC',label='\ud800'),dict(id='UTF16_4002',text='😀'*2001,label='SYNTHETIC')]
+results=run({'action':'compare','cases':cases})
+matched=[];stricter=[];model_rejected=[]
+for case,result in zip(cases,results):
+ try:
+  model=PreparationCommand(action='ADD_EVIDENCE',expected_revision=1,slot='material_outline',text=case['text'],source_kind='DOCUMENT_EXCERPT',source_label=case['label'])
+ except Exception:
+  model_rejected.append(case['id']);assert not result['ok'],case['id'];continue
+ assert result['strip_text']==model.text and result['strip_label']==model.source_label,case['id']
+ if result['ok']:
+  assert result['body']['text']==model.text and result['body']['source_label']==model.source_label,case['id']
+  assert hashlib.sha256(result['body']['text'].encode()).hexdigest()==hashlib.sha256(model.text.encode()).hexdigest()
+  matched.append(case['id'])
+ else:stricter.append(case['id'])
+by_id={x['id']:x for x in results}
+assert by_id['U+FEFF']['body']['text'].startswith('\ufeff') and by_id['U+FEFF']['body']['text'].endswith('\ufeff')
+assert set(stricter)=={'U+001C','U+001D','U+001E','U+001F','BAD_NUL','UTF16_4002'}
+unchanged=[]
+for path in ['src/parkweave/preparation.py','src/parkweave/material_corrections.py','src/parkweave/readiness.py']:
+ old=subprocess.check_output(['git','show','c3991ca0c7eee273bbb0be6da4e3aa929fe2e0d9:'+path])
+ assert old==Path(path).read_bytes();unchanged.append(path)
+print(json.dumps({'scope':'INSTALLED_MODEL_AND_ACTUAL_FRONTEND_PURE_MEMORY','pydantic_version':pydantic.__version__,'pydantic_core_version':pydantic_core.__version__,'unicode_scalar_codepoints_scanned':0x110000-0x800,'actual_JS_strip_whitespace_codepoints':[f'U+{n:04X}' for n in js_ws],'python_isspace_extra_codepoints':[f'U+{n:04X}' for n in set(python_ws)-set(js_ws)],'codepoint_cases_checked':len(points),'accepted_body_and_label_exact_matches':len(matched),'[SYNTHETIC_SESSION_REDACTED]':True,'FEFF_preserved':True,'intentional_stricter_frontend_refusals':stricter,'model_and_frontend_reject':model_rejected,'accepted_text_SHA256_matches':True,'original_backend_files_byte_unchanged':unchanged},ensure_ascii=True))
+print('INDEPENDENT_MATERIAL_VERSION_UNICODE_PASS')
+PY

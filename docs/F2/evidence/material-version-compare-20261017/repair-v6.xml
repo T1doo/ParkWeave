@@ -1,0 +1,52 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="2" time="21.953" timestamp="2026-10-17T10:44:53.126288+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_material_version_compare_browser" name="test_current_original_entry_refusal_clears_private_comparison_without_any_write[compare-catalog]" time="13.033"><failure message="psycopg.errors.ForeignKeyViolation: update or delete on table &quot;preparation_catalog&quot; violates foreign key constraint &quot;preparations_park_id_service_id_service_version_fkey&quot; on table &quot;preparations&quot;&#10;DETAIL:  Key (park_id, service_id, version)=(park-a, synthetic-material-preparation, 1) is still referenced from table &quot;preparations&quot;.">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f28981eec30&gt;, &lt;parkweave.store.Store object at 0x7f28982dc7a0&gt;, {'fixture-a': '9T...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f2897c5cb30&gt;)
+tmp_path = PosixPath('/tmp/parkweave-material-version-repair-v6/test_current_original_entry_re0')
+stage = 'compare', damage = 'catalog'
+
+    @pytest.mark.parametrize('stage,damage',[('compare','READ'),('submit','READ'),('compare','catalog'),('submit','reviewer')])
+    def test_current_original_entry_refusal_clears_private_comparison_without_any_write(preparation_fixture,tmp_path,stage,damage):
+        f=preparation_fixture;p=correction_case(f)
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);open_record(page,api,f,p);fill_file(page)
+            if stage=='submit':compare_candidate(page)
+            with f[1].connect() as c:
+                if damage=='READ':c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                elif damage=='reviewer':c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='prep-specialist-fixture-a' AND capability='REVIEW_ASSIGNED'")
+&gt;               else:c.execute('DELETE FROM preparation_catalog')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_version_compare_browser.py:130: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f28968a30e0&gt;
+query = 'DELETE FROM preparation_catalog', params = None, prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.ForeignKeyViolation: update or delete on table "preparation_catalog" violates foreign key constraint "preparations_park_id_service_id_service_version_fkey" on table "preparations"
+E           DETAIL:  Key (park_id, service_id, version)=(park-a, synthetic-material-preparation, 1) is still referenced from table "preparations".
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: ForeignKeyViolation</failure></testcase><testcase classname="tests.test_material_version_compare_browser" name="test_actual_concurrent_original_write_invalidates_pre_submit_comparison_without_post[same_revision_metadata]" time="8.294" /></testsuite></testsuites>

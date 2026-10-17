@@ -1,0 +1,105 @@
+F..                                                                      [100%]
+=================================== FAILURES ===================================
+___ test_file_v2_compare_original_correction_review_confirm_and_cold_restart ___
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1273d87470>, <parkweave.store.Store object at 0x7f1273d876e0>, {'fixture-a': '3W...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f12748b9e20>)
+tmp_path = PosixPath('/tmp/parkweave-material-version-dev-v4/test_file_v2_compare_original_0')
+
+    def test_file_v2_compare_original_correction_review_confirm_and_cold_restart(preparation_fixture,tmp_path):
+        f=preparation_fixture;p=correction_case(f);auth=authority(f);before=checked(read(f,p));original=next(m for m in before['current_materials'] if m['slot']=='material_outline')
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));open_record(page,api,f,p)
+            text=fill_file(page);posts=[];page.on('request',lambda r:posts.append(r.post_data_json) if r.method=='POST' and r.url.endswith('/commands') else None)
+            unchanged=snapshot(f[1]);page.locator('#prep-evidence button').click();expect(page.locator('#prep-error')).to_contain_text('尚未核对');assert not posts and snapshot(f[1])==unchanged
+            compare_candidate(page);v=page.evaluate('materialVersionView.data');assert v['baseline']['id']==original['id'] and v['baseline']['version']==1 and v['baseline']['text']==original['text'];assert v['candidate']['text']==text and v['candidate']['text_sha256']==hashlib.sha256(text.encode()).hexdigest()
+            assert v['corrections'][0]['status']=='REQUESTED' and 'please correct' in v['corrections'][0]['reason'];assert snapshot(f[1])==unchanged
+            expect(page.locator('#material-version-output')).to_contain_text(original['text']);expect(page.locator('#material-version-output')).to_contain_text(text)
+            assert page.locator('#material-version-output script').count()==0 and not page.evaluate('window.versionInjection||false')
+            for width in (1200,390,320):
+                page.set_viewport_size({'width':width,'height':1000});page.locator('#material-version-panel').scroll_into_view_if_needed();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.screenshot(path=str(tmp_path/f'material-version-{width}.png'))
+            page.locator('#prep-evidence button').click();expect(page.locator('#prep-command-feedback')).to_contain_text('已核对原操作保存事件',timeout=15000)
+            assert len(posts)==1 and posts[0]['text']==text
+            assert page.evaluate('!materialVersionRequired&&materialVersionOrigin===null')
+            page.locator('#prep-slot').select_option('need_summary');page.locator('#prep-text').fill('SYNTHETIC next manual source');page.locator('#prep-source-kind').select_option('USER_STATEMENT');page.locator('#prep-source-label').fill('SYNTHETIC manual follow-up')
+            page.locator('#prep-evidence button').click();expect(page.locator('#prep-materials')).to_contain_text('SYNTHETIC next manual source',timeout=15000);assert len(posts)==2
+            q=api.get('/api/preparations/'+p['preparation_id']+'/material-corrections',headers=headers(f[2])).json();assert q['active_targets'][0]['status']=='SUBMITTED_FOR_REVIEW'
+            current=api.get('/api/preparations/'+p['preparation_id'],headers=headers(f[2])).json();assert current['preparation']['review_sha256'] is None;assert any(m['text']==original['text'] for m in current['material_history'])
+            assert next(m for m in current['current_materials'] if m['slot']=='material_outline')['version']==2
+            open_record(page,api,f,p,'prep-specialist-fixture-a');expect(page.locator('#material-version-panel')).to_be_hidden();expect(page.locator('#prep-history')).to_contain_text('REVIEW');expect(page.locator('#prep-materials')).to_contain_text(text)
+            page.locator('#prep-reason').fill('SYNTHETIC independently reviews current complete two-slot pack');page.locator('#prep-review').click();expect(page.locator('#prep-summary')).to_contain_text('待企业确认')
+>           open_record(page,api,f,p);page.locator('#prep-reason').fill('SYNTHETIC owner confirms current source pack');page.locator('#prep-confirm').click();expect(page.locator('#prep-summary')).to_contain_text('本地资料准备已确认')
+                                                                                                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_version_compare_browser.py:52: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:17876: in click
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:165: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:593: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f1272486a80>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f12724827a0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for locator("#prep-confirm")
+E               - locator resolved to <button disabled type="button" id="prep-confirm">确认本地资料准备</button>
+E             - attempting click action
+E               2 × waiting for element to be visible, enabled and stable
+E                 - element is not enabled
+E               - retrying click action
+E               - waiting 20ms
+E               2 × waiting for element to be visible, enabled and stable
+E                 - element is not enabled
+E               - retrying click action
+E                 - waiting 100ms
+E               57 × waiting for element to be visible, enabled and stable
+E                  - element is not enabled
+E                - retrying click action
+E                  - waiting 500ms
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+1 failed, 2 passed, 4 warnings in 78.17s (0:01:18)

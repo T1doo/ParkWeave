@@ -1,0 +1,54 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+___ test_file_v2_compare_original_correction_review_confirm_and_cold_restart ___
+
+preparation_fixture = (<parkweave.store.Store object at 0x7fd970986fc0>, <parkweave.store.Store object at 0x7fd970a16690>, {'fixture-a': '9x...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7fd97001bd70>)
+tmp_path = PosixPath('/tmp/parkweave-material-version-dev-v1/test_file_v2_compare_original_0')
+
+    def test_file_v2_compare_original_correction_review_confirm_and_cold_restart(preparation_fixture,tmp_path):
+        f=preparation_fixture;p=correction_case(f);auth=authority(f);before=checked(read(f,p));original=next(m for m in before['current_materials'] if m['slot']=='material_outline')
+        with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+            b,context,page=browser_page(pw);errors=[];page.on('pageerror',lambda e:errors.append(str(e)));open_record(page,api,f,p)
+            text=fill_file(page);posts=[];page.on('request',lambda r:posts.append(r.post_data_json) if r.method=='POST' and r.url.endswith('/commands') else None)
+            unchanged=snapshot(f[1]);page.locator('#prep-evidence button').click();expect(page.locator('#prep-error')).to_contain_text('尚未核对');assert not posts and snapshot(f[1])==unchanged
+            compare_candidate(page);v=page.evaluate('materialVersionView.data');assert v['baseline']['id']==original['id'] and v['baseline']['version']==1 and v['baseline']['text']==original['text'];assert v['candidate']['text']==text and v['candidate']['text_sha256']==hashlib.sha256(text.encode()).hexdigest()
+            assert v['corrections'][0]['status']=='REQUESTED' and 'please correct' in v['corrections'][0]['reason'];assert snapshot(f[1])==unchanged
+            expect(page.locator('#material-version-output')).to_contain_text(original['text']);expect(page.locator('#material-version-output')).to_contain_text(text)
+            assert page.locator('#material-version-output script').count()==0 and not page.evaluate('window.versionInjection||false')
+            for width in (1200,390,320):
+                page.set_viewport_size({'width':width,'height':1000});page.locator('#material-version-panel').scroll_into_view_if_needed();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.screenshot(path=str(tmp_path/f'material-version-{width}.png'))
+>           page.locator('#prep-evidence button').click();expect(page.locator('#prep-command-feedback')).to_contain_text('已核对原操作保存事件',timeout=15000)
+                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: Locator expected to contain text '已核对原操作保存事件'
+E           Actual value:  
+E           Call log:
+E             - Expect "to_contain_text" with timeout 15000ms
+E             - waiting for locator("#prep-command-feedback")
+E               33 × locator resolved to <p class="notice" aria-live="polite" id="prep-command-feedback"></p>
+E                  - unexpected value ""
+E           
+E           Aria snapshot:
+E           - paragraph
+
+tests/test_material_version_compare_browser.py:42: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+1 failed, 4 warnings in 36.92s

@@ -1,0 +1,12 @@
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python - <<'PY'
+import hashlib,json,subprocess
+from pathlib import Path
+m=Path('.runtime/material-version-compare/freeze.json'); x=json.loads(m.read_text()); sha='a775ba0df5c2aa132e3fdcce11f70103cf7fa213'
+assert x['source_sha']==subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==sha
+observed={p:hashlib.sha256(Path(p).read_bytes()).hexdigest() if Path(p).is_file() else None for p in x['files']}
+bad=[p for p,h in observed.items() if h!=x['files'][p]]
+contract='docs/F2/MaterialVersionCompareContract-20261017.md'; contract_sha=hashlib.sha256(Path(contract).read_bytes()).hexdigest()
+assert len(observed)==729 and not bad and contract_sha==x['contract_sha256']
+print(json.dumps({'phase':'before','source_sha':sha,'paths_checked':len(observed),'mismatches':bad,'hash_map_sha256':hashlib.sha256(json.dumps(observed,sort_keys=True,separators=(',',':')).encode()).hexdigest(),'manifest_sha256':hashlib.sha256(m.read_bytes()).hexdigest(),'contract_sha256':contract_sha}))
+for p in ['src/parkweave/web.html','tests/test_material_version_compare_browser.py','tests/test_material_file_import_browser.py','tests/test_material_csv_newlines.py',contract]:print(hashlib.sha256(Path(p).read_bytes()).hexdigest()+'  '+p)
+PY
