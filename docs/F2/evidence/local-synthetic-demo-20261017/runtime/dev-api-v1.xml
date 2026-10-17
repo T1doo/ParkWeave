@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="9" skipped="0" tests="19" time="34.433" timestamp="2026-10-17T12:18:40.025768+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_local_synthetic_demo" name="test_ordinary_factory_original_full_chain_and_cold_recovery" time="4.687"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog">demo_inputs = ((&lt;parkweave.store.Store object at 0x7f150168cad0&gt;, &lt;parkweave.store.Store object at 0x7f15014926c0&gt;, {'fixture-a': 'A...atabase': {'name': 'fixture_5f701628849848b09e615c1f75b98f6b', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-0/test_ordinary_factory_original0')
+
+    def test_ordinary_factory_original_full_chain_and_cold_recovery(demo_inputs,tmp_path):
+        initial,cfg,value,journal=demo_inputs
+        before=authority_snapshot(initial[1])
+&gt;       with TestClient(configured_app()) as api:
+                        ^^^^^^^^^^^^^^^^
+
+tests/test_local_synthetic_demo.py:95: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1109: in configured_app
+    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:223: in configure
+    return LocalSyntheticDemo(LocalDemoCatalog(store,cfg),LocalDemoSelector())
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:144: in __init__
+    with store.connect() as c: self.validate(c)
+                               ^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:159: in validate
+    row = c.execute('SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation '
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f1500f079b0&gt;
+query = 'SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=1 FOR SHARE'
+params = ('park-a', 'synthetic-material-preparation'), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase><testcase classname="tests.test_local_synthetic_demo" name="test_missing_current_authority_refuses_without_writes[READ]" time="1.397"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog">demo_inputs = ((&lt;parkweave.store.Store object at 0x7f1500f06000&gt;, &lt;parkweave.store.Store object at 0x7f1500f060f0&gt;, {'fixture-a': 'A...atabase': {'name': 'fixture_8bce0872ea994d528cd95b3af6b8e672', 'oid': 17356, 'address': None, 'port': None, ...}, ...})
+target = 'READ'
+
+    @pytest.mark.parametrize('target',['READ','PREPARE','REVIEW_ASSIGNED','EXECUTE','resource','reviewer','tenant'])
+    def test_missing_current_authority_refuses_without_writes(demo_inputs,target):
+        initial,_,_,_=demo_inputs
+        p=prepared(initial)
+&gt;       with TestClient(configured_app()) as api:
+                        ^^^^^^^^^^^^^^^^
+
+tests/test_local_synthetic_demo.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1109: in configured_app
+    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:223: in configure
+    return LocalSyntheticDemo(LocalDemoCatalog(store,cfg),LocalDemoSelector())
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:144: in __init__
+    with store.connect() as c: self.validate(c)
+                               ^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:159: in validate
+    row = c.execute('SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation '
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f15004ab7a0&gt;
+query = 'SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=1 FOR SHARE'
+params = ('park-a', 'synthetic-material-preparation'), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase><testcase classname="tests.test_local_synthetic_demo" name="test_missing_current_authority_refuses_without_writes[PREPARE]" time="1.400"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog">demo_inputs = ((&lt;parkweave.store.Store object at 0x7f15004a9460&gt;, &lt;parkweave.store.Store object at 0x7f15004ab020&gt;, {'fixture-a': 'o...atabase': {'name': 'fixture_3e72e8188b3d4fe0a84978bdae149083', 'oid': 18327, 'address': None, 'port': None, ...}, ...})
+target = 'PREPARE'
+
+    @pytest.mark.parametrize('target',['READ','PREPARE','REVIEW_ASSIGNED','EXECUTE','resource','reviewer','tenant'])
+    def test_missing_current_authority_refuses_without_writes(demo_inputs,target):
+        initial,_,_,_=demo_inputs
+        p=prepared(initial)
+&gt;       with TestClient(configured_app()) as api:
+                        ^^^^^^^^^^^^^^^^
+
+tests/test_local_synthetic_demo.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1109: in configured_app
+    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:223: in configure
+    return LocalSyntheticDemo(LocalDemoCatalog(store,cfg),LocalDemoSelector())
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:144: in __init__
+    with store.connect() as c: self.validate(c)
+                               ^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:159: in validate
+    row = c.execute('SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation '
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f150029ecf0&gt;
+query = 'SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=1 FOR SHARE'
+params = ('park-a', 'synthetic-material-preparation'), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase><testcase classname="tests.test_local_synthetic_demo" name="test_missing_current_authority_refuses_without_writes[REVIEW_ASSIGNED]" time="2.621"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog">demo_inputs = ((&lt;parkweave.store.Store object at 0x7f150029ffb0&gt;, &lt;parkweave.store.Store object at 0x7f150029daf0&gt;, {'fixture-a': 'j...atabase': {'name': 'fixture_c8f064deb62046a1a4eeeb55bd8aa568', 'oid': 19298, 'address': None, 'port': None, ...}, ...})
+target = 'REVIEW_ASSIGNED'
+
+    @pytest.mark.parametrize('target',['READ','PREPARE','REVIEW_ASSIGNED','EXECUTE','resource','reviewer','tenant'])
+    def test_missing_current_authority_refuses_without_writes(demo_inputs,target):
+        initial,_,_,_=demo_inputs
+        p=prepared(initial)
+&gt;       with TestClient(configured_app()) as api:
+                        ^^^^^^^^^^^^^^^^
+
+tests/test_local_synthetic_demo.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1109: in configured_app
+    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:223: in configure
+    return LocalSyntheticDemo(LocalDemoCatalog(store,cfg),LocalDemoSelector())
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:144: in __init__
+    with store.connect() as c: self.validate(c)
+                               ^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:159: in validate
+    row = c.execute('SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation '
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f15005f21b0&gt;
+query = 'SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=1 FOR SHARE'
+params = ('park-a', 'synthetic-material-preparation'), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase><testcase classname="tests.test_local_synthetic_demo" name="test_missing_current_authority_refuses_without_writes[EXECUTE]" time="1.548"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog">demo_inputs = ((&lt;parkweave.store.Store object at 0x7f14fb53d130&gt;, &lt;parkweave.store.Store object at 0x7f14fb524800&gt;, {'fixture-a': 'r...atabase': {'name': 'fixture_1ba6a7d6b9234fa69031d7ee6b95286f', 'oid': 20269, 'address': None, 'port': None, ...}, ...})
+target = 'EXECUTE'
+
+    @pytest.mark.parametrize('target',['READ','PREPARE','REVIEW_ASSIGNED','EXECUTE','resource','reviewer','tenant'])
+    def test_missing_current_authority_refuses_without_writes(demo_inputs,target):
+        initial,_,_,_=demo_inputs
+        p=prepared(initial)
+&gt;       with TestClient(configured_app()) as api:
+                        ^^^^^^^^^^^^^^^^
+
+tests/test_local_synthetic_demo.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1109: in configured_app
+    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:223: in configure
+    return LocalSyntheticDemo(LocalDemoCatalog(store,cfg),LocalDemoSelector())
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:144: in __init__
+    with store.connect() as c: self.validate(c)
+                               ^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:159: in validate
+    row = c.execute('SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation '
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f1501023140&gt;
+query = 'SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=1 FOR SHARE'
+params = ('park-a', 'synthetic-material-preparation'), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase><testcase classname="tests.test_local_synthetic_demo" name="test_missing_current_authority_refuses_without_writes[resource]" time="1.387"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog">demo_inputs = ((&lt;parkweave.store.Store object at 0x7f1500244710&gt;, &lt;parkweave.store.Store object at 0x7f15015576e0&gt;, {'fixture-a': 'k...atabase': {'name': 'fixture_2414d06c9bcd4ca3bda724b2cb6f2a24', 'oid': 21240, 'address': None, 'port': None, ...}, ...})
+target = 'resource'
+
+    @pytest.mark.parametrize('target',['READ','PREPARE','REVIEW_ASSIGNED','EXECUTE','resource','reviewer','tenant'])
+    def test_missing_current_authority_refuses_without_writes(demo_inputs,target):
+        initial,_,_,_=demo_inputs
+        p=prepared(initial)
+&gt;       with TestClient(configured_app()) as api:
+                        ^^^^^^^^^^^^^^^^
+
+tests/test_local_synthetic_demo.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1109: in configured_app
+    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:223: in configure
+    return LocalSyntheticDemo(LocalDemoCatalog(store,cfg),LocalDemoSelector())
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:144: in __init__
+    with store.connect() as c: self.validate(c)
+                               ^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:159: in validate
+    row = c.execute('SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation '
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f14fb4aa870&gt;
+query = 'SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=1 FOR SHARE'
+params = ('park-a', 'synthetic-material-preparation'), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase><testcase classname="tests.test_local_synthetic_demo" name="test_missing_current_authority_refuses_without_writes[reviewer]" time="1.801"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog">demo_inputs = ((&lt;parkweave.store.Store object at 0x7f14fb269940&gt;, &lt;parkweave.store.Store object at 0x7f150026ade0&gt;, {'fixture-a': 'p...atabase': {'name': 'fixture_be7fdcb15dd244ffa178befda9214d60', 'oid': 22211, 'address': None, 'port': None, ...}, ...})
+target = 'reviewer'
+
+    @pytest.mark.parametrize('target',['READ','PREPARE','REVIEW_ASSIGNED','EXECUTE','resource','reviewer','tenant'])
+    def test_missing_current_authority_refuses_without_writes(demo_inputs,target):
+        initial,_,_,_=demo_inputs
+        p=prepared(initial)
+&gt;       with TestClient(configured_app()) as api:
+                        ^^^^^^^^^^^^^^^^
+
+tests/test_local_synthetic_demo.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1109: in configured_app
+    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:223: in configure
+    return LocalSyntheticDemo(LocalDemoCatalog(store,cfg),LocalDemoSelector())
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:144: in __init__
+    with store.connect() as c: self.validate(c)
+                               ^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:159: in validate
+    row = c.execute('SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation '
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f14fb782bd0&gt;
+query = 'SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=1 FOR SHARE'
+params = ('park-a', 'synthetic-material-preparation'), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase><testcase classname="tests.test_local_synthetic_demo" name="test_missing_current_authority_refuses_without_writes[tenant]" time="1.678"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog">demo_inputs = ((&lt;parkweave.store.Store object at 0x7f150044c6b0&gt;, &lt;parkweave.store.Store object at 0x7f14fb2eeba0&gt;, {'fixture-a': '-...atabase': {'name': 'fixture_29e86a2bc6d346e78db7d345c25c2374', 'oid': 23182, 'address': None, 'port': None, ...}, ...})
+target = 'tenant'
+
+    @pytest.mark.parametrize('target',['READ','PREPARE','REVIEW_ASSIGNED','EXECUTE','resource','reviewer','tenant'])
+    def test_missing_current_authority_refuses_without_writes(demo_inputs,target):
+        initial,_,_,_=demo_inputs
+        p=prepared(initial)
+&gt;       with TestClient(configured_app()) as api:
+                        ^^^^^^^^^^^^^^^^
+
+tests/test_local_synthetic_demo.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1109: in configured_app
+    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:223: in configure
+    return LocalSyntheticDemo(LocalDemoCatalog(store,cfg),LocalDemoSelector())
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:144: in __init__
+    with store.connect() as c: self.validate(c)
+                               ^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:159: in validate
+    row = c.execute('SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation '
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f1500266db0&gt;
+query = 'SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=1 FOR SHARE'
+params = ('park-a', 'synthetic-material-preparation'), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase><testcase classname="tests.test_local_synthetic_demo" name="test_startup_bindings_default_off_and_invalid_inputs[unknown_mode]" time="1.978" /><testcase classname="tests.test_local_synthetic_demo" name="test_startup_bindings_default_off_and_invalid_inputs[missing_config]" time="1.068" /><testcase classname="tests.test_local_synthetic_demo" name="test_startup_bindings_default_off_and_invalid_inputs[config_without_mode]" time="1.595" /><testcase classname="tests.test_local_synthetic_demo" name="test_startup_bindings_default_off_and_invalid_inputs[real_source]" time="1.532" /><testcase classname="tests.test_local_synthetic_demo" name="test_startup_bindings_default_off_and_invalid_inputs[pack_hash]" time="1.235" /><testcase classname="tests.test_local_synthetic_demo" name="test_startup_bindings_default_off_and_invalid_inputs[journal_hash]" time="1.496" /><testcase classname="tests.test_local_synthetic_demo" name="test_startup_bindings_default_off_and_invalid_inputs[database]" time="1.213" /><testcase classname="tests.test_local_synthetic_demo" name="test_startup_bindings_default_off_and_invalid_inputs[park]" time="1.645" /><testcase classname="tests.test_local_synthetic_demo" name="test_startup_bindings_default_off_and_invalid_inputs[catalog]" time="1.178" /><testcase classname="tests.test_local_synthetic_demo" name="test_startup_bindings_default_off_and_invalid_inputs[relative_path]" time="1.053" /><testcase classname="tests.test_local_synthetic_demo" name="test_default_off_and_isolated_types_not_substituted" time="2.237"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog">demo_inputs = ((&lt;parkweave.store.Store object at 0x7f150116c740&gt;, &lt;parkweave.store.Store object at 0x7f14fb622e40&gt;, {'fixture-a': 'G...atabase': {'name': 'fixture_8e2038a6f6324534bd0b0f7c2d6a813b', 'oid': 33863, 'address': None, 'port': None, ...}, ...})
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f14faee7020&gt;
+
+    def test_default_off_and_isolated_types_not_substituted(demo_inputs,monkeypatch):
+        f,cfg,_,_=demo_inputs
+        monkeypatch.delenv('PARKWEAVE_SERVICE_PROFILE');monkeypatch.delenv('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG')
+        p=prepared(f)
+        with TestClient(configured_app()) as api:
+            ok(api.get('/api/preparations/'+p['preparation_id']+'/service-capabilities',headers=headers(f[2])),403)
+&gt;       runtime=demo.configure(f[0],demo.PROFILE,json.dumps(cfg))
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_local_synthetic_demo.py:203: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/local_synthetic_demo.py:223: in configure
+    return LocalSyntheticDemo(LocalDemoCatalog(store,cfg),LocalDemoSelector())
+                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:144: in __init__
+    with store.connect() as c: self.validate(c)
+                               ^^^^^^^^^^^^^^^^
+src/parkweave/local_synthetic_demo.py:159: in validate
+    row = c.execute('SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation '
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f15003c9730&gt;
+query = 'SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=1 FOR SHARE'
+params = ('park-a', 'synthetic-material-preparation'), prepare = None
+binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table preparation_catalog
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase></testsuite></testsuites>

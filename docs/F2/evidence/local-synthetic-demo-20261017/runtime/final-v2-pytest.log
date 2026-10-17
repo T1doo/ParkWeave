@@ -1,0 +1,1559 @@
+........................................................................ [ 22%]
+........................................................................ [ 45%]
+........................................................................ [ 68%]
+.............................................FFFFFFFFFFFFFFFFFFFFF...... [ 90%]
+.............................                                            [100%]
+=================================== FAILURES ===================================
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[normal] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1946fabaa0>, <parkweave.store.Store object at 0x7f1946faa600>, {'fixture-a': 'Ah...re-a': 'yTg48oPY-2gmkAYa3DzqI21P2Rnm98r_rwBWmr62sEg', ...}, <starlette.testclient.TestClient object at 0x7f194639b590>)
+mode = 'normal'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f194d20ecc0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[partial] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f19461703e0>, <parkweave.store.Store object at 0x7f194ceecda0>, {'fixture-a': 'lj...re-a': 'YaRiwQ3c2VcZEOkEdq70kiDknRinkQe4sJJB11lEC48', ...}, <starlette.testclient.TestClient object at 0x7f1946f3d610>)
+mode = 'partial'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f194ce915e0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[lost_generate] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1946d21be0>, <parkweave.store.Store object at 0x7f1946ff2450>, {'fixture-a': 'Jt...re-a': 'DdTz5H-D0mTkSfVgIXeGUVi8UKsP-AYUVBbO4odfz2s', ...}, <starlette.testclient.TestClient object at 0x7f1945d61f40>)
+mode = 'lost_generate'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f194c606f60>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[cold_generate] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f19463c8050>, <parkweave.store.Store object at 0x7f1946f01ee0>, {'fixture-a': 'QO...re-a': 'U71hRtKUJKgaP0SlpZj3OKXl_34lJGn5HiNuv1PnQxM', ...}, <starlette.testclient.TestClient object at 0x7f1945d762d0>)
+mode = 'cold_generate'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1945d8b080>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[lost_adopt] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f194612e4b0>, <parkweave.store.Store object at 0x7f1946f01790>, {'fixture-a': 'Tq...re-a': 'eZfHnFbRh6ZxWSx-CZjjARWd6E9Fb7-VaSvfTqhM1qE', ...}, <starlette.testclient.TestClient object at 0x7f1945fe7f80>)
+mode = 'lost_adopt'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1946f01f70>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[cold_adopt] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1946336030>, <parkweave.store.Store object at 0x7f194c395a90>, {'fixture-a': 'LD...re-a': '0dGdI88JXujIqTXeXsVRzANheDGS5NEoO8ymPpeTi2M', ...}, <starlette.testclient.TestClient object at 0x7f1945d75d90>)
+mode = 'cold_adopt'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f19464304a0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[late] __
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f19463079e0>, <parkweave.store.Store object at 0x7f1945a2ab40>, {'fixture-a': 'y3...re-a': 'szmq2k3wV5fiVf61IQ73YI5jmIcFCE_LISXDliJ88Wo', ...}, <starlette.testclient.TestClient object at 0x7f1946f53800>)
+mode = 'late'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f19455d8a70>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[late_newcase] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f194c3ad0a0>, <parkweave.store.Store object at 0x7f194562e1b0>, {'fixture-a': 'Wz...re-a': 'l12Odkagy74AOT6LGP44lX1vS1KpirgHePslbVdfHZg', ...}, <starlette.testclient.TestClient object at 0x7f194c455100>)
+mode = 'late_newcase'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1946ff1940>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[late_plan] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1946398860>, <parkweave.store.Store object at 0x7f1946f539e0>, {'fixture-a': 'd-...re-a': 'HTu5ve38eLh3XrJjsVt-7cmkSoeJauSSaAtqr2OKbEU', ...}, <starlette.testclient.TestClient object at 0x7f1945a10ef0>)
+mode = 'late_plan'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1946ef1760>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[source_change] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1945c1a600>, <parkweave.store.Store object at 0x7f1946ff3bc0>, {'fixture-a': '5K...re-a': 'VR0tW0tyv4aH3USilG6kVBWsYN9PauiHatBvjLtNKD8', ...}, <starlette.testclient.TestClient object at 0x7f19463ae450>)
+mode = 'source_change'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f194c4877d0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[pending_adopt] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f194c51b050>, <parkweave.store.Store object at 0x7f19454b6de0>, {'fixture-a': '6t...re-a': 'kfFo7v_oehXqD1H3futHS68n530ciuTsdFwkg_2O6VQ', ...}, <starlette.testclient.TestClient object at 0x7f19464c0980>)
+mode = 'pending_adopt'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1945cad9a0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[opaque_wrongname] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1946082ab0>, <parkweave.store.Store object at 0x7f19453a7c20>, {'fixture-a': 'e1...re-a': 'Y11uw9jt8-MwhWEZ6OhsuERkHBAtWrIK6V6Ap8TFN3E', ...}, <starlette.testclient.TestClient object at 0x7f19452019a0>)
+mode = 'opaque_wrongname'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1945a894f0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[revoke] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f194c3d46b0>, <parkweave.store.Store object at 0x7f194c12a390>, {'fixture-a': 'kn...re-a': 'MrbcwJEG0arwgSu4oDhEYuK-MXQtRfwOq-ypt-H8nQI', ...}, <starlette.testclient.TestClient object at 0x7f194c3c13d0>)
+mode = 'revoke'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f194c12b6b0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[expired] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1945ab9520>, <parkweave.store.Store object at 0x7f1945bcaff0>, {'fixture-a': '95...re-a': 'cBgHs3VCQ5ZDGJrZ6ZxGVHVYVcJYRp1muCOcQH9evRM', ...}, <starlette.testclient.TestClient object at 0x7f194d0a6180>)
+mode = 'expired'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1945b2bbc0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[cold_adopt_expired] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f194c37b440>, <parkweave.store.Store object at 0x7f1946080ad0>, {'fixture-a': 'rL...re-a': 'n-PK2inc9cnBn-MsCp5zTwrKH8PLbU5_urPRzTOgswU', ...}, <starlette.testclient.TestClient object at 0x7f194c4691c0>)
+mode = 'cold_adopt_expired'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f194c37b8c0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1945dce4b0>, <parkweave.store.Store object at 0x7f194c457050>, {'fixture-a': 'kE...re-a': 'FLgZoyLoLa7Vj4Ne48C9k-ehHu2ckZsI1pZW6Jjt8CQ', ...}, <starlette.testclient.TestClient object at 0x7f1945d8be30>)
+mode = 'trace'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1945fce390>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_expired] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1946453f80>, <parkweave.store.Store object at 0x7f1946451a30>, {'fixture-a': 'G4...re-a': 't6ryoa0dQEJEV7G3TgSLfFOt8sDOJt9TKDbJYk1jP2w', ...}, <starlette.testclient.TestClient object at 0x7f194c2eea80>)
+mode = 'trace_expired'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1945bc87a0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_late] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f194cf43260>, <parkweave.store.Store object at 0x7f194cf40a10>, {'fixture-a': '5U...re-a': 'RW_Y_NeXt0BkuvHrvYj1mpxz3D7Udbz6VMAZQJkK8g4', ...}, <starlette.testclient.TestClient object at 0x7f1946e36450>)
+mode = 'trace_late'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1946450ef0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_revoke] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f19463dbda0>, <parkweave.store.Store object at 0x7f19454a2b40>, {'fixture-a': 'xB...re-a': 'KkQjxbd2Lu1ZAgUQeREyQBz8rH4h7E0a6hsFgW1xV18', ...}, <starlette.testclient.TestClient object at 0x7f194c0e4980>)
+mode = 'trace_revoke'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1945a893d0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_plan_switch] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f1945e37620>, <parkweave.store.Store object at 0x7f19455d9280>, {'fixture-a': 'ke...re-a': 'UHNHdwYmGvcQmjUtBARhXSUCKZm9ym8VTw9OLyfGO94', ...}, <starlette.testclient.TestClient object at 0x7f1946160770>)
+mode = 'trace_plan_switch'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f194ceb2e70>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_pending_material] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f194c501370>, <parkweave.store.Store object at 0x7f1945ee4980>, {'fixture-a': 'Bi...re-a': 'IqvTW3vrmG9prbTTC4hjRzNs0nGU35usqU9kmWrZd24', ...}, <starlette.testclient.TestClient object at 0x7f1945a880e0>)
+mode = 'trace_pending_material'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f1945c44050>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: node:internal/modules/cjs/loader:1520
+E               throw err;
+E               ^
+E             
+E             Error: Cannot find module '/workspace/ParkWeave/.runtime/local-synthetic-demo/final-cwd-v2/tests/service_plan_candidates_actual.js'
+E                 at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+E                 at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+E                 at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+E                 at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+E                 at Module._load (node:internal/modules/cjs/loader:1294:5)
+E                 at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E                 at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E                 at node:internal/main/run_main_module:33:47 {
+E               code: 'MODULE_NOT_FOUND',
+E               requireStack: []
+E             }
+E             
+E             Node.js v24.19.0
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../../../.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_local_synthetic_demo.py::test_ordinary_factory_original_full_chain_and_cold_recovery
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_local_synthetic_demo.py::test_ordinary_factory_original_full_chain_and_cold_recovery
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[normal]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[partial]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[lost_generate]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[cold_generate]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[lost_adopt]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[cold_adopt]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[late]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[late_newcase]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[late_plan]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[source_change]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[pending_adopt]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[opaque_wrongname]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[revoke]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[expired]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[cold_adopt_expired]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_expired]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_late]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_revoke]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_plan_switch]
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_pending_material]
+21 failed, 296 passed, 4 warnings in 539.24s (0:08:59)

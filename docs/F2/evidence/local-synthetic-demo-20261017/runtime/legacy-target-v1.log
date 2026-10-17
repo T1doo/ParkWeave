@@ -1,0 +1,83 @@
+.F                                                                       [100%]
+=================================== FAILURES ===================================
+_ test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_revoke] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f32a93d1100>, <parkweave.store.Store object at 0x7f32a91eb1d0>, {'fixture-a': '3m...re-a': 'bjJdB1HKVYZ6m8lvoByizBdNmqdNnQ4Qe-XouLEi8yQ', ...}, <starlette.testclient.TestClient object at 0x7f32a747e570>)
+mode = 'trace_revoke'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f32a72f7aa0>
+
+    @pytest.mark.parametrize('mode',['normal','partial','lost_generate','cold_generate','lost_adopt','cold_adopt','late','late_newcase','late_plan','source_change','pending_adopt','opaque_wrongname','revoke','expired','cold_adopt_expired','trace','trace_expired','trace_late','trace_revoke','trace_plan_switch','trace_pending_material'])
+    def test_original_page_candidate_consumer_never_hand_fills_candidate_json(preparation_fixture,mode,monkeypatch):
+        import os,json,selectors,subprocess
+        from pathlib import Path
+        from test_isolated_run_access import permission_snapshot
+        f=preparation_fixture;p=setup(f,[GOAL]+(['UNSUPPORTED_EXTERNAL_ACCEPTANCE'] if mode=='partial' else []));permissions=permission_snapshot(f[1]);messages=[];summary=None;stderr='';dropped=False
+        proc=subprocess.Popen(['node','tests/service_plan_candidates_actual.js',p['preparation_id'],'fixture-a',mode],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,bufsize=0);selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            while True:
+                assert selector.select(timeout=15),'candidate page bridge timeout';line=proc.stdout.readline()
+                if not line:break
+                msg=json.loads(line)
+                if msg.get('replace_source_plan'):
+                    from test_request_intents import save
+                    assert save(f,p,goals=[GOAL,'SYNTHETIC_NEW_SOURCE_TRACE_GOAL']).status_code==200
+                    newer=generate(f,p).json();assert adopt(f,p,newer).status_code==201
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('expire_candidate'):
+                    from parkweave import service_plan_candidates as candidates
+                    with f[1].connect() as c:
+                        record=c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'][-1]
+                    monkeypatch.setattr(candidates,'clock',lambda c:candidates._time(record['validity']['expires_at']))
+                    proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('change_context'):
+                    if msg['change_context']=='late_newcase':new=setup(f,[GOAL]);reply={'preparation_id':new['preparation_id']}
+                    else:
+                        from test_request_intents import save
+                        r=save(f,p,goals=[GOAL,'UNSUPPORTED_ADDED_GOAL']);assert r.status_code==200;reply={'preparation_id':p['preparation_id']}
+                    permissions=permission_snapshot(f[1]);proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush();continue
+                if msg.get('change_source'):
+                    from test_preparation import add
+                    assert add(f,p).status_code==200;proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if msg.get('revoke_read'):
+                    with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                    permissions=permission_snapshot(f[1]);proc.stdin.write(b'{}\n');proc.stdin.flush();continue
+                if 'result' in msg:summary=msg;break
+                q=msg['request'];options=q['options'];method=options.get('method','GET');body=__import__('json').loads(options['body']) if options.get('body') else None;before=digest(f)
+                r=f[3].request(method,q['path'],headers=headers(f[2],key=options['headers'].get('Idempotency-Key')),json=body);assert r.status_code in (200,201,403),r.text
+                if method=='GET':assert digest(f)==before
+                assert permission_snapshot(f[1])==permissions
+                lost=not dropped and method=='POST' and ((mode in ('lost_generate','cold_generate','opaque_wrongname') and q['path'].endswith('/service-plan-candidates')) or (mode in ('lost_adopt','cold_adopt','cold_adopt_expired') and q['path'].endswith('/service-case-plan')))
+                dropped=dropped or lost;messages.append(dict(method=method,path=q['path'],status=r.status_code,lost=lost,body=body));proc.stdin.write((json.dumps(dict(status=r.status_code,body=r.json(),lost=lost))+'\n').encode());proc.stdin.flush()
+>           code=proc.wait(timeout=15);stderr=proc.stderr.read().decode();assert code==0,stderr;assert summary and summary['result']=='PASS'
+                                                                          ^^^^^^^^^^^^^^^^^^^^^
+E           AssertionError: TypeError: Cannot read properties of undefined (reading 'remove')
+E                 at clearCaseCancellation (evalmachine.<anonymous>:1051:166)
+E                 at clearPreparation (evalmachine.<anonymous>:324:154)
+E                 at readGoalSourceTrace (evalmachine.<anonymous>:2032:95)
+E                 at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E                 at async /workspace/ParkWeave/tests/service_plan_candidates_actual.js:48:114
+E             
+E           assert 1 == 0
+
+../../../tests/test_service_plan_candidates.py:154: AssertionError
+=============================== warnings summary ===============================
+../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[normal]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[normal]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[normal]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED ../../../tests/test_service_plan_candidates.py::test_original_page_candidate_consumer_never_hand_fills_candidate_json[trace_revoke]
+1 failed, 1 passed, 4 warnings in 10.13s
