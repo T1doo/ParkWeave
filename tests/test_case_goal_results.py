@@ -143,11 +143,15 @@ def test_actual_local_revalidation_requires_original_current_event_proof(link_fi
 def test_resource_window_expiry_during_actual_last_source_row_lock_wait(link_fixture):
  import time
  f=link_fixture;p,g,d,s=complete(f,local=True)
- with f[1].connect() as c:c.execute("UPDATE synthetic_resource_holds SET starts_at=clock_timestamp()-interval '1 minute',ends_at=clock_timestamp()+interval '2 seconds' WHERE id IN (SELECT hold_id FROM synthetic_resource_combination_members WHERE combination_id=%s)",(g['id'],))
+ # Allow setup to finish; approach expiry only after all original verifications.
+ # The actual blocked read still crosses expiry within the production 3s lock timeout.
+ with f[1].connect() as c:c.execute("UPDATE synthetic_resource_holds SET starts_at=clock_timestamp()-interval '1 minute',ends_at=clock_timestamp()+interval '10 seconds' WHERE id IN (SELECT hold_id FROM synthetic_resource_combination_members WHERE combination_id=%s)",(g['id'],))
  for a in ('P2','P3','P4'):verified(f,p,a)
  assert local_act(f,p,local_read(f,p).json(),'REVALIDATE').status_code==200;verified(f,p,'P5');assert get(f,p).json()['state']=='LOCAL_OUTPUTS_VERIFIED';before=snapshot(f)
  with f[1].connect() as block,ThreadPoolExecutor(1) as pool:
-  block.execute('SELECT preparation_id FROM case_local_lifecycles WHERE preparation_id=%s FOR UPDATE',(p['preparation_id'],));pending=pool.submit(get,f,p)
+  block.execute('SELECT preparation_id FROM case_local_lifecycles WHERE preparation_id=%s FOR UPDATE',(p['preparation_id'],))
+  block.execute("SELECT pg_sleep(greatest(0,extract(epoch from (max(ends_at)-clock_timestamp()))-1)) FROM synthetic_resource_holds WHERE id IN (SELECT hold_id FROM synthetic_resource_combination_members WHERE combination_id=%s)",(g['id'],))
+  pending=pool.submit(get,f,p)
   deadline=time.monotonic()+1
   while time.monotonic()<deadline:
    block.execute('SELECT pg_stat_clear_snapshot()')

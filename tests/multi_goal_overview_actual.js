@@ -3,12 +3,14 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert');
 let nextRequestKey=99;const mode=process.argv[2],id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');let checks=0;
 const check=v=>{checks++;assert(v);};
 class Element{
- constructor(tag='div'){this.tagName=tag;this.children=[];const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.style={};this.listeners={};}
+ constructor(tag='div'){this.tagName=tag;this.children=[];const named={};this.elements=new Proxy([],{get:(a,k)=>k in a?a[k]:(named[k]??=new Element('input'))});this.dataset={};this.textContent='';this.value='';this.hidden=true;this.disabled=false;this.checked=false;this.style={};this.listeners={};this.className='';const tokens=()=>new Set(this.className.split(/\s+/).filter(Boolean));this.classList={add:(...names)=>{const t=tokens();for(const n of names)t.add(n);this.className=[...t].join(' ');},remove:(...names)=>{const t=tokens();for(const n of names)t.delete(n);this.className=[...t].join(' ');},contains:n=>tokens().has(n)};}
  append(...x){this.children.push(...x);}replaceChildren(...x){this.children=x;this.textContent='';}
  prepend(...x){this.children.unshift(...x);}reset(){}addEventListener(n,f){(this.listeners[n]??=[]).push(f);}trigger(n){for(const f of this.listeners[n]||[])f({target:this});}setAttribute(){}removeAttribute(name){delete this[name];}
  closest(){return null;}querySelectorAll(selector){const out=[];function visit(e){for(const c of e.children){if((selector==='select[data-fact-field]'&&c.dataset.factField)||(selector==='input[data-manual-material]'&&c.dataset.manualMaterial))out.push(c);visit(c);}}visit(this);return out;}scrollIntoView(){this.scrolled=true;}
  get options(){return this.children.filter(x=>x.tagName==='option');}get selectedOptions(){return this.options.filter(x=>x.value===this.value);}get firstElementChild(){return this.children[0];}focus(){}select(){}remove(){}click(){return this.onclick?.();}
 }
+// Keep this DOM substitute stateful: the original private-view clearer removes a class.
+const classProbe=new Element();classProbe.className='keep';classProbe.classList.add('case-cancel-recovery-only');check(classProbe.classList.contains('keep')&&classProbe.classList.contains('case-cancel-recovery-only'));classProbe.classList.remove('case-cancel-recovery-only');check(classProbe.className==='keep');
 let onDenied=null;let delayPath='';let delayedResponse=false,releaseDelayed=null,delayNext=false,delayedPost=false,releasePost=null;
 const lines=require('readline').createInterface({input:process.stdin}),replies=[],calls=[];
 lines.on('line',line=>{replies.shift()?.(JSON.parse(line));});
@@ -43,6 +45,7 @@ async function waitFor(predicate){const end=Date.now()+10000;while(!predicate())
    p.get('manual-goal-reason').value='SYNTHETIC new authorized draft';const plan=p.read('servicePlanView'),goal=p.read('goalResultView'),manual=p.read('mgView'),n=calls.length,snapshot=JSON.stringify(p.snapshot());releaseDelayed();await pending;
    check(p.read('servicePlanView')===plan);check(p.read('goalResultView')===goal);check(p.read('mgView')===manual);check(calls.length===n);check(p.get('manual-goal-reason').value==='SYNTHETIC new authorized draft');check(JSON.stringify(p.snapshot())===snapshot);
   }else if(mode==='support_field_denied'){await pending;check(p.read('goalResultView')!==null);check(p.read('servicePlanView')!==null);check(p.read('preparationView')!==null);check(p.read('caseFactView')===null);check(calls.some(x=>x.path.endsWith('/case-cancellation')));check(p.get('case-fact-error').textContent.length>0);}else{await pending;if(mode.includes('fact'))check(!calls.some(x=>x.path.endsWith('/case-cancellation')));console.log(JSON.stringify({checkpoint:{goalResultRetained:p.read('goalResultView')!==null,servicePlanRetained:p.read('servicePlanView')!==null,goalCards:p.get('goal-results-items').children.length,stepCards:p.get('service-plan-steps').children.length,manualRetained:p.read('mgView')!==null,opaqueRetained:p.snapshot()[opaqueName]===opaque}}));
+   check(!p.get('prep-detail').classList.contains('case-cancel-recovery-only'));
    check(p.read('goalResultView')===null);check(p.read('servicePlanView')===null);check(p.get('goal-results-items').children.length===0);check(p.get('service-plan-steps').children.length===0);check(p.read('mgView')===null);check(p.get('manual-goal-form').hidden);check(p.get('goal-results-panel').hidden);check(p.get('service-case-plan-detail').hidden);
   }
   check(p.snapshot()[opaqueName]===opaque);
