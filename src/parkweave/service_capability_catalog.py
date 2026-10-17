@@ -337,4 +337,3 @@ def current_mapping_states(store,orgs,c,instance,parent=None):
         states['resources'][id]='TRUE'
     for mapping in instance['fields'].values():states['fields'][mapping['input_field']]='TRUE'
     return states
-
