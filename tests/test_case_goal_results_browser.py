@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright
 from parkweave.api import create_app
 from parkweave.process_env import minimal_environment
 from test_case_goal_results import link_fixture,receipt_fixture,preparation_fixture,start,complete,snapshot,get,GOALS,verified,save
-OUT=Path('.runtime/case-goal-results/browser')
+OUT=Path(os.environ.get('CASE_GOAL_RESULTS_EVIDENCE','.runtime/case-goal-results/browser'))
 
 @pytest.fixture
 def goal_page(link_fixture):
