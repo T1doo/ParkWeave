@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="4" time="41.076" timestamp="2026-10-17T00:10:32.266812+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_native_preparation_entry_browser" name="test_ordinary_process_opens_original_source_preview_and_explicit_adoption" time="14.412"><failure message="AssertionError: assert {'principals'...}}, ...], ...} == {'principals'...}}, ...], ...}&#10;  &#10;  Omitting 16 identical items, use -vv to show&#10;  Differing items:&#10;  {'preparations': [{'row': {'id': '83357f33-9632-4212-9b55-8648155b2cc6', 'goal': 'SYNTHETIC资料准备', 'state': 'LOCAL_CONFIRMED', 'org_id': 'org-a', ...}}]} != {'preparations': [{'row': {'id': '83357f33-9632-4212-9b55-8648155b2cc6', 'goal': 'SYNTHETIC资料准备', 'state': 'LOCAL_CONFIRMED', 'org_id': 'org-a', ...}}]}&#10;  Use -v to get more diff">link_fixture = (&lt;parkweave.store.Store object at 0x7f55603103e0&gt;, &lt;parkweave.store.Store object at 0x7f555fca3fe0&gt;, {'fixture-a': '2V...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f555fdaa720&gt;)
+tmp_path = PosixPath('/tmp/parkweave-preparation-browser-dev-v1/test_ordinary_process_opens_or0')
+
+    def test_ordinary_process_opens_original_source_preview_and_explicit_adoption(link_fixture, tmp_path):
+        f = link_fixture
+        p, _, _, _ = complete(f, local=True)
+        assert lock(f, p, 'P1').status_code == 200
+        card = changed(f, p)
+        old = stored(f, p)
+        before = snapshot(f[1])
+        with ordinary_process(f, tmp_path) as api, sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path='/usr/bin/chromium', headless=True, args=['--no-sandbox'])
+            page = browser.new_page()
+            seen = []
+            page.on('request', lambda r: seen.append(dict(method=r.method, path=r.url.split(str(api.base_url).rstrip('/'))[-1])))
+            open_record(page, api, f, p)
+            page.locator('#opp-read').click()
+            preview = page.locator('[data-opp-plan-preview="' + card['id'] + '"]')
+            expect(preview).to_be_enabled()
+            preview.click()
+            expect(page.locator('#opp-plan-status')).to_contain_text('尚未采纳或核验')
+            expect(page.locator('#opp-plan-impact')).to_contain_text('P2、P3、P4、P5')
+            assert all(r['method'] == 'GET' for r in seen)
+&gt;           assert snapshot(f[1]) == before
+E           AssertionError: assert {'principals'...}}, ...], ...} == {'principals'...}}, ...], ...}
+E             
+E             Omitting 16 identical items, use -vv to show
+E             Differing items:
+E             {'preparations': [{'row': {'id': '83357f33-9632-4212-9b55-8648155b2cc6', 'goal': 'SYNTHETIC资料准备', 'state': 'LOCAL_CONFIRMED', 'org_id': 'org-a', ...}}]} != {'preparations': [{'row': {'id': '83357f33-9632-4212-9b55-8648155b2cc6', 'goal': 'SYNTHETIC资料准备', 'state': 'LOCAL_CONFIRMED', 'org_id': 'org-a', ...}}]}
+E             Use -v to get more diff
+
+tests/test_native_preparation_entry_browser.py:89: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry_browser" name="test_entry_id_aba_and_late_reply_cannot_replace_current_view[200]" time="6.780" /><testcase classname="tests.test_native_preparation_entry_browser" name="test_entry_id_aba_and_late_reply_cannot_replace_current_view[403]" time="7.160" /><testcase classname="tests.test_native_preparation_entry_browser" name="test_unknown_original_material_result_keeps_context_and_get_recovery" time="11.365"><failure message="AssertionError: Locator expected to contain text 'SYNTHETIC committed material with lost response'&#10;Actual value:  &#10;Call log:&#10;  - Expect &quot;to_contain_text&quot; with timeout 5000ms&#10;  - waiting for locator(&quot;#prep-materials&quot;)&#10;    14 × locator resolved to &lt;div id=&quot;prep-materials&quot;&gt;&lt;/div&gt;&#10;       - unexpected value &quot;&quot;&#10;&#10;Aria snapshot:&#10;- text: 尚未追加材料。补充有来源的资料后再进行人工核对。">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f555e5bfc50&gt;, &lt;parkweave.store.Store object at 0x7f555dc6b890&gt;, {'fixture-a': 'ZO...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f555e337b60&gt;)
+tmp_path = PosixPath('/tmp/parkweave-preparation-browser-dev-v1/test_unknown_original_material0')
+
+    def test_unknown_original_material_result_keeps_context_and_get_recovery(preparation_fixture, tmp_path):
+        f = preparation_fixture
+        p = filled(f)
+        with ordinary_process(f, tmp_path) as api, sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path='/usr/bin/chromium', headless=True, args=['--no-sandbox'])
+            page = browser.new_page()
+            seen = []
+            page.on('request', lambda r: seen.append((r.method, r.url)))
+            open_record(page, api, f, p)
+            sent = []
+            def lose_reply(route):
+                if route.request.method != 'POST': route.continue_(); return
+                response = route.fetch()
+                assert response.status == 200
+                sent.append(route.request.headers['idempotency-key'])
+                route.abort('failed')
+            page.route('**/api/preparations/*/commands', lose_reply)
+            page.locator('#prep-text').fill('SYNTHETIC committed material with lost response')
+            page.locator('#prep-source-label').fill('SYNTHETIC explicit existing source')
+            page.locator('#prep-evidence button').click()
+            expect(page.locator('#prep-command-retry')).to_be_visible()
+            assert len(sent) == 1
+            before = snapshot(f[1])
+            page.locator('#existing-preparation-read').click()
+            expect(page.locator('#existing-preparation-status')).to_contain_text('只读核对尚未确认')
+            page.locator('#existing-preparation-id').fill(str(uuid4()))
+            expect(page.locator('#existing-preparation-id')).to_have_value(p['preparation_id'])
+            page.locator('#prep-command-retry').click()
+&gt;           expect(page.locator('#prep-materials')).to_contain_text('SYNTHETIC committed material with lost response')
+E           AssertionError: Locator expected to contain text 'SYNTHETIC committed material with lost response'
+E           Actual value:  
+E           Call log:
+E             - Expect "to_contain_text" with timeout 5000ms
+E             - waiting for locator("#prep-materials")
+E               14 × locator resolved to &lt;div id="prep-materials"&gt;&lt;/div&gt;
+E                  - unexpected value ""
+E           
+E           Aria snapshot:
+E           - text: 尚未追加材料。补充有来源的资料后再进行人工核对。
+
+tests/test_native_preparation_entry_browser.py:179: AssertionError</failure></testcase></testsuite></testsuites>

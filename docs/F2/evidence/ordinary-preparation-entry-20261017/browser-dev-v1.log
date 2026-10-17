@@ -1,0 +1,104 @@
+F..F                                                                     [100%]
+=================================== FAILURES ===================================
+__ test_ordinary_process_opens_original_source_preview_and_explicit_adoption ___
+
+link_fixture = (<parkweave.store.Store object at 0x7f55603103e0>, <parkweave.store.Store object at 0x7f555fca3fe0>, {'fixture-a': '2V...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f555fdaa720>)
+tmp_path = PosixPath('/tmp/parkweave-preparation-browser-dev-v1/test_ordinary_process_opens_or0')
+
+    def test_ordinary_process_opens_original_source_preview_and_explicit_adoption(link_fixture, tmp_path):
+        f = link_fixture
+        p, _, _, _ = complete(f, local=True)
+        assert lock(f, p, 'P1').status_code == 200
+        card = changed(f, p)
+        old = stored(f, p)
+        before = snapshot(f[1])
+        with ordinary_process(f, tmp_path) as api, sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path='/usr/bin/chromium', headless=True, args=['--no-sandbox'])
+            page = browser.new_page()
+            seen = []
+            page.on('request', lambda r: seen.append(dict(method=r.method, path=r.url.split(str(api.base_url).rstrip('/'))[-1])))
+            open_record(page, api, f, p)
+            page.locator('#opp-read').click()
+            preview = page.locator('[data-opp-plan-preview="' + card['id'] + '"]')
+            expect(preview).to_be_enabled()
+            preview.click()
+            expect(page.locator('#opp-plan-status')).to_contain_text('尚未采纳或核验')
+            expect(page.locator('#opp-plan-impact')).to_contain_text('P2、P3、P4、P5')
+            assert all(r['method'] == 'GET' for r in seen)
+>           assert snapshot(f[1]) == before
+E           AssertionError: assert {'principals'...}}, ...], ...} == {'principals'...}}, ...], ...}
+E             
+E             Omitting 16 identical items, use -vv to show
+E             Differing items:
+E             {'preparations': [{'row': {'id': '83357f33-9632-4212-9b55-8648155b2cc6', 'goal': 'SYNTHETIC资料准备', 'state': 'LOCAL_CONFIRMED', 'org_id': 'org-a', ...}}]} != {'preparations': [{'row': {'id': '83357f33-9632-4212-9b55-8648155b2cc6', 'goal': 'SYNTHETIC资料准备', 'state': 'LOCAL_CONFIRMED', 'org_id': 'org-a', ...}}]}
+E             Use -v to get more diff
+
+tests/test_native_preparation_entry_browser.py:89: AssertionError
+_____ test_unknown_original_material_result_keeps_context_and_get_recovery _____
+
+preparation_fixture = (<parkweave.store.Store object at 0x7f555e5bfc50>, <parkweave.store.Store object at 0x7f555dc6b890>, {'fixture-a': 'ZO...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, <starlette.testclient.TestClient object at 0x7f555e337b60>)
+tmp_path = PosixPath('/tmp/parkweave-preparation-browser-dev-v1/test_unknown_original_material0')
+
+    def test_unknown_original_material_result_keeps_context_and_get_recovery(preparation_fixture, tmp_path):
+        f = preparation_fixture
+        p = filled(f)
+        with ordinary_process(f, tmp_path) as api, sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path='/usr/bin/chromium', headless=True, args=['--no-sandbox'])
+            page = browser.new_page()
+            seen = []
+            page.on('request', lambda r: seen.append((r.method, r.url)))
+            open_record(page, api, f, p)
+            sent = []
+            def lose_reply(route):
+                if route.request.method != 'POST': route.continue_(); return
+                response = route.fetch()
+                assert response.status == 200
+                sent.append(route.request.headers['idempotency-key'])
+                route.abort('failed')
+            page.route('**/api/preparations/*/commands', lose_reply)
+            page.locator('#prep-text').fill('SYNTHETIC committed material with lost response')
+            page.locator('#prep-source-label').fill('SYNTHETIC explicit existing source')
+            page.locator('#prep-evidence button').click()
+            expect(page.locator('#prep-command-retry')).to_be_visible()
+            assert len(sent) == 1
+            before = snapshot(f[1])
+            page.locator('#existing-preparation-read').click()
+            expect(page.locator('#existing-preparation-status')).to_contain_text('只读核对尚未确认')
+            page.locator('#existing-preparation-id').fill(str(uuid4()))
+            expect(page.locator('#existing-preparation-id')).to_have_value(p['preparation_id'])
+            page.locator('#prep-command-retry').click()
+>           expect(page.locator('#prep-materials')).to_contain_text('SYNTHETIC committed material with lost response')
+E           AssertionError: Locator expected to contain text 'SYNTHETIC committed material with lost response'
+E           Actual value:  
+E           Call log:
+E             - Expect "to_contain_text" with timeout 5000ms
+E             - waiting for locator("#prep-materials")
+E               14 × locator resolved to <div id="prep-materials"></div>
+E                  - unexpected value ""
+E           
+E           Aria snapshot:
+E           - text: 尚未追加材料。补充有来源的资料后再进行人工核对。
+
+tests/test_native_preparation_entry_browser.py:179: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_native_preparation_entry_browser.py::test_ordinary_process_opens_original_source_preview_and_explicit_adoption
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_native_preparation_entry_browser.py::test_ordinary_process_opens_original_source_preview_and_explicit_adoption
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_native_preparation_entry_browser.py::test_ordinary_process_opens_original_source_preview_and_explicit_adoption
+FAILED tests/test_native_preparation_entry_browser.py::test_unknown_original_material_result_keeps_context_and_get_recovery
+2 failed, 2 passed, 4 warnings in 41.08s

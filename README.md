@@ -1,5 +1,7 @@
 # 园合 ParkWeave
 
+2026-10-17 新增普通启动的“读取已有资料准备记录”：在 `/` 输入已有会话和 preparation 编号，按当前本人/获派权限与精确目录进入原材料、来源预检和明确采纳接口。日常启动不补建身份、Grant、分派、目录或批准；完整项目尚未完成。[本片范围、运行缺口与证据](docs/F2/OrdinaryPreparationEntry-20261017.md)。
+
 独立园区企业服务项目。设计原件及动态入口：[docs/Plan.md](docs/Plan.md)。本次为F1有界工程增量，包含合成身份、V1最小契约结构校验、持久Run/Operation/outbox、可信本地建单与事实一致性核对；未通过完整F1、PR0或赛事验收。
 
 浏览器有“服务/协同/资源”三个入口。创建诉求返回202+run_id；独立worker在PostgreSQL短事务内创建Case、核验本地回执并写outbox。Run可SUCCEEDED（LOCAL_CASE_CREATED），Case仍NEEDS_INPUT，外部受理NOT_SUBMITTED、线下履约NO_EVIDENCE。不能把本地建单称作办成全部诉求。

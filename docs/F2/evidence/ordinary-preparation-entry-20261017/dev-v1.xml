@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="13" skipped="0" tests="16" time="38.401" timestamp="2026-10-17T00:07:26.250030+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_native_preparation_entry" name="test_ordinary_unprepared_identity_is_denied_without_provisioning" time="3.774"><failure message="AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current prep...rant required'&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  - current preparation grant required&#10;  + record unavailable or authorization denied)">fixture = (&lt;parkweave.store.Store object at 0x7f4e8b547bc0&gt;, &lt;parkweave.store.Store object at 0x7f4e8b547e60&gt;, {'fixture-a': '7y...fixture-c': '[SYNTHETIC_SESSION_REDACTED]'}, &lt;starlette.testclient.TestClient object at 0x7f4e8ac545c0&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e8ad3bb60&gt;
+
+    def test_ordinary_unprepared_identity_is_denied_without_provisioning(fixture, monkeypatch):
+        f = fixture
+        before = snapshot(f[1])
+        with TestClient(ordinary(f, monkeypatch)) as api:
+            r = entry(api, f, dict(preparation_id=str(uuid4())))
+&gt;           assert r.status_code == 403 and r.json()['detail'] == 'current preparation grant required'
+E           AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current prep...rant required'
+E            +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E             
+E             - current preparation grant required
+E             + record unavailable or authorization denied)
+
+tests/test_native_preparation_entry.py:45: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_existing_owner_and_assigned_reviewer_cold_read_no_runtime_provider[fixture-a-enterprise_operator]" time="1.792" /><testcase classname="tests.test_native_preparation_entry" name="test_existing_owner_and_assigned_reviewer_cold_read_no_runtime_provider[prep-specialist-fixture-a-park_specialist]" time="1.540" /><testcase classname="tests.test_native_preparation_entry" name="test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart[prepare-403-current preparation grant required]" time="1.347"><failure message="AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current prep...rant required'&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  - current preparation grant required&#10;  + record unavailable or authorization denied)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e8b529430&gt;, &lt;parkweave.store.Store object at 0x7f4e8b8247a0&gt;, {'fixture-a': 'kq...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e7bdef1a0&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e7bc40890&gt;
+damage = 'prepare', status = 403, detail = 'current preparation grant required'
+
+    @pytest.mark.parametrize('damage,status,detail', [
+        ('prepare', 403, 'current preparation grant required'),
+        ('review', 403, 'current assigned preparation reviewer required'),
+        ('reviewer', 403, 'current assigned preparation reviewer required'),
+        ('read', 403, 'current capability grant required'),
+        ('identity', 403, 'current authorization required'),
+        ('catalog', 409, 'current SYNTHETIC preparation catalog required'),
+        ('catalog-source', 409, 'current SYNTHETIC preparation catalog required'),
+        ('exact-version', 409, 'current SYNTHETIC preparation catalog required'),
+    ])
+    def test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart(preparation_fixture, monkeypatch, damage, status, detail):
+        f = preparation_fixture
+        p = filled(f)
+        with f[1].connect() as c:
+            if damage == 'prepare': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            elif damage == 'review': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='prep-specialist-fixture-a'")
+            elif damage == 'reviewer': c.execute("UPDATE principals SET active=false WHERE id='prep-specialist-fixture-a'")
+            elif damage == 'read': c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+            elif damage == 'identity': c.execute("UPDATE principals SET active=false WHERE id='fixture-a'")
+            elif damage == 'catalog': c.execute("DELETE FROM preparation_catalog WHERE park_id='park-a'")
+            elif damage == 'catalog-source': c.execute("UPDATE preparation_catalog SET source=%s WHERE park_id='park-a'", (Jsonb({'kind':'UNKNOWN'}),))
+            else: c.execute("UPDATE preparation_catalog SET version=2 WHERE park_id='park-a'")
+        before = snapshot(f[1])
+        for _ in range(2):
+            with TestClient(ordinary(f, monkeypatch)) as api:
+                r = entry(api, f, p)
+&gt;               assert r.status_code == status and r.json()['detail'] == detail
+E               AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current prep...rant required'
+E                +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E                 
+E                 - current preparation grant required
+E                 + record unavailable or authorization denied)
+
+tests/test_native_preparation_entry.py:97: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart[review-403-current assigned preparation reviewer required]" time="1.186"><failure message="AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current assi...ewer required'&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  - current assigned preparation reviewer required&#10;  + record unavailable or authorization denied)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e7bd28350&gt;, &lt;parkweave.store.Store object at 0x7f4e7ba8d1f0&gt;, {'fixture-a': '8M...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e88be8b90&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e7ba8d160&gt;
+damage = 'review', status = 403
+detail = 'current assigned preparation reviewer required'
+
+    @pytest.mark.parametrize('damage,status,detail', [
+        ('prepare', 403, 'current preparation grant required'),
+        ('review', 403, 'current assigned preparation reviewer required'),
+        ('reviewer', 403, 'current assigned preparation reviewer required'),
+        ('read', 403, 'current capability grant required'),
+        ('identity', 403, 'current authorization required'),
+        ('catalog', 409, 'current SYNTHETIC preparation catalog required'),
+        ('catalog-source', 409, 'current SYNTHETIC preparation catalog required'),
+        ('exact-version', 409, 'current SYNTHETIC preparation catalog required'),
+    ])
+    def test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart(preparation_fixture, monkeypatch, damage, status, detail):
+        f = preparation_fixture
+        p = filled(f)
+        with f[1].connect() as c:
+            if damage == 'prepare': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            elif damage == 'review': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='prep-specialist-fixture-a'")
+            elif damage == 'reviewer': c.execute("UPDATE principals SET active=false WHERE id='prep-specialist-fixture-a'")
+            elif damage == 'read': c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+            elif damage == 'identity': c.execute("UPDATE principals SET active=false WHERE id='fixture-a'")
+            elif damage == 'catalog': c.execute("DELETE FROM preparation_catalog WHERE park_id='park-a'")
+            elif damage == 'catalog-source': c.execute("UPDATE preparation_catalog SET source=%s WHERE park_id='park-a'", (Jsonb({'kind':'UNKNOWN'}),))
+            else: c.execute("UPDATE preparation_catalog SET version=2 WHERE park_id='park-a'")
+        before = snapshot(f[1])
+        for _ in range(2):
+            with TestClient(ordinary(f, monkeypatch)) as api:
+                r = entry(api, f, p)
+&gt;               assert r.status_code == status and r.json()['detail'] == detail
+E               AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current assi...ewer required'
+E                +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E                 
+E                 - current assigned preparation reviewer required
+E                 + record unavailable or authorization denied)
+
+tests/test_native_preparation_entry.py:97: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart[reviewer-403-current assigned preparation reviewer required]" time="1.322"><failure message="AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current assi...ewer required'&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  - current assigned preparation reviewer required&#10;  + record unavailable or authorization denied)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e88ce7dd0&gt;, &lt;parkweave.store.Store object at 0x7f4e881185f0&gt;, {'fixture-a': 'qO...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e8ac57e00&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e88105400&gt;
+damage = 'reviewer', status = 403
+detail = 'current assigned preparation reviewer required'
+
+    @pytest.mark.parametrize('damage,status,detail', [
+        ('prepare', 403, 'current preparation grant required'),
+        ('review', 403, 'current assigned preparation reviewer required'),
+        ('reviewer', 403, 'current assigned preparation reviewer required'),
+        ('read', 403, 'current capability grant required'),
+        ('identity', 403, 'current authorization required'),
+        ('catalog', 409, 'current SYNTHETIC preparation catalog required'),
+        ('catalog-source', 409, 'current SYNTHETIC preparation catalog required'),
+        ('exact-version', 409, 'current SYNTHETIC preparation catalog required'),
+    ])
+    def test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart(preparation_fixture, monkeypatch, damage, status, detail):
+        f = preparation_fixture
+        p = filled(f)
+        with f[1].connect() as c:
+            if damage == 'prepare': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            elif damage == 'review': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='prep-specialist-fixture-a'")
+            elif damage == 'reviewer': c.execute("UPDATE principals SET active=false WHERE id='prep-specialist-fixture-a'")
+            elif damage == 'read': c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+            elif damage == 'identity': c.execute("UPDATE principals SET active=false WHERE id='fixture-a'")
+            elif damage == 'catalog': c.execute("DELETE FROM preparation_catalog WHERE park_id='park-a'")
+            elif damage == 'catalog-source': c.execute("UPDATE preparation_catalog SET source=%s WHERE park_id='park-a'", (Jsonb({'kind':'UNKNOWN'}),))
+            else: c.execute("UPDATE preparation_catalog SET version=2 WHERE park_id='park-a'")
+        before = snapshot(f[1])
+        for _ in range(2):
+            with TestClient(ordinary(f, monkeypatch)) as api:
+                r = entry(api, f, p)
+&gt;               assert r.status_code == status and r.json()['detail'] == detail
+E               AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current assi...ewer required'
+E                +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E                 
+E                 - current assigned preparation reviewer required
+E                 + record unavailable or authorization denied)
+
+tests/test_native_preparation_entry.py:97: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart[read-403-current capability grant required]" time="1.055"><failure message="AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current capa...rant required'&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  - current capability grant required&#10;  + record unavailable or authorization denied)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e88b8d010&gt;, &lt;parkweave.store.Store object at 0x7f4e88d538f0&gt;, {'fixture-a': 'Wm...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e88c57410&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e88d534d0&gt;
+damage = 'read', status = 403, detail = 'current capability grant required'
+
+    @pytest.mark.parametrize('damage,status,detail', [
+        ('prepare', 403, 'current preparation grant required'),
+        ('review', 403, 'current assigned preparation reviewer required'),
+        ('reviewer', 403, 'current assigned preparation reviewer required'),
+        ('read', 403, 'current capability grant required'),
+        ('identity', 403, 'current authorization required'),
+        ('catalog', 409, 'current SYNTHETIC preparation catalog required'),
+        ('catalog-source', 409, 'current SYNTHETIC preparation catalog required'),
+        ('exact-version', 409, 'current SYNTHETIC preparation catalog required'),
+    ])
+    def test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart(preparation_fixture, monkeypatch, damage, status, detail):
+        f = preparation_fixture
+        p = filled(f)
+        with f[1].connect() as c:
+            if damage == 'prepare': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            elif damage == 'review': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='prep-specialist-fixture-a'")
+            elif damage == 'reviewer': c.execute("UPDATE principals SET active=false WHERE id='prep-specialist-fixture-a'")
+            elif damage == 'read': c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+            elif damage == 'identity': c.execute("UPDATE principals SET active=false WHERE id='fixture-a'")
+            elif damage == 'catalog': c.execute("DELETE FROM preparation_catalog WHERE park_id='park-a'")
+            elif damage == 'catalog-source': c.execute("UPDATE preparation_catalog SET source=%s WHERE park_id='park-a'", (Jsonb({'kind':'UNKNOWN'}),))
+            else: c.execute("UPDATE preparation_catalog SET version=2 WHERE park_id='park-a'")
+        before = snapshot(f[1])
+        for _ in range(2):
+            with TestClient(ordinary(f, monkeypatch)) as api:
+                r = entry(api, f, p)
+&gt;               assert r.status_code == status and r.json()['detail'] == detail
+E               AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current capa...rant required'
+E                +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E                 
+E                 - current capability grant required
+E                 + record unavailable or authorization denied)
+
+tests/test_native_preparation_entry.py:97: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart[identity-403-current authorization required]" time="1.118"><failure message="AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current auth...tion required'&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  - current authorization required&#10;  + record unavailable or authorization denied)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e8a089fd0&gt;, &lt;parkweave.store.Store object at 0x7f4e7be4c0e0&gt;, {'fixture-a': 'K5...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e88d045c0&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e88c01dc0&gt;
+damage = 'identity', status = 403, detail = 'current authorization required'
+
+    @pytest.mark.parametrize('damage,status,detail', [
+        ('prepare', 403, 'current preparation grant required'),
+        ('review', 403, 'current assigned preparation reviewer required'),
+        ('reviewer', 403, 'current assigned preparation reviewer required'),
+        ('read', 403, 'current capability grant required'),
+        ('identity', 403, 'current authorization required'),
+        ('catalog', 409, 'current SYNTHETIC preparation catalog required'),
+        ('catalog-source', 409, 'current SYNTHETIC preparation catalog required'),
+        ('exact-version', 409, 'current SYNTHETIC preparation catalog required'),
+    ])
+    def test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart(preparation_fixture, monkeypatch, damage, status, detail):
+        f = preparation_fixture
+        p = filled(f)
+        with f[1].connect() as c:
+            if damage == 'prepare': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            elif damage == 'review': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='prep-specialist-fixture-a'")
+            elif damage == 'reviewer': c.execute("UPDATE principals SET active=false WHERE id='prep-specialist-fixture-a'")
+            elif damage == 'read': c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+            elif damage == 'identity': c.execute("UPDATE principals SET active=false WHERE id='fixture-a'")
+            elif damage == 'catalog': c.execute("DELETE FROM preparation_catalog WHERE park_id='park-a'")
+            elif damage == 'catalog-source': c.execute("UPDATE preparation_catalog SET source=%s WHERE park_id='park-a'", (Jsonb({'kind':'UNKNOWN'}),))
+            else: c.execute("UPDATE preparation_catalog SET version=2 WHERE park_id='park-a'")
+        before = snapshot(f[1])
+        for _ in range(2):
+            with TestClient(ordinary(f, monkeypatch)) as api:
+                r = entry(api, f, p)
+&gt;               assert r.status_code == status and r.json()['detail'] == detail
+E               AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'current auth...tion required'
+E                +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E                 
+E                 - current authorization required
+E                 + record unavailable or authorization denied)
+
+tests/test_native_preparation_entry.py:97: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart[catalog-409-current SYNTHETIC preparation catalog required]" time="0.674"><failure message="psycopg.errors.ForeignKeyViolation: update or delete on table &quot;preparation_catalog&quot; violates foreign key constraint &quot;preparations_park_id_service_id_service_version_fkey&quot; on table &quot;preparations&quot;&#10;DETAIL:  Key (park_id, service_id, version)=(park-a, synthetic-material-preparation, 1) is still referenced from table &quot;preparations&quot;.">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e8a096990&gt;, &lt;parkweave.store.Store object at 0x7f4e88cb6c90&gt;, {'fixture-a': 'eW...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e8aa7bb90&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e88ba05f0&gt;
+damage = 'catalog', status = 409
+detail = 'current SYNTHETIC preparation catalog required'
+
+    @pytest.mark.parametrize('damage,status,detail', [
+        ('prepare', 403, 'current preparation grant required'),
+        ('review', 403, 'current assigned preparation reviewer required'),
+        ('reviewer', 403, 'current assigned preparation reviewer required'),
+        ('read', 403, 'current capability grant required'),
+        ('identity', 403, 'current authorization required'),
+        ('catalog', 409, 'current SYNTHETIC preparation catalog required'),
+        ('catalog-source', 409, 'current SYNTHETIC preparation catalog required'),
+        ('exact-version', 409, 'current SYNTHETIC preparation catalog required'),
+    ])
+    def test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart(preparation_fixture, monkeypatch, damage, status, detail):
+        f = preparation_fixture
+        p = filled(f)
+        with f[1].connect() as c:
+            if damage == 'prepare': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            elif damage == 'review': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='prep-specialist-fixture-a'")
+            elif damage == 'reviewer': c.execute("UPDATE principals SET active=false WHERE id='prep-specialist-fixture-a'")
+            elif damage == 'read': c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+            elif damage == 'identity': c.execute("UPDATE principals SET active=false WHERE id='fixture-a'")
+&gt;           elif damage == 'catalog': c.execute("DELETE FROM preparation_catalog WHERE park_id='park-a'")
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_preparation_entry.py:90: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f4e88f65b80&gt;
+query = "DELETE FROM preparation_catalog WHERE park_id='park-a'", params = None
+prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.ForeignKeyViolation: update or delete on table "preparation_catalog" violates foreign key constraint "preparations_park_id_service_id_service_version_fkey" on table "preparations"
+E           DETAIL:  Key (park_id, service_id, version)=(park-a, synthetic-material-preparation, 1) is still referenced from table "preparations".
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: ForeignKeyViolation</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart[catalog-source-409-current SYNTHETIC preparation catalog required]" time="2.046" /><testcase classname="tests.test_native_preparation_entry" name="test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart[exact-version-409-current SYNTHETIC preparation catalog required]" time="0.734"><failure message="psycopg.errors.ForeignKeyViolation: update or delete on table &quot;preparation_catalog&quot; violates foreign key constraint &quot;preparations_park_id_service_id_service_version_fkey&quot; on table &quot;preparations&quot;&#10;DETAIL:  Key (park_id, service_id, version)=(park-a, synthetic-material-preparation, 1) is still referenced from table &quot;preparations&quot;.">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e7b8d8f80&gt;, &lt;parkweave.store.Store object at 0x7f4e88ec4d10&gt;, {'fixture-a': 'MT...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e88ec7fe0&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e88ec7080&gt;
+damage = 'exact-version', status = 409
+detail = 'current SYNTHETIC preparation catalog required'
+
+    @pytest.mark.parametrize('damage,status,detail', [
+        ('prepare', 403, 'current preparation grant required'),
+        ('review', 403, 'current assigned preparation reviewer required'),
+        ('reviewer', 403, 'current assigned preparation reviewer required'),
+        ('read', 403, 'current capability grant required'),
+        ('identity', 403, 'current authorization required'),
+        ('catalog', 409, 'current SYNTHETIC preparation catalog required'),
+        ('catalog-source', 409, 'current SYNTHETIC preparation catalog required'),
+        ('exact-version', 409, 'current SYNTHETIC preparation catalog required'),
+    ])
+    def test_current_missing_inputs_refuse_and_stay_missing_after_factory_restart(preparation_fixture, monkeypatch, damage, status, detail):
+        f = preparation_fixture
+        p = filled(f)
+        with f[1].connect() as c:
+            if damage == 'prepare': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            elif damage == 'review': c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='prep-specialist-fixture-a'")
+            elif damage == 'reviewer': c.execute("UPDATE principals SET active=false WHERE id='prep-specialist-fixture-a'")
+            elif damage == 'read': c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+            elif damage == 'identity': c.execute("UPDATE principals SET active=false WHERE id='fixture-a'")
+            elif damage == 'catalog': c.execute("DELETE FROM preparation_catalog WHERE park_id='park-a'")
+            elif damage == 'catalog-source': c.execute("UPDATE preparation_catalog SET source=%s WHERE park_id='park-a'", (Jsonb({'kind':'UNKNOWN'}),))
+&gt;           else: c.execute("UPDATE preparation_catalog SET version=2 WHERE park_id='park-a'")
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_native_preparation_entry.py:92: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7f4e88d07b90&gt;
+query = "UPDATE preparation_catalog SET version=2 WHERE park_id='park-a'"
+params = None, prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.ForeignKeyViolation: update or delete on table "preparation_catalog" violates foreign key constraint "preparations_park_id_service_id_service_version_fkey" on table "preparations"
+E           DETAIL:  Key (park_id, service_id, version)=(park-a, synthetic-material-preparation, 1) is still referenced from table "preparations".
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: ForeignKeyViolation</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_cross_tenant_or_unassigned_record_never_opens[fixture-b]" time="1.074"><failure message="AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'assigned pre...cope required'&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  - assigned preparation scope required&#10;  + record unavailable or authorization denied)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e88f44bc0&gt;, &lt;parkweave.store.Store object at 0x7f4e7bead250&gt;, {'fixture-a': 'IT...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e8ad38dd0&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e882547a0&gt;
+actor = 'fixture-b'
+
+    @pytest.mark.parametrize('actor', ['fixture-b', 'fixture-c', 'prep-specialist-fixture-b', 'prep-specialist-fixture-c'])
+    def test_cross_tenant_or_unassigned_record_never_opens(preparation_fixture, monkeypatch, actor):
+        f = preparation_fixture
+        p = filled(f)
+        before = snapshot(f[1])
+        with TestClient(ordinary(f, monkeypatch)) as api:
+            r = entry(api, f, p, actor)
+&gt;           assert r.status_code == 403 and r.json()['detail'] == 'assigned preparation scope required'
+E           AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'assigned pre...cope required'
+E            +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E             
+E             - assigned preparation scope required
+E             + record unavailable or authorization denied)
+
+tests/test_native_preparation_entry.py:108: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_cross_tenant_or_unassigned_record_never_opens[fixture-c]" time="1.455"><failure message="AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'assigned pre...cope required'&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  - assigned preparation scope required&#10;  + record unavailable or authorization denied)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e8a131a30&gt;, &lt;parkweave.store.Store object at 0x7f4e8ac26c90&gt;, {'fixture-a': 'OS...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e88f08a70&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e880d07a0&gt;
+actor = 'fixture-c'
+
+    @pytest.mark.parametrize('actor', ['fixture-b', 'fixture-c', 'prep-specialist-fixture-b', 'prep-specialist-fixture-c'])
+    def test_cross_tenant_or_unassigned_record_never_opens(preparation_fixture, monkeypatch, actor):
+        f = preparation_fixture
+        p = filled(f)
+        before = snapshot(f[1])
+        with TestClient(ordinary(f, monkeypatch)) as api:
+            r = entry(api, f, p, actor)
+&gt;           assert r.status_code == 403 and r.json()['detail'] == 'assigned preparation scope required'
+E           AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'assigned pre...cope required'
+E            +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E             
+E             - assigned preparation scope required
+E             + record unavailable or authorization denied)
+
+tests/test_native_preparation_entry.py:108: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_cross_tenant_or_unassigned_record_never_opens[prep-specialist-fixture-b]" time="1.576"><failure message="AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'assigned pre...cope required'&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  - assigned preparation scope required&#10;  + record unavailable or authorization denied)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e7b30dcd0&gt;, &lt;parkweave.store.Store object at 0x7f4e7b4789b0&gt;, {'fixture-a': 'ru...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e8ab54b00&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e7b4a05f0&gt;
+actor = 'prep-specialist-fixture-b'
+
+    @pytest.mark.parametrize('actor', ['fixture-b', 'fixture-c', 'prep-specialist-fixture-b', 'prep-specialist-fixture-c'])
+    def test_cross_tenant_or_unassigned_record_never_opens(preparation_fixture, monkeypatch, actor):
+        f = preparation_fixture
+        p = filled(f)
+        before = snapshot(f[1])
+        with TestClient(ordinary(f, monkeypatch)) as api:
+            r = entry(api, f, p, actor)
+&gt;           assert r.status_code == 403 and r.json()['detail'] == 'assigned preparation scope required'
+E           AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'assigned pre...cope required'
+E            +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E             
+E             - assigned preparation scope required
+E             + record unavailable or authorization denied)
+
+tests/test_native_preparation_entry.py:108: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_cross_tenant_or_unassigned_record_never_opens[prep-specialist-fixture-c]" time="1.231"><failure message="AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'assigned pre...cope required'&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  - assigned preparation scope required&#10;  + record unavailable or authorization denied)">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e88c6bd70&gt;, &lt;parkweave.store.Store object at 0x7f4e7bafcdd0&gt;, {'fixture-a': 'x3...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e7bf39610&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e7b4e8920&gt;
+actor = 'prep-specialist-fixture-c'
+
+    @pytest.mark.parametrize('actor', ['fixture-b', 'fixture-c', 'prep-specialist-fixture-b', 'prep-specialist-fixture-c'])
+    def test_cross_tenant_or_unassigned_record_never_opens(preparation_fixture, monkeypatch, actor):
+        f = preparation_fixture
+        p = filled(f)
+        before = snapshot(f[1])
+        with TestClient(ordinary(f, monkeypatch)) as api:
+            r = entry(api, f, p, actor)
+&gt;           assert r.status_code == 403 and r.json()['detail'] == 'assigned preparation scope required'
+E           AssertionError: assert (403 == 403 and 'record unava...zation denied' == 'assigned pre...cope required'
+E            +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E             
+E             - assigned preparation scope required
+E             + record unavailable or authorization denied)
+
+tests/test_native_preparation_entry.py:108: AssertionError</failure></testcase><testcase classname="tests.test_native_preparation_entry" name="test_browser_direct_read_and_current_revocation" time="14.401"><failure message="AssertionError: Locator expected to contain text '当前缺少 PREPARE'&#10;Actual value: 当前身份无此事项或操作权限。 &#10;Call log:&#10;  - Expect &quot;to_contain_text&quot; with timeout 5000ms&#10;  - waiting for locator(&quot;#existing-preparation-status&quot;)&#10;    - locator resolved to &lt;p role=&quot;status&quot; aria-live=&quot;polite&quot; id=&quot;existing-preparation-status&quot;&gt;正在只读核对原记录与当前权限…&lt;/p&gt;&#10;    - unexpected value &quot;正在只读核对原记录与当前权限…&quot;&#10;    13 × locator resolved to &lt;p role=&quot;status&quot; aria-live=&quot;polite&quot; id=&quot;existing-preparation-status&quot;&gt;当前身份无此事项或操作权限。&lt;/p&gt;&#10;       - unexpected value &quot;当前身份无此事项或操作权限。&quot;&#10;&#10;Aria snapshot:&#10;- status: 当前身份无此事项或操作权限。">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f4e7b873980&gt;, &lt;parkweave.store.Store object at 0x7f4e7bcb8e90&gt;, {'fixture-a': 'Xe...re-a': '[SYNTHETIC_SESSION_REDACTED]', ...}, &lt;starlette.testclient.TestClient object at 0x7f4e7bfd4140&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f4e8aa40620&gt;
+
+    def test_browser_direct_read_and_current_revocation(preparation_fixture, monkeypatch):
+        from playwright.sync_api import sync_playwright, expect
+        f = preparation_fixture
+        p = filled(f)
+        before = snapshot(f[1])
+        with actual_http(ordinary(f, monkeypatch)) as (api, _), sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path='/usr/bin/chromium', headless=True, args=['--no-sandbox'])
+            page = browser.new_page()
+            seen = []
+            page.on('request', lambda r: seen.append((r.method, r.url)))
+            page.goto(str(api.base_url) + '?preparation_id=' + p['preparation_id'])
+            assert not any('/entry' in url for _, url in seen)
+            page.locator('#token').fill(f[2]['fixture-a'])
+            page.locator('#existing-preparation-read').click()
+            expect(page.locator('#existing-preparation-status')).to_contain_text('已读取原资料记录')
+            expect(page.locator('#prep-materials')).to_contain_text('SYNTHETIC source text')
+            assert all(method == 'GET' for method, _ in seen)
+            assert snapshot(f[1]) == before
+            # A new page/factory performs only reads of the original record.
+            page.close()
+            page = browser.new_page()
+            page.on('request', lambda r: seen.append((r.method, r.url)))
+            page.goto(str(api.base_url))
+            page.locator('#token').fill(f[2]['prep-specialist-fixture-a'])
+            page.locator('#existing-preparation-id').fill(p['preparation_id'])
+            page.locator('#existing-preparation-read').click()
+            expect(page.locator('#existing-preparation-status')).to_contain_text('已读取原资料记录')
+            expect(page.locator('#opportunity-panel')).to_be_hidden()
+            page.locator('#token').fill(f[2]['fixture-a'])
+            with f[1].connect() as c:
+                c.execute("UPDATE preparation_grants SET active=false WHERE principal_id='fixture-a'")
+            revoked = snapshot(f[1])
+            page.locator('#existing-preparation-read').click()
+&gt;           expect(page.locator('#existing-preparation-status')).to_contain_text('当前缺少 PREPARE')
+E           AssertionError: Locator expected to contain text '当前缺少 PREPARE'
+E           Actual value: 当前身份无此事项或操作权限。 
+E           Call log:
+E             - Expect "to_contain_text" with timeout 5000ms
+E             - waiting for locator("#existing-preparation-status")
+E               - locator resolved to &lt;p role="status" aria-live="polite" id="existing-preparation-status"&gt;正在只读核对原记录与当前权限…&lt;/p&gt;
+E               - unexpected value "正在只读核对原记录与当前权限…"
+E               13 × locator resolved to &lt;p role="status" aria-live="polite" id="existing-preparation-status"&gt;当前身份无此事项或操作权限。&lt;/p&gt;
+E                  - unexpected value "当前身份无此事项或操作权限。"
+E           
+E           Aria snapshot:
+E           - status: 当前身份无此事项或操作权限。
+
+tests/test_native_preparation_entry.py:147: AssertionError</failure></testcase></testsuite></testsuites>
