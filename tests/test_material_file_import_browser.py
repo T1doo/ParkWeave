@@ -32,9 +32,15 @@ def select_file(page,name,raw):
     return page.locator('#material-file-text').input_value()
 
 
+def compare_candidate(page):
+    page.locator('#material-version-compare').click()
+    expect(page.locator('#material-version-status')).to_contain_text('已核对本次完整正文与来源',timeout=15000)
+
+
 def save_candidate(page,slot):
     page.locator('#prep-slot').select_option(slot);page.locator('#material-file-use').click()
     expect(page.locator('#material-file-status')).to_contain_text('已填入原表单，尚未保存')
+    compare_candidate(page)
     page.locator('#prep-evidence button').click()
 
 

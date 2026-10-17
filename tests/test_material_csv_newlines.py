@@ -12,7 +12,7 @@ from playwright.sync_api import sync_playwright,expect
 from parkweave import material_file_import as files
 from test_preparation import preparation_fixture,create,command,headers
 from test_material_file_import import encoded,body,path,ordinary
-from test_material_file_import_browser import browser_page,open_record,select_file
+from test_material_file_import_browser import browser_page,open_record,select_file,compare_candidate
 from test_native_preparation_entry_browser import ordinary_process
 from test_native_preparation_entry import snapshot
 
@@ -75,6 +75,8 @@ def test_csv_actual_file_chooser_original_add_and_ordinary_process_restart_prese
                 if lost:route.continue_();return
                 lost.append(route.fetch());route.abort('failed')
             page.route('**/api/preparations/*/commands',lose)
+        compare_candidate(page)
+        assert page.evaluate('materialVersionView.data.candidate.text')==expected_body
         page.locator('#prep-evidence button').click()
         if variant=='lost-reply':
             expect(page.locator('#prep-command-retry')).to_be_visible();assert lost[0].status==200
