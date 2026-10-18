@@ -17,8 +17,7 @@ from test_demo_original_page_intake_browser import login,open_from_list,open_ser
 from service_release_acceptance_support import authority_snapshot,case_history
 
 
-@pytest.mark.parametrize('width',[1200,320])
-def test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart(demo_inputs,tmp_path,width):
+def run_existing_assigned_chain(demo_inputs,tmp_path,width,*,continuation=None):
     f,_,pack,_=demo_inputs
     parent=prepared(f)
     # Only owned synthetic fixture initialization; never runtime authority.
@@ -108,6 +107,8 @@ def test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart(demo
             assert result['state']=='LOCAL_OUTPUTS_VERIFIED' and len(result['results'])==6
             assert not result['case_goal_completed'] and {x['state'] for x in result['results']}=={'LOCAL_OUTPUT_VERIFIED'}
             assert result['source_trace']['candidate']['producer']['mode']=='NO_MODEL'
+            if continuation is not None:
+                result=continuation(f,parent,owner,reviewer,executor,result,tmp_path)
             assert authority_snapshot(f[1])==baseline and not errors
             assert all(x['status']<300 for x in traffic)
             assert not any(x['path'] in ('/api/runs','/api/preparations') or 'run-access' in x['path'] or 'plan-approval' in x['path'] for x in traffic)
@@ -126,12 +127,13 @@ def test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart(demo
     with ordinary_demo(f,tmp_path/'restart') as api,sync_playwright() as pw:
         browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
         page=browser.new_page(viewport=dict(width=width,height=1000));methods=[]
+        page.on('pageerror',lambda e:errors.append(str(e)))
         page.on('request',lambda req:methods.append(req.method));login(page,api,f,pack['roles']['enterprise_operator'])
         open_from_list(page,goal);open_service_plan(page);page.locator('#goal-results-read').click()
         expect(page.locator('#goal-results-status')).to_contain_text('本地',timeout=15000)
         assert page.evaluate('goalResultView')==result and set(methods)=={'GET'}
         browser.close()
-    assert authority_snapshot(f[1])==baseline and case_history(f[1],parent['preparation_id'])==history
+    assert authority_snapshot(f[1])==baseline and case_history(f[1],parent['preparation_id'])==history and not errors
     (tmp_path/'actual-assigned-full-chain.json').write_text(json.dumps(dict(
         scope='ISOLATED_SYNTHETIC_EXISTING_RUN_ORDINARY_DOM_P1_P5',width=width,
         initial_preparation_and_materials='EXISTING_SYNTHETIC_API_FIXTURE',
@@ -140,4 +142,11 @@ def test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart(demo
         JS_application_navigation=0,api_business_setup_after_startup=0,
         original_adapters=['P1','P2','P3','P4','P5'],local_outputs=6,
         case_goal_completed=False,restart_GET_only=True,real_model_calls=0,
+        continuation='NONE' if continuation is None else continuation.__name__,
         Windows='NOT_RUN',formal_AT='NOT_RUN',real_business='NOT_RUN'),ensure_ascii=False,indent=2)+'\n')
+    return parent,result,history,traffic
+
+
+@pytest.mark.parametrize('width',[1200,320])
+def test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart(demo_inputs,tmp_path,width):
+    run_existing_assigned_chain(demo_inputs,tmp_path,width)

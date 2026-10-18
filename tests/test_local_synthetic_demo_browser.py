@@ -27,21 +27,52 @@ def ordinary_demo(f,directory,*,port=None):
         PARKWEAVE_SERVICE_PROFILE=os.environ['PARKWEAVE_SERVICE_PROFILE'],
         PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG=os.environ['PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'])
     with (directory/'ordinary-api.log').open('w') as log:
+        started=time.monotonic_ns()
         child=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
             '--host','127.0.0.1','--port',str(port),'--log-level','warning','--no-access-log'],cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT)
+        # Owned child only: retain each health attempt before any failure cleanup.
+        # No DSN, token, body, SQL text or inherited environment enters this log.
+        def record(event,**values):
+            proc={}
+            try:
+                fields=Path('/proc',str(child.pid),'stat').read_text().rsplit(')',1)[1].split()
+                proc=dict(state=fields[0],user_ticks=int(fields[11]),system_ticks=int(fields[12]),rss_pages=int(fields[21]))
+            except (OSError,ValueError,IndexError):pass
+            with (directory/'ordinary-startup.jsonl').open('a') as stream:
+                stream.write(json.dumps(dict(event=event,monotonic_ns=time.monotonic_ns(),utc_ns=time.time_ns(),
+                    since_spawn_ns=time.monotonic_ns()-started,child_pid=child.pid,child_exit=child.poll(),
+                    child_resources=proc,**values))+'\n')
         try:
+            record('spawn',argv=[sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory'],
+                   host='127.0.0.1',port=port,startup_budget_seconds=15,health_timeout_seconds=15)
             with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=15) as api:
                 until=time.monotonic()+15
+                attempt=0
                 while time.monotonic()<until:
                     assert child.poll() is None,'ordinary factory exited; see ordinary-api.log'
+                    attempt+=1;record('health_begin',attempt=attempt)
                     try:
                         response=api.get('/health')
-                        if response.status_code==200 and response.json()['process_id']==child.pid:break
-                    except httpx.TransportError:pass
+                        observed=response.json()['process_id'] if response.status_code==200 else None
+                        record('health_end',attempt=attempt,status=response.status_code,observed_process_id=observed)
+                        if response.status_code==200 and observed==child.pid:break
+                    except httpx.TransportError as error:record('health_error',attempt=attempt,error_type=type(error).__name__)
                     time.sleep(.05)
-                else:pytest.fail('ordinary demo process startup deadline')
+                else:
+                    record('startup_deadline')
+                    from owned_connection_diagnostics import current
+                    diagnostic=current()
+                    if diagnostic:
+                        from psycopg.conninfo import conninfo_to_dict
+                        diagnostic.failure_sample(conninfo_to_dict(f[0].dsn)['dbname'],'ordinary-startup')
+                    pytest.fail('ordinary demo process startup deadline')
+                record('ready')
                 yield api
-        finally:stop_children([child])
+        finally:
+            try:record('stop_begin')
+            finally:
+                try:stop_children([child])
+                finally:record('stop_end')
 
 
 def test_ordinary_subprocess_chromium_selection_explicit_adoption_and_restart(demo_inputs,tmp_path):

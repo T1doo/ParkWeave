@@ -73,6 +73,8 @@ class Diagnostics:
     def emit(self, kind, **values):
         row = dict(kind=kind, monotonic_ns=time.monotonic_ns(), utc_ns=time.time_ns(),
                    process_id=os.getpid(), thread_id=threading.get_ident(),
+                   process_cpu_ns=time.process_time_ns(), active_threads=threading.active_count(),
+                   load_average=os.getloadavg() if hasattr(os,'getloadavg') else None,
                    native_thread_id=threading.get_native_id(), thread_name=threading.current_thread().name,
                    node=self.node, phase=self.phase, stage=self.stage)
         row.update(values)
@@ -177,6 +179,14 @@ class Diagnostics:
                                     'backend_start,xact_start,query_start,state_change FROM pg_stat_activity '
                                     'WHERE datname=%s AND backend_type=\'client backend\' ORDER BY pid LIMIT 64', (db,)).fetchall()
                 self.emit('failure_activity', failed_attempt=attempt, database=db, rows=rows)
+                locks = conn.execute('SELECT l.pid,l.locktype,l.database,l.relation,l.mode,l.granted,'
+                    'pg_blocking_pids(l.pid) blocking_pids FROM pg_locks l '
+                    'JOIN pg_stat_activity a ON a.pid=l.pid WHERE a.datname=%s '
+                    'ORDER BY l.pid,l.locktype,l.mode LIMIT 128',(db,)).fetchall()
+                self.emit('failure_locks',failed_attempt=attempt,database=db,rows=locks)
+                resources=conn.execute('SELECT numbackends,deadlocks,conflicts,temp_files,temp_bytes '
+                    'FROM pg_stat_database WHERE datname=%s',(db,)).fetchall()
+                self.emit('failure_database_resources',failed_attempt=attempt,database=db,rows=resources)
             self.emit('failure_sample_closed', failed_attempt=attempt, elapsed_ns=time.monotonic_ns()-begin)
         except Exception as error:
             self.emit('failure_sample_unavailable', failed_attempt=attempt,
