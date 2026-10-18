@@ -35,7 +35,9 @@ development-v1为1FAIL：误将编辑后的request_text当原事项goal，列表
 
 [manifest](evidence/assigned-ordinary-chain-20261018/manifest.json)保存173对raw/public哈希、6处临时合成会话候选脱敏；[结构与哈希校验](evidence/assigned-ordinary-chain-20261018/archive-validation.json)覆盖实际JSON/XML/PNG等，私有原件保留，不导出PG data目录。原oversize负向测试故意保存一份x×65537的非法JSON输入；manifest按精确路径、原测试ID及SHA单列该输入，保留原字节。首归档误当结构JSON的校验失败、控制脚本版本及私有首导出均保留；该归档分类修正没有改产品或测试。继承29674个F2证据blob逐个Git核对保持，包含全部TTL原失败/中断原件。交付只正常推送开发分支，实际完整SHA及远端差异以最终回执为准。
 
-源码、测试及本报告diff-check为0；原始证据有10处空白告警，保留日志/XML等原字节。manifest、archive-validation、delivery-checks为配对表之外的衍生metadata。
+源码、测试及本报告diff-check为0；原始证据有10处空白告警，保留日志/XML等原字节。manifest、archive-validation、delivery-checks及git-auth-diagnosis为配对表之外的衍生metadata。
+
+首次推送因默认Git凭据助手缺失，在写入前失败；远端仍为0567。现有GH_TOKEN仅用于原HTTPS Git通道的单次助手重试，不新增或持久化凭据。独立API预检返回Forbidden，未重试该接口；准确推送结果以后续远端回执为准。
 
 ## 真实运行尚缺输入
 
