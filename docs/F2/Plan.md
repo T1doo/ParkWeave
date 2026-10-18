@@ -1,3 +1,11 @@
+## 2026-10-18：F2-T05 普通 ACCEPT 原键只读冷恢复
+
+产品冻结 `35031ba7334006089889f6488dfbe1feb5bc10b4`，最终源码/测试冻结 `0ec816ff566ad4b9966229f5eb82123f5b984693`，二者产品src树均为 `e0f8443127b49b5feb9e1b880e8998ca67b5c404`。复用原身份/READ/精确Run分派及ACCEPT与回执CREATE原事务证明，增加原actor/key/offer/revision限定GET；页面只存有界不含会话或正文的句柄，未知结果经明确GET历史核对和当前GET再释放，无重发ACCEPT或自动P3。NOT_OBSERVED保持未决，损坏/过期不解锁；普通其他动作/回执未获得通用恢复。
+
+最终8完整相关模块161唯一项PASS，745输入PRE/POST零漂移；独测77项与161全部重叠，不累加。较早bfb的24完整模块实际575PASS/1FAIL保留，旧过期fixture在目标锁前P5准备409；仅修测试准备窗口并保留原等待预算/负断言，新增实际SQL存活/等待/过期见证，再重跑上述最终范围。两SHA/开发/独测成绩不拼接为全仓或576项全绿。原证据仅更正已由源码证明的测试标识，旧副本及所有失败/中断保全。详见[本批范围与原件](DispatchAcceptRecovery-20261018.md)。
+
+真实Chromium普通configured_app正向初态仍由自有合成fixture预置已REVIEW/CONFIRM资料、精确Run合法assignment及OFFER。普通运行缺PREPARE/REVIEW_ASSIGNED/preparation_catalog继续准确拒绝；可信NativeRunAccess/provider及正式来源/批准接线仍未完成，permit/writer默认拒绝，IsolatedPlanApproval不作普通批准。Windows、正式AT/AT35、真实主体/业务/模型、生产与部署未验；完整项目未完成。没有main修改、强推、部署、新费用/真实身份/Grant/分派/目录发布/批准/凭据或安全权限扩大，未知锁保留。下方历史原字节保留。
+
 ## 2026-10-17：正式来源入口预检，专用来源证明仍待实现
 
 基线 `0fbd39513cf9aaf90375a28c01be4534414186a9` 保持原分支供独审，新冻结 `e4160e51c063764dba66aaf72bde37efeb881a81`。查明原数据库CHECK、固定合成创建、runtime/entry_context及NativeRunAccess成功本地Case证明均限定SYNTHETIC，Store仅LOCAL/FAULT_INJECTION。不能删除判断或只靠凭据/provider标签接入正式数据。新增独立源域/对象引用、精确Selection、当前主体/用途Lookup、公开缩小配置及reader/verifier接口；两个GET和原页条件面板始终不可用，未知合同不调用任何来源/验真回调，不授予业务权限。

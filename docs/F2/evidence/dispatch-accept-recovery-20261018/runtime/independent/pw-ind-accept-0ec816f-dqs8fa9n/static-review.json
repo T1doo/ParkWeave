@@ -1,0 +1,63 @@
+{
+  "source_sha": "0ec816ff566ad4b9966229f5eb82123f5b984693",
+  "status": "STATIC_PASS_EXECUTION_NOT_RUN",
+  "static_blockers": 0,
+  "tests_executed": 0,
+  "product_src_tree": "e0f8443127b49b5feb9e1b880e8998ca67b5c404",
+  "product_bytes_equal_source_shas": [
+    "35031ba7334006089889f6488dfbe1feb5bc10b4",
+    "bfb16026a5bcfcdca101a69f357157d5f1c4a490"
+  ],
+  "incremental_files": [
+    "tests/test_service_plan_recovery.py"
+  ],
+  "incremental_file_sha256": {
+    "tests/test_service_plan_recovery.py": "9d32d34315ffdb11e56792e454038bd330528cf5b1d57a8fc155703d76af8642"
+  },
+  "prior_full_feature_review": "/workspace/ParkWeave/.runtime/dispatch-accept-recovery-20261018/independent/pw-ind-accept-bfb1602-pb4bztkf/static-review.json",
+  "findings": [
+    {
+      "lines": "tests/test_service_plan_recovery.py:124-128",
+      "status": "PASS_STATIC",
+      "detail": "Preparation window10s; all original P2/P3/P4 VERIFY, local REVALIDATE and final P5 VERIFY retained, final P5 original key used; no warm extra business events."
+    },
+    {
+      "lines": "tests/test_service_plan_recovery.py:129-143",
+      "status": "PASS_STATIC",
+      "detail": "Same lifecycle FOR UPDATE held before launching recovery; SQL approaches1.5s. Both members asserted live with max<=2 before submit, real waiter observed within original1s, then all members asserted still live."
+    },
+    {
+      "lines": "tests/test_service_plan_recovery.py:144-151",
+      "status": "PASS_STATIC",
+      "detail": "Actual database clock passes maximum member ends_at plus original30ms before releasing lock. Original future.result(5), historicalVERIFY event, P2 LINK_NEEDS_RECHECK, P2/P5 notVERIFIED and full snapshot equality preserved. Production3s timeout unchanged."
+    },
+    {
+      "lines": "tests/test_service_plan_recovery.py:113-119,134,148,152-154",
+      "status": "PASS_STATIC",
+      "detail": "Phase JSON records actual SQL remaining bounds, budget metadata and final result. Preparation that is already expired fails explicitly; no retries or bypass."
+    }
+  ],
+  "limitations": [
+    "10s is a fixed preparation allowance, not a promise setup can never overrun under arbitrary load; before-launch assertion fails closed.",
+    "Actual proof JSON is produced only after complete(f,local=True) returns and the try/finally is entered; fixture/setup failures earlier may have JUnit without this JSON.",
+    "Waiter query is the original same-database lock/table observation, not an independently captured exact waiter PID; this increment does not weaken it.",
+    "No pytest collection/execution, Node, PostgreSQL, API, browser or network executed by this reviewer in this phase.",
+    "Actual module origins and execution POST745 checks remain pending until explicit independent start authorization.",
+    "Parent bfb broad575PASS/1FAIL and focused results are not transferred to a new SHA or counted as reviewer tests."
+  ],
+  "input_pre": {
+    "shared_count": 745,
+    "mirror_count": 745,
+    "shared_mismatches": 0,
+    "mirror_mismatches": 0
+  },
+  "input_post": "PENDING_FUTURE_AUTHORIZED_EXECUTION",
+  "recommended_selectors": [
+    "tests/test_dispatch_accept_recovery.py",
+    "tests/test_dispatch_accept_recovery_offline.py",
+    "tests/test_dispatch_accept_recovery_browser.py",
+    "tests/test_pending_receipt_handoff_offline.py",
+    "tests/test_service_plan_recovery.py::test_actual_resource_expiry_during_last_lifecycle_lock_wait_is_read_only"
+  ],
+  "recommended_total": 77
+}

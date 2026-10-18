@@ -1,0 +1,90 @@
+{
+  "source_sha": "35031ba7334006089889f6488dfbe1feb5bc10b4",
+  "reviewer": "/root/review_material_import",
+  "status": "STATIC_REVIEW_PASS_EXECUTION_NOT_RUN",
+  "static_blockers": 0,
+  "tests_executed": 0,
+  "reviewed_files": [
+    "src/parkweave/api.py",
+    "src/parkweave/service_dispatches.py",
+    "src/parkweave/web.html",
+    "tests/dispatch_accept_recovery_offline.js",
+    "tests/pending_receipt_handoff_offline.js",
+    "tests/test_dispatch_accept_recovery.py",
+    "tests/test_dispatch_accept_recovery_browser.py",
+    "tests/test_dispatch_accept_recovery_offline.py",
+    "tests/test_local_synthetic_demo_browser.py"
+  ],
+  "file_sha256": {
+    "src/parkweave/api.py": "4d6d1601478bb3233cc3877e4e83b88911db422bc6152f600354354b2cef3726",
+    "src/parkweave/service_dispatches.py": "e77739dfb641c3fe3fbd706896335a8d05106761910e00c6cdf429a6ae53feec",
+    "src/parkweave/web.html": "c91dbe80655482c96fcc442be0e4b9ed400df8ddfa3a6b539d47ba883fb6128f",
+    "tests/dispatch_accept_recovery_offline.js": "1f6a4076d659cdbf9597762cea8db6b64720ce409ebe6a925fe98cdee93ad5cb",
+    "tests/pending_receipt_handoff_offline.js": "bd8d7892f801d9e9f2d268a495a002005817c7bc94a1f1d82bd4c5a5db38a4dd",
+    "tests/test_dispatch_accept_recovery.py": "ba313a34a393197368bfeb02c85a69f47e737e958b72145d5bd5f567338a7cda",
+    "tests/test_dispatch_accept_recovery_browser.py": "7d439ccb5f3b27a7bd25b5d9029c8d85f001f1e46da75de555869cbcaaf87c82",
+    "tests/test_dispatch_accept_recovery_offline.py": "c877788511bce970334e39c61e59bc021e44530969cd9316288358764053b3ca",
+    "tests/test_local_synthetic_demo_browser.py": "fd9e40d9cbc7a1f21988d3c361558d6459f2c504c3f83003e5a48ab47e43ee2f"
+  },
+  "input_count": 745,
+  "shared_pre_mismatches": 0,
+  "mirror_pre_mismatches": 0,
+  "previous_P2_findings": [
+    {
+      "issue": "Unknown fence lost across clear/navigation/cold start",
+      "source_status": "FIXED_STATIC",
+      "lines": "web.html:55,105,1420",
+      "detail": "Independent opaque storage-prefix predicate survives presentation reset and blocks other mutations on access failure."
+    },
+    {
+      "issue": "Outer async result changed global proof without caller guard",
+      "source_status": "FIXED_STATIC",
+      "lines": "web.html:1467",
+      "detail": "Bound guard immediately follows await before proof or DOM assignment."
+    },
+    {
+      "issue": "Handle deletion preceded current-view validation/render",
+      "source_status": "FIXED_STATIC",
+      "lines": "web.html:1471-1478",
+      "detail": "Current view shape/binding is checked, rendering completes with fence retained, then current context and exact raw bytes are checked before deletion."
+    },
+    {
+      "issue": "Current executor lineage only self-consistent instead of bound to self",
+      "source_status": "FIXED_STATIC",
+      "lines": "web.html:1464,1471",
+      "detail": "Captured original observed executor must equal current_offer and every own offer executor."
+    }
+  ],
+  "backend_review": {
+    "lines": "service_dispatches.py:298-358",
+    "current_authority": "Original _auth READ plus current scoped Run assignment and own offer, rechecked before response. Same actor/key advisory lock ordering as original command.",
+    "historical_binding": "Exact parent/case/run/offer and original revision; ACCEPT event and atomic receipt CREATE fields/fingerprint/reference must agree.",
+    "boundary": "No reason/token or writable projection returned; NOT_OBSERVED remains inconclusive. GET denial auditing is inherited existing behavior, not a new authority grant."
+  },
+  "helper_changes": {
+    "handoff": "Only imports the actual original entryFailureFlows/failEntryFlow dependency; original negative assertions unchanged.",
+    "ordinary_server": "Optional preselected loopback port supports same-origin restart; default port remains ephemeral and binding is still checked."
+  },
+  "recommended_execution_modules": [
+    "tests/test_dispatch_accept_recovery.py",
+    "tests/test_dispatch_accept_recovery_offline.py",
+    "tests/test_dispatch_accept_recovery_browser.py",
+    "tests/test_pending_receipt_handoff_offline.py"
+  ],
+  "source_literal_param_counts": {
+    "tests/test_dispatch_accept_recovery.py": 31,
+    "tests/test_dispatch_accept_recovery_offline.py": 31,
+    "tests/test_dispatch_accept_recovery_browser.py": 4,
+    "tests/test_pending_receipt_handoff_offline.py": 9
+  },
+  "recommended_total": 75,
+  "overlap_in_main_regression": true,
+  "execution_limitations": [
+    "No pytest collection, Node, DB, API, browser or network run by this reviewer in this phase.",
+    "No actual loaded module origins measured yet; collect during explicitly authorized mirror execution.",
+    "PRE mirror/shared 745 comparisons are complete; POST after future execution is pending.",
+    "Narrow Node tests use controlled promises/DOM/transport/render stubs; they cannot be described as real HTTP or full renderer validation.",
+    "Browser synthetic late-arrival mode manually delivers the captured original request to represent its delayed arrival; browser recovery itself must remain GET only.",
+    "Synthetic fixture grants/assignment are pre-process test authority, not real authorization; no real fulfillment, Windows or formal AT verified."
+  ]
+}

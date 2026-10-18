@@ -1,0 +1,169 @@
+.FFFFFFF.......................                                          [100%]
+=================================== FAILURES ===================================
+_______ test_current_actor_scope_denies_without_private_proof[fixture-a] _______
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f481764c980>, <parkweave.store.Store object at 0x7f4817387e30>, {'fixture-a': 'G8...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f48162b11f0>)
+user = 'fixture-a'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+>       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = <Response [403 Forbidden]>.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError
+_______ test_current_actor_scope_denies_without_private_proof[fixture-b] _______
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f481740b710>, <parkweave.store.Store object at 0x7f481636c9e0>, {'fixture-a': '4o...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f4816092720>)
+user = 'fixture-b'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+>       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = <Response [403 Forbidden]>.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError
+_______ test_current_actor_scope_denies_without_private_proof[fixture-c] _______
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f4815dc3d70>, <parkweave.store.Store object at 0x7f4815dc3890>, {'fixture-a': '9Q...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f4815dc2360>)
+user = 'fixture-c'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+>       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = <Response [403 Forbidden]>.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError
+_ test_current_actor_scope_denies_without_private_proof[prep-specialist-fixture-a] _
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f4815aaabd0>, <parkweave.store.Store object at 0x7f4815aaa5a0>, {'fixture-a': 'bG...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f4816111250>)
+user = 'prep-specialist-fixture-a'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+>       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = <Response [403 Forbidden]>.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError
+______ test_current_actor_scope_denies_without_private_proof[executor-b] _______
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f4815dc32c0>, <parkweave.store.Store object at 0x7f4815aaa840>, {'fixture-a': '8t...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f4816222360>)
+user = 'executor-b'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+>       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = <Response [403 Forbidden]>.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError
+______ test_current_actor_scope_denies_without_private_proof[executor-c] _______
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f4817e9c8f0>, <parkweave.store.Store object at 0x7f4817e9cbf0>, {'fixture-a': '7R...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f48177bcfe0>)
+user = 'executor-c'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+>       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = <Response [403 Forbidden]>.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError
+______ test_current_actor_scope_denies_without_private_proof[unassigned] _______
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f48174a3860>, <parkweave.store.Store object at 0x7f4815b7cbf0>, {'fixture-a': 'D6...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f481588ad80>)
+user = 'unassigned'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+>       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = <Response [403 Forbidden]>.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_dispatch_accept_recovery.py::test_original_accept_committed_and_not_observed_are_read_only
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_dispatch_accept_recovery.py::test_original_accept_committed_and_not_observed_are_read_only
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_dispatch_accept_recovery.py::test_original_accept_committed_and_not_observed_are_read_only
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_dispatch_accept_recovery.py::test_current_actor_scope_denies_without_private_proof[fixture-a]
+FAILED tests/test_dispatch_accept_recovery.py::test_current_actor_scope_denies_without_private_proof[fixture-b]
+FAILED tests/test_dispatch_accept_recovery.py::test_current_actor_scope_denies_without_private_proof[fixture-c]
+FAILED tests/test_dispatch_accept_recovery.py::test_current_actor_scope_denies_without_private_proof[prep-specialist-fixture-a]
+FAILED tests/test_dispatch_accept_recovery.py::test_current_actor_scope_denies_without_private_proof[executor-b]
+FAILED tests/test_dispatch_accept_recovery.py::test_current_actor_scope_denies_without_private_proof[executor-c]
+FAILED tests/test_dispatch_accept_recovery.py::test_current_actor_scope_denies_without_private_proof[unassigned]
+7 failed, 24 passed, 4 warnings in 27.70s

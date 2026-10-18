@@ -1,0 +1,254 @@
+{
+  "scope": "EXISTING_ORDINARY_DEMO_DOM_NEW_INTAKE",
+  "width": 1200,
+  "ordinary_factory": true,
+  "separate_normal_worker": true,
+  "initial_business_rows": 0,
+  "business_POSTs": [
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/runs",
+      "status": 202,
+      "body": {
+        "goal": "SYNTHETIC new ordinary DOM request 1200"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations",
+      "status": 201,
+      "body": {
+        "run_id": "d650e9ff-1734-4de1-813e-1d94affbd51c",
+        "service_id": "synthetic-material-preparation",
+        "service_version": 1,
+        "reviewer_id": "prep-specialist-fixture-a"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/306c94b3-d317-4b84-80f6-196cb40a71be/request-intent",
+      "status": 200,
+      "body": {
+        "expected_preparation_revision": 1,
+        "request_text": "SYNTHETIC new ordinary DOM request 1200",
+        "required_goals": [
+          "LOCAL_MATERIAL_PREPARATION",
+          "LOCAL_CASE_RESOURCE_ASSOCIATION",
+          "LOCAL_INTERNAL_ACCEPTANCE",
+          "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+          "LOCAL_SYNTHETIC_COORDINATION_RECORDS",
+          "LOCAL_CASE_RECORD_RECHECK"
+        ]
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/306c94b3-d317-4b84-80f6-196cb40a71be/commands",
+      "status": 200,
+      "body": {
+        "action": "ADD_EVIDENCE",
+        "expected_revision": 2,
+        "slot": "need_summary",
+        "text": "SYNTHETIC fresh DOM need 1200",
+        "source_kind": "USER_STATEMENT",
+        "source_label": "SYNTHETIC new DOM source need_summary"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/306c94b3-d317-4b84-80f6-196cb40a71be/commands",
+      "status": 200,
+      "body": {
+        "action": "ADD_EVIDENCE",
+        "expected_revision": 3,
+        "slot": "material_outline",
+        "text": "SYNTHETIC fresh DOM outline 1200 <script>window.demoInjection=true</script>",
+        "source_kind": "USER_STATEMENT",
+        "source_label": "SYNTHETIC new DOM source material_outline"
+      }
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/306c94b3-d317-4b84-80f6-196cb40a71be/commands",
+      "status": 200,
+      "body": {
+        "action": "REVIEW",
+        "expected_revision": 4,
+        "reason": "SYNTHETIC mapped specialist independently reviews new two slots"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/306c94b3-d317-4b84-80f6-196cb40a71be/commands",
+      "status": 200,
+      "body": {
+        "action": "CONFIRM",
+        "expected_revision": 5,
+        "reason": "SYNTHETIC owner independently confirms new reviewed inputs"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/306c94b3-d317-4b84-80f6-196cb40a71be/service-selections",
+      "status": 201,
+      "body": {
+        "expected_preparation_revision": 6,
+        "expected_source_sha256": "1130a0303620987567f11e04e2e1063a5f8cff9055eabb63ee1a5d7262b0fc33",
+        "expected_capability_catalog_sha256": "62c5234803f40c2a12d926438f09e4453f229a531e110e920965e16c6ae08629"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/306c94b3-d317-4b84-80f6-196cb40a71be/service-case-plan",
+      "status": 201,
+      "body": {
+        "expected_preparation_revision": 6,
+        "expected_request_revision": 2,
+        "expected_plan_revision": 0,
+        "expected_source_sha256": "1130a0303620987567f11e04e2e1063a5f8cff9055eabb63ee1a5d7262b0fc33",
+        "required_goals": [
+          "LOCAL_MATERIAL_PREPARATION",
+          "LOCAL_CASE_RESOURCE_ASSOCIATION",
+          "LOCAL_INTERNAL_ACCEPTANCE",
+          "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+          "LOCAL_SYNTHETIC_COORDINATION_RECORDS",
+          "LOCAL_CASE_RECORD_RECHECK"
+        ],
+        "reason": "SYNTHETIC explicit new DOM selection adoption",
+        "candidate_id": "94e0e8a1-5e0a-492c-a849-30bb2e430410",
+        "expected_candidate_sha256": "b26bc3147df0bc254248e9f3ee162c1d706b3d025c4506dee3c68db0afdf7531",
+        "expected_verification_sha256": "6cb3f05e0eefb9da8ef1b339db7395c8621edda7056f6e346daa59c4f621f91c"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/306c94b3-d317-4b84-80f6-196cb40a71be/service-case-plan/commands",
+      "status": 200,
+      "body": {
+        "action": "VERIFY",
+        "step_id": "37c5f2d8-e010-4899-a9f1-4718f6546f53",
+        "expected_revision": 1,
+        "reason": "SYNTHETIC explicit DOM checks P1",
+        "expected_source_sha256": "b5f7b65927dbe6f2f74ab62bce436519f45cfd5789273e92e4cc065980c5a84d"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview",
+      "status": 200,
+      "body": {
+        "starts_at": "2026-10-18T05:05:00Z",
+        "ends_at": "2026-10-18T06:05:00Z",
+        "quantity": 1
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/holds",
+      "status": 201,
+      "body": {
+        "starts_at": "2026-10-18T05:05:00Z",
+        "ends_at": "2026-10-18T06:05:00Z",
+        "quantity": 1,
+        "expected_revision": 1,
+        "ttl_seconds": 300,
+        "purpose": "SYNTHETIC new DOM selected Case resource"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/synthetic-resources/fb161ea0-b665-4ec5-b345-a070bfec764d/preview",
+      "status": 200,
+      "body": {
+        "starts_at": "2026-10-18T05:05:00Z",
+        "ends_at": "2026-10-18T06:05:00Z",
+        "quantity": 1
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/synthetic-resources/fb161ea0-b665-4ec5-b345-a070bfec764d/holds",
+      "status": 201,
+      "body": {
+        "starts_at": "2026-10-18T05:05:00Z",
+        "ends_at": "2026-10-18T06:05:00Z",
+        "quantity": 1,
+        "expected_revision": 1,
+        "ttl_seconds": 300,
+        "purpose": "SYNTHETIC new DOM selected Case resource"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/resource-combinations",
+      "status": 201,
+      "body": {
+        "members": [
+          {
+            "hold_id": "4e86327a-9109-4ea3-9cb1-c8e8cdcbbf12",
+            "expected_revision": 1
+          },
+          {
+            "hold_id": "63ff5bee-533c-4e03-91c4-20294240b5b8",
+            "expected_revision": 1
+          }
+        ]
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/306c94b3-d317-4b84-80f6-196cb40a71be/resource-link",
+      "status": 201,
+      "body": {
+        "combination_id": "5d5cdd63-ed68-4bb4-b48c-60923a2371c9",
+        "expected_preparation_revision": 6,
+        "expected_link_revision": 0,
+        "reason": "SYNTHETIC explicit new DOM Case resource association"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/306c94b3-d317-4b84-80f6-196cb40a71be/service-case-plan/commands",
+      "status": 200,
+      "body": {
+        "action": "VERIFY",
+        "step_id": "dea0a50f-cd36-409e-b093-6a23a280f60a",
+        "expected_revision": 2,
+        "reason": "SYNTHETIC explicit DOM checks P2",
+        "expected_source_sha256": "b9703d9ece969350dd8dc24c703fa5386de259afa4c6eb63ee06bc55f7d3645e"
+      }
+    }
+  ],
+  "all_initial_materials_created_by_DOM": true,
+  "api_business_setup_calls": 0,
+  "JS_navigation_calls": 0,
+  "reused_original_entry": true,
+  "new_product_UI": false,
+  "review_then_separate_confirm": true,
+  "original_P1_P2_verified": true,
+  "new_Run_assignment_created": false,
+  "P3_missing_existing_executor_blocked": true,
+  "runtime_authority_changes": 0,
+  "restart_GET_only": true,
+  "real_model_calls": 0,
+  "Windows": "NOT_RUN",
+  "formal_AT": "NOT_RUN",
+  "real_business": "NOT_RUN"
+}

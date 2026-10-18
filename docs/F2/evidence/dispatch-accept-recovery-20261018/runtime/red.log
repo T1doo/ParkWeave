@@ -1,0 +1,37 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+________ test_original_accept_committed_and_not_observed_are_read_only _________
+
+receipt_fixture = (<parkweave.store.Store object at 0x7fbd2beeb200>, <parkweave.store.Store object at 0x7fbd2beeab40>, {'fixture-a': 'H5...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7fbd2bc15280>)
+
+    def test_original_accept_committed_and_not_observed_are_read_only(receipt_fixture):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        before=case_history(f[1],row['preparation_id']);auth=authority_snapshot(f[1])
+        missing=recover(f,row,key)
+>       assert missing.status_code==200,missing.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = <Response [404 Not Found]>.status_code
+
+tests/test_dispatch_accept_recovery.py:24: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_dispatch_accept_recovery.py::test_original_accept_committed_and_not_observed_are_read_only
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_dispatch_accept_recovery.py::test_original_accept_committed_and_not_observed_are_read_only
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_dispatch_accept_recovery.py::test_original_accept_committed_and_not_observed_are_read_only
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_dispatch_accept_recovery.py::test_original_accept_committed_and_not_observed_are_read_only
+1 failed, 4 warnings in 2.39s

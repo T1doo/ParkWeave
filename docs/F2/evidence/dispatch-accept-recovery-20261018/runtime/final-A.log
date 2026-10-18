@@ -1,0 +1,148 @@
+........F........F...F............................F..................... [ 18%]
+........................................................................ [ 36%]
+........................................................................ [ 54%]
+........................................................................ [ 72%]
+........................................................................ [ 90%]
+.....................................                                    [100%]
+=================================== FAILURES ===================================
+___________________ test_case_cancel_ui[cancelled_dispatch] ____________________
+
+mode = 'cancelled_dispatch'
+
+    @pytest.mark.parametrize('mode',['lost_response','cold_recovery','unknown_not_observed','corrupt_proof','revoked','late_read','late_post','pending_other_operation','cancelled_dispatch'])
+    def test_case_cancel_ui(mode):
+     node=shutil.which('node')
+     assert node,'Node is required for this offline acceptance'
+     result=subprocess.run([node,'tests/case_cancellation_offline.js',mode],capture_output=True,text=True,timeout=15)
+>    assert result.returncode==0,result.stderr
+E    AssertionError: evalmachine.<anonymous>:22
+E        dispatchAcceptHandle=executor?dispatchAcceptRead(x):null;dispatchAcceptProof=null;
+E        ^
+E      
+E      ReferenceError: dispatchAcceptRead is not defined
+E          at renderDispatch (evalmachine.<anonymous>:22:3)
+E          at evalmachine.<anonymous>:1:1
+E          at Script.runInContext (node:vm:149:12)
+E          at Object.runInContext (node:vm:301:6)
+E          at run (/workspace/ParkWeave/tests/case_cancellation_offline.js:28:17)
+E          at /workspace/ParkWeave/tests/case_cancellation_offline.js:73:51
+E          at Object.<anonymous> (/workspace/ParkWeave/tests/case_cancellation_offline.js:76:3)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/case_cancellatio...bject..js (node:internal/modules/cjs/loader:2003:10)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n').returncode
+
+tests/test_case_cancellation_offline.py:10: AssertionError
+_______________ test_accepted_case_cancel_ui[cancelled_dispatch] _______________
+
+mode = 'cancelled_dispatch'
+
+    @pytest.mark.parametrize('mode',['lost_response','cold_recovery','unknown_not_observed','corrupt_proof','revoked','late_read','late_post','pending_other_operation','cancelled_dispatch','late_recovery','wrong_scope','late_receipt','late_dispatch'])
+    def test_accepted_case_cancel_ui(mode):
+     node=shutil.which('node');assert node,'Node is required for this offline acceptance'
+     result=subprocess.run([node,'tests/case_cancellation_offline.js','after_'+mode],capture_output=True,text=True,timeout=15)
+>    assert result.returncode==0,result.stderr
+E    AssertionError: evalmachine.<anonymous>:22
+E        dispatchAcceptHandle=executor?dispatchAcceptRead(x):null;dispatchAcceptProof=null;
+E        ^
+E      
+E      ReferenceError: dispatchAcceptRead is not defined
+E          at renderDispatch (evalmachine.<anonymous>:22:3)
+E          at evalmachine.<anonymous>:1:1
+E          at Script.runInContext (node:vm:149:12)
+E          at Object.runInContext (node:vm:301:6)
+E          at run (/workspace/ParkWeave/tests/case_cancellation_offline.js:28:17)
+E          at /workspace/ParkWeave/tests/case_cancellation_offline.js:73:51
+E          at Object.<anonymous> (/workspace/ParkWeave/tests/case_cancellation_offline.js:76:3)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/case_cancellatio...bject..js (node:internal/modules/cjs/loader:2003:10)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n').returncode
+
+tests/test_case_cancellation_offline.py:18: AssertionError
+_________________ test_accepted_case_cancel_ui[late_dispatch] __________________
+
+mode = 'late_dispatch'
+
+    @pytest.mark.parametrize('mode',['lost_response','cold_recovery','unknown_not_observed','corrupt_proof','revoked','late_read','late_post','pending_other_operation','cancelled_dispatch','late_recovery','wrong_scope','late_receipt','late_dispatch'])
+    def test_accepted_case_cancel_ui(mode):
+     node=shutil.which('node');assert node,'Node is required for this offline acceptance'
+     result=subprocess.run([node,'tests/case_cancellation_offline.js','after_'+mode],capture_output=True,text=True,timeout=15)
+>    assert result.returncode==0,result.stderr
+E    AssertionError: evalmachine.<anonymous>:22
+E        dispatchAcceptHandle=executor?dispatchAcceptRead(x):null;dispatchAcceptProof=null;
+E        ^
+E      
+E      ReferenceError: dispatchAcceptRead is not defined
+E          at renderDispatch (evalmachine.<anonymous>:22:3)
+E          at evalmachine.<anonymous>:1:1
+E          at Script.runInContext (node:vm:149:12)
+E          at Object.runInContext (node:vm:301:6)
+E          at run (/workspace/ParkWeave/tests/case_cancellation_offline.js:28:17)
+E          at /workspace/ParkWeave/tests/case_cancellation_offline.js:73:51
+E          at Object.<anonymous> (/workspace/ParkWeave/tests/case_cancellation_offline.js:76:3)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/case_cancellatio...bject..js (node:internal/modules/cjs/loader:2003:10)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n').returncode
+
+tests/test_case_cancellation_offline.py:18: AssertionError
+______ test_manual_receipt_cancellation_reconciliation_ui[late_dispatch] _______
+
+mode = 'late_dispatch'
+
+    @pytest.mark.parametrize('mode',['lost_response','record_lost_response','finish_lost_response','cold_recovery','unknown_not_observed','corrupt_proof','wrong_scope','wrong_action','missing_causal_event','revoked','expired_handle','cold_hydrate','storage_bounds','future_handle','unknown_handle_all_forms','unknown_handle_other_case','resource_release_and_history','cross_case_plan_delivery_approval','receipt_create_uses_preparation','dynamic_writes','late_read','late_post','late_recovery','explicit_outcomes','unresolved_does_not_finalize','pending_other_operation','late_phase_read','late_receipt','late_dispatch'])
+    def test_manual_receipt_cancellation_reconciliation_ui(mode):
+     node=shutil.which('node');assert node,'Node is required for this offline acceptance'
+     result=subprocess.run([node,'tests/case_cancellation_reconciliation_offline.js',mode],capture_output=True,text=True,timeout=15)
+>    assert result.returncode==0,result.stderr
+E    AssertionError: evalmachine.<anonymous>:22
+E        dispatchAcceptHandle=executor?dispatchAcceptRead(x):null;dispatchAcceptProof=null;
+E        ^
+E      
+E      ReferenceError: dispatchAcceptRead is not defined
+E          at renderDispatch (evalmachine.<anonymous>:22:3)
+E          at evalmachine.<anonymous>:1:1
+E          at Script.runInContext (node:vm:149:12)
+E          at Object.runInContext (node:vm:301:6)
+E          at run (/workspace/ParkWeave/tests/case_cancellation_reconciliation_offline.js:16:47)
+E          at /workspace/ParkWeave/tests/case_cancellation_reconciliation_offline.js:94:4
+E          at Object.<anonymous> (/workspace/ParkWeave/tests/case_cancellation_reconciliation_offline.js:98:3)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/case_cancellatio...bject..js (node:internal/modules/cjs/loader:2003:10)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n').returncode
+
+tests/test_case_cancellation_offline.py:26: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_dispatch_accept_recovery.py::test_original_accept_committed_and_not_observed_are_read_only
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_dispatch_accept_recovery.py::test_original_accept_committed_and_not_observed_are_read_only
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_dispatch_accept_recovery.py::test_original_accept_committed_and_not_observed_are_read_only
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_cancellation_offline.py::test_case_cancel_ui[cancelled_dispatch]
+FAILED tests/test_case_cancellation_offline.py::test_accepted_case_cancel_ui[cancelled_dispatch]
+FAILED tests/test_case_cancellation_offline.py::test_accepted_case_cancel_ui[late_dispatch]
+FAILED tests/test_case_cancellation_offline.py::test_manual_receipt_cancellation_reconciliation_ui[late_dispatch]
+4 failed, 393 passed, 4 warnings in 332.80s (0:05:32)

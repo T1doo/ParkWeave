@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="6" skipped="0" tests="34" time="3.171" timestamp="2026-10-18T03:22:52.057392+00:00" hostname="9eff6a810039"><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[past]" time="0.159" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[now]" time="0.095" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[one_ms]" time="0.132" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[max]" time="0.143" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[over]" time="0.084" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[zero]" time="0.086" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[far]" time="0.074" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[null]" time="0.070" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[string]" time="0.072" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[boolean]" time="0.070" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[extra]" time="0.077" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[oversize]" time="0.071" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[malformed]" time="0.075" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[storage_error]" time="0.071" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[limit]" time="0.064" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[other_actor]" time="0.060" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[committed]" time="0.061" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[not_observed]" time="0.070" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[wrong_proof]" time="0.075" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[replacement]" time="0.075" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[late_200]" time="0.098" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[late_403]" time="0.082" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[outer_case_ABA]" time="0.068" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[outer_identity_ABA]" time="0.071" /><testcase classname="tests.test_dispatch_accept_recovery_offline" name="test_actual_accept_recovery_storage_and_async_boundaries[outer_replacement]" time="0.062" /><testcase classname="tests.test_pending_receipt_handoff_offline" name="test_pending_manual_handoff_actual_js_under_offline_doubles[explicit_success]" time="0.081" /><testcase classname="tests.test_pending_receipt_handoff_offline" name="test_pending_manual_handoff_actual_js_under_offline_doubles[lost_response_cold_get_only]" time="0.093"><failure message="AssertionError: ReferenceError: entryFailureFlows is not defined&#10;      at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)&#10;      at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)&#10;      at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:36:110&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'lost_response_cold_ge...(evalmachine.&lt;anonymous&gt;:59:111)\n    at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:36:110\n').returncode">mode = 'lost_response_cold_get_only'
+
+    @pytest.mark.parametrize('mode',['explicit_success','lost_response_cold_get_only','storage_failure','duplicate_click','identity_aba_delayed_json','late_403_new_identity','wrong_recovery_proof','bounded_handles','current_recovery_403_keeps_original_handle'])
+    def test_pending_manual_handoff_actual_js_under_offline_doubles(mode):
+     p=subprocess.run(['node',str(Path(__file__).with_name('pending_receipt_handoff_offline.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=15)
+&gt;    assert p.returncode==0,p.stderr
+E    AssertionError: ReferenceError: entryFailureFlows is not defined
+E          at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)
+E          at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)
+E          at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:36:110
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'lost_response_cold_ge...(evalmachine.&lt;anonymous&gt;:59:111)\n    at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:36:110\n').returncode
+
+tests/test_pending_receipt_handoff_offline.py:10: AssertionError</failure></testcase><testcase classname="tests.test_pending_receipt_handoff_offline" name="test_pending_manual_handoff_actual_js_under_offline_doubles[storage_failure]" time="0.086"><failure message="AssertionError: ReferenceError: entryFailureFlows is not defined&#10;      at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)&#10;      at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)&#10;      at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:40:20&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'storage_failure'], re... (evalmachine.&lt;anonymous&gt;:59:111)\n    at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:40:20\n').returncode">mode = 'storage_failure'
+
+    @pytest.mark.parametrize('mode',['explicit_success','lost_response_cold_get_only','storage_failure','duplicate_click','identity_aba_delayed_json','late_403_new_identity','wrong_recovery_proof','bounded_handles','current_recovery_403_keeps_original_handle'])
+    def test_pending_manual_handoff_actual_js_under_offline_doubles(mode):
+     p=subprocess.run(['node',str(Path(__file__).with_name('pending_receipt_handoff_offline.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=15)
+&gt;    assert p.returncode==0,p.stderr
+E    AssertionError: ReferenceError: entryFailureFlows is not defined
+E          at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)
+E          at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)
+E          at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:40:20
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'storage_failure'], re... (evalmachine.&lt;anonymous&gt;:59:111)\n    at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:40:20\n').returncode
+
+tests/test_pending_receipt_handoff_offline.py:10: AssertionError</failure></testcase><testcase classname="tests.test_pending_receipt_handoff_offline" name="test_pending_manual_handoff_actual_js_under_offline_doubles[duplicate_click]" time="0.081"><failure message="AssertionError: ReferenceError: entryFailureFlows is not defined&#10;      at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)&#10;      at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'duplicate_click'], re...\n    at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)\n    at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)\n').returncode">mode = 'duplicate_click'
+
+    @pytest.mark.parametrize('mode',['explicit_success','lost_response_cold_get_only','storage_failure','duplicate_click','identity_aba_delayed_json','late_403_new_identity','wrong_recovery_proof','bounded_handles','current_recovery_403_keeps_original_handle'])
+    def test_pending_manual_handoff_actual_js_under_offline_doubles(mode):
+     p=subprocess.run(['node',str(Path(__file__).with_name('pending_receipt_handoff_offline.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=15)
+&gt;    assert p.returncode==0,p.stderr
+E    AssertionError: ReferenceError: entryFailureFlows is not defined
+E          at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)
+E          at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'duplicate_click'], re...\n    at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)\n    at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)\n').returncode
+
+tests/test_pending_receipt_handoff_offline.py:10: AssertionError</failure></testcase><testcase classname="tests.test_pending_receipt_handoff_offline" name="test_pending_manual_handoff_actual_js_under_offline_doubles[identity_aba_delayed_json]" time="0.097" /><testcase classname="tests.test_pending_receipt_handoff_offline" name="test_pending_manual_handoff_actual_js_under_offline_doubles[late_403_new_identity]" time="0.128" /><testcase classname="tests.test_pending_receipt_handoff_offline" name="test_pending_manual_handoff_actual_js_under_offline_doubles[wrong_recovery_proof]" time="0.088"><failure message="AssertionError: ReferenceError: entryFailureFlows is not defined&#10;      at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)&#10;      at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)&#10;      at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:50:174&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'wrong_recovery_proof'...(evalmachine.&lt;anonymous&gt;:59:111)\n    at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:50:174\n').returncode">mode = 'wrong_recovery_proof'
+
+    @pytest.mark.parametrize('mode',['explicit_success','lost_response_cold_get_only','storage_failure','duplicate_click','identity_aba_delayed_json','late_403_new_identity','wrong_recovery_proof','bounded_handles','current_recovery_403_keeps_original_handle'])
+    def test_pending_manual_handoff_actual_js_under_offline_doubles(mode):
+     p=subprocess.run(['node',str(Path(__file__).with_name('pending_receipt_handoff_offline.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=15)
+&gt;    assert p.returncode==0,p.stderr
+E    AssertionError: ReferenceError: entryFailureFlows is not defined
+E          at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)
+E          at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)
+E          at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:50:174
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'wrong_recovery_proof'...(evalmachine.&lt;anonymous&gt;:59:111)\n    at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:50:174\n').returncode
+
+tests/test_pending_receipt_handoff_offline.py:10: AssertionError</failure></testcase><testcase classname="tests.test_pending_receipt_handoff_offline" name="test_pending_manual_handoff_actual_js_under_offline_doubles[bounded_handles]" time="0.108"><failure message="AssertionError: ReferenceError: entryFailureFlows is not defined&#10;      at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)&#10;      at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)&#10;      at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:52:314&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'bounded_handles'], re...(evalmachine.&lt;anonymous&gt;:59:111)\n    at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:52:314\n').returncode">mode = 'bounded_handles'
+
+    @pytest.mark.parametrize('mode',['explicit_success','lost_response_cold_get_only','storage_failure','duplicate_click','identity_aba_delayed_json','late_403_new_identity','wrong_recovery_proof','bounded_handles','current_recovery_403_keeps_original_handle'])
+    def test_pending_manual_handoff_actual_js_under_offline_doubles(mode):
+     p=subprocess.run(['node',str(Path(__file__).with_name('pending_receipt_handoff_offline.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=15)
+&gt;    assert p.returncode==0,p.stderr
+E    AssertionError: ReferenceError: entryFailureFlows is not defined
+E          at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)
+E          at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)
+E          at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:52:314
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'bounded_handles'], re...(evalmachine.&lt;anonymous&gt;:59:111)\n    at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:52:314\n').returncode
+
+tests/test_pending_receipt_handoff_offline.py:10: AssertionError</failure></testcase><testcase classname="tests.test_pending_receipt_handoff_offline" name="test_pending_manual_handoff_actual_js_under_offline_doubles[current_recovery_403_keeps_original_handle]" time="0.107"><failure message="AssertionError: ReferenceError: entryFailureFlows is not defined&#10;      at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)&#10;      at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)&#10;      at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:54:123&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'current_recovery_403_...(evalmachine.&lt;anonymous&gt;:59:111)\n    at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:54:123\n').returncode">mode = 'current_recovery_403_keeps_original_handle'
+
+    @pytest.mark.parametrize('mode',['explicit_success','lost_response_cold_get_only','storage_failure','duplicate_click','identity_aba_delayed_json','late_403_new_identity','wrong_recovery_proof','bounded_handles','current_recovery_403_keeps_original_handle'])
+    def test_pending_manual_handoff_actual_js_under_offline_doubles(mode):
+     p=subprocess.run(['node',str(Path(__file__).with_name('pending_receipt_handoff_offline.js')),mode],cwd=Path(__file__).resolve().parents[1],capture_output=True,text=True,timeout=15)
+&gt;    assert p.returncode==0,p.stderr
+E    AssertionError: ReferenceError: entryFailureFlows is not defined
+E          at failCurrentEntryRead (evalmachine.&lt;anonymous&gt;:4:56)
+E          at dispatchError (evalmachine.&lt;anonymous&gt;:59:111)
+E          at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:54:123
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/pending_receipt_handoff_offline.js', 'current_recovery_403_...(evalmachine.&lt;anonymous&gt;:59:111)\n    at async /workspace/ParkWeave/tests/pending_receipt_handoff_offline.js:54:123\n').returncode
+
+tests/test_pending_receipt_handoff_offline.py:10: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="31" time="27.698" timestamp="2026-10-18T03:20:05.393336+00:00" hostname="9eff6a810039"><testcase classname="tests.test_dispatch_accept_recovery" name="test_original_accept_committed_and_not_observed_are_read_only" time="2.342" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_current_actor_scope_denies_without_private_proof[fixture-a]" time="0.751"><failure message="AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  Differing items:&#10;  {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}&#10;  Use -v to get more diff)">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f481764c980&gt;, &lt;parkweave.store.Store object at 0x7f4817387e30&gt;, {'fixture-a': 'G8...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f48162b11f0&gt;)
+user = 'fixture-a'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+&gt;       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError</failure></testcase><testcase classname="tests.test_dispatch_accept_recovery" name="test_current_actor_scope_denies_without_private_proof[fixture-b]" time="0.645"><failure message="AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  Differing items:&#10;  {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}&#10;  Use -v to get more diff)">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f481740b710&gt;, &lt;parkweave.store.Store object at 0x7f481636c9e0&gt;, {'fixture-a': '4o...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f4816092720&gt;)
+user = 'fixture-b'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+&gt;       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError</failure></testcase><testcase classname="tests.test_dispatch_accept_recovery" name="test_current_actor_scope_denies_without_private_proof[fixture-c]" time="0.681"><failure message="AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  Differing items:&#10;  {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}&#10;  Use -v to get more diff)">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f4815dc3d70&gt;, &lt;parkweave.store.Store object at 0x7f4815dc3890&gt;, {'fixture-a': '9Q...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f4815dc2360&gt;)
+user = 'fixture-c'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+&gt;       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError</failure></testcase><testcase classname="tests.test_dispatch_accept_recovery" name="test_current_actor_scope_denies_without_private_proof[prep-specialist-fixture-a]" time="0.745"><failure message="AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  Differing items:&#10;  {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}&#10;  Use -v to get more diff)">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f4815aaabd0&gt;, &lt;parkweave.store.Store object at 0x7f4815aaa5a0&gt;, {'fixture-a': 'bG...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f4816111250&gt;)
+user = 'prep-specialist-fixture-a'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+&gt;       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError</failure></testcase><testcase classname="tests.test_dispatch_accept_recovery" name="test_current_actor_scope_denies_without_private_proof[executor-b]" time="0.763"><failure message="AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  Differing items:&#10;  {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}&#10;  Use -v to get more diff)">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f4815dc32c0&gt;, &lt;parkweave.store.Store object at 0x7f4815aaa840&gt;, {'fixture-a': '8t...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f4816222360&gt;)
+user = 'executor-b'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+&gt;       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError</failure></testcase><testcase classname="tests.test_dispatch_accept_recovery" name="test_current_actor_scope_denies_without_private_proof[executor-c]" time="0.717"><failure message="AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  Differing items:&#10;  {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}&#10;  Use -v to get more diff)">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f4817e9c8f0&gt;, &lt;parkweave.store.Store object at 0x7f4817e9cbf0&gt;, {'fixture-a': '7R...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f48177bcfe0&gt;)
+user = 'executor-c'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+&gt;       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError</failure></testcase><testcase classname="tests.test_dispatch_accept_recovery" name="test_current_actor_scope_denies_without_private_proof[unassigned]" time="0.919"><failure message="AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}&#10; +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code&#10;  &#10;  Differing items:&#10;  {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}&#10;  Use -v to get more diff)">receipt_fixture = (&lt;parkweave.store.Store object at 0x7f48174a3860&gt;, &lt;parkweave.store.Store object at 0x7f4815b7cbf0&gt;, {'fixture-a': 'D6...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f481588ad80&gt;)
+user = 'unassigned'
+
+    @pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
+                                     'executor-b','executor-c','unassigned'])
+    def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        command(f,row,'ACCEPT',key=key);before=records(f)
+        r=recover(f,row,key,user=user)
+&gt;       assert r.status_code==403 and r.json()=={'detail':'operation not permitted'}
+E       AssertionError: assert (403 == 403 and {'detail': 'r...ation denied'} == {'detail': 'o...ot permitted'}
+E        +  where 403 = &lt;Response [403 Forbidden]&gt;.status_code
+E         
+E         Differing items:
+E         {'detail': 'record unavailable or authorization denied'} != {'detail': 'operation not permitted'}
+E         Use -v to get more diff)
+
+tests/test_dispatch_accept_recovery.py:47: AssertionError</failure></testcase><testcase classname="tests.test_dispatch_accept_recovery" name="test_revocation_dominates_existing_accept_proof[READ]" time="0.706" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_revocation_dominates_existing_accept_proof[assignment]" time="1.548" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_revocation_dominates_existing_accept_proof[inactive]" time="1.114" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_revocation_dominates_existing_accept_proof[role]" time="1.205" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_revocation_dominates_existing_accept_proof[org]" time="0.990" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_selection_mismatch_cannot_project_other_case_or_offer[preparation_id]" time="0.902" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_selection_mismatch_cannot_project_other_case_or_offer[case_id]" time="0.736" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_selection_mismatch_cannot_project_other_case_or_offer[run_id]" time="0.858" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_selection_mismatch_cannot_project_other_case_or_offer[offer_id]" time="0.743" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_selection_mismatch_cannot_project_other_case_or_offer[expected_revision]" time="0.776" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_selection_mismatch_cannot_project_other_case_or_offer[preparation_revision]" time="0.768" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_same_actor_other_case_key_and_non_accept_key_refused" time="1.063" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_strict_recovery_query[bad0]" time="0.882" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_strict_recovery_query[bad1]" time="0.779" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_strict_recovery_query[bad2]" time="0.780" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_strict_recovery_query[bad3]" time="0.876" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_strict_recovery_query[bad4]" time="0.648" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_duplicate_query_and_missing_key_refused" time="0.623" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_inconsistent_atomic_proof_is_not_accepted[dispatch_payload]" time="0.659" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_inconsistent_atomic_proof_is_not_accepted[receipt_payload]" time="0.673" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_inconsistent_atomic_proof_is_not_accepted[receipt_fingerprint]" time="0.866" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_inconsistent_atomic_proof_is_not_accepted[receipt_binding]" time="0.729" /><testcase classname="tests.test_dispatch_accept_recovery" name="test_history_remains_read_only_after_parent_changes_and_original_arrives_later" time="0.817" /></testsuite></testsuites>

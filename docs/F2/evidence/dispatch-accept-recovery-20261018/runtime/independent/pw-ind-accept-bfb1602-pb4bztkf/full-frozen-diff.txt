@@ -1,0 +1,722 @@
+diff --git a/src/parkweave/api.py b/src/parkweave/api.py
+index 8dc3efff..14b4b3c8 100644
+--- a/src/parkweave/api.py
++++ b/src/parkweave/api.py
+@@ -1001,6 +1001,15 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
+     def dispatch_command(dispatch_id: UUID,data: dispatches.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+         return dispatches.command(store,token(authorization),dispatch_id,resource_key(idempotency_key),data)
+ 
++    @app.get('/api/service-dispatches/{dispatch_id}/accept-recovery')
++    def dispatch_accept_recovery(dispatch_id: UUID,request: Request,response: Response,
++            selection: Annotated[dispatches.AcceptRecoverySelection,Query()],
++            authorization: str | None=Header(default=None),idempotency_key: str=Header()):
++        response.headers['Cache-Control']='no-store'
++        keys=[key for key,_ in request.query_params.multi_items()]
++        if len(keys)!=len(set(keys)):raise HTTPException(422,'unambiguous original acceptance selection required')
++        return dispatches.recover_accept(store,token(authorization),dispatch_id,resource_key(idempotency_key),selection)
++
+     from . import executor_receipts as executor_receipts
+     @app.get('/api/executor-receipts/catalog')
+     def executor_receipt_catalog(preparation_id: UUID,authorization: str | None=Header(default=None)):
+diff --git a/src/parkweave/service_dispatches.py b/src/parkweave/service_dispatches.py
+index 58b6f4da..d0764324 100644
+--- a/src/parkweave/service_dispatches.py
++++ b/src/parkweave/service_dispatches.py
+@@ -2,7 +2,7 @@ from .business_frontier_types import BusinessFrontierFence,request as frontier_r
+ """Internal synthetic offers; never grants or external fulfillment."""
+ from typing import Literal
+ from uuid import UUID, uuid4
+-from pydantic import BaseModel, ConfigDict, Field
++from pydantic import BaseModel, ConfigDict, Field, field_validator
+ from psycopg.types.json import Jsonb
+ from . import preparation as prep, executor_receipts as receipts
+ from .store import Store, Denied, Conflict, digest
+@@ -28,6 +28,24 @@ class Command(BaseModel):
+     reason: str = Field(min_length=1, max_length=1000)
+ 
+ 
++class AcceptRecoverySelection(BaseModel):
++    """Opaque original selection; it neither supplies authority nor replays a body."""
++    model_config = ConfigDict(extra='forbid')
++    preparation_id: UUID
++    case_id: UUID
++    run_id: UUID
++    offer_id: UUID
++    expected_revision: int = Field(ge=1, le=63)
++    preparation_revision: int = Field(ge=1, le=64)
++
++    @field_validator('expected_revision','preparation_revision',mode='before')
++    @classmethod
++    def exact_revision(cls,value):
++        if type(value) is int:return value
++        if type(value) is str and value.isascii() and value.isdecimal() and str(int(value))==value:return int(value)
++        raise ValueError('exact integer revision required')
++
++
+ class Reassign(BaseModel):
+     expected_business_frontier: BusinessFrontierFence | None = None
+     model_config = ConfigDict(extra='forbid', strict=True, str_strip_whitespace=True)
+@@ -204,7 +222,8 @@ def _event(c, p, root, offer, key, fp, action, reason, **extra):
+ 
+ def _view(c, p, parent, root, event=None,store=None):
+     cancelled=prep.case_cancelled(c,parent);blocked=prep.case_write_blocked(c,parent)
+-    result = dict(scope=SCOPE, case_id=parent['case_id'], run_id=parent['run_id'], case_cancelled=cancelled, case_reconciling=prep.case_state(c,parent)=='RECONCILING', case_write_blocked=blocked, can_accept=False, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
++    from .controlled_plans import _hash
++    result = dict(scope=SCOPE, actor_ref=_hash(dict(actor_id=p['id'])), case_id=parent['case_id'], run_id=parent['run_id'], case_cancelled=cancelled, case_reconciling=prep.case_state(c,parent)=='RECONCILING', case_write_blocked=blocked, can_accept=False, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
+                   service_id=parent['service_id'], service_version=parent['service_version'],
+                   preparation_revision=parent['revision'], dispatch_id=root['id'] if root else None,
+                   revision=root['revision'] if root else 0, current_offer=None, offers=[], history=[], event=event,
+@@ -276,6 +295,69 @@ def read(store, token, id):
+         return _view(c, p, parent, _root(c, parent),store=store)
+ 
+ 
++@receipts.bounded
++def recover_accept(store, token, id, key, selection):
++    """Read the existing atomic ACCEPT/receipt CREATE proof, under live access.
++
++    Absence is inconclusive: an original request may still arrive later. The
++    response deliberately carries no writable view, saved reason or approval.
++    """
++    if type(selection) is not AcceptRecoverySelection:raise Denied('typed original selection required')
++    from .controlled_plans import _hash
++    with store.connect() as c:
++        p=_auth(store,c,token)
++        if p['role']!='service_executor':raise Denied('own dispatch decision role required')
++        # Same actor/key lock ordering as the original command, without any DML.
++        _key(c,p,key)
++        base=c.execute('SELECT preparation_id FROM service_dispatches WHERE id=%s',(id,)).fetchone()
++        if not base:raise Denied('dispatch unavailable')
++        parent=_parent(store,c,p,base['preparation_id']);root=_root(c,parent)
++        if (parent['id']!=selection.preparation_id or parent['case_id']!=selection.case_id
++                or parent['run_id']!=selection.run_id):raise Denied('dispatch unavailable')
++        own=c.execute('SELECT * FROM service_dispatch_offers WHERE id=%s AND dispatch_id=%s AND executor_id=%s',
++                      (selection.offer_id,id,p['id'])).fetchone()
++        if not own:raise Denied('dispatch unavailable')
++        if own['preparation_revision']!=selection.preparation_revision:
++            raise Conflict('original acceptance selection mismatch')
++        offered=c.execute("SELECT revision FROM service_dispatch_events WHERE dispatch_id=%s AND offer_id=%s AND action IN ('OFFER','REOFFER') ORDER BY revision LIMIT 1",(id,own['id'])).fetchone()
++        if not offered or offered['revision']!=selection.expected_revision:
++            raise Conflict('original acceptance selection mismatch')
++        old=c.execute('SELECT * FROM service_dispatch_events WHERE actor_id=%s AND request_key=%s',
++                      (p['id'],key)).fetchone()
++        event=None
++        if old:
++            expected=dict(dispatch_id=str(id),offer_id=str(own['id']),revision=selection.expected_revision+1,
++                          action='ACCEPT',state='ACCEPTED',actor_id=p['id'],executor_id=p['id'],
++                          receipt_step_id=str(own['receipt_step_id']))
++            if (old['dispatch_id']!=id or old['offer_id']!=own['id'] or old['action']!='ACCEPT'
++                    or old['revision']!=selection.expected_revision+1 or old['revision']>root['revision']
++                    or own['state']!='ACCEPTED' or not own['receipt_step_id']
++                    or not _typed_fields_equal(old['payload'],expected)):
++                raise Conflict('original acceptance proof mismatch')
++            step=c.execute('SELECT * FROM service_receipt_steps WHERE id=%s',(own['receipt_step_id'],)).fetchone()
++            created=c.execute('SELECT * FROM service_receipt_events WHERE actor_id=%s AND request_key=%s',
++                              (p['id'],'dispatch-accept:'+str(own['id']))).fetchone()
++            fields=('run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
++            if (not step or any(step[k]!=parent[k] for k in fields) or step['namespace']!='SYNTHETIC'
++                    or step['preparation_id']!=parent['id'] or step['executor_id']!=p['id']
++                    or step['preparation_revision']!=own['preparation_revision']
++                    or step['preparation_sha256']!=own['preparation_sha256']
++                    or not created or created['step_id']!=step['id'] or created['action']!='CREATE'
++                    or created['revision']!=1 or created['fingerprint']!=old['fingerprint']
++                    or not _typed_fields_equal(created['payload'],dict(step_id=str(step['id']),revision=1,
++                        state='AWAITING_RECEIPT',action='CREATE',actor_id=p['id'],scope=receipts.SCOPE,
++                        dispatch_id=str(id),offer_id=str(own['id'])))):
++                raise Conflict('original acceptance receipt proof mismatch')
++            event=dict(id=str(old['id']),action='ACCEPT',revision=old['revision'],receipt_step_id=str(step['id']))
++        # A lock wait must never revive a revoked current assignment or READ.
++        _auth(store,c,token);store.scoped_run(c,p,parent['run_id'])
++        return dict(scope=SCOPE,actor_ref=_hash(dict(actor_id=p['id'])),dispatch_id=str(id),
++                    **{k:str(getattr(selection,k)) for k in ('preparation_id','case_id','run_id','offer_id')},
++                    expected_revision=selection.expected_revision,preparation_revision=selection.preparation_revision,
++                    request_key=key,status='COMMITTED' if old else 'NOT_OBSERVED',event=event,
++                    historical_only=True,read_only=True,automatically_replayed=False,case_goal_completed=False)
++
++
+ @receipts.bounded
+ def reassign(store, token, id, key, data):
+     if type(data) is not Reassign:raise Denied('typed reassignment required')
+diff --git a/src/parkweave/web.html b/src/parkweave/web.html
+index 974aee9d..cc05b5ac 100644
+--- a/src/parkweave/web.html
++++ b/src/parkweave/web.html
+@@ -21,7 +21,7 @@
+ <p class="eyebrow">PREPARATION · 资料准备</p><h2>资料准备事项</h2><p id="prep-summary" class="status" aria-live="polite"></p><p id="prep-read-status" class="status" role="status" aria-live="polite"></p><section id="ordinary-runtime-entry" class="combination-panel"><h3>此事项的原运行与办理入口</h3><p>按当前资料记录的 Case、Run 和精确服务版本读取；各入口仍会核对当前权限。已有访问批准只用于原 Run READ，资源方案批准仍须原独立契约。</p><button id="runtime-run-read" type="button">只读查看此事项原 Run</button><button id="runtime-dispatch-read" type="button">进入此事项原分派与接单</button><button id="runtime-access-read" type="button">只读查看原 Run 访问批准</button><button id="runtime-catalog-read" type="button">读取精确目录与方案批准状态</button><p id="runtime-entry-status" role="status" aria-live="polite"></p><div id="runtime-catalog-result"></div><section id="resource-plan-approval-read-panel"><h3>资源方案批准 · 只读核对已有记录</h3><p>与 Run READ 访问批准分开核对。这里不创建或激活批准，也不提供资源执行权限。</p><button id="resource-plan-approval-read" type="button">读取已有资源方案批准</button><p id="resource-plan-approval-status" role="status" aria-live="polite"></p><div id="resource-plan-approval-result"></div><button id="resource-plan-approval-original" type="button" hidden>只读核对原批准记录</button></section></section><button id="prep-refresh">刷新当前事项</button><section id="case-cancel-panel" class="combination-panel"><h3>未提交回执前取消</h3><p>仅支持普通合成Case：首次接单前，或已接单且全部人工步骤从未提交回执。已有提交、核对、关闭或隔离效果均不能在此取消。取消停止新增资料、方案、分派、接单和回执；成功建单、原资料与实际接单历史保留。本片不支持取消后恢复。取消不释放预约，已有预约仍占容量，请按原资源权限独立释放。</p><button id="case-cancel-read" type="button" class="secondary">核对取消条件与原请求</button><button id="case-cancel-recover" type="button" class="secondary" hidden>只读核对原取消</button><p id="case-cancel-status" class="status" aria-live="polite"></p><div id="case-cancel-new-entry" hidden><h4>用新输入另建独立事项</h4><p>此旧Case仍为CANCELLED，原资料、接单历史、责任和资源占用保留。新Case须填写全新诉求与材料，另行采用方案、审批、核对容量及办理。已有资源仅可从原入口独立授权释放。</p><label><input id="case-cancel-new-confirm" type="checkbox">我确认前往原新事项入口，使用全新输入另建独立Case；不恢复旧Case，不带入原方案、审批或资源，也不自动释放占用。</label><button id="case-cancel-new-open" type="button" class="secondary" disabled>前往新事项输入入口</button></div><form id="case-cancel-form" hidden><label>明确取消原因<textarea id="case-cancel-reason" required maxlength="1000"></textarea></label><label><input id="case-cancel-confirm" type="checkbox">我确认取消此Case，并理解预约须独立释放且本片不支持恢复</label><button id="case-cancel-submit" type="submit" disabled>确认取消此Case</button></form></section><section id="case-reconcile-panel" class="combination-panel" hidden><h3>已有人工回执：取消请求与核对</h3><p>仅用于无外部效果的本地人工合成回执。请求后停止新的办理，原回执事实与预约保留；未明确结果继续核对中。全部原结果核实后仍须单独确认终结。取消不会释放预约，资源须按原权限独立办理。</p><button id="case-reconcile-read" type="button" class="secondary">读取当前取消与全部原回执</button><button id="case-reconcile-recover" type="button" class="secondary" hidden>只读核对原请求结果</button><p id="case-reconcile-status" class="status" aria-live="polite"></p><div id="case-reconcile-receipts"></div><form id="case-reconcile-form" hidden><label>本次明确操作原因<textarea id="case-reconcile-reason" maxlength="1000" required></textarea></label><label><input id="case-reconcile-confirm" type="checkbox" required>本人已核对当前Case及全部原资料；明确选择本次操作，保留原事实，资源另行释放</label><div class="actions"><button id="case-reconcile-request" type="button" disabled>明确请求取消，停止新办理</button><button id="case-reconcile-record" type="button" disabled>保存逐项核对结果</button><button id="case-reconcile-finish" type="button" disabled>全部结果核实后确认终结</button></div></form></section><section id="handling-deadline-panel" class="combination-panel"><h3>办理期限与来源</h3><p>核对当前事项的明确来源与逐日工作日历。缺少来源时保持待确认；当前没有业务停表权限。</p><button id="handling-deadline-read" type="button" class="secondary">只读核对办理期限</button><p id="handling-deadline-status" role="status">办理期限待确认。</p><div id="handling-deadline-result"></div><p id="handling-deadline-error" role="alert"></p></section><p id="prep-recovery-status" class="status" aria-live="polite"></p><button id="prep-recovery-read" class="secondary" hidden>只读核对此事项原提交记录</button><button id="prep-recovery-release" class="secondary" hidden>已查看当前材料，返回原流程</button><div id="prep-materials"></div><section id="material-draft-panel" class="combination-panel" hidden><h3>从已选事实整理诉求摘要</h3><p>将你为本事项明确选用的地区、员工人数和服务诉求整理成新的未核验材料，交给原获派专员检查。不会生成政策要求、证明或资格结论，也不会自动补齐材料目录。</p><button id="material-draft-read" type="button" class="secondary">查看当前来源的摘要草稿与待补材料</button><p id="material-draft-status" class="status" aria-live="polite"></p><div id="material-draft-content"></div><div id="material-draft-checklist"></div><form id="material-draft-form" hidden><label><input id="material-draft-share" type="checkbox" required>我已检查全文，明确将这三个所选自述值及来源版本/指纹作为本事项的新材料分享给下方原获派专员；仍须其独立核对</label><p id="material-draft-recipient"></p><button id="material-draft-save">明确追加此摘要为新未核验版本</button></form><p id="material-draft-error" role="alert"></p></section><section id="material-file-panel" class="combination-panel" hidden><h3>从文件整理材料候选</h3><p>选择本人有权使用的本地合成样例 TXT、MD、CSV 或 JSON。最多8KiB，整理后的正文最多4000字符；只读取你选择的文件，不提取事实或核实真实性，不调用模型。文件内容会发送到当前本机API解析，先看全文再决定是否填入原表单。</p><label>合成样例文件<input id="material-file-input" type="file" accept=".txt,.md,.csv,.json"></label><label><input id="material-file-synthetic" type="checkbox">这是我有权用于此事项的合成样例，内容不代表真实企业资料或业务证明</label><button id="material-file-read" type="button">读取文件并查看候选全文</button><p id="material-file-status" role="status" aria-live="polite"></p><div id="material-file-output" hidden><label>候选正文（尚未保存）<textarea id="material-file-text" rows="8" readonly></textarea></label><p id="material-file-source"></p><button id="material-file-use" type="button" disabled>填入下方原材料表单</button><p>填入后可以人工编辑。原文件指纹仅作来源线索，本次保存以原表单正文为准；仍须点击原“追加材料版本”，再由原获派专员核对、企业确认。</p></div></section><section id="material-version-panel" class="combination-panel" hidden><h3>追加前核对本次材料差异</h3><p>先在下方原表单选择材料类型、填写或导入正文及来源，再核对同事项当前同槽材料。编辑后须重新核对；不会自动采纳事实、保存材料或解决补正。</p><button id="material-version-compare" type="button" class="secondary">核对本表单与当前材料差异</button><p id="material-version-status" role="status" aria-live="polite"></p><div id="material-version-output" hidden></div></section><form id="prep-evidence"><label>材料类型<select id="prep-slot"><option value="need_summary">诉求摘要</option><option value="material_outline">材料目录</option></select></label><label>候选材料内容<textarea id="prep-text" maxlength="4000" required></textarea></label><p id="material-file-editing" role="status" hidden></p><label>来源类型<select id="prep-source-kind"><option value="USER_STATEMENT">企业自述</option><option value="DOCUMENT_EXCERPT">文档摘录（尚未核实真实性）</option></select></label><label>来源与文档版本<input id="prep-source-label" maxlength="200" required placeholder="例如：合成材料清单 v1 / 用户自述"></label><fieldset id="prep-evidence-ready" class="prep-read-guard" disabled><button>追加材料版本</button></fieldset></form><section id="material-review-panel" class="combination-panel" hidden><h3>专员复核：相对最近一次审核的材料变化</h3><p>重新读取当前已存双槽材料，与最近一次原审核可精确绑定的材料对照。企业比较不替代本次人工审核；这里不判断补正充分、真实性或资格。</p><button id="material-review-read" type="button" class="secondary">只读核对上次审核与当前材料差异</button><p id="material-review-status" role="status" aria-live="polite"></p><div id="material-review-output" hidden></div></section><form id="prep-decision"><label>人工说明<textarea id="prep-reason" maxlength="1000" required></textarea></label><fieldset id="prep-correction-slots" hidden><legend>要求新版补正的材料</legend><label><input type="checkbox" data-correction-slot="need_summary">诉求摘要</label><label><input type="checkbox" data-correction-slot="material_outline">材料目录</label><p>所选材料须提交新版本后才能核对；未选择时只记录一般补正说明。</p></fieldset><fieldset id="prep-decision-ready" class="prep-read-guard" disabled><div class="actions"><button id="prep-correction" type="button">要求补正</button><button id="prep-review" type="button">核对本地资料包</button><button id="prep-confirm" type="button">确认本地资料准备</button><button id="prep-reopen" type="button">申请重开资料准备</button></div></fieldset></form><p>核对仅表示获派专员检查当前资料包，不证明资料真实性或资格满足。确认只推进本地资料准备；Case目标、外部受理和线下履约不自动完成。</p><button id="service-plan-prepare" class="secondary">查看此Case持久步骤计划</button><button id="plan-prepare" class="secondary">查看此事项四步计划</button><button id="local-case-prepare" class="secondary">查看此Case的本地关闭与重开记录</button><button id="dispatch-prepare" class="secondary">查看此事项的内部分派</button><button id="receipt-prepare" class="secondary" hidden>查看此运行已有获派执行者</button><form id="receipt-create" hidden><label>当前合法获派执行者<select id="receipt-executor" required></select></label><button>建立合成回执步骤</button></form><div class="combination-panel"><h3>此服务Case的资源关联</h3><p>选择本人已确认的组合，持久记录资料版本、资源归属和核对说明。关联不新增占用，不代表真实预约或履约；资料重开或资源变化须重新核对。</p><button id="case-resource-load" class="secondary" hidden>查看此Case资源并选择关联</button><div id="case-resource-panel" hidden><p id="case-resource-summary" class="status" aria-live="polite"></p><form id="case-resource-form"><label>有权使用的资源组合<select id="case-resource-choice" required></select></label><label>关联或重新核对说明<textarea id="case-resource-reason" maxlength="1000" required></textarea></label><button>确认此Case资源关联</button></form><p class="notice">一个组合只归属一个Case。换组合或重开资料不会取消旧预约；到资源工作区显式整组取消，原关联历史保留。</p><div id="case-resource-history"></div></div><p id="case-resource-error" role="alert"></p></div><article id="simulation-rule-panel"><h3>合成规则准备度（开发模拟）</h3><p>仅定位服务端已配置的开发绑定。SYNTHETIC_REVIEWED只表示合成模拟事件链，不能代替正式审核或真实事实核验。资格始终未判定。</p><label>已有开发绑定编号<input id="simulation-binding" maxlength="100"></label><label>明确评估时点（UTC）<input id="simulation-as-of" type="datetime-local"></label><button id="simulation-rule-read" type="button" class="secondary">只读核对合成规则准备度</button><p id="simulation-rule-status" role="status"></p><div id="simulation-rule-result"></div></article><article id="case-time-panel"><h3>本人同资源替代时段</h3><p>先读取本事项当前办理计划和原资源关联，再查同一组资源的时段。提议不释放旧占用；分别预检、占位、组合确认、Case比较与重核仍须原入口明确操作。</p><label>搜索起点（UTC）<input id="case-time-from" type="datetime-local"></label><label>搜索终点（UTC，窗口不超过24小时）<input id="case-time-until" type="datetime-local"></label><button id="case-time-read" type="button" class="secondary">只读查找本人同资源替代时段</button><p id="case-time-status" role="status"></p><div id="case-time-result"></div><h4>仅GET核对原资源请求</h4><label>原请求类型<select id="case-resource-recovery-kind"><option value="HOLD">单资源占位/确认/释放</option><option value="COMBINATION">两资源组合确认/取消</option><option value="LINK">本事项资源关联</option></select></label><label>原请求键<input id="case-resource-recovery-key" maxlength="100"></label><label>原正文指纹（可选，精确64位SHA256）<input id="case-resource-recovery-fingerprint" maxlength="64"></label><button id="case-resource-recovery-read" type="button" class="secondary">只读核对这个原请求键</button><div id="case-resource-recovery-result"></div></article><div id="readiness-panel" class="combination-panel"><h3>此事项材料准备度</h3><p id="readiness-summary" class="status" aria-live="polite"></p><p>只核对本地合成资料条件。材料真实性未核实；规则处于工程草稿、未业务发布，资格仍未知，Case目标未完成。</p><fieldset id="prep-readiness-ready" class="prep-read-guard" disabled><button id="readiness-assess">保存当前材料准备度评估</button></fieldset><section id="material-pack-panel"><h4>当前材料准备与补正文本包</h4><p>整理已分享的当前材料、缺口和原补正说明，供你复制或保存。每次输出重新核对权限与版本；正式政策和真实履约仍待核实。</p><button id="material-pack-generate" type="button" class="secondary" disabled>生成当前材料文本包</button><p id="material-pack-status" class="status" aria-live="polite"></p><div id="material-pack-output" hidden><label>本次读取快照<textarea id="material-pack-text" rows="12" readonly></textarea></label><button id="material-pack-copy" type="button" class="secondary" disabled>重新核对并复制</button><button id="material-pack-download" type="button" class="secondary" disabled>重新核对并下载文本</button></div></section><div id="readiness-checklist"></div><div id="readiness-conditions"></div><details><summary>可复核来源与规则</summary><div id="readiness-sources"></div></details><details><summary>历史评估（过期结论不能用于当前资料）</summary><div id="readiness-history"></div></details><p id="readiness-error" role="alert"></p></div><section id="case-fact-panel" class="combination-panel" hidden><h3>为本事项明确选择事实来源</h3><p>仅将本人合成断言用于这次服务资料准备。所有竞争来源保留，明确选择不证明真实性，也不作资格判断。</p><button id="case-fact-read" class="secondary">查看本事项事实来源与用途</button><p id="case-fact-status" class="status" aria-live="polite"></p><div id="case-fact-questions"></div><form id="case-fact-declare-form" hidden><label><input id="case-fact-declare-purpose" type="checkbox" required>为本事项开启地区、员工人数、服务诉求的资料准备用途核对；来源变化后重新明确确认</label><label>本次用途声明说明<textarea id="case-fact-declare-reason" maxlength="1000" required></textarea></label><button id="case-fact-declare">明确声明本次事实用途</button></form><form id="case-fact-confirm-form" hidden><div id="case-fact-fields"></div><label><input id="case-fact-purpose" type="checkbox" required>仅将逐项选择的事实用于本次服务资料准备，仍按原流程重新人工核对</label><label>本次来源选择说明<textarea id="case-fact-confirm-reason" maxlength="1000" required></textarea></label><button id="case-fact-confirm" disabled>明确记录本次用途与来源</button></form><button id="case-fact-retry" class="secondary" hidden>以原参数重试并核对本次事实操作结果</button><details id="case-fact-source-entry" hidden><summary>从本人原事实入口追加合成来源</summary><p>追加到本人共享事实来源，不替换旧断言。来源变化会使采用这些字段的旧事项用途确认失效；须逐项重新选择并人工核对。只接受合成自述，不核实真实性。</p><form id="case-fact-source-form"><label>字段<select id="case-fact-source-field"><option value="region">地区</option><option value="employees">员工人数</option><option value="service_need">服务诉求</option></select></label><label>新来源的自述值<input id="case-fact-source-value" maxlength="2000" required></label><label>来源编号<input id="case-fact-source-ref" maxlength="120" required></label><label>来源版本<input id="case-fact-source-version" maxlength="120" required></label><label>来源原文摘录<textarea id="case-fact-source-excerpt" maxlength="1000" required></textarea></label><label>生效时间（UTC ISO，例2026-10-07T00:00:00Z）<input id="case-fact-source-from" required></label><label>失效时间（UTC ISO）<input id="case-fact-source-until" required></label><label><input id="case-fact-source-purpose" type="checkbox" required>本人明确仅追加合成的服务资料准备来源，并核对上述有效期</label><button id="case-fact-source-save">明确追加本人合成来源</button></form></details><h4>本事项事实用途历史</h4><div id="case-fact-history"></div><p id="case-fact-error" role="alert"></p></section><section id="fact-bundle-panel" class="combination-panel" hidden><h3>本事项事实来源与人工锁</h3><p>企业自述、当前资料摘录、待核假设分开保存。仅本人按本次资料准备用途读取，来源仍未经核实；假设不能直接作为事实选择。来源换版保留历史，不会自动改动你锁定的选择。</p><button id="fb-read" type="button">读取本次来源包</button><button id="fb-recover" type="button">只读核对原来源操作</button><p id="fb-status" role="status"></p><form id="fb-form" hidden><label>来源类型<select id="fb-kind"><option value="REGISTER_DOCUMENT">当前资料的精确摘录</option><option value="REGISTER_ASSUMPTION">待核假设（不进入事实选择）</option></select></label><label>字段<select id="fb-field"><option value="region">地区</option><option value="employees">员工人数</option><option value="service_need">服务诉求</option></select></label><div id="fb-document-fields"><label>本事项当前资料<select id="fb-document"></select></label><label>当前资料全文<textarea id="fb-document-text" readonly rows="4"></textarea></label><label>从上方资料复制精确摘录<textarea id="fb-quote" maxlength="2000"></textarea></label><label>相同摘录在资料中的第几处<input id="fb-occurrence" type="number" min="1" max="16" value="1"></label></div><label>字段值<input id="fb-value" maxlength="2000" required readonly></label><p id="fb-unit"></p><div id="fb-assumption-fields" hidden><label>为什么仅作为待核假设<textarea id="fb-note" maxlength="1000"></textarea></label></div><label>生效时间（UTC ISO）<input id="fb-from" required></label><label>失效时间（UTC ISO）<input id="fb-until" required></label><label><input id="fb-purpose" type="checkbox" required>仅为本事项登记来源或未知假设，不核实真实性、不对外分享</label><button id="fb-save" disabled>明确登记本次来源</button></form><label>本次登记、撤回、锁定或解锁说明<textarea id="fb-reason" maxlength="1000"></textarea></label><div id="fb-locks"></div><div id="fb-entries"></div><details><summary>来源包历史</summary><div id="fb-history"></div></details><p id="fb-error" role="alert"></p></section>
+ <section id="material-reuse-panel" class="combination-panel" hidden><h3>同用途复用本人材料目录</h3><p>为此新事项明确选择本人同一服务的已核对材料目录。复制后作为新的未核验版本，仍须提交本次诉求摘要并由本事项专员重新核对。</p><button id="material-reuse-read" class="secondary">查看本人可复用材料及历史</button><p id="material-reuse-status" class="status" aria-live="polite"></p><form id="material-reuse-form" hidden><label>本人来源材料<select id="material-reuse-source" required></select></label><button id="material-reuse-preview" type="button" class="secondary">查看所选材料内容与版本</button><div id="material-reuse-selected"></div><label><input id="material-reuse-purpose" type="checkbox" required>仅将这份材料目录用于同一服务的本次新Case，并重新提交独立核对</label><label>本次复用说明<textarea id="material-reuse-reason" maxlength="1000" required></textarea></label><button id="material-reuse-confirm" disabled>明确复制为本次未核验材料</button></form><button id="material-reuse-retry" class="secondary" hidden>仅使用原操作核对复用结果</button><h4>本事项复用来源记录</h4><div id="material-reuse-history"></div><p id="material-reuse-error" role="alert"></p></section><section id="material-corrections-panel" class="combination-panel"><h3>逐项补正与当前材料版本</h3><p id="material-corrections-summary" class="status" aria-live="polite"></p><div id="material-corrections-current"></div><details><summary>补正请求与核对历史</summary><div id="material-corrections-history"></div></details><p id="material-corrections-error" role="alert"></p></section><p id="prep-command-feedback" class="notice" aria-live="polite"></p><button id="prep-command-retry" class="secondary" hidden>以原参数核对此次未知结果</button><section id="opportunity-panel" class="combination-panel" hidden><h3>本事项合成机会</h3><p>手动导入本人事项的资料变化或既有合成服务版本提示，仍须人工审阅；不判断政策资格，不自动外发，不代表后台持续在线。</p><button id="opp-read" type="button">读取当前机会与来源</button><button id="opp-recover" type="button">只读核对原机会操作</button><p id="opp-status" role="status"></p><label>本次导入、刷新、忽略或撤回说明<textarea id="opp-reason" maxlength="1000"></textarea></label><button id="opp-refresh" type="button" disabled>明确手动刷新来源绑定</button><details><summary>明确导入合成机会</summary><form id="opp-import"><label>导入来源<select id="opp-family"><option value="">新的合成来源</option></select></label><label>导入来源版本<input id="opp-generation" type="number" min="1" max="64" value="1" required></label><label>变化类型<select id="opp-kind"><option value="LOCAL_CASE_DATA">本事项资料变化</option><option value="LOCAL_SERVICE_VERSION">既有合成服务版本</option></select></label><label>有权读取的合成目录版本<select id="opp-catalog" required></select></label><label>未核验提示标题<input id="opp-title" maxlength="200" required></label><label>导入来源说明<textarea id="opp-note" maxlength="1000" required></textarea></label><label><input id="opp-purpose" type="checkbox" required>仅用于本合成事项，明确等待人工审阅</label><button id="opp-import-save" disabled>明确导入待审机会</button></form></details><div id="opp-cards"></div><section id="plan-source-conflict-panel" class="combination-panel"><h4>本计划的人工协调说明与资料来源差异</h4><p>人工协调说明独立于资料事实和服务合同。来源候选仅取此事项实际材料目录正文；机会提示不能作为事实或授权。来源改变后须明确处理，原业务核验仍从原入口完成。保留并继续须逐行承载新来源条件；这不表示业务义务已满足。缺条件先明确编辑补入，追加合并须完整保留当前人工原文；锁定时先由原入口解锁。</p><button id="plan-source-conflict-read" type="button">读取人工说明与当前资料</button><button id="plan-source-conflict-recover" type="button">只读核对原说明操作</button><label>用于处理的当前机会<select id="plan-source-conflict-card"><option value="">只读取与编辑人工说明</option></select></label><p id="plan-source-conflict-status" role="status" aria-live="polite"></p><div id="plan-source-conflict-result"></div><label>人工协调说明<textarea id="plan-source-conflict-note" maxlength="4000"></textarea></label><label>本次编辑或处理说明<textarea id="plan-source-conflict-reason" maxlength="1000"></textarea></label><label><input id="plan-source-conflict-confirm" type="checkbox">我已核对原文、来源版本及人工锁，明确保存本次选择</label><button id="plan-source-conflict-edit" type="button" disabled>明确保存人工协调说明</button><button id="plan-source-conflict-keep" type="button" disabled>保留人工修改</button><button id="plan-source-conflict-continue" type="button" disabled>保留当前人工正文并明确继续</button><button id="plan-source-conflict-merge" type="button" disabled>明确保存追加合并稿并继续</button><button id="plan-source-conflict-accept" type="button" disabled>接受当前来源修改</button><button id="plan-source-conflict-defer" type="button" disabled>暂不处理，保留待办</button><p>保留或暂不处理不会恢复旧核验。接受来源也不会自动解锁、采纳计划或核验；请先按原规则明确解锁，再分别采纳与核验。</p><details><summary>人工说明及处置历史</summary><div id="plan-source-conflict-history"></div></details></section><section id="material-package-panel" class="combination-panel"><h4>明确确认双槽材料包并保留人工正文</h4><p>读取仅显示原捕获材料、当前实际材料和本人正文。明确提交后，本计划启用双槽检查；任一材料槽或人工正文变化后须重新确认。诉求摘要仅确认上下文；目录发生变化时仍按原文条件承载。不判断语义义务、事实或资格。</p><p>从上方选择本次当前机会；P1有锁先沿原入口解锁。如实际来源已改变，确认后仍须分别执行原局部采纳与受影响核验。</p><button id="material-package-read" type="button">读取双槽材料包与人工正文</button><button id="material-package-recover" type="button">只读核对原双槽确认</button><p id="material-package-status" role="status" aria-live="polite"></p><div id="material-package-result"></div><label>保留原文的追加合并稿<textarea id="material-package-note" maxlength="8000"></textarea></label><label>本次确认说明<textarea id="material-package-reason" maxlength="2000"></textarea></label><label><input id="material-package-confirm" type="checkbox">我已核对两槽实际版本和当前人工正文，明确启用或更新本计划的双槽确认</label><button id="material-package-keep" type="button" disabled>保留当前正文并明确确认双槽材料包</button><button id="material-package-merge" type="button" disabled>保存追加合并稿并明确确认双槽材料包</button></section><section id="opp-plan-preview" hidden><h4>此来源对原计划的影响</h4><p>下列差异来自本事项实际记录。机会标题和说明仍是待核验提示；采纳只保存局部修订，原角色须逐步核验实际产物。</p><div id="opp-plan-impact"></div><label><input id="opp-plan-confirm" type="checkbox">我已核对受影响与保留步骤，明确将此当前来源绑定到原计划局部修订</label><p>填写下方原“本次计划核验或协调说明”，再明确采纳。</p><button id="opp-plan-adopt" type="button" disabled>明确采纳此来源的原局部修订</button><p id="opp-plan-status" role="status"></p></section><details><summary>机会操作历史</summary><div id="opp-history"></div></details><p id="opp-error" role="alert"></p></section><h3>材料版本与人工记录</h3><div id="prep-history"></div><p id="prep-error" role="alert"></p></section>
+ <details class="engineering-record"><summary>本地运行记录 · 工程验证</summary><section><pre id="result" aria-live="polite">暂无记录</pre></section></details>
+-<section id="dispatch-detail" hidden><p class="eyebrow">COLLABORATION · 内部分派</p><h2>内部分派与本人接单</h2><p id="dispatch-summary" class="status" aria-live="polite"></p><button id="dispatch-refresh" class="secondary">刷新当前分派</button><button id="dispatch-retry" class="secondary" hidden>使用原操作重试</button><button id="dispatch-handoff-recover" class="secondary" hidden>只读核对原交接</button><p id="dispatch-handoff-status" class="status" aria-live="polite"></p><div id="dispatch-current"></div><form id="dispatch-offer" hidden><label>已有合法执行者<select id="dispatch-executor" required></select></label><label>分派或调整说明<textarea id="dispatch-offer-reason" maxlength="1000" required></textarea></label><button id="dispatch-offer-button">记录分派</button></form><form id="dispatch-decision" hidden><label>决定说明<textarea id="dispatch-decision-reason" maxlength="1000" required></textarea></label><div class="actions"><button type="button" id="dispatch-accept">接受本事项</button><button type="button" id="dispatch-decline">拒绝本事项</button><button type="button" id="dispatch-withdraw">撤回未接单分派</button></div></form><button id="service-plan-from-dispatch" class="secondary">返回此Case持久步骤计划</button><button id="plan-from-dispatch" class="secondary">查看此事项四步计划</button><button id="local-case-dispatch" class="secondary">查看此Case本地状态</button><button id="dispatch-receipt" class="secondary" hidden>进入已接单事项回执</button><p class="notice">接单后可记录合成回执，企业仍需核对。材料更新后，可请原执行者重新确认新版材料，旧回执继续保留；专员可说明原因交接尚未提交任何回执的人工事项；新方须已有本Run权限并独立接单，旧步骤和接单历史保留。分派与接单不代表外部受理、资格满足或线下履约。</p><h3>分派版本与决定历史</h3><div id="dispatch-history"></div><p id="dispatch-error" role="alert" aria-live="polite"></p></section>
++<section id="dispatch-detail" hidden><p class="eyebrow">COLLABORATION · 内部分派</p><h2>内部分派与本人接单</h2><p id="dispatch-summary" class="status" aria-live="polite"></p><button id="dispatch-refresh" class="secondary">刷新当前分派</button><button id="dispatch-retry" class="secondary" hidden>使用原操作重试</button><button id="dispatch-accept-recover" class="secondary" hidden>只读核对原接单</button><button id="dispatch-accept-release" class="secondary" hidden>核对后读取当前状态</button><p id="dispatch-accept-status" class="status" aria-live="polite"></p><button id="dispatch-handoff-recover" class="secondary" hidden>只读核对原交接</button><p id="dispatch-handoff-status" class="status" aria-live="polite"></p><div id="dispatch-current"></div><form id="dispatch-offer" hidden><label>已有合法执行者<select id="dispatch-executor" required></select></label><label>分派或调整说明<textarea id="dispatch-offer-reason" maxlength="1000" required></textarea></label><button id="dispatch-offer-button">记录分派</button></form><form id="dispatch-decision" hidden><label>决定说明<textarea id="dispatch-decision-reason" maxlength="1000" required></textarea></label><div class="actions"><button type="button" id="dispatch-accept">接受本事项</button><button type="button" id="dispatch-decline">拒绝本事项</button><button type="button" id="dispatch-withdraw">撤回未接单分派</button></div></form><button id="service-plan-from-dispatch" class="secondary">返回此Case持久步骤计划</button><button id="plan-from-dispatch" class="secondary">查看此事项四步计划</button><button id="local-case-dispatch" class="secondary">查看此Case本地状态</button><button id="dispatch-receipt" class="secondary" hidden>进入已接单事项回执</button><p class="notice">接单后可记录合成回执，企业仍需核对。材料更新后，可请原执行者重新确认新版材料，旧回执继续保留；专员可说明原因交接尚未提交任何回执的人工事项；新方须已有本Run权限并独立接单，旧步骤和接单历史保留。分派与接单不代表外部受理、资格满足或线下履约。</p><h3>分派版本与决定历史</h3><div id="dispatch-history"></div><p id="dispatch-error" role="alert" aria-live="polite"></p></section>
+ <section id="receipt-detail" hidden><p class="eyebrow">RECEIPT · 合成办理回执</p><h2>获派事项回执</h2><p id="receipt-summary" class="status" aria-live="polite"></p><button id="receipt-run-access" class="secondary" type="button" hidden>查看此回执Run的当前访问</button><button id="receipt-refresh" class="secondary">刷新当前回执</button><div id="receipt-current"></div><section id="receipt-local-execution" hidden><h3>本地合成接单报告</h3><p id="receipt-local-execution-status" class="notice">仅通过服务器现有本地适配器生成合成报告；不调用模型、不代表外部履约。执行者提交与企业核对仍是两个独立步骤。</p><form id="receipt-local-execution-form" hidden><label>本次本地生成说明<textarea id="receipt-local-execution-reason" maxlength="1000" required></textarea></label><button id="receipt-local-execution-button" type="button">生成本地合成接单报告</button><button id="receipt-local-execution-retry" type="button" class="secondary" hidden>使用原请求重试并核对结果</button></form><div id="receipt-local-execution-record"></div><p id="receipt-local-execution-error" role="alert" aria-live="polite"></p></section><form id="receipt-submit"><p id="receipt-manual-status" class="notice">执行者可选择人工填写合成回执，或在服务端适配器已启用且允许时单独生成本地合成报告；两条路径不会冒称线下履约。</p><label>人工填写的合成回执内容<textarea id="receipt-text" maxlength="4000" required></textarea></label><label>合成来源与记录版本<input id="receipt-source" maxlength="200" required placeholder="合成工作记录 v1"></label><button id="receipt-submit-button">提交人工填写的合成回执</button></form><form id="receipt-decisions"><label>企业核对、纠错或重开说明<textarea id="receipt-reason" maxlength="1000" required></textarea></label><div class="actions"><button type="button" id="receipt-ack">核对当前合成回执</button><button type="button" id="receipt-correct">要求纠正回执</button><button type="button" id="receipt-reopen">重开回执事项</button></div></form><p class="notice">合成文本未证明线下办理完成；本地核对不会关闭Case目标、判定资格或触发外部通知。</p><button id="service-plan-from-receipt" class="secondary">返回此Case持久步骤计划</button><button id="plan-from-receipt" class="secondary">查看此事项四步计划</button><button id="local-case-receipt" class="secondary">查看此Case本地状态</button><h3>历次回执与人工记录</h3><div id="receipt-history"></div><p id="receipt-error" role="alert" aria-live="polite"></p></section><section id="plan-material-loading" hidden><h2>正在读取此Case的资料</h2><p id="plan-material-loading-status" class="status" aria-live="polite"></p><p>当前资料版本核对通过后才显示办理入口；读取不会自动办理。</p><button id="plan-material-cancel" class="secondary">取消并返回此Case四步计划</button></section><section id="plan-detail" hidden><p class="eyebrow">COLLABORATION · 固定合成计划</p><h2>材料、资源、分派与回执</h2><p>固定四步由原有角色逐次办理，企业明确核对每一步的当前依赖；不自动赋权、办理或履约。此模板只核对合成协作记录，原Case目标仍未核验。</p><p id="plan-summary" class="status" aria-live="polite"></p><button id="plan-refresh" class="secondary">刷新当前四步计划</button><form id="request-intent-form" hidden><h3>本次诉求与必需目标</h3><p id="request-original" class="notice"></p><label>当前诉求<textarea id="request-current" maxlength="2000" required></textarea></label><label><input id="request-local-goal" type="checkbox"> 本地材料、两资源组合、已有授权接单与合成回执协作记录</label><p>有界规划支持以下明确目标；点击加入，再保存诉求。</p><div id="bounded-goal-choices"></div><label>其他必需目标（每行一项，最多7项）<textarea id="plan-required-goals" maxlength="1126" placeholder="例如：需要外部机构受理回执"></textarea></label><fieldset><legend>本次明确规划约束（声明不改变授权）</legend><label><input id="request-exclude-owner" type="checkbox">本次无法安排企业经办人</label><label><input id="request-exclude-specialist" type="checkbox">本次无法安排园区专员</label><label><input id="request-exclude-executor" type="checkbox">本次无法安排执行者</label></fieldset><label>本合同之外的必需条件（每行一项，最多4项；保留为不支持项）<textarea id="request-additional-requirements" maxlength="644"></textarea></label><p>只核对你明确列出的目标，不自动理解全部诉求。已保存必需目标只能增加；不同目标集合请另建事项。合同外必需条件也会保存为未支持目标，清除角色约束不会删除它。保存修改会使旧预览与核对失效，材料需重新确认；保留旧Case、资源和回执记录。</p><button id="request-save">保存诉求与必需目标</button></form><div id="request-intent-status" aria-live="polite"></div><form id="plan-preview-form" hidden><h3>核对已保存目标的办理方案</h3><p>目录无能力或未知的必需目标仍保留待处理；先保存诉求与目标，再读取当前方案。</p><button id="plan-preview-button">预览当前事项方案</button></form><div id="plan-preview-result" aria-live="polite"></div><button id="plan-create" hidden>确认预览并启用固定合成模板</button><p id="plan-next-action" class="notice" aria-live="polite"></p><div id="plan-steps"></div><label id="plan-reason-label">本次显式兼容核对说明<textarea id="plan-reason" maxlength="1000"></textarea></label><div class="actions"><button id="plan-P1">核对材料步骤</button><button id="plan-P2">核对资源步骤</button><button id="plan-P3">核对接单步骤</button><button id="plan-P4">核对回执步骤</button></div><div class="actions"><button id="plan-materials" class="secondary">返回当前资料办理</button><button id="plan-dispatch" class="secondary">进入当前分派事项</button><button id="plan-handoff" class="secondary" hidden>办理此Case接单交接</button><button id="plan-receipt" class="secondary" hidden>打开此Case已有回执</button><p id="plan-handoff-status" role="status" aria-live="polite"></p><button id="plan-local-case" class="secondary" hidden>进入此Case本地校验与关闭</button><button id="plan-back" class="secondary">收起计划</button></div><p>上游失配时保留原责任、回执与资源；处理原业务后须显式重验，不自动撤单、释放或重派。缺少合法运行访问时阻塞，模板不新增授权。</p><section id="bounded-planning" hidden><h3>按已保存必需目标编排有界方案</h3><p>从现有受支持适配器选择步骤及完整前置依赖。工程预览不执行，不自动启用四步模板或授予访问。</p><button id="bounded-planning-read" class="secondary">读取目标覆盖与步骤方案</button><button id="bounded-planning-save" class="secondary" disabled>保存当前方案预览记录</button><button id="bounded-planning-confirm" class="secondary" disabled>打开当前来源的采纳确认</button><div id="bounded-planning-result" aria-live="polite"></div><p id="bounded-planning-error" role="alert"></p><div id="execution-preview-panel" hidden><h3>隔离预演材料步骤</h3><p>仅在独立预览命名空间实际运行 P1 的双槽材料添加、模拟专员核对和模拟企业确认。其他目标保留待办理；不写此Case、不占用资源、不产生正式审核或成果。</p><button id="execution-preview-run" class="secondary" disabled>明确隔离执行当前材料链</button><button id="execution-preview-read" class="secondary">读取预览产物与历史</button><button id="execution-preview-recover" class="secondary" hidden>只读核对原预演请求</button><button id="execution-preview-release" class="secondary" hidden>结束原请求核对</button><div id="execution-preview-result" aria-live="polite"></div><p id="execution-preview-error" role="alert"></p></div><div id="resource-execution-preview-panel" hidden><h3>隔离预演材料与两资源组合</h3><p>仅在空隔离空间运行 P1 材料链与 P2 两资源预检、占位、组合和 Case 关联。预演容量不代表正式可用量；P3–P5 未预演，正式写入0。</p><button id="resource-execution-preview-run" class="secondary" disabled>明确隔离执行材料与资源链</button><button id="resource-execution-preview-read" class="secondary">读取预览产物与历史</button><button id="resource-execution-preview-recover" class="secondary" hidden>只读核对原预演请求</button><button id="resource-execution-preview-release" class="secondary" hidden>结束原请求核对</button><div id="resource-execution-preview-result" aria-live="polite"></div><p id="resource-execution-preview-error" role="alert"></p></div><div id="dispatch-execution-preview-panel" hidden><h3>隔离预演材料、资源与本人接单</h3><p>依照此Run现有获派资格，在独立合成空间运行 P1/P2 与 P3 分派决定。角色均为模拟，原真人没有批准；P4/P5 未预演，正式分派、回执、通知写入0。</p><label>本轮模拟执行者决定<select id="dispatch-execution-preview-decision"><option value="ACCEPT">模拟本人接受</option><option value="DECLINE">模拟本人拒绝</option></select></label><button id="dispatch-execution-preview-run" class="secondary" disabled>明确隔离执行当前接单链</button><button id="dispatch-execution-preview-read" class="secondary">读取接单预览产物与历史</button><button id="dispatch-execution-preview-recover" class="secondary" hidden>只读核对原接单预演请求</button><button id="dispatch-execution-preview-release" class="secondary" hidden>结束原接单请求核对</button><div id="dispatch-execution-preview-result" aria-live="polite"></div><p id="dispatch-execution-preview-error" role="alert"></p></div><div id="receipt-execution-preview-panel" hidden><h3>隔离执行原本地报告与模拟企业核对</h3><p>在此Run已有受管理资格及原本地适配器前置下，实际运行 P1–P4 并生成接单一致性报告。企业决定为模拟，未代表原人批准、材料服务交付或现实履约；P5未执行，正式回执/通知写入0。</p><label>本轮模拟企业核对决定<select id="receipt-execution-preview-decision"><option value="ACKNOWLEDGE">模拟企业核对当前报告</option><option value="REQUEST_CHANGES">模拟企业要求纠正，保持未决</option></select></label><button id="receipt-execution-preview-run" class="secondary" disabled>明确隔离执行本地报告与企业决定</button><button id="receipt-execution-preview-read" class="secondary">读取报告预览产物与历史</button><button id="receipt-execution-preview-recover" class="secondary" hidden>只读核对原报告预演请求</button><button id="receipt-execution-preview-release" class="secondary" hidden>结束原报告请求核对</button><div id="receipt-execution-preview-result" aria-live="polite"></div><p id="receipt-execution-preview-error" role="alert"></p></div><div id="lifecycle-execution-preview-panel" hidden><h3>隔离预演本地Case记录重新校验</h3><p>原生命周期处理器仅在合成影子执行。模拟企业主动核验与执行者分离；关闭后Case仍WAITING_CONFIRMATION，重开后清空校验。非真人批准、非真实履约，正式Case/权限/通知写入0。</p><label>本轮模拟企业核对决定<select id="lifecycle-execution-preview-decision"><option value="ACKNOWLEDGE">模拟企业核对当前报告</option><option value="REQUEST_CHANGES">模拟企业要求纠正，保持未决</option></select></label><label>明确选择本轮本地记录动作<select id="lifecycle-execution-preview-sequence"><option value="REVALIDATE">仅重新校验</option><option value="REVALIDATE_CLOSE">重新校验后明确关闭本地记录</option><option value="REVALIDATE_CLOSE_REOPEN">重新校验、明确关闭，再明确重开验证失效</option></select></label><button id="lifecycle-execution-preview-run" class="secondary" disabled>明确执行所选隔离生命周期序列</button><button id="lifecycle-execution-preview-read" class="secondary">读取报告预览产物与历史</button><button id="lifecycle-execution-preview-recover" class="secondary" hidden>只读核对原报告预演请求</button><button id="lifecycle-execution-preview-release" class="secondary" hidden>结束原报告请求核对</button><div id="lifecycle-execution-preview-result" aria-live="polite"></div><p id="lifecycle-execution-preview-error" role="alert"></p></div></section><section id="resource-plan-binding" hidden><h3>核对方案与资源变化</h3><p>对照此Case已有工程核对和资源关联，显示当前变化及重新核对步骤。正式业务批准尚未实现；读取或比较替代不会确认、释放预约或执行方案。已确认组合按预约时段、当前规则和撤回状态核对，原占位期限到期不会自动取消。</p><label>比较本人已有资源组合<select id="resource-binding-choice"><option value="">当前关联</option></select></label><button id="resource-binding-read" class="secondary">读取版本绑定与变更影响</button><div id="resource-binding-result" aria-live="polite"></div><form id="resource-binding-confirm-form" hidden><label>明确选择替代的说明<textarea id="resource-binding-confirm-reason" maxlength="1000" required></textarea></label><button id="resource-binding-confirm" disabled>明确确认此替代组合并保留旧预约</button></form><p id="resource-binding-confirm-status" aria-live="polite"></p><p id="resource-binding-error" role="alert"></p></section><button id="case-path-read" class="secondary" hidden>核对此Case协作入口与已有Run访问</button><div id="case-path-result" aria-live="polite"></div><p id="case-path-error" role="alert"></p><div id="plan-history"></div><p id="plan-error" role="alert" aria-live="polite"></p></section>
+ <section id="local-case-detail" hidden><p class="eyebrow">CASE · 本地记录</p><h2>本地记录关闭与重开</h2><p id="local-case-summary" class="status" aria-live="polite"></p><p id="local-case-boundary" class="notice">关闭仅整理当前合成本地记录。真实Case仍等待确认，目标未完成，外部尚未受理，线下履约无证据。重开保留历史与资源占用；新一轮须显式重新校验材料、接单、回执和资源。</p><div class="actions"><button id="local-case-recover" class="secondary">只读核对原Case操作</button><p id="local-case-recovery-status" role="status"></p><button id="local-case-refresh" class="secondary">刷新当前Case本地记录</button><button id="local-case-plan" class="secondary">返回此Case四步计划</button></div><div id="local-case-checks"></div><form id="local-case-decision"><label>本地校验、关闭或重开说明<textarea id="local-case-reason" maxlength="1000" required></textarea></label><div class="actions"><button id="local-case-validate" type="button">重新校验当前一轮</button><button id="local-case-close" type="button">关闭本地记录</button><button id="local-case-reopen" type="button">重开本地记录</button></div></form><h3>逐轮历史</h3><div id="local-case-history"></div><p id="local-case-error" role="alert" aria-live="polite"></p></section>
+ <section id="service-case-plan-detail" hidden><p class="eyebrow">SERVICE PLAN · 持久办理步骤</p><h2>此Case的目标、前置与办理记录</h2><p>明确采用已保存目标对应的1–5个注册适配器步骤，每步保留稳定编号和当前业务来源。原角色仍从原入口办理，计划不代办、赋权或判定真实履约。</p><p id="service-plan-summary" class="status" aria-live="polite"></p><section id="goal-results-panel" hidden><h3>同Case必需目标总览</h3><p>只核对本事项约定的合成本地记录。历史核验和当前有效结果分开；原诉求完整履约、机构受理和线下服务仍未证明。</p><button id="goal-results-read" class="secondary" type="button">只读核对逐目标结果</button><p id="goal-results-status" class="status" aria-live="polite"></p><p id="goal-results-navigation" role="status"></p><button id="goal-results-source-read" type="button" class="secondary" hidden>只读追溯此已采用方案来源</button><div id="goal-results-source"></div><div id="goal-results-items"></div><section id="case-record-pack"><h4>本事项办理记录核对包</h4><p>带走本次全部目标、未满足原因和当前允许读取的记录引用，方便逐项核对；材料正文另用原资料包。仅为合成本地读取快照，不是实际履约、提交或批准证明。</p><div class="actions"><button id="case-record-pack-generate" type="button" class="secondary" disabled>生成本次核对包</button><button id="case-record-pack-download" type="button" class="secondary" disabled>重新核对并下载 TXT</button></div><p id="case-record-pack-status" role="status" aria-live="polite"></p><div id="case-record-pack-output" hidden><label>本次核对包全文（只读）<textarea id="case-record-pack-text" rows="18" readonly spellcheck="false"></textarea></label><p>仅对应所列版本和指纹；下载副本无法收回，也不保证导出后仍有效。指纹用于核对内容，不是签名。</p></div></section><p id="goal-results-error" class="error" role="alert"></p></section><div class="actions"><button id="service-plan-read" class="secondary">刷新当前步骤与来源</button><button id="service-plan-adopt" hidden>采用当前受支持方案并建立步骤</button><button id="service-plan-retry" hidden>只读核对此次原提交</button><button id="service-plan-release" class="secondary" hidden>结束原提交核对，重新读取当前步骤</button></div><button id="service-release-preflight-read" type="button" class="secondary" hidden>只读预检此Case服务版本兼容性</button><section id="service-release-preflight-panel" hidden><h3>ServiceRelease 单Case兼容预检</h3><p>原采用版本来自冻结历史；目标须当前已审且属于同一服务谱系。合同差异与此Case当前来源分列，UNKNOWN不能判兼容。此入口只比较并可明确记录预检证据，不发布、迁移、回滚、采纳或办理。</p><label>原采用版本<select id="service-release-preflight-original"></select></label><label>当前目标实例<select id="service-release-preflight-target"></select></label><button id="service-release-preflight-preview" type="button" class="secondary">只读比较所选精确版本</button><div id="service-release-preflight-result"></div><label>预检记录说明<textarea id="service-release-preflight-reason" maxlength="1000"></textarea></label><label><input id="service-release-preflight-confirm" type="checkbox">我已核对此Case和精确版本，仅记录这份预检及拒绝原因</label><button id="service-release-preflight-save" type="button">明确记录预检证据</button><button id="service-release-preflight-recover" type="button" class="secondary" hidden>只GET核对原预检记录</button><button id="service-release-preflight-release" type="button" class="secondary" hidden>结束已确认记录核对，重新预检</button><p id="service-release-preflight-status" role="status" aria-live="polite"></p></section><button id="service-selection-read" type="button" class="secondary" hidden>只读核对此园区可信服务能力</button><section id="service-selection-panel" hidden><h3>按当前目标选择可信服务版本</h3><p>仅使用已审阅定义及本园区实例绑定。模型只提出版本引用，服务端重建并独立核对；目录、权限、材料或资源未知时不会判满足。候选不执行、赋权或证明履约。</p><div id="service-selection-catalog"></div><p id="service-selection-status" role="status"></p><button id="service-selection-generate" type="button">生成当前目标的紧凑服务选择</button><button id="service-selection-recover" type="button" class="secondary" hidden>只GET核对原服务选择请求</button><div id="service-selection-result"></div><label><input id="service-selection-confirm" type="checkbox">我已核对服务版本、本园区实例、全部目标和前置，明确采用此服务选择候选</label></section><section id="plan-candidate-panel" hidden><h3>合成服务计划候选与确定性验真</h3><p>provider关闭。原有注册服务生成的合成候选始终不可信，选中原ID后须按当前Case、完整必需目标、硬约束及来源重验；未知不判满足。</p><button id="plan-candidate-generate" type="button">生成此Case合成候选</button><button id="plan-candidate-read" type="button" class="secondary">读取原候选ID</button><button id="plan-candidate-recover" type="button" class="secondary" hidden>只GET核对原生成请求</button><label>原服务端候选<select id="plan-candidate-choice"></select></label><div id="plan-candidate-result"></div><label><input id="plan-candidate-confirm" type="checkbox">我已核对上述完整目标、前置、责任及限制，明确使用此合成候选采用当前方案</label><p id="plan-candidate-status" role="status"></p></section><label id="service-plan-partial-label" hidden><input id="service-plan-partial-confirm" type="checkbox">我确认仅采用下列独立步骤；全部必需目标保留，整体PARTIAL，不支持目标转人工，等待依赖的步骤不可执行</label><label>本次计划核验或协调说明<textarea id="service-plan-reason" maxlength="1000"></textarea></label><p id="service-plan-feedback" class="notice" aria-live="polite"></p><div id="service-plan-coverage"></div><div id="service-plan-steps"></div><h3>计划和步骤历史</h3><div id="service-plan-history"></div><p id="service-plan-error" role="alert" aria-live="polite"></p><button id="service-plan-back" class="secondary">收起持久步骤计划</button></section>
+@@ -52,7 +52,7 @@ function failEntryFlow(flow,error){if(!flow||error?.independentEntryRefusal)retu
+ const capturedCancelFrontierRequests=new WeakMap();
+ function clearEntryWriteRequests(){for(const op of entryWriteRequests.values())retainDeniedOperationReference(op.kind,op);entryWriteRequests.clear();}
+ function entryWriteDomain(path){if(/^\/api\/executor-receipts(?:\/|$)/.test(path))return 'receipt';if(/^\/api\/service-dispatches(?:\/|$)/.test(path)||/\/dispatch$/.test(path))return 'dispatch';if(/\/resource-link$/.test(path))return 'link';if(/\/request-intent$/.test(path))return 'intent';if(/\/planning-preview$/.test(path))return 'planning';if(/\/controlled-plan(?:\/.*)?$/.test(path))return 'plan';if(/\/readiness$/.test(path))return 'readiness';if(/^\/api\/runs(?:\/|$)/.test(path))return 'run';if(/^\/api\/preparations(?:\/[a-f0-9-]{36}\/(?:commands|evidence))?$/.test(path))return 'preparation';return 'other';}
+-function originalStoredWritePending(ignoreCold=false){const selectionHandles=serviceSelectionHandles(),candidateHandles=planCandidateHandles();return (!ignoreCold&&coldUnresolved())||selectionHandles===null||selectionHandles.length>0||candidateHandles===null||candidateHandles.length>0||mgHandles()===null||mgHandles().length>0||!!(caseCancelHandle||caseReconHandle||handoffHandle||executionPreviewHandle||resourceExecutionPreviewHandle||dispatchExecutionPreviewHandle||receiptExecutionPreviewHandle||lifecycleExecutionPreviewHandle||servicePlanRecoveryHandle||planSourceConflictPending()||materialPackagePending()||localCaseLocked()||oppLocked()||fbLocked()||bundleLocked()||deliveryLocked()||planApprovalLocked());}
++function originalStoredWritePending(ignoreCold=false){const selectionHandles=serviceSelectionHandles(),candidateHandles=planCandidateHandles();return (!ignoreCold&&coldUnresolved())||selectionHandles===null||selectionHandles.length>0||candidateHandles===null||candidateHandles.length>0||mgHandles()===null||mgHandles().length>0||!!(caseCancelHandle||caseReconHandle||dispatchAcceptStoredPending()||handoffHandle||executionPreviewHandle||resourceExecutionPreviewHandle||dispatchExecutionPreviewHandle||receiptExecutionPreviewHandle||lifecycleExecutionPreviewHandle||servicePlanRecoveryHandle||planSourceConflictPending()||materialPackagePending()||localCaseLocked()||oppLocked()||fbLocked()||bundleLocked()||deliveryLocked()||planApprovalLocked());}
+ function validatedEntryRead(fn,proof,domain,isRead=()=>true){return async function(...args){
+  const flow=activeEntryWriteFlow,first=args[0],readId=typeof first==='string'?first.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i)?.[0]:first?.id;
+  const awaited=flow?[...flow.requests].filter(op=>op.observed&&op.token==='Bearer '+$('token').value&&(Array.isArray(domain)?domain.includes(entryWriteDomain(op.path)):entryWriteDomain(op.path)===domain)&&(!readId||[op.id,op.response?.run_id,op.response?.preparation_id,op.response?.preparation?.id].includes(readId))):[];
+@@ -99,9 +99,10 @@ function failCurrentEntryRead(error){const flow=error&&entryFailureFlows.get(err
+ function originalWriteOwnerRetains(flow){
+  const owns=(name,pending)=>flow.allowed.has(name)&&!!pending;
+  if(owns('planSourceConflictWrite',planSourceConflictPending())||owns('materialPackageWrite',materialPackagePending()))return true;
+- return owns('generateServiceSelection',serviceSelectionHandles()?.some(h=>[...flow.requests].some(op=>op.key===h.key&&op.id===h.id)))||owns('generatePlanCandidate',planCandidateHandles()?.some(h=>[...flow.requests].some(op=>op.key===h.key&&op.id===h.id)))||owns('manualGoalWrite',mgHandles()?.some(h=>[...flow.requests].some(op=>op.key===h.key&&op.id===h.id)))||owns('sendPrepCommand',prepCommandPending||prepRecoveryHandle)||owns('sendMaterialDraft',prepCommandPending||prepRecoveryHandle)||owns('sendCaseFact',caseFactPending)||owns('sendMaterialReuse',materialReusePending)||owns('sendDispatchPending',dispatchPending)||owns('sendRunAccess',runAccessPending)||owns('receiptLocalExecute',receiptLocalPending)||owns('servicePlanWrite',servicePlanPending)||owns('confirmResourceBinding',resourceBindingPending)||owns('objectionCommand',objectionLock())||owns('sendHandoff',handoffHandle)||owns('submitCaseCancellation',caseCancelHandle)||owns('submitCaseReconciliation',caseReconHandle)||owns('runExecutionPreview',executionPreviewHandle)||owns('runResourceExecutionPreview',resourceExecutionPreviewHandle)||owns('runDispatchExecutionPreview',dispatchExecutionPreviewHandle)||owns('runReceiptExecutionPreview',receiptExecutionPreviewHandle)||owns('runLifecycleExecutionPreview',lifecycleExecutionPreviewHandle)||owns('oppCommand',oppLocked())||owns('fbCommand',fbLocked())||owns('writeBundle',bundleLocked())||owns('writePlanApproval',planApprovalLocked())||owns('localCaseCommand',localCaseLocked())||owns('servicePlanWrite',servicePlanRecoveryHandle)||(flow.kind.startsWith('delivery-')&&deliveryLocked());
++ return owns('generateServiceSelection',serviceSelectionHandles()?.some(h=>[...flow.requests].some(op=>op.key===h.key&&op.id===h.id)))||owns('generatePlanCandidate',planCandidateHandles()?.some(h=>[...flow.requests].some(op=>op.key===h.key&&op.id===h.id)))||owns('manualGoalWrite',mgHandles()?.some(h=>[...flow.requests].some(op=>op.key===h.key&&op.id===h.id)))||owns('sendPrepCommand',prepCommandPending||prepRecoveryHandle)||owns('sendMaterialDraft',prepCommandPending||prepRecoveryHandle)||owns('sendCaseFact',caseFactPending)||owns('sendMaterialReuse',materialReusePending)||owns('dispatchWrite',dispatchAcceptHandle)||owns('sendDispatchPending',dispatchPending)||owns('sendRunAccess',runAccessPending)||owns('receiptLocalExecute',receiptLocalPending)||owns('servicePlanWrite',servicePlanPending)||owns('confirmResourceBinding',resourceBindingPending)||owns('objectionCommand',objectionLock())||owns('sendHandoff',handoffHandle)||owns('submitCaseCancellation',caseCancelHandle)||owns('submitCaseReconciliation',caseReconHandle)||owns('runExecutionPreview',executionPreviewHandle)||owns('runResourceExecutionPreview',resourceExecutionPreviewHandle)||owns('runDispatchExecutionPreview',dispatchExecutionPreviewHandle)||owns('runReceiptExecutionPreview',receiptExecutionPreviewHandle)||owns('runLifecycleExecutionPreview',lifecycleExecutionPreviewHandle)||owns('oppCommand',oppLocked())||owns('fbCommand',fbLocked())||owns('writeBundle',bundleLocked())||owns('writePlanApproval',planApprovalLocked())||owns('localCaseCommand',localCaseLocked())||owns('servicePlanWrite',servicePlanRecoveryHandle)||(flow.kind.startsWith('delivery-')&&deliveryLocked());
+ }
+ function trackedEntryFunction(fn,kind,allowed=new Set(),handler=false){return async function(...args){
++ if(dispatchAcceptStoredPending()){const e=Error('原接单结果待只读核对，禁止另一写入');e.independentEntryRefusal=true;if(handler){args[0]?.preventDefault?.();pageError(e);return;}throw e;}
+  if(materialPackagePending()&&kind!=='materialPackageWrite'&&!(kind==='boundedPlanning'&&args[0]!==true)){const e=Error('原双槽确认待GET核对，禁止另一写入');e.independentEntryRefusal=true;if(handler)pageError(e);throw e;}
+  if(planSourceConflictPending()&&kind!=='planSourceConflictWrite'&&!(kind==='boundedPlanning'&&args[0]!==true)){const e=Error('原人工说明请求待GET核对，禁止另一写入');e.independentEntryRefusal=true;if(handler)pageError(e);throw e;}
+  if(coldUnresolved()&&!(kind==='boundedPlanning'&&args[0]!==true)){const e=Error('原新事项请求待GET核对，禁止另一写入');e.independentEntryRefusal=true;if(handler)pageError(e);throw e;}
+@@ -1338,7 +1339,7 @@ function dispatchCurrent(c){return (!c.callerCurrent||c.callerCurrent())&&c.gene
+ function requireDispatch(c){if(!dispatchCurrent(c)){const e=Error('已离开原分派事项');e.staleDispatch=true;throw e;}}
+ function dispatchDraft(){return JSON.stringify(['dispatch-executor','dispatch-offer-reason','dispatch-decision-reason'].map(id=>$(id).value));}
+ function resetDispatchDraft(){$('dispatch-offer').reset();$('dispatch-decision').reset();}
+-function clearDispatch(preservePlan=false){clearLocalCase(preservePlan);dispatchGeneration++;dispatchView=null;dispatchPreparationId=null;dispatchId=null;dispatchContext=null;dispatchCatalog=null;dispatchPending=null;handoffHandle=null;handoffSubmitting=false;$('dispatch-handoff-status').textContent='';dispatchRetries.clear();dispatchPendingUI();resetDispatchDraft();$('dispatch-detail').hidden=true;$('dispatch-offer').hidden=true;$('dispatch-decision').hidden=true;$('dispatch-items').replaceChildren();$('dispatch-executor').replaceChildren();for(const id of ['dispatch-current','dispatch-history'])$(id).replaceChildren();$('dispatch-summary').textContent='';$('dispatch-error').textContent='';$('dispatch-receipt').hidden=true;}
++function clearDispatch(preservePlan=false){clearLocalCase(preservePlan);dispatchGeneration++;dispatchView=null;dispatchPreparationId=null;dispatchId=null;dispatchContext=null;dispatchCatalog=null;dispatchPending=null;dispatchAcceptHandle=null;dispatchAcceptProof=null;dispatchAcceptBusy=false;$('dispatch-accept-status').textContent='';handoffHandle=null;handoffSubmitting=false;$('dispatch-handoff-status').textContent='';dispatchRetries.clear();dispatchPendingUI();resetDispatchDraft();$('dispatch-detail').hidden=true;$('dispatch-offer').hidden=true;$('dispatch-decision').hidden=true;$('dispatch-items').replaceChildren();$('dispatch-executor').replaceChildren();for(const id of ['dispatch-current','dispatch-history'])$(id).replaceChildren();$('dispatch-summary').textContent='';$('dispatch-error').textContent='';$('dispatch-receipt').hidden=true;}
+ async function dispatchCall(path,method='GET',body,key,c=dispatchCtx()){
+   requireDispatch(c);const headers={Authorization:'Bearer '+c.token};if(body)headers['Content-Type']='application/json';if(key)headers['Idempotency-Key']=key;
+   let response,x;try{response=await entryFetch(path,{method,headers,cache:'no-store',body:body?JSON.stringify(body):undefined});x=await response.json();}catch(e){requireDispatch(c);const error=Error('分派操作结果尚未确认，请使用原操作重试；不要重新填写或另建操作。');error.status=response?.status;error.dispatchContext=c;throw error;}
+@@ -1366,6 +1367,7 @@ function renderDispatch(x,catalog){
+   if(catalog?.can_reoffer){$('dispatch-current').append(textElement('p','新版材料需重新接单：请原执行者重新确认新版材料。历史回执不会复制到新步骤。'));$('dispatch-offer-button').textContent='请原执行者重新确认新版材料';}else $('dispatch-offer-button').textContent='记录分派';
+   if(catalog?.can_reassign){$('dispatch-offer-button').textContent='交接尚未回执事项';$('dispatch-current').append(textElement('p','选择另一位已有权限执行者并说明原因。旧步骤将停止新写入，新方独立接单后才创建新回执步骤；不会复制旧结果。'));}
+   handoffHandle=reviewer?handoffHandles().find(h=>h.actor===catalog?.reassignment_actor_id&&h.dispatch===x.dispatch_id&&h.preparation===x.preparation_id)||null:null;
++  dispatchAcceptHandle=executor?dispatchAcceptRead(x):null;dispatchAcceptProof=null;
+   dispatchPendingUI();$('dispatch-error').textContent=dispatchPending?'原操作结果尚未确认；请使用原操作重试。':'';$('page-feedback').textContent='';
+ }
+ async function loadDispatch(preparationId,{fromNotice=false,fromPlan=null,fromServicePlan=null,runtimeSelection=null}={}){
+@@ -1382,10 +1384,11 @@ $('dispatch-prepare').onclick=()=>{const id=preparationId;loadDispatch(id).catch
+ $('dispatch-refresh').onclick=()=>loadDispatch(dispatchPreparationId).catch(dispatchError);
+ function dispatchPendingUI(){
+   $('dispatch-retry').hidden=!dispatchPending;
+-  for(const form of ['dispatch-offer','dispatch-decision'])for(const el of $(form).elements)el.disabled=!!dispatchPending||!!handoffHandle||handoffSubmitting;
++  for(const form of ['dispatch-offer','dispatch-decision'])for(const el of $(form).elements)el.disabled=!!dispatchPending||!!handoffHandle||handoffSubmitting||!!dispatchAcceptHandle||dispatchAcceptBusy;
+   $('dispatch-handoff-recover').hidden=!handoffHandle;$('dispatch-handoff-recover').disabled=handoffSubmitting;
+   $('dispatch-handoff-status').textContent=handoffHandle?'原交接结果待只读核对；不重发正文，也不发起另一次交接。':'';
+-  if(!dispatchPending&&!handoffHandle&&!handoffSubmitting&&dispatchView)$('dispatch-accept').disabled=dispatchView.dependency!=='CURRENT';
++  dispatchAcceptControls();
++  if(!dispatchPending&&!handoffHandle&&!handoffSubmitting&&!dispatchAcceptHandle&&!dispatchAcceptBusy&&dispatchView)$('dispatch-accept').disabled=dispatchView.dependency!=='CURRENT';
+ }
+ async function sendDispatchPending(){
+   const pending=dispatchPending,c=dispatchCtx();if(!pending||pending.token!==c.token||pending.preparationId!==c.preparationId)throw Error('请先读取原分派事项');requireDispatch(c);
+@@ -1395,11 +1398,12 @@ async function sendDispatchPending(){
+   if(result.event?.revision!==dispatchView.revision)$('dispatch-error').textContent='原输入的操作已记录；上方显示当前持久状态，请核对当前版本。';
+ }
+ async function dispatchWrite(action){
+-  if(dispatchPending||handoffHandle||handoffSubmitting)throw Error('请先核对原操作结果。');
++  if(dispatchPending||handoffHandle||handoffSubmitting||dispatchAcceptHandle||dispatchAcceptBusy)throw Error('请先核对原操作结果。');
+   const c=dispatchContext;if(!c||!dispatchView)throw Error('请先读取当前分派');requireDispatch(c);
+   if(dispatchView.dispatch_id!==c.id||dispatchView.preparation_id!==c.preparationId||dispatchView.revision!==c.revision||dispatchView.preparation_revision!==c.preparationRevision||(dispatchView.current_offer?.id||null)!==c.offerId)throw Error('分派版本不匹配，请刷新');
+   const draft=dispatchDraft(),offer=action==='OFFER',body=offer?{expected_preparation_revision:c.preparationRevision,expected_dispatch_revision:c.revision,executor_id:$('dispatch-executor').value,reason:$('dispatch-offer-reason').value}:{action,expected_revision:c.revision,reason:$('dispatch-decision-reason').value};
+   if(c.businessFrontier!==undefined)body.expected_business_frontier=c.businessFrontier;
++  if(action==='ACCEPT'){await sendDispatchAccept(c,body);return;}
+   if(offer&&dispatchCatalog?.can_reassign){await sendHandoff(c);return;}
+   if(offer&&dispatchCatalog?.can_reoffer)body.recovery_receipt_step_id=dispatchCatalog.recovery_receipt_step_id;
+   const path=offer?'/api/preparations/'+encodeURIComponent(c.preparationId)+'/dispatch':'/api/service-dispatches/'+encodeURIComponent(c.id)+'/commands',signature=path+JSON.stringify(body);let key=dispatchRetries.get(signature);if(!key){key=crypto.randomUUID();dispatchRetries.set(signature,key);}
+@@ -1410,6 +1414,89 @@ $('dispatch-offer').onsubmit=e=>{e.preventDefault();return dispatchWrite('OFFER'
+ for(const [id,action] of [['dispatch-accept','ACCEPT'],['dispatch-decline','DECLINE'],['dispatch-withdraw','WITHDRAW']])$(id).onclick=()=>dispatchWrite(action).catch(dispatchError);
+ $('dispatch-receipt').onclick=()=>{const c=dispatchContext;try{if(!c||!dispatchView?.current_receipt_step_id)throw Error('请先读取已接单事项');requireDispatch(c);const id=dispatchView.current_receipt_step_id;clearPreparation();loadReceipt(id).catch(receiptError);}catch(e){dispatchError(e);}};
+ 
++// ACCEPT recovery owns only opaque IDs and the original key, never the reason/token.
++let dispatchAcceptHandle=null,dispatchAcceptProof=null,dispatchAcceptBusy=false;
++const dispatchAcceptStorage='parkweave.dispatch-accept.v1.';
++function dispatchAcceptStoredPending(){try{return Object.keys(localStorage).some(n=>n.startsWith(dispatchAcceptStorage));}catch{return true;}}
++function dispatchAcceptHandles(actor){
++  try{
++    if(!/^[a-f0-9]{64}$/.test(actor))return null;
++    const names=Object.keys(localStorage).filter(n=>n.startsWith(dispatchAcceptStorage+actor+'.'));
++    if(names.length>8)return null;
++    const now=Date.now(),rows=[];
++    for(const name of names){
++      const raw=localStorage.getItem(name);if(typeof raw!=='string'||raw.length>640) return null;
++      const h=JSON.parse(raw);
++      if(!h||typeof h!=='object'||Array.isArray(h)||Object.keys(h).sort().join(',')!=='action,actor,case,dispatch,expires,key,offer,preparation,preparation_revision,revision,run,v'||h.v!==1||h.action!=='ACCEPT'||h.actor!==actor||name!==dispatchAcceptStorage+h.actor+'.'+h.dispatch||!['case','dispatch','offer','preparation','run'].every(k=>uuidHandle(h[k]))||!uuidHandle(h.key)||!Number.isInteger(h.revision)||h.revision<1||h.revision>63||!Number.isInteger(h.preparation_revision)||h.preparation_revision<1||h.preparation_revision>64||!Number.isFinite(h.expires)||h.expires<=now||h.expires>now+86400000)return null;
++      rows.push(Object.freeze({...h,name,raw}));
++    }
++    return rows;
++  }catch{return null;}
++}
++function dispatchAcceptRead(x){
++  const rows=dispatchAcceptHandles(x.actor_ref);
++  if(rows===null)return Object.freeze({invalid:true});
++  const h=rows.find(h=>h.dispatch===x.dispatch_id);
++  if(!h)return rows.length?Object.freeze({invalid:true}):null;
++  if(h.preparation!==x.preparation_id||h.case!==x.case_id||h.run!==x.run_id)return Object.freeze({invalid:true});
++  return h;
++}
++function dispatchAcceptControls(){
++  const h=dispatchAcceptHandle;
++  $('dispatch-accept-recover').hidden=!h;$('dispatch-accept-recover').disabled=dispatchAcceptBusy||!!h?.invalid;
++  $('dispatch-accept-release').hidden=!dispatchAcceptProof;$('dispatch-accept-release').disabled=dispatchAcceptBusy;
++  if(h)$('dispatch-accept-status').textContent=h.invalid?'原接单句柄损坏、过期或属于其他事项；保留原记录，停止新写入并人工核对。':dispatchAcceptProof?'原接单历史已核对；请明确读取当前状态后继续。':'原接单结果待核对；只GET原编号，不自动重发接单。';
++}
++function dispatchAcceptBound(c,h){
++  requireDispatch(c);
++  if(!h||h.invalid||dispatchAcceptHandle!==h||dispatchView?.actor_ref!==h.actor||dispatchView.preparation_id!==h.preparation||dispatchView.case_id!==h.case||dispatchView.run_id!==h.run||c.id!==h.dispatch||dispatchAcceptHandles(h.actor)===null||localStorage.getItem(h.name)!==h.raw)throw Error('原接单上下文或保存句柄已变化；保留记录重新核对');
++}
++async function dispatchAcceptGet(c,h){
++  dispatchAcceptBound(c,h);
++  const q=new URLSearchParams({preparation_id:h.preparation,case_id:h.case,run_id:h.run,offer_id:h.offer,expected_revision:String(h.revision),preparation_revision:String(h.preparation_revision)});
++  const x=await dispatchCall('/api/service-dispatches/'+h.dispatch+'/accept-recovery?'+q,'GET',undefined,h.key,c);
++  dispatchAcceptBound(c,h);
++  const expected={scope:'SYNTHETIC_INTERNAL_DISPATCH_ONLY',actor_ref:h.actor,dispatch_id:h.dispatch,preparation_id:h.preparation,case_id:h.case,run_id:h.run,offer_id:h.offer,expected_revision:h.revision,preparation_revision:h.preparation_revision,request_key:h.key,historical_only:true,read_only:true,automatically_replayed:false,case_goal_completed:false};
++  if(!Object.entries(expected).every(([k,v])=>typeof x[k]===typeof v&&x[k]===v)||!['COMMITTED','NOT_OBSERVED'].includes(x.status)||(x.status==='NOT_OBSERVED'?x.event!==null:!x.event||!uuidHandle(x.event.id)||!uuidHandle(x.event.receipt_step_id)||x.event.action!=='ACCEPT'||x.event.revision!==h.revision+1))throw Error('原接单只读证明不匹配；保留句柄');
++  return x;
++}
++async function dispatchAcceptRecover(release=false){
++  const c=dispatchCtx(),h=dispatchAcceptHandle,executor=dispatchView?.current_offer?.executor_id;if(dispatchAcceptBusy)return;
++  dispatchAcceptBound(c,h);dispatchAcceptBusy=true;dispatchPendingUI();
++  try{
++    const x=await dispatchAcceptGet(c,h);dispatchAcceptBound(c,h);dispatchAcceptProof=x.status==='COMMITTED'?x:null;
++    if(!dispatchAcceptProof){$('dispatch-accept-status').textContent='尚未观察到原接单；结果仍未知，原请求可能稍后到达。不重发、不另建接单。';return;}
++    if(!release)return;
++    const current=await dispatchCall('/api/service-dispatches/'+h.dispatch,'GET',undefined,undefined,c);dispatchAcceptBound(c,h);
++    if(typeof executor!=='string'||current.current_offer?.executor_id!==executor||!Array.isArray(current.offers)||!current.offers.every(o=>o.executor_id===executor)||current.scope!=='SYNTHETIC_INTERNAL_DISPATCH_ONLY'||current.role!=='service_executor'||current.actor_ref!==h.actor||current.preparation_id!==h.preparation||current.case_id!==h.case||current.run_id!==h.run||current.dispatch_id!==h.dispatch||!Number.isInteger(current.revision)||current.revision<x.event.revision||current.revision>64||!Number.isInteger(current.preparation_revision)||current.preparation_revision<1||current.preparation_revision>64||!Array.isArray(current.history)||!Array.isArray(current.offers)||!current.current_offer||!current.offers.some(o=>o.id===current.current_offer.id&&o.executor_id===current.current_offer.executor_id&&o.state===current.current_offer.state)||!current.offers.some(o=>o.id===h.offer&&o.dispatch_id===h.dispatch&&o.state==='ACCEPTED'&&o.receipt_step_id===x.event.receipt_step_id)||!['OFFERED','ACCEPTED','DECLINED','WITHDRAWN'].includes(current.current_offer.state))throw Error('当前分派与原接单证明不匹配；保留句柄');
++    // Rendering must succeed while the persistent unknown fence still exists.
++    renderDispatch(current,null);requireDispatch(c);
++    if(localStorage.getItem(h.name)!==h.raw)throw Error('原接单句柄已替换，保留新记录');
++    // Exact same bytes only: a late response cannot clear a replacement handle.
++    localStorage.removeItem(h.name);if(localStorage.getItem(h.name)!==null)throw Error('原接单句柄尚未清除，保持只读核对');
++    for(const op of entryWriteRequests.values())if(op.key===h.key&&op.path==='/api/service-dispatches/'+h.dispatch+'/commands'&&op.token==='Bearer '+c.token){op.verified=true;entryWriteRequests.delete(op.signature);}
++    dispatchAcceptHandle=null;dispatchAcceptProof=null;
++    $('dispatch-accept-status').textContent='已核对原接单历史并读取当前状态；未重发接单，也未自动验证步骤计划。';
++  }catch(e){e.dispatchContext=c;if(dispatchCurrent(c)&&e.status===403)dispatchError(e);throw e;}
++  finally{if(dispatchCurrent(c)){dispatchAcceptBusy=false;dispatchPendingUI();}}
++}
++async function sendDispatchAccept(c,body){
++  requireDispatch(c);const x=dispatchView;
++  if(x.role!=='service_executor'||x.can_accept!==true||!x.is_current_offer||x.current_offer?.state!=='OFFERED'||dispatchAcceptHandles(x.actor_ref)?.length!==0||!body.reason.trim())throw Error('请先读取本人当前合法分派并填写决定说明，核对所有原接单请求');
++  const h={v:1,action:'ACCEPT',actor:x.actor_ref,preparation:x.preparation_id,case:x.case_id,run:x.run_id,dispatch:x.dispatch_id,offer:x.current_offer.id,key:crypto.randomUUID(),revision:c.revision,preparation_revision:c.preparationRevision,expires:Date.now()+86400000},name=dispatchAcceptStorage+h.actor+'.'+h.dispatch,raw=JSON.stringify(h);
++  localStorage.setItem(name,raw);if(localStorage.getItem(name)!==raw)throw Error('原接单编号保存失败，尚未发送请求');
++  dispatchAcceptHandle=dispatchAcceptRead(x);dispatchAcceptBound(c,dispatchAcceptHandle);dispatchAcceptBusy=true;dispatchPendingUI();
++  let received=false;
++  try{await dispatchCall('/api/service-dispatches/'+c.id+'/commands','POST',body,h.key,c);received=true;}
++  catch(e){if(!dispatchCurrent(c))throw e;if(e.status===403){dispatchError(e);throw e;}$('dispatch-accept-status').textContent='原接单响应未核实；句柄保留，只读核对原编号。';}
++  finally{if(dispatchCurrent(c)){dispatchAcceptBusy=false;dispatchPendingUI();}}
++  requireDispatch(c);
++  // A received success follows the same GET proof; unknown outcomes require an explicit read.
++  if(received)await dispatchAcceptRecover(true);
++}
++$('dispatch-accept-recover').onclick=()=>dispatchAcceptRecover().catch(dispatchError);
++$('dispatch-accept-release').onclick=()=>dispatchAcceptRecover(true).catch(dispatchError);
++
+ // Explicit pending manual handoff. Only opaque identity/key metadata survives refresh.
+ let handoffHandle=null,handoffSubmitting=false;
+ const handoffStorage='parkweave.pending-receipt-handoff.v1';
+@@ -2796,6 +2883,7 @@ $('token').addEventListener('input',()=>{templateEntryGeneration++;$('template-i
+ function entryReadAllowed(id){
+  if(['case-worklist-read','case-worklist-next','prep-tasks','prep-tasks-next'].includes(id))return true;
+  if(activeEntryWriteFlow)return false;
++ if(['dispatch-accept-recover','dispatch-accept-release'].includes(id))return [...entryWriteRequests.values()].every(op=>entryWriteDomain(op.path)==='dispatch');
+  if(!entryWriteRequests.size)return true;
+  if(id==='case-resource-recovery-read'){try{return boundedCaseRecoveryAllowed(boundedCaseContext(),{kind:$('case-resource-recovery-kind').value,key:$('case-resource-recovery-key').value.trim()});}catch{return false;}}
+  if(id==='receipt-history-read')return true;
+diff --git a/tests/case_cancellation_offline.js b/tests/case_cancellation_offline.js
+index 71e5d8cc..7464776b 100644
+--- a/tests/case_cancellation_offline.js
++++ b/tests/case_cancellation_offline.js
+@@ -64,12 +64,13 @@ async function read(){const p=run('readCaseCancellation()');calls.at(-1).resolve
+   context.rx={step:{id,case_id:cid,preparation_id:id,state:'AWAITING_RECEIPT',revision:1,goal:'SYNTHETIC'},case_cancelled:false,role:'service_executor',dependency:'CURRENT',is_current_step:true,current_receipt:null,local_execution:{enabled:true,can_execute:true},receipt_history:[],history:[]};
+   vm.runInContext(renderer,context);run('renderReceipt(rx)');check($('receipt-submit').hidden&&$('receipt-submit-button').disabled&&$('receipt-local-execution-button').disabled&&$('receipt-summary').textContent.includes('已取消'));
+  }else if(mode==='cancelled_dispatch'||mode==='late_dispatch'){
++  vm.runInContext(html.slice(html.indexOf('let dispatchAcceptHandle='),html.indexOf('function dispatchAcceptControls(')),context);
+   const dcode=html.slice(html.indexOf('function renderDispatch('),html.indexOf('async function loadDispatch('));
+   // Use only this renderer's function; following unrelated functions are excluded.
+   const start=dcode.indexOf('function renderDispatch(');let brace=dcode.indexOf('{',start),depth=1,end=brace+1;for(;depth&&end<dcode.length;end++){if(dcode[end]==='{')depth++;if(dcode[end]==='}')depth--;}
+   Object.assign(context,{dispatchCtx:()=>({}),textElement:()=>new Element(),dispatchLabels:{OFFERED:'等待执行者决定'},dispatchPendingUI:()=>{},dispatchDraft:()=>'',handoffControls:()=>{}});
+   if(mode==='late_dispatch'){context.preparationView.preparation.id=id;context.preparationView.case_cancelled=true;}
+-  context.dx={preparation_id:id,case_cancelled:mode!=='late_dispatch',goal:'Case',role:'service_executor',dispatch_id:id,revision:1,preparation_revision:5,current_offer:{id:key,state:'OFFERED',executor_id:'executor-a',reason:'history'},is_current_offer:true,dependency:'CURRENT',history:[]};
++  context.dx={actor_ref:'a'.repeat(64),preparation_id:id,case_cancelled:mode!=='late_dispatch',goal:'Case',role:'service_executor',dispatch_id:id,revision:1,preparation_revision:5,current_offer:{id:key,state:'OFFERED',executor_id:'executor-a',reason:'history'},is_current_offer:true,dependency:'CURRENT',history:[]};
+   vm.runInContext(dcode.slice(start,end),context);run('renderDispatch(dx,null)');check($('dispatch-decision').hidden&&$('dispatch-summary').textContent.includes('已取消'));
+  }
+  console.log(JSON.stringify({mode:requestedMode,checks,scope:'NODE_VM_DOM_FETCH_DOUBLES_ONLY'}));
+diff --git a/tests/case_cancellation_reconciliation_offline.js b/tests/case_cancellation_reconciliation_offline.js
+index 742b9a79..3eebe20e 100644
+--- a/tests/case_cancellation_reconciliation_offline.js
++++ b/tests/case_cancellation_reconciliation_offline.js
+@@ -89,8 +89,9 @@ function confirm(){ $('case-reconcile-reason').value='PRIVATE_REASON';$('case-re
+    run('renderReceipt(rx)');check($('receipt-submit').hidden&&$('receipt-submit-button').disabled&&$('receipt-local-execution-button').disabled);
+   }else{
+    Object.assign(context,{dispatchCtx:()=>({}),dispatchLabels:{OFFERED:'等待'},handoffHandles:()=>[],handoffControls:()=>{},dispatchControls:()=>{},dispatchPendingUI:()=>{},dispatchRetries:new Map()});
++  vm.runInContext(html.slice(html.indexOf('let dispatchAcceptHandle='),html.indexOf('function dispatchAcceptControls(')),context);
+    const block=html.slice(html.indexOf('function renderDispatch(x,catalog)'),html.indexOf('async function loadDispatch',html.indexOf('function renderDispatch(x,catalog)')));vm.runInContext(block,context);
+-   context.dx={dispatch_id:id,preparation_id:id,case_id:cid,revision:1,preparation_revision:5,goal:'SYNTHETIC',role:'service_executor',dependency:'CURRENT',is_current_offer:true,current_offer:{id,state:'OFFERED',executor_id:'executor-a',reason:'SYNTHETIC'},history:[]};
++   context.dx={actor_ref:'a'.repeat(64),dispatch_id:id,preparation_id:id,case_id:cid,revision:1,preparation_revision:5,goal:'SYNTHETIC',role:'service_executor',dependency:'CURRENT',is_current_offer:true,current_offer:{id,state:'OFFERED',executor_id:'executor-a',reason:'SYNTHETIC'},history:[]};
+    run('renderDispatch(dx,{ready:true,executors:[]})');check($('dispatch-decision').hidden&&$('dispatch-accept').disabled);
+   }
+  }else throw Error('unknown mode');
+diff --git a/tests/dispatch_accept_recovery_offline.js b/tests/dispatch_accept_recovery_offline.js
+new file mode 100644
+index 00000000..caecf0b5
+--- /dev/null
++++ b/tests/dispatch_accept_recovery_offline.js
+@@ -0,0 +1,76 @@
++// Actual narrow production functions under controlled promises; no HTTP/browser claims.
++const fs=require('fs'),vm=require('vm'),assert=require('assert');
++const html=fs.readFileSync('src/parkweave/web.html','utf8'),mode=process.argv[2];
++const start=html.indexOf('// ACCEPT recovery owns'),end=html.indexOf('// Explicit pending manual handoff.',start);assert(start>=0&&end>start);
++const block=html.slice(start,end),now=1792238400000,id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0');
++const h={v:1,action:'ACCEPT',actor:'a'.repeat(64),preparation:id(1),case:id(2),run:id(3),dispatch:id(4),offer:id(5),key:id(6),revision:1,preparation_revision:4,expires:now+1000};
++const name='parkweave.dispatch-accept.v1.'+h.actor+'.'+h.dispatch,raw=JSON.stringify(h),store={},nodes={};
++Object.defineProperties(store,{getItem:{value:n=>Object.hasOwn(store,n)?store[n]:null},setItem:{value:(n,v)=>store[n]=v},removeItem:{value:n=>{removed.push(n);delete store[n];}}});
++const removed=[],requests=[],view={actor_ref:h.actor,preparation_id:h.preparation,case_id:h.case,run_id:h.run,dispatch_id:h.dispatch,current_offer:{executor_id:'executor-a'}},c={generation:1,token:'PRIVATE',id:h.dispatch};
++const context=vm.createContext({URLSearchParams,JSON,Number,Object,Error,Date:{now:()=>now},localStorage:store,
++ $:n=>nodes[n]??(nodes[n]={value:'PRIVATE',textContent:'',hidden:false,disabled:false}),
++ uuidHandle:x=>typeof x==='string'&&/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(x),
++ dispatchView:view,entryWriteRequests:new Map(),dispatchCtx:()=>({...c}),
++ dispatchCurrent:x=>x.generation===c.generation&&x.token===c.token,
++ requireDispatch:x=>{if(x.generation!==c.generation||x.token!==c.token){const e=Error('stale');e.staleDispatch=true;throw e;}},
++ dispatchPendingUI:()=>{},dispatchError:()=>{},renderDispatch:()=>{},
++ dispatchCall:(...args)=>new Promise((resolve,reject)=>requests.push({args,resolve,reject}))});
++vm.runInContext(block,context);const run=x=>vm.runInContext(x,context);
++store[name]=raw;
++const expires={past:now-1,now:now,one_ms:now+1,max:now+86400000,over:now+86400001,zero:0,far:999999999999999,null:null,string:String(now+1000),boolean:true};
++(async()=>{
++ if(Object.hasOwn(expires,mode)||['extra','oversize','malformed','storage_error','limit','other_actor'].includes(mode)){
++  const changed={...h};if(Object.hasOwn(expires,mode))changed.expires=expires[mode];
++  if(mode==='extra')changed.reason='FORBIDDEN';
++  store[name]=mode==='malformed'?'{':mode==='oversize'?'x'.repeat(641):JSON.stringify(changed);
++  if(mode==='limit')for(let i=10;i<18;i++)store[name+i]=raw;
++  if(mode==='storage_error')Object.defineProperty(store,name,{enumerable:true,get:()=>{throw Error('storage refused');}});
++  const before=mode==='storage_error'?null:JSON.stringify({...store}),result=run('dispatchAcceptHandles('+JSON.stringify(h.actor)+')');
++  assert(['one_ms','max','other_actor'].includes(mode)?result.length===1:result===null);
++  assert(run('dispatchAcceptStoredPending()'));if(mode!=='storage_error')assert.equal(JSON.stringify({...store}),before);
++  if(mode==='other_actor')assert.equal(run('dispatchAcceptHandles('+JSON.stringify('b'.repeat(64))+')').length,0);
++ }else{
++  run('dispatchAcceptHandle=dispatchAcceptRead(dispatchView)');
++  const proof={scope:'SYNTHETIC_INTERNAL_DISPATCH_ONLY',actor_ref:h.actor,dispatch_id:h.dispatch,preparation_id:h.preparation,case_id:h.case,run_id:h.run,offer_id:h.offer,expected_revision:1,preparation_revision:4,request_key:h.key,historical_only:true,read_only:true,automatically_replayed:false,case_goal_completed:false,status:'COMMITTED',event:{id:id(7),action:'ACCEPT',revision:2,receipt_step_id:id(8)}};
++  if(mode.startsWith('outer_')){
++   // Keep the actual inner implementation in source; inject only its resolved
++   // boundary to place navigation between inner completion and caller resume.
++   context.originalGet=run('dispatchAcceptGet');context.proof=proof;
++   run('dispatchAcceptGet=async()=>proof');
++   const pending=run('dispatchAcceptRecover()');
++   if(mode==='outer_case_ABA'){c.generation+=2;view.case_id=id(9);}
++   else if(mode==='outer_identity_ABA'){c.generation+=2;c.token='PRIVATE';}
++   else if(mode==='outer_replacement')store[name]=JSON.stringify({...h,key:id(10)});
++   else throw Error(mode);
++   nodes['dispatch-accept-status']={textContent:'NEW_STATUS'};
++   await assert.rejects(pending);assert(run('dispatchAcceptProof===null'));assert.equal(nodes['dispatch-accept-status'].textContent,'NEW_STATUS');
++  }else{
++   const release=mode.startsWith('current_bad_')||mode==='render_failure';
++   const pending=run('dispatchAcceptRecover('+release+')');assert.equal(requests.length,1);assert.equal(requests[0].args[1],'GET');
++   if(mode==='wrong_proof')proof.case_id=id(9);
++   else if(mode==='replacement')store[name]=JSON.stringify({...h,key:id(10)});
++   else if(mode==='late_200'||mode==='late_403'){c.generation+=2;nodes['dispatch-accept-status']={textContent:'NEW_STATUS'};}
++   else if(mode==='not_observed'){proof.status='NOT_OBSERVED';proof.event=null;}
++   else if(mode!=='committed'&&!release)throw Error(mode);
++   if(mode==='late_403'){const e=Error('denied');e.status=403;requests[0].reject(e);}else requests[0].resolve(proof);
++   if(release){
++    for(let i=0;requests.length<2&&i<10;i++)await Promise.resolve();
++    assert.equal(requests.length,2);
++    const offer={id:h.offer,dispatch_id:h.dispatch,state:'ACCEPTED',executor_id:'executor-a',receipt_step_id:id(8)};
++    const current={...view,scope:proof.scope,role:'service_executor',revision:2,preparation_revision:4,offers:[offer],current_offer:offer,history:[]};
++    if(mode==='current_bad_history')current.history=null;
++    if(mode==='current_bad_role')current.role='park_specialist';
++    if(mode==='current_bad_revision')current.revision=65;
++    if(mode==='current_bad_executor'){offer.executor_id='executor-b';}
++    if(mode==='current_bad_offer')current.current_offer={...offer,id:id(10)};
++    if(mode==='render_failure')context.renderDispatch=()=>{throw Error('actual renderer failure boundary');};
++    requests[1].resolve(current);await assert.rejects(pending);
++   }else if(['wrong_proof','replacement','late_200','late_403'].includes(mode))await assert.rejects(pending);else await pending;
++   assert.equal(run('dispatchAcceptProof!==null'),(mode==='committed'||release));
++   if(mode.startsWith('late_'))assert.equal(nodes['dispatch-accept-status'].textContent,'NEW_STATUS');
++  }
++  assert(store[name]);assert(run('dispatchAcceptStoredPending()'));
++ }
++ assert.deepEqual(removed,[]);assert(requests.every(r=>r.args[1]==='GET'));
++ console.log(JSON.stringify({mode,actual_production_functions:true,HTTP_requests:0,GET_stubs:requests.length,POST_stubs:0,removals:0}));
++})().catch(e=>{console.error(e);process.exitCode=1;});
+diff --git a/tests/pending_receipt_handoff_offline.js b/tests/pending_receipt_handoff_offline.js
+index 48290c9c..cb0b1045 100644
+--- a/tests/pending_receipt_handoff_offline.js
++++ b/tests/pending_receipt_handoff_offline.js
+@@ -6,6 +6,7 @@ const source=fs.readFileSync('src/parkweave/web.html','utf8');
+ function originalBlock(start,end){const at=source.indexOf(start),until=source.indexOf(end,at+1);assert(at>=0&&until>at);return source.slice(at,until);}
+ function originalLine(marker){const line=source.split('\n').find(s=>s.startsWith(marker));assert(line,marker);return line+'\n';}
+ const dependencies=originalLine('const deniedOperationReferences=')+originalLine('const entryWriteRequests=')+
++ originalLine('const entryFailureFlows=')+originalLine('function failEntryFlow(')+
+  originalLine('function clearEntryWriteRequests(')+originalLine('function failCurrentEntryRead(')+
+  originalLine('let receiptHistoryGeneration=')+originalLine('function clearReceiptHistory(')+
+  originalBlock('function receiptCommandExplicitlyRejected(', 'function runEntryReadProof(')+
+diff --git a/tests/test_dispatch_accept_recovery.py b/tests/test_dispatch_accept_recovery.py
+new file mode 100644
+index 00000000..812866a7
+--- /dev/null
++++ b/tests/test_dispatch_accept_recovery.py
+@@ -0,0 +1,111 @@
++"""Original ACCEPT key recovery is a current-authorized read, never a retry."""
++from uuid import UUID,uuid4
++import pytest
++
++from test_service_dispatches import receipt_fixture,preparation_fixture,offer,command
++from test_preparation import headers
++from service_release_acceptance_support import authority_snapshot,case_history
++from test_dispatch_recovery import records,changed_materials
++
++
++def selection(row):
++    return dict(preparation_id=row['preparation_id'],case_id=row['case_id'],run_id=row['run_id'],
++                offer_id=row['current_offer']['id'],expected_revision=row['revision'],
++                preparation_revision=row['preparation_revision'])
++
++
++def recover(f,row,key,*,user='executor-a',params=None):
++    return f[3].get('/api/service-dispatches/'+row['dispatch_id']+'/accept-recovery',
++                    params=selection(row) if params is None else params,headers=headers(f[2],user,key))
++
++
++def test_original_accept_committed_and_not_observed_are_read_only(receipt_fixture):
++    f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
++    before=case_history(f[1],row['preparation_id']);auth=authority_snapshot(f[1])
++    missing=recover(f,row,key)
++    assert missing.status_code==200,missing.text
++    assert missing.json()['status']=='NOT_OBSERVED' and missing.json()['event'] is None
++    assert case_history(f[1],row['preparation_id'])==before
++    done=command(f,row,'ACCEPT',key=key).json()
++    before=case_history(f[1],row['preparation_id'])
++    result=recover(f,row,key);assert result.status_code==200,result.text
++    data=result.json();assert result.headers['cache-control']=='no-store'
++    assert data['status']=='COMMITTED' and data['historical_only'] and data['read_only']
++    assert data['automatically_replayed'] is False and data['case_goal_completed'] is False
++    assert data['event']['receipt_step_id']==done['receipt_step_id']
++    assert data['event']['revision']==row['revision']+1 and data['event']['action']=='ACCEPT'
++    assert 'reason' not in result.text and f[2]['executor-a'] not in result.text
++    assert case_history(f[1],row['preparation_id'])==before and authority_snapshot(f[1])==auth
++
++
++@pytest.mark.parametrize('user',['fixture-a','fixture-b','fixture-c','prep-specialist-fixture-a',
++                                 'executor-b','executor-c','unassigned'])
++def test_current_actor_scope_denies_without_private_proof(receipt_fixture,user):
++    f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
++    command(f,row,'ACCEPT',key=key);before=records(f)
++    r=recover(f,row,key,user=user)
++    assert r.status_code==403 and r.json()=={'detail':'record unavailable or authorization denied'}
++    assert records(f)==before
++
++
++@pytest.mark.parametrize('change',['READ','assignment','inactive','role','org'])
++def test_revocation_dominates_existing_accept_proof(receipt_fixture,change):
++    f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex;command(f,row,'ACCEPT',key=key)
++    with f[1].connect() as c:
++        f[1].lock_principal(c,'executor-a',exclusive=True)
++        if change=='READ':c.execute("UPDATE capability_grants SET active=false WHERE principal_id='executor-a' AND capability='READ'")
++        elif change=='assignment':c.execute("UPDATE run_assignments SET active=false WHERE principal_id='executor-a'")
++        else:c.execute("UPDATE principals SET "+{'inactive':'active=false','role':"role='resource_admin'",'org':"org_id='org-b'"}[change]+" WHERE id='executor-a'")
++    before=records(f);auth=authority_snapshot(f[1])
++    assert recover(f,row,key).status_code==403
++    assert records(f)==before and authority_snapshot(f[1])==auth
++
++
++@pytest.mark.parametrize('field',['preparation_id','case_id','run_id','offer_id','expected_revision','preparation_revision'])
++def test_selection_mismatch_cannot_project_other_case_or_offer(receipt_fixture,field):
++    f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex;command(f,row,'ACCEPT',key=key)
++    params=selection(row);params[field]=params[field]+1 if 'revision' in field else str(uuid4())
++    before=records(f);r=recover(f,row,key,params=params)
++    assert r.status_code==(409 if 'revision' in field else 403) and records(f)==before
++
++
++def test_same_actor_other_case_key_and_non_accept_key_refused(receipt_fixture):
++    f=receipt_fixture;a=offer(f)[0].json();ka=uuid4().hex;command(f,a,'ACCEPT',key=ka)
++    b=offer(f)[0].json();kb=uuid4().hex;command(f,b,'DECLINE',key=kb);before=records(f)
++    assert recover(f,b,ka).status_code==409 and recover(f,b,kb).status_code==409
++    assert records(f)==before
++
++
++@pytest.mark.parametrize('bad',[{'extra':'x'},{'expected_revision':'1.0'},{'expected_revision':'true'},
++                              {'expected_revision':'01'},{'preparation_revision':'0'}])
++def test_strict_recovery_query(receipt_fixture,bad):
++    f=receipt_fixture;row=offer(f)[0].json();params={**selection(row),**bad};before=records(f)
++    assert recover(f,row,uuid4().hex,params=params).status_code==422 and records(f)==before
++
++
++def test_duplicate_query_and_missing_key_refused(receipt_fixture):
++    f=receipt_fixture;row=offer(f)[0].json();params=list(selection(row).items())
++    params.append(('offer_id',row['current_offer']['id']))
++    assert recover(f,row,uuid4().hex,params=params).status_code==422
++    assert f[3].get('/api/service-dispatches/'+row['dispatch_id']+'/accept-recovery',
++                    params=selection(row),headers=headers(f[2],'executor-a')).status_code==422
++
++
++@pytest.mark.parametrize('damage',['dispatch_payload','receipt_payload','receipt_fingerprint','receipt_binding'])
++def test_inconsistent_atomic_proof_is_not_accepted(receipt_fixture,damage):
++    f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex;done=command(f,row,'ACCEPT',key=key).json()
++    with f[1].connect() as c:
++        if damage=='dispatch_payload':c.execute("UPDATE service_dispatch_events SET payload=jsonb_set(payload,'{revision}','true') WHERE request_key=%s",(key,))
++        elif damage=='receipt_payload':c.execute("UPDATE service_receipt_events SET payload=jsonb_set(payload,'{offer_id}',to_jsonb(%s::text)) WHERE step_id=%s",(str(uuid4()),UUID(done['receipt_step_id'])))
++        elif damage=='receipt_fingerprint':c.execute("UPDATE service_receipt_events SET fingerprint=repeat('0',64) WHERE step_id=%s",(UUID(done['receipt_step_id']),))
++        else:c.execute('UPDATE service_receipt_steps SET preparation_revision=preparation_revision+1 WHERE id=%s',(UUID(done['receipt_step_id']),))
++    before=records(f);assert recover(f,row,key).status_code==409 and records(f)==before
++
++
++def test_history_remains_read_only_after_parent_changes_and_original_arrives_later(receipt_fixture):
++    f=receipt_fixture;r,parent,_=offer(f);row=r.json();key=uuid4().hex
++    assert recover(f,row,key).json()['status']=='NOT_OBSERVED'
++    done=command(f,row,'ACCEPT',key=key);assert done.status_code==200
++    changed_materials(f,parent);before=records(f)
++    r=recover(f,row,key);assert r.status_code==200 and r.json()['status']=='COMMITTED'
++    assert r.json()['historical_only'] and r.json()['read_only'] and records(f)==before
+diff --git a/tests/test_dispatch_accept_recovery_browser.py b/tests/test_dispatch_accept_recovery_browser.py
+new file mode 100644
+index 00000000..c5e26edd
+--- /dev/null
++++ b/tests/test_dispatch_accept_recovery_browser.py
+@@ -0,0 +1,118 @@
++"""Chromium -> ordinary subprocess -> owned PG; only explicit synthetic initial authority."""
++import json
++from contextlib import ExitStack
++from urllib.parse import urlsplit
++from uuid import UUID
++
++import pytest
++from playwright.sync_api import sync_playwright,expect
++
++from test_local_synthetic_demo import demo_inputs,prepared,preparation_fixture,receipt_fixture
++from test_local_synthetic_demo_browser import ordinary_demo
++from test_demo_original_page_intake_browser import login
++from test_service_dispatches import offer
++from service_release_acceptance_support import authority_snapshot,case_history
++
++
++def open_dispatch(page):
++    page.locator('[data-tab="collaboration"]').click();page.locator('#dispatch-list').click()
++    item=page.locator('#dispatch-items button').filter(has_text='SYNTHETIC资料准备')
++    expect(item).to_have_count(1,timeout=15000);item.click()
++    expect(page.locator('#dispatch-detail')).to_be_visible(timeout=15000)
++
++
++@pytest.mark.parametrize('mode',['committed_reply_lost','not_observed_then_late','revoked','restart','bad_current'])
++def test_ordinary_accept_lost_reply_cold_recovery_is_get_only(demo_inputs,tmp_path,mode):
++    f,_,pack,_=demo_inputs;parent=prepared(f)
++    # Explicit existing synthetic assignment BEFORE starting the ordinary factory.
++    f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
++    offered=offer(f,parent)[0];assert offered.status_code==201;row=offered.json()
++    baseline=authority_snapshot(f[1]);traffic=[];errors=[];saved=[]
++    with ExitStack() as servers,sync_playwright() as pw:
++        api=servers.enter_context(ordinary_demo(f,tmp_path/'ordinary'))
++        browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
++        context=browser.new_context(viewport=dict(width=320,height=1000));page=context.new_page()
++        page.on('pageerror',lambda e:errors.append(str(e)))
++        page.on('request',lambda r:traffic.append(dict(method=r.method,path=urlsplit(r.url).path)))
++        login(page,api,f,'executor-a');open_dispatch(page)
++        def lost(route):
++            saved.append(dict(headers=route.request.all_headers(),body=route.request.post_data_json,url=route.request.url))
++            if mode!='not_observed_then_late':assert route.fetch().status==200
++            route.abort('failed')
++        page.route('**/api/service-dispatches/*/commands',lost)
++        page.locator('#dispatch-decision-reason').fill('SYNTHETIC private reason never persisted')
++        page.locator('#dispatch-accept').click()
++        expect(page.locator('#dispatch-accept-recover')).to_be_visible(timeout=15000)
++        page.wait_for_function('()=>!dispatchAcceptBusy&&!activeEntryWriteFlow')
++        assert len(saved)==1
++        handles=page.evaluate('()=>Object.entries(localStorage).filter(([n])=>n.startsWith(dispatchAcceptStorage))')
++        assert len(handles)==1 and 'reason' not in handles[0][1] and f[2]['executor-a'] not in handles[0][1]
++        assert all(not r['path'].endswith('/accept-recovery') for r in traffic)
++        def refuse_other_write():
++            # The owner could create a Run. The opaque unresolved lease must
++            # survive identity/navigation before the original view is hydrated.
++            marker=len(traffic)
++            with f[1].connect() as c:count=c.execute('SELECT count(*) n FROM runs').fetchone()['n']
++            page.locator('#token').fill(f[2]['fixture-a'])
++            page.locator('[data-tab="service"]').click()
++            page.locator('#goal').fill('SYNTHETIC must not create while original accept is unknown')
++            page.locator('#intake button').click()
++            expect(page.locator('#result')).to_contain_text('原接单结果待只读核对')
++            assert not any(r['method']=='POST' for r in traffic[marker:])
++            with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==count
++        page.locator('#dispatch-list').click()  # Clears in-memory dispatch presentation.
++        refuse_other_write()
++        if mode=='restart':
++            port=api.base_url.port;servers.close()
++            api=servers.enter_context(ordinary_demo(f,tmp_path/'restart',port=port))
++        # Reload erases all JavaScript state. Ordinary list/read uses persisted opaque key.
++        page.reload();refuse_other_write()
++        page.locator('#token').fill(f[2]['executor-a']);open_dispatch(page)
++        marker=len(traffic);before=case_history(f[1],parent['preparation_id'])
++        if mode=='revoked':
++            with f[1].connect() as c:
++                f[1].lock_principal(c,'executor-a',exclusive=True)
++                c.execute("UPDATE capability_grants SET active=false WHERE principal_id='executor-a' AND capability='READ'")
++        page.locator('#dispatch-accept-recover').click()
++        if mode=='revoked':
++            expect(page.locator('#dispatch-detail')).to_be_hidden(timeout=15000)
++            assert page.evaluate('dispatchView===null&&dispatchContext===null')
++            assert page.evaluate('(name)=>localStorage.getItem(name)',handles[0][0])==handles[0][1]
++        else:
++            page.wait_for_function('()=>!dispatchAcceptBusy')
++            if mode=='not_observed_then_late':
++                assert page.evaluate('dispatchAcceptProof===null')
++                expect(page.locator('#dispatch-accept')).to_be_disabled()
++                assert page.evaluate('(name)=>localStorage.getItem(name)',handles[0][0])==handles[0][1]
++                # Only the captured original request arrives; recovery never sends it.
++                r=api.post(saved[0]['url'],headers=saved[0]['headers'],json=saved[0]['body'])
++                assert r.status_code==200,r.text
++                before=case_history(f[1],parent['preparation_id'])
++                page.locator('#dispatch-accept-recover').click()
++            expect(page.locator('#dispatch-accept-release')).to_be_visible(timeout=15000)
++            if mode=='bad_current':
++                # The real server response is obtained, then this fault harness
++                # corrupts one field. Never claim the backend produced it.
++                path='**/api/service-dispatches/'+row['dispatch_id']
++                def corrupt(route):
++                    reply=route.fetch();assert reply.status==200
++                    data=reply.json();data['history']=None
++                    route.fulfill(response=reply,json=data)
++                page.route(path,corrupt)
++                page.locator('#dispatch-accept-release').click()
++                expect(page.locator('#dispatch-error')).to_contain_text('当前分派与原接单证明不匹配',timeout=15000)
++                assert page.evaluate('(name)=>localStorage.getItem(name)',handles[0][0])==handles[0][1]
++                page.unroute(path,corrupt)
++            page.locator('#dispatch-accept-release').click()
++            expect(page.locator('#dispatch-accept-recover')).to_be_hidden(timeout=15000)
++            expect(page.locator('#dispatch-summary')).to_contain_text('执行者已接单')
++            assert page.evaluate('(name)=>localStorage.getItem(name)',handles[0][0]) is None
++        assert case_history(f[1],parent['preparation_id'])==before
++        assert traffic[marker:] and {r['method'] for r in traffic[marker:]}=={'GET'}
++        assert not errors and page.evaluate('document.documentElement.scrollWidth<=innerWidth')
++        page.screenshot(path=str(tmp_path/(mode+'.png')))
++        (tmp_path/'proof.json').write_text(json.dumps(dict(mode=mode,ordinary_subprocess=True,
++            actual_chromium=True,cold_reload=True,ordinary_API_process_restart=mode=='restart',recovery_requests=traffic[marker:],
++            original_POST_count=len(saved),no_automatic_P3=True,Windows='NOT_RUN'),indent=2)+'\n')
++        context.close();browser.close()
++    if mode!='revoked':assert authority_snapshot(f[1])==baseline
+diff --git a/tests/test_dispatch_accept_recovery_offline.py b/tests/test_dispatch_accept_recovery_offline.py
+new file mode 100644
+index 00000000..43a49476
+--- /dev/null
++++ b/tests/test_dispatch_accept_recovery_offline.py
+@@ -0,0 +1,14 @@
++"""Narrow production reader/context contracts under Node VM, no actual HTTP."""
++import json,subprocess
++from pathlib import Path
++import pytest
++
++@pytest.mark.parametrize('mode',['past','now','one_ms','max','over','zero','far','null','string','boolean',
++    'extra','oversize','malformed','storage_error','limit','other_actor','committed','not_observed',
++    'wrong_proof','replacement','late_200','late_403','outer_case_ABA','outer_identity_ABA','outer_replacement','current_bad_history','current_bad_role','current_bad_revision','current_bad_offer','current_bad_executor','render_failure'])
++def test_actual_accept_recovery_storage_and_async_boundaries(mode):
++    root=Path(__file__).resolve().parents[1]
++    p=subprocess.run(['node',str(Path(__file__).with_name('dispatch_accept_recovery_offline.js')),mode],
++                     cwd=root,capture_output=True,text=True,timeout=15)
++    assert p.returncode==0,p.stderr
++    proof=json.loads(p.stdout);assert proof['POST_stubs']==0 and proof['removals']==0
+diff --git a/tests/test_local_synthetic_demo_browser.py b/tests/test_local_synthetic_demo_browser.py
+index 86c0b929..bcb9bbe3 100644
+--- a/tests/test_local_synthetic_demo_browser.py
++++ b/tests/test_local_synthetic_demo_browser.py
+@@ -17,10 +17,11 @@ from service_release_acceptance_support import authority_snapshot,case_history
+ 
+ 
+ @contextmanager
+-def ordinary_demo(f,directory):
++def ordinary_demo(f,directory,*,port=None):
+     directory.mkdir(parents=True,exist_ok=True)
+     with socket.socket() as sock:
+-        sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
++        sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
++        sock.bind(('127.0.0.1',0 if port is None else port));port=sock.getsockname()[1]
+     root=Path(__file__).resolve().parents[1]
+     env=minimal_environment(os.environ,PYTHONPATH=str(root/'src'),PARKWEAVE_DSN=f[0].dsn,PARKWEAVE_MODE='LOCAL',
+         PARKWEAVE_SERVICE_PROFILE=os.environ['PARKWEAVE_SERVICE_PROFILE'],

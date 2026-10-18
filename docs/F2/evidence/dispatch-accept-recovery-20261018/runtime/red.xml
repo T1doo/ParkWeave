@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="2.396" timestamp="2026-10-18T03:17:56.232267+00:00" hostname="9eff6a810039"><testcase classname="tests.test_dispatch_accept_recovery" name="test_original_accept_committed_and_not_observed_are_read_only" time="2.245"><failure message="AssertionError: {&quot;detail&quot;:&quot;Not Found&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404 Not Found]&gt;.status_code">receipt_fixture = (&lt;parkweave.store.Store object at 0x7fbd2beeb200&gt;, &lt;parkweave.store.Store object at 0x7fbd2beeab40&gt;, {'fixture-a': 'H5...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7fbd2bc15280&gt;)
+
+    def test_original_accept_committed_and_not_observed_are_read_only(receipt_fixture):
+        f=receipt_fixture;row=offer(f)[0].json();key=uuid4().hex
+        before=case_history(f[1],row['preparation_id']);auth=authority_snapshot(f[1])
+        missing=recover(f,row,key)
+&gt;       assert missing.status_code==200,missing.text
+E       AssertionError: {"detail":"Not Found"}
+E       assert 404 == 200
+E        +  where 404 = &lt;Response [404 Not Found]&gt;.status_code
+
+tests/test_dispatch_accept_recovery.py:24: AssertionError</failure></testcase></testsuite></testsuites>

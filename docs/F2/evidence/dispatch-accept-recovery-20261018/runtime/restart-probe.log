@@ -1,0 +1,98 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+______ test_ordinary_accept_lost_reply_cold_recovery_is_get_only[restart] ______
+
+demo_inputs = ((<parkweave.store.Store object at 0x7fcedbd6a0f0>, <parkweave.store.Store object at 0x7fcedbd69ee0>, {'fixture-a': 'z...atabase': {'name': 'fixture_fbd0ad5197bf4eb4b64567d34df10d5c', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-ttl-template-restart-probe-uawo19bx/pytest/test_ordinary_accept_lost_repl0')
+mode = 'restart'
+
+    @pytest.mark.parametrize('mode',['committed_reply_lost','not_observed_then_late','revoked','restart'])
+    def test_ordinary_accept_lost_reply_cold_recovery_is_get_only(demo_inputs,tmp_path,mode):
+        f,_,pack,_=demo_inputs;parent=prepared(f)
+        # Explicit existing synthetic assignment BEFORE starting the ordinary factory.
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        offered=offer(f,parent)[0];assert offered.status_code==201;row=offered.json()
+        baseline=authority_snapshot(f[1]);traffic=[];errors=[];saved=[]
+        with ExitStack() as servers,sync_playwright() as pw:
+            api=servers.enter_context(ordinary_demo(f,tmp_path/'ordinary'))
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            context=browser.new_context(viewport=dict(width=320,height=1000));page=context.new_page()
+            page.on('pageerror',lambda e:errors.append(str(e)))
+            page.on('request',lambda r:traffic.append(dict(method=r.method,path=urlsplit(r.url).path)))
+            login(page,api,f,'executor-a');open_dispatch(page)
+            def lost(route):
+                saved.append(dict(headers=route.request.all_headers(),body=route.request.post_data_json,url=route.request.url))
+                if mode!='not_observed_then_late':assert route.fetch().status==200
+                route.abort('failed')
+            page.route('**/api/service-dispatches/*/commands',lost)
+            page.locator('#dispatch-decision-reason').fill('SYNTHETIC private reason never persisted')
+            page.locator('#dispatch-accept').click()
+            expect(page.locator('#dispatch-accept-recover')).to_be_visible(timeout=15000)
+            page.wait_for_function('()=>!dispatchAcceptBusy&&!activeEntryWriteFlow')
+            assert len(saved)==1
+            handles=page.evaluate('()=>Object.entries(localStorage).filter(([n])=>n.startsWith(dispatchAcceptStorage))')
+            assert len(handles)==1 and 'reason' not in handles[0][1] and f[2]['executor-a'] not in handles[0][1]
+            assert all(not r['path'].endswith('/accept-recovery') for r in traffic)
+            def refuse_other_write():
+                # The owner could create a Run. The opaque unresolved lease must
+                # survive identity/navigation before the original view is hydrated.
+                marker=len(traffic)
+                with f[1].connect() as c:count=c.execute('SELECT count(*) n FROM runs').fetchone()['n']
+                page.locator('#token').fill(f[2]['fixture-a'])
+                page.locator('[data-tab="service"]').click()
+                page.locator('#goal').fill('SYNTHETIC must not create while original accept is unknown')
+                page.locator('#intake button').click()
+                expect(page.locator('#result')).to_contain_text('原接单结果待只读核对')
+                assert not any(r['method']=='POST' for r in traffic[marker:])
+                with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==count
+            page.locator('#dispatch-list').click()  # Clears in-memory dispatch presentation.
+            refuse_other_write()
+            if mode=='restart':
+                port=api.base_url.port;servers.close()
+>               api=servers.enter_context(ordinary_demo(f,tmp_path/'restart',port=port))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_dispatch_accept_recovery_browser.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7fcedbd6a0f0>, <parkweave.store.Store object at 0x7fcedbd69ee0>, {'fixture-a': 'zL...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7fcedae6a870>)
+directory = PosixPath('/tmp/pw-ttl-template-restart-probe-uawo19bx/pytest/test_ordinary_accept_lost_repl0/restart')
+port = 34401
+
+    @contextmanager
+    def ordinary_demo(f,directory,*,port=None):
+        directory.mkdir(parents=True,exist_ok=True)
+        with socket.socket() as sock:
+>           sock.bind(('127.0.0.1',0 if port is None else port));port=sock.getsockname()[1]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           OSError: [Errno 98] Address already in use
+
+tests/test_local_synthetic_demo_browser.py:23: OSError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_dispatch_accept_recovery_browser.py::test_ordinary_accept_lost_reply_cold_recovery_is_get_only[restart]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_dispatch_accept_recovery_browser.py::test_ordinary_accept_lost_reply_cold_recovery_is_get_only[restart]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_dispatch_accept_recovery_browser.py::test_ordinary_accept_lost_reply_cold_recovery_is_get_only[restart]
+1 failed, 4 warnings in 9.55s

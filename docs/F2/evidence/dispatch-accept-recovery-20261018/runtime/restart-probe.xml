@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="9.555" timestamp="2026-10-18T03:37:12.491307+00:00" hostname="9eff6a810039"><testcase classname="tests.test_dispatch_accept_recovery_browser" name="test_ordinary_accept_lost_reply_cold_recovery_is_get_only[restart]" time="8.842"><failure message="OSError: [Errno 98] Address already in use">demo_inputs = ((&lt;parkweave.store.Store object at 0x7fcedbd6a0f0&gt;, &lt;parkweave.store.Store object at 0x7fcedbd69ee0&gt;, {'fixture-a': 'z...atabase': {'name': 'fixture_fbd0ad5197bf4eb4b64567d34df10d5c', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-ttl-template-restart-probe-uawo19bx/pytest/test_ordinary_accept_lost_repl0')
+mode = 'restart'
+
+    @pytest.mark.parametrize('mode',['committed_reply_lost','not_observed_then_late','revoked','restart'])
+    def test_ordinary_accept_lost_reply_cold_recovery_is_get_only(demo_inputs,tmp_path,mode):
+        f,_,pack,_=demo_inputs;parent=prepared(f)
+        # Explicit existing synthetic assignment BEFORE starting the ordinary factory.
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        offered=offer(f,parent)[0];assert offered.status_code==201;row=offered.json()
+        baseline=authority_snapshot(f[1]);traffic=[];errors=[];saved=[]
+        with ExitStack() as servers,sync_playwright() as pw:
+            api=servers.enter_context(ordinary_demo(f,tmp_path/'ordinary'))
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            context=browser.new_context(viewport=dict(width=320,height=1000));page=context.new_page()
+            page.on('pageerror',lambda e:errors.append(str(e)))
+            page.on('request',lambda r:traffic.append(dict(method=r.method,path=urlsplit(r.url).path)))
+            login(page,api,f,'executor-a');open_dispatch(page)
+            def lost(route):
+                saved.append(dict(headers=route.request.all_headers(),body=route.request.post_data_json,url=route.request.url))
+                if mode!='not_observed_then_late':assert route.fetch().status==200
+                route.abort('failed')
+            page.route('**/api/service-dispatches/*/commands',lost)
+            page.locator('#dispatch-decision-reason').fill('SYNTHETIC private reason never persisted')
+            page.locator('#dispatch-accept').click()
+            expect(page.locator('#dispatch-accept-recover')).to_be_visible(timeout=15000)
+            page.wait_for_function('()=&gt;!dispatchAcceptBusy&amp;&amp;!activeEntryWriteFlow')
+            assert len(saved)==1
+            handles=page.evaluate('()=&gt;Object.entries(localStorage).filter(([n])=&gt;n.startsWith(dispatchAcceptStorage))')
+            assert len(handles)==1 and 'reason' not in handles[0][1] and f[2]['executor-a'] not in handles[0][1]
+            assert all(not r['path'].endswith('/accept-recovery') for r in traffic)
+            def refuse_other_write():
+                # The owner could create a Run. The opaque unresolved lease must
+                # survive identity/navigation before the original view is hydrated.
+                marker=len(traffic)
+                with f[1].connect() as c:count=c.execute('SELECT count(*) n FROM runs').fetchone()['n']
+                page.locator('#token').fill(f[2]['fixture-a'])
+                page.locator('[data-tab="service"]').click()
+                page.locator('#goal').fill('SYNTHETIC must not create while original accept is unknown')
+                page.locator('#intake button').click()
+                expect(page.locator('#result')).to_contain_text('原接单结果待只读核对')
+                assert not any(r['method']=='POST' for r in traffic[marker:])
+                with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==count
+            page.locator('#dispatch-list').click()  # Clears in-memory dispatch presentation.
+            refuse_other_write()
+            if mode=='restart':
+                port=api.base_url.port;servers.close()
+&gt;               api=servers.enter_context(ordinary_demo(f,tmp_path/'restart',port=port))
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_dispatch_accept_recovery_browser.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:526: in enter_context
+    result = _enter(cm)
+             ^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7fcedbd6a0f0&gt;, &lt;parkweave.store.Store object at 0x7fcedbd69ee0&gt;, {'fixture-a': 'zL...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7fcedae6a870&gt;)
+directory = PosixPath('/tmp/pw-ttl-template-restart-probe-uawo19bx/pytest/test_ordinary_accept_lost_repl0/restart')
+port = 34401
+
+    @contextmanager
+    def ordinary_demo(f,directory,*,port=None):
+        directory.mkdir(parents=True,exist_ok=True)
+        with socket.socket() as sock:
+&gt;           sock.bind(('127.0.0.1',0 if port is None else port));port=sock.getsockname()[1]
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E           OSError: [Errno 98] Address already in use
+
+tests/test_local_synthetic_demo_browser.py:23: OSError</failure></testcase></testsuite></testsuites>

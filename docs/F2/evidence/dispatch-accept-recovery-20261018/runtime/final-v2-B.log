@@ -1,0 +1,52 @@
+........................................................................ [ 27%]
+...................................F.................................... [ 54%]
+........................................................................ [ 81%]
+..................................................                       [100%]
+=================================== FAILURES ===================================
+___ test_actual_resource_expiry_during_last_lifecycle_lock_wait_is_read_only ___
+
+link_fixture = (<parkweave.store.Store object at 0x7fe67b19f770>, <parkweave.store.Store object at 0x7fe67b4f9a30>, {'fixture-a': 'Zb...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7fe6805b3470>)
+
+    def test_actual_resource_expiry_during_last_lifecycle_lock_wait_is_read_only(link_fixture):
+     f=link_fixture;p,g,d,s=complete(f,local=True)
+     with f[1].connect() as c:c.execute("UPDATE synthetic_resource_holds SET starts_at=clock_timestamp()-interval '1 minute',ends_at=clock_timestamp()+interval '2 seconds' WHERE id IN (SELECT hold_id FROM synthetic_resource_combination_members WHERE combination_id=%s)",(g['id'],))
+     for adapter in ('P2','P3','P4'):verified(f,p,adapter)
+>    assert local_act(f,p,local_read(f,p).json(),'REVALIDATE').status_code==200;row=verified(f,p,'P5');key=row['command_receipt']['request_key'];before=snapshot(f)
+                                                                                    ^^^^^^^^^^^^^^^^^^
+
+tests/test_service_plan_recovery.py:115: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7fe67b19f770>, <parkweave.store.Store object at 0x7fe67b4f9a30>, {'fixture-a': 'Zb...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7fe6805b3470>)
+p = {'preparation_id': '2dd3327f-365a-41da-9e05-caa5473acba3', 'case_id': 'd9ddb800-d2fb-44cf-9c02-028f0a12be4e', 'run_id': '482fa3e8-a5ec-44a6-8e7a-7f74c7f07825', 'revision': 11, ...}
+adapter = 'P5'
+
+    def verified(f, p, adapter):
+        r = command(f, p, adapter)
+>       assert r.status_code == 200, r.text
+E       AssertionError: {"detail":"adapter sources, binding, reported obstacle or predecessors need recheck"}
+E       assert 409 == 200
+E        +  where 409 = <Response [409 Conflict]>.status_code
+
+tests/test_service_case_steps.py:71: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_version_compare_browser.py::test_file_v2_compare_original_correction_review_confirm_and_cold_restart
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_service_plan_recovery.py::test_actual_resource_expiry_during_last_lifecycle_lock_wait_is_read_only
+1 failed, 265 passed, 4 warnings in 1122.95s (0:18:42)

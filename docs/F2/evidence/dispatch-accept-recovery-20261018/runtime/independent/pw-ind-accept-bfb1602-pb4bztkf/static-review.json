@@ -1,0 +1,85 @@
+{
+  "source_sha": "bfb16026a5bcfcdca101a69f357157d5f1c4a490",
+  "status": "STATIC_PASS_EXECUTION_NOT_RUN",
+  "static_blockers": 0,
+  "tests_executed": 0,
+  "product_src_tree": "e0f8443127b49b5feb9e1b880e8998ca67b5c404",
+  "product_bytes_equal_previous_source_sha": "35031ba7334006089889f6488dfbe1feb5bc10b4",
+  "reviewed_full_feature_reference": "/workspace/ParkWeave/.runtime/dispatch-accept-recovery-20261018/independent/pw-ind-accept-35031ba-06ghhj3g/static-review.json",
+  "full_changed_files": [
+    "src/parkweave/api.py",
+    "src/parkweave/service_dispatches.py",
+    "src/parkweave/web.html",
+    "tests/case_cancellation_offline.js",
+    "tests/case_cancellation_reconciliation_offline.js",
+    "tests/dispatch_accept_recovery_offline.js",
+    "tests/pending_receipt_handoff_offline.js",
+    "tests/test_dispatch_accept_recovery.py",
+    "tests/test_dispatch_accept_recovery_browser.py",
+    "tests/test_dispatch_accept_recovery_offline.py",
+    "tests/test_local_synthetic_demo_browser.py"
+  ],
+  "incremental_test_files": [
+    "tests/case_cancellation_offline.js",
+    "tests/case_cancellation_reconciliation_offline.js",
+    "tests/test_dispatch_accept_recovery_browser.py",
+    "tests/test_local_synthetic_demo_browser.py"
+  ],
+  "incremental_file_sha256": {
+    "tests/case_cancellation_offline.js": "481902fcb71f9589e69dc6ec9762dcad700e5ce0fc8b7853f9f3b627a7283baf",
+    "tests/case_cancellation_reconciliation_offline.js": "487c9d6425376a401a7b584930c8a6e35da899ef28de2c940a4a10d121a6cb7a",
+    "tests/test_dispatch_accept_recovery_browser.py": "ef675a4c43fb1fa3adfe31b5b3937edefc042c6bbf3666ddf7b7c45c74e7b217",
+    "tests/test_local_synthetic_demo_browser.py": "65ce4ca9682579dcdd7f294d85a7ef46c4e5696fb947fb155f146a022f764dc4"
+  },
+  "incremental_findings": [
+    {
+      "files": [
+        "tests/case_cancellation_offline.js",
+        "tests/case_cancellation_reconciliation_offline.js"
+      ],
+      "status": "NO_STATIC_BLOCKER",
+      "detail": "Two cancellation Node surrogates extract actual production ACCEPT storage/read helper block and supply actor_ref; original canceled/reconciling controls assertions retained."
+    },
+    {
+      "file": "tests/test_dispatch_accept_recovery_browser.py",
+      "status": "NO_STATIC_BLOCKER",
+      "detail": "Fifth case obtains real current GET response then explicitly corrupts history in Playwright route; original raw key preservation checked before removing the fault and successful original GET release. This is transport fault injection, not claimed backend corruption."
+    },
+    {
+      "file": "tests/test_local_synthetic_demo_browser.py",
+      "status": "NO_STATIC_BLOCKER",
+      "detail": "SO_REUSEADDR applies only to owned loopback socket preflight for same-origin restart. No unknown process killed; default remains ephemeral port and original 15s deadline unchanged."
+    }
+  ],
+  "shared_prepost": {
+    "input_count": 745,
+    "pre_mismatches": 0,
+    "post": "NOT_RUN_PENDING"
+  },
+  "mirror_prepost": {
+    "input_count": 745,
+    "pre_mismatches": 0,
+    "post": "NOT_RUN_PENDING"
+  },
+  "recommended_modules": [
+    "tests/test_dispatch_accept_recovery.py",
+    "tests/test_dispatch_accept_recovery_offline.py",
+    "tests/test_dispatch_accept_recovery_browser.py",
+    "tests/test_pending_receipt_handoff_offline.py"
+  ],
+  "source_literal_param_counts": {
+    "tests/test_dispatch_accept_recovery.py": 31,
+    "tests/test_dispatch_accept_recovery_offline.py": 31,
+    "tests/test_dispatch_accept_recovery_browser.py": 5,
+    "tests/test_pending_receipt_handoff_offline.py": 9
+  },
+  "recommended_count": 76,
+  "overlap_with_parent_main": true,
+  "execution_limits": [
+    "No pytest collection/execution, Node, DB, API, browser or network started in this phase.",
+    "Actual module import origins will be collected during later authorized execution; not yet observed.",
+    "Previous35031 mirror and static evidence remain unchanged; neither75 nor76 independent tests have been run.",
+    "Source unchanged does not transfer parent35031 partial results to bfb final result.",
+    "Fixture grants/Run assignment are owned synthetic pre-process inputs; no real authorization, external service, real fulfillment, Windows or formal AT claim."
+  ]
+}

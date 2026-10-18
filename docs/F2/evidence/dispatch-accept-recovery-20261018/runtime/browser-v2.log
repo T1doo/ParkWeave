@@ -1,0 +1,418 @@
+FFF                                                                      [100%]
+=================================== FAILURES ===================================
+_ test_ordinary_accept_lost_reply_cold_recovery_is_get_only[committed_reply_lost] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7fe6f4392cc0>, <parkweave.store.Store object at 0x7fe6f4392f00>, {'fixture-a': 'N...atabase': {'name': 'fixture_cd98232735a84b1688ee10ac6b545fb8', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-ttl-template-browser-v2-r26i4txx/pytest/test_ordinary_accept_lost_repl0')
+mode = 'committed_reply_lost'
+
+    @pytest.mark.parametrize('mode',['committed_reply_lost','not_observed_then_late','revoked'])
+    def test_ordinary_accept_lost_reply_cold_recovery_is_get_only(demo_inputs,tmp_path,mode):
+        f,_,pack,_=demo_inputs;parent=prepared(f)
+        # Explicit existing synthetic assignment BEFORE starting the ordinary factory.
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        offered=offer(f,parent)[0];assert offered.status_code==201;row=offered.json()
+        baseline=authority_snapshot(f[1]);traffic=[];errors=[];saved=[]
+        with ordinary_demo(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            context=browser.new_context(viewport=dict(width=320,height=1000));page=context.new_page()
+            page.on('pageerror',lambda e:errors.append(str(e)))
+            page.on('request',lambda r:traffic.append(dict(method=r.method,path=urlsplit(r.url).path)))
+            login(page,api,f,'executor-a');open_dispatch(page)
+            def lost(route):
+                saved.append(dict(headers=route.request.all_headers(),body=route.request.post_data_json,url=route.request.url))
+                if mode!='not_observed_then_late':assert route.fetch().status==200
+                route.abort('failed')
+            page.route('**/api/service-dispatches/*/commands',lost)
+            page.locator('#dispatch-decision-reason').fill('SYNTHETIC private reason never persisted')
+            page.locator('#dispatch-accept').click()
+            expect(page.locator('#dispatch-accept-recover')).to_be_visible(timeout=15000)
+            page.wait_for_function('()=>!dispatchAcceptBusy&&!activeEntryWriteFlow')
+            assert len(saved)==1
+            handles=page.evaluate('()=>Object.entries(localStorage).filter(([n])=>n.startsWith(dispatchAcceptStorage))')
+            assert len(handles)==1 and 'reason' not in handles[0][1] and f[2]['executor-a'] not in handles[0][1]
+            assert all(not r['path'].endswith('/accept-recovery') for r in traffic)
+            def refuse_other_write():
+                # The owner could create a Run. The opaque unresolved lease must
+                # survive identity/navigation before the original view is hydrated.
+                marker=len(traffic)
+                with f[1].connect() as c:count=c.execute('SELECT count(*) n FROM runs').fetchone()['n']
+                page.locator('#token').fill(f[2]['fixture-a'])
+                page.locator('[data-tab="service"]').click()
+                page.locator('#goal').fill('SYNTHETIC must not create while original accept is unknown')
+                page.locator('#intake button').click()
+                expect(page.locator('#result')).to_contain_text('原接单结果待只读核对')
+                assert not any(r['method']=='POST' for r in traffic[marker:])
+                with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==count
+            page.locator('#dispatch-list').click()  # Clears in-memory dispatch presentation.
+>           refuse_other_write()
+
+tests/test_dispatch_accept_recovery_browser.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def refuse_other_write():
+        # The owner could create a Run. The opaque unresolved lease must
+        # survive identity/navigation before the original view is hydrated.
+        marker=len(traffic)
+        with f[1].connect() as c:count=c.execute('SELECT count(*) n FROM runs').fetchone()['n']
+        page.locator('#token').fill(f[2]['fixture-a'])
+        page.locator('[data-tab="service"]').click()
+        page.locator('#goal').fill('SYNTHETIC must not create while original accept is unknown')
+        page.locator('#intake button').click()
+>       expect(page.locator('#result')).to_contain_text('原接单结果待只读核对')
+E       AssertionError: Locator expected to contain text '原接单结果待只读核对'
+E       Actual value: 暂无记录 
+E       Call log:
+E         - Expect "to_contain_text" with timeout 5000ms
+E         - waiting for locator("#result")
+E           13 × locator resolved to <pre id="result" aria-live="polite">暂无记录</pre>
+E              - unexpected value "暂无记录"
+E       
+E       Aria snapshot:
+E       - banner:
+E         - heading "园合 ParkWeave" [level=1]
+E         - paragraph: 企业说目标，园区交付服务。
+E         - text: 合成工程验证 未接入真实园区或模型
+E       - navigation "工作区":
+E         - button "服务"
+E         - button "协同"
+E         - button "资源"
+E       - text: 合成身份会话
+E       - textbox "合成身份会话":
+E         - /placeholder: 输入本机测试会话
+E       - text: 仅用于本机合成测试。会话只保存在当前页面内存；切换身份会清空当前界面。
+E       - heading "读取已有资料准备记录" [level=2]
+E       - paragraph: 输入当前会话及原资料准备编号。只读核对本人或获派范围、当前专员和目录，再进入原材料与来源修订入口。此入口只接受本地合成资料；读取不会创建记录、分派或批准。
+E       - text: 原资料准备编号
+E       - textbox "原资料准备编号"
+E       - button "只读打开已有记录"
+E       - status
+E       - heading "正式资料来源 · 入口条件" [level=2]
+E       - paragraph: 核对当前已有会话的只读权限和正式来源接线条件。正式来源须独立证明资料、Case、Run、已采纳方案及当前主体授权；合成资料编号、批准或签名不能代替这些证明。
+E       - button "只读核对正式入口条件"
+E       - status
+E       - paragraph: SERVICE · 服务
+E       - heading "从一件企业诉求开始" [level=2]
+E       - paragraph: 描述目标，准备材料，核对每一步的本地记录。
+E       - article:
+E         - heading "按当前服务配置准备新事项" [level=3]
+E         - paragraph: 此入口由服务端单独启用。只准备原请求；每一步由你另行确认提交。不会自动选择方案、采用或办理，也不会释放资源。
+E         - button "读取本人当前服务配置"
+E         - button "仅GET核对原新事项请求" [disabled]
+E         - status
+E       - heading "提出服务诉求" [level=3]
+E       - text: 本次目标
+E       - textbox "本次目标":
+E         - /placeholder: 描述本次测试目标
+E       - button "创建本地办理记录"
+E       - paragraph: 本增量仅建立待补件记录，不代表外部受理或线下履约。
+E       - separator
+E       - heading "服务资料准备" [level=2]
+E       - paragraph: 合成服务：企业资料整理。提交带来源的资料，由获派专员人工核对后，企业确认本地资料包。资格未判定，外部服务未受理。
+E       - button "查看可选服务与专员"
+E       - group: 补充企业事实与必要澄清 · 合成数据
+E       - group: 本地运行记录 · 工程验证
+E       - heading "读取已保存的本地报告历史" [level=3]
+E       - paragraph: 使用原事项和请求编号，只读核对已保存的报告与企业决定。当前权限仍须有效；不会重新生成报告、提交回执或自动核对。服务未启用或原授权不可用时保持拒绝。
+E       - text: 原资料事项编号
+E       - textbox "原资料事项编号"
+E       - text: 原请求编号
+E       - textbox "原请求编号"
+E       - button "只读核对原历史"
+E       - alert
+E       - heading "未支持目标的人工请求与补证" [level=2]
+E       - paragraph: 仅向原资料专员请求人工核对。请求发出、接责或补交材料都不代表服务已提供、外部受理或批准；全部目标保留，整体仍为 PARTIAL。
+E       - text: 原资料事项编号
+E       - textbox "原资料事项编号"
+E       - button "读取人工请求"
+E       - button "查看当前资料事项的人工请求"
+E       - button "只读核对原请求结果"
+E       - status
+E       - alert
+
+tests/test_dispatch_accept_recovery_browser.py:58: AssertionError
+_ test_ordinary_accept_lost_reply_cold_recovery_is_get_only[not_observed_then_late] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7fe6f2be7860>, <parkweave.store.Store object at 0x7fe6f43906b0>, {'fixture-a': 'K...atabase': {'name': 'fixture_bc288354d785463e920edd34fc84a85c', 'oid': 17356, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-ttl-template-browser-v2-r26i4txx/pytest/test_ordinary_accept_lost_repl1')
+mode = 'not_observed_then_late'
+
+    @pytest.mark.parametrize('mode',['committed_reply_lost','not_observed_then_late','revoked'])
+    def test_ordinary_accept_lost_reply_cold_recovery_is_get_only(demo_inputs,tmp_path,mode):
+        f,_,pack,_=demo_inputs;parent=prepared(f)
+        # Explicit existing synthetic assignment BEFORE starting the ordinary factory.
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        offered=offer(f,parent)[0];assert offered.status_code==201;row=offered.json()
+        baseline=authority_snapshot(f[1]);traffic=[];errors=[];saved=[]
+        with ordinary_demo(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            context=browser.new_context(viewport=dict(width=320,height=1000));page=context.new_page()
+            page.on('pageerror',lambda e:errors.append(str(e)))
+            page.on('request',lambda r:traffic.append(dict(method=r.method,path=urlsplit(r.url).path)))
+            login(page,api,f,'executor-a');open_dispatch(page)
+            def lost(route):
+                saved.append(dict(headers=route.request.all_headers(),body=route.request.post_data_json,url=route.request.url))
+                if mode!='not_observed_then_late':assert route.fetch().status==200
+                route.abort('failed')
+            page.route('**/api/service-dispatches/*/commands',lost)
+            page.locator('#dispatch-decision-reason').fill('SYNTHETIC private reason never persisted')
+            page.locator('#dispatch-accept').click()
+            expect(page.locator('#dispatch-accept-recover')).to_be_visible(timeout=15000)
+            page.wait_for_function('()=>!dispatchAcceptBusy&&!activeEntryWriteFlow')
+            assert len(saved)==1
+            handles=page.evaluate('()=>Object.entries(localStorage).filter(([n])=>n.startsWith(dispatchAcceptStorage))')
+            assert len(handles)==1 and 'reason' not in handles[0][1] and f[2]['executor-a'] not in handles[0][1]
+            assert all(not r['path'].endswith('/accept-recovery') for r in traffic)
+            def refuse_other_write():
+                # The owner could create a Run. The opaque unresolved lease must
+                # survive identity/navigation before the original view is hydrated.
+                marker=len(traffic)
+                with f[1].connect() as c:count=c.execute('SELECT count(*) n FROM runs').fetchone()['n']
+                page.locator('#token').fill(f[2]['fixture-a'])
+                page.locator('[data-tab="service"]').click()
+                page.locator('#goal').fill('SYNTHETIC must not create while original accept is unknown')
+                page.locator('#intake button').click()
+                expect(page.locator('#result')).to_contain_text('原接单结果待只读核对')
+                assert not any(r['method']=='POST' for r in traffic[marker:])
+                with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==count
+            page.locator('#dispatch-list').click()  # Clears in-memory dispatch presentation.
+>           refuse_other_write()
+
+tests/test_dispatch_accept_recovery_browser.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def refuse_other_write():
+        # The owner could create a Run. The opaque unresolved lease must
+        # survive identity/navigation before the original view is hydrated.
+        marker=len(traffic)
+        with f[1].connect() as c:count=c.execute('SELECT count(*) n FROM runs').fetchone()['n']
+        page.locator('#token').fill(f[2]['fixture-a'])
+        page.locator('[data-tab="service"]').click()
+        page.locator('#goal').fill('SYNTHETIC must not create while original accept is unknown')
+        page.locator('#intake button').click()
+>       expect(page.locator('#result')).to_contain_text('原接单结果待只读核对')
+E       AssertionError: Locator expected to contain text '原接单结果待只读核对'
+E       Actual value: 暂无记录 
+E       Call log:
+E         - Expect "to_contain_text" with timeout 5000ms
+E         - waiting for locator("#result")
+E           13 × locator resolved to <pre id="result" aria-live="polite">暂无记录</pre>
+E              - unexpected value "暂无记录"
+E       
+E       Aria snapshot:
+E       - banner:
+E         - heading "园合 ParkWeave" [level=1]
+E         - paragraph: 企业说目标，园区交付服务。
+E         - text: 合成工程验证 未接入真实园区或模型
+E       - navigation "工作区":
+E         - button "服务"
+E         - button "协同"
+E         - button "资源"
+E       - text: 合成身份会话
+E       - textbox "合成身份会话":
+E         - /placeholder: 输入本机测试会话
+E       - text: 仅用于本机合成测试。会话只保存在当前页面内存；切换身份会清空当前界面。
+E       - heading "读取已有资料准备记录" [level=2]
+E       - paragraph: 输入当前会话及原资料准备编号。只读核对本人或获派范围、当前专员和目录，再进入原材料与来源修订入口。此入口只接受本地合成资料；读取不会创建记录、分派或批准。
+E       - text: 原资料准备编号
+E       - textbox "原资料准备编号"
+E       - button "只读打开已有记录"
+E       - status
+E       - heading "正式资料来源 · 入口条件" [level=2]
+E       - paragraph: 核对当前已有会话的只读权限和正式来源接线条件。正式来源须独立证明资料、Case、Run、已采纳方案及当前主体授权；合成资料编号、批准或签名不能代替这些证明。
+E       - button "只读核对正式入口条件"
+E       - status
+E       - paragraph: SERVICE · 服务
+E       - heading "从一件企业诉求开始" [level=2]
+E       - paragraph: 描述目标，准备材料，核对每一步的本地记录。
+E       - article:
+E         - heading "按当前服务配置准备新事项" [level=3]
+E         - paragraph: 此入口由服务端单独启用。只准备原请求；每一步由你另行确认提交。不会自动选择方案、采用或办理，也不会释放资源。
+E         - button "读取本人当前服务配置"
+E         - button "仅GET核对原新事项请求" [disabled]
+E         - status
+E       - heading "提出服务诉求" [level=3]
+E       - text: 本次目标
+E       - textbox "本次目标":
+E         - /placeholder: 描述本次测试目标
+E       - button "创建本地办理记录"
+E       - paragraph: 本增量仅建立待补件记录，不代表外部受理或线下履约。
+E       - separator
+E       - heading "服务资料准备" [level=2]
+E       - paragraph: 合成服务：企业资料整理。提交带来源的资料，由获派专员人工核对后，企业确认本地资料包。资格未判定，外部服务未受理。
+E       - button "查看可选服务与专员"
+E       - group: 补充企业事实与必要澄清 · 合成数据
+E       - group: 本地运行记录 · 工程验证
+E       - heading "读取已保存的本地报告历史" [level=3]
+E       - paragraph: 使用原事项和请求编号，只读核对已保存的报告与企业决定。当前权限仍须有效；不会重新生成报告、提交回执或自动核对。服务未启用或原授权不可用时保持拒绝。
+E       - text: 原资料事项编号
+E       - textbox "原资料事项编号"
+E       - text: 原请求编号
+E       - textbox "原请求编号"
+E       - button "只读核对原历史"
+E       - alert
+E       - heading "未支持目标的人工请求与补证" [level=2]
+E       - paragraph: 仅向原资料专员请求人工核对。请求发出、接责或补交材料都不代表服务已提供、外部受理或批准；全部目标保留，整体仍为 PARTIAL。
+E       - text: 原资料事项编号
+E       - textbox "原资料事项编号"
+E       - button "读取人工请求"
+E       - button "查看当前资料事项的人工请求"
+E       - button "只读核对原请求结果"
+E       - status
+E       - alert
+
+tests/test_dispatch_accept_recovery_browser.py:58: AssertionError
+______ test_ordinary_accept_lost_reply_cold_recovery_is_get_only[revoked] ______
+
+demo_inputs = ((<parkweave.store.Store object at 0x7fe6f2bbad50>, <parkweave.store.Store object at 0x7fe6f26e6510>, {'fixture-a': 'K...atabase': {'name': 'fixture_dd9bdc8d6430416892918ee19b2c7c83', 'oid': 18327, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-ttl-template-browser-v2-r26i4txx/pytest/test_ordinary_accept_lost_repl2')
+mode = 'revoked'
+
+    @pytest.mark.parametrize('mode',['committed_reply_lost','not_observed_then_late','revoked'])
+    def test_ordinary_accept_lost_reply_cold_recovery_is_get_only(demo_inputs,tmp_path,mode):
+        f,_,pack,_=demo_inputs;parent=prepared(f)
+        # Explicit existing synthetic assignment BEFORE starting the ordinary factory.
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        offered=offer(f,parent)[0];assert offered.status_code==201;row=offered.json()
+        baseline=authority_snapshot(f[1]);traffic=[];errors=[];saved=[]
+        with ordinary_demo(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            context=browser.new_context(viewport=dict(width=320,height=1000));page=context.new_page()
+            page.on('pageerror',lambda e:errors.append(str(e)))
+            page.on('request',lambda r:traffic.append(dict(method=r.method,path=urlsplit(r.url).path)))
+            login(page,api,f,'executor-a');open_dispatch(page)
+            def lost(route):
+                saved.append(dict(headers=route.request.all_headers(),body=route.request.post_data_json,url=route.request.url))
+                if mode!='not_observed_then_late':assert route.fetch().status==200
+                route.abort('failed')
+            page.route('**/api/service-dispatches/*/commands',lost)
+            page.locator('#dispatch-decision-reason').fill('SYNTHETIC private reason never persisted')
+            page.locator('#dispatch-accept').click()
+            expect(page.locator('#dispatch-accept-recover')).to_be_visible(timeout=15000)
+            page.wait_for_function('()=>!dispatchAcceptBusy&&!activeEntryWriteFlow')
+            assert len(saved)==1
+            handles=page.evaluate('()=>Object.entries(localStorage).filter(([n])=>n.startsWith(dispatchAcceptStorage))')
+            assert len(handles)==1 and 'reason' not in handles[0][1] and f[2]['executor-a'] not in handles[0][1]
+            assert all(not r['path'].endswith('/accept-recovery') for r in traffic)
+            def refuse_other_write():
+                # The owner could create a Run. The opaque unresolved lease must
+                # survive identity/navigation before the original view is hydrated.
+                marker=len(traffic)
+                with f[1].connect() as c:count=c.execute('SELECT count(*) n FROM runs').fetchone()['n']
+                page.locator('#token').fill(f[2]['fixture-a'])
+                page.locator('[data-tab="service"]').click()
+                page.locator('#goal').fill('SYNTHETIC must not create while original accept is unknown')
+                page.locator('#intake button').click()
+                expect(page.locator('#result')).to_contain_text('原接单结果待只读核对')
+                assert not any(r['method']=='POST' for r in traffic[marker:])
+                with f[1].connect() as c:assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==count
+            page.locator('#dispatch-list').click()  # Clears in-memory dispatch presentation.
+>           refuse_other_write()
+
+tests/test_dispatch_accept_recovery_browser.py:62: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+    def refuse_other_write():
+        # The owner could create a Run. The opaque unresolved lease must
+        # survive identity/navigation before the original view is hydrated.
+        marker=len(traffic)
+        with f[1].connect() as c:count=c.execute('SELECT count(*) n FROM runs').fetchone()['n']
+        page.locator('#token').fill(f[2]['fixture-a'])
+        page.locator('[data-tab="service"]').click()
+        page.locator('#goal').fill('SYNTHETIC must not create while original accept is unknown')
+        page.locator('#intake button').click()
+>       expect(page.locator('#result')).to_contain_text('原接单结果待只读核对')
+E       AssertionError: Locator expected to contain text '原接单结果待只读核对'
+E       Actual value: 暂无记录 
+E       Call log:
+E         - Expect "to_contain_text" with timeout 5000ms
+E         - waiting for locator("#result")
+E           13 × locator resolved to <pre id="result" aria-live="polite">暂无记录</pre>
+E              - unexpected value "暂无记录"
+E       
+E       Aria snapshot:
+E       - banner:
+E         - heading "园合 ParkWeave" [level=1]
+E         - paragraph: 企业说目标，园区交付服务。
+E         - text: 合成工程验证 未接入真实园区或模型
+E       - navigation "工作区":
+E         - button "服务"
+E         - button "协同"
+E         - button "资源"
+E       - text: 合成身份会话
+E       - textbox "合成身份会话":
+E         - /placeholder: 输入本机测试会话
+E       - text: 仅用于本机合成测试。会话只保存在当前页面内存；切换身份会清空当前界面。
+E       - heading "读取已有资料准备记录" [level=2]
+E       - paragraph: 输入当前会话及原资料准备编号。只读核对本人或获派范围、当前专员和目录，再进入原材料与来源修订入口。此入口只接受本地合成资料；读取不会创建记录、分派或批准。
+E       - text: 原资料准备编号
+E       - textbox "原资料准备编号"
+E       - button "只读打开已有记录"
+E       - status
+E       - heading "正式资料来源 · 入口条件" [level=2]
+E       - paragraph: 核对当前已有会话的只读权限和正式来源接线条件。正式来源须独立证明资料、Case、Run、已采纳方案及当前主体授权；合成资料编号、批准或签名不能代替这些证明。
+E       - button "只读核对正式入口条件"
+E       - status
+E       - paragraph: SERVICE · 服务
+E       - heading "从一件企业诉求开始" [level=2]
+E       - paragraph: 描述目标，准备材料，核对每一步的本地记录。
+E       - article:
+E         - heading "按当前服务配置准备新事项" [level=3]
+E         - paragraph: 此入口由服务端单独启用。只准备原请求；每一步由你另行确认提交。不会自动选择方案、采用或办理，也不会释放资源。
+E         - button "读取本人当前服务配置"
+E         - button "仅GET核对原新事项请求" [disabled]
+E         - status
+E       - heading "提出服务诉求" [level=3]
+E       - text: 本次目标
+E       - textbox "本次目标":
+E         - /placeholder: 描述本次测试目标
+E       - button "创建本地办理记录"
+E       - paragraph: 本增量仅建立待补件记录，不代表外部受理或线下履约。
+E       - separator
+E       - heading "服务资料准备" [level=2]
+E       - paragraph: 合成服务：企业资料整理。提交带来源的资料，由获派专员人工核对后，企业确认本地资料包。资格未判定，外部服务未受理。
+E       - button "查看可选服务与专员"
+E       - group: 补充企业事实与必要澄清 · 合成数据
+E       - group: 本地运行记录 · 工程验证
+E       - heading "读取已保存的本地报告历史" [level=3]
+E       - paragraph: 使用原事项和请求编号，只读核对已保存的报告与企业决定。当前权限仍须有效；不会重新生成报告、提交回执或自动核对。服务未启用或原授权不可用时保持拒绝。
+E       - text: 原资料事项编号
+E       - textbox "原资料事项编号"
+E       - text: 原请求编号
+E       - textbox "原请求编号"
+E       - button "只读核对原历史"
+E       - alert
+E       - heading "未支持目标的人工请求与补证" [level=2]
+E       - paragraph: 仅向原资料专员请求人工核对。请求发出、接责或补交材料都不代表服务已提供、外部受理或批准；全部目标保留，整体仍为 PARTIAL。
+E       - text: 原资料事项编号
+E       - textbox "原资料事项编号"
+E       - button "读取人工请求"
+E       - button "查看当前资料事项的人工请求"
+E       - button "只读核对原请求结果"
+E       - status
+E       - alert
+
+tests/test_dispatch_accept_recovery_browser.py:58: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_dispatch_accept_recovery_browser.py::test_ordinary_accept_lost_reply_cold_recovery_is_get_only[committed_reply_lost]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_dispatch_accept_recovery_browser.py::test_ordinary_accept_lost_reply_cold_recovery_is_get_only[committed_reply_lost]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_dispatch_accept_recovery_browser.py::test_ordinary_accept_lost_reply_cold_recovery_is_get_only[committed_reply_lost]
+FAILED tests/test_dispatch_accept_recovery_browser.py::test_ordinary_accept_lost_reply_cold_recovery_is_get_only[not_observed_then_late]
+FAILED tests/test_dispatch_accept_recovery_browser.py::test_ordinary_accept_lost_reply_cold_recovery_is_get_only[revoked]
+3 failed, 4 warnings in 35.84s

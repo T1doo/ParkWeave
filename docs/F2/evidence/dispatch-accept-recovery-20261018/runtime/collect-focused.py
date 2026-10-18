@@ -1,0 +1,6 @@
+from pathlib import Path
+import os,sys,json,subprocess,time
+from parkweave.process_env import minimal_environment
+root=Path('/workspace/ParkWeave');r=root/'.runtime/dispatch-accept-recovery-20261018';plan=json.load(open(r/'final-focused-plan.json'));modules=plan['shards']['A']+plan['shards']['B'];argv=[sys.executable,'-B','-m','pytest','--collect-only','-q','-p','no:cacheprovider','--rootdir='+str(root),*modules]
+env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join(str(root/p) for p in ['tests','src','.']),PYTHONDONTWRITEBYTECODE='1');start=time.time();p=subprocess.run(argv,cwd=root,env=env,capture_output=True,text=True);(r/'final-focused-node-collection.log').write_text(p.stdout+p.stderr);ids=[x for x in p.stdout.splitlines() if x.startswith('tests/') and '::' in x]
+result=dict(source_sha=plan['source_sha'],argv=argv,cwd=str(root),exit_code=p.returncode,elapsed_seconds=time.time()-start,collected_count=len(ids),unique=len(set(ids)),test_nodes=ids,kind='COLLECTION_ONLY',executed_tests=0);(r/'final-focused-node-collection.json').write_text(json.dumps(result,indent=2)+'\n');assert p.returncode==0 and len(ids)==len(set(ids))==161;print('161 unique nodes collected;0 tests run')
