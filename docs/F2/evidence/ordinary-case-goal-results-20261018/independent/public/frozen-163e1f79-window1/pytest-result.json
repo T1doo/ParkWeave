@@ -1,0 +1,215 @@
+{
+  "collected": [
+    {
+      "name": "test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline",
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline",
+      "path": "/workspace/ParkWeave/.runtime/ordinary-case-goal-results-20261018/independent/frozen-163e1f79-window1/mirror/tests/test_independent_ordinary_goal_results.py"
+    },
+    {
+      "name": "test_manual_correction_history_current_v2_and_cold_source_hash",
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_manual_correction_history_current_v2_and_cold_source_hash",
+      "path": "/workspace/ParkWeave/.runtime/ordinary-case-goal-results-20261018/independent/frozen-163e1f79-window1/mirror/tests/test_independent_ordinary_goal_results.py"
+    },
+    {
+      "name": "test_forged_verify_field_cannot_become_ordinary_goal_proof",
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_forged_verify_field_cannot_become_ordinary_goal_proof",
+      "path": "/workspace/ParkWeave/.runtime/ordinary-case-goal-results-20261018/independent/frozen-163e1f79-window1/mirror/tests/test_independent_ordinary_goal_results.py"
+    },
+    {
+      "name": "test_cold_execute_revoke_preserves_history_without_current_source_or_verify",
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_cold_execute_revoke_preserves_history_without_current_source_or_verify",
+      "path": "/workspace/ParkWeave/.runtime/ordinary-case-goal-results-20261018/independent/frozen-163e1f79-window1/mirror/tests/test_independent_ordinary_goal_results.py"
+    },
+    {
+      "name": "test_explicit_store_binding_never_leaks_to_default_or_p5",
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_explicit_store_binding_never_leaks_to_default_or_p5",
+      "path": "/workspace/ParkWeave/.runtime/ordinary-case-goal-results-20261018/independent/frozen-163e1f79-window1/mirror/tests/test_independent_ordinary_goal_results.py"
+    },
+    {
+      "name": "test_ordinary_outputs_require_original_predecessors_and_explicit_owner_verification",
+      "nodeid": "tests/test_ordinary_case_goal_results.py::test_ordinary_outputs_require_original_predecessors_and_explicit_owner_verification",
+      "path": "/workspace/ParkWeave/.runtime/ordinary-case-goal-results-20261018/independent/frozen-163e1f79-window1/mirror/tests/test_ordinary_case_goal_results.py"
+    },
+    {
+      "name": "test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[VERIFY]",
+      "nodeid": "tests/test_ordinary_case_goal_results.py::test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[VERIFY]",
+      "path": "/workspace/ParkWeave/.runtime/ordinary-case-goal-results-20261018/independent/frozen-163e1f79-window1/mirror/tests/test_ordinary_case_goal_results.py"
+    },
+    {
+      "name": "test_normal_process_original_html_verify_download_cold_read_and_revoked_source",
+      "nodeid": "tests/test_ordinary_case_goal_record_pack_process.py::test_normal_process_original_html_verify_download_cold_read_and_revoked_source",
+      "path": "/workspace/ParkWeave/.runtime/ordinary-case-goal-results-20261018/independent/frozen-163e1f79-window1/mirror/tests/test_ordinary_case_goal_record_pack_process.py"
+    }
+  ],
+  "exit_code": 1,
+  "fixture_names": [
+    "fixture",
+    "monkeypatch",
+    "operation",
+    "ordinary",
+    "ordinary_plan",
+    "owned_normal",
+    "pg",
+    "preparation_fixture",
+    "receipt_fixture",
+    "tmp_path",
+    "tmp_path_factory"
+  ],
+  "owned_pg": [
+    {
+      "data": "/tmp/pw-independent-ordinary-goal-results-r12okuiu/pytest-temp/parkweave-pg0/data",
+      "pid": 382085
+    }
+  ],
+  "private_fixture_token_values_captured": 80,
+  "pytest_main_seconds": 105.7875888349954,
+  "reports": [
+    {
+      "duration": 5.061640072002774,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline",
+      "outcome": "passed",
+      "when": "setup"
+    },
+    {
+      "duration": 19.818174780004483,
+      "longrepr": "owned_normal = ((<parkweave.store.Store object at 0x7ff6f88ce750>, <parkweave.store.Store object at 0x7ff6f88ce960>, {'fixture-a': 'SYNTHETIC_TRUNCATED_SESSION_REDACTED, {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff6f87eb1d0>\n\n    def test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline(owned_normal,monkeypatch):\n        from parkweave import case_goal_results as goals\n        f,baseline=owned_normal\n        monkeypatch.setattr(cs._OrdinaryCaseStep,'_offer_deadline',lambda self,c:cs._now(c)+timedelta(seconds=18))\n        p=start(f,GOALS[:2]);d,_=acceptance(f,p)\n        initial=ok(results(f,p));assert initial['state']=='LOCAL_OUTPUTS_VERIFIED'\n        assert [r['adapter_id'] for r in initial['results']]==['P1','P2']\n        before=business(f);original=goals.outputs\n        query=\"SELECT id FROM operations WHERE run_id=%s AND action='case.create' FOR SHARE /* independent_p1_p2_last_wait */\"\n        def after_outputs(*args,**kwargs):\n            value=original(*args,**kwargs);args[1].execute(query,(p['run_id'],)).fetchone();return value\n        monkeypatch.setattr(goals,'outputs',after_outputs)\n        with f[1].connect() as c:\n            remaining=c.execute('SELECT %s::timestamptz-clock_timestamp() remaining',(d['assignment_valid_until'],)).fetchone()['remaining'].total_seconds()\n        assert remaining>2;time.sleep(remaining-1.5)\n        with f[1].connect() as lock:\n            lock.execute(\"SELECT id FROM operations WHERE run_id=%s AND action='case.create' FOR UPDATE\",(p['run_id'],))\n            with ThreadPoolExecutor(max_workers=1) as pool:\n                future=pool.submit(results,f,p);observed=False\n                for _ in range(100):\n                    with f[1].connect() as c:\n                        observed=bool(c.execute(\"SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT id FROM operations%%independent_p1_p2_last_wait%%'\").fetchone())\n                    if observed:break\n                    if future.done():future.result()\n                    time.sleep(.01)\n                assert observed\n                with f[1].connect() as c:\n                    remaining=c.execute('SELECT %s::timestamptz-clock_timestamp() remaining',(d['assignment_valid_until'],)).fetchone()['remaining'].total_seconds()\n                assert 0<remaining<1.6;time.sleep(remaining+.10);lock.commit();response=future.result(timeout=8)\n        monkeypatch.setattr(goals,'outputs',original)\n        fresh=results(f,p)\n        record('p1-p2-only-deadline',dict(actual_pg_wait=observed,original_deadline=d['assignment_valid_until'],initial=initial,late_status=response.status_code,late_body=response.json(),fresh_status=fresh.status_code,fresh_body=fresh.json(),business_before=before,business_after=business(f),authority_unchanged=authority_snapshot(f[1])==baseline))\n        # Only P1/P2 are actual adopted/required outputs. Their currentness is\n        # independent of the unrelated accepted CaseStep's deadline.\n>       x=ok(response);assert x['state']=='LOCAL_OUTPUTS_VERIFIED' and x['results']==initial['results']\n          ^^^^^^^^^^^^\n\ntests/test_independent_ordinary_goal_results.py:71: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nr = <Response [403 Forbidden]>, status = 200\n\n>   def ok(r,status=200):assert r.status_code==status,r.text;return r.json()\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   AssertionError: {\"detail\":\"record unavailable or authorization denied\"}\nE   assert 403 == 200\nE    +  where 403 = <Response [403 Forbidden]>.status_code\n\ntests/test_case_step_assignments.py:22: AssertionError",
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline",
+      "outcome": "failed",
+      "when": "call"
+    },
+    {
+      "duration": 0.01828272700367961,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline",
+      "outcome": "passed",
+      "when": "teardown"
+    },
+    {
+      "duration": 1.1332437980017858,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_manual_correction_history_current_v2_and_cold_source_hash",
+      "outcome": "passed",
+      "when": "setup"
+    },
+    {
+      "duration": 4.057270027995401,
+      "longrepr": "owned_normal = ((<parkweave.store.Store object at 0x7ff6f933ade0>, <parkweave.store.Store object at 0x7ff6f7931be0>, {'fixture-a': 'SYNTHETIC_TRUNCATED_SESSION_REDACTED, {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})\n\n    def test_manual_correction_history_current_v2_and_cold_source_hash(owned_normal):\n        f,baseline=owned_normal;p=start(f);d,r=acceptance(f,p);verified(f,p,'P3')\n        r=ok(act(f,r,'SUBMIT',text='SYNTHETIC PRIVATE_OLD_RECEIPT_1'));first=r['current_receipt']\n        r=ok(act(f,r,'REQUEST_CHANGES'))\n        r=ok(act(f,r,'SUBMIT',text='SYNTHETIC PRIVATE_CURRENT_RECEIPT_2'));r=ok(act(f,r,'ACKNOWLEDGE'))\n        current_plan=verified(f,p,'P4');expected=ok(results(f,p));before=business(f)\n        out=expected['results'][3]['actual_output'];assert out['receipt_version']==2 and out['receipt_id']==r['current_receipt']['id'] and out['receipt_sha256']==r['current_receipt']['source_sha256'] and out['receipt_id']!=first['id']\n        assert expected['state']=='LOCAL_OUTPUTS_VERIFIED'\n>       assert all(secret not in json.dumps(expected) for secret in ('PRIVATE_OLD_RECEIPT_1','PRIVATE_CURRENT_RECEIPT_2','PRIVATE_REQUEST','PRIVATE_MATERIAL','PRIVATE_OUTLINE'))\nE       assert False\nE        +  where False = all(<generator object test_manual_correction_history_current_v2_and_cold_source_hash.<locals>.<genexpr> at 0x7ff6f77f3760>)\n\ntests/test_independent_ordinary_goal_results.py:83: AssertionError",
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_manual_correction_history_current_v2_and_cold_source_hash",
+      "outcome": "failed",
+      "when": "call"
+    },
+    {
+      "duration": 0.08013127599406289,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_manual_correction_history_current_v2_and_cold_source_hash",
+      "outcome": "passed",
+      "when": "teardown"
+    },
+    {
+      "duration": 1.416406813004869,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_forged_verify_field_cannot_become_ordinary_goal_proof",
+      "outcome": "passed",
+      "when": "setup"
+    },
+    {
+      "duration": 6.841821432004508,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_forged_verify_field_cannot_become_ordinary_goal_proof",
+      "outcome": "passed",
+      "when": "call"
+    },
+    {
+      "duration": 0.015992654996807687,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_forged_verify_field_cannot_become_ordinary_goal_proof",
+      "outcome": "passed",
+      "when": "teardown"
+    },
+    {
+      "duration": 1.5378214000011212,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_cold_execute_revoke_preserves_history_without_current_source_or_verify",
+      "outcome": "passed",
+      "when": "setup"
+    },
+    {
+      "duration": 6.806680396999582,
+      "longrepr": "owned_normal = ((<parkweave.store.Store object at 0x7ff6f85c19a0>, <parkweave.store.Store object at 0x7ff6f5a53710>, {'fixture-a': 'SYNTHETIC_TRUNCATED_SESSION_REDACTED, {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})\n\n    def test_cold_execute_revoke_preserves_history_without_current_source_or_verify(owned_normal):\n        f,_=owned_normal;p=start(f);finish(f,p);old=ok(results(f,p));before=business(f)\n        with f[1].connect() as c:\n            c.execute(\"UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'\")\n        after_negative=authority_snapshot(f[1])\n        with ordinary_api(f,OUT/'execute-revoked-cold') as api:\n            cold=(*f[:3],api);now=ok(results(cold,p))\n            assert now['state']=='UNVERIFIED' and now['current_required_goals']==old['current_required_goals']\n            for i in (2,3):\n                assert now['results'][i]['historical_verification']['id']==old['results'][i]['historical_verification']['id']\n                assert not now['results'][i]['historical_verification']['current'] and now['results'][i]['actual_output'] is None\n            ok(command(cold,p,'P3'),403)\n            ok(api.get('/api/runs/'+p['run_id'],headers=headers(f[2],'executor-a')),403)\n>       assert business(f)==before and authority_snapshot(f[1])==after_negative\nE       AssertionError: assert ({'run_assignm...), ...}], ...} == {'run_assignm...), ...}], ...}\nE         \nE         Omitting 8 identical items, use -vv to show\nE         Differing items:\nE         {'capability_grants': [{'principal_id': 'fixture-a', 'capability': 'EXECUTE', 'active': False, 'revision': 1, ...}, {'...1, ...}, {'principal_id': 'prep-specialist-fixture-a', 'capability': 'READ', 'active': True, 'revision': 1, ...}, ...]} != {'capability_grants': [{'principal_id': 'fixture-a', 'capability': 'CONTROL', 'active': True, 'revision': 1, ...}, {'p...1, ...}, {'principal_id': 'prep-specialist-fixture-a', 'capability': 'READ', 'active': True, 'revision': 1, ...}, ...]}\nE         Use -v to get more diff)\n\ntests/test_independent_ordinary_goal_results.py:125: AssertionError",
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_cold_execute_revoke_preserves_history_without_current_source_or_verify",
+      "outcome": "failed",
+      "when": "call"
+    },
+    {
+      "duration": 0.02025058100116439,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_cold_execute_revoke_preserves_history_without_current_source_or_verify",
+      "outcome": "passed",
+      "when": "teardown"
+    },
+    {
+      "duration": 1.1913920629958739,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_explicit_store_binding_never_leaks_to_default_or_p5",
+      "outcome": "passed",
+      "when": "setup"
+    },
+    {
+      "duration": 5.528224740999576,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_explicit_store_binding_never_leaks_to_default_or_p5",
+      "outcome": "passed",
+      "when": "call"
+    },
+    {
+      "duration": 0.01517373499518726,
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_explicit_store_binding_never_leaks_to_default_or_p5",
+      "outcome": "passed",
+      "when": "teardown"
+    },
+    {
+      "duration": 1.3123882660001982,
+      "nodeid": "tests/test_ordinary_case_goal_results.py::test_ordinary_outputs_require_original_predecessors_and_explicit_owner_verification",
+      "outcome": "passed",
+      "when": "setup"
+    },
+    {
+      "duration": 5.386777303996496,
+      "nodeid": "tests/test_ordinary_case_goal_results.py::test_ordinary_outputs_require_original_predecessors_and_explicit_owner_verification",
+      "outcome": "passed",
+      "when": "call"
+    },
+    {
+      "duration": 0.01581727000302635,
+      "nodeid": "tests/test_ordinary_case_goal_results.py::test_ordinary_outputs_require_original_predecessors_and_explicit_owner_verification",
+      "outcome": "passed",
+      "when": "teardown"
+    },
+    {
+      "duration": 1.2588080689965864,
+      "nodeid": "tests/test_ordinary_case_goal_results.py::test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[VERIFY]",
+      "outcome": "passed",
+      "when": "setup"
+    },
+    {
+      "duration": 19.40952305099927,
+      "nodeid": "tests/test_ordinary_case_goal_results.py::test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[VERIFY]",
+      "outcome": "passed",
+      "when": "call"
+    },
+    {
+      "duration": 0.02061544999742182,
+      "nodeid": "tests/test_ordinary_case_goal_results.py::test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[VERIFY]",
+      "outcome": "passed",
+      "when": "teardown"
+    },
+    {
+      "duration": 2.506900863998453,
+      "nodeid": "tests/test_ordinary_case_goal_record_pack_process.py::test_normal_process_original_html_verify_download_cold_read_and_revoked_source",
+      "outcome": "passed",
+      "when": "setup"
+    },
+    {
+      "duration": 17.617435410000326,
+      "nodeid": "tests/test_ordinary_case_goal_record_pack_process.py::test_normal_process_original_html_verify_download_cold_read_and_revoked_source",
+      "outcome": "passed",
+      "when": "call"
+    },
+    {
+      "duration": 0.03002836200175807,
+      "nodeid": "tests/test_ordinary_case_goal_record_pack_process.py::test_normal_process_original_html_verify_download_cold_read_and_revoked_source",
+      "outcome": "passed",
+      "when": "teardown"
+    }
+  ]
+}

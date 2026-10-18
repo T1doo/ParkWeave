@@ -1,0 +1,65 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_normal_process_original_html_verify_download_cold_read_and_revoked_source _
+
+ordinary_plan = ((<parkweave.store.Store object at 0x7fa9aaa1f6e0>, <parkweave.store.Store object at 0x7fa9aafce090>, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+tmp_path = PosixPath('/tmp/parkweave-ordinary-goal-process-v2/test_normal_process_original_h0')
+
+    def test_normal_process_original_html_verify_download_cold_read_and_revoked_source(ordinary_plan,tmp_path):
+        initial,baseline=ordinary_plan
+        with ordinary_api(initial,tmp_path/'first-api') as api:
+            f=(*initial[:3],api);p=start(f);d,r=acceptance(f,p)
+            r=ok(act(f,r,'SUBMIT'));r=ok(act(f,r,'ACKNOWLEDGE'))
+            pending=ok(results(f,p));plan_id=pending['plan_id']
+            assert pending['results'][2]['state']=='AWAITING_OWNER_VERIFICATION'
+>           first=html(f,tmp_path/'first-html',p,plan_id,'LOCAL_OUTPUTS_VERIFIED',verify=True)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_ordinary_case_goal_record_pack_process.py:34: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7fa9aaa1f6e0>, <parkweave.store.Store object at 0x7fa9aafce090>, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED': '0nxzr1j5BfR62a8fLJAxDN9cyfVOsddcWvJbjwxi-5k', ...}, <httpx.Client object at 0x7fa9a9987c20>)
+directory = PosixPath('/tmp/parkweave-ordinary-goal-process-v2/test_normal_process_original_h0/first-html')
+p = {'preparation_id': '4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd', 'case_id': '061877b0-0d3e-4485-bb97-039b30cc6291', 'run_id': '5f17810f-0d73-48c6-bc7a-5e4e20f3d23e', 'revision': 8, ...}
+plan_id = '13a583c7-bd61-4704-b1de-5574ffb4d0ed'
+state = 'LOCAL_OUTPUTS_VERIFIED', verify = True
+
+    def html(f,directory,p,plan_id,state,verify=False):
+        directory.mkdir(parents=True,exist_ok=True)
+        config=dict(base=str(f[3].base_url).rstrip('/'),preparation_id=p['preparation_id'],plan_id=plan_id,
+            state=state,verify=verify,tokens=dict(owner=f[2]['fixture-a'],executor=f[2]['executor-a']))
+        with (directory/'html.stdout').open('w') as out,(directory/'html.stderr').open('w') as err:
+            result=subprocess.run(['node','tests/ordinary_case_goal_record_pack_html.js'],input=json.dumps(config)+'\n',
+                text=True,stdout=out,stderr=err,timeout=60)
+>       assert result.returncode==0,(directory/'html.stderr').read_text()
+E       AssertionError: AssertionError [ERR_ASSERTION]: durable explicit VERIFY P4
+E             at check (/workspace/ParkWeave/tests/ordinary_case_goal_record_pack_html.js:12:51)
+E             at /workspace/ParkWeave/tests/ordinary_case_goal_record_pack_html.js:105:4
+E             at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E         {"calls":[{"method":"GET","path":"/api/preparations","status":200,"response_scope":"SYNTHETIC_LOCAL_PREPARATION_ONLY"},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd","status":200,"response_scope":"SYNTHETIC_LOCAL_PREPARATION_ONLY"},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/readiness","status":200,"response_scope":"SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY"},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/material-corrections","status":200,"response_scope":"SYNTHETIC_SLOT_MATERIAL_CORRECTIONS"},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/material-objections","status":200,"response_scope":"SYNTHETIC_MATERIAL_DELIVERY_OBJECTION"},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/material-reuse","status":200,"response_scope":"SYNTHETIC_SAME_OWNER_MATERIAL_OUTLINE_REUSE"},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/fact-clarifications","status":200},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/case-cancellation","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT"},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/case-cancellation-before-receipt","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT"},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/case-cancellation-reconciliation","status":200,"response_scope":"SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION"},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/service-case-plan","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"POST","path":"/api/preparations/4dae7bf5-62a8-4d1f-873b-ab1bbda9f8bd/service-case-plan/commands","status":200,"body":{"action":"VERIFY","step_id":"5927b21b-1e61-4c72-9002-9495acd64f53","expected_revision":3,"reason":"SYNTHETIC owner explicitly verifies original ordinary output","expected_source_sha256":"7cda456dba6fe29fe17f4b2c5fc5dcdc55c147db9e2adc387b32c444b1cae749"},"request_key":"a7a89fbb-8fbe-4dc7-90a4-1e74e6f2d268","response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"}]}
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', 'tests/ordinary_case_goal_record_pack_html.js'], returncode=1).returncode
+
+tests/test_ordinary_case_goal_record_pack_process.py:20: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_ordinary_case_goal_record_pack_process.py::test_normal_process_original_html_verify_download_cold_read_and_revoked_source
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_ordinary_case_goal_record_pack_process.py::test_normal_process_original_html_verify_download_cold_read_and_revoked_source
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_ordinary_case_goal_record_pack_process.py::test_normal_process_original_html_verify_download_cold_read_and_revoked_source
+1 failed, 4 warnings in 12.34s

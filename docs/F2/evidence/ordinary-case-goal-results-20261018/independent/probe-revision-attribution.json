@@ -1,0 +1,44 @@
+{
+  "historical_counts": {
+    "call_FAIL": 3,
+    "call_PASS": 5,
+    "collection": 8,
+    "setup_PASS": 8,
+    "teardown_PASS": 8
+  },
+  "historical_window": "frozen-163e1f79-window1",
+  "initial_probe": "test_independent_ordinary_goal_results.v1.py",
+  "initial_probe_sha256": "95229daf0bc2f1aac7eb096f96760af47e661606abf0ee7f43d13875ca488a7a",
+  "policy": "Preserve first source/probe/window unchanged. Root fixes product callback scope and freezes a new source SHA; reviewer reruns same8 bounded nodes. No old PASS transferred or double counted, no permission/fixture/source changes to bypass refusals.",
+  "private_test_design_errors": [
+    {
+      "cause": "Original owner goal-results intentionally includes current_request/original_request; PRIVATE_REQUEST was incorrectly treated like forbidden material/receipt body.",
+      "classification": "OVERBROAD_PRIVACY_ASSERTION",
+      "correction": "Retain receipt/material-body exclusions; explicitly assert the original owner request remains preserved.",
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_manual_correction_history_current_v2_and_cold_source_hash"
+    },
+    {
+      "cause": "business helper includes capability_grants; comparison baseline was captured before deliberately revoking owner EXECUTE.",
+      "classification": "NEGATIVE_FIXTURE_SNAPSHOT_BASELINE_ERROR",
+      "correction": "Capture both business and authority after the explicit negative revocation; only then compare no further business/authority writes.",
+      "nodeid": "tests/test_independent_ordinary_goal_results.py::test_cold_execute_revoke_preserves_history_without_current_source_or_verify"
+    }
+  ],
+  "revised_probe": "test_independent_ordinary_goal_results.py",
+  "revised_probe_sha256": "05de648e626387907b2f67f7a7b9443ccc228630c69299e2721955fee4ef8961",
+  "source_initial_sha": "163e1f7926e50f273c6490d9f2e8f7fbfc90e5a8",
+  "source_product_failure": {
+    "actual_PG_wait": true,
+    "actual_required_adapters": [
+      "P1",
+      "P2"
+    ],
+    "authority_unchanged": true,
+    "classification": "CONFIRMED_PRODUCT_P2",
+    "expectation_unchanged": "P1/P2-only source result must not inherit unrelated ordinary offer expiry; expect200 throughout",
+    "fresh_status": 200,
+    "initial_and_fresh_state": "LOCAL_OUTPUTS_VERIFIED",
+    "late_status": 403,
+    "nodeid": "tests/test_independent_ordinary_goal_results.py::test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline"
+  }
+}

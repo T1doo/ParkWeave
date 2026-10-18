@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="8" time="127.874" timestamp="2026-10-18T18:26:40.151399+00:00" hostname="9eff6a810039"><testcase classname="tests.test_independent_ordinary_goal_results" name="test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline" time="24.137" /><testcase classname="tests.test_independent_ordinary_goal_results" name="test_manual_correction_history_current_v2_and_cold_source_hash" time="10.327" /><testcase classname="tests.test_independent_ordinary_goal_results" name="test_forged_verify_field_cannot_become_ordinary_goal_proof" time="9.731" /><testcase classname="tests.test_independent_ordinary_goal_results" name="test_cold_execute_revoke_preserves_history_without_current_source_or_verify" time="10.330" /><testcase classname="tests.test_independent_ordinary_goal_results" name="test_explicit_store_binding_never_leaks_to_default_or_p5" time="6.814" /><testcase classname="tests.test_ordinary_case_goal_results" name="test_ordinary_outputs_require_original_predecessors_and_explicit_owner_verification" time="9.577" /><testcase classname="tests.test_ordinary_case_goal_results" name="test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[VERIFY]" time="29.112"><failure message="AssertionError: owned final row wait required&#10;assert False">ordinary_plan = ((&lt;parkweave.store.Store object at 0x7f2d21167aa0&gt;, &lt;parkweave.store.Store object at 0x7f2d20716450&gt;, {'fixture-a': 'SYNTHETIC_TRUNCATED_SESSION_REDACTED, {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f2d134d60c0&gt;
+tmp_path = PosixPath('/tmp/pw-independent-ordinary-goal-results-7iyi7wf1/pytest-temp/test_actual_last_pg_lock_wait_0')
+operation = 'VERIFY'
+
+    @pytest.mark.parametrize('operation',['VERIFY','READ_RESULT'])
+    def test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit(ordinary_plan,monkeypatch,tmp_path,operation):
+        import json,time
+        from concurrent.futures import ThreadPoolExecutor
+        from parkweave import case_goal_results as goals,service_case_steps as plans
+        f,_=ordinary_plan
+        monkeypatch.setattr(cs._OrdinaryCaseStep,'_offer_deadline',lambda self,c:cs._now(c)+timedelta(seconds=18))
+        p=start(f);d,r=acceptance(f,p)
+        r=ok(act(f,r,'SUBMIT'));r=ok(act(f,r,'ACKNOWLEDGE'))
+        if operation=='READ_RESULT':verified(f,p,'P3');verified(f,p,'P4')
+        before=ok(read(f,p));module,attribute=(plans,'_view') if operation=='VERIFY' else (goals,'outputs')
+        original=getattr(module,attribute)
+        query="SELECT id FROM operations WHERE run_id=%s AND action='case.create' FOR SHARE /* ordinary_goal_last_wait */"
+        def after_sources(*args,**kw):
+            value=original(*args,**kw);args[1].execute(query,(p['run_id'],)).fetchone();return value
+        monkeypatch.setattr(module,attribute,after_sources)
+        with f[1].connect() as c:
+            initial_remaining=c.execute('SELECT %s::timestamptz-clock_timestamp() AS remaining',(d['assignment_valid_until'],)).fetchone()['remaining'].total_seconds()
+        assert initial_remaining&gt;2
+        time.sleep(initial_remaining-2)
+        with f[1].connect() as lock:
+            lock.execute("SELECT id FROM operations WHERE run_id=%s AND action='case.create' FOR UPDATE",(p['run_id'],))
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                future=pool.submit(command,f,p,'P3',row=before) if operation=='VERIFY' else pool.submit(results,f,p)
+                observed=False
+                for _ in range(100):
+                    with f[1].connect() as c:
+                        observed=bool(c.execute("SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT id FROM operations%%ordinary_goal_last_wait%%'").fetchone())
+                    if observed:break
+                    if future.done():future.result()
+                    time.sleep(.02)
+&gt;               assert observed,'owned final row wait required'
+E               AssertionError: owned final row wait required
+E               assert False
+
+tests/test_ordinary_case_goal_results.py:207: AssertionError</failure></testcase><testcase classname="tests.test_ordinary_case_goal_record_pack_process" name="test_normal_process_original_html_verify_download_cold_read_and_revoked_source" time="24.552" /></testsuite></testsuites>

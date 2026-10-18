@@ -1,0 +1,45 @@
+{
+  "attribution": "The original timing-sensitive test did not observe its required final PG wait; its response was not retained, so its exact early outcome remains unknown. Root same-SHA proof and this one unchanged-selector supplement both observe the real final wait and correct403 rollback. This does not retrospectively turn the failed original call into PASS or prove its missing response.",
+  "counting": "Main same-SHA7PASS1FAIL plus single original-node supplement1PASS; effective unique PASS8 (5 own+3 overlaps), root34 intersection3 union39. No additional selector or business-source changes.",
+  "diagnostic_source_sha256": {
+    "execute_review_lock_diagnostic_v3.py": "af6ae7afc9ca691ef3fa36580bddfbc7d0a7b48435effbd362bc4f5568a033a1",
+    "run_lock_recheck_v3.py": "db94658bf4682957c5ec2a8b0db7252fa6426abf78ec064a0290fb15b951febd"
+  },
+  "failed_nodeid": "tests/test_ordinary_case_goal_results.py::test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[VERIFY]",
+  "failed_window": "frozen-33aef7ab-window3",
+  "original_failure": {
+    "assertion": "assert observed, owned final row wait required",
+    "classification": "INTENDED_FINAL_LOCK_NOT_OBSERVED",
+    "product_regression_proven": false,
+    "remain_preserved": true,
+    "response_status": "UNKNOWN_NOT_CAPTURED_BY_ORIGINAL_TEST"
+  },
+  "source_sha": "33aef7ab8f297c52bbb15d1ae0930ac33a253d7e",
+  "supplement": {
+    "actual_retries": 1,
+    "allowed_retries": 1,
+    "last_POST_observation": {
+      "detail": "record unavailable or authorization denied",
+      "exception_type": null,
+      "finished_perf_counter": 57711.250540168,
+      "finished_utc": "2026-10-18T18:33:29.303308+00:00",
+      "path": "/api/preparations/aa680109-7d75-47a7-8209-7ba5183dd77b/service-case-plan/commands",
+      "started_perf_counter": 57709.113091809,
+      "started_utc": "2026-10-18T18:33:27.165858+00:00",
+      "status": 403
+    },
+    "last_lock_proof": {
+      "actual_pg_lock_observed": true,
+      "clock_offset_used": false,
+      "operation": "VERIFY",
+      "original_deadline": "2026-10-18T18:33:29.128176+00:00",
+      "plan_revision_unchanged": true,
+      "status": 403
+    },
+    "original_tracked_selector_unchanged": true,
+    "private_observer_only": "Actual TestClient POST status/detail/UTC and perf start/end; response object returned unchanged",
+    "requests_deadline_2s_18s_fixture_assertions_permissions_unchanged": true,
+    "result": "PASS"
+  },
+  "supplement_window": "frozen-33aef7ab-lock-recheck-window4"
+}

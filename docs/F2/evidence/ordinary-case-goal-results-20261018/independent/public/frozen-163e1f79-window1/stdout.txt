@@ -1,0 +1,118 @@
+FF.F....                                                                 [100%]
+=================================== FAILURES ===================================
+_______ test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline _______
+
+owned_normal = ((<parkweave.store.Store object at 0x7ff6f88ce750>, <parkweave.store.Store object at 0x7ff6f88ce960>, {'fixture-a': 'SYNTHETIC_TRUNCATED_SESSION_REDACTED, {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff6f87eb1d0>
+
+    def test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline(owned_normal,monkeypatch):
+        from parkweave import case_goal_results as goals
+        f,baseline=owned_normal
+        monkeypatch.setattr(cs._OrdinaryCaseStep,'_offer_deadline',lambda self,c:cs._now(c)+timedelta(seconds=18))
+        p=start(f,GOALS[:2]);d,_=acceptance(f,p)
+        initial=ok(results(f,p));assert initial['state']=='LOCAL_OUTPUTS_VERIFIED'
+        assert [r['adapter_id'] for r in initial['results']]==['P1','P2']
+        before=business(f);original=goals.outputs
+        query="SELECT id FROM operations WHERE run_id=%s AND action='case.create' FOR SHARE /* independent_p1_p2_last_wait */"
+        def after_outputs(*args,**kwargs):
+            value=original(*args,**kwargs);args[1].execute(query,(p['run_id'],)).fetchone();return value
+        monkeypatch.setattr(goals,'outputs',after_outputs)
+        with f[1].connect() as c:
+            remaining=c.execute('SELECT %s::timestamptz-clock_timestamp() remaining',(d['assignment_valid_until'],)).fetchone()['remaining'].total_seconds()
+        assert remaining>2;time.sleep(remaining-1.5)
+        with f[1].connect() as lock:
+            lock.execute("SELECT id FROM operations WHERE run_id=%s AND action='case.create' FOR UPDATE",(p['run_id'],))
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                future=pool.submit(results,f,p);observed=False
+                for _ in range(100):
+                    with f[1].connect() as c:
+                        observed=bool(c.execute("SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT id FROM operations%%independent_p1_p2_last_wait%%'").fetchone())
+                    if observed:break
+                    if future.done():future.result()
+                    time.sleep(.01)
+                assert observed
+                with f[1].connect() as c:
+                    remaining=c.execute('SELECT %s::timestamptz-clock_timestamp() remaining',(d['assignment_valid_until'],)).fetchone()['remaining'].total_seconds()
+                assert 0<remaining<1.6;time.sleep(remaining+.10);lock.commit();response=future.result(timeout=8)
+        monkeypatch.setattr(goals,'outputs',original)
+        fresh=results(f,p)
+        record('p1-p2-only-deadline',dict(actual_pg_wait=observed,original_deadline=d['assignment_valid_until'],initial=initial,late_status=response.status_code,late_body=response.json(),fresh_status=fresh.status_code,fresh_body=fresh.json(),business_before=before,business_after=business(f),authority_unchanged=authority_snapshot(f[1])==baseline))
+        # Only P1/P2 are actual adopted/required outputs. Their currentness is
+        # independent of the unrelated accepted CaseStep's deadline.
+>       x=ok(response);assert x['state']=='LOCAL_OUTPUTS_VERIFIED' and x['results']==initial['results']
+          ^^^^^^^^^^^^
+
+tests/test_independent_ordinary_goal_results.py:71: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = <Response [403 Forbidden]>, status = 200
+
+>   def ok(r,status=200):assert r.status_code==status,r.text;return r.json()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: {"detail":"record unavailable or authorization denied"}
+E   assert 403 == 200
+E    +  where 403 = <Response [403 Forbidden]>.status_code
+
+tests/test_case_step_assignments.py:22: AssertionError
+________ test_manual_correction_history_current_v2_and_cold_source_hash ________
+
+owned_normal = ((<parkweave.store.Store object at 0x7ff6f933ade0>, <parkweave.store.Store object at 0x7ff6f7931be0>, {'fixture-a': 'SYNTHETIC_TRUNCATED_SESSION_REDACTED, {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+
+    def test_manual_correction_history_current_v2_and_cold_source_hash(owned_normal):
+        f,baseline=owned_normal;p=start(f);d,r=acceptance(f,p);verified(f,p,'P3')
+        r=ok(act(f,r,'SUBMIT',text='SYNTHETIC PRIVATE_OLD_RECEIPT_1'));first=r['current_receipt']
+        r=ok(act(f,r,'REQUEST_CHANGES'))
+        r=ok(act(f,r,'SUBMIT',text='SYNTHETIC PRIVATE_CURRENT_RECEIPT_2'));r=ok(act(f,r,'ACKNOWLEDGE'))
+        current_plan=verified(f,p,'P4');expected=ok(results(f,p));before=business(f)
+        out=expected['results'][3]['actual_output'];assert out['receipt_version']==2 and out['receipt_id']==r['current_receipt']['id'] and out['receipt_sha256']==r['current_receipt']['source_sha256'] and out['receipt_id']!=first['id']
+        assert expected['state']=='LOCAL_OUTPUTS_VERIFIED'
+>       assert all(secret not in json.dumps(expected) for secret in ('PRIVATE_OLD_RECEIPT_1','PRIVATE_CURRENT_RECEIPT_2','PRIVATE_REQUEST','PRIVATE_MATERIAL','PRIVATE_OUTLINE'))
+E       assert False
+E        +  where False = all(<generator object test_manual_correction_history_current_v2_and_cold_source_hash.<locals>.<genexpr> at 0x7ff6f77f3760>)
+
+tests/test_independent_ordinary_goal_results.py:83: AssertionError
+_ test_cold_execute_revoke_preserves_history_without_current_source_or_verify __
+
+owned_normal = ((<parkweave.store.Store object at 0x7ff6f85c19a0>, <parkweave.store.Store object at 0x7ff6f5a53710>, {'fixture-a': 'SYNTHETIC_TRUNCATED_SESSION_REDACTED, {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+
+    def test_cold_execute_revoke_preserves_history_without_current_source_or_verify(owned_normal):
+        f,_=owned_normal;p=start(f);finish(f,p);old=ok(results(f,p));before=business(f)
+        with f[1].connect() as c:
+            c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='EXECUTE'")
+        after_negative=authority_snapshot(f[1])
+        with ordinary_api(f,OUT/'execute-revoked-cold') as api:
+            cold=(*f[:3],api);now=ok(results(cold,p))
+            assert now['state']=='UNVERIFIED' and now['current_required_goals']==old['current_required_goals']
+            for i in (2,3):
+                assert now['results'][i]['historical_verification']['id']==old['results'][i]['historical_verification']['id']
+                assert not now['results'][i]['historical_verification']['current'] and now['results'][i]['actual_output'] is None
+            ok(command(cold,p,'P3'),403)
+            ok(api.get('/api/runs/'+p['run_id'],headers=headers(f[2],'executor-a')),403)
+>       assert business(f)==before and authority_snapshot(f[1])==after_negative
+E       AssertionError: assert ({'run_assignm...), ...}], ...} == {'run_assignm...), ...}], ...}
+E         
+E         Omitting 8 identical items, use -vv to show
+E         Differing items:
+E         {'capability_grants': [{'principal_id': 'fixture-a', 'capability': 'EXECUTE', 'active': False, 'revision': 1, ...}, {'...1, ...}, {'principal_id': 'prep-specialist-fixture-a', 'capability': 'READ', 'active': True, 'revision': 1, ...}, ...]} != {'capability_grants': [{'principal_id': 'fixture-a', 'capability': 'CONTROL', 'active': True, 'revision': 1, ...}, {'p...1, ...}, {'principal_id': 'prep-specialist-fixture-a', 'capability': 'READ', 'active': True, 'revision': 1, ...}, ...]}
+E         Use -v to get more diff)
+
+tests/test_independent_ordinary_goal_results.py:125: AssertionError
+=============================== warnings summary ===============================
+../../../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_independent_ordinary_goal_results.py::test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline
+  /workspace/ParkWeave/.runtime/ordinary-case-goal-results-20261018/independent/frozen-163e1f79-window1/mirror/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_independent_ordinary_goal_results.py::test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline
+  /workspace/ParkWeave/.runtime/ordinary-case-goal-results-20261018/independent/frozen-163e1f79-window1/mirror/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_independent_ordinary_goal_results.py::test_p1_p2_only_result_does_not_inherit_unrelated_offer_deadline
+FAILED tests/test_independent_ordinary_goal_results.py::test_manual_correction_history_current_v2_and_cold_source_hash
+FAILED tests/test_independent_ordinary_goal_results.py::test_cold_execute_revoke_preserves_history_without_current_source_or_verify
+3 failed, 5 passed, 3 warnings in 104.25s (0:01:44)

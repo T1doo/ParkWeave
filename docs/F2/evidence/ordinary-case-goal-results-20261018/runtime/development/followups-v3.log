@@ -1,0 +1,108 @@
+..FF.                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[VERIFY] _
+
+ordinary_plan = ((<parkweave.store.Store object at 0x7ff32e7f68a0>, <parkweave.store.Store object at 0x7ff32e76f680>, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff32e76fb90>
+tmp_path = PosixPath('/tmp/parkweave-ordinary-goal-development-v3/test_actual_last_pg_lock_wait_0')
+operation = 'VERIFY'
+
+    @pytest.mark.parametrize('operation',['VERIFY','READ_RESULT'])
+    def test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit(ordinary_plan,monkeypatch,tmp_path,operation):
+        import json,time
+        from concurrent.futures import ThreadPoolExecutor
+        from parkweave import case_goal_results as goals,service_case_steps as plans
+        f,_=ordinary_plan
+        monkeypatch.setattr(cs._OrdinaryCaseStep,'_offer_deadline',lambda self,c:cs._now(c)+timedelta(seconds=18))
+        p=start(f);d,r=acceptance(f,p)
+        r=ok(act(f,r,'SUBMIT'));r=ok(act(f,r,'ACKNOWLEDGE'))
+        if operation=='READ_RESULT':verified(f,p,'P3');verified(f,p,'P4')
+        before=ok(read(f,p));module,attribute=(plans,'_view') if operation=='VERIFY' else (goals,'outputs')
+        original=getattr(module,attribute)
+        query="SELECT id FROM preparation_events WHERE preparation_id=%s AND action='CONFIRM' FOR SHARE /* ordinary_goal_last_wait */"
+        def after_sources(*args,**kw):
+            value=original(*args,**kw);args[1].execute(query,(p['preparation_id'],)).fetchone();return value
+        monkeypatch.setattr(module,attribute,after_sources)
+        with f[1].connect() as c:
+            initial_remaining=c.execute('SELECT %s::timestamptz-clock_timestamp() AS remaining',(d['assignment_valid_until'],)).fetchone()['remaining'].total_seconds()
+        assert initial_remaining>2
+        time.sleep(initial_remaining-2)
+        with f[1].connect() as lock:
+            lock.execute("SELECT id FROM preparation_events WHERE preparation_id=%s AND action='CONFIRM' FOR UPDATE",(p['preparation_id'],))
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                future=pool.submit(command,f,p,'P3',row=before) if operation=='VERIFY' else pool.submit(results,f,p)
+                observed=False
+                for _ in range(100):
+                    with f[1].connect() as c:
+                        observed=bool(c.execute("SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT id FROM preparation_events%%ordinary_goal_last_wait%%'").fetchone())
+                    if observed:break
+                    time.sleep(.02)
+>               assert observed,'owned final row wait required'
+E               AssertionError: owned final row wait required
+E               assert False
+
+tests/test_ordinary_case_goal_results.py:206: AssertionError
+_ test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[READ_RESULT] _
+
+ordinary_plan = ((<parkweave.store.Store object at 0x7ff32e101e20>, <parkweave.store.Store object at 0x7ff32e101d30>, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7ff32e586570>
+tmp_path = PosixPath('/tmp/parkweave-ordinary-goal-development-v3/test_actual_last_pg_lock_wait_1')
+operation = 'READ_RESULT'
+
+    @pytest.mark.parametrize('operation',['VERIFY','READ_RESULT'])
+    def test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit(ordinary_plan,monkeypatch,tmp_path,operation):
+        import json,time
+        from concurrent.futures import ThreadPoolExecutor
+        from parkweave import case_goal_results as goals,service_case_steps as plans
+        f,_=ordinary_plan
+        monkeypatch.setattr(cs._OrdinaryCaseStep,'_offer_deadline',lambda self,c:cs._now(c)+timedelta(seconds=18))
+        p=start(f);d,r=acceptance(f,p)
+        r=ok(act(f,r,'SUBMIT'));r=ok(act(f,r,'ACKNOWLEDGE'))
+        if operation=='READ_RESULT':verified(f,p,'P3');verified(f,p,'P4')
+        before=ok(read(f,p));module,attribute=(plans,'_view') if operation=='VERIFY' else (goals,'outputs')
+        original=getattr(module,attribute)
+        query="SELECT id FROM preparation_events WHERE preparation_id=%s AND action='CONFIRM' FOR SHARE /* ordinary_goal_last_wait */"
+        def after_sources(*args,**kw):
+            value=original(*args,**kw);args[1].execute(query,(p['preparation_id'],)).fetchone();return value
+        monkeypatch.setattr(module,attribute,after_sources)
+        with f[1].connect() as c:
+            initial_remaining=c.execute('SELECT %s::timestamptz-clock_timestamp() AS remaining',(d['assignment_valid_until'],)).fetchone()['remaining'].total_seconds()
+        assert initial_remaining>2
+        time.sleep(initial_remaining-2)
+        with f[1].connect() as lock:
+            lock.execute("SELECT id FROM preparation_events WHERE preparation_id=%s AND action='CONFIRM' FOR UPDATE",(p['preparation_id'],))
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                future=pool.submit(command,f,p,'P3',row=before) if operation=='VERIFY' else pool.submit(results,f,p)
+                observed=False
+                for _ in range(100):
+                    with f[1].connect() as c:
+                        observed=bool(c.execute("SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT id FROM preparation_events%%ordinary_goal_last_wait%%'").fetchone())
+                    if observed:break
+                    time.sleep(.02)
+>               assert observed,'owned final row wait required'
+E               AssertionError: owned final row wait required
+E               assert False
+
+tests/test_ordinary_case_goal_results.py:206: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_ordinary_case_goal_results.py::test_p5_lifecycle_and_unknown_targets_remain_unverified
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_ordinary_case_goal_results.py::test_p5_lifecycle_and_unknown_targets_remain_unverified
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_ordinary_case_goal_results.py::test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[VERIFY]
+FAILED tests/test_ordinary_case_goal_results.py::test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_or_commit[READ_RESULT]
+2 failed, 3 passed, 4 warnings in 83.92s (0:01:23)
