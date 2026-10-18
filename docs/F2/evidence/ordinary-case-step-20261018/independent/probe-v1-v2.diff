@@ -1,0 +1,26 @@
+--- private-probe-v1
++++ private-probe-v2
+@@ -161,7 +161,7 @@
+ 
+ def test_independent_cold_api_real_notice_lock_crosses_persisted_first_deadline(normal,monkeypatch):
+     f=normal;p=ready(f,label='LOCK')
+-    monkeypatch.setattr(cs._OrdinaryCaseStep,'_offer_deadline',lambda self,c:cs._now(c)+timedelta(seconds=3))
++    monkeypatch.setattr(cs._OrdinaryCaseStep,'_offer_deadline',lambda self,c:cs._now(c)+timedelta(seconds=15))
+     d=ok(offer(f,p)[0],201)
+     # Only the initial shorter test deadline is injected. Cold API uses the actual
+     # frozen implementation and reads that persisted original deadline unchanged.
+@@ -171,6 +171,14 @@
+     with ordinary_api(f,OUT/'lock-cold') as api:
+         cold=(*f[:3],api);n=inbox(cold)[0];opened=ok(note(cold,n,'OPEN'))
+         assert opened['notice']['assignment_valid_until']==d['assignment_valid_until']
++        end=datetime.fromisoformat(d['assignment_valid_until'])
++        with f[1].connect() as c:
++            database_now=c.execute('SELECT clock_timestamp() t').fetchone()['t']
++        remaining=(end-database_now).total_seconds()
++        assert remaining>1.2,'cold OPEN must occur before the original persisted test deadline'
++        # Allow real cold-process/consumer setup, then begin the owned row wait
++        # close enough to expiry to stay inside the original 3s lock timeout.
++        time.sleep(remaining-1.1)
+         with f[1].connect() as lock:
+             lock.execute('SELECT * FROM dispatch_notices WHERE event_id=%s AND recipient_id=%s FOR UPDATE',(n['event_id'],'executor-a'))
+             with ThreadPoolExecutor(max_workers=1) as pool:

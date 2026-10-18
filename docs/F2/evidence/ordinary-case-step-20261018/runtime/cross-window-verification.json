@@ -1,0 +1,59 @@
+{
+  "tested_sha": "954825efb66d16f7e41087e1c108b45042732703",
+  "root_passed": 48,
+  "root_new": 39,
+  "root_old_targeted": 9,
+  "independent_initial": {
+    "collection": 9,
+    "passed": 8,
+    "private_timing_design_call_failed": 1
+  },
+  "independent_retry": {
+    "collection": 1,
+    "passed": 1,
+    "only_failed_selector": true
+  },
+  "independent_effective_unique_passed": 9,
+  "independent_own": 6,
+  "overlap": [
+    "tests/test_ordinary_case_step_process.py::test_original_html_and_worker_restarts_retain_uuid_deadline_and_read_receipt",
+    "tests/test_ordinary_case_step_process.py::test_original_ordinary_decline_clears_terminal_view_without_forbidden_get",
+    "tests/test_ordinary_case_steps.py::test_ordinary_existing_preparation_receipt_and_notices_without_run_grant"
+  ],
+  "unique_passed": 54,
+  "selected_inputs": 798,
+  "shared_mirror_and_cross_window_inputs_equal": true,
+  "current_inputs_equal": true,
+  "root_origins": 112,
+  "independent_window_origins": [
+    {
+      "total": 110,
+      "frozen": 109,
+      "probe": 1
+    },
+    {
+      "total": 108,
+      "frozen": 107,
+      "probe": 1
+    }
+  ],
+  "independent_probe_versions": {
+    "source_sha": "954825efb66d16f7e41087e1c108b45042732703",
+    "initial_probe": "test_independent_ordinary_case_step.v1.py",
+    "initial_sha256": "0cc279e518844d4b79633094f93d5b1b833fde8513fc189aad1a0c9a1f489ee2",
+    "revised_probe": "test_independent_ordinary_case_step.py",
+    "revised_sha256": "6784f28eaaab5ef35167ceae138d30657b2f59b9ce492ab9cb24ae566bfd5fd6",
+    "failed_nodeid": "tests/test_independent_ordinary_case_step.py::test_independent_cold_api_real_notice_lock_crosses_persisted_first_deadline",
+    "initial_window": "frozen-954825ef-window1",
+    "initial_call_seconds": 3.5411879560051602,
+    "classification": "PRIVATE_PROBE_TIMING_DESIGN_FAILURE_BEFORE_LOCK_WAIT",
+    "evidence": "A 3-second original deadline was consumed by queue work plus cold process startup. First call lasted3.541s and failed at empty inbox[0] before row-lock setup. Contract deliberately filters expired executor notices. No product failure proven.",
+    "change": "Use a15-second original bounded test deadline; cold OPEN must prove it remains live, then wait until about1.1s before that same persisted deadline before starting the actual PG row-lock wait. No source/fixture/assertion weakening or deadline renewal.",
+    "rerun_policy": "Only this one independent selector; the passed5 own and3 root-overlap selectors are not rerun or double counted."
+  },
+  "private_interwindow_changes": [
+    "test_independent_ordinary_case_step.py"
+  ],
+  "old_69_and_129_not_repeated_or_transferred": true,
+  "product_or_root_test_failures": 0
+}

@@ -1,0 +1,14 @@
+{
+  "source_sha": "954825efb66d16f7e41087e1c108b45042732703",
+  "initial_probe": "test_independent_ordinary_case_step.v1.py",
+  "initial_sha256": "0cc279e518844d4b79633094f93d5b1b833fde8513fc189aad1a0c9a1f489ee2",
+  "revised_probe": "test_independent_ordinary_case_step.py",
+  "revised_sha256": "6784f28eaaab5ef35167ceae138d30657b2f59b9ce492ab9cb24ae566bfd5fd6",
+  "failed_nodeid": "tests/test_independent_ordinary_case_step.py::test_independent_cold_api_real_notice_lock_crosses_persisted_first_deadline",
+  "initial_window": "frozen-954825ef-window1",
+  "initial_call_seconds": 3.5411879560051602,
+  "classification": "PRIVATE_PROBE_TIMING_DESIGN_FAILURE_BEFORE_LOCK_WAIT",
+  "evidence": "A 3-second original deadline was consumed by queue work plus cold process startup. First call lasted3.541s and failed at empty inbox[0] before row-lock setup. Contract deliberately filters expired executor notices. No product failure proven.",
+  "change": "Use a15-second original bounded test deadline; cold OPEN must prove it remains live, then wait until about1.1s before that same persisted deadline before starting the actual PG row-lock wait. No source/fixture/assertion weakening or deadline renewal.",
+  "rerun_policy": "Only this one independent selector; the passed5 own and3 root-overlap selectors are not rerun or double counted."
+}

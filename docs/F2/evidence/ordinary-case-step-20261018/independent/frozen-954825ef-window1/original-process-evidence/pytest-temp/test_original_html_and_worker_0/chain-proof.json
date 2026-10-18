@@ -1,0 +1,261 @@
+{
+  "ordinary_api_processes": 3,
+  "worker_processes": 3,
+  "first_offer": {
+    "scope": "ORDINARY_CASE_STEP_REAL_HTML",
+    "phase": "OFFER",
+    "checks": 5,
+    "calls": [
+      {
+        "method": "GET",
+        "path": "/api/preparations",
+        "status": 200,
+        "response_scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/preparations/20fda841-9b12-499d-8f03-5b96f02a9370",
+        "status": 200,
+        "response_scope": "SYNTHETIC_LOCAL_PREPARATION_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/preparations/20fda841-9b12-499d-8f03-5b96f02a9370/readiness",
+        "status": 200,
+        "response_scope": "SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/preparations/20fda841-9b12-499d-8f03-5b96f02a9370/material-corrections",
+        "status": 200,
+        "response_scope": "SYNTHETIC_SLOT_MATERIAL_CORRECTIONS"
+      },
+      {
+        "method": "GET",
+        "path": "/api/preparations/20fda841-9b12-499d-8f03-5b96f02a9370/material-objections",
+        "status": 200,
+        "response_scope": "SYNTHETIC_MATERIAL_DELIVERY_OBJECTION"
+      },
+      {
+        "method": "GET",
+        "path": "/api/preparations/20fda841-9b12-499d-8f03-5b96f02a9370/dispatch",
+        "status": 200,
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/service-dispatches/catalog?preparation_id=20fda841-9b12-499d-8f03-5b96f02a9370",
+        "status": 200,
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_ONLY"
+      },
+      {
+        "method": "POST",
+        "path": "/api/preparations/20fda841-9b12-499d-8f03-5b96f02a9370/dispatch",
+        "status": 201,
+        "body": {
+          "expected_preparation_revision": 5,
+          "expected_dispatch_revision": 0,
+          "executor_id": "executor-a",
+          "reason": "SYNTHETIC ordinary exact duty"
+        },
+        "request_key": "3bdaa3ad-a074-4aab-b596-2fe6da0ec661",
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/preparations/20fda841-9b12-499d-8f03-5b96f02a9370/dispatch",
+        "status": 200,
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/service-dispatches/catalog?preparation_id=20fda841-9b12-499d-8f03-5b96f02a9370",
+        "status": 200,
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_ONLY"
+      }
+    ],
+    "dispatch_id": "6e97b343-853d-402b-ba65-cd366b457ef0",
+    "deadline": "2026-10-18T17:42:56.553889+00:00",
+    "real_browser": false
+  },
+  "executed": {
+    "scope": "ORDINARY_CASE_STEP_REAL_HTML",
+    "phase": "EXECUTE",
+    "checks": 12,
+    "calls": [
+      {
+        "method": "GET",
+        "path": "/api/dispatch-notices",
+        "status": 200,
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_NOTICES_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/dispatch-notices/fc97dab2-9ea7-4d70-8060-96c593bcee70",
+        "status": 200,
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_NOTICES_ONLY"
+      },
+      {
+        "method": "POST",
+        "path": "/api/dispatch-notices/fc97dab2-9ea7-4d70-8060-96c593bcee70/commands",
+        "status": 200,
+        "body": {
+          "action": "OPEN",
+          "expected_revision": 1
+        },
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_NOTICES_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/preparations/20fda841-9b12-499d-8f03-5b96f02a9370/dispatch",
+        "status": 200,
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_ONLY"
+      },
+      {
+        "method": "POST",
+        "path": "/api/dispatch-notices/fc97dab2-9ea7-4d70-8060-96c593bcee70/commands",
+        "status": 200,
+        "body": {
+          "action": "MARK_READ",
+          "expected_revision": 1
+        },
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_NOTICES_ONLY"
+      },
+      {
+        "method": "POST",
+        "path": "/api/service-dispatches/6e97b343-853d-402b-ba65-cd366b457ef0/commands",
+        "status": 200,
+        "body": {
+          "action": "ACCEPT",
+          "expected_revision": 1,
+          "reason": "SYNTHETIC I accept my own step"
+        },
+        "request_key": "40aff657-2876-4d9c-93b6-52bb0061571f",
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/service-dispatches/6e97b343-853d-402b-ba65-cd366b457ef0/accept-recovery?preparation_id=20fda841-9b12-499d-8f03-5b96f02a9370&case_id=d2bc8f09-cd64-4d1e-a2ef-fa5701456056&run_id=496a935a-43a3-459d-b7cb-b628be8ac0a1&offer_id=18652029-e8ac-46b6-9795-7545c8edc245&expected_revision=1&preparation_revision=5",
+        "status": 200,
+        "request_key": "40aff657-2876-4d9c-93b6-52bb0061571f",
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/service-dispatches/6e97b343-853d-402b-ba65-cd366b457ef0",
+        "status": 200,
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/executor-receipts",
+        "status": 200,
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/executor-receipts/ef5df40d-8f76-47ae-aeae-ca7e86d6dcd0",
+        "status": 200,
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      },
+      {
+        "method": "POST",
+        "path": "/api/executor-receipts/ef5df40d-8f76-47ae-aeae-ca7e86d6dcd0/commands",
+        "status": 200,
+        "body": {
+          "action": "SUBMIT",
+          "expected_revision": 1,
+          "text": "SYNTHETIC ordinary manual task output",
+          "source_kind": "SYNTHETIC",
+          "source_label": "SYNTHETIC executor work log"
+        },
+        "request_key": "71f90e81-5677-450a-a828-0631b412c254",
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/executor-receipts/ef5df40d-8f76-47ae-aeae-ca7e86d6dcd0/submit-recovery?preparation_id=20fda841-9b12-499d-8f03-5b96f02a9370&case_id=d2bc8f09-cd64-4d1e-a2ef-fa5701456056&run_id=496a935a-43a3-459d-b7cb-b628be8ac0a1&expected_revision=1&preparation_revision=5",
+        "status": 200,
+        "request_key": "71f90e81-5677-450a-a828-0631b412c254",
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/executor-receipts/ef5df40d-8f76-47ae-aeae-ca7e86d6dcd0",
+        "status": 200,
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/executor-receipts",
+        "status": 200,
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/executor-receipts/ef5df40d-8f76-47ae-aeae-ca7e86d6dcd0",
+        "status": 200,
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      },
+      {
+        "method": "POST",
+        "path": "/api/executor-receipts/ef5df40d-8f76-47ae-aeae-ca7e86d6dcd0/commands",
+        "status": 200,
+        "body": {
+          "action": "ACKNOWLEDGE",
+          "expected_revision": 2,
+          "reason": "SYNTHETIC independent owner check",
+          "receipt_sha256": "ed936154a8bcd94756a75b32c73794a00d2e4f34283d4f9bb4b0abac4eab198f"
+        },
+        "request_key": "0b08a1cf-cded-4689-b7b6-042c77c8be2b",
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/executor-receipts/ef5df40d-8f76-47ae-aeae-ca7e86d6dcd0",
+        "status": 200,
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      }
+    ],
+    "step": "ef5df40d-8f76-47ae-aeae-ca7e86d6dcd0",
+    "deadline": "2026-10-18T17:42:56.553889+00:00",
+    "state": "LOCAL_ACKNOWLEDGED",
+    "real_browser": false
+  },
+  "cold": {
+    "scope": "ORDINARY_CASE_STEP_REAL_HTML",
+    "phase": "READ",
+    "checks": 7,
+    "calls": [
+      {
+        "method": "GET",
+        "path": "/api/executor-receipts",
+        "status": 200,
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/executor-receipts/ef5df40d-8f76-47ae-aeae-ca7e86d6dcd0",
+        "status": 200,
+        "response_scope": "SYNTHETIC_ASSIGNED_EXECUTOR_RECEIPT_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/dispatch-notices",
+        "status": 200,
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_NOTICES_ONLY"
+      },
+      {
+        "method": "GET",
+        "path": "/api/dispatch-notices/fc97dab2-9ea7-4d70-8060-96c593bcee70",
+        "status": 200,
+        "response_scope": "SYNTHETIC_INTERNAL_DISPATCH_NOTICES_ONLY"
+      }
+    ],
+    "step": "ef5df40d-8f76-47ae-aeae-ca7e86d6dcd0",
+    "deadline": "2026-10-18T17:42:56.553889+00:00",
+    "real_browser": false
+  },
+  "authority_unchanged": true,
+  "real_browser": false
+}

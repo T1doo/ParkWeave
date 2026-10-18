@@ -1,0 +1,63 @@
+{
+  "baseline_commit": "7b98f454bee96947f2bc1c824a2b50c10939e77a",
+  "contract_initial_commit": "b260c6f00a5f79a330a875852ac171a2c07d5174",
+  "execution": {
+    "db_server_worker_browser_processes_started": 0,
+    "network_calls": 0,
+    "project_imports": 0,
+    "tests_run": 0,
+    "tracked_or_git_mutations": false
+  },
+  "findings": [
+    {
+      "evidence": "Terminal response handling tests only the ISOLATED_CASE_STEP_ASSIGNMENT_V1 literal; the ordinary success falls through to loadDispatch. Backend deliberately ends executor read rights after DECLINE, so that follow-up GET is forbidden.",
+      "expected": "Use the same existing exact terminal event/offer/actor/revision proof for the explicit ordinary contract; clear the terminal view and show confirmed decline, with no forbidden follow-up GET or retained live view.",
+      "id": "STATIC-P2-01",
+      "lines": [
+        1398,
+        1403
+      ],
+      "minimal_fix": "Recognize both explicit known CaseStep contracts in the current strict terminal branch; retain all guards and proof checks. Add one ordinary complete-page DECLINE selector.",
+      "severity": "P2",
+      "source": "src/parkweave/web.html",
+      "state": "REPORTED_TO_ROOT_AWAITING_FIX_AND_FROZEN_EXECUTION",
+      "trigger": "A normal CASE_STEP_ASSIGNMENT_V1 executor successfully posts DECLINE from the original complete page."
+    },
+    {
+      "evidence": "Dispatch and receipt label every assignment_contract as isolated; notice explanatory text recognizes only the old isolated literal.",
+      "expected": "Normal CaseStep text describes the ordinary limited step and no whole-Run access, retaining explicit SYNTHETIC evidence limits.",
+      "id": "STATIC-UI-02",
+      "lines": [
+        1355,
+        1530,
+        2152
+      ],
+      "severity": "PRODUCT_TEXT",
+      "source": "src/parkweave/web.html",
+      "state": "REPORTED_TO_ROOT"
+    }
+  ],
+  "limitations": [
+    "Static review of WIP only; no frozen implementation sign-off",
+    "Need bounded private-mirror execution after root freeze",
+    "Browser/Windows/formal AT35/real sources or business remain unverified"
+  ],
+  "observed_wip_file_sha256": {
+    "src/parkweave/api.py": "c7387c5ab000cf8bd0a0a6c824089ab5ddad741c4def53c3fff5372abfb4be0e",
+    "src/parkweave/case_step_assignments.py": "f5baac1aae7e185a0bfe5fa4c80cc5d24dc32d74eeb317925f41fc2da882364f",
+    "src/parkweave/dispatch_notices.py": "dc24cb1e9fcfef7cb348cab90928c5eae8299938a4fc36f81674a9eb2eaee21f",
+    "src/parkweave/web.html": "6e4e6c3c7f59e09c91befa3cd2036d13cf4a3df7394472bc5a1f5d0877c2bad2",
+    "src/parkweave/worker.py": "2bbcc26a87886a94c21f66a56292f72daa7b83d682c331512bdc71338746711d"
+  },
+  "oracle": "literal-oracle-plan.json",
+  "oracle_sha256": "04c02fef368ede67e907d33debc99bf37099e2d5eef8026de1254f12c3231d39",
+  "phase": "UNFROZEN_WIP_STATIC_ONLY",
+  "reviewed_structure": [
+    "Ordinary admission is explicit, exact-type/store-bound and rejects mixed runtime providers; original default/Native refusal remains.",
+    "Business methods reuse _CaseStepTransactions; per-operation _OrdinaryCaseStep holds participants instead of shared mutable participant fields.",
+    "Ordinary has no fixture nonce, provider expiry or tainted_runs set. Existing first-OFFER marker supplies deadline; old isolated remains a separate protocol.",
+    "Context selection outside the subsequent transaction grants no access; original _parent reauthenticates and matches the exact current parent.",
+    "Notification lane routing uses explicit contract before LIMIT and complete original source proof before delivery/suppression."
+  ],
+  "transport_note": "Earlier private-oracle write process failed with exec-server transport disconnected; read-only retry confirmed no private artifact, then one authorized write retry succeeded. This was a transport failure, not a permission denial."
+}

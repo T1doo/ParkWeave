@@ -1,0 +1,160 @@
+{
+  "baseline_commit": "7b98f454bee96947f2bc1c824a2b50c10939e77a",
+  "baseline_git_blob_sha256": {
+    "docs/F2/CaseStepAssignmentContract-20261018.md": "f1680c20fdc720a703a81ec3c8bd8c366b8795aa2ef95ea35b3b5f753e3f20b9",
+    "docs/F2/CaseStepNoticeContract-20261018.md": "6e158de21ba9400152e607da3fd3a68e4460f96de257df5415925a10f4cb109d",
+    "docs/F2/NativeRunAccessWriterContract.md": "882297f92b6e1c78b41cc1a72ff0732ab2209dc41a07aa56e14cf714b1c3f46c",
+    "src/parkweave/api.py": "7702127288f731cef06c993f573aaa1ec2d631862a416e111e93107f278ebeac",
+    "src/parkweave/case_step_assignments.py": "841782a2329e56d5d2d2c550099871f8a3f1d52afee9aec1b52deb9f613c70bf",
+    "src/parkweave/dispatch_notices.py": "cad2b1d654630334692ee6f532052f1fc918aa5c09875299940ff6fa40e0499d",
+    "src/parkweave/executor_receipts.py": "902df736e63f5ab4516e7322988cc6845e3bf091ea7484c90c8bdd56b6b92c1b",
+    "src/parkweave/permissions.py": "eb16e8f90e800dec3c57ff77e6c37e6626bd667ad43e3b2a00cfef1e12448ea3",
+    "src/parkweave/preparation.py": "957505ff461c367bb918e24e947fc9ef46e398a98a0c651932dacfb03d384bc2",
+    "src/parkweave/roles.sql": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+    "src/parkweave/service_dispatches.py": "f237feccf5994b313fbfb478457f39d75ecaecdf6849b7c58bd3b5e607a412d9",
+    "src/parkweave/store.py": "432d6993f834390088d719eae11b7a6a68f7f160bebc3d66332841bb7a24fdf1",
+    "src/parkweave/web.html": "6e4e6c3c7f59e09c91befa3cd2036d13cf4a3df7394472bc5a1f5d0877c2bad2",
+    "src/parkweave/worker.py": "46352aaf786bc2f4b6db19503b62935ec6e4f49aca67e4b53f7d5749ebaf8290"
+  },
+  "business_tests_run": 0,
+  "clarifications_accepted_by_parent": [
+    "Owner history READ/PREPARE does not require current EXECUTE; new business writes do.",
+    "Ordinary has no provider one-hour lifetime. History/OPEN/MARK_READ/WITHDRAW do not inherit offer expiry; ACCEPT/SUBMIT/ACK retain the original 300-second deadline and generation checks.",
+    "Per-operation local immutable participant context; no participants stored on shared ordinary service. Persisted current active/inactive assignments and Native history are checked; no claim to detect trusted-admin history deletion."
+  ],
+  "contract_initial_commit": "b260c6f00a5f79a330a875852ac171a2c07d5174",
+  "contract_path": "docs/F2/OrdinaryCaseStepContract-20261018.md",
+  "counts_note": "18 oracle specifications and planned designs are not test executions or PASS counts.",
+  "execution_status": "NOT_RUN_AWAITING_IMPLEMENTATION_FREEZE",
+  "initial_committed_contract_sha256": "a86240e2f938e2807eb9fe0a9703bc31c8ec0f525610e59f8d851ef80710297f",
+  "method": "Literal expected states/access/side effects from original requirements, contract and baseline only; no new implementation-derived oracle, project import, algorithm clone or execution.",
+  "observed_clarified_contract_sha256": "ab741c3731e62fce7e1af56ee0024f830b40b5fce3d5ca8a1b32b69211b7877c",
+  "observed_contract_snapshot": "contract-observed.md",
+  "open_p1_p2_before_implementation": [],
+  "planned_bounded_composites": [
+    "fresh configured_app and original worker processes preserve exact original deadline/UUID/timestamps",
+    "two simultaneous Cases do not leak mutable participant context",
+    "revoke/restore then restart cannot revive stale generation",
+    "old isolated/native/assignment exclusion with no foreign queue takeover",
+    "owned lock wait crosses original deadline and rolls back new action",
+    "shared API/worker mode routing, default and invalid/mixed configuration"
+  ],
+  "schema_version": 1,
+  "scope": "INDEPENDENT_ORDINARY_CASE_STEP_LITERAL_ORACLE_BEFORE_IMPLEMENTATION",
+  "scope_limitations": [
+    "No implementation review/sign-off yet",
+    "No tests, DB, worker/server/browser/model process or network started by reviewer",
+    "No real source or business authority issued"
+  ],
+  "specifications": [
+    {
+      "boundary": "No identity, Grant, policy, permit, approval or credential is issued by configuration.",
+      "expected": "Unset mode retains the original guard. Exact CURRENT_PREPARATION selects the same admission configuration for API and worker. Unknown/noncanonical mode and mixed Native/formal/isolated/demo configuration deny without a fallback.",
+      "id": "OC01",
+      "title": "Explicit routing is not authority"
+    },
+    {
+      "boundary": "No fresh-DB issuance, fixture registry, process nonce, participant whitelist or formal-proof fixture substitutes ordinary current sources.",
+      "expected": "An existing LOCAL preparation/Case/successful case.create Run/VERIFIED operation with current exact-domain participants and the explicit SYNTHETIC material service can enter. Nonempty business DB is allowed. Missing scope/source, unconfirmed material or wrong service denies.",
+      "id": "OC02",
+      "title": "Existing legal ordinary parent"
+    },
+    {
+      "boundary": "Authority tables remain unchanged; executor whole-Run read still denies. Only the fixed task, exact service version, own offer/state/receipt are exposed; no automatic P1-P5 verification or whole-Case completion.",
+      "expected": "The current responsible reviewer READ/REVIEW_ASSIGNED explicitly offers to an existing same-domain READ service_executor; that executor accepts/submits and the owner independently ACKs. Owner new business writes require READ/PREPARE/EXECUTE.",
+      "id": "OC03",
+      "title": "Original HTTP business chain and least information"
+    },
+    {
+      "boundary": "Neither shared Python object nor issuance registry is needed. Restart/configuration never replaces the deadline with now+300 seconds or introduces a provider one-hour lifetime; current grants remain required.",
+      "expected": "Recreated configured_app and a separately restarted worker see the same original UUIDs, versions, fingerprints and first timestamps after OFFER/ACCEPT/SUBMIT/OPEN/READ. The persisted first OFFER deadline remains identical.",
+      "id": "OC04",
+      "title": "Independent restart preserves original facts"
+    },
+    {
+      "boundary": "Recovery is bound to exact original proof/coordinates, exposes uncertainty when not observed, and does not automatically POST ACCEPT/SUBMIT/ACK/VERIFY.",
+      "expected": "Within the original allowed authorization/time boundary an identical original-key replay preserves its original event and creates no extra row. A different body conflicts. Terminal/expired states and a fresh key cannot create a second OFFER or renew the first deadline.",
+      "id": "OC05",
+      "title": "Keys and one offer"
+    },
+    {
+      "boundary": "No authority write, fixture-issued CaseStep dependency, old-isolated adoption or suppression of foreign intent.",
+      "expected": "An ordinary API may stop before delivery; a fresh original worker consumes the persisted ordinary event using current authorization. Later worker restarts and a fresh API preserve one inbox item per event/recipient and the original OPEN/READ times.",
+      "id": "OC06",
+      "title": "Fresh original worker consumes ordinary history"
+    },
+    {
+      "boundary": "Marker text alone grants nothing. Rejected business calls have no event/outbox delta and no rejected-old-handler fallback.",
+      "expected": "Live/expired ISOLATED marker, legacy dispatch/receipt, mixed/unknown/damaged marker deny ordinary read/write or remain quarantined in consumption. Ordinary mode never converts or relabels their history.",
+      "id": "OC07",
+      "title": "Old and corrupt protocols remain isolated"
+    },
+    {
+      "boundary": "No new Run grant, history deletion or fallback from a Native/legacy denial. Detection relies on persisted surviving records, not an in-memory tainted_runs set; arbitrary trusted-admin deletion of history is outside this claim.",
+      "expected": "Any surviving active/inactive run_assignment row or Native history denies ordinary actions, including contamination added after OFFER and checked by a new process.",
+      "id": "OC08",
+      "title": "Persisted Run/Native exclusions survive restart"
+    },
+    {
+      "boundary": "A stale executor action or ACK denies and rolls back; implementation must not overwrite old proof with a restored current generation.",
+      "expected": "Revoke/restore READ/PREPARE/REVIEW_ASSIGNED/EXECUTE or principal role/domain/generation across a restart never revives an old offer. Exact current scope and the original generation are required for new business actions.",
+      "id": "OC09",
+      "title": "Current permission and generation ABA"
+    },
+    {
+      "boundary": "Currently authorized owner/reviewer may retain the contract minimum history; no new key, reassignment or process recreation bypasses changed-source rejection for new business actions.",
+      "expected": "Material revision/hash or exact catalogue hash/xmin changes, including restore to apparently equal content, cannot bless the old offer or renew it in a fresh process.",
+      "id": "OC10",
+      "title": "Material and catalogue ABA"
+    },
+    {
+      "boundary": "No per-request participants are stored as mutable shared service state. A failed or skipped candidate in Case A cannot poison the final checks for Case B.",
+      "expected": "Two Cases with different participants interleaved through one API service/Store retain exact own Case/Run/preparation bindings for OFFER/read/ACCEPT/recovery/consume. Cross-Case actor/key/ID swaps deny or conflict.",
+      "id": "OC11",
+      "title": "Concurrent Case context separation"
+    },
+    {
+      "boundary": "Malformed/edited deadline is rejected. A final admission check after locks is not claimed to be a physical COMMIT-instant atomic expiry guarantee.",
+      "expected": "The first OFFER persists a database-clock deadline at most 300 seconds after its birth. ACCEPT/SUBMIT/ACK require that original deadline and generations; retry, ACCEPT, restart, revoke/restore or configuration never extends it.",
+      "id": "OC12",
+      "title": "First database deadline"
+    },
+    {
+      "boundary": "Denied business or inbox commands do not commit their event or read timestamp. Busy/faulted delivery preserves the pending intent. Valid proven delivery may legitimately suppress a currently unauthorized recipient.",
+      "expected": "A supported owned parent/inbox/outbox/auth lock wait crossing expiry, revocation or source change is followed by current token/authority/source checks and, for new business actions, the original deadline check.",
+      "id": "OC13",
+      "title": "Final check after lock waits"
+    },
+    {
+      "boundary": "WITHDRAW does not require beneficiary READ or old-material freshness. Original accepted receipt/events remain historical. Executor read/write denies after expiry/termination; new business writes still require owner EXECUTE and the original deadline/generations.",
+      "expected": "Current owner history needs READ/PREPARE without EXECUTE; reviewer history needs READ/REVIEW_ASSIGNED. History, OPEN/MARK_READ and current reviewer WITHDRAW do not inherit the offer 300-second deadline or isolated provider one-hour lifetime.",
+      "id": "OC14",
+      "title": "Ordinary history and withdrawal lifetime"
+    },
+    {
+      "boundary": "Routing is not authorization. Unknown/damaged/foreign intent remains pending; only a complete own source proof can be delivered/suppressed. Cursor scope cannot cross protocol/authority boundaries. Bounded False does not prove exhaustion.",
+      "expected": "Ordinary/default/old-isolated/foreign lanes are separated before a bounded LIMIT, consistently for API and worker. A foreign prefix must not starve an eligible own event; markerless followups still follow their original lineage.",
+      "id": "OC15",
+      "title": "Before-LIMIT lane separation"
+    },
+    {
+      "boundary": "Corrupt payload/column/type/binding or unknown-key wrong coordinates refuse without 500 or partial-hash authorization; immutable event prefixes remain unchanged.",
+      "expected": "OFFER1, ACCEPT2 to receipt CREATE, DECLINE/WITHDRAW and SUBMIT/recovery retain exact original typed actor/reason/revision/Case/Run/dispatch/receipt UUID/hash/version proof. A false OFFER2 cannot borrow the first marker.",
+      "id": "OC16",
+      "title": "Strict original event and recovery proofs"
+    },
+    {
+      "boundary": "Only minimum CaseStep information appears, with no goal/material/facts/other executor data, no whole-Run access claim and no automatic POST. Node VM evidence is not a real-browser claim.",
+      "expected": "Original complete HTML under ordinary configured_app navigates list/row/buttons to explicit OFFER, own ACCEPT/SUBMIT, independent ACK, notice OPEN and separate MARK_READ with actual HTTP. A late success/403 or ABA cannot restore stale private context or clear a newer recovery handle.",
+      "id": "OC17",
+      "title": "Original full-page controls and late responses"
+    },
+    {
+      "boundary": "Startup must not seed/migrate/repair authority, create credentials or install host policy. Do not rerun/transfer the prior69 or129 matrices. Real browser, Windows, formal AT35, real sources/business/models and external messages remain NOT_RUN.",
+      "expected": "Later bounded evidence must use an actual configured_app child process plus the original worker process, restricted app DSN, and only preboot original owned fixture principals/grants/catalogue. Runtime business is created by original HTTP, without CaseStep fixture issuance or owner.assign_status.",
+      "id": "OC18",
+      "title": "Execution provenance and allowed setup"
+    }
+  ],
+  "tracked_or_git_mutations": false
+}

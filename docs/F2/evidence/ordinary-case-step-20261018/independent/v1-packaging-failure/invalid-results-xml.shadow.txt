@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="9" time="82.285" timestamp="2026-10-18T17:36:59.363259+00:00" hostname="9eff6a810039"><testcase classname="tests.test_independent_ordinary_case_step" name="test_independent_two_domains_parallel_context_and_exact_recovery" time="10.315" /><testcase classname="tests.test_independent_ordinary_case_step" name="test_independent_owner_history_without_execute_and_withdraw_after_stale_source" time="7.372" /><testcase classname="tests.test_independent_ordinary_case_step" name="test_independent_fresh_worker_after_read_generation_aba_suppresses_only_executor" time="5.987" /><testcase classname="tests.test_independent_ordinary_case_step" name="test_independent_catalog_xmin_aba_is_not_fresh_after_process_restart" time="7.135" /><testcase classname="tests.test_independent_ordinary_case_step" name="test_independent_corrupt_ordinary_proof_stays_pending_in_fresh_worker" time="6.354" /><testcase classname="tests.test_independent_ordinary_case_step" name="test_independent_cold_api_real_notice_lock_crosses_persisted_first_deadline" time="4.890"><failure message="IndexError: list index out of range">normal = (&lt;parkweave.store.Store object at 0x7f15833d7710&gt;, &lt;parkweave.store.Store object at 0x7f15833d7dd0&gt;, {'fixture-a': '<REDACTED_TRUNCATED_FIXTURE_VALUE>': '<REDACTED_SYNTHETIC_FIXTURE_SESSION>', ...}, &lt;starlette.testclient.TestClient object at 0x7f1581551ac0&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f15833d6e70&gt;
+
+    def test_independent_cold_api_real_notice_lock_crosses_persisted_first_deadline(normal,monkeypatch):
+        f=normal;p=ready(f,label='LOCK')
+        monkeypatch.setattr(cs._OrdinaryCaseStep,'_offer_deadline',lambda self,c:cs._now(c)+timedelta(seconds=3))
+        d=ok(offer(f,p)[0],201)
+        # Only the initial shorter test deadline is injected. Cold API uses the actual
+        # frozen implementation and reads that persisted original deadline unchanged.
+        scope=cs.from_environment(Store(f[0].dsn),{'PARKWEAVE_CASE_STEP_MODE':cs.ORDINARY_MODE})
+        for _ in range(4):
+            if not dn.consume(scope.store,case_step_assignments=scope):break
+        with ordinary_api(f,OUT/'lock-cold') as api:
+&gt;           cold=(*f[:3],api);n=inbox(cold)[0];opened=ok(note(cold,n,'OPEN'))
+                                ^^^^^^^^^^^^^^
+E           IndexError: list index out of range
+
+tests/test_independent_ordinary_case_step.py:172: IndexError</failure></testcase><testcase classname="tests.test_ordinary_case_steps" name="test_ordinary_existing_preparation_receipt_and_notices_without_run_grant" time="5.483" /><testcase classname="tests.test_ordinary_case_step_process" name="test_original_html_and_worker_restarts_retain_uuid_deadline_and_read_receipt" time="20.826" /><testcase classname="tests.test_ordinary_case_step_process" name="test_original_ordinary_decline_clears_terminal_view_without_forbidden_get" time="10.041" /></testsuite></testsuites>
