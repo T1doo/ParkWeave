@@ -1,0 +1,275 @@
+{
+  "tested_sha": "555edeacd7720b34e9055a1fecdbfef1ef13dbe0",
+  "unique_pass": 7,
+  "new_nodes": 4,
+  "necessary_compatibility_and_static_nodes": 3,
+  "nodes": [
+    "tests/test_at28_resource_observation.py::test_current_preview_source_is_not_prior_catalog_and_writes_nothing",
+    "tests/test_at28_resource_observation.py::test_original_page_discloses_current_source_before_explicit_local_confirmation[current-source]",
+    "tests/test_at28_resource_observation.py::test_original_page_discloses_current_source_before_explicit_local_confirmation[missing-source]",
+    "tests/test_at28_resource_observation.py::test_original_page_discloses_current_source_before_explicit_local_confirmation[invalid-observation-time]",
+    "tests/test_resource_alternative_times_offline.py::test_actual_resource_suggestions_with_offline_doubles[original_flow_explicit]",
+    "tests/test_resource_holds.py::test_catalog_and_anonymous_availability_do_not_expose_other_enterprise_hold",
+    "tests/test_acceptance_runner.py::test_fixed_bindings_complete_unique_and_safe"
+  ],
+  "pytest_seconds": 17.609,
+  "outer_seconds": 20.379323169996496,
+  "input_count": 821,
+  "four_maps_equal": true,
+  "module_origins": 93,
+  "all_origins_in_frozen_mirror": true,
+  "scenarios": {
+    "invalid-observation-time": {
+      "checks": 10,
+      "mode": "invalid-observation-time",
+      "calls": [
+        {
+          "method": "GET",
+          "path": "/api/synthetic-resources",
+          "status": 200,
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        },
+        {
+          "method": "GET",
+          "path": "/api/plan-approval/status",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/resource-bundles",
+          "status": 200,
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        },
+        {
+          "method": "POST",
+          "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview",
+          "status": 200,
+          "body": {
+            "starts_at": "2026-10-18T23:02:00Z",
+            "ends_at": "2026-10-19T00:02:00Z",
+            "quantity": 1
+          },
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        },
+        {
+          "method": "POST",
+          "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview",
+          "status": 200,
+          "body": {
+            "starts_at": "2026-10-18T23:02:00Z",
+            "ends_at": "2026-10-19T00:02:00Z",
+            "quantity": 1
+          },
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        }
+      ],
+      "preview": {
+        "scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY",
+        "namespace": "SYNTHETIC",
+        "reservation": "NOT_CONFIRMED",
+        "external_acceptance": "NOT_SUBMITTED",
+        "offline_fulfillment": "NO_EVIDENCE",
+        "resource_id": "fa161ea0-b665-4ec5-b345-a070bfec764d",
+        "resource_revision": 2,
+        "server_time": "2026-10-18T22:02:39.438493+00:00",
+        "starts_at": "2026-10-18T23:02:00+00:00",
+        "ends_at": "2026-10-19T00:02:00+00:00",
+        "quantity": 1,
+        "capacity": 3,
+        "buffer_seconds": 300,
+        "occupied_peak": 0,
+        "available_quantity": 3,
+        "available": true,
+        "preview_only": true,
+        "resource_name": "SYNTHETIC current resource v2",
+        "source": {
+          "id": "AT28-current-resource-source",
+          "kind": "SYNTHETIC",
+          "revision": "2",
+          "statement": "SYNTHETIC current v2 <note>& source; external availability unverified"
+        },
+        "authority": "LOCAL_AUTHORITY",
+        "timezone": "UTC",
+        "external_availability": "UNKNOWN",
+        "confirmation_required": true
+      },
+      "real_browser": false,
+      "external_resource_availability": "UNKNOWN"
+    },
+    "missing-source": {
+      "checks": 10,
+      "mode": "missing-source",
+      "calls": [
+        {
+          "method": "GET",
+          "path": "/api/synthetic-resources",
+          "status": 200,
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        },
+        {
+          "method": "GET",
+          "path": "/api/plan-approval/status",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/resource-bundles",
+          "status": 200,
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        },
+        {
+          "method": "POST",
+          "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview",
+          "status": 200,
+          "body": {
+            "starts_at": "2026-10-18T23:02:00Z",
+            "ends_at": "2026-10-19T00:02:00Z",
+            "quantity": 1
+          },
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        },
+        {
+          "method": "POST",
+          "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview",
+          "status": 200,
+          "body": {
+            "starts_at": "2026-10-18T23:02:00Z",
+            "ends_at": "2026-10-19T00:02:00Z",
+            "quantity": 1
+          },
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        }
+      ],
+      "preview": {
+        "scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY",
+        "namespace": "SYNTHETIC",
+        "reservation": "NOT_CONFIRMED",
+        "external_acceptance": "NOT_SUBMITTED",
+        "offline_fulfillment": "NO_EVIDENCE",
+        "resource_id": "fa161ea0-b665-4ec5-b345-a070bfec764d",
+        "resource_revision": 2,
+        "server_time": "2026-10-18T22:02:34.981461+00:00",
+        "starts_at": "2026-10-18T23:02:00+00:00",
+        "ends_at": "2026-10-19T00:02:00+00:00",
+        "quantity": 1,
+        "capacity": 3,
+        "buffer_seconds": 300,
+        "occupied_peak": 0,
+        "available_quantity": 3,
+        "available": true,
+        "preview_only": true,
+        "resource_name": "SYNTHETIC current resource v2",
+        "source": {
+          "id": "AT28-current-resource-source",
+          "kind": "SYNTHETIC",
+          "revision": "2",
+          "statement": "SYNTHETIC current v2 <note>& source; external availability unverified"
+        },
+        "authority": "LOCAL_AUTHORITY",
+        "timezone": "UTC",
+        "external_availability": "UNKNOWN",
+        "confirmation_required": true
+      },
+      "real_browser": false,
+      "external_resource_availability": "UNKNOWN"
+    },
+    "current-source": {
+      "checks": 19,
+      "mode": "current-source",
+      "calls": [
+        {
+          "method": "GET",
+          "path": "/api/synthetic-resources",
+          "status": 200,
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        },
+        {
+          "method": "GET",
+          "path": "/api/plan-approval/status",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/resource-bundles",
+          "status": 200,
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        },
+        {
+          "method": "POST",
+          "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview",
+          "status": 200,
+          "body": {
+            "starts_at": "2026-10-18T23:02:00Z",
+            "ends_at": "2026-10-19T00:02:00Z",
+            "quantity": 1
+          },
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        },
+        {
+          "method": "POST",
+          "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/holds",
+          "status": 201,
+          "body": {
+            "starts_at": "2026-10-18T23:02:00Z",
+            "ends_at": "2026-10-19T00:02:00Z",
+            "quantity": 1,
+            "expected_revision": 2,
+            "ttl_seconds": 120,
+            "purpose": "SYNTHETIC explicit AT28 local request"
+          },
+          "request_key": "a28d922a-4ef7-49ce-b10d-27d895fe5f65",
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        },
+        {
+          "method": "POST",
+          "path": "/api/resource-holds/76edac69-ca97-47c4-935c-34a0234c559f/confirm",
+          "status": 200,
+          "body": {
+            "expected_revision": 2
+          },
+          "request_key": "b261616f-9f06-477a-921a-8834fa51d0a3",
+          "response_scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"
+        }
+      ],
+      "preview": {
+        "scope": "SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY",
+        "namespace": "SYNTHETIC",
+        "reservation": "NOT_CONFIRMED",
+        "external_acceptance": "NOT_SUBMITTED",
+        "offline_fulfillment": "NO_EVIDENCE",
+        "resource_id": "fa161ea0-b665-4ec5-b345-a070bfec764d",
+        "resource_revision": 2,
+        "server_time": "2026-10-18T22:02:31.607157+00:00",
+        "starts_at": "2026-10-18T23:02:00+00:00",
+        "ends_at": "2026-10-19T00:02:00+00:00",
+        "quantity": 1,
+        "capacity": 3,
+        "buffer_seconds": 300,
+        "occupied_peak": 0,
+        "available_quantity": 3,
+        "available": true,
+        "preview_only": true,
+        "resource_name": "SYNTHETIC current resource v2",
+        "source": {
+          "id": "AT28-current-resource-source",
+          "kind": "SYNTHETIC",
+          "revision": "2",
+          "statement": "SYNTHETIC current v2 <note>& source; external availability unverified"
+        },
+        "authority": "LOCAL_AUTHORITY",
+        "timezone": "UTC",
+        "external_availability": "UNKNOWN",
+        "confirmation_required": true
+      },
+      "real_browser": false,
+      "external_resource_availability": "UNKNOWN"
+    }
+  },
+  "whole_AT28": "NOT_RUN",
+  "all42_whole_status": "NOT_RUN",
+  "real_browser": false,
+  "windows": false,
+  "real_external_resource": false,
+  "template_risk_window_retried": false,
+  "historical_HTTP_timeout": "UNKNOWN_OPEN"
+}

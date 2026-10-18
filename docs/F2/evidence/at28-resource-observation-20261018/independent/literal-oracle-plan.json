@@ -1,0 +1,138 @@
+{
+  "DB_HTTP_lock_browser_dynamic_tests": 0,
+  "baseline": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+  "baseline_inputs_sha256": "7254e20801c23b749a1557316bbf5a787946651164c3311f937671f84d697981",
+  "contract_commit": "48fd48f0dc8f39c60d32f25f8800cfd5a8f66f05",
+  "contract_path": "docs/F2/AT28CurrentResourceObservationContract-20261018.md",
+  "contract_sha256": "5fad8b430802527e64a1a16d620fac1f4aae2f10171b5898313dbd2c5d78dbbd",
+  "fixed_AT28": {
+    "id": "AT-28",
+    "initial_state": "待实现fixture",
+    "oracle": "显示来源/时间及需确认；本地非权威快照不能保证外部资源可用",
+    "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+    "scenario": "资源状态新鲜度",
+    "stage": "F2",
+    "status": "NOT_RUN",
+    "steps": "检查可用性并申请确认",
+    "type": "待执行时指定"
+  },
+  "frozen_at_utc": "2026-10-18T21:57:44.667100+00:00",
+  "kind": "SOURCE_BLIND_AT28_STATIC_ONLY_LITERAL_ORACLE",
+  "literal_originals": [
+    {
+      "line": 161,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+      "text": "资源包含空间、设备和服务时段，不包含真实硬件控制。容量、开放区间、占用、停用、缓冲、租户可用范围、确认方式都有版本与来源。每个资源标记权威状态来源：`LOCAL_AUTHORITY`表示经管理员确认由本系统管理；`IMPORTED_SNAPSHOT`只是导入快照，不能仅靠本地写入保证真实资源已被预订。合成资源始终标记为测试对象，不冒充真实房间/设备。"
+    },
+    {
+      "line": 163,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+      "text": "拟定方案只做可行性检查。临时占位、正式确认、释放和履约是不同动作；“模型选中”不等于预约成功。占位有可配置有效期，数据库时钟作为过期判断依据，即使清理 worker 停止，提交事务也不能继续把过期占位当有效。"
+    },
+    {
+      "line": 165,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+      "text": "同一本地数据库内的一组必需资源确认使用短事务：按稳定顺序锁定相关资源/时段，复核授权、规则和容量，全部成功才提交；否则全部不提交并说明冲突。时间采用半开区间 `[start,end)`、UTC存储与显式业务时区，缓冲纳入冲突检查。确定性约束交给代码，不让模型自行算并发容量。"
+    },
+    {
+      "line": 210,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+      "text": "新建对象只分配一次稳定ID，内容变化形成修订和规范化指纹。业务日期、源文件日期与导入日期分开；非当前来源不假装实时。"
+    },
+    {
+      "line": 339,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+      "text": "首版至少测试两个企业、两个园区配置和多种角色。有效权限为当前用户授权、Case范围、服务发布所需能力、运行身份与当前Grant的交集。企业ID由后端会话/授权确定，不能相信请求体自行指定。"
+    },
+    {
+      "line": 86,
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "revision": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+      "text": "| F2-T03 | 资源预检与组合确认 | 可用性、占位、过期、容量/缓冲、短事务组合确认和稳定锁顺序 | AT-09—AT-11、AT-28、AT-29 |"
+    },
+    {
+      "line": 300,
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "revision": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+      "text": "| AT-28 | 资源状态新鲜度 | 检查可用性并申请确认 | 显示来源/时间及需确认；本地非权威快照不能保证外部资源可用 | F2 |"
+    },
+    {
+      "line": 300,
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "revision": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+      "text": "| AT-28 | 资源状态新鲜度 | 检查可用性并申请确认 | 显示来源/时间及需确认；本地非权威快照不能保证外部资源可用 | F2 |"
+    },
+    {
+      "line": 372,
+      "path": "docs/分阶段开发计划.md",
+      "revision": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+      "text": "| AT-28 | 资源状态新鲜度 | 检查可用性并申请确认 | 显示来源/时间及需确认；本地非权威快照不能保证外部资源可用 | F2 |"
+    }
+  ],
+  "product_imports": 0,
+  "read_boundary": "Only historical baseline Git objects and committed contract; future WIP is not read.",
+  "rows": [
+    {
+      "given": "Catalog is read under registered sourceA/resource revision1, and later original preview locks and rereads actual current rowB/revision2.",
+      "id": "AT28-OBS-01",
+      "must": "Return source, authority, timezone and resource_name from the same authenticated post-resource-lock _scope row used for current revision/capacity/window/peak; preserve resource_id and original server_time observation.",
+      "must_not": "Do not copy source from the earlier catalog, pre-lock row, another resource, cached registration or invented source proof.",
+      "source": "fixed AT28;baseline resource_holds.py:141-159;contract:5"
+    },
+    {
+      "given": "An ordinary authorized synthetic preview is locally available.",
+      "id": "AT28-OBS-02",
+      "must": "Keep preview_only=true and original SYNTHETIC/local boundary. Add external_availability=UNKNOWN and confirmation_required=true independent of local available true/false.",
+      "must_not": "Do not claim external availability, approved reservation/receipt or fulfillment from LOCAL_AUTHORITY/source/preview success. No new authority/source/permission/claim is introduced.",
+      "source": "fixed AT28;product§5.4:161-167;contract:7"
+    },
+    {
+      "given": "Resource and source revisions may be different values and server_time comes from original DB clock after lock.",
+      "id": "AT28-OBS-03",
+      "must": "Expose actual resource/source revisions distinctly and accurately; label server_time as this database observation in UTC only.",
+      "must_not": "Do not invent source_updated_at/upstream refresh/TTL/current-until, equate source revision with resource revision, or promise the observation remains valid until HOLD.",
+      "source": "fixed AT28;product:210;contract:7"
+    },
+    {
+      "given": "The existing page has an earlier catalog observation and receives the new current preview.",
+      "id": "AT28-OBS-04",
+      "must": "Show separate catalog registration and current preview observations, including actual name/resource version/source kind,id,revision,statement/authority-local-scope/UTC observation and current local capacity decision. Keep original explicit hold/confirm decisions.",
+      "must_not": "Do not silently rewrite the earlier catalog as if freshly reread; do not display stale catalog source as the new preview source or imply automatic holding/confirmation.",
+      "source": "contract:9;baseline web resource catalog and preview handlers"
+    },
+    {
+      "given": "A returned preview is missing/invalid source or observation identity/time/boundary metadata, even if available=true.",
+      "id": "AT28-OBS-05",
+      "must": "Treat it as unverified, explain need to recheck, leave no actionable cached preview and keep HOLD disabled until a fresh valid current preview. Validate before caching/enabling, and clear any bad new/old preview on that path.",
+      "must_not": "Do not supply synthetic fallback source/time/authority, accept truthy malformed fields or leave a rejected response available for HOLD. Backend availability algorithm itself is unchanged.",
+      "source": "contract:9;baseline web resourcePreview/resourceCurrent"
+    },
+    {
+      "given": "Inputs/session/resource/navigation change, including ABA, while a preview or source response is pending.",
+      "id": "AT28-OBS-06",
+      "must": "Retain the original context/generation checks and late-error/late403 isolation. Show metadata with textContent and static DOM nodes; do not store secrets or execute source statement markup.",
+      "must_not": "Do not restore an old source/current preview or clear a newer private view from a stale response; no recovery/permission fallback or new persistence protocol.",
+      "source": "product:339;contract:9;baseline web resourceGeneration/token/resource/window"
+    },
+    {
+      "given": "The source observation slice is added.",
+      "id": "AT28-OBS-07",
+      "must": "Preserve original _auth/_scope/principal+resource locks, post-lock DB clock, _window/_peak, expected_revision HOLD, TTL/replay, single/combination confirmation, schema/roles and privacy. Only existing preview projection/current metadata presentation and required client validation change.",
+      "must_not": "Do not reimplement/retest algorithms, add routes/tables/Grant/admin/SLA/signed pin/receipt/publication/evaluation layers or use old template/platform-risk operations for this task.",
+      "source": "product§5.4;contract:7,11;baseline original locks/auth/window/peak/HOLD"
+    },
+    {
+      "given": "The bounded new source observation is reviewed against original fixed AT28 and prior receipts.",
+      "id": "AT28-OBS-08",
+      "must": "Record this as a fresh response/display increment. Existing AT22/23/24-27/history/secondscope work stays historical/reused within its own scope. Reviewer performs only static checks after final source SHA; parent dynamic results remain separate.",
+      "must_not": "No independent DB/HTTP/locks/browser/dynamic tests or prior marked-window retry. No formal whole AT28/Windows/real external resource/product-complete claim. AT29 stop authority/real sources retain their own missing inputs; old HTTP UNKNOWN stays open.",
+      "source": "RemainingDeliveryGates:7-23;dedup receipts;contract:3,11,13"
+    }
+  ],
+  "status": "WAITING_FOR_FINAL_SOURCE_SHA_STATIC_REVIEW_ONLY"
+}

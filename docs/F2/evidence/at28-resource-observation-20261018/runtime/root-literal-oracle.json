@@ -1,0 +1,42 @@
+{
+  "base": "4c1aa1005d3e81dce5a240b3a9056627ff527f1b",
+  "contract": "48fd48f0dc8f39c60d32f25f8800cfd5a8f66f05",
+  "original_case": {
+    "id": "AT-28",
+    "scenario": "资源状态新鲜度",
+    "steps": "检查可用性并申请确认",
+    "oracle": "显示来源/时间及需确认；本地非权威快照不能保证外部资源可用",
+    "stage": "F2",
+    "status": "NOT_RUN",
+    "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+    "initial_state": "待实现fixture",
+    "type": "待执行时指定"
+  },
+  "oracles": [
+    {
+      "id": "OBS-01",
+      "expected": "Original catalog v1 remains a prior observation. After owned fixture source/registration revision advances, original preview returns source v2, resource revision2, current capacity3, peak0, available_quantity3 and available true, all from original authorized current row."
+    },
+    {
+      "id": "OBS-02",
+      "expected": "Preview time is existing server_time UTC observation only. external_availability UNKNOWN and confirmation_required true; existing NOT_CONFIRMED/NOT_SUBMITTED/NO_EVIDENCE boundaries remain through original local HOLD and explicit local CONFIRM."
+    },
+    {
+      "id": "OBS-03",
+      "expected": "Full original HTML displays current preview source kind/id/revision/statement, registration revision, observed time and local authority separately from old catalog source, using text output. No automatic hold/confirmation."
+    },
+    {
+      "id": "OBS-04",
+      "expected": "Missing/invalid current observation source metadata is shown as not verified; new page does not enable/save usable hold preview or send a business write. Original mutation and late-context contracts remain unchanged."
+    }
+  ],
+  "does_not_claim": [
+    "whole AT28",
+    "real external resource availability",
+    "formal approval",
+    "browser/Windows",
+    "new source authority",
+    "new algorithm"
+  ],
+  "prior_template_window_not_retried": true
+}

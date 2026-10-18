@@ -1,0 +1,54 @@
+diff --git a/src/parkweave/web.html b/src/parkweave/web.html
+index 5aaf38c9..7e25d153 100644
+--- a/src/parkweave/web.html
++++ b/src/parkweave/web.html
+@@ -1098,13 +1098,13 @@ for(const input of $('resource-form').querySelectorAll('input,select'))input.oni
+ $('resource-catalog').onclick=async()=>{clearResources();const c=resourceContext();try{const x=await resourceCall('/api/synthetic-resources','GET',undefined,undefined,c);$('resource-catalog-view').append(textElement('p','本次目录读取时间 '+x.server_time+'（UTC）；目录是读取时快照，本次预检来源另列。'));for(const r of x.items){const o=textElement('option',r.name+' · 容量 '+r.capacity);o.value=r.id;o.dataset.resourceRevision=String(r.revision);$('resource-select').append(o);$('resource-catalog-view').append(textElement('p',r.name+' · 合成版本 '+r.revision+' · 容量 '+r.capacity+' · 前后各'+r.buffer_seconds+'秒缓冲 · '+(r.enabled?'启用':'停用')),textElement('small',r.source.kind+' / '+r.source.id+' / v'+r.source.revision+' · '+r.source.statement+' · 开放区间 '+r.open_from+' — '+r.open_until+' · UTC'));}if(!x.items.length){$('resource-catalog-view').append(textElement('p','当前身份没有可读的合成资源。'));return;}const start=new Date(new Date(x.server_time).getTime()+3600000),end=new Date(start.getTime()+3600000);$('resource-start').value=start.toISOString().slice(0,16);$('resource-end').value=end.toISOString().slice(0,16);$('resource-search-from').value=$('resource-start').value;$('resource-search-until').value=new Date(start.getTime()+4*3600000).toISOString().slice(0,16);$('resource-form').hidden=false;}catch(e){resourceError(e);}};
+ function resourceObservationText(x,id){
+  const source=x.source,text=v=>typeof v==='string'&&v.trim().length>0,version=v=>text(v)||(Number.isSafeInteger(v)&&v>0);
+  if(x.resource_id!==id||!Number.isInteger(x.resource_revision)||x.resource_revision<1||x.scope!=='SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY'||x.namespace!=='SYNTHETIC'||x.preview_only!==true||x.authority!=='LOCAL_AUTHORITY'||x.timezone!=='UTC'||x.external_availability!=='UNKNOWN'||x.confirmation_required!==true||x.reservation!=='NOT_CONFIRMED'||x.external_acceptance!=='NOT_SUBMITTED'||x.offline_fulfillment!=='NO_EVIDENCE'||typeof x.available!=='boolean'||!text(x.resource_name)||!source||source.kind!=='SYNTHETIC'||!text(source.id)||!version(source.revision)||!text(source.statement)||!text(x.server_time)||!Number.isFinite(Date.parse(x.server_time))||!/(Z|[+]00:00)$/.test(x.server_time))throw Error('本次资源预检的来源、版本或观察时间尚未核实，请重新读取；尚不能据此占位。');
+  return '本次预检：'+x.resource_name+' · 资源版本 '+x.resource_revision+' · 来源 '+source.kind+' / '+source.id+' / v'+source.revision+' · '+source.statement+' · 本次数据库观察时间 '+x.server_time+'（UTC，并非上游更新时间） · LOCAL_AUTHORITY仅对本地合成账本有效。外部资源可用性 UNKNOWN，仍需来源方确认；本地须另行明确占位及确认，预检不是预约。';
+ }
+-$('resource-preview').onclick=async()=>{clearResourceAlternatives();resourceGeneration++;resourcePreview=null;$('resource-hold').disabled=true;const c=resourceContext();try{if(!c.id)throw Error('请先读取并选择合成资源');const x=await resourceCall('/api/synthetic-resources/'+encodeURIComponent(c.id)+'/preview','POST',resourceWindow(),undefined,c);const observation=resourceObservationText(x,c.id);resourcePreview={view:x,context:c};$('page-feedback').textContent='';$('resource-preview-result').dataset.tone=x.available?'success':'warning';$('resource-preview-result').textContent=(x.available?'当前区间可尝试占位':'当前区间容量不足')+' · 当前峰值占用 '+x.occupied_peak+' / 容量 '+x.capacity+' · 可用 '+x.available_quantity+'份 · '+observation;$('resource-hold').disabled=!x.available;$('resource-error').textContent='';}catch(e){resourceError(e);}};
++$('resource-preview').onclick=async()=>{clearResourceAlternatives();resourceGeneration++;resourcePreview=null;$('resource-hold').disabled=true;$('resource-preview-result').textContent='';const c=resourceContext();try{if(!c.id)throw Error('请先读取并选择合成资源');const x=await resourceCall('/api/synthetic-resources/'+encodeURIComponent(c.id)+'/preview','POST',resourceWindow(),undefined,c);const observation=resourceObservationText(x,c.id);resourcePreview={view:x,context:c};$('page-feedback').textContent='';$('resource-preview-result').dataset.tone=x.available?'success':'warning';$('resource-preview-result').textContent=(x.available?'当前区间可尝试占位':'当前区间容量不足')+' · 当前峰值占用 '+x.occupied_peak+' / 容量 '+x.capacity+' · 可用 '+x.available_quantity+'份 · '+observation;$('resource-hold').disabled=!x.available;$('resource-error').textContent='';}catch(e){resourceError(e);}};
+ $('resource-form').onsubmit=async e=>{e.preventDefault();const snapshot=resourcePreview;try{if(!snapshot||!snapshot.view.available)throw Error('请先预检当前区间');requireResourceCurrent(snapshot.context);resourceGeneration++;const c=resourceContext();snapshot.context=c;const body={...resourceWindow(),expected_revision:snapshot.view.resource_revision,ttl_seconds:Number($('resource-ttl').value),purpose:$('resource-purpose').value};$('resource-hold').disabled=true;const x=await resourceWrite('/api/synthetic-resources/'+encodeURIComponent(c.id)+'/holds',body,c,x=>{if(x.hold.resource_id!==c.id)throw Error('占位响应不匹配，请刷新核对');});$('resource-current').replaceChildren();renderResourceHold(x.hold,$('resource-current'));resourcePreview=null;$('resource-preview-result').textContent='占位已核对；尚未正式预约。请刷新我的占位记录查看到期状态。';$('resource-error').textContent='';}catch(e){resourceError(e);if(e.status===409)resourcePreview=null;if(snapshot&&resourceCurrent(snapshot.context)&&e.status!==409)$('resource-hold').disabled=false;}};
+ $('resource-mine').onclick=async()=>{clearCombinationSelection();resourceGeneration++;resourcePreview=null;$('resource-hold').disabled=true;$('resource-hold-items').replaceChildren();const c=resourceContext();try{const x=await resourceCall('/api/resource-holds','GET',undefined,undefined,c);$('resource-hold-items').replaceChildren();$('resource-current').replaceChildren();for(const h of x.items)renderResourceHold(h,$('resource-hold-items'));if(!x.items.length)$('resource-hold-items').append(textElement('p','当前身份没有可读的占位记录。'));if(x.has_older_records)$('resource-hold-items').append(textElement('p','仅显示最近100条，仍有更早记录。'));$('resource-error').textContent='';}catch(e){resourceError(e);}};
+ 
+ function updateCombinationSelection(){const hs=[...combinationSelection.values()];const valid=hs.length===2&&new Set(hs.map(h=>h.resource_id)).size===2;$('combination-selection').textContent=(hs.length<=2?'已选 '+hs.length+' / 2 条占位':'多会话组合已选 '+hs.length+' / 8 条占位')+(hs.length===2&&!valid?' · 原两资源操作须选两个不同资源':'');$('combination-confirm').disabled=!valid;bundleControls();}
+ function clearCombinationSelection(){combinationSelection.clear();for(const check of document.querySelectorAll('[data-combination-hold]'))check.checked=false;updateCombinationSelection();}
+ function combinationFailure(detail){const reasons={'combination requires two valid unconfirmed holds':'至少一条占位已过期、已释放或不再可组合。','combination resource revision changed; release and preview again':'至少一个资源版本已变化，请释放原占位并重新预检。','synthetic resource disabled':'至少一个资源已停用。','window outside current synthetic opening interval':'至少一个区间不符合当前开放或缓冲规则。','combination resource capacity conflict':'至少一个资源当前容量不足。','two different resources required':'请选择两个不同资源。','request key fingerprint mismatch':'请求key已用于不同操作，请刷新核对原结果。'};return '组合操作未完成：'+(reasons[detail]||'记录正在变化或暂不可操作，请刷新核对。')+' 本次不会部分确认或部分取消；原占位可能已过期，请刷新本人记录。';}
+diff --git a/tests/at28_resource_observation_html.js b/tests/at28_resource_observation_html.js
+index 2fb30f8a..733bbb82 100644
+--- a/tests/at28_resource_observation_html.js
++++ b/tests/at28_resource_observation_html.js
+@@ -54,13 +54,13 @@ function page(config, storage, calls, transport) {
+     window: {addEventListener() {}}, fetch: async (path, options = {}) => {
+       if (transport.revokeBeforeRead && (options.method || 'GET') === 'GET' && path.includes('dependency_scope=BOUNDED_MULTI_SOURCE_V1')) {
+         transport.revokeBeforeRead = false;
+         await control('revoke');
+       }
+       const response = await fetch(config.base + path, options), body = await response.json();
+-      if(path.endsWith('/preview')){transport.preview=JSON.parse(JSON.stringify(body));if(config.mode==='missing-source')delete body.source;if(config.mode==='invalid-observation-time')body.server_time='not-an-observation';}
++      if(path.endsWith('/preview')){transport.previewCalls=(transport.previewCalls||0)+1;transport.preview=JSON.parse(JSON.stringify(body));if(config.mode==='missing-source'&&transport.previewCalls>1)delete body.source;if(config.mode==='invalid-observation-time'&&transport.previewCalls>1)body.server_time='not-an-observation';}
+       const call = {method: options.method || 'GET', path, status: response.status};
+       if (options.body) call.body = JSON.parse(options.body);
+       if (options.headers?.['Idempotency-Key']) call.request_key = options.headers['Idempotency-Key'];
+       if (body.source_impact) call.graph_sha256 = body.source_impact.sha256;
+       call.response_scope = body.scope; call.response_schema = body.schema;
+       if (body.dependency_propagation) call.dependency_propagation_sha256=body.dependency_propagation.sha256;if(body.typed_dependency_preview)transport.lastPreview=body;if(body.resource_dependency_preview){call.resource_graph_sha256=body.resource_dependency_preview.sha256;call.member_state=body.resource_dependency_preview.membership.state;}
+@@ -107,12 +107,15 @@ function page(config, storage, calls, transport) {
+   const card=$('resource-current').children[0];check(card?.dataset.state==='HELD','explicit original hold observed');
+   const button=card.children.find(e=>e.dataset?.resourceAction==='confirm');check(!!button,'separate local confirm remains explicit');await button.onclick();
+   check($('resource-current').children[0].dataset.state==='CONFIRMED','original local confirmation observed');
+   check(textOf($('resource-current')).includes('真实预约未确认'),'local confirmation does not assert external availability');
+   check(calls.filter(c=>/\/holds$|\/confirm$/.test(c.path)).length===2,'exactly explicit hold and confirm');
+  }else{
++  check(!$('resource-hold').disabled&&textOf($('resource-preview-result')).includes('AT28-current-resource-source'),'first valid current observation is visible');
++  await $('resource-preview').onclick();
++  check(!textOf($('resource-preview-result')).includes('AT28-current-resource-source'),'failed new observation clears prior source display');
+   check($('resource-hold').disabled&&p.run('resourcePreview')===null,'unverified source or observation cannot become usable hold preview');
+   check(textOf($('resource-error')).includes('尚未核实'),'precise missing observation notice');
+   check(!calls.some(c=>/\/holds$|\/confirm$/.test(c.path)),'unverified observation sends no business command');
+  }
+  check(Object.keys(storage).length===0,'no session/source browser persistence added');
+  console.log(JSON.stringify({checks,mode:config.mode,calls,preview:transport.preview,real_browser:false,external_resource_availability:'UNKNOWN'}));readline.close();

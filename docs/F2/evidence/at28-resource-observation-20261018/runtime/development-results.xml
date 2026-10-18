@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="6" time="15.651" timestamp="2026-10-18T21:58:29.930662+00:00" hostname="9eff6a810039"><testcase classname="tests.test_at28_resource_observation" name="test_current_preview_source_is_not_prior_catalog_and_writes_nothing" time="3.582" /><testcase classname="tests.test_at28_resource_observation" name="test_original_page_discloses_current_source_before_explicit_local_confirmation[current-source]" time="3.507"><failure message="AssertionError: {&quot;error&quot;:&quot;AssertionError [ERR_ASSERTION]: current source/time/boundary AT28-current-resource-source\n    at check (/workspace/ParkWeave/tests/at28_resource_observation_html.js:12:51)\n    at /workspace/ParkWeave/tests/at28_resource_observation_html.js:103:167\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&quot;,&quot;diagnostics&quot;:{&quot;calls&quot;:[{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/synthetic-resources&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/resource-bundles&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/plan-approval/status&quot;,&quot;status&quot;:200},{&quot;method&quot;:&quot;POST&quot;,&quot;path&quot;:&quot;/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview&quot;,&quot;status&quot;:200,&quot;body&quot;:{&quot;starts_at&quot;:&quot;2026-10-18T22:58:00Z&quot;,&quot;ends_at&quot;:&quot;2026-10-18T23:58:00Z&quot;,&quot;quantity&quot;:1},&quot;response_scope&quot;:&quot;SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY&quot;}]}}&#10;  &#10;assert 1 == 0">resource_fixture = (&lt;parkweave.store.Store object at 0x7f424d11f6e0&gt;, &lt;parkweave.store.Store object at 0x7f424d89c8f0&gt;, {'synthetic_sessions': 'SYNTHETIC_SESSION_VALUES_REDACTED'}, &lt;starlette.testclient.TestClient object at 0x7f424c590260&gt;)
+tmp_path = PosixPath('/tmp/pw-at28-resource-observation-development/test_original_page_discloses_c0')
+mode = 'current-source'
+
+    @pytest.mark.parametrize('mode',['current-source','missing-source','invalid-observation-time'])
+    def test_original_page_discloses_current_source_before_explicit_local_confirmation(resource_fixture,tmp_path,mode):
+        f=resource_fixture;authority=authority_snapshot(f[1])
+        with ordinary_api(f,tmp_path/'ordinary-api') as api:
+            config=dict(base=str(api.base_url).rstrip('/'),token=f[2]['fixture-a'],resource_id=str(rh.RESOURCE_ID),mode=mode)
+            with (tmp_path/'html.stdout').open('w') as out,(tmp_path/'html.stderr').open('w') as err:
+                child=subprocess.Popen(['node','tests/at28_resource_observation_html.js'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=err,text=True)
+                timer=threading.Timer(45,child.terminate);timer.start()
+                try:
+                    child.stdin.write(json.dumps(config)+'\n');child.stdin.flush()
+                    for line in child.stdout:
+                        out.write(line);out.flush();row=json.loads(line)
+                        if row.get('control')=='advance':advance_source(f);child.stdin.write('{}\n');child.stdin.flush()
+                    code=child.wait(timeout=5)
+                finally:
+                    timer.cancel()
+                    if child.poll() is None:child.terminate();child.wait(timeout=5)
+&gt;           assert code==0,(tmp_path/'html.stderr').read_text()
+E           AssertionError: {"error":"AssertionError [ERR_ASSERTION]: current source/time/boundary AT28-current-resource-source\n    at check (/workspace/ParkWeave/tests/at28_resource_observation_html.js:12:51)\n    at /workspace/ParkWeave/tests/at28_resource_observation_html.js:103:167\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)","diagnostics":{"calls":[{"method":"GET","path":"/api/synthetic-resources","status":200,"response_scope":"SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"},{"method":"GET","path":"/api/resource-bundles","status":200,"response_scope":"SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"},{"method":"GET","path":"/api/plan-approval/status","status":200},{"method":"POST","path":"/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview","status":200,"body":{"starts_at":"2026-10-18T22:58:00Z","ends_at":"2026-10-18T23:58:00Z","quantity":1},"response_scope":"SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY"}]}}
+E             
+E           assert 1 == 0
+
+tests/test_at28_resource_observation.py:59: AssertionError</failure></testcase><testcase classname="tests.test_at28_resource_observation" name="test_original_page_discloses_current_source_before_explicit_local_confirmation[missing-source]" time="3.650" /><testcase classname="tests.test_at28_resource_observation" name="test_original_page_discloses_current_source_before_explicit_local_confirmation[invalid-observation-time]" time="3.399" /><testcase classname="tests.test_resource_alternative_times_offline" name="test_actual_resource_suggestions_with_offline_doubles[original_flow_explicit]" time="0.147" /><testcase classname="tests.test_resource_holds" name="test_catalog_and_anonymous_availability_do_not_expose_other_enterprise_hold" time="1.048" /></testsuite></testsuites>

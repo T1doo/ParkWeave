@@ -1,0 +1,215 @@
+
+FILE 555edeacd7720b34e9055a1fecdbfef1ef13dbe0:src/parkweave/resource_holds.py
+65: def _auth(store,c,token,write=False):
+66:     c.execute("SET LOCAL lock_timeout='3s'")
+67:     try:p=store.auth(c,token,lock=True)
+68:     except LockNotAvailable as e:raise Conflict('authorization busy; retry the same request key') from e
+69:     if p['role']!='enterprise_operator':raise Denied('enterprise resource scope required')
+70:     store.check_capability(c,p,'READ')
+71:     if write:store.check_capability(c,p,'EXECUTE')
+72:     return p
+73: 
+74: 
+75: def _scope(c,p,id,write=False):
+76:     r=c.execute('SELECT * FROM synthetic_resources WHERE id=%s AND park_id=%s',(id,p['park_id'])).fetchone()
+77:     if not r:raise Denied('resource unavailable')
+78:     for cap in ('READ','HOLD') if write else ('READ',):
+79:         if not c.execute('SELECT 1 FROM synthetic_resource_grants WHERE principal_id=%s AND resource_id=%s AND park_id=%s AND org_id=%s AND capability=%s AND active',(p['id'],id,p['park_id'],p['org_id'],cap)).fetchone():
+80:             raise Denied('current resource grant required')
+81:     return r
+82: 
+83: 
+84: def _lock(c,id,shared=False):
+85:     fn='pg_advisory_xact_lock_shared' if shared else 'pg_advisory_xact_lock'
+86:     try:c.execute(f'SELECT {fn}(hashtextextended(%s,0))',('synthetic-resource:'+str(id),))
+87:     except LockNotAvailable as e:raise Conflict('resource busy; retry the same request key') from e
+88: 
+89: 
+90: def _key(c,p,key):
+91:     try:c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('synthetic-resource-key:'+p['id']+':'+key,))
+92:     except LockNotAvailable as e:raise Conflict('request busy; retry the same request key') from e
+93: 
+94: 
+95: def _now(c):return c.execute('SELECT clock_timestamp() AS now').fetchone()['now']
+96: 
+97: 
+98: def _active_resource(r):
+99:     if not r['enabled']:raise Conflict('synthetic resource disabled')
+100:     if r['namespace']!='SYNTHETIC' or r['authority']!='LOCAL_AUTHORITY':raise Conflict('unsupported authority')
+101: 
+102: 
+103: def _window(r,data,now):
+104:     _active_resource(r)
+105:     lo=data.starts_at-timedelta(seconds=r['buffer_seconds']);hi=data.ends_at+timedelta(seconds=r['buffer_seconds'])
+106:     if data.starts_at<now or lo<r['open_from'] or hi>r['open_until']:
+107:         raise Conflict('window outside current synthetic opening interval')
+108:     return lo,hi
+109: 
+110: 
+111: def _peak(c,id,lo,hi,now,exclude=None):
+112:     rows=c.execute("""SELECT starts_at,ends_at,buffer_seconds,quantity FROM synthetic_resource_holds
+113:         WHERE resource_id=%s AND ((state='HELD' AND expires_at>%s) OR state='CONFIRMED')
+114:         AND (%s::uuid IS NULL OR id<>%s::uuid)
+115:         AND starts_at-make_interval(secs=>buffer_seconds)<%s
+116:         AND ends_at+make_interval(secs=>buffer_seconds)>%s""",(id,now,exclude,exclude,hi,lo)).fetchall()
+117:     points=defaultdict(int)
+118:     for h in rows:
+119:         start=max(lo,h['starts_at']-timedelta(seconds=h['buffer_seconds']))
+120:         end=min(hi,h['ends_at']+timedelta(seconds=h['buffer_seconds']))
+121:         points[start]+=h['quantity'];points[end]-=h['quantity']
+122:     used=peak=0
+123:     for at in sorted(points):
+124:         used+=points[at];peak=max(peak,used)
+125:     return peak
+126: 
+127: 
+128: def _public(h,now):
+129:     result={k:h[k] for k in ('id','resource_id','resource_revision','starts_at','ends_at','quantity','purpose','created_at','expires_at')}
+130:     result['state']=h['state'] if h['state'] in ('RELEASED','CONFIRMED') else 'EXPIRED' if h['expires_at']<=now else 'HELD'
+131:     result['local_confirmation']='CONFIRMED' if h['state']=='CONFIRMED' else 'NOT_CONFIRMED'
+132:     result['combination_id']=h.get('combination_id')
+133:     result['resource_name']=h.get('resource_name','合成资源')
+134:     return result
+135: 
+136: 
+137: def _boundary(**extra):
+138:     return dict(scope=SCOPE,namespace='SYNTHETIC',reservation='NOT_CONFIRMED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',**extra)
+139: 
+140: 
+141: def catalog(store,token):
+142:     with store.connect() as c:
+143:         p=_auth(store,c,token)
+144:         rows=c.execute("""SELECT r.id,r.name,r.revision,r.capacity,r.buffer_seconds,r.open_from,r.open_until,
+145:             r.enabled,r.timezone,r.namespace,r.authority,r.source FROM synthetic_resources r
+146:             JOIN synthetic_resource_grants g ON g.resource_id=r.id AND g.park_id=r.park_id
+147:             WHERE g.principal_id=%s AND g.park_id=%s AND g.org_id=%s AND g.capability='READ' AND g.active
+148:             ORDER BY r.id LIMIT 100""",(p['id'],p['park_id'],p['org_id'])).fetchall()
+149:         return _boundary(items=rows,server_time=_now(c))
+150: 
+151: 
+152: def preview(store,token,id,data):
+153:     with store.connect() as c:
+154:         p=_auth(store,c,token);_scope(c,p,id);_lock(c,id,shared=True);r=_scope(c,p,id);now=_now(c)
+155:         lo,hi=_window(r,data,now);peak=_peak(c,id,lo,hi,now)
+156:         return _boundary(resource_id=id,resource_revision=r['revision'],server_time=now,
+157:             starts_at=data.starts_at,ends_at=data.ends_at,quantity=data.quantity,capacity=r['capacity'],
+158:             buffer_seconds=r['buffer_seconds'],occupied_peak=peak,available_quantity=max(0,r['capacity']-peak),
+159:             available=peak+data.quantity<=r['capacity'],preview_only=True,
+160:             resource_name=r['name'],source=r['source'],authority=r['authority'],timezone=r['timezone'],
+161:             external_availability='UNKNOWN',confirmation_required=True)
+162: 
+163: 
+164: def alternative_times(store,token,id,data):
+165:     """Read-only suggestions under the existing resource lock and current scope.
+166: 
+167:     Enumerate all starts that fit the explicit window on its anchored grid.
+168:     No hold, request key, receipt, actor detail or reservation is produced.
+169:     """
+170:     with store.connect() as c:
+
+FILE 555edeacd7720b34e9055a1fecdbfef1ef13dbe0:src/parkweave/web.html
+1069: let resourceGeneration=0,resourcePreview=null;const resourceRetries=new Map();const combinationSelection=new Map();
+1070: function resourceDraft(){return JSON.stringify(['resource-select','resource-start','resource-end','resource-quantity','resource-ttl','resource-purpose','resource-search-from','resource-search-until'].map(id=>$(id).value));}
+1071: function resourceContext(){return {generation:resourceGeneration,token:$('token').value,id:$('resource-select').value||null,draft:resourceDraft()};}
+1072: function resourceCurrent(c){return c.generation===resourceGeneration&&c.token===$('token').value&&c.id===($('resource-select').value||null)&&c.draft===resourceDraft();}
+1073: function requireResourceCurrent(c){if(!resourceCurrent(c)){const e=Error('资源选择已变化');e.staleResource=true;throw e;}}
+1074: function clearResourceAlternatives(){$('resource-alternative-results').replaceChildren();}
+1075: function clearResources(){clearResourceAlternatives();bundleActor=null;bundleBusy=false;clearCombinationSelection();$('combination-items').replaceChildren();$('combination-feedback').textContent='';resourceGeneration++;resourcePreview=null;resourceRetries.clear();$('resource-form').reset();$('resource-form').hidden=true;$('resource-select').replaceChildren();for(const id of ['resource-catalog-view','resource-current','resource-hold-items'])$(id).replaceChildren();$('resource-preview-result').textContent='';$('resource-error').textContent='';$('resource-hold').disabled=true;}
+1076: function resourceError(e){if(e.staleResource||(e.resourceContext&&!resourceCurrent(e.resourceContext)))return;failCurrentEntryRead(e);if(e.status===403||e.status===401)clearResources();$('resource-error').textContent=e.message;$('page-feedback').dataset.tone='error';$('page-feedback').textContent=e.message;}
+1077: async function resourceCall(path,method='GET',body,key,c=resourceContext()){requireResourceCurrent(c);const headers={Authorization:'Bearer '+c.token};if(body)headers['Content-Type']='application/json';if(key)headers['Idempotency-Key']=key;let r,x;try{r=await entryFetch(path,{method,headers,body:body?JSON.stringify(body):undefined});x=await r.json();}catch(e){requireResourceCurrent(c);e.resourceContext=c;throw e;}requireResourceCurrent(c);if(!r.ok){const e=Error(r.status===409?(path.startsWith('/api/resource-combinations')?combinationFailure(x.detail):'容量、区间或规则已变化，请重新预检。'):r.status===403||r.status===401?'当前身份无此资源或占位权限。':r.status===422?'请检查UTC时间、数量和输入。':'请求未完成，可用相同输入重试或刷新核对。');e.status=r.status;e.resourceContext=c;throw e;}return x;}
+1078: async function resourceWrite(path,body,c,validate){requireResourceCurrent(c);if(bundleLocked())throw Error('请先只读核对原组合操作');const signature=path+JSON.stringify(body);let key=resourceRetries.get(signature);if(!key){key=crypto.randomUUID();resourceRetries.set(signature,key);}const x=await resourceCall(path,'POST',body,key,c);await validate(x);requireResourceCurrent(c);resourceRetries.delete(signature);return x;}
+1079: function resourceWindow(){return {starts_at:$('resource-start').value+':00Z',ends_at:$('resource-end').value+':00Z',quantity:Number($('resource-quantity').value)};}
+1080: function resourceTime(value){const d=new Date(value);return Number.isNaN(d.getTime())?String(value):d.toISOString().slice(0,19).replace('T',' ');}
+1081: function resourceAlternativeBody(){return {...resourceWindow(),search_from:$('resource-search-from').value+':00Z',search_until:$('resource-search-until').value+':00Z'};}
+1082: function renderResourceAlternatives(x,c,body){
+1083:   const at=v=>new Date(v).getTime(),duration=at(body.ends_at)-at(body.starts_at),from=at(body.search_from),until=at(body.search_until);
+1084:   if(x.resource_id!==c.id||x.preview_only!==true||x.coverage!=='SEARCH_WINDOW_GRID_ONLY'||x.ordering!=='START_ASC'||x.grid_minutes!==15||x.scan_limit!==100||x.result_limit!==10||x.quantity!==body.quantity||at(x.starts_at)!==at(body.starts_at)||at(x.ends_at)!==at(body.ends_at)||at(x.search_from)!==from||at(x.search_until)!==until||at(x.grid_anchor)!==from||!Array.isArray(x.items)||x.items.length>10)throw Error('替代时段响应不匹配，请重新查找');
+1085:   let previous=-Infinity;
+1086:   for(const item of x.items){const start=at(item.starts_at),end=at(item.ends_at);if(!Number.isFinite(start)||!Number.isFinite(end)||start<=previous||start<from||end>until||end-start!==duration||(start-from)%900000!==0||item.quantity!==body.quantity)throw Error('替代时段响应不匹配，请重新查找');previous=start;}
+1087:   const target=$('resource-alternative-results');target.replaceChildren();
+1088:   target.append(textElement('p','本次数据库状态时间 '+x.server_time+'；窗口 '+resourceTime(x.search_from)+' — '+resourceTime(x.search_until)+' UTC。以起点每15分钟检查，扫描 '+x.scanned_candidates+' 个候选，最多返回最早10个。'+(x.results_truncated?'还有更晚的可用网格候选，可调整窗口继续查找。':'')));
+1089:   if(!x.items.length)target.append(textElement('p','所查网格未找到可用时段；这不表示所有时刻都不可用。可调整搜索窗口。'));
+1090:   for(const item of x.items){const button=textElement('button','填入 '+resourceTime(item.starts_at)+' — '+resourceTime(item.ends_at)+' UTC · '+item.quantity+'份');button.type='button';button.onclick=()=>{try{requireResourceCurrent(c);resourceGeneration++;resourcePreview=null;clearResourceAlternatives();$('resource-start').value=new Date(item.starts_at).toISOString().slice(0,16);$('resource-end').value=new Date(item.ends_at).toISOString().slice(0,16);$('resource-hold').disabled=true;$('resource-preview-result').textContent='已填入建议时段，请重新预检，再明确占位和确认。';$('resource-error').textContent='';}catch(e){resourceError(e);}};target.append(button);}
+1091: }
+1092: $('resource-alternatives').onclick=async()=>{
+1093:   clearResourceAlternatives();resourceGeneration++;resourcePreview=null;$('resource-hold').disabled=true;$('resource-preview-result').textContent='建议仅填表；占位前须重新预检。';const c=resourceContext(),body=resourceAlternativeBody();
+1094:   try{if(!c.id)throw Error('请先读取并选择合成资源');const x=await resourceCall('/api/synthetic-resources/'+encodeURIComponent(c.id)+'/alternative-times','POST',body,undefined,c);renderResourceAlternatives(x,c,body);$('resource-error').textContent='';}catch(e){resourceError(e);}
+1095: };
+1096: function renderResourceHold(h,target){const labels={HELD:'短期占位有效',CONFIRMED:'本地合成确认',EXPIRED:'占位已过期',RELEASED:'占位已释放 / 本地取消'};const card=textElement('article','');card.dataset.holdId=h.id;card.dataset.state=h.state;const badge=textElement('strong',labels[h.state]);badge.className='resource-state';const title=textElement('p',h.purpose);title.className='resource-title';const facts=textElement('dl','');facts.className='resource-facts';for(const [label,value] of [['合成资源',h.resource_name||'合成资源'],['使用区间（UTC）',resourceTime(h.starts_at)+' — '+resourceTime(h.ends_at)],['使用份数',h.quantity+'份'],['占位确认截止（历史，UTC）',resourceTime(h.expires_at)],['合成资源版本',String(h.resource_revision)]]){const field=textElement('div','');field.append(textElement('dt',label),textElement('dd',value));facts.append(field);}const boundary=textElement('p','本地合成状态；真实预约未确认，外部未受理，无线下履约。');boundary.className='boundary-note';card.append(badge,title,facts,boundary);if(h.combination_id){card.append(textElement('p','此记录属于资源组合，请在组合记录中整组取消。'));}else if(h.state==='HELD'||h.state==='CONFIRMED'){function command(action,label,body){const button=textElement('button',label);button.dataset.resourceAction=action;button.onclick=async()=>{resourceGeneration++;resourcePreview=null;$('resource-hold').disabled=true;const c=resourceContext();button.disabled=true;try{const x=await resourceWrite('/api/resource-holds/'+encodeURIComponent(h.id)+'/'+action,body,c,x=>{if(x.hold.id!==h.id)throw Error('占位响应不匹配，请刷新核对');});const next=document.createElement('div');renderResourceHold(x.hold,next);card.replaceWith(next.firstElementChild);const historical=x.receipt&&x.receipt.observed_state!==x.hold.state?' 原操作回执为历史记录，当前状态以本次核对为准。':'';$('resource-preview-result').dataset.tone=x.hold.state==='CONFIRMED'?'success':x.hold.state==='RELEASED'?'neutral':'warning';$('resource-preview-result').textContent='当前状态：'+labels[x.hold.state]+'。'+historical+' 外部未受理，无线下履约。';$('resource-error').textContent='';$('page-feedback').dataset.tone='success';$('page-feedback').textContent='当前状态：'+labels[x.hold.state]+'。'+historical;resourcePreview=null;$('resource-hold').disabled=true;}catch(e){resourceError(e);if(resourceCurrent(c))button.disabled=false;}};card.append(button);}command('release',h.state==='CONFIRMED'?'取消此本地合成确认':'释放此占位',{});if(h.state==='HELD')command('confirm','确认此单资源合成占位',{expected_revision:h.resource_revision});}if(h.state==='HELD'&&!h.combination_id){const label=textElement('label','选入资源组合');label.className='combination-select';const check=document.createElement('input');check.type='checkbox';check.dataset.combinationHold=h.id;check.checked=combinationSelection.has(h.id);check.onchange=()=>{resourceGeneration++;resourcePreview=null;$('resource-hold').disabled=true;if(check.checked)combinationSelection.set(h.id,h);else combinationSelection.delete(h.id);updateCombinationSelection();};label.prepend(check);card.append(label);}target.append(card);}
+1097: for(const input of $('resource-form').querySelectorAll('input,select'))input.oninput=()=>{clearResourceAlternatives();resourceGeneration++;resourcePreview=null;$('resource-hold').disabled=true;$('resource-preview-result').dataset.tone='warning';$('resource-preview-result').textContent='输入已变化，请重新预检。';$('resource-error').textContent='';};
+1098: $('resource-catalog').onclick=async()=>{clearResources();const c=resourceContext();try{const x=await resourceCall('/api/synthetic-resources','GET',undefined,undefined,c);$('resource-catalog-view').append(textElement('p','本次目录读取时间 '+x.server_time+'（UTC）；目录是读取时快照，本次预检来源另列。'));for(const r of x.items){const o=textElement('option',r.name+' · 容量 '+r.capacity);o.value=r.id;o.dataset.resourceRevision=String(r.revision);$('resource-select').append(o);$('resource-catalog-view').append(textElement('p',r.name+' · 合成版本 '+r.revision+' · 容量 '+r.capacity+' · 前后各'+r.buffer_seconds+'秒缓冲 · '+(r.enabled?'启用':'停用')),textElement('small',r.source.kind+' / '+r.source.id+' / v'+r.source.revision+' · '+r.source.statement+' · 开放区间 '+r.open_from+' — '+r.open_until+' · UTC'));}if(!x.items.length){$('resource-catalog-view').append(textElement('p','当前身份没有可读的合成资源。'));return;}const start=new Date(new Date(x.server_time).getTime()+3600000),end=new Date(start.getTime()+3600000);$('resource-start').value=start.toISOString().slice(0,16);$('resource-end').value=end.toISOString().slice(0,16);$('resource-search-from').value=$('resource-start').value;$('resource-search-until').value=new Date(start.getTime()+4*3600000).toISOString().slice(0,16);$('resource-form').hidden=false;}catch(e){resourceError(e);}};
+1099: function resourceObservationText(x,id){
+1100:  const source=x.source,text=v=>typeof v==='string'&&v.trim().length>0,version=v=>text(v)||(Number.isSafeInteger(v)&&v>0);
+1101:  if(x.resource_id!==id||!Number.isInteger(x.resource_revision)||x.resource_revision<1||x.scope!=='SYNTHETIC_LOCAL_RESOURCE_HOLD_ONLY'||x.namespace!=='SYNTHETIC'||x.preview_only!==true||x.authority!=='LOCAL_AUTHORITY'||x.timezone!=='UTC'||x.external_availability!=='UNKNOWN'||x.confirmation_required!==true||x.reservation!=='NOT_CONFIRMED'||x.external_acceptance!=='NOT_SUBMITTED'||x.offline_fulfillment!=='NO_EVIDENCE'||typeof x.available!=='boolean'||!text(x.resource_name)||!source||source.kind!=='SYNTHETIC'||!text(source.id)||!version(source.revision)||!text(source.statement)||!text(x.server_time)||!Number.isFinite(Date.parse(x.server_time))||!/(Z|[+]00:00)$/.test(x.server_time))throw Error('本次资源预检的来源、版本或观察时间尚未核实，请重新读取；尚不能据此占位。');
+1102:  return '本次预检：'+x.resource_name+' · 资源版本 '+x.resource_revision+' · 来源 '+source.kind+' / '+source.id+' / v'+source.revision+' · '+source.statement+' · 本次数据库观察时间 '+x.server_time+'（UTC，并非上游更新时间） · LOCAL_AUTHORITY仅对本地合成账本有效。外部资源可用性 UNKNOWN，仍需来源方确认；本地须另行明确占位及确认，预检不是预约。';
+1103: }
+1104: $('resource-preview').onclick=async()=>{clearResourceAlternatives();resourceGeneration++;resourcePreview=null;$('resource-hold').disabled=true;$('resource-preview-result').textContent='';const c=resourceContext();try{if(!c.id)throw Error('请先读取并选择合成资源');const x=await resourceCall('/api/synthetic-resources/'+encodeURIComponent(c.id)+'/preview','POST',resourceWindow(),undefined,c);const observation=resourceObservationText(x,c.id);resourcePreview={view:x,context:c};$('page-feedback').textContent='';$('resource-preview-result').dataset.tone=x.available?'success':'warning';$('resource-preview-result').textContent=(x.available?'当前区间可尝试占位':'当前区间容量不足')+' · 当前峰值占用 '+x.occupied_peak+' / 容量 '+x.capacity+' · 可用 '+x.available_quantity+'份 · '+observation;$('resource-hold').disabled=!x.available;$('resource-error').textContent='';}catch(e){resourceError(e);}};
+1105: $('resource-form').onsubmit=async e=>{e.preventDefault();const snapshot=resourcePreview;try{if(!snapshot||!snapshot.view.available)throw Error('请先预检当前区间');requireResourceCurrent(snapshot.context);resourceGeneration++;const c=resourceContext();snapshot.context=c;const body={...resourceWindow(),expected_revision:snapshot.view.resource_revision,ttl_seconds:Number($('resource-ttl').value),purpose:$('resource-purpose').value};$('resource-hold').disabled=true;const x=await resourceWrite('/api/synthetic-resources/'+encodeURIComponent(c.id)+'/holds',body,c,x=>{if(x.hold.resource_id!==c.id)throw Error('占位响应不匹配，请刷新核对');});$('resource-current').replaceChildren();renderResourceHold(x.hold,$('resource-current'));resourcePreview=null;$('resource-preview-result').textContent='占位已核对；尚未正式预约。请刷新我的占位记录查看到期状态。';$('resource-error').textContent='';}catch(e){resourceError(e);if(e.status===409)resourcePreview=null;if(snapshot&&resourceCurrent(snapshot.context)&&e.status!==409)$('resource-hold').disabled=false;}};
+1106: $('resource-mine').onclick=async()=>{clearCombinationSelection();resourceGeneration++;resourcePreview=null;$('resource-hold').disabled=true;$('resource-hold-items').replaceChildren();const c=resourceContext();try{const x=await resourceCall('/api/resource-holds','GET',undefined,undefined,c);$('resource-hold-items').replaceChildren();$('resource-current').replaceChildren();for(const h of x.items)renderResourceHold(h,$('resource-hold-items'));if(!x.items.length)$('resource-hold-items').append(textElement('p','当前身份没有可读的占位记录。'));if(x.has_older_records)$('resource-hold-items').append(textElement('p','仅显示最近100条，仍有更早记录。'));$('resource-error').textContent='';}catch(e){resourceError(e);}};
+
+FILE 555edeacd7720b34e9055a1fecdbfef1ef13dbe0:tests/test_at28_resource_observation.py
+1: """AT28 current observation only; original local resource/confirmation algorithms."""
+2: from datetime import datetime
+3: from pathlib import Path
+4: import json,subprocess,threading
+5: import pytest
+6: from psycopg.types.json import Jsonb
+7: from parkweave import resource_holds as rh
+8: from test_resource_holds import resource_fixture,body,preview,counts
+9: from test_preparation import headers
+10: from ordinary_case_step_support import ordinary_api
+11: from service_release_acceptance_support import authority_snapshot,table_snapshot
+12: 
+13: SOURCE_V2=dict(kind='SYNTHETIC',id='AT28-current-resource-source',revision='2',
+14:     statement='SYNTHETIC current v2 <note>& source; external availability unverified')
+15: 
+16: 
+17: def advance_source(f):
+18:     with f[1].connect() as c:
+19:         rh._lock(c,rh.RESOURCE_ID)
+20:         c.execute('UPDATE synthetic_resources SET source=%s,revision=revision+1,capacity=3,name=%s WHERE id=%s',
+21:             (Jsonb(SOURCE_V2),'SYNTHETIC current resource v2',rh.RESOURCE_ID))
+22: 
+23: 
+24: def test_current_preview_source_is_not_prior_catalog_and_writes_nothing(resource_fixture,tmp_path):
+25:     f=resource_fixture;authority=authority_snapshot(f[1]);catalog=f[3].get('/api/synthetic-resources',headers=headers(f[2])).json()
+26:     assert catalog['items'][0]['revision']==1 and catalog['items'][0]['source']['revision']=='1'
+27:     data=body(f);advance_source(f)
+28:     tables=('runs','cases','preparations','model_steps','synthetic_resource_holds','synthetic_resource_receipts')
+29:     before=table_snapshot(f[1],tables)
+30:     result=preview(f,data);assert result.status_code==200,result.text;x=result.json()
+31:     assert x['resource_revision']==2 and x['resource_name']=='SYNTHETIC current resource v2' and x['source']==SOURCE_V2
+32:     assert x['authority']=='LOCAL_AUTHORITY' and x['timezone']=='UTC'
+33:     assert x['available'] is True and (x['capacity'],x['occupied_peak'],x['available_quantity'])==(3,0,3)
+34:     assert x['confirmation_required'] is True and x['external_availability']=='UNKNOWN'
+35:     assert x['preview_only'] and x['reservation']=='NOT_CONFIRMED' and x['external_acceptance']=='NOT_SUBMITTED' and x['offline_fulfillment']=='NO_EVIDENCE'
+36:     assert datetime.fromisoformat(x['server_time']).utcoffset().total_seconds()==0
+37:     assert catalog['items'][0]['source']!=x['source'] and catalog['items'][0]['revision']==1
+38:     assert table_snapshot(f[1],tables)==before and authority_snapshot(f[1])==authority
+39:     (tmp_path/'current-observation.json').write_text(json.dumps(dict(prior_catalog=catalog,current_preview=x,selected_business_tables_unchanged=True,authority_unchanged=True,preview_read_only=True),indent=2)+'\n')
+40: 
+41: 
+42: @pytest.mark.parametrize('mode',['current-source','missing-source','invalid-observation-time'])
+43: def test_original_page_discloses_current_source_before_explicit_local_confirmation(resource_fixture,tmp_path,mode):
+44:     f=resource_fixture;authority=authority_snapshot(f[1])
+45:     with ordinary_api(f,tmp_path/'ordinary-api') as api:
+46:         config=dict(base=str(api.base_url).rstrip('/'),token=f[2]['fixture-a'],resource_id=str(rh.RESOURCE_ID),mode=mode)
+47:         with (tmp_path/'html.stdout').open('w') as out,(tmp_path/'html.stderr').open('w') as err:
+48:             child=subprocess.Popen(['node','tests/at28_resource_observation_html.js'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=err,text=True)
+49:             timer=threading.Timer(45,child.terminate);timer.start()
+50:             try:
+51:                 child.stdin.write(json.dumps(config)+'\n');child.stdin.flush()
+52:                 for line in child.stdout:
+53:                     out.write(line);out.flush();row=json.loads(line)
+54:                     if row.get('control')=='advance':advance_source(f);child.stdin.write('{}\n');child.stdin.flush()
+55:                 code=child.wait(timeout=5)
+56:             finally:
+57:                 timer.cancel()
+58:                 if child.poll() is None:child.terminate();child.wait(timeout=5)
+59:         assert code==0,(tmp_path/'html.stderr').read_text()
+60:         summary=json.loads((tmp_path/'html.stdout').read_text().splitlines()[-1]);assert summary['real_browser'] is False
+61:     assert authority_snapshot(f[1])==authority
+62:     assert counts(f)==((1,2) if mode=='current-source' else (0,0))
+63:     with f[1].connect() as c:
+64:         assert c.execute('SELECT count(*) n FROM runs').fetchone()['n']==0
+65:         assert c.execute('SELECT count(*) n FROM model_steps').fetchone()['n']==0

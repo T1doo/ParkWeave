@@ -1,0 +1,57 @@
+{
+  "dynamic_cases_executed": 0,
+  "final": "555edeacd7720b34e9055a1fecdbfef1ef13dbe0",
+  "open_P1": [],
+  "open_P2": [],
+  "oracle_sha256": "68a815972db60d1362b6e67b7e141dd52411febbabb9cfe45313ecfbe87e10c5",
+  "rows": [
+    {
+      "evidence": "resource_holds.py:152-161",
+      "id": "AT28-OBS-01",
+      "reason": "All six new kwargs are either r post-lock fields or constants; resource module is original AST after removing exactly those six keywords.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "resource_holds.py:137-138,159-161;web.html:1101-1102",
+      "id": "AT28-OBS-02",
+      "reason": "Existing SYNTHETIC/NOT_CONFIRMED/NOT_SUBMITTED/NO_EVIDENCE preserved; UNKNOWN and explicit confirmation are unconditional, including locally available=true.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "web.html:1100-1102",
+      "id": "AT28-OBS-03",
+      "reason": "Resource revision and source revision are separate fields; original post-lock clock_timestamp remains server_time; UI calls it database observation UTC and explicitly not upstream update time.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "web.html:1098,1102,1104",
+      "id": "AT28-OBS-04",
+      "reason": "Catalog read time and old catalog source remain separate from latest preview name/resource revision/source fields/local capacity and explicit hold/confirm. No cache rewrite or automatic write added.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "web.html:1100-1105",
+      "id": "AT28-OBS-05",
+      "reason": "Handler clears prior preview text/cache and disables HOLD before await; validation precedes cache and HOLD enable; invalid metadata leaves no prior source display, cache null and HOLD disabled with unverified error; no fallback metadata.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "web.html:385,1069-1078,1097,1104-1105",
+      "id": "AT28-OBS-06",
+      "reason": "Original generation/token/id/draft/current/fetch/error/ABA guards and HOLD submission remain byte identical; new metadata uses textContent. No new browser persistence or recovery.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "protection-verification.json",
+      "id": "AT28-OBS-07",
+      "reason": "Original resource AST preserved after six return additions; 798/801 original code files and separate README byte identical, including all other source, templates, schema/roles/migrations/scripts/conftest. No SQL/write/endpoint/provider change.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "docs/F1/ATBindings.json;fixed docs/验收规格.json",
+      "id": "AT28-OBS-08",
+      "reason": "Only AT28 selectors/gate changed; all 42 whole statuses and fixed spec unchanged. Current slice reviewed static only; old template risk operation and HTTP UNKNOWN untouched.",
+      "status": "STATIC_SATISFIED_NOT_DYNAMIC_EXECUTION"
+    }
+  ]
+}
