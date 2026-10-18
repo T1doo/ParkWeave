@@ -1,0 +1,104 @@
+{
+  "status": "ORACLE_FROZEN_WAITING_IMPLEMENTATION_SHA",
+  "baseline_sha": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+  "contract_commit": "1c430b61b223620d152df2ae78e0732f536ed423",
+  "oracle_count": 16,
+  "oracle_sha256": "af3085d86253e76ffe625757d8b4292d17da64d8e1933c36cbc80f81896c5fb7",
+  "input_count": 20,
+  "implementation_P1_P2": "NOT_ASSESSED_NO_FROZEN_IMPLEMENTATION",
+  "parent_preimplementation_clarifications": [
+    {
+      "status": "PARENT_ACCEPTED_BEFORE_IMPLEMENTATION",
+      "topic": "Owner authority",
+      "decision": "Fresh direct owner context; actual database owner=session_user=current_user and relevant original public table owners; reject runtime/provider-bound Store. No new fixture authority."
+    },
+    {
+      "status": "PARENT_ACCEPTED_BEFORE_IMPLEMENTATION",
+      "topic": "Dry-run/catalogue/audit",
+      "decision": "Genuine READ ONLY and no row locks/audit. Preserve valid original no-journal SYNTHETIC catalogue. Audit principal is beneficiary, not invented application administrator."
+    },
+    {
+      "status": "PARENT_ACCEPTED_BEFORE_IMPLEMENTATION",
+      "topic": "Instance fence",
+      "decision": "Actual connection endpoint hashed internally, database OID/name and pg_postmaster_start_time. No pg_control_system, OS seal/root or new privilege. State fence only, no cryptographic identity or physical commit-time guarantee."
+    },
+    {
+      "status": "DOCUMENT_REFERENCE_CORRECTION_REPORTED",
+      "topic": "Original section labels",
+      "decision": "Frozen V1 product line317 is section9.3; plan line325 is section11 and line366 section13. Contract line anchors and actual source text are used rather than the mistaken chapter numbers. A later mechanical citation correction may be recorded as a frozen diff; this oracle is not overwritten."
+    }
+  ],
+  "baseline_evidence": [
+    {
+      "path": "src/parkweave/cli.py",
+      "lines": [
+        13,
+        24,
+        34
+      ],
+      "finding": "Only migrate/fixed enterprise seed/revoke routes; no existing-preparation access configuration."
+    },
+    {
+      "path": "src/parkweave/migration-009.sql",
+      "lines": [
+        9,
+        12
+      ],
+      "finding": "Preparation grant primary key is principal+capability; wrong domain cannot be interpreted as a new key."
+    },
+    {
+      "path": "src/parkweave/store.py",
+      "lines": [
+        83,
+        95,
+        374,
+        386,
+        840,
+        842
+      ],
+      "finding": "Direct versus provider-managed connections, original principal lock and current-capability checks, original four-field audit."
+    },
+    {
+      "path": "src/parkweave/catalog_publication.py",
+      "lines": [
+        82,
+        88,
+        129,
+        135
+      ],
+      "finding": "Original proof permits no journal; snapshot attaches a descriptor only if non-None."
+    },
+    {
+      "path": "src/parkweave/controlled_plans.py",
+      "lines": [
+        119,
+        120
+      ],
+      "finding": "Original known catalogue requires explicit SYNTHETIC source and ACTIVE cooperative state."
+    },
+    {
+      "path": "scripts/windows/lifecycle.py",
+      "lines": [
+        399,
+        407
+      ],
+      "finding": "Original Windows candidate migrates/roles and optionally fixed enterprise seed; not this missing existing-subject preparation configuration. No execution attempted."
+    }
+  ],
+  "execution": {
+    "tests_run": 0,
+    "project_imports": 0,
+    "DB_instances": 0,
+    "business_commands": 0,
+    "network": 0,
+    "tracked_or_Git_mutations": 0
+  },
+  "read_path_failure": {
+    "target": "a9c725babd36561a6a25733953cc374ee1b77bd5:scripts/Setup.ps1",
+    "outcome": "git128 path absent; actual original is scripts/windows/Setup.ps1 and calls scripts/windows/lifecycle.py setup. Read-only lookup error, not a business test or permission denial."
+  },
+  "remaining": [
+    "Await frozen implementation SHA; no implementation sign-off yet.",
+    "Real subject mapping/legitimate source/catalogue publication/executor and resource administration/production schema installation/Windows formal AT35 are not completed by this limited code contract."
+  ]
+}

@@ -1,0 +1,341 @@
+{
+  "schema": 1,
+  "review": "existing-preparation-access-20261018",
+  "frozen_at_utc": "2026-10-18T19:40:31.125450+00:00",
+  "baseline_sha": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+  "contract_commit": "1c430b61b223620d152df2ae78e0732f536ed423",
+  "contract_path": "docs/F2/ExistingPreparationAccessContract-20261018.md",
+  "status": "WAITING_FOR_FROZEN_IMPLEMENTATION",
+  "oracle_origin": "Independent literal original product/AT requirements and frozen contract; baseline code only bounds existing semantics, never supplies generated expected answers.",
+  "oracles": [
+    {
+      "id": "EPA-O01",
+      "title": "Strict bounded reference-only JSON",
+      "stimulus": "Supply exact existing owner/reviewer/domain/catalog references and a bounded reason; alternatively unknown or repeated keys at any nested level, extra capability lists, credential/hash/DSN/path/SQL fields, malformed types including boolean-as-version, or oversized input.",
+      "expect": "Only the finite reference config is accepted. Invalid config is rejected before business writes and cannot create entities, choose arbitrary SQL/permissions or expose raw input/credentials in errors. Reason is bound by the plan hash and never echoed as free text."
+    },
+    {
+      "id": "EPA-O02",
+      "title": "Default is an actual read-only dry-run",
+      "stimulus": "Run prepare-access --config FILE without --apply, including missing/blocked/no-change target states.",
+      "expect": "Use a genuine READ ONLY transaction and only inspect current state/differences. Zero INSERT/UPDATE/DELETE/DDL, authorization_audit writes, session issuance, schema install or startup repair. Do not use FOR SHARE/FOR UPDATE row locking in this path. No transaction or missing permission exception implies approval."
+    },
+    {
+      "id": "EPA-O03",
+      "title": "Only existing exact current subjects and capabilities",
+      "stimulus": "Use active same-domain enterprise_operator owner and park_specialist reviewer with pre-existing owner READ/EXECUTE and reviewer READ; then omit/deactivate/change role/domain/capability.",
+      "expect": "Only the exact current prerequisites pass; all missing or mismatched rows block. No principal, capability/action/resource/Run grant, token, directory or material is created or reactivated. Existing role and scope checks are reused."
+    },
+    {
+      "id": "EPA-O04",
+      "title": "The original preparation-grant key determines missingness",
+      "stimulus": "For each target principal/capability, supply no row, active same-scope row, inactive row, or same primary key with wrong park/org.",
+      "expect": "Only truly absent original keys are insert candidates: owner PREPARE and reviewer REVIEW_ASSIGNED. Active same-scope rows are preserved. Inactive or wrong-scope same-key rows block the entire apply; no UPDATE, ON CONFLICT repair, deletion or resurrection. One existing valid row means at most the other missing row is inserted."
+    },
+    {
+      "id": "EPA-O05",
+      "title": "Existing catalogue proof is consumed, never published",
+      "stimulus": "Reference the exact original supported service/version/park, namespace SYNTHETIC and qualification NOT_EVALUATED, with original publication proof and binding_catalog_known; try unknown/withdrawn/corrupt/changed/wrong-version source.",
+      "expect": "Reuse the original proof and known-source rules. A valid original explicit SYNTHETIC catalogue without a journal remains supported when the original proof returns None; no forced INIT/PUBLISH or new source is invented. All bad or missing current references block and no catalogue field/history is modified."
+    },
+    {
+      "id": "EPA-O06",
+      "title": "Grant scope is represented truthfully",
+      "stimulus": "Inspect planned/applied scope and use original owner/reviewer business endpoints afterward.",
+      "expect": "The two grants have original principal+park/org+capability scope, not a single catalogue/Case restriction. Original owner-only and responsible-reviewer Case checks remain current on every request; config catalogue reference is a source fence, not a substitute narrowing or broadening of business authorization."
+    },
+    {
+      "id": "EPA-O07",
+      "title": "Apply needs both explicit fence intent and actual owner authority",
+      "stimulus": "Request --apply with correct expected-plan SHA from a real direct database owner; alternatively omit/malform SHA, use the normal app role, merely grant INSERT, SET ROLE, or claim admin in config.",
+      "expect": "Only explicit apply plus the exact current fence and actual session_user=current_user=database owner with ownership of relevant original public tables can write. A SHA, role flag, INSERT privilege, superuser label without the selected owner identity, or config text is not authorization. Normal app denial remains even if INSERT is accidentally available."
+    },
+    {
+      "id": "EPA-O08",
+      "title": "Management context is separate from runtime providers",
+      "stimulus": "Use an existing application/provider-bound Store or mixed Native/isolated/ordinary service context instead of a fresh direct owner Store.",
+      "expect": "Reject the mixed context; no fallback from a Native/default refusal, fixture permit or application actor to administrator rights. Runtime configured_app/worker do not auto-discover/call this command. No roles/schema/conftest changes or real installation are required or executed."
+    },
+    {
+      "id": "EPA-O09",
+      "title": "Plan SHA is a current-state fence, not approval",
+      "stimulus": "Dry-run the same semantic config on the same actual endpoint/database/state, then change config/reason, database endpoint/OID/name/postmaster-start, relevant principal/capability/preparation-grant xmin or catalogue content/generation.",
+      "expect": "A matching fence binds the normalized config and selected current state; each relevant change invalidates the old SHA. Credentials/token hashes/material bodies/DSN strings are not exposed or included as credentials in the plan. Actual endpoint+database OID/name+postmaster start is a bounded state fence, not a cryptographic instance identifier, signature, Approval or Native permit; no pg_control_system/root/seal privilege is added."
+    },
+    {
+      "id": "EPA-O10",
+      "title": "Apply acquires original locks before its final fresh decision",
+      "stimulus": "Apply while another owned transaction holds a relevant principal/row/catalogue lock, then alter the relevant state before releasing the wait.",
+      "expect": "Take original principal exclusive advisory locks in stable ID order, acquire required row/catalogue locks in deterministic order, and re-read all required generations/source/owner state after every admission wait before comparing the expected SHA and writing. Never compare a pre-wait cached plan as the final fence."
+    },
+    {
+      "id": "EPA-O11",
+      "title": "ABA and conflicting administration are rejected atomically",
+      "stimulus": "Revoke/restore or replace a relevant row between dry-run and apply; concurrently attempt the same missing keys or introduce an inactive/wrong-scope key.",
+      "expect": "Changed xmin/current state makes the old SHA stale, or an original uniqueness/lock conflict cleanly rejects/rolls back. No partial grant/audit set, ignored conflict or automatic retry that silently accepts the new state. Trusted-admin uncooperative rewriting/deleted historical revocations are not claimed detectable."
+    },
+    {
+      "id": "EPA-O12",
+      "title": "Original audit and both inserts share one transaction",
+      "stimulus": "Apply a valid two-missing-grant plan; fail the second insert or original audit, or inspect the audit record.",
+      "expect": "All required grant inserts and original authorization_audit records commit together or all roll back. Audit uses actual beneficiary principal, operation/specific capability/plan SHA and ALLOWED; it does not invent an application-admin identity or log reason/config/secrets. No new audit schema or alternate authorization engine."
+    },
+    {
+      "id": "EPA-O13",
+      "title": "NO_CHANGE and old-plan reuse are not false issuance or recovery",
+      "stimulus": "After a successful apply, repeat the previous expected SHA, then take a new dry-run of the already active same-scope grants.",
+      "expect": "The pre-insert SHA is stale after new xmin generations. A current no-difference plan returns NO_CHANGE without claiming a new grant. No persistent original-key receipt is invented, no automatic exact-request idempotency or cold-recovery guarantee is claimed, and existing valid grants remain byte-identical."
+    },
+    {
+      "id": "EPA-O14",
+      "title": "Commit connection failure leaves an unknown outcome",
+      "stimulus": "Lose the client/connection around transaction commit or receive an ambiguous transport error.",
+      "expect": "Report that the result is unconfirmed, never assert no commit solely from a connection exception, and never automatically replay apply. A new read-only dry-run can inspect current state; it is not an immutable receipt proving which original invocation committed. Errors do not echo credentials or raw config."
+    },
+    {
+      "id": "EPA-O15",
+      "title": "Applied prerequisites feed the original user flow",
+      "stimulus": "In an explicitly owned synthetic test initial state containing existing legal subjects/capabilities/catalogue, add only the two missing preparation grants, then use original preparation HTTP entry/material REVIEW/CONFIRM and cold startup.",
+      "expect": "Original current identity/Case/source algorithms consume the resulting grants; ordinary startup still does not seed or install. Principals/capabilities/catalogue/Run access/Native/provider/receipt resources remain unchanged. This finite code path is not a real management execution or formal end-to-end AT35."
+    },
+    {
+      "id": "EPA-O16",
+      "title": "New grant generations never revive an old CaseStep marker",
+      "stimulus": "In owned negative data only, delete/reinsert a previously bound preparation grant through the proposed missing-key workflow, or restore a row after an original marker was issued.",
+      "expect": "Original CaseStep current-generation checks still reject the old marker. The initializer need not infer deleted revocation history, but must never reset or rewrite a marker, UUID, original deadline, actor generation, receipt or lifecycle to revive it. Broader real subjects/catalogue/executor/resource initialization and Windows/formal installation remain separate gaps."
+    }
+  ],
+  "inputs": [
+    {
+      "commit": "1c430b61b223620d152df2ae78e0732f536ed423",
+      "path": "docs/F2/ExistingPreparationAccessContract-20261018.md",
+      "bytes": 4786,
+      "sha256": "23c58977de75f6123ac7e28b204e2009fc8a2d2c7b1553af577a2c2bd32f2b54",
+      "git_blob": "7c552ebcfef5ed30a364b9b2271329d8b3d5657b"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "bytes": 44220,
+      "sha256": "48ff72723678546500973b6ad45ae841320cda69f08f9ca24013137ae5e7b02b",
+      "git_blob": "50a2b9a0fcf818a4912ac5925e9a32cdbd1f23e6"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "bytes": 31271,
+      "sha256": "4437dac3b86c12bd1ffc57cf7c4e66c154eea5ec2a5d8562d0ddfc1f6cfb5989",
+      "git_blob": "4f0163469b0815e69acb889c207af7294c114819"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "docs/F1/ATBindings.json",
+      "bytes": 22163,
+      "sha256": "30641772818c6435b18090fb66bddd9989b115e669702105adf766902372e296",
+      "git_blob": "1b5a25e97d715ed342670795099672537015e78f"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "docs/验收规格.json",
+      "bytes": 18857,
+      "sha256": "747fafdf948012b3569ef5d43fcf5c279b3e6acad25231b4a68c493e6f32a17b",
+      "git_blob": "ec8ebfd4fedc107e5bec3f2f2e865de1c9b6f594"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/cli.py",
+      "bytes": 1872,
+      "sha256": "e5a80d2d909619892be463e8ac803de32db9b88d98e83a431e62cf0ba6ea6128",
+      "git_blob": "e7979750cb07a9bd4314d5720f70100d0fc4d9e1"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/store.py",
+      "bytes": 53025,
+      "sha256": "432d6993f834390088d719eae11b7a6a68f7f160bebc3d66332841bb7a24fdf1",
+      "git_blob": "975b6783d6cdd924403768999c8bcdc9bcf090a7"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/preparation.py",
+      "bytes": 29794,
+      "sha256": "957505ff461c367bb918e24e947fc9ef46e398a98a0c651932dacfb03d384bc2",
+      "git_blob": "d855556d2b6c77933ada2f46c95549cc0f2e9658"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/migration-004.sql",
+      "bytes": 2721,
+      "sha256": "64e3617a0807559fb9f084c24483e8b7de490788071b4878aa18023e84f34ada",
+      "git_blob": "1930cdc24198e6245e0d394e0d0d02e747c69cc6"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/migration-009.sql",
+      "bytes": 2870,
+      "sha256": "f56b6f3f254afd374384fb181fa1f19d49bb977c338f8b109232d4892bd2e893",
+      "git_blob": "560757196d9f3148176e4a4a9f6484a3109f54eb"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/roles.sql",
+      "bytes": 3341,
+      "sha256": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+      "git_blob": "cf150ce98808ca74ed555bb1ba828e1d7f69120c"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/catalog_publication.py",
+      "bytes": 14020,
+      "sha256": "d1aba8a5d77002d275fc97bb7f87684fdac24bf47fd70a67ea84a025a12e8a30",
+      "git_blob": "525278799b334a3d7185d72699bdcc6a6bb69f67"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/controlled_plans.py",
+      "bytes": 25135,
+      "sha256": "11a9bc618bc07ec7b6f12b83ba7b381306b3e66326799f7afedb529b31c4b9fd",
+      "git_blob": "741cae6b8cad1de38dc941cd427c282da2a9d560"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/permissions.py",
+      "bytes": 395,
+      "sha256": "eb16e8f90e800dec3c57ff77e6c37e6626bd667ad43e3b2a00cfef1e12448ea3",
+      "git_blob": "652cd9ea5b2bb2ba33ae37fabe7652c18209584b"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/case_step_assignments.py",
+      "bytes": 55627,
+      "sha256": "4557497f83e7c2241d42ad26c9aee1adf8ee5b99df403109ddf2595fb9d83590",
+      "git_blob": "1e4b9cf4c8286ac2472be7b56202366dfb7c38c4"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/ordinary_plan_sources.py",
+      "bytes": 5805,
+      "sha256": "3c662a8ea13da8c41221ca9703c2fdfa6035216e899950af4e7ecd5c49a3d6c3",
+      "git_blob": "6e03fd45f6704dd5e8a65871078e5d4d7c3af050"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/native_run_access.py",
+      "bytes": 32784,
+      "sha256": "1e95c4a6bdb5da9d3beca53b248d4c85bccd66fa80ac2144032f389734485366",
+      "git_blob": "851dc43bcbd19e579bb333ee3f3f9cdb34148446"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "src/parkweave/native_run_access_writer.py",
+      "bytes": 32898,
+      "sha256": "71d53aa75ac286042ab273b51ec4675c0915025e8ae74e0cdfcc91161ada8220",
+      "git_blob": "03c83e2ce2de6f30c7a22b6014e169276e0c9809"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "scripts/windows/Setup.ps1",
+      "bytes": 147,
+      "sha256": "fd8b19568a567b01936e81d577ab3e60f315d3f06c67a2b9f7692a015104611c",
+      "git_blob": "0ee0291dae86c41fcf4c8bd0b3375c760d1ca3a4"
+    },
+    {
+      "commit": "a9c725babd36561a6a25733953cc374ee1b77bd5",
+      "path": "scripts/windows/lifecycle.py",
+      "bytes": 35633,
+      "sha256": "49826c31570a0233b8e9d0d71f86291098ac2bb125a3e8edbf278c1d5cf081e7",
+      "git_blob": "4c99e6642183280d2bc52fb83b816be2252e2fe3"
+    }
+  ],
+  "parent_preimplementation_clarifications": [
+    {
+      "status": "PARENT_ACCEPTED_BEFORE_IMPLEMENTATION",
+      "topic": "Owner authority",
+      "decision": "Fresh direct owner context; actual database owner=session_user=current_user and relevant original public table owners; reject runtime/provider-bound Store. No new fixture authority."
+    },
+    {
+      "status": "PARENT_ACCEPTED_BEFORE_IMPLEMENTATION",
+      "topic": "Dry-run/catalogue/audit",
+      "decision": "Genuine READ ONLY and no row locks/audit. Preserve valid original no-journal SYNTHETIC catalogue. Audit principal is beneficiary, not invented application administrator."
+    },
+    {
+      "status": "PARENT_ACCEPTED_BEFORE_IMPLEMENTATION",
+      "topic": "Instance fence",
+      "decision": "Actual connection endpoint hashed internally, database OID/name and pg_postmaster_start_time. No pg_control_system, OS seal/root or new privilege. State fence only, no cryptographic identity or physical commit-time guarantee."
+    },
+    {
+      "status": "DOCUMENT_REFERENCE_CORRECTION_REPORTED",
+      "topic": "Original section labels",
+      "decision": "Frozen V1 product line317 is section9.3; plan line325 is section11 and line366 section13. Contract line anchors and actual source text are used rather than the mistaken chapter numbers. A later mechanical citation correction may be recorded as a frozen diff; this oracle is not overwritten."
+    }
+  ],
+  "execution": {
+    "project_imports": 0,
+    "tests_run": 0,
+    "database_instances": 0,
+    "business_commands": 0,
+    "network_requests": 0,
+    "tracked_or_Git_mutations": 0
+  },
+  "bounded_future_groups": [
+    {
+      "id": "I01",
+      "oracles": [
+        "EPA-O01",
+        "EPA-O02"
+      ],
+      "design": "Strict nested duplicate/unknown/credential-shaped config plus genuine read-only dry-run and complete business/authorization/audit snapshot."
+    },
+    {
+      "id": "I02",
+      "oracles": [
+        "EPA-O03",
+        "EPA-O04",
+        "EPA-O05",
+        "EPA-O06"
+      ],
+      "design": "Small current-state matrix: missing/active/inactive/wrong-scope keys; exact original no-journal and invalid catalogue; no entity import/publication."
+    },
+    {
+      "id": "I03",
+      "oracles": [
+        "EPA-O07",
+        "EPA-O08",
+        "EPA-O09"
+      ],
+      "design": "Actual owned owner versus original app connection and a mixed provider; exact database/fence changes; never grant the app INSERT merely to bypass a guard."
+    },
+    {
+      "id": "I04",
+      "oracles": [
+        "EPA-O10",
+        "EPA-O11",
+        "EPA-O12"
+      ],
+      "design": "Real owned PG lock wait with relevant generation change; exact stale rejection and original two-insert/audit rollback, using no new schema/roles."
+    },
+    {
+      "id": "I05",
+      "oracles": [
+        "EPA-O13",
+        "EPA-O14"
+      ],
+      "design": "Success/old SHA/current NO_CHANGE and a narrowly instrumented commit-uncertainty path with no auto-replay; preserve precise actual outcome versus unknown."
+    },
+    {
+      "id": "I06",
+      "oracles": [
+        "EPA-O15",
+        "EPA-O16"
+      ],
+      "design": "One original preparation user/cold-read chain from existing synthetic principals and current capabilities, plus old-marker generation refusal; no old P5 matrix."
+    }
+  ],
+  "limits": [
+    "No WIP implementation read or sign-off. Wait for final SHA before owned PG/tests.",
+    "Only private runtime writes; root sole tracked/Git writer.",
+    "No real identity/Grant/assignment/publication/approval/credential/install or broader authorization.",
+    "No roles/schema/conftest mutation, real browser/Windows/model/root/seal retry.",
+    "No old P5 42-node whole-slice rerun or transferred counts."
+  ]
+}

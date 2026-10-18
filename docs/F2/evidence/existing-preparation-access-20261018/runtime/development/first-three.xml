@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="17.300" timestamp="2026-10-18T19:46:00.882180+00:00" hostname="9eff6a810039"><testcase classname="tests.test_existing_preparation_access" name="test_default_dry_run_is_read_only_then_explicit_two_grants_and_no_change" time="6.981" /><testcase classname="tests.test_existing_preparation_access" name="test_normal_cli_dry_apply_original_preparation_and_cold_api" time="8.001"><failure message="AssertionError: {&quot;run_id&quot;:&quot;3b2edb4d-6736-4553-8116-bfa3f6bb8c79&quot;}&#10;assert 202 == 200&#10; +  where 202 = &lt;Response [202 Accepted]&gt;.status_code">configuration_fixture = ((&lt;parkweave.store.Store object at 0x7f8fc00b8890&gt;, &lt;parkweave.store.Store object at 0x7f8fc00b8a10&gt;, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'), PosixPath('/tmp/pytest-of-agent/pytest-8/test_normal_cli_dry_apply_orig0/已有配置 空格.json'))
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-8/test_normal_cli_dry_apply_orig0')
+
+    def test_normal_cli_dry_apply_original_preparation_and_cold_api(configuration_fixture,tmp_path):
+        f,manager,config,path=configuration_fixture;immutable=tuple(t for t in TABLES if t not in ('preparation_grants','authorization_audit','runs','operations','cases','preparations','preparation_events','preparation_evidence'));before=fingerprint(f[1],immutable)
+        with ordinary_api(f,tmp_path/'first-api') as api:
+            assert api.get('/api/preparation-catalog',headers=headers(f[2],OWNER)).status_code==403
+            counts_before=counts(f[1]);preview=run_cli(f,path,tmp_path/'dry-run');assert preview['status']=='READY_TO_APPLY' and preview['read_only']
+            assert counts(f[1])==counts_before
+            applied=run_cli(f,path,tmp_path/'explicit-apply','--apply','--expected-plan-sha256',preview['plan_sha256'],owner=True)
+            assert applied['status']=='APPLIED' and len(applied['applied'])==2
+&gt;           run=ok(api.post('/api/runs',headers=headers(f[2],OWNER,uuid4().hex),json=dict(goal='SYNTHETIC existing configured user')))['run_id']
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_existing_preparation_access.py:200: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = &lt;Response [202 Accepted]&gt;, status = 200
+
+&gt;   def ok(r,status=200):assert r.status_code==status,r.text;return r.json()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: {"run_id":"3b2edb4d-6736-4553-8116-bfa3f6bb8c79"}
+E   assert 202 == 200
+E    +  where 202 = &lt;Response [202 Accepted]&gt;.status_code
+
+tests/test_case_step_assignments.py:22: AssertionError</failure></testcase><testcase classname="tests.test_existing_preparation_access" name="test_actual_owner_lock_wait_rechecks_current_generation[capability_aba]" time="1.405" /></testsuite></testsuites>

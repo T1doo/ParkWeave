@@ -1,0 +1,49 @@
+.................................F.                                      [100%]
+=================================== FAILURES ===================================
+_________ test_normal_cli_dry_apply_original_preparation_and_cold_api __________
+
+configuration_fixture = ((<parkweave.store.Store object at 0x7fa74b507290>, <parkweave.store.Store object at 0x7fa74a16a930>, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'), PosixPath('/tmp/pytest-of-agent/pytest-9/test_normal_cli_dry_apply_orig0/已有配置 空格.json'))
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-9/test_normal_cli_dry_apply_orig0')
+
+    def test_normal_cli_dry_apply_original_preparation_and_cold_api(configuration_fixture,tmp_path):
+        f,manager,config,path=configuration_fixture;immutable=tuple(t for t in TABLES if t not in ('preparation_grants','authorization_audit','runs','operations','cases','preparations','preparation_events','preparation_evidence'));before=fingerprint(f[1],immutable)
+        with ordinary_api(f,tmp_path/'first-api') as api:
+            assert api.get('/api/preparation-catalog',headers=headers(f[2],OWNER)).status_code==403
+            counts_before=counts(f[1]);preview=run_cli(f,path,tmp_path/'dry-run');assert preview['status']=='READY_TO_APPLY' and preview['read_only']
+            assert counts(f[1])==counts_before
+            applied=run_cli(f,path,tmp_path/'explicit-apply','--apply','--expected-plan-sha256',preview['plan_sha256'],owner=True)
+            assert applied['status']=='APPLIED' and len(applied['applied'])==2
+            run=ok(api.post('/api/runs',headers=headers(f[2],OWNER,uuid4().hex),json=dict(goal='SYNTHETIC existing configured user')),202)['run_id']
+            f[0].finish(f[0].claim('SYNTHETIC existing-directory-user'))
+            p=ok(api.post('/api/preparations',headers=headers(f[2],OWNER,uuid4().hex),json=dict(run_id=run,service_id=prep.SERVICE,service_version=1,reviewer_id=REVIEWER_ID)),201)
+            for slot in prep.SLOTS:
+                p=ok(api.post('/api/preparations/'+p['preparation_id']+'/commands',headers=headers(f[2],OWNER,uuid4().hex),json=dict(action='ADD_EVIDENCE',expected_revision=p['revision'],slot=slot,text='SYNTHETIC original explicit '+slot,source_kind='USER_STATEMENT',source_label='SYNTHETIC existing user')))
+            for user,action in ((REVIEWER_ID,'REVIEW'),(OWNER,'CONFIRM')):
+                p=ok(api.post('/api/preparations/'+p['preparation_id']+'/commands',headers=headers(f[2],user,uuid4().hex),json=dict(action=action,expected_revision=p['revision'],reason='SYNTHETIC independent '+action)))
+            first=ok(api.get('/api/preparations/'+p['preparation_id'],headers=headers(f[2],OWNER)))
+>           assert first['state']=='LOCAL_CONFIRMED'
+                   ^^^^^^^^^^^^^^
+E           KeyError: 'state'
+
+tests/test_existing_preparation_access.py:226: KeyError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_existing_preparation_access.py::test_default_dry_run_is_read_only_then_explicit_two_grants_and_no_change
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_existing_preparation_access.py::test_default_dry_run_is_read_only_then_explicit_two_grants_and_no_change
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_existing_preparation_access.py::test_normal_cli_dry_apply_original_preparation_and_cold_api
+1 failed, 34 passed, 4 warnings in 32.52s

@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+<testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="9" time="47.394" timestamp="2026-10-18T19:52:58.217858+00:00" hostname="9eff6a810039"><testcase classname="tests.test_independent_existing_preparation_access" name="test_nested_duplicates_and_reference_only_json_leave_a_true_read_only_snapshot" time="7.890" /><testcase classname="tests.test_independent_existing_preparation_access" name="test_one_missing_grant_keeps_existing_xmin_then_inactive_same_key_is_not_repaired" time="2.739" /><testcase classname="tests.test_independent_existing_preparation_access" name="test_reason_is_a_hidden_fence_and_neither_app_nor_provider_is_owner_authority" time="2.290" /><testcase classname="tests.test_independent_existing_preparation_access" name="test_actual_capability_row_share_wait_rejects_generation_after_principal_admission" time="1.204" /><testcase classname="tests.test_independent_existing_preparation_access" name="test_second_original_insert_failure_rolls_back_first_grant_and_audit" time="1.247" /><testcase classname="tests.test_independent_existing_preparation_access" name="test_reinserted_preparation_grant_does_not_revive_marker_in_cold_ordinary_or_default_app" time="5.254"><failure message="AssertionError: assert {'sha256': '4...ts': 18, ...}} == {'sha256': '9...ts': 18, ...}}&#10;  &#10;  Differing items:&#10;  {'counts': {'principals': 10, 'capability_grants': 19, 'action_grants': 9, 'field_grants': 18, ...}} != {'counts': {'principals': 10, 'capability_grants': 19, 'action_grants': 9, 'field_grants': 18, ...}}&#10;  {'sha256': '48a2c8c3929eb2d37450dba50decc4854240cf44368ad6d0c4f1d63ebdd7eff2'} != {'sha256': '958fda058c65853ca70cddeb747453687774bafa7b5cb08715279d9a9e005d08'}&#10;  Use -v to get more diff">ordinary = ((&lt;parkweave.store.Store object at 0x7fc9c3f72b40&gt;, &lt;parkweave.store.Store object at 0x7fc9c3f73440&gt;, {'fixture-a': 'SYNTHETIC_TRUNCATED_SESSION_REDACTED, {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+
+    def test_reinserted_preparation_grant_does_not_revive_marker_in_cold_ordinary_or_default_app(ordinary):
+        f,_=ordinary;p=prepared(f,'INITIALIZER_GENERATION');offered=ok(offer(f,p)[0],201)
+        with f[1].connect() as c:
+            original=c.execute("SELECT xmin::text generation FROM preparation_grants WHERE principal_id='fixture-a' AND capability='PREPARE'").fetchone()['generation']
+            marker=c.execute("SELECT payload FROM service_dispatch_events WHERE action='OFFER'").fetchone()['payload']['case_step_assignment']
+            c.execute("DELETE FROM preparation_grants WHERE principal_id='fixture-a' AND capability='PREPARE'")
+        manager=ExistingPreparationAccess(Store(f[1].dsn));config=Configuration(**data('fixture-a',REVIEWER))
+        plan=manager.preview(config);applied=manager.apply(config,plan['plan_sha256'])
+        assert [x['capability'] for x in applied['applied']]==['PREPARE']
+        with f[1].connect() as c:
+            current=c.execute("SELECT xmin::text generation FROM preparation_grants WHERE principal_id='fixture-a' AND capability='PREPARE'").fetchone()['generation']
+            assert current!=original
+            assert c.execute("SELECT payload FROM service_dispatch_events WHERE action='OFFER'").fetchone()['payload']['case_step_assignment']==marker
+            assert not c.execute('SELECT 1 FROM run_assignments').fetchone()
+        before=snapshot(f[1])
+        from fastapi.testclient import TestClient
+        with TestClient(configured_app()) as api:
+            cold=(*f[:3],api);ok(dispatch_command(cold,offered,'ACCEPT'),403)
+            history=ok(dispatch_read(cold,offered,'fixture-a'))
+            assert history['assignment_valid_until']==offered['assignment_valid_until']
+        with TestClient(create_app(Store(f[0].dsn))) as api:
+            cold=(*f[:3],api);ok(dispatch_command(cold,offered,'ACCEPT'),403)
+&gt;       assert snapshot(f[1])==before
+E       AssertionError: assert {'sha256': '4...ts': 18, ...}} == {'sha256': '9...ts': 18, ...}}
+E         
+E         Differing items:
+E         {'counts': {'principals': 10, 'capability_grants': 19, 'action_grants': 9, 'field_grants': 18, ...}} != {'counts': {'principals': 10, 'capability_grants': 19, 'action_grants': 9, 'field_grants': 18, ...}}
+E         {'sha256': '48a2c8c3929eb2d37450dba50decc4854240cf44368ad6d0c4f1d63ebdd7eff2'} != {'sha256': '958fda058c65853ca70cddeb747453687774bafa7b5cb08715279d9a9e005d08'}
+E         Use -v to get more diff
+
+tests/test_independent_existing_preparation_access.py:182: AssertionError</failure></testcase><testcase classname="tests.test_existing_preparation_access" name="test_default_dry_run_is_read_only_then_explicit_two_grants_and_no_change" time="3.072" /><testcase classname="tests.test_existing_preparation_access" name="test_actual_owner_lock_wait_rechecks_current_generation[catalog_aba]" time="2.106" /><testcase classname="tests.test_existing_preparation_access" name="test_normal_cli_dry_apply_original_preparation_and_cold_api" time="16.065" /></testsuite></testsuites>

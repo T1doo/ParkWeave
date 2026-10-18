@@ -1,0 +1,54 @@
+.....F...                                                                [100%]
+=================================== FAILURES ===================================
+_ test_reinserted_preparation_grant_does_not_revive_marker_in_cold_ordinary_or_default_app _
+
+ordinary = ((<parkweave.store.Store object at 0x7fc9c3f72b40>, <parkweave.store.Store object at 0x7fc9c3f73440>, {'fixture-a': 'SYNTHETIC_TRUNCATED_SESSION_REDACTED, {'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+
+    def test_reinserted_preparation_grant_does_not_revive_marker_in_cold_ordinary_or_default_app(ordinary):
+        f,_=ordinary;p=prepared(f,'INITIALIZER_GENERATION');offered=ok(offer(f,p)[0],201)
+        with f[1].connect() as c:
+            original=c.execute("SELECT xmin::text generation FROM preparation_grants WHERE principal_id='fixture-a' AND capability='PREPARE'").fetchone()['generation']
+            marker=c.execute("SELECT payload FROM service_dispatch_events WHERE action='OFFER'").fetchone()['payload']['case_step_assignment']
+            c.execute("DELETE FROM preparation_grants WHERE principal_id='fixture-a' AND capability='PREPARE'")
+        manager=ExistingPreparationAccess(Store(f[1].dsn));config=Configuration(**data('fixture-a',REVIEWER))
+        plan=manager.preview(config);applied=manager.apply(config,plan['plan_sha256'])
+        assert [x['capability'] for x in applied['applied']]==['PREPARE']
+        with f[1].connect() as c:
+            current=c.execute("SELECT xmin::text generation FROM preparation_grants WHERE principal_id='fixture-a' AND capability='PREPARE'").fetchone()['generation']
+            assert current!=original
+            assert c.execute("SELECT payload FROM service_dispatch_events WHERE action='OFFER'").fetchone()['payload']['case_step_assignment']==marker
+            assert not c.execute('SELECT 1 FROM run_assignments').fetchone()
+        before=snapshot(f[1])
+        from fastapi.testclient import TestClient
+        with TestClient(configured_app()) as api:
+            cold=(*f[:3],api);ok(dispatch_command(cold,offered,'ACCEPT'),403)
+            history=ok(dispatch_read(cold,offered,'fixture-a'))
+            assert history['assignment_valid_until']==offered['assignment_valid_until']
+        with TestClient(create_app(Store(f[0].dsn))) as api:
+            cold=(*f[:3],api);ok(dispatch_command(cold,offered,'ACCEPT'),403)
+>       assert snapshot(f[1])==before
+E       AssertionError: assert {'sha256': '4...ts': 18, ...}} == {'sha256': '9...ts': 18, ...}}
+E         
+E         Differing items:
+E         {'counts': {'principals': 10, 'capability_grants': 19, 'action_grants': 9, 'field_grants': 18, ...}} != {'counts': {'principals': 10, 'capability_grants': 19, 'action_grants': 9, 'field_grants': 18, ...}}
+E         {'sha256': '48a2c8c3929eb2d37450dba50decc4854240cf44368ad6d0c4f1d63ebdd7eff2'} != {'sha256': '958fda058c65853ca70cddeb747453687774bafa7b5cb08715279d9a9e005d08'}
+E         Use -v to get more diff
+
+tests/test_independent_existing_preparation_access.py:182: AssertionError
+=============================== warnings summary ===============================
+../../../../../.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_independent_existing_preparation_access.py::test_nested_duplicates_and_reference_only_json_leave_a_true_read_only_snapshot
+  /workspace/ParkWeave/.runtime/existing-preparation-access-20261018/independent/frozen-c6aa4a9a-window1/mirror/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_independent_existing_preparation_access.py::test_nested_duplicates_and_reference_only_json_leave_a_true_read_only_snapshot
+  /workspace/ParkWeave/.runtime/existing-preparation-access-20261018/independent/frozen-c6aa4a9a-window1/mirror/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_independent_existing_preparation_access.py::test_reinserted_preparation_grant_does_not_revive_marker_in_cold_ordinary_or_default_app
+1 failed, 8 passed, 3 warnings in 47.39s

@@ -1,0 +1,25 @@
+--- test_independent_existing_preparation_access.v1.py
++++ test_independent_existing_preparation_access.py
+@@ -171,7 +171,9 @@
+         assert current!=original
+         assert c.execute("SELECT payload FROM service_dispatch_events WHERE action='OFFER'").fetchone()['payload']['case_step_assignment']==marker
+         assert not c.execute('SELECT 1 FROM run_assignments').fetchone()
+-    before=snapshot(f[1])
++    protected=tuple(t for t in TABLES if t!='authorization_audit')+('service_dispatches','service_dispatch_offers','service_dispatch_events','service_receipt_steps','service_receipt_events')
++    before=snapshot(f[1],protected)
++    with f[1].connect() as c:before_audits={row['id'] for row in c.execute('SELECT id FROM authorization_audit')}
+     from fastapi.testclient import TestClient
+     with TestClient(configured_app()) as api:
+         cold=(*f[:3],api);ok(dispatch_command(cold,offered,'ACCEPT'),403)
+@@ -179,5 +181,9 @@
+         assert history['assignment_valid_until']==offered['assignment_valid_until']
+     with TestClient(create_app(Store(f[0].dsn))) as api:
+         cold=(*f[:3],api);ok(dispatch_command(cold,offered,'ACCEPT'),403)
+-    assert snapshot(f[1])==before
+-    evidence('old-marker-generation',dict(original_generation=original,reinserted_generation=current,original_deadline=offered['assignment_valid_until'],cold_ordinary_denied=True,default_denied=True,marker_unchanged=True))
++    assert snapshot(f[1],protected)==before
++    with f[1].connect() as c:
++        added=[dict(row) for row in c.execute('SELECT id,principal_id,category,outcome FROM authorization_audit') if row['id'] not in before_audits]
++    assert len(added)==2
++    assert all((row['principal_id'],row['category'],row['outcome'])==('executor-a','API_AUTHORIZATION','DENIED') for row in added)
++    evidence('old-marker-generation',dict(original_generation=original,reinserted_generation=current,original_deadline=offered['assignment_valid_until'],cold_ordinary_denied=True,default_denied=True,marker_unchanged=True,protected_business_snapshot_unchanged=before,expected_denial_audits=added))
