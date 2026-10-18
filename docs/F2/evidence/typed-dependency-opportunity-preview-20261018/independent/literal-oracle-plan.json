@@ -1,0 +1,117 @@
+{
+  "baseline": "9be4788bb068eeead64cda2f7a4eb70099a4df4f",
+  "counting": "18 specification rows are not test counts; final actual selector IDs, independent overlap and windows will be reported separately",
+  "literal_oracles": [
+    {
+      "expected": {
+        "affected_adapters": [
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "authority_verified": false,
+        "business_permission_history_unchanged": true,
+        "execution_authorized": false,
+        "preserved_adapters": [
+          "P1"
+        ],
+        "status": 200,
+        "typed_projection_can_adopt": false,
+        "typed_projection_read_only": true
+      },
+      "id": "OP01",
+      "scenario": "explicit graph GET over original resource collection change"
+    },
+    {
+      "expected": "old ordinary v2 and unified v4 preview/hash/adoption payload unchanged; no typed projection without explicit query",
+      "id": "OP02",
+      "scenario": "old ordinary request and unified request remain byte-equivalent before/after new GET"
+    },
+    {
+      "expected": "same JSON and current actor/Case/Run/plan/card/ledger/source epochs; GET alone reconstructs from DB; no UI session or posted graph needed",
+      "id": "OP03",
+      "scenario": "same exact typed GET via fresh API/Store object"
+    },
+    {
+      "expected": "graph_preview missing dependency_scope or unknown graph/scope value fails closed (422 or documented409); old requests retain old shape; no graph body upload",
+      "id": "OP04",
+      "scenario": "explicit query grammar"
+    },
+    {
+      "expected": "aggregate shared source hash may change, but unchanged P1 observation and original P1 VERIFY/history remain preserved while P2 changed observation propagates P2-P5",
+      "id": "OP05",
+      "scenario": "shared source consumer observations"
+    },
+    {
+      "expected": "UNKNOWN THIS_CASE expands all actual selected steps, never fills historical absence with current source, can_adopt false",
+      "id": "OP06",
+      "scenario": "missing registered before source"
+    },
+    {
+      "expected": "original lock P1 preserved; affected P3 conflict listed by current lock event; both converted historical snapshots locked_fields empty; old plan history/hash unchanged; unlock requires original action",
+      "id": "OP07",
+      "scenario": "current lock separation"
+    },
+    {
+      "expected": "nonowner enterprise, other park, prep specialist, executor, revoked current READ/PREPARE return403 without projection/body leakage or business/permission mutation",
+      "id": "OP08",
+      "scenario": "scope role READ/PREPARE revocation"
+    },
+    {
+      "expected": "409 no projection and no writes; explicit refresh does not publish authority or rewrite history",
+      "id": "OP09",
+      "scenario": "stale withdrawn old-generation card or corrupted plan lock proof"
+    },
+    {
+      "expected": "original exact unified v4 ADOPT body still commits by original endpoint; new wrapper never enters request/history; same stable IDs, original history/source proof hashes retained; new top-level graph field rejected if offered as unknown body field",
+      "id": "OP10",
+      "scenario": "legacy ADOPT unchanged"
+    },
+    {
+      "expected": "actual button sends explicit typed GET; renders only textContent; opportunityPlanView remains null, original confirmation unchecked and ADOPT disabled; no POST from readonly click",
+      "id": "UI01",
+      "scenario": "original full page new readonly button"
+    },
+    {
+      "expected": "original DTO accepted; missing/extra wrapper field, changed binding, forged path, bad hash and self-consistently rehashed cross-Case/snapshot/partition DTO rejected before display or adoption view",
+      "id": "UI02",
+      "scenario": "real data DTO shape/binding/hash/path checks"
+    },
+    {
+      "expected": "current denied GET clears typed projection and original private preparation/plan according to existing page handling; recovery opaque handles remain; no POST",
+      "id": "UI03",
+      "scenario": "current403"
+    },
+    {
+      "expected": "hold old response; switch identity away/back and load another Case/plan; old200 cannot render or replace current typed view, no posts/auto retry",
+      "id": "UI04",
+      "scenario": "late200 and identity ABA"
+    },
+    {
+      "expected": "held old403 after newer Case/identity renders cannot erase newer private view",
+      "id": "UI05",
+      "scenario": "late403"
+    },
+    {
+      "expected": "same stale guard after every await, including digest checking; failures cannot clear newer view or enable write",
+      "id": "UI06",
+      "scenario": "late JSON/transport rejection and hash await"
+    },
+    {
+      "expected": "new NodeVM page reconstructs via GET only; Case/plan/draft navigation invalidates pending typed response; storage contains no graph/token/body and no auto resend",
+      "id": "UI07",
+      "scenario": "cold page and navigation/draft guards"
+    },
+    {
+      "expected": "original ordinary/unified button still creates original opportunityPlanView via existing logic; new graph button never borrows that write path",
+      "id": "UI08",
+      "scenario": "legacy page preview after typed view"
+    }
+  ],
+  "permissions": "existing owned temporary SYNTHETIC PG/ASGI and complete HTML NodeVM only; no real browser/root/seal/issuer/LIVE/new real grants/credentials/costs",
+  "prepared_before_new_implementation_review": true,
+  "provenance": "literal adapter sets frozen from original P1-P5 business meanings; no new kernel closure or output used to generate answers",
+  "scope": "read-only original opportunity GET/UI connection; no whole AT25/26 or real authority claim",
+  "version": 1
+}

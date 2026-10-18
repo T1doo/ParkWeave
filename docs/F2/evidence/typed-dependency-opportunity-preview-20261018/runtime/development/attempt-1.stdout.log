@@ -1,0 +1,91 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /workspace/ParkWeave
+configfile: pyproject.toml
+collected 13 items
+
+tests/test_typed_dependency_opportunity_preview.py ......F
+
+=================================== FAILURES ===================================
+_____ test_full_original_html_readonly_button_and_context_guards[positive] _____
+
+http_f = (<parkweave.store.Store object at 0x7fdd1966f4d0>, <parkweave.store.Store object at 0x7fdd1838f1a0>, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED': 'SYNTHETIC_SESSION_REDACTED', ...}, <httpx.Client object at 0x7fdd18afbcb0>)
+mode = 'positive'
+
+    @pytest.mark.parametrize('mode',['positive','current_403','late_200','late_403','late_json','late_transport','hash_aba'])
+    def test_full_original_html_readonly_button_and_context_guards(http_f,mode):
+        f=http_f;p,*_=complete(f,local=True);assert lock(f,p,'P1').status_code==200;assert lock(f,p,'P3').status_code==200
+>       run_html(f,p,changed(f,p),mode)
+
+tests/test_typed_dependency_opportunity_preview.py:142: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7fdd1966f4d0>, <parkweave.store.Store object at 0x7fdd1838f1a0>, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED': 'SYNTHETIC_SESSION_REDACTED', ...}, <httpx.Client object at 0x7fdd18afbcb0>)
+p = {'preparation_id': '3cc35f01-2690-4bef-947a-997d2f6d7b1e', 'case_id': 'dc32bf71-688e-4a1a-b9bd-6325087b4971', 'run_id': 'e33acc89-0f49-4394-a303-c1834bd9ee04', 'revision': 11, ...}
+card = {'id': '5af141de-3766-43b9-9a60-ef99c2ff0be6', 'basis': {'binding': {'id': '3cc35f01-2690-4bef-947a-997d2f6d7b1e', 'or...le': 'SYNTHETIC 新资料变化待人工审阅', 'family_id': '19708be8-abf1-49b6-8835-bcb3417bfd6f', ...}, 'state': 'PENDING_REVIEW', ...}
+mode = 'positive'
+
+    def run_html(f,p,card,mode):
+        OUT.mkdir(parents=True,exist_ok=True);calls=[];lines=[];err='';result=None
+        config=dict(base=str(f[3].base_url).rstrip('/'),token=f[2]['fixture-a'],mode=mode,A=p,card=card['id'])
+        process=subprocess.Popen(['node',str(Path(__file__).with_name('typed_dependency_opportunity_real_html.js'))],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        incoming=queue.Queue()
+        def consume():
+            for line in process.stdout:incoming.put(line)
+            incoming.put(None)
+        reader=threading.Thread(target=consume,daemon=True);reader.start();attempt=mode+'-'+uuid4().hex[:8];before={}
+        try:
+            process.stdin.write(json.dumps(config)+'\n');process.stdin.flush()
+            while True:
+                try:line=incoming.get(timeout=45)
+                except queue.Empty:raise AssertionError('original HTML made no progress for45 seconds')
+                if line is None:break
+                lines.append(line);msg=json.loads(line)
+                if 'trace' in msg:calls.append(msg['trace']);continue
+                if 'control' in msg:
+                    action=msg['control']
+                    if action=='snapshot':before['state']=database_state(f)
+                    elif action=='assert_readonly':assert database_state(f)==before['state']
+                    elif action=='revoke':
+                        with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='fixture-a' AND capability='READ'")
+                        before['denied']=database_state(f)
+                    elif action=='assert_denied_read_no_write':assert database_state(f)==before['denied']
+                    elif action=='restore':
+                        with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=true WHERE principal_id='fixture-a' AND capability='READ'")
+                    else:raise AssertionError(action)
+                    process.stdin.write('{}\n');process.stdin.flush()
+                else:result=msg;break
+>           code=process.wait(timeout=10);err=process.stderr.read();assert code==0,err
+                                                                    ^^^^^^^^^^^^^^^^^^
+E           AssertionError: AssertionError [ERR_ASSERTION]: readonly mode hides and disables old adoption
+E                 at check (/workspace/ParkWeave/tests/typed_dependency_opportunity_real_html.js:12:51)
+E                 at preview (/workspace/ParkWeave/tests/typed_dependency_opportunity_real_html.js:95:351)
+E                 at async /workspace/ParkWeave/tests/typed_dependency_opportunity_real_html.js:98:28
+E             {"calls":[{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e","status":200,"response_scope":"SYNTHETIC_LOCAL_PREPARATION_ONLY"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/readiness","status":200,"response_scope":"SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/material-corrections","status":200,"response_scope":"SYNTHETIC_SLOT_MATERIAL_CORRECTIONS"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/material-objections","status":200,"response_scope":"SYNTHETIC_MATERIAL_DELIVERY_OBJECTION"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/material-reuse","status":200,"response_scope":"SYNTHETIC_SAME_OWNER_MATERIAL_OUTLINE_REUSE"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/fact-clarifications","status":200},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/case-cancellation","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/case-cancellation-before-receipt","status":200,"response_scope":"SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/case-cancellation-reconciliation","status":200,"response_scope":"SYNTHETIC_MANUAL_RECEIPT_CASE_CANCELLATION_RECONCILIATION"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/opportunities","status":200,"response_scope":"SYNTHETIC_CASE_OPPORTUNITY_ONLY"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/service-case-plan","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/opportunities/5af141de-3766-43b9-9a60-ef99c2ff0be6/plan-revision?dependency_scope=BOUNDED_MULTI_SOURCE_V1","status":200,"graph_sha256":"192f88dd6c234ba5a57f966fe48ee08fb744b3639dcfe63639f8b9aca6aab36c","response_scope":"BOUNDED_MULTI_SOURCE_REVISION_PREVIEW","dependency_propagation_sha256":"9859d1e6be75795cf41c308e0eb88f1d4db6ca3c75e77304e104c5f8d0194b3e"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/service-case-plan/command-recovery","status":200,"response_scope":"SYNTHETIC_REGISTERED_CASE_ADAPTER_PLAN"},{"method":"GET","path":"/api/preparations/3cc35f01-2690-4bef-947a-997d2f6d7b1e/opportunities/5af141de-3766-43b9-9a60-ef99c2ff0be6/plan-revision?dependency_scope=BOUNDED_MULTI_SOURCE_V1&graph_preview=VERSIONED_TYPED_GRAPH_V1","status":200,"graph_sha256":"192f88dd6c234ba5a57f966fe48ee08fb744b3639dcfe63639f8b9aca6aab36c","response_scope":"BOUNDED_MULTI_SOURCE_REVISION_PREVIEW","dependency_propagation_sha256":"9859d1e6be75795cf41c308e0eb88f1d4db6ca3c75e77304e104c5f8d0194b3e"}]}
+E             
+E           assert 1 == 0
+
+tests/test_typed_dependency_opportunity_preview.py:126: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_typed_dependency_opportunity_preview.py::test_actual_readonly_projection_locks_cold_store_and_old_adopt
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_typed_dependency_opportunity_preview.py::test_actual_readonly_projection_locks_cold_store_and_old_adopt
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_typed_dependency_opportunity_preview.py::test_actual_readonly_projection_locks_cold_store_and_old_adopt
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/ParkWeave/.runtime/typed-dependency-opportunity-preview-20261018/development/attempt-1.junit.xml -
+=========================== short test summary info ============================
+FAILED tests/test_typed_dependency_opportunity_preview.py::test_full_original_html_readonly_button_and_context_guards[positive]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+============== 1 failed, 6 passed, 4 warnings in 66.70s (0:01:06) ==============
