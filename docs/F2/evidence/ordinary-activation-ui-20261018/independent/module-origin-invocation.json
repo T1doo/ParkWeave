@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "/workspace/ParkWeave/.venv/bin/python",
+    "-B",
+    "-c",
+    "import importlib,json;from pathlib import Path;from hashlib import sha256;names=['parkweave', 'parkweave.api', 'parkweave.ordinary_runtime_write', 'parkweave.ordinary_runtime_read', 'parkweave.native_run_access', 'parkweave.native_run_access_writer', 'parkweave.native_run_access_restricted_host', 'parkweave.native_run_access_activation'];mods={n:importlib.import_module(n) for n in names};print(json.dumps({n:{'origin':str(Path(m.__file__).resolve()),'sha256':sha256(Path(m.__file__).read_bytes()).hexdigest()} for n,m in mods.items()},indent=2))"
+  ],
+  "cwd": "/tmp/pw-ind-activate-25a650b-VLJJTQ/mirror",
+  "exit_code": 0,
+  "scope": "Separate import-only process with same cwd/PYTHONPATH; no test-process origin instrumentation."
+}
