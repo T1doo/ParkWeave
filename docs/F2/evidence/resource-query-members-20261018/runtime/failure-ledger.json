@@ -1,0 +1,58 @@
+{
+  "frozen_sha": "09ea99212b8ddcc70797ec7ac2bfc1909d574a18",
+  "windows": [
+    {
+      "name": "development/attempt-1",
+      "collected": 16,
+      "passed": 5,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "pytest_seconds": 1.51,
+      "warnings": 1,
+      "cause": "An original false grant cannot prove an inactive query row existed; historical partial fingerprints differed from the current observation.",
+      "resolution": "Both member changed and added/removed are confirmed only when both endpoints are complete; partial differences are observation_changed/newly_observed/no_longer_observed. Product, client, contract and assertions tightened."
+    },
+    {
+      "name": "development/attempt-2",
+      "collected": 16,
+      "passed": 10,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "pytest_seconds": 18.13,
+      "warnings": 4,
+      "cause": "FOR SHARE locking SELECT on synthetic_resources/synthetic_resource_grants required UPDATE privilege; existing app SELECT-only permissions accurately rejected it with InsufficientPrivilege and the HTTP request returned 500.",
+      "denied_action": "Locking SELECT on existing synthetic resource tables",
+      "resolution": "Removed the locking clause and retained existing SELECT permissions, with original source epoch recheck after new rows are read. No grant or role privilege expanded; denied locking operation not retried.",
+      "boundary": "READ COMMITTED with final epoch check; not a full resource lock or cross-transaction atomic snapshot. Trusted external administrative writes after the final check remain an existing concurrency boundary."
+    },
+    {
+      "name": "development/attempt-3",
+      "collected": 6,
+      "passed": 2,
+      "failed": 1,
+      "errors": 0,
+      "skipped": 0,
+      "pytest_seconds": 76.17,
+      "warnings": 4,
+      "cause": "The test removed the fixed first-resource grants, then the original fixture add_resource helper copied those empty grants. The injected resource was outside the owner query/epoch; HTTP 200 was correct.",
+      "resolution": "Remove the second owned synthetic resource's grants and assert the injected fixture resource has an active READ grant before expecting epoch 409. No production algorithm or fixture helper changed.",
+      "not_frozen": "Some edits occurred after this unfrozen process loaded; this window is development evidence only."
+    },
+    {
+      "name": "development/attempt-4",
+      "collected": 4,
+      "passed": 4,
+      "failed": 0,
+      "errors": 0,
+      "skipped": 0,
+      "pytest_seconds": 53.50,
+      "warnings": 4,
+      "scope": "Only the remaining epoch-removal, exact-query/no-P2 and two complete-HTML selectors; not a full 16-test frozen pass."
+    }
+  ],
+  "raw_preserved": true,
+  "counts_not_added_to_frozen_passes": true,
+  "previous_browser_sandbox_and_root_seal_refusals": "Not retried. No browser, privilege escalation, host installation or authority issuance attempted."
+}

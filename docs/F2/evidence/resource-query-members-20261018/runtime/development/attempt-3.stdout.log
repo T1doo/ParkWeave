@@ -1,0 +1,54 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /workspace/ParkWeave
+configfile: pyproject.toml
+collected 6 items
+
+tests/test_resource_query_members_api.py ..F
+
+=================================== FAILURES ===================================
+_ test_actual_query_removal_and_epoch_race_are_not_physical_delete_or_silent_retry _
+
+http_f = (<parkweave.store.Store object at 0x7f55e9a992e0>, <parkweave.store.Store object at 0x7f55e9a99280>, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED': 'SYNTHETIC_SESSION_REDACTED', ...}, <httpx.Client object at 0x7f55eb920560>)
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f55e9347680>
+
+    def test_actual_query_removal_and_epoch_race_are_not_physical_delete_or_silent_retry(http_f,monkeypatch):
+        f=http_f;p,*_=complete(f,local=True);card=imported_card(f,p)
+        old=stored(f,p);removed=old['steps'][1]['verified_sources']['resource_rules'][0]['id']
+        with f[1].connect() as c:c.execute("DELETE FROM synthetic_resource_grants WHERE resource_id=%s AND principal_id='fixture-a'",(removed,))
+        card=refresh(f,p);before=database_state(f);r=get(f,p,card);assert r.status_code==200,r.text;x=r.json()['resource_dependency_preview']
+        assert x['membership']['state']=='KNOWN' and x['membership']['removed']==[removed]
+        assert x['membership']['semantics']=='QUERY_MEMBERSHIP_ONLY' and database_state(f)==before
+        original=rg.read_rows;state={}
+        def changing(c,parent):
+            rows=original(c,parent);add_resource(f);state['after_injected_source_change']=database_state(f);return rows
+        monkeypatch.setattr(rg,'read_rows',changing)
+>       r=get(f,p,card);assert r.status_code==409 and r.json()['detail']=='resource source epochs changed during read'
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert (200 == 409)
+E        +  where 200 = <Response [200 OK]>.status_code
+
+tests/test_resource_query_members_api.py:96: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_resource_query_members_api.py::test_actual_member_insert_cold_get_old_hash_and_adopt_keep_history
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_resource_query_members_api.py::test_actual_member_insert_cold_get_old_hash_and_adopt_keep_history
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_resource_query_members_api.py::test_actual_member_insert_cold_get_old_hash_and_adopt_keep_history
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/ParkWeave/.runtime/resource-query-members-20261018/development/attempt-3.junit.xml -
+=========================== short test summary info ============================
+FAILED tests/test_resource_query_members_api.py::test_actual_query_removal_and_epoch_race_are_not_physical_delete_or_silent_retry
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+============== 1 failed, 2 passed, 4 warnings in 76.17s (0:01:16) ==============

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="76.172" timestamp="2026-10-18T14:28:59.169726+00:00" hostname="9eff6a810039"><testcase classname="tests.test_resource_query_members_api" name="test_actual_member_insert_cold_get_old_hash_and_adopt_keep_history" time="43.362" /><testcase classname="tests.test_resource_query_members_api" name="test_partial_history_and_current_read_gate_never_fill_missing_members" time="15.690" /><testcase classname="tests.test_resource_query_members_api" name="test_actual_query_removal_and_epoch_race_are_not_physical_delete_or_silent_retry" time="15.934"><failure message="assert (200 == 409)&#10; +  where 200 = &lt;Response [200 OK]&gt;.status_code">http_f = (&lt;parkweave.store.Store object at 0x7f55e9a992e0&gt;, &lt;parkweave.store.Store object at 0x7f55e9a99280&gt;, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED': 'SYNTHETIC_SESSION_REDACTED', ...}, &lt;httpx.Client object at 0x7f55eb920560&gt;)
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f55e9347680&gt;
+
+    def test_actual_query_removal_and_epoch_race_are_not_physical_delete_or_silent_retry(http_f,monkeypatch):
+        f=http_f;p,*_=complete(f,local=True);card=imported_card(f,p)
+        old=stored(f,p);removed=old['steps'][1]['verified_sources']['resource_rules'][0]['id']
+        with f[1].connect() as c:c.execute("DELETE FROM synthetic_resource_grants WHERE resource_id=%s AND principal_id='fixture-a'",(removed,))
+        card=refresh(f,p);before=database_state(f);r=get(f,p,card);assert r.status_code==200,r.text;x=r.json()['resource_dependency_preview']
+        assert x['membership']['state']=='KNOWN' and x['membership']['removed']==[removed]
+        assert x['membership']['semantics']=='QUERY_MEMBERSHIP_ONLY' and database_state(f)==before
+        original=rg.read_rows;state={}
+        def changing(c,parent):
+            rows=original(c,parent);add_resource(f);state['after_injected_source_change']=database_state(f);return rows
+        monkeypatch.setattr(rg,'read_rows',changing)
+&gt;       r=get(f,p,card);assert r.status_code==409 and r.json()['detail']=='resource source epochs changed during read'
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       assert (200 == 409)
+E        +  where 200 = &lt;Response [200 OK]&gt;.status_code
+
+tests/test_resource_query_members_api.py:96: AssertionError</failure></testcase></testsuite></testsuites>

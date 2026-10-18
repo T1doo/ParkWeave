@@ -1,0 +1,132 @@
+{
+  "boundary_clarification": "root explicitly selected409 for >256 query rows or >96 resource members before implementation; partial legitimate evidence remains UNKNOWN",
+  "business_baseline_sha": "f522b6bfb4080d1fc557f1695dd6c909a61bda80",
+  "contract_source_sha": "9a32a1555ba039ab27505780d6ba72ac8756f650",
+  "historical_evidence_boundary": "resource_rules/source grants from original P2 VERIFY/accepted source bases only; no current backfill; active false is absence-of-active-match boolean, not existence proof of SQL row",
+  "literal_oracles": [
+    {
+      "expected": "before complete only when known,count4 and original row hash exactly match; membersA/B; stable resource:<UUID> IDs, stable query identity; input order irrelevant",
+      "id": "RQ01",
+      "scenario": "full historical resource rules plus active grants reconstruct original four ordered query rows for A/B"
+    },
+    {
+      "expected": {
+        "confirmed_added": [
+          "C"
+        ],
+        "confirmed_removed": [],
+        "physical_delete_claim": false,
+        "required_path": "resource:C CAPACITY→query CAPACITY→originalP2 PRECEDES→actual downstream",
+        "step_affected": [
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "step_preserved": [
+          "P1"
+        ]
+      },
+      "id": "RQ02",
+      "scenario": "fully proved A/B before, A/B/C current"
+    },
+    {
+      "expected": {
+        "confirmed_added": [],
+        "confirmed_removed": [
+          "C"
+        ],
+        "membership_only": true,
+        "release_reservation": false,
+        "step_affected": [
+          "P2",
+          "P3",
+          "P4",
+          "P5"
+        ],
+        "step_preserved": [
+          "P1"
+        ]
+      },
+      "id": "RQ03",
+      "scenario": "fully proved A/B/C before, A/B current"
+    },
+    {
+      "expected": "A fingerprint and query collection fingerprint change, stable IDs retained; confirmed add/remove both empty; only explicit query→P2→real downstream affected, P1 preserved",
+      "id": "RQ04",
+      "scenario": "member A capacity/rule revision changes while both membership sets stay A/B"
+    },
+    {
+      "expected": "before partial UNKNOWN, never fill B old rule/grant from current; both confirmed add/remove empty; current-only B is newly observed, not confirmed added; uncertain query and P2/downstream, P1 preserved",
+      "id": "RQ05",
+      "scenario": "history has only stamp, or original evidence for A while stamp includes A/B"
+    },
+    {
+      "expected": "false cannot prove a historical SQL grant row existed; do not reconstruct a false row; stamp mismatch stays partial UNKNOWN; no confirmation of added/removed",
+      "id": "RQ06",
+      "scenario": "historical grant active=false appears in original per-hold bool snapshot"
+    },
+    {
+      "expected": "identical true grant evidence folds to one original unique query row; contradictory duplicate stays UNKNOWN; duplicates never increase original count; no false complete/full membership",
+      "id": "RQ07",
+      "scenario": "same resource/cap true grant evidence repeated by multiple historical holds; contradictory duplicate; duplicate rule ID with different content"
+    },
+    {
+      "expected": "current projection contains none of its current details/rule/source/member node; visible query cannot match stamp and is partial; no confirmed removal; old authorized Case evidence may remain only before and must not fill current",
+      "id": "RQ08",
+      "scenario": "current resource has no active READ but original all-grants stamp includes its row"
+    },
+    {
+      "expected": "96 members and <=256 query rows permitted when otherwise complete; 97 members or257 query rows accurately409, no truncated known snapshot; no dg kernel bounds changed",
+      "id": "RQ09",
+      "scenario": "boundaries"
+    },
+    {
+      "expected": "owner READ/PREPARE and originalCase/card scopes still required; source xmin A→B→A or final epoch change rejects409; current locks separately verified by original_manual_lock, no history backfill",
+      "id": "RQ10",
+      "scenario": "scope/epoch/current locks"
+    },
+    {
+      "expected": "old no-graph, VERSIONED_TYPED_GRAPH_V1 and v4 build/hash/ADOPT DTO unchanged; RESOURCE_QUERY_MEMBERS mode only attaches new readonly field, no old history mutation; all public business/authority row values except authorization_audit unchanged around GET",
+      "id": "RQ11",
+      "scenario": "compatibility and immutable GET"
+    },
+    {
+      "expected": "same existing typed button sends new explicit mode; actual resource member labels and confirmed-versus-observed uncertainty shown via textContent, readonly and no opportunityPlanView/POST/ordinary observing plan GET; malformed/rehashed cross-scope or node/member/path DTO rejected; one crossCase held response and current403 protected; no graph/token/body storage; not real browser",
+      "id": "RQ12",
+      "scenario": "complete original HTML NodeVM connection"
+    },
+    {
+      "expected": "do not invent P2 or unselected downstream; exact closed/NOT_APPLICABLE API contract to be fixed before execution",
+      "id": "RQ13",
+      "scenario": "original plan excludes P2"
+    }
+  ],
+  "not_to_run": [
+    "old17 matrix",
+    "old141 matrix",
+    "database before implementation freeze",
+    "real browser",
+    "root/seal",
+    "issuer",
+    "LIVE",
+    "real model",
+    "new real permissions/credentials/costs"
+  ],
+  "original_SQL_fields": [
+    "id",
+    "revision",
+    "source",
+    "capacity",
+    "buffer_seconds",
+    "open_from",
+    "open_until",
+    "enabled",
+    "capability",
+    "active"
+  ],
+  "prepared_before_implementation_review": true,
+  "scope": "F3-T03 resource query member engineering subset only; no whole AT25/26, real authority, Windows or real business claim",
+  "specification_rows_are_not_test_counts": true,
+  "version": 1
+}

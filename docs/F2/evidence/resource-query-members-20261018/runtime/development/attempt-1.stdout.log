@@ -1,0 +1,54 @@
+============================= test session starts ==============================
+platform linux -- Python 3.12.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: /workspace/ParkWeave
+configfile: pyproject.toml
+collected 16 items
+
+tests/test_resource_query_graph.py .....F
+
+=================================== FAILURES ===================================
+________ test_original_evidence_literal_membership_and_paths[false_row] ________
+
+operation = 'false_row'
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f6781e171d0>
+
+    @pytest.mark.parametrize('operation',['added','removed','rule','partial','same_true_duplicates','false_row','false_absent','contradictory','missing'])
+    def test_original_evidence_literal_membership_and_paths(operation,monkeypatch):
+        rules=[rule(R1),rule(R2)];old=source(rules);current=query(rules);known=True;added=[];removed=[];changed=[]
+        if operation=='added':current=query(rules+[rule(R3)]);added=[R3]
+        elif operation=='removed':current=query(rules[:1]);removed=[R2]
+        elif operation=='rule':rules[1]['capacity']=3;current=query(rules);changed=[R2]
+        elif operation=='partial':old['resource_collection']=source(rules+[rule(R3)])['resource_collection'];current=query(rules+[rule(R3)]);known=False
+        elif operation=='same_true_duplicates':old['resource_grants']+=deepcopy(old['resource_grants'])
+        elif operation in ('false_row','false_absent'):
+            old['resource_grants'][1]['active']=False
+            prior=query(rules)
+            if operation=='false_row':prior[0]['active']=False;known=False
+            else:prior=prior[1:]
+            old['resource_collection']=dict(known=True,count=len(prior),sha256=cp._hash(prior))
+            current=prior
+        elif operation=='contradictory':old['resource_grants'].append({**old['resource_grants'][0],'active':False});known=False
+        elif operation=='missing':old={};known=False
+        def forbidden(*args,**kwargs):raise AssertionError('raw member adapter must not use old schema2 conversion')
+        monkeypatch.setattr(dg,'from_unified_v1',forbidden)
+        saved=deepcopy(old);x=preview(old,current);assert old==saved
+        assert x['membership']['state']==('KNOWN' if known else 'UNKNOWN')
+        assert x['membership']['added']==added and x['membership']['removed']==removed
+>       assert x['membership']['changed']==changed
+E       AssertionError: assert ['00000000-00...000000000101'] == []
+E         
+E         Left contains one more item: '00000000-0000-0000-0000-000000000101'
+E         Use -v to get more diff
+
+tests/test_resource_query_graph.py:58: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+- generated xml file: /workspace/ParkWeave/.runtime/resource-query-members-20261018/development/attempt-1.junit.xml -
+=========================== short test summary info ============================
+FAILED tests/test_resource_query_graph.py::test_original_evidence_literal_membership_and_paths[false_row]
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+==================== 1 failed, 5 passed, 1 warning in 1.51s ====================

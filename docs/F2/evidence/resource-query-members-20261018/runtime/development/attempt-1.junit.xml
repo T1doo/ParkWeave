@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="6" time="1.517" timestamp="2026-10-18T14:26:21.918324+00:00" hostname="9eff6a810039"><testcase classname="tests.test_resource_query_graph" name="test_original_evidence_literal_membership_and_paths[added]" time="0.013" /><testcase classname="tests.test_resource_query_graph" name="test_original_evidence_literal_membership_and_paths[removed]" time="0.005" /><testcase classname="tests.test_resource_query_graph" name="test_original_evidence_literal_membership_and_paths[rule]" time="0.007" /><testcase classname="tests.test_resource_query_graph" name="test_original_evidence_literal_membership_and_paths[partial]" time="0.020" /><testcase classname="tests.test_resource_query_graph" name="test_original_evidence_literal_membership_and_paths[same_true_duplicates]" time="0.009" /><testcase classname="tests.test_resource_query_graph" name="test_original_evidence_literal_membership_and_paths[false_row]" time="0.028"><failure message="AssertionError: assert ['00000000-00...000000000101'] == []&#10;  &#10;  Left contains one more item: '00000000-0000-0000-0000-000000000101'&#10;  Use -v to get more diff">operation = 'false_row'
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f6781e171d0&gt;
+
+    @pytest.mark.parametrize('operation',['added','removed','rule','partial','same_true_duplicates','false_row','false_absent','contradictory','missing'])
+    def test_original_evidence_literal_membership_and_paths(operation,monkeypatch):
+        rules=[rule(R1),rule(R2)];old=source(rules);current=query(rules);known=True;added=[];removed=[];changed=[]
+        if operation=='added':current=query(rules+[rule(R3)]);added=[R3]
+        elif operation=='removed':current=query(rules[:1]);removed=[R2]
+        elif operation=='rule':rules[1]['capacity']=3;current=query(rules);changed=[R2]
+        elif operation=='partial':old['resource_collection']=source(rules+[rule(R3)])['resource_collection'];current=query(rules+[rule(R3)]);known=False
+        elif operation=='same_true_duplicates':old['resource_grants']+=deepcopy(old['resource_grants'])
+        elif operation in ('false_row','false_absent'):
+            old['resource_grants'][1]['active']=False
+            prior=query(rules)
+            if operation=='false_row':prior[0]['active']=False;known=False
+            else:prior=prior[1:]
+            old['resource_collection']=dict(known=True,count=len(prior),sha256=cp._hash(prior))
+            current=prior
+        elif operation=='contradictory':old['resource_grants'].append({**old['resource_grants'][0],'active':False});known=False
+        elif operation=='missing':old={};known=False
+        def forbidden(*args,**kwargs):raise AssertionError('raw member adapter must not use old schema2 conversion')
+        monkeypatch.setattr(dg,'from_unified_v1',forbidden)
+        saved=deepcopy(old);x=preview(old,current);assert old==saved
+        assert x['membership']['state']==('KNOWN' if known else 'UNKNOWN')
+        assert x['membership']['added']==added and x['membership']['removed']==removed
+&gt;       assert x['membership']['changed']==changed
+E       AssertionError: assert ['00000000-00...000000000101'] == []
+E         
+E         Left contains one more item: '00000000-0000-0000-0000-000000000101'
+E         Use -v to get more diff
+
+tests/test_resource_query_graph.py:58: AssertionError</failure></testcase></testsuite></testsuites>
