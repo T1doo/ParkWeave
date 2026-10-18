@@ -1,0 +1,14 @@
+from pathlib import Path
+import hashlib,json,os,subprocess,sys,time,xml.etree.ElementTree as ET
+R=Path.cwd();D=R/'.runtime/at21-synthetic-readiness-20261018';label=sys.argv[1];freeze=json.loads((D/(label+'-freeze.json')).read_text());mirror=Path(freeze['mirror']);outer=Path(freeze['outer']);expected=json.loads((D/(label+'-inputs.json')).read_text());assert not (D/(label+'-result.json')).exists()
+def snapshot(base):return {p:hashlib.sha256((base/p).read_bytes()).hexdigest() for p in expected}
+def drift(values):return [p for p in expected if values[p]!=expected[p]]
+assert subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()==freeze['source_sha'];pre={str(p):snapshot(p) for p in [R,mirror]};assert all(not drift(v) for v in pre.values());(D/(label+'-PRE-inputs.json')).write_text(json.dumps(pre,indent=2)+'\n')
+env={k:os.environ[k] for k in ['PATH','SystemRoot','SYSTEMROOT','WINDIR','COMSPEC','PATHEXT','TEMP','TMP','TMPDIR','LANG','LC_ALL','TZ'] if k in os.environ};env.update(PYTHONPATH=os.pathsep.join(str(mirror/p) for p in ['tests','src','.']),PYTHONDONTWRITEBYTECODE='1',PW_AT21_EVIDENCE=str(D),PW_AT21_WINDOW=label)
+argv=[str(R/'.venv/bin/python'),'-B',str(D/'observe-pytest.py'),'-q','-p','no:cacheprovider','--rootdir='+str(mirror),'--basetemp='+str(outer/'pytest'),'--junitxml='+str(D/(label+'.xml')),'--owned-connection-diagnostics='+str(D/(label+'-connections')),*freeze['nodes']]
+inv=dict(source_sha=freeze['source_sha'],argv=argv,cwd=str(mirror),basetemp=str(outer/'pytest'),started_utc=time.time(),automatic_retries=0,environment=env);(D/(label+'-invocation.json')).write_text(json.dumps(inv,indent=2)+'\n');start=time.monotonic()
+with (D/(label+'.log')).open('w') as log:
+    p=subprocess.Popen(argv,cwd=mirror,env=env,stdout=log,stderr=subprocess.STDOUT);(D/(label+'-owned-process.json')).write_text(json.dumps(dict(pid=p.pid,argv=argv,cwd=str(mirror),ownership='created by this runner'),indent=2)+'\n');code=p.wait()
+post={str(p):snapshot(p) for p in [R,mirror]};(D/(label+'-POST-inputs.json')).write_text(json.dumps(post,indent=2)+'\n');cases=list(ET.parse(D/(label+'.xml')).getroot().iter('testcase'))
+result=dict(source_sha=freeze['source_sha'],exit_code=code,elapsed_seconds=time.monotonic()-start,input_count=len(expected),PRE_drift={k:drift(v) for k,v in pre.items()},POST_drift={k:drift(v) for k,v in post.items()},automatic_retries=0,owned_pytest_exit=p.returncode,unique=len({(c.get('classname'),c.get('name')) for c in cases}),testcases=len(cases),passed=sum(not any(c.find(x) is not None for x in ['failure','error','skipped']) for c in cases),failures=sum(c.find('failure') is not None for c in cases),errors=sum(c.find('error') is not None for c in cases),skipped=sum(c.find('skipped') is not None for c in cases))
+(D/(label+'-result.json')).write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result));raise SystemExit(code)

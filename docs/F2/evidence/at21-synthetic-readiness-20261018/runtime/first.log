@@ -1,0 +1,347 @@
+..FFF                                                                    [100%]
+=================================== FAILURES ===================================
+_ test_actual_synthetic_rule_read_original_purpose_facts_and_no_business_writes _
+
+simulation = ((<parkweave.store.Store object at 0x7f1416c69df0>, <parkweave.store.Store object at 0x7f1416c69e50>, {'fixture-a': '_...ntheticRuleReadiness object at 0x7f14164980e0>, Context(binding_id='rule-a', as_of='2026-10-18T08:21:58.969062+00:00'))
+tmp_path = PosixPath('/tmp/pw-at21-first-db868ac-80mps580/pytest/test_actual_synthetic_rule_rea0')
+
+    def test_actual_synthetic_rule_read_original_purpose_facts_and_no_business_writes(simulation,tmp_path):
+        f,p,engine,adapter,context=simulation;authority=authority_snapshot(f[1]);rows=all_public_rows(f[1])
+        dt=datetime.fromisoformat(context.as_of).astimezone(timezone.utc)
+        params=dict(mode='b_true',preparation_id=p['preparation_id'],binding_id=context.binding_id,as_of=dt.strftime('%Y-%m-%dT%H:%M'),expected_truth='TRUE')
+        with TestClient(create_app(f[0],synthetic_rule_readiness=adapter)) as api:
+>           evidence=bridge(api,f,p,params,'fixture-a')
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_preview_rules_change_nodevm_actual.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+api = <starlette.testclient.TestClient object at 0x7f141529c9b0>
+f = (<parkweave.store.Store object at 0x7f1416c69df0>, <parkweave.store.Store object at 0x7f1416c69e50>, {'fixture-a': '_t...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f14164c6720>)
+p = {'preparation_id': '980bb323-a0a1-4d1f-83f1-5534f88c08a2', 'case_id': 'a13700c4-c34e-4da0-b667-eef5522a2718', 'run_id': '43b88ba5-33b2-4916-95dc-96aa8e5ed855', 'revision': 5, ...}
+params = {'mode': 'b_true', 'preparation_id': '980bb323-a0a1-4d1f-83f1-5534f88c08a2', 'binding_id': 'rule-a', 'as_of': '2026-10-18T08:21', ...}
+actor = 'fixture-a', readonly_rows = None
+
+    def bridge(api,f,p,params,actor,*,readonly_rows=None):
+        out=Path('.runtime/preview-rules-ui-20261014');out.mkdir(parents=True,exist_ok=True)
+        errpath=out/(params['mode']+'-node.stderr.log');errfile=errpath.open('w')
+        proc=subprocess.Popen(['node','tests/preview_rules_change_actual_nodevm.js',json.dumps(params)],cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=errfile,bufsize=0)
+        traffic=[];external=[];value=None;selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            until=time.monotonic()+45
+            buffered=b'';lines=[]
+            while time.monotonic()<until:
+                if not lines:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    chunk=os.read(proc.stdout.fileno(),65536)
+                    if not chunk:break
+                    buffered+=chunk
+                    while b'\n' in buffered:
+                        line,buffered=buffered.split(b'\n',1);lines.append(line)
+                    if not lines:continue
+                message=json.loads(lines.pop(0))
+                if message['type']=='result':value=message;break
+                if message['type']=='readonly_checkpoint':
+                    assert all_public_rows(f[1])==readonly_rows,'read-only proposal changed business rows'
+                    reply=dict(id=message['id'],status=200,body={})
+                elif message['type']=='explicit_original_binding_confirmation':
+                    # This is a separately simulated explicit owner action using the
+                    # original compare/confirm API, not an automatic page request.
+                    base='/api/preparations/'+p['preparation_id'];key=uuid4().hex
+                    comparison=ok(api.get(base+'/resource-plan-binding',params=dict(candidate_combination_id=message['combination_id']),headers=headers(f[2],actor)))
+                    assert comparison['comparison']['can_confirm']
+                    body=dict(combination_id=message['combination_id'],expected_preparation_revision=p['revision'],expected_link_revision=1,expected_comparison_sha256=comparison['comparison']['sha256'],reason='SYNTHETIC separate owner explicitly confirms original current comparison')
+                    confirmed=ok(api.post(base+'/resource-plan-binding/confirm',headers=headers(f[2],actor,key),json=body),201)
+                    assert confirmed['event']['revision']==2
+                    external.append(dict(action='EXPLICIT_ORIGINAL_COMPARE_AND_CONFIRM',request_key=key,comparison=comparison,response=confirmed))
+                    reply=dict(id=message['id'],key=key)
+                else:
+                    assert message['type']=='request';options=message['options'];assert options['headers']['Authorization']=='Bearer SYNTHETIC_NODE_API_SESSION'
+                    h={**options['headers'],'Authorization':'Bearer '+f[2][actor]}
+                    response=api.request(options.get('method','GET'),message['path'],headers=h,content=options.get('body'))
+                    body=response.json();traffic.append(dict(path=message['path'],method=options.get('method','GET'),key=options.get('headers',{}).get('Idempotency-Key'),status=response.status_code,body=body))
+                    reply=dict(id=message['id'],status=response.status_code,body=body)
+                    (out/(params['mode']+'-latest-observed-traffic.json')).write_text(json.dumps(traffic,indent=2)+'\n')
+                proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush()
+            proc.wait(timeout=5);errfile.flush();stderr=errpath.read_text()
+            evidence=dict(mode=params['mode'],process_exit=proc.returncode,result=value,traffic=traffic,external_explicit_original_actions=external,stderr=stderr)
+            out=Path('.runtime/preview-rules-ui-20261014');out.mkdir(parents=True,exist_ok=True)
+            (out/(params['mode']+'-actual-traffic.json')).write_text(json.dumps(evidence,indent=2)+'\n')
+>           assert proc.returncode==0,stderr
+E           AssertionError: TypeError: Cannot read properties of undefined (reading 'remove')
+E                 at clearCaseCancellation (evalmachine.<anonymous>:1093:166)
+E                 at loadPreparationSnapshot (evalmachine.<anonymous>:368:1323)
+E                 at loadPreparation (evalmachine.<anonymous>:331:17)
+E                 at evalmachine.<anonymous>:25:24
+E                 at evalmachine.<anonymous>:1:1
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/tmp/pw-at21-first-db868ac-80mps580/mirror/tests/preview_rules_change_actual_nodevm.js:13:140)
+E                 at /tmp/pw-at21-first-db868ac-80mps580/mirror/tests/preview_rules_change_actual_nodevm.js:17:85
+E                 at Object.<anonymous> (/tmp/pw-at21-first-db868ac-80mps580/mirror/tests/preview_rules_change_actual_nodevm.js:24:3)
+E             
+E           assert 1 == 0
+E            +  where 1 = <Popen: returncode: 1 args: ['node', 'tests/preview_rules_change_actual_node...>.returncode
+
+tests/test_preview_rules_change_nodevm_actual.py:66: AssertionError
+_____ test_original_html_real_asgi_output_has_no_official_approval[FALSE] ______
+
+request = <FixtureRequest for <Function test_original_html_real_asgi_output_has_no_official_approval[FALSE]>>
+tmp_path = PosixPath('/tmp/pw-at21-first-db868ac-80mps580/pytest/test_original_html_real_asgi_o0')
+want = 'FALSE'
+
+    @pytest.mark.parametrize('want', ['FALSE', 'UNKNOWN'])
+    def test_original_html_real_asgi_output_has_no_official_approval(request, tmp_path, want):
+        if want == 'FALSE':
+            f, p, _, _, _ = request.getfixturevalue('simulation')
+        else:
+            f = request.getfixturevalue('preparation_fixture')
+            p = filled(f)
+        source_path = tmp_path / 'at21-rule-source'
+        source_path.mkdir()
+        candidate = engine(source_path, dict(kind='EQ', field='employees', expected=3 if want == 'FALSE' else 17))
+        release = candidate.read('fixture-a', SCOPE)['releases'][0]
+        binding = sr.RuleBinding(binding_id='at21-' + want.lower(), scope=SCOPE,
+            release_id=release['id'], content_sha256=release['content_sha256'], region='REGION_A', epoch=1)
+        adapter = sr.SyntheticRuleReadiness(f[0], f[1], candidate,
+            sr.SimulationJournal(tmp_path / 'at21.synthetic-readiness.sqlite3'),
+            bindings=[binding], enabled_for_isolated_tests=True)
+        context = sr.Context(binding_id=binding.binding_id, as_of=datetime.now(timezone.utc).isoformat())
+        path = '/api/preparations/' + p['preparation_id'] + '/synthetic-rule-readiness'
+        with TestClient(create_app(f[0], synthetic_rule_readiness=adapter)) as api:
+            current = api.get(path, params=context.model_dump(), headers=headers(f[2]))
+            assert current.status_code == 200, current.text
+            value = current.json()
+            assert value['result']['synthetic_simulated_condition_truth'] == want
+            if want == 'UNKNOWN':
+                assert value['sources']['purpose_status']['state'] == 'NOT_DECLARED'
+                assert all(c['truth'] == 'UNKNOWN' and c['reason'] == 'MISSING_EVIDENCE'
+                           and c['evidence'] == [] for c in value['result']['conditions'])
+            before_business, before_authority = business(f), authority(f)
+            journal = adapter.journal.path.read_bytes()
+            with f[1].connect() as c:
+                initial_counts = {table: c.execute('SELECT count(*) n FROM ' + table).fetchone()['n']
+                                  for table in ('runs', 'cases', 'preparations', 'fact_assertions', 'run_assignments')}
+            params = dict(mode='b_at21_' + want.lower(), preparation_id=p['preparation_id'],
+                binding_id=context.binding_id,
+                as_of=datetime.fromisoformat(context.as_of).astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M'),
+                expected_truth=want, expected_purpose_status=value['sources']['purpose_status']['state'])
+>           evidence = bridge(api, f, p, params, 'fixture-a')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_at21_synthetic_readiness.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+api = <starlette.testclient.TestClient object at 0x7f1416db0ce0>
+f = (<parkweave.store.Store object at 0x7f14151d4740>, <parkweave.store.Store object at 0x7f1416421d30>, {'fixture-a': 'eZ...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f14152a8710>)
+p = {'preparation_id': 'd9d4c581-93e8-4dc7-a1ba-9297e5598866', 'case_id': '54499931-848f-4b77-bc80-ba9ad8d3556e', 'run_id': 'b19faa25-8d22-4e99-9cca-8cb7208431fa', 'revision': 5, ...}
+params = {'mode': 'b_at21_false', 'preparation_id': 'd9d4c581-93e8-4dc7-a1ba-9297e5598866', 'binding_id': 'at21-false', 'as_of': '2026-10-18T08:22', ...}
+actor = 'fixture-a', readonly_rows = None
+
+    def bridge(api,f,p,params,actor,*,readonly_rows=None):
+        out=Path('.runtime/preview-rules-ui-20261014');out.mkdir(parents=True,exist_ok=True)
+        errpath=out/(params['mode']+'-node.stderr.log');errfile=errpath.open('w')
+        proc=subprocess.Popen(['node','tests/preview_rules_change_actual_nodevm.js',json.dumps(params)],cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=errfile,bufsize=0)
+        traffic=[];external=[];value=None;selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            until=time.monotonic()+45
+            buffered=b'';lines=[]
+            while time.monotonic()<until:
+                if not lines:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    chunk=os.read(proc.stdout.fileno(),65536)
+                    if not chunk:break
+                    buffered+=chunk
+                    while b'\n' in buffered:
+                        line,buffered=buffered.split(b'\n',1);lines.append(line)
+                    if not lines:continue
+                message=json.loads(lines.pop(0))
+                if message['type']=='result':value=message;break
+                if message['type']=='readonly_checkpoint':
+                    assert all_public_rows(f[1])==readonly_rows,'read-only proposal changed business rows'
+                    reply=dict(id=message['id'],status=200,body={})
+                elif message['type']=='explicit_original_binding_confirmation':
+                    # This is a separately simulated explicit owner action using the
+                    # original compare/confirm API, not an automatic page request.
+                    base='/api/preparations/'+p['preparation_id'];key=uuid4().hex
+                    comparison=ok(api.get(base+'/resource-plan-binding',params=dict(candidate_combination_id=message['combination_id']),headers=headers(f[2],actor)))
+                    assert comparison['comparison']['can_confirm']
+                    body=dict(combination_id=message['combination_id'],expected_preparation_revision=p['revision'],expected_link_revision=1,expected_comparison_sha256=comparison['comparison']['sha256'],reason='SYNTHETIC separate owner explicitly confirms original current comparison')
+                    confirmed=ok(api.post(base+'/resource-plan-binding/confirm',headers=headers(f[2],actor,key),json=body),201)
+                    assert confirmed['event']['revision']==2
+                    external.append(dict(action='EXPLICIT_ORIGINAL_COMPARE_AND_CONFIRM',request_key=key,comparison=comparison,response=confirmed))
+                    reply=dict(id=message['id'],key=key)
+                else:
+                    assert message['type']=='request';options=message['options'];assert options['headers']['Authorization']=='Bearer SYNTHETIC_NODE_API_SESSION'
+                    h={**options['headers'],'Authorization':'Bearer '+f[2][actor]}
+                    response=api.request(options.get('method','GET'),message['path'],headers=h,content=options.get('body'))
+                    body=response.json();traffic.append(dict(path=message['path'],method=options.get('method','GET'),key=options.get('headers',{}).get('Idempotency-Key'),status=response.status_code,body=body))
+                    reply=dict(id=message['id'],status=response.status_code,body=body)
+                    (out/(params['mode']+'-latest-observed-traffic.json')).write_text(json.dumps(traffic,indent=2)+'\n')
+                proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush()
+            proc.wait(timeout=5);errfile.flush();stderr=errpath.read_text()
+            evidence=dict(mode=params['mode'],process_exit=proc.returncode,result=value,traffic=traffic,external_explicit_original_actions=external,stderr=stderr)
+            out=Path('.runtime/preview-rules-ui-20261014');out.mkdir(parents=True,exist_ok=True)
+            (out/(params['mode']+'-actual-traffic.json')).write_text(json.dumps(evidence,indent=2)+'\n')
+>           assert proc.returncode==0,stderr
+E           AssertionError: TypeError: Cannot read properties of undefined (reading 'remove')
+E                 at clearCaseCancellation (evalmachine.<anonymous>:1093:166)
+E                 at loadPreparationSnapshot (evalmachine.<anonymous>:368:1323)
+E                 at loadPreparation (evalmachine.<anonymous>:331:17)
+E                 at evalmachine.<anonymous>:25:24
+E                 at evalmachine.<anonymous>:1:1
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/tmp/pw-at21-first-db868ac-80mps580/mirror/tests/preview_rules_change_actual_nodevm.js:13:140)
+E                 at /tmp/pw-at21-first-db868ac-80mps580/mirror/tests/preview_rules_change_actual_nodevm.js:17:85
+E                 at Object.<anonymous> (/tmp/pw-at21-first-db868ac-80mps580/mirror/tests/preview_rules_change_actual_nodevm.js:24:3)
+E             
+E           assert 1 == 0
+E            +  where 1 = <Popen: returncode: 1 args: ['node', 'tests/preview_rules_change_actual_node...>.returncode
+
+tests/test_preview_rules_change_nodevm_actual.py:66: AssertionError
+____ test_original_html_real_asgi_output_has_no_official_approval[UNKNOWN] _____
+
+request = <FixtureRequest for <Function test_original_html_real_asgi_output_has_no_official_approval[UNKNOWN]>>
+tmp_path = PosixPath('/tmp/pw-at21-first-db868ac-80mps580/pytest/test_original_html_real_asgi_o1')
+want = 'UNKNOWN'
+
+    @pytest.mark.parametrize('want', ['FALSE', 'UNKNOWN'])
+    def test_original_html_real_asgi_output_has_no_official_approval(request, tmp_path, want):
+        if want == 'FALSE':
+            f, p, _, _, _ = request.getfixturevalue('simulation')
+        else:
+            f = request.getfixturevalue('preparation_fixture')
+            p = filled(f)
+        source_path = tmp_path / 'at21-rule-source'
+        source_path.mkdir()
+        candidate = engine(source_path, dict(kind='EQ', field='employees', expected=3 if want == 'FALSE' else 17))
+        release = candidate.read('fixture-a', SCOPE)['releases'][0]
+        binding = sr.RuleBinding(binding_id='at21-' + want.lower(), scope=SCOPE,
+            release_id=release['id'], content_sha256=release['content_sha256'], region='REGION_A', epoch=1)
+        adapter = sr.SyntheticRuleReadiness(f[0], f[1], candidate,
+            sr.SimulationJournal(tmp_path / 'at21.synthetic-readiness.sqlite3'),
+            bindings=[binding], enabled_for_isolated_tests=True)
+        context = sr.Context(binding_id=binding.binding_id, as_of=datetime.now(timezone.utc).isoformat())
+        path = '/api/preparations/' + p['preparation_id'] + '/synthetic-rule-readiness'
+        with TestClient(create_app(f[0], synthetic_rule_readiness=adapter)) as api:
+            current = api.get(path, params=context.model_dump(), headers=headers(f[2]))
+            assert current.status_code == 200, current.text
+            value = current.json()
+            assert value['result']['synthetic_simulated_condition_truth'] == want
+            if want == 'UNKNOWN':
+                assert value['sources']['purpose_status']['state'] == 'NOT_DECLARED'
+                assert all(c['truth'] == 'UNKNOWN' and c['reason'] == 'MISSING_EVIDENCE'
+                           and c['evidence'] == [] for c in value['result']['conditions'])
+            before_business, before_authority = business(f), authority(f)
+            journal = adapter.journal.path.read_bytes()
+            with f[1].connect() as c:
+                initial_counts = {table: c.execute('SELECT count(*) n FROM ' + table).fetchone()['n']
+                                  for table in ('runs', 'cases', 'preparations', 'fact_assertions', 'run_assignments')}
+            params = dict(mode='b_at21_' + want.lower(), preparation_id=p['preparation_id'],
+                binding_id=context.binding_id,
+                as_of=datetime.fromisoformat(context.as_of).astimezone(timezone.utc).strftime('%Y-%m-%dT%H:%M'),
+                expected_truth=want, expected_purpose_status=value['sources']['purpose_status']['state'])
+>           evidence = bridge(api, f, p, params, 'fixture-a')
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_at21_synthetic_readiness.py:98: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+api = <starlette.testclient.TestClient object at 0x7f14144db440>
+f = (<parkweave.store.Store object at 0x7f1415298140>, <parkweave.store.Store object at 0x7f14151c9220>, {'fixture-a': '6u...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f1414866540>)
+p = {'preparation_id': 'b4e81d63-95b4-4edc-8ab0-f4496b9e2384', 'case_id': 'bc1f27b4-8c91-4cda-9952-a17d1ea51bb6', 'run_id': 'f42a9aed-d7ff-411c-9b66-b586723e9be8', 'revision': 3, ...}
+params = {'mode': 'b_at21_unknown', 'preparation_id': 'b4e81d63-95b4-4edc-8ab0-f4496b9e2384', 'binding_id': 'at21-unknown', 'as_of': '2026-10-18T08:22', ...}
+actor = 'fixture-a', readonly_rows = None
+
+    def bridge(api,f,p,params,actor,*,readonly_rows=None):
+        out=Path('.runtime/preview-rules-ui-20261014');out.mkdir(parents=True,exist_ok=True)
+        errpath=out/(params['mode']+'-node.stderr.log');errfile=errpath.open('w')
+        proc=subprocess.Popen(['node','tests/preview_rules_change_actual_nodevm.js',json.dumps(params)],cwd=Path(__file__).resolve().parents[1],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=errfile,bufsize=0)
+        traffic=[];external=[];value=None;selector=selectors.DefaultSelector();selector.register(proc.stdout,selectors.EVENT_READ)
+        try:
+            until=time.monotonic()+45
+            buffered=b'';lines=[]
+            while time.monotonic()<until:
+                if not lines:
+                    if not selector.select(.1):
+                        if proc.poll() is not None:break
+                        continue
+                    chunk=os.read(proc.stdout.fileno(),65536)
+                    if not chunk:break
+                    buffered+=chunk
+                    while b'\n' in buffered:
+                        line,buffered=buffered.split(b'\n',1);lines.append(line)
+                    if not lines:continue
+                message=json.loads(lines.pop(0))
+                if message['type']=='result':value=message;break
+                if message['type']=='readonly_checkpoint':
+                    assert all_public_rows(f[1])==readonly_rows,'read-only proposal changed business rows'
+                    reply=dict(id=message['id'],status=200,body={})
+                elif message['type']=='explicit_original_binding_confirmation':
+                    # This is a separately simulated explicit owner action using the
+                    # original compare/confirm API, not an automatic page request.
+                    base='/api/preparations/'+p['preparation_id'];key=uuid4().hex
+                    comparison=ok(api.get(base+'/resource-plan-binding',params=dict(candidate_combination_id=message['combination_id']),headers=headers(f[2],actor)))
+                    assert comparison['comparison']['can_confirm']
+                    body=dict(combination_id=message['combination_id'],expected_preparation_revision=p['revision'],expected_link_revision=1,expected_comparison_sha256=comparison['comparison']['sha256'],reason='SYNTHETIC separate owner explicitly confirms original current comparison')
+                    confirmed=ok(api.post(base+'/resource-plan-binding/confirm',headers=headers(f[2],actor,key),json=body),201)
+                    assert confirmed['event']['revision']==2
+                    external.append(dict(action='EXPLICIT_ORIGINAL_COMPARE_AND_CONFIRM',request_key=key,comparison=comparison,response=confirmed))
+                    reply=dict(id=message['id'],key=key)
+                else:
+                    assert message['type']=='request';options=message['options'];assert options['headers']['Authorization']=='Bearer SYNTHETIC_NODE_API_SESSION'
+                    h={**options['headers'],'Authorization':'Bearer '+f[2][actor]}
+                    response=api.request(options.get('method','GET'),message['path'],headers=h,content=options.get('body'))
+                    body=response.json();traffic.append(dict(path=message['path'],method=options.get('method','GET'),key=options.get('headers',{}).get('Idempotency-Key'),status=response.status_code,body=body))
+                    reply=dict(id=message['id'],status=response.status_code,body=body)
+                    (out/(params['mode']+'-latest-observed-traffic.json')).write_text(json.dumps(traffic,indent=2)+'\n')
+                proc.stdin.write((json.dumps(reply)+'\n').encode());proc.stdin.flush()
+            proc.wait(timeout=5);errfile.flush();stderr=errpath.read_text()
+            evidence=dict(mode=params['mode'],process_exit=proc.returncode,result=value,traffic=traffic,external_explicit_original_actions=external,stderr=stderr)
+            out=Path('.runtime/preview-rules-ui-20261014');out.mkdir(parents=True,exist_ok=True)
+            (out/(params['mode']+'-actual-traffic.json')).write_text(json.dumps(evidence,indent=2)+'\n')
+>           assert proc.returncode==0,stderr
+E           AssertionError: TypeError: Cannot read properties of undefined (reading 'remove')
+E                 at clearCaseCancellation (evalmachine.<anonymous>:1093:166)
+E                 at loadPreparationSnapshot (evalmachine.<anonymous>:368:1323)
+E                 at loadPreparation (evalmachine.<anonymous>:331:17)
+E                 at evalmachine.<anonymous>:25:24
+E                 at evalmachine.<anonymous>:1:1
+E                 at Script.runInContext (node:vm:149:12)
+E                 at Object.runInContext (node:vm:301:6)
+E                 at Object.read (/tmp/pw-at21-first-db868ac-80mps580/mirror/tests/preview_rules_change_actual_nodevm.js:13:140)
+E                 at /tmp/pw-at21-first-db868ac-80mps580/mirror/tests/preview_rules_change_actual_nodevm.js:17:85
+E                 at Object.<anonymous> (/tmp/pw-at21-first-db868ac-80mps580/mirror/tests/preview_rules_change_actual_nodevm.js:24:3)
+E             
+E           assert 1 == 0
+E            +  where 1 = <Popen: returncode: 1 args: ['node', 'tests/preview_rules_change_actual_node...>.returncode
+
+tests/test_preview_rules_change_nodevm_actual.py:66: AssertionError
+=============================== warnings summary ===============================
+../../../workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_preview_rules_change_nodevm_actual.py::test_actual_synthetic_rule_read_original_purpose_facts_and_no_business_writes
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_preview_rules_change_nodevm_actual.py::test_actual_synthetic_rule_read_original_purpose_facts_and_no_business_writes
+  /tmp/pw-at21-first-db868ac-80mps580/mirror/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_preview_rules_change_nodevm_actual.py::test_actual_synthetic_rule_read_original_purpose_facts_and_no_business_writes
+  /tmp/pw-at21-first-db868ac-80mps580/mirror/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_preview_rules_change_nodevm_actual.py::test_actual_synthetic_rule_read_original_purpose_facts_and_no_business_writes
+FAILED tests/test_at21_synthetic_readiness.py::test_original_html_real_asgi_output_has_no_official_approval[FALSE]
+FAILED tests/test_at21_synthetic_readiness.py::test_original_html_real_asgi_output_has_no_official_approval[UNKNOWN]
+3 failed, 2 passed, 4 warnings in 11.82s
