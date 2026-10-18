@@ -6,6 +6,7 @@ const source=fs.readFileSync('src/parkweave/web.html','utf8');
 function originalBlock(start,end){const at=source.indexOf(start),until=source.indexOf(end,at+1);assert(at>=0&&until>at);return source.slice(at,until);}
 function originalLine(marker){const line=source.split('\n').find(s=>s.startsWith(marker));assert(line,marker);return line+'\n';}
 const dependencies=originalLine('const deniedOperationReferences=')+originalLine('const entryWriteRequests=')+
+ originalLine('const entryFailureFlows=')+originalLine('function failEntryFlow(')+
  originalLine('function clearEntryWriteRequests(')+originalLine('function failCurrentEntryRead(')+
  originalLine('let receiptHistoryGeneration=')+originalLine('function clearReceiptHistory(')+
  originalBlock('function receiptCommandExplicitlyRejected(', 'function runEntryReadProof(')+

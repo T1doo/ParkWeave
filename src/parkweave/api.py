@@ -1001,6 +1001,15 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
     def dispatch_command(dispatch_id: UUID,data: dispatches.Command,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         return dispatches.command(store,token(authorization),dispatch_id,resource_key(idempotency_key),data)
 
+    @app.get('/api/service-dispatches/{dispatch_id}/accept-recovery')
+    def dispatch_accept_recovery(dispatch_id: UUID,request: Request,response: Response,
+            selection: Annotated[dispatches.AcceptRecoverySelection,Query()],
+            authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        response.headers['Cache-Control']='no-store'
+        keys=[key for key,_ in request.query_params.multi_items()]
+        if len(keys)!=len(set(keys)):raise HTTPException(422,'unambiguous original acceptance selection required')
+        return dispatches.recover_accept(store,token(authorization),dispatch_id,resource_key(idempotency_key),selection)
+
     from . import executor_receipts as executor_receipts
     @app.get('/api/executor-receipts/catalog')
     def executor_receipt_catalog(preparation_id: UUID,authorization: str | None=Header(default=None)):

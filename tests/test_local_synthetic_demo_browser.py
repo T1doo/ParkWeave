@@ -17,10 +17,10 @@ from service_release_acceptance_support import authority_snapshot,case_history
 
 
 @contextmanager
-def ordinary_demo(f,directory):
+def ordinary_demo(f,directory,*,port=None):
     directory.mkdir(parents=True,exist_ok=True)
     with socket.socket() as sock:
-        sock.bind(('127.0.0.1',0));port=sock.getsockname()[1]
+        sock.bind(('127.0.0.1',0 if port is None else port));port=sock.getsockname()[1]
     root=Path(__file__).resolve().parents[1]
     env=minimal_environment(os.environ,PYTHONPATH=str(root/'src'),PARKWEAVE_DSN=f[0].dsn,PARKWEAVE_MODE='LOCAL',
         PARKWEAVE_SERVICE_PROFILE=os.environ['PARKWEAVE_SERVICE_PROFILE'],

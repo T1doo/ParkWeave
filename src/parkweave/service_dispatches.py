@@ -2,7 +2,7 @@ from .business_frontier_types import BusinessFrontierFence,request as frontier_r
 """Internal synthetic offers; never grants or external fulfillment."""
 from typing import Literal
 from uuid import UUID, uuid4
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from psycopg.types.json import Jsonb
 from . import preparation as prep, executor_receipts as receipts
 from .store import Store, Denied, Conflict, digest
@@ -26,6 +26,24 @@ class Command(BaseModel):
     action: Literal['ACCEPT', 'DECLINE', 'WITHDRAW']
     expected_revision: int = Field(ge=1, le=64)
     reason: str = Field(min_length=1, max_length=1000)
+
+
+class AcceptRecoverySelection(BaseModel):
+    """Opaque original selection; it neither supplies authority nor replays a body."""
+    model_config = ConfigDict(extra='forbid')
+    preparation_id: UUID
+    case_id: UUID
+    run_id: UUID
+    offer_id: UUID
+    expected_revision: int = Field(ge=1, le=63)
+    preparation_revision: int = Field(ge=1, le=64)
+
+    @field_validator('expected_revision','preparation_revision',mode='before')
+    @classmethod
+    def exact_revision(cls,value):
+        if type(value) is int:return value
+        if type(value) is str and value.isascii() and value.isdecimal() and str(int(value))==value:return int(value)
+        raise ValueError('exact integer revision required')
 
 
 class Reassign(BaseModel):
@@ -204,7 +222,8 @@ def _event(c, p, root, offer, key, fp, action, reason, **extra):
 
 def _view(c, p, parent, root, event=None,store=None):
     cancelled=prep.case_cancelled(c,parent);blocked=prep.case_write_blocked(c,parent)
-    result = dict(scope=SCOPE, case_id=parent['case_id'], run_id=parent['run_id'], case_cancelled=cancelled, case_reconciling=prep.case_state(c,parent)=='RECONCILING', case_write_blocked=blocked, can_accept=False, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
+    from .controlled_plans import _hash
+    result = dict(scope=SCOPE, actor_ref=_hash(dict(actor_id=p['id'])), case_id=parent['case_id'], run_id=parent['run_id'], case_cancelled=cancelled, case_reconciling=prep.case_state(c,parent)=='RECONCILING', case_write_blocked=blocked, can_accept=False, role=p['role'], preparation_id=parent['id'], goal=parent['goal'],
                   service_id=parent['service_id'], service_version=parent['service_version'],
                   preparation_revision=parent['revision'], dispatch_id=root['id'] if root else None,
                   revision=root['revision'] if root else 0, current_offer=None, offers=[], history=[], event=event,
@@ -274,6 +293,69 @@ def read(store, token, id):
         if not root: raise Denied('dispatch unavailable')
         parent = _parent(store, c, p, root['preparation_id'])
         return _view(c, p, parent, _root(c, parent),store=store)
+
+
+@receipts.bounded
+def recover_accept(store, token, id, key, selection):
+    """Read the existing atomic ACCEPT/receipt CREATE proof, under live access.
+
+    Absence is inconclusive: an original request may still arrive later. The
+    response deliberately carries no writable view, saved reason or approval.
+    """
+    if type(selection) is not AcceptRecoverySelection:raise Denied('typed original selection required')
+    from .controlled_plans import _hash
+    with store.connect() as c:
+        p=_auth(store,c,token)
+        if p['role']!='service_executor':raise Denied('own dispatch decision role required')
+        # Same actor/key lock ordering as the original command, without any DML.
+        _key(c,p,key)
+        base=c.execute('SELECT preparation_id FROM service_dispatches WHERE id=%s',(id,)).fetchone()
+        if not base:raise Denied('dispatch unavailable')
+        parent=_parent(store,c,p,base['preparation_id']);root=_root(c,parent)
+        if (parent['id']!=selection.preparation_id or parent['case_id']!=selection.case_id
+                or parent['run_id']!=selection.run_id):raise Denied('dispatch unavailable')
+        own=c.execute('SELECT * FROM service_dispatch_offers WHERE id=%s AND dispatch_id=%s AND executor_id=%s',
+                      (selection.offer_id,id,p['id'])).fetchone()
+        if not own:raise Denied('dispatch unavailable')
+        if own['preparation_revision']!=selection.preparation_revision:
+            raise Conflict('original acceptance selection mismatch')
+        offered=c.execute("SELECT revision FROM service_dispatch_events WHERE dispatch_id=%s AND offer_id=%s AND action IN ('OFFER','REOFFER') ORDER BY revision LIMIT 1",(id,own['id'])).fetchone()
+        if not offered or offered['revision']!=selection.expected_revision:
+            raise Conflict('original acceptance selection mismatch')
+        old=c.execute('SELECT * FROM service_dispatch_events WHERE actor_id=%s AND request_key=%s',
+                      (p['id'],key)).fetchone()
+        event=None
+        if old:
+            expected=dict(dispatch_id=str(id),offer_id=str(own['id']),revision=selection.expected_revision+1,
+                          action='ACCEPT',state='ACCEPTED',actor_id=p['id'],executor_id=p['id'],
+                          receipt_step_id=str(own['receipt_step_id']))
+            if (old['dispatch_id']!=id or old['offer_id']!=own['id'] or old['action']!='ACCEPT'
+                    or old['revision']!=selection.expected_revision+1 or old['revision']>root['revision']
+                    or own['state']!='ACCEPTED' or not own['receipt_step_id']
+                    or not _typed_fields_equal(old['payload'],expected)):
+                raise Conflict('original acceptance proof mismatch')
+            step=c.execute('SELECT * FROM service_receipt_steps WHERE id=%s',(own['receipt_step_id'],)).fetchone()
+            created=c.execute('SELECT * FROM service_receipt_events WHERE actor_id=%s AND request_key=%s',
+                              (p['id'],'dispatch-accept:'+str(own['id']))).fetchone()
+            fields=('run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
+            if (not step or any(step[k]!=parent[k] for k in fields) or step['namespace']!='SYNTHETIC'
+                    or step['preparation_id']!=parent['id'] or step['executor_id']!=p['id']
+                    or step['preparation_revision']!=own['preparation_revision']
+                    or step['preparation_sha256']!=own['preparation_sha256']
+                    or not created or created['step_id']!=step['id'] or created['action']!='CREATE'
+                    or created['revision']!=1 or created['fingerprint']!=old['fingerprint']
+                    or not _typed_fields_equal(created['payload'],dict(step_id=str(step['id']),revision=1,
+                        state='AWAITING_RECEIPT',action='CREATE',actor_id=p['id'],scope=receipts.SCOPE,
+                        dispatch_id=str(id),offer_id=str(own['id'])))):
+                raise Conflict('original acceptance receipt proof mismatch')
+            event=dict(id=str(old['id']),action='ACCEPT',revision=old['revision'],receipt_step_id=str(step['id']))
+        # A lock wait must never revive a revoked current assignment or READ.
+        _auth(store,c,token);store.scoped_run(c,p,parent['run_id'])
+        return dict(scope=SCOPE,actor_ref=_hash(dict(actor_id=p['id'])),dispatch_id=str(id),
+                    **{k:str(getattr(selection,k)) for k in ('preparation_id','case_id','run_id','offer_id')},
+                    expected_revision=selection.expected_revision,preparation_revision=selection.preparation_revision,
+                    request_key=key,status='COMMITTED' if old else 'NOT_OBSERVED',event=event,
+                    historical_only=True,read_only=True,automatically_replayed=False,case_goal_completed=False)
 
 
 @receipts.bounded
