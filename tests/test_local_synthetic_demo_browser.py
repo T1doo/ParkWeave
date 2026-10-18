@@ -20,6 +20,7 @@ from service_release_acceptance_support import authority_snapshot,case_history
 def ordinary_demo(f,directory,*,port=None):
     directory.mkdir(parents=True,exist_ok=True)
     with socket.socket() as sock:
+        sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
         sock.bind(('127.0.0.1',0 if port is None else port));port=sock.getsockname()[1]
     root=Path(__file__).resolve().parents[1]
     env=minimal_environment(os.environ,PYTHONPATH=str(root/'src'),PARKWEAVE_DSN=f[0].dsn,PARKWEAVE_MODE='LOCAL',

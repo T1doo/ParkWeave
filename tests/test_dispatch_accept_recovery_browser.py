@@ -21,7 +21,7 @@ def open_dispatch(page):
     expect(page.locator('#dispatch-detail')).to_be_visible(timeout=15000)
 
 
-@pytest.mark.parametrize('mode',['committed_reply_lost','not_observed_then_late','revoked','restart'])
+@pytest.mark.parametrize('mode',['committed_reply_lost','not_observed_then_late','revoked','restart','bad_current'])
 def test_ordinary_accept_lost_reply_cold_recovery_is_get_only(demo_inputs,tmp_path,mode):
     f,_,pack,_=demo_inputs;parent=prepared(f)
     # Explicit existing synthetic assignment BEFORE starting the ordinary factory.
@@ -90,6 +90,19 @@ def test_ordinary_accept_lost_reply_cold_recovery_is_get_only(demo_inputs,tmp_pa
                 before=case_history(f[1],parent['preparation_id'])
                 page.locator('#dispatch-accept-recover').click()
             expect(page.locator('#dispatch-accept-release')).to_be_visible(timeout=15000)
+            if mode=='bad_current':
+                # The real server response is obtained, then this fault harness
+                # corrupts one field. Never claim the backend produced it.
+                path='**/api/service-dispatches/'+row['dispatch_id']
+                def corrupt(route):
+                    reply=route.fetch();assert reply.status==200
+                    data=reply.json();data['history']=None
+                    route.fulfill(response=reply,json=data)
+                page.route(path,corrupt)
+                page.locator('#dispatch-accept-release').click()
+                expect(page.locator('#dispatch-error')).to_contain_text('当前分派与原接单证明不匹配',timeout=15000)
+                assert page.evaluate('(name)=>localStorage.getItem(name)',handles[0][0])==handles[0][1]
+                page.unroute(path,corrupt)
             page.locator('#dispatch-accept-release').click()
             expect(page.locator('#dispatch-accept-recover')).to_be_hidden(timeout=15000)
             expect(page.locator('#dispatch-summary')).to_contain_text('执行者已接单')

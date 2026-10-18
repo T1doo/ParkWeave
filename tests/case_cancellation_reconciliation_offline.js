@@ -89,8 +89,9 @@ function confirm(){ $('case-reconcile-reason').value='PRIVATE_REASON';$('case-re
    run('renderReceipt(rx)');check($('receipt-submit').hidden&&$('receipt-submit-button').disabled&&$('receipt-local-execution-button').disabled);
   }else{
    Object.assign(context,{dispatchCtx:()=>({}),dispatchLabels:{OFFERED:'等待'},handoffHandles:()=>[],handoffControls:()=>{},dispatchControls:()=>{},dispatchPendingUI:()=>{},dispatchRetries:new Map()});
+  vm.runInContext(html.slice(html.indexOf('let dispatchAcceptHandle='),html.indexOf('function dispatchAcceptControls(')),context);
    const block=html.slice(html.indexOf('function renderDispatch(x,catalog)'),html.indexOf('async function loadDispatch',html.indexOf('function renderDispatch(x,catalog)')));vm.runInContext(block,context);
-   context.dx={dispatch_id:id,preparation_id:id,case_id:cid,revision:1,preparation_revision:5,goal:'SYNTHETIC',role:'service_executor',dependency:'CURRENT',is_current_offer:true,current_offer:{id,state:'OFFERED',executor_id:'executor-a',reason:'SYNTHETIC'},history:[]};
+   context.dx={actor_ref:'a'.repeat(64),dispatch_id:id,preparation_id:id,case_id:cid,revision:1,preparation_revision:5,goal:'SYNTHETIC',role:'service_executor',dependency:'CURRENT',is_current_offer:true,current_offer:{id,state:'OFFERED',executor_id:'executor-a',reason:'SYNTHETIC'},history:[]};
    run('renderDispatch(dx,{ready:true,executors:[]})');check($('dispatch-decision').hidden&&$('dispatch-accept').disabled);
   }
  }else throw Error('unknown mode');

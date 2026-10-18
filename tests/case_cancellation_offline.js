@@ -64,12 +64,13 @@ async function read(){const p=run('readCaseCancellation()');calls.at(-1).resolve
   context.rx={step:{id,case_id:cid,preparation_id:id,state:'AWAITING_RECEIPT',revision:1,goal:'SYNTHETIC'},case_cancelled:false,role:'service_executor',dependency:'CURRENT',is_current_step:true,current_receipt:null,local_execution:{enabled:true,can_execute:true},receipt_history:[],history:[]};
   vm.runInContext(renderer,context);run('renderReceipt(rx)');check($('receipt-submit').hidden&&$('receipt-submit-button').disabled&&$('receipt-local-execution-button').disabled&&$('receipt-summary').textContent.includes('已取消'));
  }else if(mode==='cancelled_dispatch'||mode==='late_dispatch'){
+  vm.runInContext(html.slice(html.indexOf('let dispatchAcceptHandle='),html.indexOf('function dispatchAcceptControls(')),context);
   const dcode=html.slice(html.indexOf('function renderDispatch('),html.indexOf('async function loadDispatch('));
   // Use only this renderer's function; following unrelated functions are excluded.
   const start=dcode.indexOf('function renderDispatch(');let brace=dcode.indexOf('{',start),depth=1,end=brace+1;for(;depth&&end<dcode.length;end++){if(dcode[end]==='{')depth++;if(dcode[end]==='}')depth--;}
   Object.assign(context,{dispatchCtx:()=>({}),textElement:()=>new Element(),dispatchLabels:{OFFERED:'等待执行者决定'},dispatchPendingUI:()=>{},dispatchDraft:()=>'',handoffControls:()=>{}});
   if(mode==='late_dispatch'){context.preparationView.preparation.id=id;context.preparationView.case_cancelled=true;}
-  context.dx={preparation_id:id,case_cancelled:mode!=='late_dispatch',goal:'Case',role:'service_executor',dispatch_id:id,revision:1,preparation_revision:5,current_offer:{id:key,state:'OFFERED',executor_id:'executor-a',reason:'history'},is_current_offer:true,dependency:'CURRENT',history:[]};
+  context.dx={actor_ref:'a'.repeat(64),preparation_id:id,case_cancelled:mode!=='late_dispatch',goal:'Case',role:'service_executor',dispatch_id:id,revision:1,preparation_revision:5,current_offer:{id:key,state:'OFFERED',executor_id:'executor-a',reason:'history'},is_current_offer:true,dependency:'CURRENT',history:[]};
   vm.runInContext(dcode.slice(start,end),context);run('renderDispatch(dx,null)');check($('dispatch-decision').hidden&&$('dispatch-summary').textContent.includes('已取消'));
  }
  console.log(JSON.stringify({mode:requestedMode,checks,scope:'NODE_VM_DOM_FETCH_DOUBLES_ONLY'}));
