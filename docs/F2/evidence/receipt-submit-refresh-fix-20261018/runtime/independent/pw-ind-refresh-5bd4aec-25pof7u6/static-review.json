@@ -1,0 +1,35 @@
+{
+  "source_sha": "5bd4aecc18eccc4c939e035cfba66fbc3b5ecea7",
+  "source_tree": "74b5b08951ecbf5ea1f4b36eab91fb57386266a7",
+  "tests_tree": "78b16d606045d7610f7c5fa2e0e19c5260cc3555",
+  "kind": "FROZEN_STATIC_REVIEW",
+  "blockers": 0,
+  "p1_open": 0,
+  "p2_open": 0,
+  "reviewed_changed_files": [
+    "docs/F2/ReceiptSubmitRefreshFix-20261018.md",
+    "src/parkweave/web.html",
+    "tests/test_receipt_submit_recovery_browser.py"
+  ],
+  "closed_p2": "Cold recovery refresh abandoned old generation without resetting busy; operation owner now separates old/new busy lifecycles",
+  "mechanism": [
+    "loadReceipt generation increment and receiptSubmitCancel synchronous; persistent storage untouched",
+    "clearReceipts cancels operation and changes generation without deleting storage",
+    "send/recover each get own operation; End only current owner can clear busy",
+    "End redraws controls only with original current context and raw match",
+    "Existing awaited Bound/current/403 guards remain; Cancel is reached only with synchronous generation changes",
+    "Same-item refresh retains draft; original precise rejection and UNKNOWN global write fence remain"
+  ],
+  "test_scope": [
+    "15 real ordinary API/PG/Chromium nodes, including 4 refresh interleavings",
+    "39 Node VM nodes with actual extracted production functions and controlled transport/render stubs",
+    "old 403 is actual backend denial using other existing tenant token injected into captured read, not current executor revocation",
+    "new_before_old means newer request started before old response; both branches deliver old response first"
+  ],
+  "limits": [
+    "No product source/test/docs/Git writes by reviewer",
+    "No real identity/authority/model/external source/network/deployment",
+    "LocalStorage compare/remove is not database-level atomic CAS across processes",
+    "No new callback-owner guard demanded without reachable same-generation owner replacement path"
+  ]
+}

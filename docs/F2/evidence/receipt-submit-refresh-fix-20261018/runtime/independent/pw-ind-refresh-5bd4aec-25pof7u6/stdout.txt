@@ -1,0 +1,78 @@
+...........F..........................................                   [100%]
+=================================== FAILURES ===================================
+_ test_cold_recovery_refresh_releases_only_its_own_busy_operation[old_then_new-200] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7ff19fa5c620>, <parkweave.store.Store object at 0x7ff19fab7b60>, {'fixture-a': 'l...atabase': {'name': 'fixture_f88d0b477a9441eea1a194769384b6cb', 'oid': 27068, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-ind-refresh-5bd4aec-25pof7u6/pytest/test_cold_recovery_refresh_rel0')
+old_status = 200, overlap = False
+
+    @pytest.mark.parametrize('old_status',[200,403])
+    @pytest.mark.parametrize('overlap',[False,True],ids=['old_then_new','new_before_old'])
+    def test_cold_recovery_refresh_releases_only_its_own_busy_operation(demo_inputs,tmp_path,old_status,overlap):
+        """Refresh is an ordinary allowed GET; an old completion cannot own its busy state."""
+        f,_,pack,_=demo_inputs;parent=prepared(f)
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        row=create(f,parent)[0].json();authority=authority_snapshot(f[1]);traffic=[];errors=[];held=[];phases=[]
+>       with ordinary_demo(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_receipt_submit_recovery_browser.py:180: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7ff19fa5c620>, <parkweave.store.Store object at 0x7ff19fab7b60>, {'fixture-a': 'ln...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7ff1acc51640>)
+directory = PosixPath('/tmp/pw-ind-refresh-5bd4aec-25pof7u6/pytest/test_cold_recovery_refresh_rel0/ordinary')
+port = 37631
+
+    @contextmanager
+    def ordinary_demo(f,directory,*,port=None):
+        directory.mkdir(parents=True,exist_ok=True)
+        with socket.socket() as sock:
+            sock.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+            sock.bind(('127.0.0.1',0 if port is None else port));port=sock.getsockname()[1]
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=str(root/'src'),PARKWEAVE_DSN=f[0].dsn,PARKWEAVE_MODE='LOCAL',
+            PARKWEAVE_SERVICE_PROFILE=os.environ['PARKWEAVE_SERVICE_PROFILE'],
+            PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG=os.environ['PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'])
+        with (directory/'ordinary-api.log').open('w') as log:
+            child=subprocess.Popen([sys.executable,'-m','uvicorn','parkweave.api:configured_app','--factory',
+                '--host','127.0.0.1','--port',str(port),'--log-level','warning','--no-access-log'],cwd=root,env=env,stdout=log,stderr=subprocess.STDOUT)
+            try:
+                with httpx.Client(base_url=f'http://127.0.0.1:{port}',timeout=15) as api:
+                    until=time.monotonic()+15
+                    while time.monotonic()<until:
+                        assert child.poll() is None,'ordinary factory exited; see ordinary-api.log'
+                        try:
+                            response=api.get('/health')
+                            if response.status_code==200 and response.json()['process_id']==child.pid:break
+                        except httpx.TransportError:pass
+                        time.sleep(.05)
+>                   else:pytest.fail('ordinary demo process startup deadline')
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   Failed: ordinary demo process startup deadline
+
+tests/test_local_synthetic_demo_browser.py:42: Failed
+=============================== warnings summary ===============================
+../../../workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../../../workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_receipt_submit_recovery_browser.py::test_ordinary_manual_submit_cold_recovery_never_reposts[committed_reply_lost]
+  /tmp/pw-ind-refresh-5bd4aec-25pof7u6/mirror/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_receipt_submit_recovery_browser.py::test_ordinary_manual_submit_cold_recovery_never_reposts[committed_reply_lost]
+  /tmp/pw-ind-refresh-5bd4aec-25pof7u6/mirror/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_receipt_submit_recovery_browser.py::test_cold_recovery_refresh_releases_only_its_own_busy_operation[old_then_new-200]
+1 failed, 53 passed, 4 warnings in 149.38s (0:02:29)

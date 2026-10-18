@@ -1,0 +1,53 @@
+{
+  "mode": "body_validation_422",
+  "actual_chromium": true,
+  "ordinary_subprocess": true,
+  "actual_stale_409": false,
+  "actual_backend_body_422": true,
+  "responses": [
+    {
+      "status": 422,
+      "payload": {
+        "detail": [
+          {
+            "type": "extra_forbidden",
+            "loc": [
+              "body",
+              "unknown_field"
+            ],
+            "msg": "Extra inputs are not permitted",
+            "input": "SYNTHETIC invalid body"
+          }
+        ]
+      },
+      "actual_server": true
+    }
+  ],
+  "page_requests": [
+    {
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "method": "GET",
+      "path": "/api/run-access/status"
+    },
+    {
+      "method": "GET",
+      "path": "/api/executor-receipts"
+    },
+    {
+      "method": "GET",
+      "path": "/api/executor-receipts/24afc117-e987-4a22-bdd5-64ad00db73dd"
+    },
+    {
+      "method": "POST",
+      "path": "/api/executor-receipts/24afc117-e987-4a22-bdd5-64ad00db73dd/commands"
+    },
+    {
+      "method": "GET",
+      "path": "/api/executor-receipts/24afc117-e987-4a22-bdd5-64ad00db73dd"
+    }
+  ],
+  "unknown_status_never_released": false
+}

@@ -1,0 +1,41 @@
+{
+  "failed_node": "tests/test_receipt_submit_recovery_browser.py::test_cold_recovery_refresh_releases_only_its_own_busy_operation[old_then_new-200]",
+  "classification": "CALL_FAILURE_BEFORE_ORDINARY_API_READY; TARGET_BROWSER_REFRESH_BUSINESS_NOT_RUN",
+  "message": "Failed: ordinary demo process startup deadline",
+  "setup_seconds": 0.7380272779992083,
+  "call_seconds": 16.090888245000315,
+  "teardown_seconds": 0.04466533699996944,
+  "raw_trace_path": "/workspace/ParkWeave/.runtime/receipt-submit-refresh-fix-20261018/independent/pw-ind-refresh-5bd4aec-25pof7u6/independent.xml",
+  "raw_trace_contains_fixture_token_repr": true,
+  "public_export_requires_redaction": true,
+  "failed_owned_api_log": "/workspace/ParkWeave/.runtime/receipt-submit-refresh-fix-20261018/independent/pw-ind-refresh-5bd4aec-25pof7u6/case-artifacts/test_cold_recovery_refresh_rel0/ordinary/ordinary-api.log",
+  "failed_owned_api_log_bytes": 0,
+  "failed_owned_api_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "health_wait": {
+    "deadline_seconds": 15,
+    "httpx_request_timeout_seconds": 15,
+    "own_child_poll_checked_each_loop": true,
+    "success_required_status": 200,
+    "success_required_pid_matches_own_child": true,
+    "what_observed": "deadline branch reached, not child-exit assertion; exact per-poll status/exception/duration unavailable",
+    "child_pid": "NOT_RETAINED_FOR_FAILED_STARTUP",
+    "child_cleanup": "ordinary_demo finally calls stop_children; no cleanup error and teardown passed; pytest exited",
+    "helper_source": "tests/test_local_synthetic_demo_browser.py:20-44"
+  },
+  "owned_pg": {
+    "expected_log": "/tmp/pw-ind-refresh-5bd4aec-25pof7u6/pytest/parkweave-pg0/data/log",
+    "log_available": false,
+    "pg_parent_empty": true,
+    "data_exists": false,
+    "reason": "existing fixture cleanup_mode=delete; pgserver log lives under pgdata/log and is removed on process cleanup; opt-in owned diagnostics was not enabled in this window",
+    "copied_pg_data": false
+  },
+  "known_boundary": "No refresh-proof or PNG for failed node because ordinary_demo.__enter__ failed before browser setup/try block; remaining three refresh nodes have phase proofs and passed",
+  "root_cause": "UNKNOWN; no claim of environment flake, product cause, resource contention or fix",
+  "next_steps_not_executed": [
+    "Wait until parent full window naturally ends; no parallel rerun now",
+    "One authorized targeted failed-node run with existing --owned-connection-diagnostics at private evidence path, same 15s health/5s drop budgets and all original assertions",
+    "Retain owned PG connection/phase/log evidence before delete; diagnostics do not by themselves prove child import/health phase timing",
+    "At most one separately authorized full 54 serial validation after targeted diagnosis; preserve first 53P1F and keep results separate"
+  ]
+}

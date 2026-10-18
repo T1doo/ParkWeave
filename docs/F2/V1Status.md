@@ -1,3 +1,9 @@
+## 2026-10-18：普通SUBMIT冷恢复刷新并发修复及原T07复验
+
+冻结 `5bd4aecc18eccc4c939e035cfba66fbc3b5ecea7`，修旧恢复GET挂起时刷新导致busy永久禁用，operation归属防旧finally结束新核对。真实红2FAIL保留；新4浏览器场景实际通过。主17模块382唯一范围首窗381PASS/一个节点setup+teardown共2ERROR，原预算诊断该节点1PASS；独54首窗53P1F、唯一完整串行确认54P，全部ID重叠不累加。没有17模块382项单窗全绿，首次启动/连接/清理底因仍UNKNOWN。756输入零漂移。
+
+原T07全部10项实跑PASS，599实际HTTP/23独立LOCAL worker/1冷API，新增输入、材料纠错/反馈、实际产物、取消、关闭重开/复用均保留历史；显式SYNTHETIC assignment前置不作普通零设置AT35。正式backend/主体/采纳映射合同与代码、Win11/真实模型/正式AT未验；人工补证答复与关闭重开完整普通DOM是可继续的具体验收。项目仍IN_PROGRESS。详见[修补合同](ReceiptSubmitRefreshFix-20261018.md)、[各窗实际结果及原产品剩余项](ReceiptSubmitRefreshFixValidation-20261018.md)。以下原历史原字节保留。
+
 ## 已审普通建单在途自然过期接管（Linux有限故障）
 
 源码 `dc3ee77b736e880455e0c326f9c0b146deddad8d`、已推冻结候选 `6efd2387352759144d9a3c826ded0b460a935b00` 精确独审 LIMITED_PASS。原 runtime 与 f585 逐字/模式相同；新增实际普通LOCAL worker/LeaseKeeper/gateway自有进程故障验收，修原目录游标测试UUID类型与非空oracle，trusted IDs只增4函数。原DB自然租约到期合法接管、当前有效新lease期间旧fence拒写，原旧PID恢复实际Conflict；提交中退出回滚，提交后消费者退出由原outbox继续、不重领终态、不重复Case/回执。当前撤EXECUTE/正常cancel不恢复授权、无新Case；初建NEEDS_INPUT/LOCAL_CASE_CREATED不作履约。
