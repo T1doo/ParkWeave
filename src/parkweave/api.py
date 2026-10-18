@@ -1114,6 +1114,8 @@ def configured_app(*, resource_plan_approval_provider=None, formal_source_reader
     store=Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL"),file_root=os.environ.get("PARKWEAVE_FILE_ROOT"))
     from .ordinary_runtime_read import configure
     configure(store,os.environ.get('PARKWEAVE_RUNTIME_READ_CONFIG'))
+    from .resource_approval_host_read import configure as configure_approval
+    resource_plan_approval_provider=configure_approval(os.environ.get('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'),resource_plan_approval_provider)
     from .local_synthetic_demo import configure as configure_demo
     demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
     return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider,

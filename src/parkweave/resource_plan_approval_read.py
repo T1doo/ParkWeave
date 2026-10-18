@@ -7,6 +7,7 @@ revision/revocation; the application then checks its exact live local bindings.
 Nothing in this module grants or consumes authority or executes a resource action.
 """
 from dataclasses import dataclass
+from contextlib import nullcontext
 import json
 from typing import Callable, Literal
 from uuid import UUID
@@ -72,12 +73,14 @@ class ReadOnlyApprovalProvider:
     read_existing: Callable[[Lookup], bytes | None]
     verify_existing: Callable[[Lookup, bytes], bool]
     source_kind: Literal['EXISTING_AUTHORITY_ADAPTER', 'SYNTHETIC_CONTRACT_FIXTURE'] = 'EXISTING_AUTHORITY_ADAPTER'
+    read_window: Callable | None = None
 
     def __post_init__(self):
         import re
         if (not isinstance(self.source_id, str) or not re.fullmatch('[a-zA-Z0-9_.:-]{1,100}', self.source_id)
                 or not callable(self.read_existing) or not callable(self.verify_existing)
-                or self.source_kind not in ('EXISTING_AUTHORITY_ADAPTER', 'SYNTHETIC_CONTRACT_FIXTURE')):
+                or self.source_kind not in ('EXISTING_AUTHORITY_ADAPTER', 'SYNTHETIC_CONTRACT_FIXTURE')
+                or self.read_window is not None and not callable(self.read_window)):
             raise Denied('explicit existing resource approval source adapter required')
 
 
@@ -247,45 +250,46 @@ def read(store, token, preparation_id, selection, provider, approval_id=None):
                 selection.expected_plan_id, selection.expected_plan_revision, selection.expected_context_sha256):
             raise Conflict('resource approval plan/version/source selection changed; reread original context')
         if provider is None: return _boundary('CONTRACT_UNAVAILABLE', 'EXISTING_APPROVAL_PROVIDER_REQUIRED')
-        lookup = Lookup(scope, actor['id'], approval_id)
-        try:
-            record, raw = _read(provider, lookup)
-            if record is None: return _boundary('MISSING_SOURCE', 'EXISTING_APPROVAL_RECORD_REQUIRED')
-            # Explicit original-ID second read catches replacement/revocation while checking the first read.
-            again, second = _read(provider, Lookup(scope, actor['id'], record.approval_id))
-        except Exception:
-            return _boundary('MISSING_SOURCE', 'EXISTING_APPROVAL_SOURCE_UNVERIFIED')
-        current_actor = store.auth(c, token, lock=True)
-        current_parent, _ = prep.entry_context(store, c, current_actor, preparation_id)
-        try: after = _snapshot(store, c, current_parent)
-        except (Conflict, ValueError, KeyError, TypeError): after = None
-        if after is None or after['context_sha256'] != before['context_sha256']:
-            return _boundary('INVALID', 'CURRENT_PERMISSION_OR_SOURCE_CHANGED')
-        if raw != second or record != again:
-            return _boundary('INVALID', 'ORIGINAL_APPROVAL_CHANGED_DURING_READ')
-        if record.binding != scope: return _boundary('INVALID', 'APPROVAL_EXACT_BINDING_MISMATCH')
-        approver = next((p for p in after['principals'] if p['id'] == record.approver_id), None)
-        if (not approver or not approver['active'] or approver['role'] != record.approver_role
-                or (approver['park_id'], approver['org_id']) != (scope.park_id, scope.org_id)):
-            return _boundary('INVALID', 'CURRENT_APPROVER_IDENTITY_REQUIRED')
-        try:
-            prep.grant(store, c, approver, 'PREPARE' if approver['role'] == 'enterprise_operator' else 'REVIEW_ASSIGNED')
-        except Denied:
-            return _boundary('INVALID', 'CURRENT_APPROVER_PERMISSION_REQUIRED')
-        try:
-            if provider.verify_existing(Lookup(scope, current_actor['id'], record.approval_id), raw) is not True:
-                return _boundary('INVALID', 'CURRENT_APPROVAL_SOURCE_CHANGED')
-        except Exception:
-            return _boundary('MISSING_SOURCE', 'EXISTING_APPROVAL_SOURCE_UNVERIFIED')
-        now = c.execute('SELECT clock_timestamp() now').fetchone()['now']
-        reason = ('ORIGINAL_APPROVAL_REVOKED' if record.state == 'REVOKED' else
-                  'ORIGINAL_APPROVAL_EXPIRED' if now >= record.valid_until else
-                  'ORIGINAL_APPROVAL_NOT_YET_VALID' if now < record.valid_from or now < record.approved_at else
-                  'CURRENT_PLAN_SOURCE_INVALID' if after['issues'] else None)
-        state = 'INVALID' if reason else 'VERIFIED'
-        return _boundary(state, reason or 'EXISTING_APPROVAL_SOURCE_VERIFIED',
-                         record=record.model_dump(mode='json'), action_scope=after['actions'],
-                         approval_source_kind=provider.source_kind, production_installation_verified=False,
-                         checked_at=now.isoformat(),
-                         context_sha256=after['context_sha256'],
-                         original_record_path=f'/api/preparations/{preparation_id}/runtime/resource-plan-approval/records/{record.approval_id}')
+        with provider.read_window() if provider.read_window else nullcontext():
+            lookup = Lookup(scope, actor['id'], approval_id)
+            try:
+                record, raw = _read(provider, lookup)
+                if record is None: return _boundary('MISSING_SOURCE', 'EXISTING_APPROVAL_RECORD_REQUIRED')
+                # Explicit original-ID second read catches replacement/revocation while checking the first read.
+                again, second = _read(provider, Lookup(scope, actor['id'], record.approval_id))
+            except Exception:
+                return _boundary('MISSING_SOURCE', 'EXISTING_APPROVAL_SOURCE_UNVERIFIED')
+            current_actor = store.auth(c, token, lock=True)
+            current_parent, _ = prep.entry_context(store, c, current_actor, preparation_id)
+            try: after = _snapshot(store, c, current_parent)
+            except (Conflict, ValueError, KeyError, TypeError): after = None
+            if after is None or after['context_sha256'] != before['context_sha256']:
+                return _boundary('INVALID', 'CURRENT_PERMISSION_OR_SOURCE_CHANGED')
+            if raw != second or record != again:
+                return _boundary('INVALID', 'ORIGINAL_APPROVAL_CHANGED_DURING_READ')
+            if record.binding != scope: return _boundary('INVALID', 'APPROVAL_EXACT_BINDING_MISMATCH')
+            approver = next((p for p in after['principals'] if p['id'] == record.approver_id), None)
+            if (not approver or not approver['active'] or approver['role'] != record.approver_role
+                    or (approver['park_id'], approver['org_id']) != (scope.park_id, scope.org_id)):
+                return _boundary('INVALID', 'CURRENT_APPROVER_IDENTITY_REQUIRED')
+            try:
+                prep.grant(store, c, approver, 'PREPARE' if approver['role'] == 'enterprise_operator' else 'REVIEW_ASSIGNED')
+            except Denied:
+                return _boundary('INVALID', 'CURRENT_APPROVER_PERMISSION_REQUIRED')
+            try:
+                if provider.verify_existing(Lookup(scope, current_actor['id'], record.approval_id), raw) is not True:
+                    return _boundary('INVALID', 'CURRENT_APPROVAL_SOURCE_CHANGED')
+            except Exception:
+                return _boundary('MISSING_SOURCE', 'EXISTING_APPROVAL_SOURCE_UNVERIFIED')
+            now = c.execute('SELECT clock_timestamp() now').fetchone()['now']
+            reason = ('ORIGINAL_APPROVAL_REVOKED' if record.state == 'REVOKED' else
+                      'ORIGINAL_APPROVAL_EXPIRED' if now >= record.valid_until else
+                      'ORIGINAL_APPROVAL_NOT_YET_VALID' if now < record.valid_from or now < record.approved_at else
+                      'CURRENT_PLAN_SOURCE_INVALID' if after['issues'] else None)
+            state = 'INVALID' if reason else 'VERIFIED'
+            return _boundary(state, reason or 'EXISTING_APPROVAL_SOURCE_VERIFIED',
+                             record=record.model_dump(mode='json'), action_scope=after['actions'],
+                             approval_source_kind=provider.source_kind, production_installation_verified=False,
+                             checked_at=now.isoformat(),
+                             context_sha256=after['context_sha256'],
+                             original_record_path=f'/api/preparations/{preparation_id}/runtime/resource-plan-approval/records/{record.approval_id}')
