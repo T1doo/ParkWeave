@@ -188,7 +188,8 @@ class LocalDemoCatalog:
         from .ordinary_plan_sources import selected
         from .case_step_assignments import local_demo_pair
         service=selected(self.store)
-        if service is not None and not local_demo_pair(service,self.store,service.local_synthetic_demo):
+        if service is not None and (not local_demo_pair(service,self.store,service.local_synthetic_demo)
+                or service.local_synthetic_demo.catalog is not self):
             raise Denied('local demo reads require their exact ordinary transaction pair')
         transaction=service._connection(self.store) if service is not None else self.store.connect()
         with transaction as c:

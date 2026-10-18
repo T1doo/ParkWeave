@@ -102,6 +102,8 @@ def test_exact_pair_preserves_old_mode_and_all_other_provider_guards(demo_inputs
     with pytest.raises(Denied):create_app(store,case_step_assignments=ordinary,local_synthetic_demo=provider)
     paired=cs.from_environment(store,env)
     create_app(store,case_step_assignments=paired,local_synthetic_demo=paired.local_synthetic_demo)
+    with pytest.raises(Denied):
+        with provider.catalog.connection():pass
     with pytest.raises(Denied):create_app(store,case_step_assignments=paired)
     with pytest.raises(Denied):create_app(store,case_step_assignments=paired,local_synthetic_demo=provider)
     for key in ('_native_run_access','_isolated_run_access','_isolated_plan_approval','_isolated_service_capability_catalog'):
