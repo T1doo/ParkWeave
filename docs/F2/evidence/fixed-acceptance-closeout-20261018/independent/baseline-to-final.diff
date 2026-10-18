@@ -1,0 +1,214 @@
+diff --git a/docs/F1/AcceptanceSourceBatchContract-20261018.md b/docs/F1/AcceptanceSourceBatchContract-20261018.md
+new file mode 100644
+index 00000000..f4ec128e
+--- /dev/null
++++ b/docs/F1/AcceptanceSourceBatchContract-20261018.md
+@@ -0,0 +1,11 @@
++# 固定验收源码校验的有界分批
++
++基线 `e08f2f60f87ff54bdbb3a2e9f9bdd9b60dc46e03`。本片唯一代码改动是修复原固定验收入口对合法当前源码集合的容量拒绝，不新增业务功能、loader、来源适配、验收定义或统一框架。原 AT21/32 的拒绝与旧风险窗口保留，不重试它们。
++
++原 `verify_head_test_sources` 在 HEAD/路径/hash/header 检查之后、业务测试之前，对全部 test blob 的合计4MiB作拒绝。当前381个blob共4,768,614字节，最大55,659字节，各原件等于工作区；选择单项 AT 仍核全部源码，不能靠缩减校验集合逃过该门。
++
++沿原接口按排序路径分批读取，每批 blob 内容合计最多4,194,304字节，最大单文件仍为该值，路径总数仍最多1024。所有 HEAD/blob/manifest SHA256/工作区原始字节三方对照、LF/CRLF、symlink/路径、header/大小/分隔符/尾字节及固定错误分类保持。每个原 Git 调用仍5秒；累计内容与调用次数比旧全体4MiB上限增加，不能声称全函数资源预算完全不变。分批失败仍整体拒绝，不返回部分校验成功，不开始pytest。
++
++只在自有临时 Git fixture验证批次边界、跨批篡改与原拒绝门；在最终冻结 HEAD 对全部当前test源码作只读校验。必要时原 runner仅选择新的AT13工程入口，使用新拥有SYNTHETIC PG和实际worker，不执行旧AT21/32、平台风险或HTTP UNKNOWN窗口，不刷全量。
++
++固定42项定义与 whole_status 不改，pytest成功最多为工程 PARTIAL_PASS，不能回填正式PASS。Windows、LIVE、C0和业务功能缺口分别列入本轮固定清单审计；不改main、不强推、不部署、无真实模型/凭据/业务权限或安全网络权限变化。独审只静态，动态成绩单列。
+diff --git a/scripts/windows_ci/source_bytes.py b/scripts/windows_ci/source_bytes.py
+index d81772bc..69c7558e 100644
+--- a/scripts/windows_ci/source_bytes.py
++++ b/scripts/windows_ci/source_bytes.py
+@@ -49,49 +49,61 @@ def verify_head_test_sources(root, expected_head, hashes):
+     """
+     verify_head(root, expected_head)
+     if not isinstance(hashes, dict) or not hashes or len(hashes) > 1024:
+         raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+     for path in hashes:
+         if not isinstance(path, str) or not re.fullmatch(r'tests/test_[A-Za-z0-9_]+\.py', path):
+             raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+         if not isinstance(hashes[path], str) or not re.fullmatch(r'[0-9a-f]{64}', hashes[path]):
+             raise SourceBytesRefused('GIT_BLOB_MISMATCH')
+     paths = sorted(hashes)
+     queries = ''.join(expected_head + ':' + path + '\n' for path in paths).encode('ascii')
+     checks = _git(root, ['cat-file', '--batch-check'], queries).splitlines()
+     if len(checks) != len(paths):
+         raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+     sizes = []
+     for check in checks:
+         match = re.fullmatch(rb'([0-9a-f]{40}) blob ([0-9]{1,10})', check)
+         if not match:
+             raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+         sizes.append(int(match[2]))
+-    if sum(sizes) > 4 * 1024 * 1024:
++    limit = 4 * 1024 * 1024
++    if any(size > limit for size in sizes):
+         raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+-    raw = _git(root, ['cat-file', '--batch'], queries)
+-    cursor = 0
+     root = Path(root).resolve()
+-    for path, header, size in zip(paths, checks, sizes):
+-        end = raw.find(b'\n', cursor, cursor + 256)
+-        if end < 0 or raw[cursor:end] != header:
+-            raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+-        cursor = end + 1
+-        blob = raw[cursor:cursor + size]
+-        cursor += size
+-        if raw[cursor:cursor + 1] != b'\n' or len(blob) != size:
+-            raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+-        cursor += 1
+-        work_file = root / path
+-        try:
+-            if work_file.is_symlink() or work_file.resolve().parent != root / 'tests':
+-                raise SourceBytesRefused('GIT_BLOB_MISMATCH')
+-            if work_file.stat().st_size != size:
++    batch_start = 0
++    while batch_start < len(paths):
++        batch_end, batch_bytes = batch_start, 0
++        while batch_end < len(paths) and batch_bytes + sizes[batch_end] <= limit:
++            batch_bytes += sizes[batch_end]
++            batch_end += 1
++        # Keep the complete source set. Only each cat-file body read is bounded;
++        # cumulative bytes/call count can exceed the former aggregate 4 MiB.
++        batch_queries = ''.join(expected_head + ':' + path + '\n'
++                                for path in paths[batch_start:batch_end]).encode('ascii')
++        raw = _git(root, ['cat-file', '--batch'], batch_queries)
++        cursor = 0
++        for path, header, size in zip(paths[batch_start:batch_end], checks[batch_start:batch_end], sizes[batch_start:batch_end]):
++            end = raw.find(b'\n', cursor, cursor + 256)
++            if end < 0 or raw[cursor:end] != header:
++                raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
++            cursor = end + 1
++            blob = raw[cursor:cursor + size]
++            cursor += size
++            if raw[cursor:cursor + 1] != b'\n' or len(blob) != size:
++                raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
++            cursor += 1
++            work_file = root / path
++            try:
++                if work_file.is_symlink() or work_file.resolve().parent != root / 'tests':
++                    raise SourceBytesRefused('GIT_BLOB_MISMATCH')
++                if work_file.stat().st_size != size:
++                    raise SourceBytesRefused('GIT_BLOB_MISMATCH')
++                with work_file.open('rb') as stream:
++                    work = stream.read(size + 1)
++            except OSError:
++                raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE') from None
++            if hashlib.sha256(blob).hexdigest() != hashes[path] or work != blob:
+                 raise SourceBytesRefused('GIT_BLOB_MISMATCH')
+-            with work_file.open('rb') as stream:
+-                work = stream.read(size + 1)
+-        except OSError:
+-            raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE') from None
+-        if hashlib.sha256(blob).hexdigest() != hashes[path] or work != blob:
+-            raise SourceBytesRefused('GIT_BLOB_MISMATCH')
+-    if cursor != len(raw):
+-        raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
++        if cursor != len(raw):
++            raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
++        batch_start = batch_end
+diff --git a/tests/test_source_bytes.py b/tests/test_source_bytes.py
+index 232a2bf0..e05172c5 100644
+--- a/tests/test_source_bytes.py
++++ b/tests/test_source_bytes.py
+@@ -63,20 +63,100 @@ def test_untracked_file_not_bound_to_head(source):
+     root, head, hashes = source
+     path = root / 'tests/test_extra.py'
+     path.write_bytes(b'# untracked\n')
+     hashes[str(path.relative_to(root))] = hashlib.sha256(path.read_bytes()).hexdigest()
+     with pytest.raises(SourceBytesRefused, match='GIT_BLOB_UNAVAILABLE'):
+         verify_head_test_sources(root, head, hashes)
+ 
+ 
+ @pytest.mark.parametrize('operation,reason', [('rev-parse','SOURCE_HEAD_UNAVAILABLE'), ('cat-file','GIT_BLOB_UNAVAILABLE')])
+ def test_git_timeout_has_fixed_operation_reason(source, monkeypatch, operation, reason):
+     root, head, hashes = source
+     original = subprocess.run
+     def run(command, **kwargs):
+         assert kwargs['timeout'] == 5
+         if operation in command:
+             raise subprocess.TimeoutExpired(command, 5)
+         return original(command, **kwargs)
+     monkeypatch.setattr(subprocess, 'run', run)
+     with pytest.raises(SourceBytesRefused, match=reason):
+         verify_head_test_sources(root, head, hashes)
++
++
++def large_sources(source, *, size=2 * 1024 * 1024, count=2):
++    """Owned Git data only; no application/acceptance test is executed."""
++    root, _, hashes = source
++    for index in range(count):
++        path = root / ('tests/test_zlarge_' + str(index) + '.py')
++        path.write_bytes(b'#' + b'x' * (size - 2) + b'\n')
++        hashes[str(path.relative_to(root))] = hashlib.sha256(path.read_bytes()).hexdigest()
++    git(root, 'add', '.')
++    git(root, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'bounded source fixture')
++    return root, git(root, 'rev-parse', 'HEAD').decode().strip(), hashes
++
++
++def test_more_than_four_mib_checks_all_sources_in_bounded_reads(source, monkeypatch):
++    from scripts.windows_ci import source_bytes
++    root, head, hashes = large_sources(source)
++    original = source_bytes._git
++    batches = []
++    def observe(root, args, data=None):
++        if args == ['cat-file', '--batch']:
++            paths = [line.split(':', 1)[1] for line in data.decode().splitlines()]
++            batches.append(paths)
++            assert sum((root / path).stat().st_size for path in paths) <= 4 * 1024 * 1024
++        return original(root, args, data)
++    monkeypatch.setattr(source_bytes, '_git', observe)
++    assert sum((root / path).stat().st_size for path in hashes) > 4 * 1024 * 1024
++    verify_head_test_sources(root, head, hashes)
++    assert len(batches) == 2 and [path for batch in batches for path in batch] == sorted(hashes)
++
++
++@pytest.mark.parametrize('change', ['byte', 'forged_hash', 'crlf', 'staged'])
++def test_later_batch_raw_tampering_is_still_refused(source, change):
++    root, head, hashes = large_sources(source)
++    path = root / sorted(hashes)[-1]
++    raw = path.read_bytes()
++    path.write_bytes(raw.replace(b'\n', b'\r\n') if change == 'crlf' else b'!' + raw[1:])
++    if change == 'forged_hash':hashes[str(path.relative_to(root))] = hashlib.sha256(path.read_bytes()).hexdigest()
++    if change == 'staged':git(root, 'add', '.')
++    with pytest.raises(SourceBytesRefused, match='GIT_BLOB_MISMATCH'):
++        verify_head_test_sources(root, head, hashes)
++
++
++def test_exact_four_mib_file_can_use_its_own_bounded_batch(source):
++    root, head, hashes = large_sources(source, size=4 * 1024 * 1024, count=1)
++    verify_head_test_sources(root, head, hashes)
++
++
++def test_single_oversize_blob_refuses_before_any_body_read(source, monkeypatch):
++    from scripts.windows_ci import source_bytes
++    root, head, hashes = large_sources(source, size=4 * 1024 * 1024 + 1, count=1)
++    original = source_bytes._git
++    def bounded(root, args, data=None):
++        assert args != ['cat-file', '--batch'], 'oversize input must not be read'
++        return original(root, args, data)
++    monkeypatch.setattr(source_bytes, '_git', bounded)
++    with pytest.raises(SourceBytesRefused, match='GIT_BLOB_UNAVAILABLE'):
++        verify_head_test_sources(root, head, hashes)
++
++
++@pytest.mark.parametrize('change', ['header', 'short', 'separator', 'tail'])
++def test_later_batch_bad_protocol_is_not_partial_success(source, monkeypatch, change):
++    from scripts.windows_ci import source_bytes
++    root, head, hashes = large_sources(source)
++    original = source_bytes._git
++    reads = []
++    def broken(root, args, data=None):
++        raw = original(root, args, data)
++        if args == ['cat-file', '--batch']:
++            reads.append(data)
++            if len(reads) == 2:
++                if change == 'header':return b'!' + raw[1:]
++                if change == 'short':return raw[:-2]
++                if change == 'separator':return raw[:-1] + b'!'
++                return raw + b'\n'
++        return raw
++    monkeypatch.setattr(source_bytes, '_git', broken)
++    with pytest.raises(SourceBytesRefused, match='GIT_BLOB_UNAVAILABLE'):
++        verify_head_test_sources(root, head, hashes)
++    assert len(reads) == 2

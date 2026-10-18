@@ -1,0 +1,48 @@
+{
+  "cap_bytes": 4194304,
+  "examples": [
+    {
+      "expect": "VALID_IF_ALL_ORIGINAL_BYTE_CHECKS_PASS",
+      "expected_batches": [
+        {
+          "blob_bytes": 4194304,
+          "paths": [
+            "tests/test_a.py",
+            "tests/test_b.py"
+          ]
+        },
+        {
+          "blob_bytes": 1,
+          "paths": [
+            "tests/test_c.py"
+          ]
+        }
+      ],
+      "paths": [
+        "tests/test_a.py",
+        "tests/test_b.py",
+        "tests/test_c.py"
+      ],
+      "sizes": [
+        3145728,
+        1048576,
+        1
+      ]
+    },
+    {
+      "expect": "REFUSE_BEFORE_BODY",
+      "sizes": [
+        4194305
+      ]
+    },
+    {
+      "expect": "GIT_BLOB_MISMATCH",
+      "later_batch_work_CRLF": true
+    },
+    {
+      "expect": "GIT_BLOB_UNAVAILABLE",
+      "later_batch_extra_tail": true
+    }
+  ],
+  "kind": "LITERAL_DESIGN_ORACLE_NOT_EXECUTED"
+}

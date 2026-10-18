@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="25" time="4.120" timestamp="2026-10-18T22:52:15.959231+00:00" hostname="9eff6a810039"><testcase classname="tests.test_source_bytes" name="test_autocrlf_checkout_preserves_bound_lf" time="0.072" /><testcase classname="tests.test_source_bytes" name="test_raw_tampering_is_refused[crlf]" time="0.067" /><testcase classname="tests.test_source_bytes" name="test_raw_tampering_is_refused[byte]" time="0.066" /><testcase classname="tests.test_source_bytes" name="test_raw_tampering_is_refused[forged_hash]" time="0.056" /><testcase classname="tests.test_source_bytes" name="test_raw_tampering_is_refused[staged]" time="0.070" /><testcase classname="tests.test_source_bytes" name="test_wrong_or_malformed_claim_refused[0000000000000000000000000000000000000000]" time="0.064" /><testcase classname="tests.test_source_bytes" name="test_wrong_or_malformed_claim_refused[bad]" time="0.052" /><testcase classname="tests.test_source_bytes" name="test_wrong_or_malformed_claim_refused[AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA]" time="0.072" /><testcase classname="tests.test_source_bytes" name="test_untracked_file_not_bound_to_head" time="0.069" /><testcase classname="tests.test_source_bytes" name="test_git_timeout_has_fixed_operation_reason[rev-parse-SOURCE_HEAD_UNAVAILABLE]" time="0.056" /><testcase classname="tests.test_source_bytes" name="test_git_timeout_has_fixed_operation_reason[cat-file-GIT_BLOB_UNAVAILABLE]" time="0.063" /><testcase classname="tests.test_source_bytes" name="test_more_than_four_mib_checks_all_sources_in_bounded_reads" time="0.314" /><testcase classname="tests.test_source_bytes" name="test_later_batch_raw_tampering_is_still_refused[byte]" time="0.284" /><testcase classname="tests.test_source_bytes" name="test_later_batch_raw_tampering_is_still_refused[forged_hash]" time="0.281" /><testcase classname="tests.test_source_bytes" name="test_later_batch_raw_tampering_is_still_refused[crlf]" time="0.351" /><testcase classname="tests.test_source_bytes" name="test_later_batch_raw_tampering_is_still_refused[staged]" time="0.313" /><testcase classname="tests.test_source_bytes" name="test_exact_four_mib_file_can_use_its_own_bounded_batch" time="0.274" /><testcase classname="tests.test_source_bytes" name="test_single_oversize_blob_refuses_before_any_body_read" time="0.195" /><testcase classname="tests.test_source_bytes" name="test_later_batch_bad_protocol_is_not_partial_success[header]" time="0.272" /><testcase classname="tests.test_source_bytes" name="test_later_batch_bad_protocol_is_not_partial_success[short]" time="0.227" /><testcase classname="tests.test_source_bytes" name="test_later_batch_bad_protocol_is_not_partial_success[separator]" time="0.267" /><testcase classname="tests.test_source_bytes" name="test_later_batch_bad_protocol_is_not_partial_success[tail]" time="0.240" /><testcase classname="tests.test_acceptance_runner" name="test_whole_acceptance_never_passes_and_missing_tests_are_incomplete" time="0.002" /><testcase classname="tests.test_acceptance_runner" name="test_fixed_bindings_complete_unique_and_safe" time="0.011" /><testcase classname="tests.test_acceptance_runner" name="test_sources_archive_integrity" time="0.000"><failure message="FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pw-source-batches-final-jh9cbunj/mirror/docs/sources/V1/manifest.json'">def test_sources_archive_integrity():
+&gt;       records=json.loads((ROOT/'docs/sources/V1/manifest.json').read_text(encoding='utf-8'))
+                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_acceptance_runner.py:40: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1027: in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = PosixPath('/tmp/pw-source-batches-final-jh9cbunj/mirror/docs/sources/V1/manifest.json')
+mode = 'r', buffering = -1, encoding = 'utf-8', errors = None, newline = None
+
+    def open(self, mode='r', buffering=-1, encoding=None,
+             errors=None, newline=None):
+        """
+        Open the file pointed to by this path and return a file object, as
+        the built-in open() function does.
+        """
+        if "b" not in mode:
+            encoding = io.text_encoding(encoding)
+&gt;       return io.open(self, mode, buffering, encoding, errors, newline)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pw-source-batches-final-jh9cbunj/mirror/docs/sources/V1/manifest.json'
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/pathlib.py:1013: FileNotFoundError</failure></testcase></testsuite></testsuites>

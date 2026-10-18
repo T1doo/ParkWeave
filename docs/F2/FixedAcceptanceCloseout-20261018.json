@@ -1,0 +1,1036 @@
+{
+  "baseline": "e08f2f60f87ff54bdbb3a2e9f9bdd9b60dc46e03",
+  "kind": "READONLY_FIXED_ORACLE_SCOPE_AUDIT_NOT_EXECUTION",
+  "fixed_cases": 42,
+  "original_36_table_fields_verbatim_match": true,
+  "formal_statuses_changed": 0,
+  "reused_test_counts_summed": false,
+  "whole_AT_EX": "NOT_RUN",
+  "source_scope": "Original table/spec plus cited report scopes and selected source/oracle records; no recursive all-link archive audit.",
+  "rows": [
+    {
+      "id": "AT-01",
+      "stage": "F1",
+      "scenario": "Windows原生启动",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "原生进程真实存在，数据可读；WSL2或远程浏览器不替代；错误清晰且不覆盖既有配置",
+      "classification": "ENVIRONMENT_AND_NATIVE_ADAPTER",
+      "remaining": "Linux/Server工程证据；Win11真实启动/停止/再启未签。需要真实Win11及已有安装/测试owner条件、已审native创建回执适配；owner/ACL暂停仍生效。",
+      "evidence_reports": [
+        "docs/F1/Win11FirstUseRemaining.md",
+        "docs/F2/ENG097-WindowsFullAcceptanceBlockers.md"
+      ],
+      "prior_selectors": [
+        "tests/test_lifecycle.py::test_native_cli_cannot_run_on_linux",
+        "tests/test_lifecycle.py::test_process_identity_refuses_pid_reuse_foreign_command_and_cwd"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-02",
+      "stage": "F1",
+      "scenario": "书生真实工具闭环",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "调用ID、工具回填与修订可核查；无开发模型兜底；不能用stub计通过",
+      "classification": "LIVE_EXECUTION",
+      "remaining": "离线工具/反馈/修订已有；原明确要求真实书生链，需获准模型环境、R4/范围和预算。",
+      "evidence_reports": [
+        "docs/F1/ModelChain.md",
+        "docs/F1/PlanRevision.md"
+      ],
+      "prior_selectors": [
+        "tests/test_intern_adapter.py::test_offline_tool_feedback_and_known_model_case_identity",
+        "tests/test_model_chain.py::test_actual_worker_plan_tool_feedback_and_failures",
+        "tests/test_model_chain.py::test_feedback_resume_keeps_known_effect_and_does_not_repeat_plan",
+        "tests/test_plan_revision.py::test_normal_cli_worker_persists_actual_revision_and_independent_oracle",
+        "tests/test_plan_revision.py::test_invalid_revision_keeps_known_effect_without_publishing_artifact"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-03",
+      "stage": "F1",
+      "scenario": "恶意规格与注入拒绝",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "先拒绝后无业务副作用；不会执行“看得懂的半截”或加载新工具",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "恶意结构/未知动作/注入拒绝已有有限工程证据；完整固定初态和副作用回执尚未整项核齐，未坐实新产品缺陷。",
+      "evidence_reports": [
+        "docs/F1/ModelBoundary.md",
+        "docs/F1/CandidateReview.md"
+      ],
+      "prior_selectors": [
+        "tests/test_authorization_files.py::test_roles_assigned_status_only_no_self_elevation",
+        "tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids",
+        "tests/test_foundation.py::test_rejected_contract_has_no_effect",
+        "tests/test_intern_adapter.py::test_invalid_proposal_is_rejected_before_any_execution",
+        "tests/test_v1_contracts.py::test_v1_source_deadline_tool_and_rule_boundaries"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-04",
+      "stage": "F1",
+      "scenario": "跨企业/园区隔离",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "后端隔离；不能泄露别家资料、身份和预约用途；汇总另授权",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "已有双园区/双企业逐ID与列表隔离、外来资源/方案拒绝；不能由历史窗口直接签当前完整AT。",
+      "evidence_reports": [
+        "docs/F2/OrdinarySyntheticScopesValidation-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_authorization_files.py::test_application_cannot_self_grant_or_register_resource",
+        "tests/test_authorization_files.py::test_cross_scope_even_with_misconfigured_assignment_zero_effect",
+        "tests/test_authorization_files.py::test_identity_scope_change_does_not_carry_old_grants",
+        "tests/test_authorization_files.py::test_logical_file_actual_http_attachment_scope_and_revoked_cache",
+        "tests/test_authorization_files.py::test_roles_assigned_status_only_no_self_elevation",
+        "tests/test_facts_heartbeat.py::test_actual_http_fact_and_assessment_cross_scope_denial"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-05",
+      "stage": "F1",
+      "scenario": "文件和凭证边界",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "只读授权根目录；无密钥/宿主文件外泄；危险内容不执行",
+      "classification": "ENVIRONMENT_AND_RECEIPT",
+      "remaining": "本地导入/下载/转义与私密边界已有；原生私有根/受保护authority及全入口完整验收分别未验。",
+      "evidence_reports": [
+        "docs/F1/WindowsFileCandidate.md",
+        "docs/F2/MaterialFileImport-20261017.md"
+      ],
+      "prior_selectors": [
+        "tests/test_authorization_files.py::test_denied_file_authorization_never_opens_backend",
+        "tests/test_authorization_files.py::test_file_integrity_and_descriptor_boundary",
+        "tests/test_authorization_files.py::test_fixture_writer_cannot_follow_configured_root_symlink",
+        "tests/test_authorization_files.py::test_logical_file_actual_http_attachment_scope_and_revoked_cache",
+        "tests/test_authorization_files.py::test_windows_and_traversal_strings_are_not_file_ids",
+        "tests/test_lifecycle.py::test_child_environment_drops_owner_and_model_secrets",
+        "tests/test_lifecycle.py::test_config_write_is_exclusive_and_no_secret_fields",
+        "tests/test_authorization_files.py::test_insecure_private_directories_rejected_without_repair",
+        "tests/test_authorization_files.py::test_private_directory_wrong_owner_and_new_minimum_mode",
+        "tests/test_lifecycle.py::test_windows_existing_acl_check_does_not_repair_permissions",
+        "tests/test_lifecycle.py::test_environment_whitelist_never_reads_or_forwards_unrelated_keys",
+        "tests/test_windows_file_candidate.py::test_candidate_flow_opens_relative_once_keeps_handles_and_checks_acl_twice",
+        "tests/test_windows_file_candidate.py::test_reparse_every_component_and_bad_object_refused_handles_close",
+        "tests/test_windows_file_candidate.py::test_unsafe_or_unsupported_acl_refused_without_mutators",
+        "tests/test_windows_file_candidate.py::test_linux_does_not_load_dll_or_expose_unsafe_fallback"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-06",
+      "stage": "F1",
+      "scenario": "事实冲突与必要澄清",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "保留双方来源，不猜测有权事实，不把缺值当不符合；必要问题集中展示",
+      "classification": "DOMAIN_SCOPE_AND_RECEIPT",
+      "remaining": "事实来源/冲突/必要澄清/历史用途已有有限合同；具体新领域的字段、用途及核实责任另需定义，不推断真实性或臆造一般算法缺陷。",
+      "evidence_reports": [
+        "docs/F2/FactHistoryComparison-20261016.md",
+        "docs/F2/LocalSourceFacts-20261016.md"
+      ],
+      "prior_selectors": [
+        "tests/test_facts_heartbeat.py::test_api_facts_conflict_missing_and_independent_source_preservation",
+        "tests/test_facts_heartbeat.py::test_expired_fact_never_becomes_known_and_idempotency",
+        "tests/test_candidate_review.py::test_normal_cli_source_projection_questions_and_independent_hash",
+        "tests/test_candidate_review.py::test_existing_assertion_history_not_promoted_or_overwritten",
+        "tests/test_candidate_review.py::test_expired_source_and_empty_fields_unknown",
+        "tests/test_candidate_review.py::test_cross_org_park_review_and_answer_denied",
+        "tests/test_candidate_review.py::test_current_read_write_and_role_intersection",
+        "tests/test_candidate_review.py::test_assigned_status_role_never_reads_candidates",
+        "tests/test_candidate_review.py::test_queued_revoke_no_review_side_effect",
+        "tests/test_candidate_review.py::test_revocation_after_mock_projection_rechecked",
+        "tests/test_candidate_review.py::test_control_during_mock_wait_old_fence_cannot_publish",
+        "tests/test_candidate_review.py::test_mock_value_disagrees_preserve_source_and_stays_unknown",
+        "tests/test_candidate_review.py::test_clarification_append_only_lineage_retry_conflict_and_cancel",
+        "tests/test_candidate_review.py::test_missing_answer_becomes_only_unverified_not_known",
+        "tests/test_candidate_review.py::test_answer_retry_rechecks_grants_and_rejects_out_of_review_field",
+        "tests/test_candidate_review.py::test_cancel_queued_child_no_review_and_no_change_parent",
+        "tests/test_candidate_review.py::test_review_transaction_failure_restart_fence_and_immutable_history",
+        "tests/test_candidate_review.py::test_invalid_mock_projection_never_persisted",
+        "tests/test_candidate_review.py::test_untrusted_candidate_contract_rejects_origin_promotion_new_field_real_source",
+        "tests/test_candidate_review.py::test_concurrent_clarification_same_key_one_child"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-07",
+      "stage": "F2",
+      "scenario": "复合目标服务编排",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "必需目标不删；步骤有责任与验收；不可行明确等待/拒绝，软件输出不是虚假履约",
+      "classification": "LIVE_SUBCASE_AND_RECEIPT",
+      "remaining": "有限注册选择/重建/显式采纳/P1–P5及冷恢复已交付；真实模型选择部分未验，不能用NO_MODEL代替；原文并不要求任意无界DAG。",
+      "evidence_reports": [
+        "docs/F2/LocalDemoCaseStepChainValidation-20261018.md",
+        "docs/F2/ATServiceColdEntry-20261014.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-08",
+      "stage": "F2",
+      "scenario": "模板新输入与冷会话",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "产生新Case和结果；不复制旧材料/授权；错误明确处理",
+      "classification": "FORMAL_TEMPLATE_WIRING",
+      "remaining": "隔离合成模板新输入及错误输入已有；普通正式模板来源/主体/发布与消费接线未完成。合成测试不必等待正式adapter。",
+      "evidence_reports": [
+        "docs/F2/OrdinaryTemplateInputValidation-20261018.md",
+        "docs/F2/ATServiceColdEntry-20261014.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-09",
+      "stage": "F2",
+      "scenario": "本地组合资源确认",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "同本地事务全成功或全不提交；部分替代需重新选方案；不会残留未说明占用",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "原双资源和3–8成员组合全成/全不提交、取消与恢复已有；固定整项回执未汇齐，不追加无界组合要求。",
+      "evidence_reports": [
+        "docs/F2/ENG021-ResourceCombinations.md",
+        "docs/F2/BoundedResourceBundles.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-10",
+      "stage": "F2",
+      "scenario": "并发最后名额",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "总有效确认不超容量；同键不重复，不同指纹冲突",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "容量竞争、同键/异指纹和并发取消已有工程证据；真实部署容量或全固定AT未签。",
+      "evidence_reports": [
+        "docs/F2/ENG018-ResourceHolds.md",
+        "docs/F2/ENG021-ResourceCombinations.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-11",
+      "stage": "F2",
+      "scenario": "陈旧批准与过期占位",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "提交时重验并拒绝陈旧批准；数据库当前时点判断占位，不靠清理任务才过期",
+      "classification": "AUTHORITY_SCOPE_AND_RECEIPT",
+      "remaining": "数据库时点占位过期、合成方案Approval和协作目录提交窗已有；真实批准来源/适用动作另需实际合同，不能用Run READ代替。",
+      "evidence_reports": [
+        "docs/F2/ServicePlanApproval.md",
+        "docs/F2/CatalogApprovalCoordination.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-12",
+      "stage": "F2",
+      "scenario": "多人协同最小权限",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "只允许所获派数据与动作；所有入口一致，改变客户端角色无效",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "普通CaseStep精确参与者、当前权限、本人接单/回执已有；新窄模式无Run assignment，正式既有Run分派路径仍各按原准入。",
+      "evidence_reports": [
+        "docs/F2/OrdinaryCaseStepValidation-20261018.md",
+        "docs/F2/OrdinarySyntheticScopesValidation-20261018.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-13",
+      "stage": "F2",
+      "scenario": "Case与Run成功分离",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "Run可成功，Case仍待补件；不得计业务目标已交付",
+      "classification": "ENGINEERING_ENTRY_SELECTED",
+      "remaining": "已有Run成功/Case未完成分离及原worker重启节点；本轮仅借原AT13工程入口验证容量修复，不回填whole_status。",
+      "evidence_reports": [
+        "docs/F2/LocalDemoCaseStepChainValidation-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_foundation.py::test_api_worker_process_restart_and_business_separation"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-14",
+      "stage": "F2",
+      "scenario": "预览与真实数据隔离",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "预览只影响测试命名空间，不能占用生产资源或沿用生产Grant",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "P1–P5有限隔离执行/公表不变和源快照边界已有；结构只读预览不冒充执行隔离，完整固定回执仍待逐项核齐。",
+      "evidence_reports": [
+        "docs/F2/IsolatedExecutionPreview.md",
+        "docs/F2/P2ResourceExecutionPreview.md",
+        "docs/F2/P3DispatchExecutionPreview.md",
+        "docs/F2/P4ReceiptExecutionPreview.md",
+        "docs/F2/P5LocalCasePreview.md",
+        "docs/F2/PreviewCommitProtection.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-15",
+      "stage": "F2",
+      "scenario": "履约核验与重开",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "发送不等于履约；无证据不关闭；冲突需复核；重开不抹历史",
+      "classification": "BUSINESS_EVIDENCE_AND_RECEIPT",
+      "remaining": "本地核对关闭/重开、手工回执、异议与反馈DOM已交付；不再重做。真实承诺交付/Case FULFILLED需对应证据及授权确认。",
+      "evidence_reports": [
+        "docs/F2/OrdinaryCaseRecordRecheckValidation-20261018.md",
+        "docs/F2/OriginalCollaborationDOMValidation-20261018.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-16",
+      "stage": "F1",
+      "scenario": "outbox与消息去重",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "业务与事件意图不分离丢失；同事件不重复逻辑效果；陈旧事件不覆盖新版",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "事务outbox/去重/倒序/本人通知已有；不同事件族分别保留范围，无须为PR0接真实外部消息。",
+      "evidence_reports": [
+        "docs/F2/OrdinaryCaseStepValidation-20261018.md",
+        "docs/F2/CaseStepNoticeValidation-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_authorization_files.py::test_outbox_ack_fault_rolls_back_delivery_monotonic_replay",
+        "tests/test_authorization_files.py::test_outbox_revoked_before_consume_suppressed_after_delivery_retracted",
+        "tests/test_worker_gateway.py::test_real_api_worker_unknown_reconcile_outbox_and_no_duplicate"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-17",
+      "stage": "F1",
+      "scenario": "worker失联与旧worker回报",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "已提交效果不重复，旧token不能写新状态，结果未明先核对",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "租约fencing/旧worker/原幂等恢复已有；各适配器组合回执尚非完整AT，未坐实新算法缺陷。",
+      "evidence_reports": [
+        "docs/F1/Log.md",
+        "docs/F2/OrdinaryCaseStepValidation-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_facts_heartbeat.py::test_heartbeat_renews_independently_during_mock_wait_and_competing_worker_cannot_steal",
+        "tests/test_facts_heartbeat.py::test_killed_waiting_worker_lease_expires_and_old_heartbeat_cannot_resurrect",
+        "tests/test_worker_gateway.py::test_actual_expiry_recovery_after_crash_does_not_dispatch_again",
+        "tests/test_plan_revision.py::test_after_artifact_and_terminal_run_outbox_atomic_recovery_no_new_call",
+        "tests/test_account_rate.py::test_rate_deferred_feedback_resumes_no_duplicate_case_or_plan",
+        "tests/test_account_rate.py::test_rate_denial_retry_is_bounded_three_attempts_known_effect_preserved",
+        "tests/test_candidate_review.py::test_review_transaction_failure_restart_fence_and_immutable_history"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-18",
+      "stage": "F1",
+      "scenario": "暂停取消在途动作",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "不派发新动作；不把取消当撤销；未知保持核对；已有影响可见",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "在途取消/未知核对/旧效果历史已有；取消不当释放或撤销；相关拒绝和未知窗不重试。",
+      "evidence_reports": [
+        "docs/F2/CaseCancellationBeforeReceiptEvidence.md",
+        "docs/F2/Schema33BeforeReceiptCancellation-20261016.md"
+      ],
+      "prior_selectors": [
+        "tests/test_facts_heartbeat.py::test_wait_revocation_or_cancel_aborts_without_assessment_or_deadlock",
+        "tests/test_worker_gateway.py::test_real_worker_crash_old_callback_control_and_effect_visibility"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-19",
+      "stage": "F1",
+      "scenario": "撤权与缓存",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "当前授权优先，旧缓存/批准不恢复授权；记录在途无法收回边界",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "当前撤权/403清屏/ABA/历史只读已覆盖有限场景；不将已导出副本说成可收回，也不再扩全缓存矩阵刷数。",
+      "evidence_reports": [
+        "docs/F2/OrdinaryCaseStepValidation-20261018.md",
+        "docs/F2/OrdinaryTemplateInputValidation-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_authorization_files.py::test_action_grant_and_role_change_cannot_reuse_queued_identity",
+        "tests/test_authorization_files.py::test_field_delivery_after_withdrawal_retracted",
+        "tests/test_authorization_files.py::test_logical_file_actual_http_attachment_scope_and_revoked_cache",
+        "tests/test_authorization_files.py::test_outbox_field_grant_revoked_before_consume",
+        "tests/test_authorization_files.py::test_outbox_revoked_before_consume_suppressed_after_delivery_retracted",
+        "tests/test_authorization_files.py::test_queued_execution_rechecks_current_capability",
+        "tests/test_facts_heartbeat.py::test_grant_revoke_blocks_cached_receipt_new_read_and_write_and_seed_does_not_restore",
+        "tests/test_worker_gateway.py::test_real_worker_revocation_before_dispatch_and_after_effect",
+        "tests/test_plan_revision.py::test_current_authority_and_cross_scope_no_revision_leak",
+        "tests/test_plan_revision.py::test_assigned_status_role_never_receives_plan_documents",
+        "tests/test_candidate_review.py::test_revocation_after_mock_projection_rechecked",
+        "tests/test_candidate_review.py::test_current_read_write_and_role_intersection"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-20",
+      "stage": "F1",
+      "scenario": "外部结果不明工程测试",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "OUTCOME_UNKNOWN不盲重发；失败适配器明确标FAULT_INJECTION，不称真实集成",
+      "classification": "FAULT_ALLOWED_AND_RECEIPT",
+      "remaining": "原计划明确PR0只用FAULT_INJECTION测试外部未知结果；不需要真实连接器作为本项前提，已有故障/恢复证据不可当真实集成。",
+      "evidence_reports": [
+        "docs/F1/ModelChain.md",
+        "docs/F2/RecoveryDeadlinesAndTemplateFixtures-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_worker_gateway.py::test_crash_without_observed_effect_stays_unknown_and_stops_automatic_queries",
+        "tests/test_worker_gateway.py::test_invalid_receipt_rejected_by_actual_worker_gateway"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-21",
+      "stage": "F3",
+      "scenario": "准备度三值",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "三值结果符合独立真值表；无证据不通过；不显示官方审批结论",
+      "classification": "FINITE_CASE_REUSED",
+      "remaining": "已有有限合成独立真值表/原路由回执；复用，不重跑原受阻runner、不提升为任意政策或全AT。",
+      "evidence_reports": [
+        "docs/F2/AT21SyntheticReadinessValidation-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_foundation.py::test_independent_three_value_truth_table"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-22",
+      "stage": "F3",
+      "scenario": "地区日期与规则版本",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "不混用地区或失效版本；未审核候选不直接用于承诺；历史按当时规则留存",
+      "classification": "FINITE_CASE_REUSED",
+      "remaining": "已有地区/指定业务时点/源版本/候选发布/历史有限接口回执；真实规则适用性另列。",
+      "evidence_reports": [
+        "docs/F2/AT22AT23FiniteValidation-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_facts_heartbeat.py::test_expired_fact_never_becomes_known_and_idempotency",
+        "tests/test_synthetic_rule_readiness_api.py::test_at22_api_business_date_region_and_reviewed_version_keep_original_history"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-23",
+      "stage": "F3",
+      "scenario": "材料清单与不伪造",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "缺事实留缺口；不生成虚假资质/财务/签章；材料齐全不冒充已批准",
+      "classification": "HISTORICAL_EVIDENCE_REUSED",
+      "remaining": "已有缺事实/缺材料/草稿UNVERIFIED/独立审核/实际下载证据；不重复材料复用DOM，不伪造真实资质。",
+      "evidence_reports": [
+        "docs/F2/AT22AT23FiniteValidation-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_readiness_checklist.py::test_missing_and_actual_evidence_read_only_without_policy_invention",
+        "tests/test_material_preparation_drafts.py::test_no_selection_does_not_generate_a_brief_or_guess_required_policy_materials",
+        "tests/test_material_preparation_drafts.py::test_actual_brief_selected_values_missing_directory_persistence_and_independent_review"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-24",
+      "stage": "F3",
+      "scenario": "机会提示作用域和去重",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "只匹配有权企业；同版本不重复骚扰；不外发消息或宣称后台一直在线",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "已有IMPORT/REFRESH/IGNORE/来源机会明确采纳与去重；早期F1未实现gate过时，不作当前功能缺口依据。",
+      "evidence_reports": [
+        "docs/F2/SourceOpportunityAdoption-20261015.md",
+        "docs/F2/ServiceCatalogQueryDependencyValidation-20261018.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-25",
+      "stage": "F3",
+      "scenario": "依赖失效与未知扩大重验",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "确定依赖更新；未知扩大重验而非乱改；分别报告漏更新与误改",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "已有有限多来源/查询集合/资源成员传播及确定/UNKNOWN影响；36行设计oracle不当实际36次执行；漏更/误改仍需对应独立样例回执。",
+      "evidence_reports": [
+        "docs/F2/UnifiedSourcePropagation-20261016.md",
+        "docs/F2/ResourceQueryMemberGraphValidation-20261018.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-26",
+      "stage": "F3",
+      "scenario": "人工锁与历史事实",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "LOCK_CONFLICT保留原内容；未解冲突不自动发布；历史不删除，当前有效性单列",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "原LOCK/UNLOCK、冲突/历史与显式重验已交付；不静默覆盖或重做该功能。",
+      "evidence_reports": [
+        "docs/F2/ServicePlanManualLock.md",
+        "docs/F2/FactHistoryComparison-20261016.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-27",
+      "stage": "F3",
+      "scenario": "定义升级与业务数据",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "阻止不兼容操作；版本回退不回滚业务事实，预检有证据",
+      "classification": "RECEIPT_SCOPE_AND_FORMAL_GOVERNANCE",
+      "remaining": "已有不兼容拒绝/兼容新版本独立新Case/有限模板迁移证据；正式发布治理需实际主体合同，首版允许拒绝破坏性迁移，并非必须实现任意迁移。",
+      "evidence_reports": [
+        "docs/F2/TemplateStructureMigrationDelivery-20261015.md",
+        "docs/F2/CompatibleReleaseIndependentNewCase-20261016.md"
+      ],
+      "prior_selectors": [
+        "tests/test_authorization_files.py::test_additive_unreleased_grant_scope_migration_preserves_withdrawal",
+        "tests/test_worker_gateway.py::test_upgrade_legacy_database_preserves_business_history"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-28",
+      "stage": "F2",
+      "scenario": "资源状态新鲜度",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "显示来源/时间及需确认；本地非权威快照不能保证外部资源可用",
+      "classification": "FINITE_CASE_REUSED",
+      "remaining": "最新当前资源来源/版本/UTC观察及确认已交付；外部可用性UNKNOWN，不能因本地写入声称真实预约。",
+      "evidence_reports": [
+        "docs/F2/AT28CurrentResourceObservationValidation-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_at28_resource_observation.py::test_current_preview_source_is_not_prior_catalog_and_writes_nothing",
+        "tests/test_at28_resource_observation.py::test_original_page_discloses_current_source_before_explicit_local_confirmation"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-29",
+      "stage": "F2",
+      "scenario": "时间与办理期限",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "UTC存储和业务时区一致；[start,end)与缓冲正确；无来源不编SLA，非法暂停被拒",
+      "classification": "FUNCTIONAL_CONTRACT_GAP",
+      "remaining": "合法停表尚无产品写入：任意非空pauses返回PAUSE_AUTHORITY_UNAVAILABLE。需最小本地actor/授权用途/受控理由/Case-policy绑定和事件合同；独立批准人/签名head是后加设计选择，非原硬前提。",
+      "evidence_reports": [
+        "docs/F2/HandlingDeadlineReadOnly.md",
+        "docs/F2/HandlingDeadlineReadOnlyContract.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-30",
+      "stage": "F1",
+      "scenario": "限流截断与全成本",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "共享或明确划分总额度；非流式工具完整校验；步骤有上限；未知usage不记零；注入不冒充真实上游",
+      "classification": "LIVE_SUBCASE_AND_RECEIPT",
+      "remaining": "共享账号协调/截断/usage未知/全成本有工程子集；供应商真实限流/预算和两真实产品共享部署需相应LIVE条件，其他技术子项可LOCAL。",
+      "evidence_reports": [
+        "docs/F1/AccountRate.md",
+        "docs/F1/JobAccountingLength.md"
+      ],
+      "prior_selectors": [
+        "tests/test_intern_adapter.py::test_atomic_offline_attempt_budget_and_unknown_usage",
+        "tests/test_intern_adapter.py::test_errors_timeout_truncation_usage_and_no_automatic_retry",
+        "tests/test_model_chain.py::test_two_products_coordinate_same_account_atomically",
+        "tests/test_model_chain.py::test_unknown_sent_work_survives_restart_no_refund_or_resend",
+        "tests/test_model_chain.py::test_real_transport_gate_zero_network_without_live_budget",
+        "tests/test_account_rate.py::test_thirty_first_immediate_send_denied_and_unsent_refunded",
+        "tests/test_account_rate.py::test_exact_sixty_second_boundary_and_same_unsent_work_retry",
+        "tests/test_account_rate.py::test_held_and_inflight_do_not_expire_delayed_send_cooldown_from_finish",
+        "tests/test_account_rate.py::test_release_unsent_held_slot_once_no_refund_sent_or_unknown",
+        "tests/test_account_rate.py::test_reopened_unsent_work_fences_old_generation",
+        "tests/test_account_rate.py::test_lowered_rate_rechecked_at_dispatch_and_zero_disables",
+        "tests/test_account_rate.py::test_clock_rewind_blocks_send_and_finish_is_conservative",
+        "tests/test_account_rate.py::test_cross_worker_account_admission_atomic",
+        "tests/test_account_rate.py::test_two_synthetic_products_same_coordinator_share_thirty_slots",
+        "tests/test_account_rate.py::test_clock_and_rate_policy_owner_only_live_ignores_synthetic_clock",
+        "tests/test_account_rate.py::test_live_config_presence_checks_names_only",
+        "tests/test_account_rate.py::test_live_missing_names_fail_closed",
+        "tests/test_account_rate.py::test_live_each_explicit_precondition_required",
+        "tests/test_account_rate.py::test_default_live_off_does_not_even_iterate_names",
+        "tests/test_account_rate.py::test_coordinator_upgrade_idempotent_and_sent_history_preserved"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-31",
+      "stage": "F3",
+      "scenario": "公平对照与验收不降低",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "各组有合理能力且安全保护相同；固定标准不被模型降低；保留全部失败和修复成本",
+      "classification": "EVALUATION_DESIGN_AND_LIVE",
+      "remaining": "B0/B1/B2实际公平对照未完成；B1明确同真实书生模型需LIVE，B0/B2技术REPLAY可独立做；缺冻结同目录/任务/独立答案与全失败成本回执，不等同缺新业务算法。",
+      "evidence_reports": [
+        "docs/F1/DataLedger.md",
+        "docs/F2/PR0-CoverageAt-a1e6022.md"
+      ],
+      "prior_selectors": [
+        "tests/test_acceptance_runner.py::test_whole_acceptance_never_passes_and_missing_tests_are_incomplete"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-32",
+      "stage": "F3",
+      "scenario": "数据来源与效果声明",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "各类分列；无真实试点就明确无证据；不能把校园模拟/专家检查当园区上线",
+      "classification": "FINITE_REPLAY_CASE_REUSED",
+      "remaining": "已有无试点来源/披露完整性有限REPLAY回执，原四条件通过只属冻结包；无真实试点/收益主张，旧runner0tests拒绝保留。",
+      "evidence_reports": [
+        "docs/F2/AT32SourceDisclosureValidation-20261018.md"
+      ],
+      "prior_selectors": [
+        "tests/test_acceptance_runner.py::test_sources_archive_integrity"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-33",
+      "stage": "F3",
+      "scenario": "第二园区配置迁移",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "结果可核对、不同园区隔离；统计人工配置/代码与回归问题，不预设一键迁移",
+      "classification": "SECOND_SCOPE_BC_RECEIPT_GAP",
+      "remaining": "双scope原办理属于业务A；第二scope B准备度/C变化闭环及配置/代码成本实际回执未齐。代码已有scope过滤，未坐实独立算法缺陷，不另造迁移loader。",
+      "evidence_reports": [
+        "docs/F2/OrdinarySyntheticScopesValidation-20261018.md",
+        "docs/F2/ATServiceColdEntry-20261014.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-34",
+      "stage": "F3",
+      "scenario": "干净Windows复现与关机边界",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "隐含依赖可见；关机期间不报继续运行；重开不重复操作，占位按当前时钟失效",
+      "classification": "ENVIRONMENT_AND_NATIVE_ADAPTER",
+      "remaining": "干净Win11/关机与重开/过期撤权真实环境未验；与AT01同类，但不由Linux冷重启替代。",
+      "evidence_reports": [
+        "docs/F1/Win11FirstUseRemaining.md",
+        "docs/F2/ENG097-WindowsFullAcceptanceBlockers.md"
+      ],
+      "prior_selectors": [
+        "tests/test_lifecycle.py::test_native_cli_cannot_run_on_linux"
+      ],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-35",
+      "stage": "F2",
+      "scenario": "首个完整办理和重新使用",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "关键状态持久化并能被对应角色操作；不靠手改源码/数据库；不同输入输出不混淆",
+      "classification": "RECEIPT_SCOPE",
+      "remaining": "新事项原全链/再次输入、独立材料及跨scope、反馈DOM与关闭重开均有各自工程证据；不能相加为一条正式完整AT；不再实现同一入口。",
+      "evidence_reports": [
+        "docs/F2/LocalDemoCaseStepChainValidation-20261018.md",
+        "docs/F2/OrdinarySyntheticScopesValidation-20261018.md",
+        "docs/F2/OriginalCollaborationDOMValidation-20261018.md",
+        "docs/F2/MaterialReuseDOMValidation-20261018.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "AT-36",
+      "stage": "C0",
+      "scenario": "单PDF及双赛道提交核查",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "单PDF符合所取得规则；不移植他赛道硬要求；未知项阻塞而非默认为通过；无虚构链接/效果",
+      "classification": "C0_INPUTS_AND_DELIVERY",
+      "remaining": "当前未提供可核官方模板/规则/准确截止时区与双赛道边界；单PDF/真实视频二维码访问/实际提交回执未完成。C0不依赖F4–F6。",
+      "evidence_reports": [
+        "docs/F2/RemainingDeliveryGates-20261018.md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "EX-01",
+      "stage": "F4",
+      "scenario": "真实连接器权限、幂等、回执与非原子补偿；无授权接口保持关闭",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "真实连接器权限、幂等、回执与非原子补偿；无授权接口保持关闭",
+      "classification": "FUTURE_PHASE",
+      "remaining": "原F4–F6增强项，按其连接授权/在线/生态/运营条件单独启用；不是PR0或C0新增前置。",
+      "evidence_reports": [
+        "docs/sources/V1/分阶段开发计划 (2).md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "EX-02",
+      "stage": "F4",
+      "scenario": "自动触发签名、去重、过期、错过执行、在线停止与权限撤回",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "自动触发签名、去重、过期、错过执行、在线停止与权限撤回",
+      "classification": "FUTURE_PHASE",
+      "remaining": "原F4–F6增强项，按其连接授权/在线/生态/运营条件单独启用；不是PR0或C0新增前置。",
+      "evidence_reports": [
+        "docs/sources/V1/分阶段开发计划 (2).md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "EX-03",
+      "stage": "F5",
+      "scenario": "能力包许可、企业资料不随包复制、供需候选与引荐授权",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "能力包许可、企业资料不随包复制、供需候选与引荐授权",
+      "classification": "FUTURE_PHASE",
+      "remaining": "原F4–F6增强项，按其连接授权/在线/生态/运营条件单独启用；不是PR0或C0新增前置。",
+      "evidence_reports": [
+        "docs/sources/V1/分阶段开发计划 (2).md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "EX-04",
+      "stage": "F5",
+      "scenario": "复杂规则升级、第二配置迁移、实际使用与预约统计分离",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "复杂规则升级、第二配置迁移、实际使用与预约统计分离",
+      "classification": "FUTURE_PHASE",
+      "remaining": "原F4–F6增强项，按其连接授权/在线/生态/运营条件单独启用；不是PR0或C0新增前置。",
+      "evidence_reports": [
+        "docs/sources/V1/分阶段开发计划 (2).md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "EX-05",
+      "stage": "F6",
+      "scenario": "实测负载、数据库/文件备份恢复、故障定位和全量成本",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "实测负载、数据库/文件备份恢复、故障定位和全量成本",
+      "classification": "FUTURE_PHASE",
+      "remaining": "原F4–F6增强项，按其连接授权/在线/生态/运营条件单独启用；不是PR0或C0新增前置。",
+      "evidence_reports": [
+        "docs/sources/V1/分阶段开发计划 (2).md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    },
+    {
+      "id": "EX-06",
+      "stage": "F6",
+      "scenario": "保留删除、密钥轮换、模型/依赖变更和全部已启用能力回归",
+      "original_status": "NOT_RUN",
+      "binding_whole_status": "NOT_RUN",
+      "original_oracle": "保留删除、密钥轮换、模型/依赖变更和全部已启用能力回归",
+      "classification": "FUTURE_PHASE",
+      "remaining": "原F4–F6增强项，按其连接授权/在线/生态/运营条件单独启用；不是PR0或C0新增前置。",
+      "evidence_reports": [
+        "docs/sources/V1/分阶段开发计划 (2).md"
+      ],
+      "prior_selectors": [],
+      "new_whole_PASS": false
+    }
+  ],
+  "inputs": {
+    "docs/F1/ATBindings.json": {
+      "bytes": 22548,
+      "sha256": "00552103ecfdcbde0b482ed24e28e82bab3970b244cec91c2b135f60a88ad6aa"
+    },
+    "docs/F1/AccountRate.md": {
+      "bytes": 4575,
+      "sha256": "b2d502dcc4371dc372d108a62702dec3d33139650d6c5d392750689dbfe6a7e8"
+    },
+    "docs/F1/CandidateReview.md": {
+      "bytes": 4590,
+      "sha256": "3994d3669e1a4e5d3198c2550c844a5cd3bd8edaf649031ee61bce6579a75d8e"
+    },
+    "docs/F1/DataLedger.md": {
+      "bytes": 5118,
+      "sha256": "66c88c2fd5378d18fdc8dd99aef5f0acc60ff3be71ab6d2e8967c19c167894cd"
+    },
+    "docs/F1/JobAccountingLength.md": {
+      "bytes": 2530,
+      "sha256": "4b57a0410ff64c1fce1122b7cf650befce45ebf0e43aa31d92115d59b0e3d741"
+    },
+    "docs/F1/Log.md": {
+      "bytes": 86565,
+      "sha256": "add4ebfcdccaa88000237519f0a454fc2a6f52be8319991e37f258fec220f158"
+    },
+    "docs/F1/ModelBoundary.md": {
+      "bytes": 3625,
+      "sha256": "56999387f32ce4f860fe2d082144b8a0a928c982a96e7a54aa43b74610502c28"
+    },
+    "docs/F1/ModelChain.md": {
+      "bytes": 6339,
+      "sha256": "5f858ee5fba2122991da1da9f37f5c0fc3e2c893d5af8ebea92dc8ebeffaa53d"
+    },
+    "docs/F1/PlanRevision.md": {
+      "bytes": 3118,
+      "sha256": "69861c48e5aad060cc45f35135144bae895d8197977a09177e2c69ba64846c17"
+    },
+    "docs/F1/Win11FirstUseRemaining.md": {
+      "bytes": 4625,
+      "sha256": "6cf15c60a322dc740b624b23926313bf3413ffe9acd2d26dfa5a9262613efac2"
+    },
+    "docs/F1/WindowsFileCandidate.md": {
+      "bytes": 8967,
+      "sha256": "225a5c80994fab2cfc52532b57eef1ca4f6de6176d203d17ce9e591a6c491a6d"
+    },
+    "docs/F2/AT21SyntheticReadinessValidation-20261018.md": {
+      "bytes": 8175,
+      "sha256": "01f64aa2ebaffd574832019115a4bfd533a0a99cb15c23c9ad93184d8c9da7e6"
+    },
+    "docs/F2/AT22AT23FiniteValidation-20261018.md": {
+      "bytes": 5806,
+      "sha256": "88a6c82b0d53dca980e9e281348873420e8a7748da7e497b707e68c873be6c6a"
+    },
+    "docs/F2/AT28CurrentResourceObservationValidation-20261018.md": {
+      "bytes": 8755,
+      "sha256": "b0f7d86f430ebf19a0afb41e82803d56059b5a318a3b847c9408bcdf936def9f"
+    },
+    "docs/F2/AT32SourceDisclosureValidation-20261018.md": {
+      "bytes": 7344,
+      "sha256": "1f08a2cc3d63d1729988a08d96d6464257e76fe6103053d51f422b6090625893"
+    },
+    "docs/F2/ATServiceColdEntry-20261014.md": {
+      "bytes": 7631,
+      "sha256": "44bb0edd2a559b68ac4e7a64ea3bc7dc0a53f631b671c5366eb3d22e63e06428"
+    },
+    "docs/F2/BoundedResourceBundles.md": {
+      "bytes": 5604,
+      "sha256": "c8f559d45f7d59f541a98f07a266e8ae893e7b0fda11d6faa35e8ee147ff560d"
+    },
+    "docs/F2/CaseCancellationBeforeReceiptEvidence.md": {
+      "bytes": 10719,
+      "sha256": "1a09d310cb772699f48e35b98ecd52318cd9b617575d86ba54f8ce46e47aed85"
+    },
+    "docs/F2/CaseStepNoticeValidation-20261018.md": {
+      "bytes": 10163,
+      "sha256": "e90d79df9a6ffed118c0c5ae4e6ffd4f1e991c646988c986d88ec14909a526c0"
+    },
+    "docs/F2/CatalogApprovalCoordination.md": {
+      "bytes": 6184,
+      "sha256": "83693c61dbdbfc140352a0d996a7ce7917274a6e78ddd4558c86d7fe97ac988f"
+    },
+    "docs/F2/CompatibleReleaseIndependentNewCase-20261016.md": {
+      "bytes": 9065,
+      "sha256": "2796ae3450bfa65d4b70b611fa1141391a0c88477f042123219ec46ed2704035"
+    },
+    "docs/F2/ENG018-ResourceHolds.md": {
+      "bytes": 5917,
+      "sha256": "1496838a6ec0907e7c9a16c528b66af92534f527a59355c06b594c7bf97e2441"
+    },
+    "docs/F2/ENG021-ResourceCombinations.md": {
+      "bytes": 2673,
+      "sha256": "1167c637e32a4b389771ad5410da61c3913878f1bf4692e3b6396eab0456468d"
+    },
+    "docs/F2/ENG097-WindowsFullAcceptanceBlockers.md": {
+      "bytes": 14373,
+      "sha256": "e5bc08a573fba7241d867d165eaafd2354f16dc09589c679fef39f30e679c973"
+    },
+    "docs/F2/FactHistoryComparison-20261016.md": {
+      "bytes": 5189,
+      "sha256": "d6c2a279a2a017dd0f6e6b455c6e4a01e5a1ad0a5e55161c2de1399614958ffc"
+    },
+    "docs/F2/HandlingDeadlineReadOnly.md": {
+      "bytes": 5972,
+      "sha256": "be21027cd2575da8a3dd772a08226bccebdb86ca9c36fc35f2699f1a64c3bff7"
+    },
+    "docs/F2/HandlingDeadlineReadOnlyContract.md": {
+      "bytes": 6285,
+      "sha256": "9b7c3f35fab8cf92b73b130fca111f0cd58e6e8458f8c092a4f127af700cac85"
+    },
+    "docs/F2/IsolatedExecutionPreview.md": {
+      "bytes": 5494,
+      "sha256": "48ba86330f4a20a050b620dc67a82dd6aa882984863be0c48892da08bc77b766"
+    },
+    "docs/F2/LocalDemoCaseStepChainValidation-20261018.md": {
+      "bytes": 7387,
+      "sha256": "0880ffa10d1e7c759d8cc975d988d9bde97bd36464a70c174f120dc9f4438f24"
+    },
+    "docs/F2/LocalSourceFacts-20261016.md": {
+      "bytes": 7744,
+      "sha256": "c1d148fc70aa805728021c28e73b8897307efece0bb633e0dacf2338ea94101f"
+    },
+    "docs/F2/MaterialFileImport-20261017.md": {
+      "bytes": 6814,
+      "sha256": "7d85766800cae696d9c60c4306b70d920ecf60ddb3cb15f0faed83f602fb8839"
+    },
+    "docs/F2/MaterialReuseDOMValidation-20261018.md": {
+      "bytes": 8448,
+      "sha256": "99634d51136629d6662aef20a655cdb68e9b964777cbbe6cab468da6ac075a45"
+    },
+    "docs/F2/OrdinaryCaseRecordRecheckValidation-20261018.md": {
+      "bytes": 12706,
+      "sha256": "af035d63f9948b653e2a5a436fe61f4b0ea411eef0abfa172055adb4e48f6066"
+    },
+    "docs/F2/OrdinaryCaseStepValidation-20261018.md": {
+      "bytes": 10597,
+      "sha256": "325a0b80f6d2ce4b8533655bb592c7b5513f1dbdff6f559432895f7b5286aa64"
+    },
+    "docs/F2/OrdinarySyntheticScopesValidation-20261018.md": {
+      "bytes": 10861,
+      "sha256": "f8986e5a487ad3e3361e4a5b601fc65d27f8489c5adf9886170f73a35e2823d3"
+    },
+    "docs/F2/OrdinaryTemplateInputValidation-20261018.md": {
+      "bytes": 11494,
+      "sha256": "865c352e39edb6ad10247a040c4f4a2196d69a9f5ee656c01219f35f4b98d7e6"
+    },
+    "docs/F2/OriginalCollaborationDOMValidation-20261018.md": {
+      "bytes": 11402,
+      "sha256": "740e0ed0a4b25071a12e133a13a7bfd7724cd5cad2cdce22dc3241b069ace62f"
+    },
+    "docs/F2/P2ResourceExecutionPreview.md": {
+      "bytes": 4969,
+      "sha256": "977ec996dd6111f559969028e2bca0a12ae8783e9eeeee8f084c32d854a4eb33"
+    },
+    "docs/F2/P3DispatchExecutionPreview.md": {
+      "bytes": 6382,
+      "sha256": "9ccf60ab5f6e6b222811778d48a26bd0dbea44bfac53a90cb291b17bd474c393"
+    },
+    "docs/F2/P4ReceiptExecutionPreview.md": {
+      "bytes": 8882,
+      "sha256": "4ea60a43c02514f522c88bda218d0d14bb927b6f262edc2e245de417575b93db"
+    },
+    "docs/F2/P5LocalCasePreview.md": {
+      "bytes": 12209,
+      "sha256": "cff849ea962b36d2bb209cfa3c67720269c6eb738e59ab397d442e080fd3007e"
+    },
+    "docs/F2/PR0-CoverageAt-a1e6022.md": {
+      "bytes": 22033,
+      "sha256": "0107e80831868e48831f88e296ebeed5ea88ade0d180a8168c22daf62c743213"
+    },
+    "docs/F2/PreviewCommitProtection.md": {
+      "bytes": 6340,
+      "sha256": "e5878cd3c0480d224b39275a1ec19ff51312323297ea3205b6337041b3241082"
+    },
+    "docs/F2/RecoveryDeadlinesAndTemplateFixtures-20261018.md": {
+      "bytes": 8849,
+      "sha256": "207ee0d7038cc260eb941b729185ecb763198ab8afe0fc11a7cae0642bd91aed"
+    },
+    "docs/F2/RemainingDeliveryGates-20261018.md": {
+      "bytes": 8792,
+      "sha256": "79c518f86b8ef59c98e06caea8f578e80c4f44cfb83cb4faebf263099e12b888"
+    },
+    "docs/F2/ResourceQueryMemberGraphValidation-20261018.md": {
+      "bytes": 10948,
+      "sha256": "57ef93cbc632a7bdb24d75273c30d10341641e26e28bc46f223559e2980d2d00"
+    },
+    "docs/F2/Schema33BeforeReceiptCancellation-20261016.md": {
+      "bytes": 6584,
+      "sha256": "62999e4fcfa6532bc1b8f7062acb41e6017f9755b1290330cbb9fe4d1485692d"
+    },
+    "docs/F2/ServiceCatalogQueryDependencyValidation-20261018.md": {
+      "bytes": 8553,
+      "sha256": "37cce5b97aaa0517f76b8884c6e65ad56adfcfa0855c1c3d47a5290bb53b3c5c"
+    },
+    "docs/F2/ServicePlanApproval.md": {
+      "bytes": 5494,
+      "sha256": "641a1819d03bf93db852b7ed51f6232fb5f6d13000b2b3d8d0b389ffc1245d2e"
+    },
+    "docs/F2/ServicePlanManualLock.md": {
+      "bytes": 4940,
+      "sha256": "4181269938da6a475177ae6b806d3f6c7f367d82ec882241a11d4796783d6cc7"
+    },
+    "docs/F2/SourceOpportunityAdoption-20261015.md": {
+      "bytes": 13839,
+      "sha256": "e63d2d39d7a7227e7c8a2bc2355de9459c12627aca3656e38d231fc6f9794872"
+    },
+    "docs/F2/TemplateStructureMigrationDelivery-20261015.md": {
+      "bytes": 6187,
+      "sha256": "5b70a04aab7b03d92c88f26c466f3beb4ac7376f3bb51f83e100822952426612"
+    },
+    "docs/F2/UnifiedSourcePropagation-20261016.md": {
+      "bytes": 8906,
+      "sha256": "4522cc5d9fda3f8c4314986d17b8bdcb87540dc21515e679b6eb44b008a1efb7"
+    },
+    "docs/sources/V1/分阶段开发计划 (2).md": {
+      "bytes": 31271,
+      "sha256": "4437dac3b86c12bd1ffc57cf7c4e66c154eea5ec2a5d8562d0ddfc1f6cfb5989"
+    },
+    "docs/sources/V1/平台产品设计 (2).md": {
+      "bytes": 44220,
+      "sha256": "48ff72723678546500973b6ad45ae841320cda69f08f9ca24013137ae5e7b02b"
+    },
+    "docs/验收规格.json": {
+      "bytes": 18857,
+      "sha256": "747fafdf948012b3569ef5d43fcf5c279b3e6acad25231b4a68c493e6f32a17b"
+    }
+  }
+}

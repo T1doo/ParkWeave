@@ -1,0 +1,73 @@
+{
+  "baseline": "e08f2f60f87ff54bdbb3a2e9f9bdd9b60dc46e03",
+  "baseline_inputs_sha256": "8e64bfbbe5f93e7ced1337a5ab7cb1aaf822389be909c945605452801a1de826",
+  "created_at_utc": "2026-10-18T22:46:57.154345+00:00",
+  "independent_dynamic": 0,
+  "kind": "SOURCE_BLIND_EXISTING_SOURCE_VERIFIER_BATCHING_ORACLE",
+  "original_function_source_sha256": "ae2e8bdef198be80c192c0fadc3b7d118e936e43706d52b7edd7acb172276d76",
+  "original_test_source_sha256": "6c000840e2246c55afaf9ac35ec0fea39bc33fee77a68c023d6ebdb99e18ebb9",
+  "product_imports": 0,
+  "rows": [
+    {
+      "given": "All original root test paths are supplied, including when caller selected a single AT.",
+      "id": "SB-01",
+      "must": "Keep the existing full supplied path set, <=1024 nonempty dict, sorted processing and exact lowercase hash/path contracts. Do not narrow to the selected test to evade the aggregate fault.",
+      "must_not": "No new loader/source adapter, selector closure claim, dropped test/path or partial verification marked complete."
+    },
+    {
+      "given": "The valid supplied blobs total more than4MiB but every individual file and every formed batch is <=4MiB.",
+      "id": "SB-02",
+      "must": "Allow multiple bounded body batches within the existing function. Exact4MiB is allowed. Enforce explicit per-file<=4MiB before body reads; reject an individual oversized blob with original fixed refusal.",
+      "must_not": "Do not raise file cap/path count or read all body blobs into one aggregate buffer. This deliberately changes per-call aggregate cap into per-batch cap; do not claim unchanged cumulative work."
+    },
+    {
+      "given": "The first or a later batch has changed work bytes, CRLF conversion, staged edits or a forged matching work hash.",
+      "id": "SB-03",
+      "must": "Require immutable expected HEAD blob == supplied SHA256 == raw working file bytes for every path in every batch, preserving original mismatch reason. CRLF is not a normalization exception.",
+      "must_not": "No checkout-normalization fallback, forged manifest acceptance, early success before later batches or hash-only comparison omitting work==blob."
+    },
+    {
+      "given": "Git batch-check metadata has wrong count/type/object hash/size or an oversized file.",
+      "id": "SB-04",
+      "must": "Preserve exact header validation, blob type, count matching and bounded decimal size syntax; pair headers/sizes with the correct sorted paths. Oversize must be rejected before body fetch.",
+      "must_not": "No trusting missing/nonblob/malformed metadata, inferred body lengths or zip truncation that silently skips a file."
+    },
+    {
+      "given": "A first or later body batch has truncated header/body, wrong declared size, missing separating LF or extra trailing bytes.",
+      "id": "SB-05",
+      "must": "Keep original exact header comparison, bounded header delimiter search, size/body length checks, required LF and cursor==len(raw) independently per batch.",
+      "must_not": "Do not accept tail bytes at any batch boundary, concatenate batches before framing validation or reuse cursors/metadata from a different batch."
+    },
+    {
+      "given": "Malformed/unknown HEAD, untracked blob, invalid/nested/outside path, malformed hash, symlink or work-size mismatch is supplied.",
+      "id": "SB-06",
+      "must": "Keep original HEAD and path/hash restrictions, explicit expected-SHA queries, real test-root containment/no-symlink and size+raw read checks, preserving fixed SourceBytesRefused reasons.",
+      "must_not": "No path discovery/import/evaluation, credentials, untracked source approval or source-head deletion to make runner pass."
+    },
+    {
+      "given": "Any Git command times out/fails, including a later batch.",
+      "id": "SB-07",
+      "must": "Keep original sanitized read-only Git command construction and timeout=5 on each command; late refusal rejects the whole source binding with original operation reason.",
+      "must_not": "No retries, larger per-command deadline, credential discovery or claim that the complete multi-command function has a5second total bound."
+    },
+    {
+      "given": "Batching increases body command count.",
+      "id": "SB-08",
+      "must": "Make batching deterministic and cover each original path exactly once. Maintain <=4MiB blob bodies per batch and one-batch memory processing. Record actual total bytes/batch count separately; at<=1024 paths, at most1024 nonempty batches and <=4GiB aggregate bodies.",
+      "must_not": "Do not conceal increased cumulative I/O or per-call worst-case command budget; do not claim framing overhead is included in the body cap. No new security permission or external data input is introduced."
+    },
+    {
+      "given": "The existing runner receives successful source verification and then a selected AT13 run.",
+      "id": "SB-09",
+      "must": "Preserve original fixed AT/spec/binding validation, observed JUnit outcomes, missing/empty-evidence handling and whole_AT_EX/42 whole_status NOT_RUN. Source verification is engineering integrity, not business outcome.",
+      "must_not": "No formal PASS automatically inferred, AT29/AT33 completion claim, retry of old AT21/32 or marked template/HTTP window, or hidden extra business/model/Windows run."
+    },
+    {
+      "given": "Historical AT21/32 rejection receipts and other delivery evidence are reused.",
+      "id": "SB-10",
+      "must": "Preserve both SOURCE_BINDING/GIT_BLOB_UNAVAILABLE/0tests original reports and their separate finite already-PASS instances. Reviewer final work remains static-only/product import0; parent execution is counted separately.",
+      "must_not": "Do not rewrite historical refusals as repaired PASS, count0tests as business FAIL/PASS, transfer results acrossSHA or close old HTTP UNKNOWN."
+    }
+  ],
+  "status": "WAIT_FINAL_SHA_STATIC_REVIEW_ONLY"
+}

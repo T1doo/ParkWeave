@@ -1,0 +1,59 @@
+{
+  "final_sha": "7f02fe3f463fb402eb497fb4342d93037b24cc18",
+  "independent_dynamic": 0,
+  "open_P1": [],
+  "open_P2": [],
+  "oracle_sha256": "8f9beffbc214925c3a28eea066f99ff3e869757b780714a02ce8bebf8ccd51e1",
+  "rows": [
+    {
+      "id": "SB-01",
+      "reason": "Original dictionary/path/hash prelude and both runner callers byte/AST identical; all381 test roots remain selected by existing caller.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "id": "SB-02",
+      "reason": "Explicit individual size>limit rejects before any body; <=limit inner condition permits exactcap and allocates contiguous batches. No all-body aggregation.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "id": "SB-03",
+      "reason": "Every per-file body is exact original AST, including raw SHA and work==blob checks. Same checks apply to every later batch.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "id": "SB-04",
+      "reason": "Original batch-check count/header regex/type/hash/size parsing remains AST identical; zipped slices use the same start/end; no truncating metadata branch.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "id": "SB-05",
+      "reason": "Original per-file header/length/LF parser and final cursor!=len(raw) rejection moved verbatim inside each batch. Later tails cannot be ignored.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "id": "SB-06",
+      "reason": "Original HEAD/path/hash/untracked/symlink/root containment/work-size/read failure code and fixed reasons preserved.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "id": "SB-07",
+      "reason": "_git and verify_head AST/behavior unchanged; timeout=5 and sanitized read-only environment remain on every body command. No retry or cumulative5s claim.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "id": "SB-08",
+      "reason": "Sorted contiguous slices advance end by1 and start=end; prior individual oversize gate guarantees progress. Contract discloses cumulative body/call growth and framing distinction; no process-memory4MiB claim.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "id": "SB-09",
+      "reason": "run_acceptance.py, original AT13 selector, fixed spec and bindings are byte unchanged. No whole PASS logic modification. Parent AT13 operation is separate from this review.",
+      "status": "STATIC_SATISFIED_NOT_EXECUTED"
+    },
+    {
+      "id": "SB-10",
+      "reason": "Historical AT21/32 rejection report source bytes and sourceblind freeze unchanged. No verifier/runner/pytest or old platform-window replay performed by reviewer.",
+      "status": "STATIC_SATISFIED"
+    }
+  ]
+}
