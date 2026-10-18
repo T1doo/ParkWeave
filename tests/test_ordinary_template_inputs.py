@@ -222,3 +222,30 @@ def test_actual_journal_wait_must_recheck_catalog_before_preparation_send(templa
  (tmp_path/'journal-wait.json').write_text(json.dumps(proof,indent=2)+'\n')
  assert responses[0]['status'] in (403,409),responses
  assert after==before,'a newly stale catalog pin was used to send a preparation stage after actual journal wait'
+
+
+def test_late_pin_refusal_preserves_previously_unknown_original_send(template_consumption,monkeypatch):
+    f=template_consumption;_,_,data=pinned(f);original=f['store'].submit
+    def lose_committed_reply(*args,**kwargs):
+        original(*args,**kwargs)
+        raise RuntimeError('SYNTHETIC original committed Run reply lost')
+    monkeypatch.setattr(f['store'],'submit',lose_committed_reply)
+    assert consume(f,key='old-unknown-before-late-pin',data=data).status_code==503
+    before=products(f['owner']);old=journal(f);assert old['consumer_stages'][0]['state']=='UNKNOWN'
+    available=f['consumer']._available;checks=[];sends=[]
+    def advance_after_early_check(*args,**kwargs):
+        result=available(*args,**kwargs);checks.append(True)
+        if len(checks)==1:drift(f)
+        return result
+    def no_second_send(*args,**kwargs):
+        sends.append(True)
+        raise AssertionError('late pin refusal must precede any original send')
+    monkeypatch.setattr(f['consumer'],'_available',advance_after_early_check)
+    monkeypatch.setattr(f['store'],'submit',no_second_send)
+    assert consume(f,key='old-unknown-before-late-pin',data=data).status_code==409
+    current=journal(f)
+    assert not sends and products(f['owner'])==before
+    assert current['consumer_instances'][0]['state']=='UNKNOWN'
+    assert current['consumer_stages'][0]['state']=='UNKNOWN'
+    assert current['consumer_stages'][0]['body']==old['consumer_stages'][0]['body']
+    assert current['consumer_requests']==old['consumer_requests']

@@ -339,16 +339,22 @@ class TemplateConsumer:
                 raise Conflict('immutable stage body fingerprint changed')
         if stage['state'] == 'CONFIRMED':
             return json.loads(stage['result'])
+        late_pin_check = instance['input'].get('expected_catalog_sha256') is not None or 'catalog_binding' in instance['binding']
         try:
-            if instance['input'].get('expected_catalog_sha256') is not None or 'catalog_binding' in instance['binding']:
+            if late_pin_check:
                 # BEGIN IMMEDIATE and body construction may wait. A pinned new
                 # input must still be current when this original send starts.
                 current, current_database = self._auth(token)
                 self._instance(current, current_database, instance['id'])
                 self._available(current, instance, token)
                 self._reviewer(current, instance['input']['reviewer_id'])
+            late_pin_check = False
             result = normal(send(stage['request_key'], json.loads(stage['body'])))
         except (Denied, Conflict) as error:
+            if late_pin_check and not stage['fresh_attempt'] and stage['state'] in ('STARTED', 'UNKNOWN'):
+                # This current preflight cannot disprove an earlier send.
+                self._unknown(instance, name)
+                raise
             if name.startswith(('EDIT_REQUEST_', 'CONFIRM_PLAN_')) and not stage['fresh_attempt']:
                 self._unknown(instance, name)
                 raise  # Current refusal cannot disprove an earlier unknown commit.
