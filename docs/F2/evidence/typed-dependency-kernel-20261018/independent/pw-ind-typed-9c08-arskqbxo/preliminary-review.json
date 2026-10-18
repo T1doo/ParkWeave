@@ -1,0 +1,90 @@
+{
+  "actual_unique_test_nodes": 53,
+  "all_local_origins_match_mirror": true,
+  "failed": 2,
+  "findings": [
+    {
+      "action": "fix union variant deduplication certainty",
+      "counterexample": "test_source_category_transition_keeps_both_union_certainties",
+      "expected": {
+        "definite": [
+          "A",
+          "S",
+          "X"
+        ],
+        "preserved": [
+          "Z"
+        ],
+        "uncertain": [
+          "A"
+        ]
+      },
+      "observed": {
+        "definite": [
+          "S",
+          "X"
+        ],
+        "preserved": [
+          "Z"
+        ],
+        "uncertain": [
+          "A"
+        ]
+      },
+      "reason": "edge bytes identical while upstream node source_kind changes; candidate and confirmed version produce distinct certainty variants; one is removed by dedup",
+      "severity": "P2",
+      "target": "src/parkweave/dependency_graph.py:preview"
+    },
+    {
+      "action": "freeze original schema2 SCOPE constant during conversion",
+      "counterexample": "test_original_schema2_conversion_is_independent_of_current_scope_or_compiler",
+      "reason": "current legacy.SCOPE mutation causes original frozen schema2 to be refused; no old recompilation is allowed",
+      "severity": "P2",
+      "target": "src/parkweave/dependency_graph.py:from_unified_v1"
+    }
+  ],
+  "frozen_literal_plan_sha256": "dca269c3706f1459dedd33058490ba21bcf72f0907dae3717e5a684101cc1be6",
+  "mirror_drift": [],
+  "module_origin_records": 20,
+  "not_executed": [
+    "database",
+    "browser",
+    "root",
+    "seal",
+    "issuer",
+    "LIVE",
+    "real model",
+    "authority",
+    "whole AT25/26"
+  ],
+  "passed": 51,
+  "planned_cases_executed_as_pytest_nodes": 51,
+  "raw_files": {
+    "independent.xml": "a80c71085d052f9b437c1a732314d687fe15465d851a85731c703afa510ed559",
+    "result.json": "182d2d40fb4e1ecf2e3c4604ba068e6456a9332f4e3feaa61ca8321fc9071ceb",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout.txt": "76d13e997aa864c9b37a310efe68e3871b003c441d607f0033e689aff742b46d",
+    "test_frozen_compatibility.py": "9e754952bf4b90663001efe4d826d72ee4121af43d9e61496192b8f9184516a4",
+    "test_independent_literal_graph.py": "17e73de90efd14690d00df18dc8e7d68f5ca63b0764de0c85e0b5ccf7914df76",
+    "window-2-frozen/independent.xml": "ac64376953fb29061abfd7e25798b91547b831f4d6ff94b1b858d90cd2b7f326",
+    "window-2-frozen/module-origins.json": "305951c8f43b7cf1633c9303582f574e38550b09db55f6cce20b0baef01371c7",
+    "window-2-frozen/result.json": "db62285851f39c60c155c462c6a9045ac6bec81a5227cd5fc0ed84d21b13d056",
+    "window-2-frozen/stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "window-2-frozen/stdout.txt": "28dd2b12602115a63442aeb82429d71cd4906e626ba36ca60e2ac0d92de68d5b"
+  },
+  "review_derived_counterexample_nodes": 2,
+  "review_version": 1,
+  "reviewed_source_sha": "9c08f07677c7c29e20d322fa1b55f97af2c41e0e",
+  "runner_failure_preserved": {
+    "actual_nodes": 52,
+    "corrected_by": "explicit -c private pyproject.toml and --rootdir private mirror in window-2-frozen",
+    "directory": ".runtime/typed-dependency-kernel-20261018/independent/pw-ind-typed-9c08-arskqbxo",
+    "failed": 1,
+    "issue": "pytest discovered shared pyproject/pythonpath from external test location; module origins did not all match private mirror; do not sign frozen provenance or add counts",
+    "passed": 51
+  },
+  "scope": "pure-computation engineering subset; not whole AT25/26",
+  "selected_inputs": 772,
+  "shared_drift": [],
+  "status": "CHANGES_REQUIRED"
+}

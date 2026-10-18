@@ -1,0 +1,575 @@
+{
+  "baseline": "a56ecc0ac12af80f69811edc66dd4808956d376e",
+  "created_before_implementation_review": true,
+  "limits": "engineering subset only, no AT25/26 whole approval; no DB/browser/root/seal/issuer/LIVE/models/authority",
+  "oracle_version": 1,
+  "rejections": [
+    "dangling endpoint",
+    "confirmed cycle",
+    "candidate cycle",
+    "duplicate node ID",
+    "duplicate edge ID",
+    "duplicate relation with distinct edge ID",
+    "duplicate collection member ID",
+    "128 nodes accepted, 129 rejected",
+    "256 edges accepted, 257 rejected",
+    "512 total collection members accepted, 513 rejected",
+    "256 per collection accepted, 257 rejected",
+    "32 unknown ranges accepted, 33 rejected",
+    "80-character ID accepted, 81 rejected",
+    "16 locks accepted, 17 rejected",
+    "cross park/org/package snapshot compare rejected",
+    "same node ID changes type rejected",
+    "same node ID changes case rejected",
+    "same edge ID changes endpoints rejected",
+    "same edge ID changes kind rejected",
+    "same observation ID changes consumer rejected",
+    "same observation ID changes source rejected",
+    "unknown node scope targets absent node rejected",
+    "unknown case scope targets absent case rejected",
+    "MODEL_CANDIDATE CONFIRMED edge rejected",
+    "SEMANTIC CONFIRMED edge rejected",
+    "malformed hash rejected",
+    "hash mismatch rejected",
+    "same revision with different content rejected",
+    "backwards revision rejected",
+    "non-json objects and boolean revision rejected"
+  ],
+  "scenarios": [
+    {
+      "change": "none",
+      "definite": [],
+      "edges": [
+        "S>A:MATERIAL",
+        "A>B:CAPACITY",
+        "A>C:ELIGIBILITY",
+        "B>D:VERIFIED_BY",
+        "C>D:PACKAGED_IN"
+      ],
+      "id": "L01",
+      "name": "unchanged graph",
+      "nodes": [
+        "S",
+        "A",
+        "B",
+        "C",
+        "D",
+        "Z"
+      ],
+      "preserved": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "S",
+        "Z"
+      ],
+      "uncertain": []
+    },
+    {
+      "base": "L01",
+      "change": "S revision a→b",
+      "definite": [
+        "A",
+        "B",
+        "C",
+        "D",
+        "S"
+      ],
+      "id": "L02",
+      "name": "confirmed typed chain fork and join",
+      "preserved": [
+        "Z"
+      ],
+      "uncertain": []
+    },
+    {
+      "base": "L01",
+      "change": "B revision a→b",
+      "definite": [
+        "B",
+        "D"
+      ],
+      "id": "L03",
+      "name": "middle typed edge only",
+      "preserved": [
+        "A",
+        "C",
+        "S",
+        "Z"
+      ],
+      "uncertain": []
+    },
+    {
+      "change": "S revision a→b",
+      "definite": [
+        "A",
+        "S"
+      ],
+      "edges": [
+        "S>A:CAPACITY:CONFIRMED",
+        "A>B:MATERIAL:CANDIDATE"
+      ],
+      "id": "L04",
+      "name": "candidate path cannot confirm descendant",
+      "nodes": [
+        "S",
+        "A",
+        "B",
+        "Z"
+      ],
+      "preserved": [
+        "Z"
+      ],
+      "uncertain": [
+        "B"
+      ]
+    },
+    {
+      "change": "S revision a→b",
+      "definite": [
+        "A",
+        "D",
+        "S"
+      ],
+      "edges": [
+        "S>A:PRECEDES:CONFIRMED",
+        "S>B:SEMANTIC:CANDIDATE",
+        "A>D:VERIFIED_BY:CONFIRMED",
+        "B>D:PACKAGED_IN:CONFIRMED"
+      ],
+      "id": "L05",
+      "name": "converging certain and candidate paths overlap",
+      "nodes": [
+        "S",
+        "A",
+        "B",
+        "D",
+        "Z"
+      ],
+      "preserved": [
+        "Z"
+      ],
+      "uncertain": [
+        "B",
+        "D"
+      ]
+    },
+    {
+      "change": "S revision a→b; obs-a unchanged known; obs-b a→b known",
+      "definite": [
+        "B",
+        "S"
+      ],
+      "edges": [
+        "S>A:MATERIAL:obs-a",
+        "S>B:MATERIAL:obs-b",
+        "A>C:PRECEDES"
+      ],
+      "id": "L06",
+      "name": "source-wide revision preserves unchanged consumer observation",
+      "nodes": [
+        "S",
+        "A",
+        "B",
+        "C",
+        "Z"
+      ],
+      "preserved": [
+        "A",
+        "C",
+        "Z"
+      ],
+      "uncertain": []
+    },
+    {
+      "change": "X revision a→b; S and obs-a unchanged known",
+      "definite": [
+        "A",
+        "S",
+        "X"
+      ],
+      "edges": [
+        "X>S:CAPACITY",
+        "S>A:MATERIAL:obs-a"
+      ],
+      "id": "L07",
+      "name": "dependency propagation must pass unchanged observation",
+      "nodes": [
+        "X",
+        "S",
+        "A",
+        "Z"
+      ],
+      "preserved": [
+        "Z"
+      ],
+      "uncertain": []
+    },
+    {
+      "change": "none",
+      "definite": [],
+      "edges": [
+        "S>A:MATERIAL:obs-a-unknown",
+        "A>B:PRECEDES"
+      ],
+      "id": "L08",
+      "name": "unknown observation is uncertainty even if unchanged",
+      "nodes": [
+        "S",
+        "A",
+        "B",
+        "Z"
+      ],
+      "preserved": [
+        "S",
+        "Z"
+      ],
+      "uncertain": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "change": "none",
+      "definite": [],
+      "edges": [
+        "S>A:ELIGIBILITY",
+        "A>B:CAPACITY"
+      ],
+      "id": "L09",
+      "name": "unknown explicit node scope expands through downstream",
+      "nodes": [
+        "S",
+        "A",
+        "B",
+        "Z"
+      ],
+      "preserved": [
+        "S",
+        "Z"
+      ],
+      "uncertain": [
+        "A",
+        "B"
+      ],
+      "unknown_scope": "NODES:[A]"
+    },
+    {
+      "change": "none",
+      "definite": [],
+      "edges": [
+        "A>B:MATERIAL"
+      ],
+      "id": "L10",
+      "name": "case scope stays explicit",
+      "nodes": [
+        "S:none",
+        "A:case-a",
+        "B:case-b",
+        "Z:case-z"
+      ],
+      "preserved": [
+        "S",
+        "Z"
+      ],
+      "uncertain": [
+        "A",
+        "B"
+      ],
+      "unknown_scope": "CASES:[case-a]"
+    },
+    {
+      "change": "none",
+      "definite": [],
+      "edges": [],
+      "id": "L11",
+      "name": "package scope expands to all explicit nodes",
+      "nodes": [
+        "S",
+        "A",
+        "Z"
+      ],
+      "preserved": [],
+      "uncertain": [
+        "A",
+        "S",
+        "Z"
+      ],
+      "unknown_scope": "PACKAGE"
+    },
+    {
+      "change": "none",
+      "definite": [],
+      "edges": [
+        "S>A:CAPACITY"
+      ],
+      "id": "L12",
+      "name": "incomplete collection requires recheck",
+      "nodes": [
+        "S:collection-unknown",
+        "A",
+        "Z"
+      ],
+      "preserved": [
+        "Z"
+      ],
+      "uncertain": [
+        "A",
+        "S"
+      ]
+    },
+    {
+      "change": "S collection adds m2",
+      "definite": [
+        "A",
+        "S"
+      ],
+      "edges": [
+        "S>A:CAPACITY"
+      ],
+      "id": "L13",
+      "name": "collection addition",
+      "nodes": [
+        "S:collection-m1",
+        "A",
+        "Z"
+      ],
+      "preserved": [
+        "Z"
+      ],
+      "uncertain": []
+    },
+    {
+      "change": "S collection removes m1",
+      "definite": [
+        "A",
+        "S"
+      ],
+      "edges": [
+        "S>A:CAPACITY"
+      ],
+      "id": "L14",
+      "name": "collection removal",
+      "nodes": [
+        "S:collection-m1-m2",
+        "A",
+        "Z"
+      ],
+      "preserved": [
+        "Z"
+      ],
+      "uncertain": []
+    },
+    {
+      "change": "S collection input order reversed only",
+      "definite": [],
+      "edges": [
+        "S>A:CAPACITY"
+      ],
+      "id": "L15",
+      "name": "collection order immaterial",
+      "nodes": [
+        "S:collection-m1-m2",
+        "A",
+        "Z"
+      ],
+      "preserved": [
+        "A",
+        "S",
+        "Z"
+      ],
+      "uncertain": []
+    },
+    {
+      "change": "remove S>A and change S revision",
+      "definite": [
+        "A",
+        "B",
+        "S"
+      ],
+      "edges": [
+        "S>A:MATERIAL",
+        "A>B:PRECEDES"
+      ],
+      "id": "L16",
+      "name": "removed edge retains old propagation",
+      "nodes": [
+        "S",
+        "A",
+        "B",
+        "Z"
+      ],
+      "preserved": [
+        "Z"
+      ],
+      "uncertain": []
+    },
+    {
+      "change": "add S>A:MATERIAL",
+      "edges": [
+        "A>B:PRECEDES"
+      ],
+      "id": "L17",
+      "name": "new edge triggers endpoint and new downstream",
+      "nodes": [
+        "S",
+        "A",
+        "B",
+        "Z"
+      ],
+      "preserved_must_include": [
+        "Z"
+      ],
+      "required_affected": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "change": "remove S and S>A",
+      "definite": [
+        "A",
+        "B",
+        "S"
+      ],
+      "edges": [
+        "S>A:MATERIAL",
+        "A>B:PRECEDES"
+      ],
+      "id": "L18",
+      "name": "removed node retained in result history",
+      "nodes": [
+        "S",
+        "A",
+        "B",
+        "Z"
+      ],
+      "preserved": [
+        "Z"
+      ],
+      "removed": [
+        "S"
+      ],
+      "uncertain": []
+    },
+    {
+      "base": "L02",
+      "expected_conflicts": {
+        "A": [
+          "body",
+          "decision"
+        ],
+        "B": [
+          "manual"
+        ]
+      },
+      "id": "L19",
+      "locks_before": {
+        "A": [
+          "body"
+        ],
+        "B": [
+          "manual"
+        ]
+      },
+      "locks_current": {
+        "A": [
+          "decision"
+        ],
+        "Z": [
+          "keep"
+        ]
+      },
+      "name": "affected lock union before/current"
+    },
+    {
+      "change": "S source_kind confirmed→unverified with revision_sha256 unchanged",
+      "edges": [
+        "S>A:MATERIAL:CONFIRMED"
+      ],
+      "id": "L20",
+      "name": "metadata certainty downgrade",
+      "nodes": [
+        "S",
+        "A",
+        "Z"
+      ],
+      "preserved_must_include": [
+        "Z"
+      ],
+      "uncertain_must_include": [
+        "S",
+        "A"
+      ]
+    },
+    {
+      "change": "S>A CONFIRMED→CANDIDATE",
+      "edges": [
+        "S>A:MATERIAL:CONFIRMED",
+        "A>B:PRECEDES"
+      ],
+      "id": "L21",
+      "name": "edge certainty downgrade",
+      "nodes": [
+        "S",
+        "A",
+        "B",
+        "Z"
+      ],
+      "preserved_must_include": [
+        "Z"
+      ],
+      "uncertain_must_include": [
+        "A",
+        "B"
+      ]
+    },
+    {
+      "change": "reverse nodes edges collections locks and unknown scope target input order",
+      "expected": "same canonical snapshot hash; unchanged input deep copy",
+      "id": "L22",
+      "name": "all node edge set canonical hashes"
+    },
+    {
+      "expected": {
+        "authority_verified": false,
+        "can_adopt": false,
+        "execution_authorized": false,
+        "read_only": true
+      },
+      "id": "L23",
+      "name": "explicit read only guarantees"
+    },
+    {
+      "change": "original literal UP13 P2-only material observation",
+      "expected": "legacy SHA retained; hash of original object unchanged",
+      "expected_affected_adapters": [
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "expected_preserved_adapters": [
+        "P1"
+      ],
+      "id": "L24",
+      "name": "legacy schema2 observed consumer isolation"
+    },
+    {
+      "change": "original literal UP20 resource collection unknown",
+      "expected": "original graph SHA retained without rewriting history",
+      "expected_affected_adapters": [
+        "P1",
+        "P2",
+        "P3",
+        "P4",
+        "P5"
+      ],
+      "expected_preserved_adapters": [],
+      "id": "L25",
+      "name": "legacy unknown scope retains full case"
+    }
+  ],
+  "source": "original design section8 and independent literal expectations; no product closure/impact output used to construct answers"
+}

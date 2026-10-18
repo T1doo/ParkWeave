@@ -1,0 +1,21 @@
+.............F......................................                     [100%]
+=================================== FAILURES ===================================
+_________ test_source_category_transition_keeps_both_union_certainties _________
+
+    def test_source_category_transition_keeps_both_union_certainties():
+        # Planned certainty-contract supplement: union includes one candidate source
+        # version and one confirmed source version even when the edge bytes match.
+        raw=g([n('X'),n('S',kind='SOURCE',case=None,source='MODEL_CANDIDATE'),n('A'),n('Z')],
+              [e('X','S','CAPACITY'),e('S','A')])
+        def change(q):
+            revise('X')(q);q['nodes'][1]['source_kind']='COMPILED'
+        result=run(raw,change)
+        assert 'A' in result['uncertain']
+>       assert 'A' in result['definite'], result
+E       AssertionError: {'contract': 'parkweave.dependency-graph/1', 'graph_id': 'independent', 'scope': {'park_id': 'park-a', 'org_id': 'org-a', 'package_id': 'package-a'}, 'before_sha256': 'fbc99da657cc73c2935e7ecf5ebd10a9a4e15f1b8b954f2485c8e92af8f9dd23', ...}
+E       assert 'A' in ['S', 'X']
+
+../test_independent_literal_graph.py:160: AssertionError
+=========================== short test summary info ============================
+FAILED ../test_independent_literal_graph.py::test_source_category_transition_keeps_both_union_certainties
+1 failed, 51 passed in 1.14s

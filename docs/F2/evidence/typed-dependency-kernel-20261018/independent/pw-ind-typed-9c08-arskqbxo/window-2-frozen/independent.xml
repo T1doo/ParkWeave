@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="53" time="1.321" timestamp="2026-10-18T13:16:41.563985+00:00" hostname="9eff6a810039"><testcase classname="" name="test_literal_chain_fork_join[None-definite0-preserved0]" time="0.004" /><testcase classname="" name="test_literal_chain_fork_join[S-definite1-preserved1]" time="0.005" /><testcase classname="" name="test_literal_chain_fork_join[B-definite2-preserved2]" time="0.006" /><testcase classname="" name="test_literal_candidate_and_semantic_join_preserve_both_certainties" time="0.005" /><testcase classname="" name="test_literal_unverified_source_and_candidate_edge_are_never_definite[MODEL_CANDIDATE]" time="0.006" /><testcase classname="" name="test_literal_unverified_source_and_candidate_edge_are_never_definite[UNVERIFIED]" time="0.003" /><testcase classname="" name="test_literal_individual_consumer_observation_and_actual_multihop" time="0.004" /><testcase classname="" name="test_literal_unknown_observation_and_ranges" time="0.011" /><testcase classname="" name="test_literal_collections_and_canonical_order[add]" time="0.003" /><testcase classname="" name="test_literal_collections_and_canonical_order[remove]" time="0.003" /><testcase classname="" name="test_literal_collections_and_canonical_order[unchanged-order]" time="0.004" /><testcase classname="" name="test_literal_collections_and_canonical_order[incomplete]" time="0.002" /><testcase classname="" name="test_literal_two_version_edges_removed_nodes_and_lock_union" time="0.004" /><testcase classname="" name="test_source_category_transition_keeps_both_union_certainties" time="0.003"><failure message="AssertionError: {'contract': 'parkweave.dependency-graph/1', 'graph_id': 'independent', 'scope': {'park_id': 'park-a', 'org_id': 'org-a', 'package_id': 'package-a'}, 'before_sha256': 'fbc99da657cc73c2935e7ecf5ebd10a9a4e15f1b8b954f2485c8e92af8f9dd23', ...}&#10;assert 'A' in ['S', 'X']">def test_source_category_transition_keeps_both_union_certainties():
+        # Planned certainty-contract supplement: union includes one candidate source
+        # version and one confirmed source version even when the edge bytes match.
+        raw=g([n('X'),n('S',kind='SOURCE',case=None,source='MODEL_CANDIDATE'),n('A'),n('Z')],
+              [e('X','S','CAPACITY'),e('S','A')])
+        def change(q):
+            revise('X')(q);q['nodes'][1]['source_kind']='COMPILED'
+        result=run(raw,change)
+        assert 'A' in result['uncertain']
+&gt;       assert 'A' in result['definite'], result
+E       AssertionError: {'contract': 'parkweave.dependency-graph/1', 'graph_id': 'independent', 'scope': {'park_id': 'park-a', 'org_id': 'org-a', 'package_id': 'package-a'}, 'before_sha256': 'fbc99da657cc73c2935e7ecf5ebd10a9a4e15f1b8b954f2485c8e92af8f9dd23', ...}
+E       assert 'A' in ['S', 'X']
+
+../test_independent_literal_graph.py:160: AssertionError</failure></testcase><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[dangling]" time="0.001" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[cycle]" time="0.001" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[candidate-cycle]" time="0.001" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[node-id]" time="0.001" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[edge-id]" time="0.001" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[relation]" time="0.001" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[observation-id]" time="0.001" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[member-id]" time="0.003" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[unknown-node]" time="0.005" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[unknown-case]" time="0.002" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[semantic-confirmed]" time="0.002" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[model-confirmed]" time="0.001" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[bad-revision-hash]" time="0.001" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[bool-revision]" time="0.003" /><testcase classname="" name="test_invalid_structures_are_closed_and_immutable[non-json-object]" time="0.001" /><testcase classname="" name="test_exact_contract_limits_accept_then_reject[nodes]" time="0.007" /><testcase classname="" name="test_exact_contract_limits_accept_then_reject[edges]" time="0.005" /><testcase classname="" name="test_exact_contract_limits_accept_then_reject[single-members]" time="0.004" /><testcase classname="" name="test_exact_contract_limits_accept_then_reject[total-members]" time="0.007" /><testcase classname="" name="test_exact_contract_limits_accept_then_reject[unknown]" time="0.001" /><testcase classname="" name="test_exact_contract_limits_accept_then_reject[id]" time="0.003" /><testcase classname="" name="test_exact_contract_limits_accept_then_reject[locks]" time="0.003" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[park]" time="0.003" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[org]" time="0.004" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[package]" time="0.003" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[node-type]" time="0.001" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[node-case]" time="0.001" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[edge-source]" time="0.001" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[edge-target]" time="0.003" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[edge-kind]" time="0.002" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[observation-source]" time="0.001" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[observation-target]" time="0.002" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[observation-edge]" time="0.001" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[same-revision]" time="0.001" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[backwards]" time="0.001" /><testcase classname="" name="test_versions_cannot_rebind_stable_contract_entities[hash]" time="0.001" /><testcase classname="" name="test_frozen_legacy_literal_observation_and_unknown_contract[UP13-expected0-preserved0]" time="0.631" /><testcase classname="" name="test_frozen_legacy_literal_observation_and_unknown_contract[UP20-expected1-preserved1]" time="0.034" /><testcase classname="" name="test_original_schema2_conversion_is_independent_of_current_scope_or_compiler" time="0.011"><failure message="parkweave.dependency_graph.GraphError: legacy snapshot cannot be converted consistently">monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fba377ff530&gt;
+
+    def test_original_schema2_conversion_is_independent_of_current_scope_or_compiler(monkeypatch):
+        from test_unified_dependency_propagation_literal import scenario
+        from parkweave import unified_dependency_propagation as original
+        args=scenario('UP13');frozen=original.build_v1(*args);saved=deepcopy(frozen)
+        monkeypatch.setattr(original,'SCOPE','FUTURE_CURRENT_COMPILER')
+        def forbidden(*a,**k):
+            raise AssertionError('frozen conversion must not recompile old graph')
+        monkeypatch.setattr(original,'build_v1',forbidden)
+&gt;       converted=graph.from_unified_v1(frozen)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+../test_frozen_compatibility.py:12: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = {'schema': 2, 'scope': 'BOUNDED_MULTI_SOURCE_V1', 'binding': {'id': '14522f4e-f2d2-4501-bb2a-49dc5ee10e47', 'case_id':...cca9dd-1c83-4968-9867-b029407638cc', 'owner_id': 'owner', ...}, 'plan_id': 'c4431f05-7d97-4542-9d05-71c210e2f717', ...}
+
+    def from_unified_v1(value):
+        """Read a frozen schema2 comparison without altering its original hash.
+    
+        This checks self-consistency of the existing snapshot, not its authority or
+        current business proofs. It never writes back into the historical format.
+        """
+        from . import controlled_plans as cp, unified_dependency_propagation as legacy
+        try:
+            graph = deepcopy(value)
+            if (type(graph['schema']) is not int or graph['schema'] != 2 or
+                    graph['scope'] != legacy.SCOPE or
+                    graph['sha256'] != cp._hash({k: v for k, v in graph.items() if k != 'sha256'})):
+                raise GraphError('invalid legacy graph hash or version')
+            nodes, observations, edges, steps = (graph[k] for k in
+                                                 ('nodes', 'observations', 'edges', 'step_endpoints'))
+            if not (len(nodes) + len(steps) &lt;= 96 and len(observations) &lt;= 96 and len(edges) &lt;= 128):
+                raise GraphError('legacy graph bound exceeded')
+            _unique([n['id'] for n in nodes] + [s['id'] for s in steps])
+            _unique([o['id'] for o in observations])
+            _unique([e['id'] for e in edges])
+            by_observation = {o['id']: o for o in observations}
+            by_node = {n['id']: n for n in nodes}
+            step_ids = {s['id'] for s in steps}
+            if (set(graph['affected']) &amp; set(graph['preserved']) or
+                    set(graph['affected']) | set(graph['preserved']) != step_ids or
+                    graph['unknown_scope'] not in (None, 'THIS_CASE')):
+                raise GraphError('legacy partition invalid')
+            for node in nodes:
+                actual = [o for o in observations if o['source_node_id'] == node['id']]
+                if (not actual or sorted(node['observation_ids']) != sorted(o['id'] for o in actual) or
+                        node['changed'] is not any(o['changed'] for o in actual) or
+                        node['known'] is not all(o['known'] for o in actual)):
+                    raise GraphError('legacy shared observation mismatch')
+            for observation in observations:
+                if (observation['source_node_id'] not in by_node or observation['step_id'] not in step_ids or
+                        type(observation['known']) is not bool or type(observation['changed']) is not bool or
+                        observation['changed'] !=
+                        ((observation['before_present'], observation['before_sha256']) !=
+                         (observation['current_present'], observation['current_sha256']))):
+                    raise GraphError('legacy observation invalid')
+            observed = []
+            for edge in edges:
+                if edge['id'] != cp._hash(dict(scope=legacy.SCOPE, edge={k: v for k, v in edge.items() if k != 'id'})):
+                    raise GraphError('legacy edge hash changed')
+                if 'observation_id' in edge:
+                    observation = by_observation[edge['observation_id']]
+                    if (edge['upstream'], edge['downstream']) != (
+                            observation['source_node_id'], observation['step_id']):
+                        raise GraphError('legacy observation consumer rebound')
+                    observed.append(observation['id'])
+                elif (edge['upstream'] not in step_ids or edge['downstream'] not in step_ids or
+                      edge['kind'] != 'PRECEDES'):
+                    raise GraphError('legacy predecessor invalid')
+            if sorted(observed) != sorted(by_observation):
+                raise GraphError('legacy observation edges incomplete')
+            scope = dict(park_id=graph['binding']['park_id'], org_id=graph['binding']['org_id'],
+                         package_id=graph['plan_id'])
+            snapshots = []
+            for revision, prefix in ((1, 'before'), (2, 'current')):
+                converted_nodes = []
+                for node in nodes:
+                    observations_for_node = [o for o in observations if o['source_node_id'] == node['id']]
+                    converted_nodes.append(dict(id=node['id'], type=node['type'], case_id=None,
+                        revision_sha256=digest(sorted((o['id'], o[prefix+'_present'], o[prefix+'_sha256'])
+                                                      for o in observations_for_node)),
+                        source_kind='ACTUAL_SNAPSHOT'))
+                converted_nodes.extend(dict(id=s['id'], type='PLAN_STEP', case_id=graph['binding']['case_id'],
+                                            revision_sha256=digest(s), source_kind='COMPILED') for s in steps)
+                converted_edges = []
+                for edge in edges:
+                    converted = {k: edge[k] for k in ('id', 'upstream', 'downstream', 'kind')}
+                    converted.update(source_kind='ACTUAL_SNAPSHOT' if 'observation_id' in edge else 'COMPILED',
+                                     state='CONFIRMED')
+                    if 'observation_id' in edge:
+                        observation = by_observation[edge['observation_id']]
+                        converted['observation'] = dict(id=observation['id'], known=observation['known'],
+                            revision_sha256=digest([observation[prefix+'_present'], observation[prefix+'_sha256']]))
+                    converted_edges.append(converted)
+                unknown = ([dict(id='legacy-unknown', kind='CASES', case_ids=[graph['binding']['case_id']],
+                                 reason='LEGACY_UNKNOWN')] if graph['unknown_scope'] or graph['unknown_reasons'] else [])
+                snapshots.append(snapshot(dict(graph_id=graph['plan_id'], revision=revision, scope=scope,
+                    nodes=converted_nodes, edges=converted_edges, unknown=unknown, legacy_sha256=graph['sha256'])))
+            result = preview(*snapshots)
+            if (set(result['affected']) &amp; step_ids != set(graph['affected']) or
+                    set(result['preserved']) &amp; step_ids != set(graph['preserved'])):
+                raise GraphError('legacy partition not reproduced')
+            return dict(before=snapshots[0], current=snapshots[1], preview=result,
+                        legacy_sha256=graph['sha256'], legacy_history_unchanged=True)
+        except (KeyError, TypeError, ValueError, AttributeError):
+&gt;           raise GraphError('legacy snapshot cannot be converted consistently') from None
+E           parkweave.dependency_graph.GraphError: legacy snapshot cannot be converted consistently
+
+src/parkweave/dependency_graph.py:413: GraphError</failure></testcase></testsuite></testsuites>
