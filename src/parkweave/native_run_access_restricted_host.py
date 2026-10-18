@@ -496,8 +496,10 @@ def load_host_ticket(fd):
     return engine,authorization
 
 
-def bind_api(store,binding_path=None,expected_sha256=None,*,read_only=False):
-    """Explicit protected public pin only; configured_app gains no auto binding."""
+def bind_api(store,binding_path=None,expected_sha256=None,*,read_only=False,publish=True):
+    """Build from a protected pin; callers may attach a scope before publishing."""
+    if type(publish) is not bool:
+        raise Denied('explicit boolean publication choice required')
     if binding_path is None or expected_sha256 is None:
         raise Denied('explicit trusted public binding required')
     public = json.loads(_protected_bytes(binding_path,0,expected=expected_sha256))
@@ -517,5 +519,6 @@ def bind_api(store,binding_path=None,expected_sha256=None,*,read_only=False):
         if set(extra)!=EXTRA_CHECKS or any(v is not False for v in extra.values()):
             raise Denied('current API/writer role boundary unsafe')
     bridge = native.NativeRunAccess(store,writer=client,read_only=read_only)
-    store._native_run_access = bridge
+    if publish:
+        store._native_run_access = bridge
     return bridge

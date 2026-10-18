@@ -9,6 +9,7 @@ from contextlib import ExitStack
 from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 import json
+import sys
 from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -30,6 +31,7 @@ from parkweave.store import Store, Denied, Conflict, digest
 RUN, CASE, PREP = [UUID('00000000-0000-4000-8000-%012d' % x) for x in (1, 2, 3)]
 LEASE = UUID('00000000-0000-4000-8000-000000000004')
 NOW = datetime(2026, 10, 18, 12, tzinfo=timezone.utc)
+ORIGINAL_BIND_API = host.bind_api
 
 
 class MemoryConnection:
@@ -48,6 +50,7 @@ class MemoryConnection:
                             database_role='app', started=NOW)
         elif 'FROM pg_roles WHERE rolname=current_user' in sql:
             self.row = dict(rolsuper=self.h.admin, rolcreaterole=False, rolcreatedb=False)
+        elif sql == 'SELECT session_user value':self.row = {'value':'app'}
         elif sql == 'SELECT current_schemas(true) value':self.row = {'value': ['pg_catalog', 'public']}
         elif 'SELECT native_run_access_protocol,native_run_access_activation' in sql:
             self.row = dict(native_run_access_protocol=None, native_run_access_activation=None)
@@ -119,10 +122,9 @@ class Harness:
             return self.raw_binding if self.raw_binding is not None else json.dumps(self.binding).encode()
         assert (path, expected) == ('/offline/host.json', 'b'*64)
         return self.raw_public if self.raw_public is not None else json.dumps(self.public).encode()
-    def bind(self, store, path, sha, *, read_only):
-        assert (path, sha, read_only) == ('/offline/host.json', 'b'*64, False)
+    def bind(self, store, path, sha, *, read_only, publish=False):
+        assert (path, sha, read_only, publish) == ('/offline/host.json', 'b'*64, False, False)
         bridge = native.NativeRunAccess(store, writer=writer.WriterClient(store, self.policy, self.pin))
-        store._native_run_access = bridge
         return bridge
     def rpc(self, client, operation, **data):
         with self.lock:self.calls.append((operation, deepcopy(data)))
@@ -213,8 +215,8 @@ class OrdinaryWriteTests(TestCase):
         with Harness() as h:
             original=h.bind
             for damage in ['reference','decision','activation','context','readonly','read-binding']:
-                def bad(store,path,sha,*,read_only):
-                    b=original(store,path,sha,read_only=read_only)
+                def bad(store,path,sha,*,read_only,publish):
+                    b=original(store,path,sha,read_only=read_only,publish=publish)
                     if damage=='reference':
                         policy={**h.policy,'environment':'OWNED_SYNTHETIC_REFERENCE','database_name':'fixture_'+'a'*32}
                         b.writer=writer.WriterClient(store,policy,{**h.pin,'policy_sha256':writer._sha(policy)})
@@ -253,6 +255,50 @@ class OrdinaryWriteTests(TestCase):
             with patch.object(write,'before_invoke',interrupted):
                 with self.assertRaises(RuntimeError):h.configure()
             self.assertIs(h.store._native_run_access,replacement)
+    def test_binder_return_interruption_never_publishes_unscoped_bridge(self):
+        from parkweave import native_run_access_restricted_runtime as runtime
+        with Harness() as h, ExitStack() as patches:
+            patches.enter_context(patch.object(host,'bind_api',ORIGINAL_BIND_API))
+            patches.enter_context(patch.object(host.os,'geteuid',return_value=1000))
+            patches.enter_context(patch.object(host.os,'getegid',return_value=1000))
+            patches.enter_context(patch.object(host.os,'getgroups',return_value=[1001]))
+            patches.enter_context(patch.object(runtime,'_additional_acl',return_value={k:False for k in runtime.EXTRA_CHECKS}))
+            observed=[];previous=sys.gettrace()
+            def interrupt(frame,event,arg):
+                if frame.f_code is ORIGINAL_BIND_API.__code__ and event=='return':
+                    self.assertIsInstance(arg,native.NativeRunAccess)
+                    observed.append(hasattr(h.store,'_native_run_access'))
+                    raise KeyboardInterrupt()
+                return interrupt
+            try:
+                sys.settrace(interrupt)
+                with self.assertRaises(KeyboardInterrupt):h.configure()
+            finally:sys.settrace(previous)
+            self.assertEqual(observed,[False])
+            self.assertFalse(hasattr(h.store,'_native_run_access'))
+            self.assertIs(sys.gettrace(),previous)
+    def test_caller_publication_interruption_has_scope_then_cleans(self):
+        with Harness() as h:
+            previous=Store.__setattr__;observed=[]
+            def interrupt(store,name,value):
+                previous(store,name,value)
+                if name=='_native_run_access':
+                    observed.append(hasattr(value,'runtime_write_binding'))
+                    raise KeyboardInterrupt()
+            with patch.object(Store,'__setattr__',interrupt):
+                with self.assertRaises(KeyboardInterrupt):h.configure()
+            self.assertEqual(observed,[True])
+            self.assertFalse(hasattr(h.store,'_native_run_access'))
+    def test_binder_publication_flag_strict_and_legacy_default_unchanged(self):
+        with patch.object(host,'_protected_bytes',side_effect=AssertionError('no IO')):
+            for value in (None,1,'false'):
+                with self.subTest(value=value), self.assertRaises(Denied):
+                    ORIGINAL_BIND_API(Store('OFFLINE'),'/offline/host.json','b'*64,publish=value)
+        from parkweave import native_run_access_restricted_runtime as runtime
+        with Harness() as h, patch.object(host.os,'geteuid',return_value=1000), patch.object(host.os,'getegid',return_value=1000), patch.object(host.os,'getgroups',return_value=[1001]), patch.object(runtime,'_additional_acl',return_value={k:False for k in runtime.EXTRA_CHECKS}):
+            b=ORIGINAL_BIND_API(h.store,'/offline/host.json','b'*64,read_only=True)
+            self.assertIs(h.store._native_run_access,b)
+            self.assertTrue(b.read_only)
     def test_exact_scope_catalog_generation_and_original_source_proof(self):
         for damage in ['case','run','service','version','catalog','generation','owner','receipt']:
             with self.subTest(damage=damage), Harness() as h:

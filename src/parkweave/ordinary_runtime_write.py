@@ -118,8 +118,9 @@ def configure(store, raw):
         if WriterPolicy.model_validate(public['policy']).environment != 'PRODUCTION':
             raise Denied('reference writer is not ordinary startup authority')
         from .native_run_access_restricted_host import bind_api
-        bridge = bind_api(store, binding.binding_path, binding.binding_sha256, read_only=False)
+        bridge = bind_api(store, binding.binding_path, binding.binding_sha256, read_only=False, publish=False)
         bridge.runtime_write_binding = cfg.model_dump_json()
+        store._native_run_access = bridge
         before_invoke(bridge, 'COMMAND', binding.run_id)
         complete = True
         return bridge
