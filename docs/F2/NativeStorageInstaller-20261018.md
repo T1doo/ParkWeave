@@ -1,10 +1,10 @@
 # 普通已有库的显式 native 存储与精确 ACL 安装代码
 
-本片接续已有安装启动 profile，新增 `native_run_access_installer`，把原 InstallationSpec、目录预检、三份固定 SQL 和 RuntimeGuard 的权限合同接到一个显式安装入口。原 host、普通配置工厂、业务算法、SQL 文件及旧 owned fixture 发行门均不修改。本片没有运行安装或发行任何真实政策、批准、身份、凭据或业务 Grant。
+本片接续已有安装启动 profile，新增 `native_run_access_installer`，把原 InstallationSpec、目录预检、两份固定 storage SQL 和 RuntimeGuard 的权限合同接到一个显式安装入口。原 host、普通配置工厂、业务算法、SQL 文件及旧 owned fixture 发行门均不修改。本片没有运行安装或发行任何真实政策、批准、身份、凭据或业务 Grant。
 
 ## 最小调用闭环
 
-调用者先提供同一实际普通库的严格 InstallationSpec、InstalledRuntimeLayout，以及已存在、空闲、autocommit 的精确 plain psycopg.Connection；连接主体必须是原 installer，host/port/dbname/user 与 spec 相符，函数不打开连接、不发现目标、不改变 caller 的 row_factory。
+调用者先提供同一实际普通库的严格 InstallationSpec、InstalledRuntimeLayout，以及已存在、空闲、autocommit 的精确 plain psycopg.Connection；inspect/install 整段调用须独占该连接。连接主体必须是原 installer，host/port/dbname/user 与 spec 相符，函数不打开连接、不发现目标、不改变 caller 的 row_factory。
 
 `inspect(controller, connection)` 在明确 READ COMMITTED READ ONLY 事务中核实际 session/current_user、物理库 OID/system_identifier。读取原 schema_version 数据前，仅用 pg_catalog 拒绝非原 owner 的普通整数表、view、RLS、规则、分区或继承结构；先验通过才获取 ACCESS SHARE ONLY 锁，再复核。原目录读取器及现有有效权限检测复用，自有 dict_row cursor 补上 schema_version SELECT、CONNECT/public USAGE 和适用函数默认 ACL 观察。只读事务以 rollback 结束。输出 snapshot 与纯 `prepare(spec, layout, snapshot)` 计划，授权及激活标记仍为 false，不读取私钥或审批文件。
 
