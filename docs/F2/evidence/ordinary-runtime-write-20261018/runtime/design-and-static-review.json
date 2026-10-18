@@ -1,0 +1,13 @@
+{
+  "design_review": "APPROVED_BOUNDED_IMPLEMENTATION",
+  "design_constraints": [
+    "environment cannot upgrade readonly binding",
+    "root-protected write record plus original host pin, exact PRODUCTION WriterClient only",
+    "no permit/reference/context in API",
+    "same-connection managed commit gate; original writer remains transaction authority",
+    "outer pin revocation cannot atomically recall an in-flight command"
+  ],
+  "identified_P2": "startup unexpected exception could retain own new bridge",
+  "P2_resolution": "complete flag and finally cleanup only own bridge; preserve other/preexisting bridge; original exception semantics",
+  "WIP_static_review_open_P1_P2": 0
+}
