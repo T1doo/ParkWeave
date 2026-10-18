@@ -434,6 +434,7 @@ def _view(store,c,p,parent,plan,event=None,observe=True,fresh_clock=False):
     context=dict(role=p['role'],actor_ref=cp._hash(dict(actor_id=p['id'])),preparation_id=str(parent['id']),case_id=str(parent['case_id']),run_id=str(parent['run_id']),
                  preparation_revision=parent['revision'],request_revision=(parent.get('request_intent') or {}).get('revision',0),
                  current_preview=preview)
+    context.update(cp.ordinary.display_scope(store))
     if source_unavailable:context['current_source_unavailable']=True
     if not plan:return dict(**context,scope=SCOPE,state='NOT_ADOPTED',plan_id=None,revision=0,steps=[],history=[],events=[],can_adopt=owner and p.get('_plan_write') and context['current_preview']['state']=='COVERED_PREVIEW_ONLY',can_adopt_partial=bool(owner and p.get('_plan_write') and context['current_preview']['partial_offer']['can_adopt']),new_grants=False,automatic_execution=False,case_goal_completed=False)
     # A migrated read preserves stored decisions even when its live source expires.

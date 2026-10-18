@@ -31,6 +31,11 @@ def connection(store):
     return service._connection(store) if service is not None else store.connect()
 
 
+def display_scope(store):
+    service=selected(store)
+    return {} if service is None else dict(current_case_step_scope=dict(contract=service.contract,run_access_granted=False))
+
+
 def parent(store,c,token,id):
     service=selected(store)
     context=service._context(c,id)

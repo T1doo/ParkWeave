@@ -96,6 +96,8 @@ const snapshot=p=>p.run(`JSON.stringify({id:noticeId,view:noticeView,context:not
  await owner.$('prep-list').click();const item=owner.$('prep-items').children.find(e=>e.tagName==='button');check(!!item,'actual original preparation list');await item.click();
  check(owner.run('preparationId')===config.preparation_id,'exact original preparation row');
  await owner.$('service-plan-prepare').click();check(owner.run('servicePlanView.plan_id')===config.plan_id,'original durable adopted plan');
+ check(owner.run('servicePlanView.current_case_step_scope.contract')==='CASE_STEP_ASSIGNMENT_V1','explicit ordinary display metadata');
+ check(textOf(owner.$('service-plan-coverage')).includes('受限步骤核对接单'),'ordinary current scope distinguishes original Run contract text');
  check(calls.every(c=>c.method==='GET'),'navigation is GET only');
  if(config.verify){
   owner.$('service-plan-reason').value='SYNTHETIC owner explicitly verifies original ordinary output';
