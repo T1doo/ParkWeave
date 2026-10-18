@@ -168,3 +168,105 @@ def test_only_complete_original_definitive_rejection_releases_handle(demo_inputs
             actual_backend_body_422=mode=='body_validation_422',responses=responses,
             page_requests=traffic,unknown_status_never_released=mode.startswith('unknown') or mode=='bad_json_422'),indent=2)+'\n')
         context.close();browser.close()
+
+
+@pytest.mark.parametrize('old_status',[200,403])
+@pytest.mark.parametrize('overlap',[False,True],ids=['old_then_new','new_before_old'])
+def test_cold_recovery_refresh_releases_only_its_own_busy_operation(demo_inputs,tmp_path,old_status,overlap):
+    """Refresh is an ordinary allowed GET; an old completion cannot own its busy state."""
+    f,_,pack,_=demo_inputs;parent=prepared(f)
+    f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+    row=create(f,parent)[0].json();authority=authority_snapshot(f[1]);traffic=[];errors=[];held=[];phases=[]
+    with ordinary_demo(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+        browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+        context=browser.new_context(viewport=dict(width=320,height=1000));page=context.new_page()
+        page.on('pageerror',lambda e:errors.append(str(e)))
+        page.on('request',lambda r:traffic.append(dict(method=r.method,path=urlsplit(r.url).path)))
+        def snapshot(label):
+            phases.append(dict(label=label,**page.evaluate('''()=>({generation:receiptGeneration,
+                busy:receiptSubmitBusy,recoverDisabled:document.querySelector('#receipt-submit-recover').disabled,
+                releaseDisabled:document.querySelector('#receipt-submit-release').disabled,
+                proof:receiptSubmitProof?.status??null,handlePresent:receiptSubmitStoredPending(),
+                detailHidden:document.querySelector('#receipt-detail').hidden})''')))
+            (tmp_path/'refresh-proof.json').write_text(json.dumps(dict(
+                ordinary_configured_app=True,actual_chromium=True,old_status=old_status,overlap=overlap,
+                old_403_transport_injection='existing other-tenant token used only for captured read' if old_status==403 else None,
+                phases=phases,traffic=traffic,errors=errors,Windows='NOT_RUN'),indent=2)+'\n')
+        try:
+            login(page,api,f,'executor-a');open_receipt(page)
+            def lost(route):
+                reply=route.fetch();assert reply.status==200
+                route.abort('failed')
+            path='**/api/executor-receipts/*/commands';page.route(path,lost)
+            page.locator('#receipt-text').fill('SYNTHETIC original lost manual reply')
+            page.locator('#receipt-source').fill('SYNTHETIC original manual source')
+            page.locator('#receipt-submit-button').click()
+            page.wait_for_function('()=>receiptSubmitStoredPending()&&!receiptSubmitBusy&&!activeEntryWriteFlow')
+            assert len([r for r in traffic if r['method']=='POST'])==1
+            handles=page.evaluate('()=>Object.entries(localStorage).filter(([n])=>n.startsWith(receiptSubmitStorage))')
+            assert len(handles)==1
+            page.reload();page.locator('#token').fill(f[2]['executor-a']);open_receipt(page)
+            marker=len(traffic);before=case_history(f[1],parent['preparation_id'])
+            draft='SYNTHETIC current draft survives same-item refresh'
+            page.locator('#receipt-text').fill(draft)
+            def hold(route):
+                if len(held)<2:
+                    headers=route.request.all_headers()
+                    # Actual server denial of the existing wrong principal, delivered late
+                    # as a transport fault; this is not current executor revocation.
+                    if not held and old_status==403:headers['authorization']='Bearer '+f[2]['fixture-b']
+                    reply=route.fetch(headers=headers)
+                    assert reply.status==(old_status if not held else 200)
+                    held.append((route,reply))
+                else:route.continue_()
+            page.route('**/api/executor-receipts/*/submit-recovery?*',hold)
+            page.locator('#receipt-submit-recover').click()
+            for _ in range(100):
+                if len(held)==1:break
+                page.wait_for_timeout(20)
+            assert len(held)==1;snapshot('old-recovery-held')
+            generation=page.evaluate('receiptGeneration')
+            page.locator('#receipt-refresh').click()
+            page.wait_for_function('(g)=>receiptGeneration>g&&receiptView!==null&&receiptContext!==null',arg=generation)
+            snapshot('new-current-detail-read')
+            if overlap:
+                expect(page.locator('#receipt-submit-recover')).to_be_enabled(timeout=3000)
+                page.locator('#receipt-submit-recover').click()
+                for _ in range(100):
+                    if len(held)==2:break
+                    page.wait_for_timeout(20)
+                assert len(held)==2
+                snapshot('new-recovery-held')
+            held[0][0].fulfill(response=held[0][1]);page.wait_for_timeout(80)
+            snapshot('old-recovery-returned')
+            assert page.evaluate('(h)=>localStorage.getItem(h[0])===h[1]',handles[0])
+            assert page.locator('#receipt-text').input_value()==draft
+            if overlap:
+                assert page.evaluate('receiptSubmitBusy&&receiptSubmitProof===null')
+                expect(page.locator('#receipt-submit-recover')).to_be_disabled()
+            else:
+                expect(page.locator('#receipt-submit-recover')).to_be_enabled(timeout=3000)
+                assert page.evaluate('!receiptSubmitBusy&&receiptSubmitProof===null')
+                page.locator('#receipt-submit-recover').click()
+                for _ in range(100):
+                    if len(held)==2:break
+                    page.wait_for_timeout(20)
+                assert len(held)==2
+            held[1][0].fulfill(response=held[1][1])
+            page.wait_for_function('()=>!receiptSubmitBusy&&receiptSubmitProof?.status==="COMMITTED"')
+            snapshot('new-recovery-returned')
+            page.locator('#receipt-submit-release').click()
+            page.wait_for_function('()=>!receiptSubmitBusy&&!receiptSubmitStoredPending()')
+            expect(page.locator('#receipt-summary')).to_contain_text('回执已记录')
+            assert page.locator('#receipt-text').input_value()==draft
+            assert page.evaluate('(n)=>localStorage.getItem(n)',handles[0][0]) is None
+            assert case_history(f[1],parent['preparation_id'])==before
+            assert authority_snapshot(f[1])==authority and not errors
+            assert traffic[marker:] and {r['method'] for r in traffic[marker:]}=={'GET'}
+            assert len([r for r in traffic if r['method']=='POST'])==1
+            assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
+            snapshot('explicit-current-read-release-complete')
+            page.screenshot(path=str(tmp_path/'refresh-recovered.png'))
+        finally:
+            snapshot('final')
+            context.close();browser.close()
