@@ -57,7 +57,7 @@ function page(config, storage, calls, transport) {
         await control('revoke');
       }
       const response = await fetch(config.base + path, options), body = await response.json();
-      if(path.endsWith('/preview')){transport.preview=JSON.parse(JSON.stringify(body));if(config.mode==='missing-source')delete body.source;if(config.mode==='invalid-observation-time')body.server_time='not-an-observation';}
+      if(path.endsWith('/preview')){transport.previewCalls=(transport.previewCalls||0)+1;transport.preview=JSON.parse(JSON.stringify(body));if(config.mode==='missing-source'&&transport.previewCalls>1)delete body.source;if(config.mode==='invalid-observation-time'&&transport.previewCalls>1)body.server_time='not-an-observation';}
       const call = {method: options.method || 'GET', path, status: response.status};
       if (options.body) call.body = JSON.parse(options.body);
       if (options.headers?.['Idempotency-Key']) call.request_key = options.headers['Idempotency-Key'];
@@ -110,6 +110,9 @@ function page(config, storage, calls, transport) {
   check(textOf($('resource-current')).includes('真实预约未确认'),'local confirmation does not assert external availability');
   check(calls.filter(c=>/\/holds$|\/confirm$/.test(c.path)).length===2,'exactly explicit hold and confirm');
  }else{
+  check(!$('resource-hold').disabled&&textOf($('resource-preview-result')).includes('AT28-current-resource-source'),'first valid current observation is visible');
+  await $('resource-preview').onclick();
+  check(!textOf($('resource-preview-result')).includes('AT28-current-resource-source'),'failed new observation clears prior source display');
   check($('resource-hold').disabled&&p.run('resourcePreview')===null,'unverified source or observation cannot become usable hold preview');
   check(textOf($('resource-error')).includes('尚未核实'),'precise missing observation notice');
   check(!calls.some(c=>/\/holds$|\/confirm$/.test(c.path)),'unverified observation sends no business command');
