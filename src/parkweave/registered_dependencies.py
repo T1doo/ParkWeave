@@ -5,21 +5,23 @@ import re
 from . import controlled_plans as cp
 from .store import Conflict
 
-VERSION=1
+VERSION=2
 MAX_COLLECTION_ROWS=256
 COLLECTION_LIMIT=MAX_COLLECTION_ROWS
-DECLARATIONS={
+DECLARATIONS_V1={
     'P1':['REQUEST','MATERIAL','FACT','SERVICE_RULE','OWNER_AUTHORITY'],
     'P2':['MATERIAL','RESOURCE','RESERVATION','RESOURCE_RULE_COLLECTION'],
     'P3':['MATERIAL','DISPATCH','ACCEPTANCE','RUN_ACCESS_COLLECTION'],
     'P4':['MATERIAL','RECEIPT','RECEIPT_EVENT_COLLECTION','LOCAL_EXECUTION'],
     'P5':['MATERIAL','RESOURCE','ACCEPTANCE','RECEIPT','LOCAL_CASE_CHECK'],
 }
-COLLECTION_ROOTS={'resources':'P2','existing_access':'P3'}
+DECLARATIONS=deepcopy(DECLARATIONS_V1)
+DECLARATIONS['P1'].append('SERVICE_CATALOG_QUERY_COLLECTION')
+COLLECTION_ROOTS={'resources':'P2','existing_access':'P3','service_catalog':'P1'}
 
 
 def collections(store,c,parent):
-    """Reuse only already readable owner resource and original Run access queries.
+    """Reuse original scoped resource, Run access and same-service queries.
 
     The extra row detects overflow; an incomplete set never becomes known.
     Raw rows remain in this stack frame, not in plan history or role projections.
@@ -37,16 +39,23 @@ def collections(store,c,parent):
         store.lock_principal(c,source['principal_id'])
         principal=c.execute('SELECT * FROM principals WHERE id=%s',(source['principal_id'],)).fetchone()
         source['effective_active']=bool(principal and principal['active'] and source['read_active'] and store.assignment_allowed(c,principal,parent['run_id']))
-    return {name:dict(known=len(rows)<=COLLECTION_LIMIT,count=len(rows),sha256=cp._hash(cp._normal(rows)))
+    values={name:dict(known=len(rows)<=COLLECTION_LIMIT,count=len(rows),sha256=cp._hash(cp._normal(rows)))
             for name,rows in (('resources',resources),('existing_access',access))}
+    from .service_catalog_dependencies import collection
+    values['service_catalog']=collection(c,parent)
+    return values
 
 
 def manifest(steps,values):
     selected={s.get('adapter_id',s.get('id')) for s in steps}
-    basis=dict(version=VERSION,declarations={a:deepcopy(DECLARATIONS[a]) for a in sorted(selected)},
+    # Frozen old adoption previews contain only the two V1 queries. Rebuilding
+    # those proofs must produce their original bytes, never today's collection.
+    version=VERSION if 'service_catalog' in values else 1
+    declarations=DECLARATIONS if version==VERSION else DECLARATIONS_V1
+    basis=dict(version=version,declarations={a:deepcopy(declarations[a]) for a in sorted(selected)},
                edges=[dict(upstream=dep,downstream=s.get('adapter_id',s.get('id')),kind='PRECEDES',provenance='COMPILED_REGISTERED_ADAPTER')
                       for s in steps for dep in s['depends_on']],
-               collections={name:deepcopy(values[name]) for name,root in COLLECTION_ROOTS.items() if root in selected})
+               collections={name:deepcopy(values[name]) for name,root in COLLECTION_ROOTS.items() if root in selected and name in values})
     return {**basis,'sha256':cp._hash(basis)}
 
 
@@ -60,10 +69,13 @@ def validate(value):
             any(not isinstance(e,dict) or set(e)!={'upstream','downstream','kind','provenance'} or e['upstream'] not in DECLARATIONS or e['downstream'] not in DECLARATIONS or e['kind']!='PRECEDES' or e['provenance']!='COMPILED_REGISTERED_ADAPTER' for e in value['edges']) or
             not isinstance(value['collections'],dict) or not set(value['collections'])<=set(COLLECTION_ROOTS)):
             raise ValueError()
-        for v in value['collections'].values():
+        if (value['version']==1 and 'service_catalog' in value['collections'] or
+            value['version']==2 and 'P1' in value['declarations'] and 'service_catalog' not in value['collections']):raise ValueError()
+        for name,v in value['collections'].items():
             if (not isinstance(v,dict) or set(v)!={'known','count','sha256'} or type(v['known']) is not bool or
-                type(v['count']) is not int or not 0<=v['count']<=MAX_COLLECTION_ROWS+1 or
-                (v['known'] and v['count']>MAX_COLLECTION_ROWS) or (not v['known'] and v['count']==0) or not re.fullmatch('[a-f0-9]{64}',v['sha256'])):raise ValueError()
+                type(v['count']) is not int or not 0<=v['count']<=(33 if name=='service_catalog' else MAX_COLLECTION_ROWS+1) or
+                (v['known'] and v['count']>(32 if name=='service_catalog' else MAX_COLLECTION_ROWS)) or
+                (not v['known'] and v['count']==0) or not re.fullmatch('[a-f0-9]{64}',v['sha256'])):raise ValueError()
         if value['sha256']!=cp._hash({k:v for k,v in value.items() if k!='sha256'}):raise ValueError()
     except (TypeError,KeyError,ValueError,AttributeError):raise Conflict('registered dependency proof invalid')
 

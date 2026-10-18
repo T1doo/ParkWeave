@@ -63,6 +63,9 @@ COLLECTIONS_V1={
  'resources':('P2','DEPENDENCY_RESOURCE_QUERY_SET','CAPACITY_SNAPSHOT','CAPACITY'),
  'existing_access':('P3','DEPENDENCY_RUN_ACCESS_QUERY_SET','SOURCE','PRECEDES'),
 }
+COLLECTIONS_V2={
+ 'service_catalog':('P1','DEPENDENCY_SERVICE_CATALOG_QUERY_SET','SERVICE_RULE','MATERIAL'),
+}
 
 
 def _flatten_v1(adapter,value):
@@ -157,7 +160,9 @@ def build_v1(parent,plan,before_sources,current_sources,previous_dependencies,cu
         for facet in ('FACT_PURPOSE_BINDING',):
             source=current.get('fact_clarification',current.get('sources.fact_clarification'))
             if source is not None and (not isinstance(source,dict) or source.get('satisfied') is not True):reasons.add('CURRENT_FACT_SOURCE_UNAVAILABLE')
-    for name,(adapter,facet,type,kind) in COLLECTIONS_V1.items():
+    for name,(adapter,facet,type,kind) in {**COLLECTIONS_V1,**COLLECTIONS_V2}.items():
+        if name in COLLECTIONS_V2 and not any(name in (v or {}).get('collections',{}) for v in (previous_dependencies,current_dependencies)):
+            continue  # Preserve old V1 source graphs and history byte-for-byte.
         if adapter not in selected:continue
         step=next(s for s in plan['steps'] if s['adapter_id']==adapter)
         prior=(previous_dependencies or {}).get('collections',{}).get(name)
