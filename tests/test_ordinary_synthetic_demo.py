@@ -59,9 +59,29 @@ def server(p,directory,selected_port=None):
                 if rows:ready=rows[-1];break
                 time.sleep(.05)
             assert ready and ready['mode']=='CURRENT_PREPARATION' and ready['models']=='DISABLED'
-            with httpx.Client(base_url=ready['url'],timeout=20) as api:
+            # Bounded test evidence only: no Authorization header or body text.
+            def trace(kind,request,status=None):
+                payload=json.loads(request.content) if request.content else {}
+                with (directory/'http-metadata.jsonl').open('a') as stream:
+                    stream.write(json.dumps(dict(kind=kind,monotonic=time.monotonic(),method=request.method,
+                        path=request.url.path,request_key=request.headers.get('Idempotency-Key'),
+                        action=payload.get('action'),status=status))+'\n')
+            hooks=dict(request=[lambda request:trace('REQUEST',request)],
+                response=[lambda response:trace('RESPONSE',response.request,response.status_code)])
+            with httpx.Client(base_url=ready['url'],timeout=20,event_hooks=hooks) as api:
                 assert api.get('/health').json()['process_id']==ready['api_pid']
-                yield api,ready
+                try:yield api,ready
+                except httpx.ReadTimeout:
+                    # Observe this exact owned database once before normal cleanup.
+                    try:
+                        with psycopg.connect(demo.lifecycle.dsn(p),connect_timeout=3,
+                                options='-c statement_timeout=1000',row_factory=psycopg.rows.dict_row) as c:
+                            c.execute('SET TRANSACTION READ ONLY')
+                            observed=dict(activity=c.execute("SELECT pid,state,wait_event_type,wait_event,pg_blocking_pids(pid) blockers FROM pg_stat_activity WHERE datname=current_database() ORDER BY pid").fetchall(),
+                                locks=c.execute("SELECT pid,locktype,mode,granted,relation::regclass::text relation FROM pg_locks WHERE database=(SELECT oid FROM pg_database WHERE datname=current_database()) ORDER BY pid,locktype,mode").fetchall())
+                    except Exception as error:observed=dict(diagnostic_error_type=type(error).__name__)
+                    (directory/'http-timeout-observation.json').write_text(json.dumps(observed,default=str,indent=2)+'\n')
+                    raise
         finally:
             if child.poll() is None:child.terminate()
             child.wait(timeout=40)
@@ -79,7 +99,8 @@ def call(api,tokens,path,body=None,actor='enterprise',expected=200):
     return r.json()
 
 
-def new_case(api,tokens,label):
+def prepare_case(api,tokens,label,scope=None):
+    scope=scope or demo.SCOPES['primary']
     run=call(api,tokens,'/api/runs',dict(goal='SYNTHETIC '+label+' wholly new request'),expected=202)['run_id']
     deadline=time.monotonic()+20
     while time.monotonic()<deadline:
@@ -88,7 +109,7 @@ def new_case(api,tokens,label):
         assert row['state'] in ('QUEUED','RUNNING'),row
         time.sleep(.05)
     else:pytest.fail('ordinary worker did not finish new local Case')
-    p=call(api,tokens,'/api/preparations',dict(run_id=run,service_id='synthetic-material-preparation',service_version=1,reviewer_id=demo.IDS['specialist']),expected=201)
+    p=call(api,tokens,'/api/preparations',dict(run_id=run,service_id='synthetic-material-preparation',service_version=1,reviewer_id=scope['ids']['specialist']),expected=201)
     base='/api/preparations/'+p['preparation_id']
     p=call(api,tokens,base+'/request-intent',dict(expected_preparation_revision=p['revision'],request_text='SYNTHETIC new '+label+' request and explicit five goals',required_goals=GOALS))
     request_revision=p['request_intent']['revision']
@@ -96,11 +117,21 @@ def new_case(api,tokens,label):
         p=call(api,tokens,base+'/commands',dict(action='ADD_EVIDENCE',expected_revision=p['revision'],slot=slot,text='SYNTHETIC '+label+' '+slot+' independently entered',source_kind='USER_STATEMENT',source_label='SYNTHETIC explicit '+label))
     for actor,action in (('specialist','REVIEW'),('enterprise','CONFIRM')):
         p=call(api,tokens,base+'/commands',dict(action=action,expected_revision=p['revision'],reason='SYNTHETIC user '+action),actor=actor)
+    return p,request_revision
+
+
+def adopt_case(api,tokens,p,request_revision):
+    base='/api/preparations/'+p['preparation_id']
     planning=call(api,tokens,base+'/planning-preview')['current']
     assert planning['required_goals']==GOALS
     plan=call(api,tokens,base+'/service-case-plan',dict(expected_preparation_revision=p['revision'],expected_request_revision=request_revision,expected_source_sha256=planning['source_sha256'],expected_plan_revision=0,required_goals=GOALS,reason='SYNTHETIC explicit user ADOPT'),expected=201)
     assert len(plan['steps'])==5
     return p
+
+
+def new_case(api,tokens,label,scope=None):
+    p,request_revision=prepare_case(api,tokens,label,scope)
+    return adopt_case(api,tokens,p,request_revision)
 
 
 def verify(api,tokens,p,adapter):
@@ -110,15 +141,17 @@ def verify(api,tokens,p,adapter):
     assert next(s for s in row['steps'] if s['adapter_id']==adapter)['state']=='VERIFIED'
 
 
-def complete(api,tokens,p,label):
-    base='/api/preparations/'+p['preparation_id'];verify(api,tokens,p,'P1')
+def complete(api,tokens,p,label,scope=None,p1_verified=False):
+    scope=scope or demo.SCOPES['primary']
+    base='/api/preparations/'+p['preparation_id']
+    if not p1_verified:verify(api,tokens,p,'P1')
     now=datetime.now(timezone.utc);holds=[]
-    for resource in (demo.resources.RESOURCE_ID,demo.combinations.SECOND_RESOURCE_ID):
+    for resource in (row['id'] for row in scope['resources']):
         holds.append(call(api,tokens,'/api/synthetic-resources/'+str(resource)+'/holds',dict(starts_at=(now+timedelta(hours=1)).isoformat(),ends_at=(now+timedelta(hours=2)).isoformat(),quantity=1,expected_revision=1,ttl_seconds=120,purpose='SYNTHETIC '+label),expected=201)['hold'])
     group=call(api,tokens,'/api/resource-combinations',dict(members=[dict(hold_id=h['id'],expected_revision=h['resource_revision']) for h in holds]),expected=201)['combination']
     call(api,tokens,base+'/resource-link',dict(combination_id=group['id'],expected_preparation_revision=p['revision'],expected_link_revision=0,reason='SYNTHETIC original combination association'),expected=201)
     verify(api,tokens,p,'P2')
-    d=call(api,tokens,base+'/dispatch',dict(expected_preparation_revision=p['revision'],expected_dispatch_revision=0,executor_id=demo.IDS['executor'],reason='SYNTHETIC explicit reviewer OFFER'),actor='specialist',expected=201)
+    d=call(api,tokens,base+'/dispatch',dict(expected_preparation_revision=p['revision'],expected_dispatch_revision=0,executor_id=scope['ids']['executor'],reason='SYNTHETIC explicit reviewer OFFER'),actor='specialist',expected=201)
     d=call(api,tokens,'/api/service-dispatches/'+d['dispatch_id']+'/commands',dict(action='ACCEPT',expected_revision=d['revision'],reason='SYNTHETIC executor accepts own step'),actor='executor')
     verify(api,tokens,p,'P3')
     receipt='/api/executor-receipts/'+d['receipt_step_id'];r=call(api,tokens,receipt,actor='executor')

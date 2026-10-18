@@ -33,9 +33,22 @@ from parkweave.process_env import minimal_environment
 from parkweave import resource_holds as resources,resource_combinations as combinations
 
 PREFIX='parkweave-ordinary-demo-'
-SCHEMA='parkweave-ordinary-synthetic-demo/1'
+SCHEMA='parkweave-ordinary-synthetic-demo/2'
 IDS=dict(enterprise='ordinary-demo-enterprise',specialist='ordinary-demo-specialist',executor='ordinary-demo-executor')
 PARK='synthetic-ordinary-park';ORG='synthetic-ordinary-org'
+# Fixed demo configuration only; these are not production grants or logins.
+SCOPES={
+    'primary':dict(label='第一合成企业 / 第一合成园区',park_id=PARK,org_id=ORG,ids=IDS,
+        sessions={actor:actor for actor in IDS},source_id='ORDINARY_LOCAL_DEMO_V1',
+        resources=[dict(id=str(resources.RESOURCE_ID),name='合成协作空间'),
+                   dict(id=str(combinations.SECOND_RESOURCE_ID),name='合成研讨设备')]),
+    'secondary':dict(label='第二合成企业 / 第二合成园区',park_id='synthetic-ordinary-second-park',
+        org_id='synthetic-ordinary-second-org',
+        ids={actor:'ordinary-demo-second-'+actor for actor in IDS},
+        sessions={actor:'second_'+actor for actor in IDS},source_id='ORDINARY_LOCAL_DEMO_SECOND_SCOPE_V1',
+        resources=[dict(id='e6120954-2e0b-4ad3-857f-ed6cc7501651',name='第二园区合成协作空间'),
+                   dict(id='34ed95d8-1f15-4a47-9118-eb21c7ae5610',name='第二园区合成研讨设备')]),
+}
 _last_owned_state=None
 SQL_RIGHTS={
     **lifecycle.SQL_RIGHTS,
@@ -120,18 +133,21 @@ def initialize(owner,tokens):
         raise Denied('live owned synthetic creation receipt required before demo initialization')
     with owner.connect() as c:
         receipt.authorize_migration(c)
-        for actor,role,caps in (('enterprise','enterprise_operator',('READ','EXECUTE')),
-                ('specialist','park_specialist',('READ',)),('executor','service_executor',('READ',))):
-            c.execute('INSERT INTO principals VALUES(%s,%s,%s,%s,%s,true)',(IDS[actor],digest(tokens[actor]),PARK,ORG,role))
-            for cap in caps:c.execute('INSERT INTO capability_grants(principal_id,capability,park_id,org_id) VALUES(%s,%s,%s,%s)',(IDS[actor],cap,PARK,ORG))
-        c.execute("INSERT INTO action_grants(principal_id,action,park_id,org_id) VALUES(%s,'case.create',%s,%s)",(IDS['enterprise'],PARK,ORG))
-        for actor,cap in (('enterprise','PREPARE'),('specialist','REVIEW_ASSIGNED')):
-            c.execute('INSERT INTO preparation_grants(principal_id,park_id,org_id,capability) VALUES(%s,%s,%s,%s)',(IDS[actor],PARK,ORG,cap))
-        source=dict(kind='SYNTHETIC',id='ORDINARY_LOCAL_DEMO_V1',revision='1',statement='合成演示配置；不是正式目录、批准或外部履约。')
-        c.execute("INSERT INTO preparation_catalog VALUES(%s,'synthetic-material-preparation',1,'普通办理资料服务（合成）',%s,'SYNTHETIC','NOT_EVALUATED')",(PARK,Jsonb(source)))
-        for id,name in ((resources.RESOURCE_ID,'合成协作空间'),(combinations.SECOND_RESOURCE_ID,'合成研讨设备')):
-            c.execute("INSERT INTO synthetic_resources VALUES(%s,%s,%s,1,2,300,clock_timestamp()-interval '1 day',clock_timestamp()+interval '30 days',true,'UTC','SYNTHETIC','LOCAL_AUTHORITY',%s)",(id,PARK,name,Jsonb(source)))
-            for cap in ('READ','HOLD'):c.execute('INSERT INTO synthetic_resource_grants VALUES(%s,%s,%s,%s,%s,true)',(IDS['enterprise'],id,PARK,ORG,cap))
+        for scope in SCOPES.values():
+            ids=scope['ids'];park=scope['park_id'];org=scope['org_id']
+            for actor,role,caps in (('enterprise','enterprise_operator',('READ','EXECUTE')),
+                    ('specialist','park_specialist',('READ',)),('executor','service_executor',('READ',))):
+                session=tokens[scope['sessions'][actor]]
+                c.execute('INSERT INTO principals VALUES(%s,%s,%s,%s,%s,true)',(ids[actor],digest(session),park,org,role))
+                for cap in caps:c.execute('INSERT INTO capability_grants(principal_id,capability,park_id,org_id) VALUES(%s,%s,%s,%s)',(ids[actor],cap,park,org))
+            c.execute("INSERT INTO action_grants(principal_id,action,park_id,org_id) VALUES(%s,'case.create',%s,%s)",(ids['enterprise'],park,org))
+            for actor,cap in (('enterprise','PREPARE'),('specialist','REVIEW_ASSIGNED')):
+                c.execute('INSERT INTO preparation_grants(principal_id,park_id,org_id,capability) VALUES(%s,%s,%s,%s)',(ids[actor],park,org,cap))
+            source=dict(kind='SYNTHETIC',id=scope['source_id'],revision='1',statement=scope['label']+'；合成演示配置，不是正式目录、批准或外部履约。')
+            c.execute("INSERT INTO preparation_catalog VALUES(%s,'synthetic-material-preparation',1,%s,%s,'SYNTHETIC','NOT_EVALUATED')",(park,scope['label']+'普通资料服务（合成）',Jsonb(source)))
+            for resource in scope['resources']:
+                c.execute("INSERT INTO synthetic_resources VALUES(%s,%s,%s,1,2,300,clock_timestamp()-interval '1 day',clock_timestamp()+interval '30 days',true,'UTC','SYNTHETIC','LOCAL_AUTHORITY',%s)",(resource['id'],park,resource['name'],Jsonb(source)))
+                for cap in ('READ','HOLD'):c.execute('INSERT INTO synthetic_resource_grants VALUES(%s,%s,%s,%s,%s,true)',(ids['enterprise'],resource['id'],park,org,cap))
         c.execute('REVOKE ALL ON DATABASE parkweave FROM PUBLIC')
         c.execute('REVOKE ALL ON SCHEMA public FROM PUBLIC')
         c.execute('GRANT CONNECT ON DATABASE parkweave TO parkweave_app')
@@ -161,20 +177,20 @@ def setup():
         owner._case_fact_fixture_receipt=receipt
         lifecycle.dump(p/'creation-observation.json',asdict(receipt))
         owner.migrate()
-        tokens={actor:secrets.token_urlsafe(32) for actor in IDS}
+        tokens={key:secrets.token_urlsafe(32) for scope in SCOPES.values() for key in scope['sessions'].values()}
         initialize(owner,tokens)
         with owner.connect() as c:
             identity=c.execute('SELECT system_identifier::text FROM pg_control_system()').fetchone()
             oid=c.execute('SELECT oid::bigint FROM pg_database WHERE datname=current_database()').fetchone()['oid']
             snapshot=authority(c)
-            assert snapshot['counts']==dict(principals=3,capability_grants=4,action_grants=1,
-                preparation_grants=2,preparation_catalog=1,run_assignments=0,field_grants=0,
-                synthetic_resources=2,synthetic_resource_grants=4)
+            assert snapshot['counts']==dict(principals=6,capability_grants=8,action_grants=2,
+                preparation_grants=4,preparation_catalog=2,run_assignments=0,field_grants=0,
+                synthetic_resources=4,synthetic_resource_grants=8)
             assert all(c.execute('SELECT count(*) n FROM '+t).fetchone()['n']==0 for t in
                 ('runs','cases','preparations','synthetic_resource_holds','service_dispatches','service_receipt_steps','case_local_events'))
         lifecycle.dump(p/'sessions.json',tokens)
         lifecycle.dump(p/'state.json',dict(schema=SCHEMA,source=source_binding(),system_identifier=identity['system_identifier'],
-            database_oid=oid,schema_version=32,authority=snapshot,ids=IDS,sessions_sha256=sha256((p/'sessions.json').read_bytes()).hexdigest(),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED'))
+            database_oid=oid,schema_version=32,authority=snapshot,ids=IDS,scopes=SCOPES,sessions_sha256=sha256((p/'sessions.json').read_bytes()).hexdigest(),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED'))
     return p
 
 
@@ -190,7 +206,8 @@ def serve(value,port):
         _last_owned_state=p
         if (p/'stop-unconfirmed').exists():raise Denied('previous owned stop unconfirmed; state retained')
         marker=json.loads((p/'state.json').read_text())
-        if (marker['schema']!=SCHEMA or marker['source']!=source_binding() or marker['ids']!=IDS or
+        if (marker.get('schema')!=SCHEMA or marker.get('source')!=source_binding() or marker.get('ids')!=IDS or
+                marker.get('scopes')!=SCOPES or
                 marker['sessions_sha256']!=sha256((p/'sessions.json').read_bytes()).hexdigest()):
             raise Denied('ordinary demo source/state binding changed')
         with lifecycle.postgres(p) as pg:
@@ -221,7 +238,8 @@ def serve(value,port):
                     else:raise RuntimeError('owned ordinary API readiness timeout')
                     print(json.dumps(dict(url=f'http://127.0.0.1:{port}',api_pid=children[0].pid,worker_pid=children[1].pid,
                         postgres_pid=pg.pid,state_dir=str(p),sessions_file=str(p/'sessions.json'),scope='ORDINARY_SYNTHETIC',
-                        mode='CURRENT_PREPARATION',models='DISABLED',run_assignment_created=False)),flush=True)
+                        mode='CURRENT_PREPARATION',models='DISABLED',run_assignment_created=False,
+                        available_scopes=[dict(id=id,label=scope['label'],session_keys=scope['sessions']) for id,scope in SCOPES.items()])),flush=True)
                     while all(child.poll() is None for child in children):time.sleep(.25)
                     raise RuntimeError('owned API/worker exited')
                 finally:

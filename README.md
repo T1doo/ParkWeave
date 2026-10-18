@@ -148,3 +148,5 @@ python -m parkweave.cli prepare-access --config existing-preparation.json
 只有经过独立授权的管理员才能选择直连数据库及相关表 owner 的连接，并明确执行 `python -m parkweave.cli prepare-access --config existing-preparation.json --apply --expected-plan-sha256 <刚核对的计划SHA>`。本会话只在拥有的合成数据库测试该代码，未执行真实授权。普通应用连接不能应用；主体、READ/EXECUTE、目录等缺失或已有准备权限 inactive/错 scope 均阻断，不自动修复。两项准备权限沿用原主体/园区/企业范围，不是目录专属权限；新插入与审计原子提交，当前状态改变须重新预检。命令异常可能结果未知，先核对新预检，不自动重放。配置不创建身份、凭据、能力、目录、材料、分派或 Run 权限，不能代替批准；生产安装、其余管理初始化和 Windows/正式 AT35 仍未完成。
 
 要从空业务库体验普通P1–P5，使用[普通合成演示操作说明](docs/demo/OrdinarySyntheticDemo.md)：已有Linux/Python依赖下先运行 `.venv/bin/python -B -m scripts.ordinary_synthetic_demo setup`，再以输出的私有目录运行 `serve --state-dir 路径 --port 8765`。初始化仅发生于全新独立合成集群，日常启动不补权限；普通API/worker从用户新输入建单，可保留同一库停止、重启和另建第二事项。不需手工准备pack/journal或Run assignment；原确定性规划、明确采纳与办理算法复用。V4/demo provider组合、Native/正式来源、生产安装与Windows正式AT仍保持原边界。会话只在私有目录本机查看，勿放入聊天、URL或仓库。
+
+普通合成入口现提供同一新库内的两企业、两园区独立范围。按[操作说明](docs/demo/OrdinarySyntheticDemo.md)选择第一组或`second_*`会话，从各自目录以新材料办理；重启不复制Case、授权或证明。旧一范围状态保留，不自动迁移或补权。此项仍限已有依赖Linux合成演示，不等于安装器、Windows或正式AT35验收。
