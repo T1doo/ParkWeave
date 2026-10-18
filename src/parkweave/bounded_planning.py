@@ -97,6 +97,8 @@ def _proposal(store,c,p,parent):
     global_requirements=sorted({value for row in declarations for value in (row['requirements'] or [])})
     fixed_plan=bool(c.execute('SELECT 1 FROM controlled_plans WHERE preparation_id=%s',(parent['id'],)).fetchone())
     items,steps=compile(goals);issues,snapshots=cp._sources(store,c,parent)
+    if any(s['id'] in ('P3','P4') for s in steps):
+        cp.ordinary.guard_current(store,c,parent,snapshots['P3'].get('case_step_assignment'))
     from .catalog_publication import snapshot as catalog_snapshot
     catalog=catalog_snapshot(c,parent)
     from .registered_dependencies import collections
@@ -139,11 +141,11 @@ def _view(store,c,p,parent):
                 isolated_dispatch_execution_preview_enabled=getattr(store,'_isolated_dispatch_execution_preview',None) is not None, isolated_receipt_execution_preview_enabled=getattr(store,'_isolated_receipt_execution_preview',None) is not None,isolated_lifecycle_execution_preview_enabled=getattr(store,'_isolated_lifecycle_execution_preview',None) is not None)
 
 def read(store,token,id):
-    with store.connect() as c:
+    with cp.connection(store) as c:
         p,parent=_context(store,c,token,id);return _view(store,c,p,parent)
 
 def capture(store,token,id,key,data):
-    with store.connect() as c:
+    with cp.connection(store) as c:
         p,parent=_context(store,c,token,id,True);prep.key_lock(c,p,'planning-preview:'+key)
         fp=cp._hash({'preparation_id':str(id),**data.model_dump()})
         prior=c.execute('SELECT id,planning_previews FROM preparations WHERE planning_previews @> %s',(Jsonb([{'actor_id':p['id'],'request_key':key}]),)).fetchall()

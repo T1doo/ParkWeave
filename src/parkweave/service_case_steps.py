@@ -294,6 +294,8 @@ def current_sources(store,c,parent,plan):
                     issues['P4'].append('SELECTED_INSTANCE_EXECUTOR_BINDING_CHANGED')
     from .template_migration import add_sources
     add_sources(parent,plan,sources)
+    if any(s['adapter_id'] in ('P3','P4') for s in plan['steps']):
+        cp.ordinary.guard_current(store,c,parent,sources['P3'].get('case_step_assignment'))
     return {k:sorted(set(v)) for k,v in issues.items()},cp._normal(sources),actual
 
 

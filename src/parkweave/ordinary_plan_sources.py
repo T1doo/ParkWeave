@@ -62,11 +62,24 @@ def observation(store,c,parent):
         try:context._live(c,current,offer,final=True)
         except Denied:return proof
         proof['current']=True
-        # Run only after every subsequent source/history/ledger wait. A VERIFY
-        # crossing the original deadline rolls back with its original key.
-        if c in service._checks:
-            service._checks[c].append(lambda: context._live(c,current,offer,final=True))
     return proof
+
+
+def guard_current(store,c,parent,proof):
+    """Protect only consumers whose actual plan uses the ordinary P3/P4 source."""
+    if proof is None or not proof['current']:return
+    service=selected(store)
+    if service is None or c not in service._checks:
+        raise Denied('bounded ordinary plan source transaction required')
+    context=service._context(c,parent['id'])
+    _,current=context._parent(c,None,parent['id'],recipient_id=parent['owner_id'],final=True)
+    root=context._root(c,current)
+    from .service_dispatches import _own_offer
+    offer=_own_offer(c,{'role':'enterprise_operator'},root) if root else None
+    if not offer or offer['state']!='ACCEPTED':raise Denied('current ordinary plan acceptance required')
+    # Original _live registers its final check after every subsequent wait.
+    # Unrelated P1/P2-only outputs do not acquire a CaseStep deadline.
+    context._live(c,current,offer)
 
 
 def _receipt_proof(c,context,step,receipt):

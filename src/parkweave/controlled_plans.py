@@ -181,6 +181,7 @@ def _inspect(store,c,parent,row,observe=True):
     if prep.case_write_blocked(c,parent):observe=False
     if row['template_sha256']!=TEMPLATE_SHA:raise Conflict('fixed template version/hash unavailable')
     issues,snapshots=_sources(store,c,parent);bad=None
+    ordinary.guard_current(store,c,parent,snapshots['P3'].get('case_step_assignment'))
     if _planning_constraint_conflict(parent):
         for reasons in issues.values():reasons.append('DECLARED_PLANNING_CONSTRAINT_CONFLICT')
     for i,s in enumerate(STEPS,1):

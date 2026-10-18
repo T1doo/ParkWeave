@@ -219,3 +219,44 @@ def test_actual_last_pg_lock_wait_crosses_first_deadline_without_false_current_o
     (tmp_path/'last-lock-proof.json').write_text(json.dumps(dict(operation=operation,actual_pg_lock_observed=observed,
         original_deadline=d['assignment_valid_until'],status=response.status_code,plan_revision_unchanged=True,
         clock_offset_used=False),indent=2)+'\n')
+
+
+@pytest.mark.parametrize('goal',[GOALS[0],GOALS[1]])
+def test_p1_p2_only_goal_result_does_not_acquire_unrelated_step_deadline(ordinary_plan,monkeypatch,tmp_path,goal):
+    import json,time
+    from concurrent.futures import ThreadPoolExecutor
+    from parkweave import case_goal_results as goals
+    f,baseline=ordinary_plan
+    monkeypatch.setattr(cs._OrdinaryCaseStep,'_offer_deadline',lambda self,c:cs._now(c)+timedelta(seconds=18))
+    p=start(f,[goal]);verified(f,p,'P1')
+    if goal==GOALS[1]:ok(resource_link(f,p,group(f)),201);verified(f,p,'P2')
+    d=ok(decision(f,ok(offer(f,p)[0],201),'ACCEPT'))
+    initial=ok(results(f,p));assert initial['state']=='LOCAL_OUTPUTS_VERIFIED'
+    original=goals.outputs
+    query="SELECT id FROM operations WHERE run_id=%s FOR SHARE /* p1_p2_only_last_wait */"
+    def wait_after_sources(*args,**kw):
+        value=original(*args,**kw);args[1].execute(query,(p['run_id'],)).fetchall();return value
+    monkeypatch.setattr(goals,'outputs',wait_after_sources)
+    with f[1].connect() as c:
+        remaining=c.execute('SELECT %s::timestamptz-clock_timestamp() AS t',(d['assignment_valid_until'],)).fetchone()['t'].total_seconds()
+    assert remaining>2;time.sleep(remaining-2)
+    with f[1].connect() as lock:
+        lock.execute('SELECT id FROM operations WHERE run_id=%s FOR UPDATE',(p['run_id'],)).fetchall()
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            future=pool.submit(results,f,p);observed=False
+            for _ in range(100):
+                with f[1].connect() as c:
+                    observed=bool(c.execute("SELECT 1 FROM pg_stat_activity WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE 'SELECT id FROM operations%%p1_p2_only_last_wait%%'").fetchone())
+                if observed:break
+                if future.done():future.result()
+                time.sleep(.02)
+            assert observed
+            with f[1].connect() as c:
+                remaining=c.execute('SELECT %s::timestamptz-clock_timestamp() AS t',(d['assignment_valid_until'],)).fetchone()['t'].total_seconds()
+            assert 0<remaining<2;time.sleep(remaining+.12);lock.commit();late=ok(future.result(timeout=10))
+    monkeypatch.setattr(goals,'outputs',original)
+    fresh=ok(results(f,p));assert late==initial==fresh
+    assert authority_snapshot(f[1])==baseline
+    (tmp_path/'p1-p2-only-last-lock.json').write_text(json.dumps(dict(goal=goal,actual_pg_wait=observed,
+        late_status=200,original_deadline=d['assignment_valid_until'],all_results_equal=True,
+        original_p1_p2_current=True,clock_offset_used=False),indent=2)+'\n')
