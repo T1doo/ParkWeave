@@ -1,3 +1,11 @@
+## 2026-10-18：人工补证与同事项关闭／重开原普通DOM贯通
+
+最终冻结 `a9c78345d6c25aa46d808fe975a6360f43a1b51c`，生产src与e3be相同。新partial事项七步人工补证／答复／明确知悉和双角色冷读；原assigned同Case六产物后纠错回执v3、关闭／重开cycle2、P4/P5重验及新普通API持久回读，均1200／320实跑。初始SYNTHETIC权限／目录与assigned精确Run assignment fixture明确，不作真实零设置办理、Case完成或正式AT。
+
+精确口径：a54首14完整模块301唯一282PASS／19FAIL；旧Node替身缺classList。e1d错误修补截断constructor，独审拦下，27窗8P19F保留；完整修正六替身、六语法检查后最终有限27PASS（19旧失败＋8DOM），同SHA独25PASS全重叠，静审无开放P1/P2。没有301单窗全绿或最终SHA完整301窗；759逐窗共享／镜像PREPOST零漂移，32342继承证据原字节保持。此前连接／清理／启动底因仍UNKNOWN，前片382／独测53P1F等原口径及旧403／旧先交付80ms边界不改。
+
+这两项DOM缺口在LOCAL合成范围关闭；正式来源backend／主体／采纳合同与代码、原合法权限／目录／Run assignment、Windows11／真实场景／模型／正式AT仍待，项目IN_PROGRESS。详见[合同](OriginalCollaborationDOM-20261018.md)、[全部分窗、原件与剩余输入](OriginalCollaborationDOMValidation-20261018.md)。下方原历史原文保留。
+
 ## 2026-10-18：普通SUBMIT冷恢复刷新并发修复及原T07复验
 
 冻结 `5bd4aecc18eccc4c939e035cfba66fbc3b5ecea7`，修旧恢复GET挂起时刷新导致busy永久禁用，operation归属防旧finally结束新核对。真实红2FAIL保留；新4浏览器场景实际通过。主17模块382唯一范围首窗381PASS/一个节点setup+teardown共2ERROR，原预算诊断该节点1PASS；独54首窗53P1F、唯一完整串行确认54P，全部ID重叠不累加。没有17模块382项单窗全绿，首次启动/连接/清理底因仍UNKNOWN。756输入零漂移。

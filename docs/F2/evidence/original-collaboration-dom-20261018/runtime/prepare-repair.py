@@ -1,0 +1,15 @@
+from pathlib import Path
+import hashlib,io,json,subprocess,tarfile,tempfile,xml.etree.ElementTree as E
+root=Path('/workspace/ParkWeave');r=root/'.runtime/original-collaboration-dom-20261018';first=json.loads((r/'final-result.json').read_text());assert first['exit_code']==1 and first['unique']==301 and first['failures']==19 and first['errors']==first['skipped']==0
+tree=E.parse(r/'final.xml');cases=tree.findall('.//testcase');failed={'tests/'+c.get('classname').split('.')[-1]+'.py::'+c.get('name') for c in cases if c.find('failure') is not None};assert len(failed)==19
+original=json.loads((r/'final-collected-nodeids.json').read_text());dom={'tests/'+name+'.py' for name in ['test_manual_goal_collaboration_browser','test_case_feedback_cycle_browser','test_assigned_demo_chain_browser','test_demo_original_page_intake_browser']}
+selected=[node for node in original if node.split('::')[0] in dom or node in failed];assert len(selected)==len(set(selected))==27
+sha=subprocess.check_output(['git','rev-parse','HEAD'],cwd=root,text=True).strip();old=json.loads((r/'frozen-inputs.json').read_text());expected={name:hashlib.sha256((root/name).read_bytes()).hexdigest() for name in old};changed=[name for name in old if expected[name]!=old[name]]
+assert len(changed)==7 and len([name for name in changed if name.endswith('.js')])==6 and 'docs/F2/OriginalCollaborationDOM-20261018.md' in changed
+outer=Path(tempfile.mkdtemp(prefix='pw-collaboration-repair-'+sha[:7]+'-'));mirror=outer/'mirror';mirror.mkdir();contracts=json.loads((r/'freeze.json').read_text())['contracts']
+archive=subprocess.check_output(['git','archive',sha,'src','tests','scripts','pyproject.toml',*contracts],cwd=root)
+with tarfile.open(fileobj=io.BytesIO(archive)) as tar:tar.extractall(mirror,filter='data')
+assert all(hashlib.sha256((mirror/name).read_bytes()).hexdigest()==digest for name,digest in expected.items())
+for name in ['same-case-goals-20261014','partial-plan-20261013','manual-goal-task-late-20261014','manual-goal-tasks-20261014','manual-goal-recheck-20261014','manual-goal-reply-20261014','manual-goal-privacy-20261014']:(mirror/'.runtime'/name).mkdir(parents=True)
+freeze=dict(source_sha=sha,source_tree=subprocess.check_output(['git','rev-parse',sha+':src'],cwd=root,text=True).strip(),tests_tree=subprocess.check_output(['git','rev-parse',sha+':tests'],cwd=root,text=True).strip(),input_count=len(expected),contracts={name:expected[name] for name in contracts},outer=str(outer),mirror=str(mirror),nodes=selected,original_failed_nodes=[node for node in original if node in failed],complete_DOM_nodes=8,automatic_retries=0)
+(r/'repair-inputs.json').write_text(json.dumps(expected,indent=2)+'\n');(r/'repair-freeze.json').write_text(json.dumps(freeze,indent=2)+'\n');(r/'repair-input-difference.json').write_text(json.dumps(dict(first_sha=first['source_sha'],repair_sha=sha,input_count=len(expected),changed=changed,production_source_changed=False,Python_test_modules_changed=False,first_window_preserved=True),indent=2)+'\n');print(json.dumps(freeze,indent=2))
