@@ -222,7 +222,7 @@ def typed_dependency_preview(parent,result,change):
 
 @er.bounded
 def read(store,token,id,card_id,*,dependency_scope=None,graph_preview=None):
-    if graph_preview is not None and (graph_preview!='VERSIONED_TYPED_GRAPH_V1' or
+    if graph_preview is not None and (graph_preview not in ('VERSIONED_TYPED_GRAPH_V1','RESOURCE_QUERY_MEMBERS_V1') or
                                      dependency_scope!='BOUNDED_MULTI_SOURCE_V1'):
         raise Conflict('explicit original dependency scope required for graph preview')
     with store.connect() as c:
@@ -235,6 +235,21 @@ def read(store,token,id,card_id,*,dependency_scope=None,graph_preview=None):
         result,change,_,_=build(store,c,p,parent,card_id,**({'dependency_scope':dependency_scope} if dependency_scope is not None else {}))
         if graph_preview is not None:
             result={**result,'typed_dependency_preview':typed_dependency_preview(parent,result,change)}
+            if graph_preview=='RESOURCE_QUERY_MEMBERS_V1':
+                if not any(s['adapter_id']=='P2' for s in parent['service_case_plan']['steps']):
+                    raise Conflict('original resource consumer required')
+                from . import resource_query_graph as resource_graph
+                from .dependency_graph import GraphError
+                try:
+                    rows=resource_graph.read_rows(c,parent)
+                    detail=resource_graph.preview(parent,parent['service_case_plan'],
+                        change['before_sources'].get('P2'),rows,change['current_sources'].get('P2',{}).get('resource_collection'),
+                        result['typed_dependency_preview']['binding'],result['typed_dependency_preview']['current_manual_locks'])
+                except GraphError:
+                    raise Conflict('resource member graph unavailable') from None
+                if epochs(c,parent)!=change['source_epochs_sha256']:
+                    raise Conflict('resource source epochs changed during read')
+                result={**result,'resource_dependency_preview':detail}
             prep.grant(store,c,p,'PREPARE')
         return result
 

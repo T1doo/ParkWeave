@@ -172,7 +172,7 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         return opportunities.recover(store,token(authorization),preparation_id,resource_key(request_key))
     # Preserve every existing recovery key before the dynamic card route.
     @app.get('/api/preparations/{preparation_id}/opportunities/{card_id}/plan-revision')
-    def opportunity_plan_revision(preparation_id: UUID,card_id: UUID,request: Request,dependency_scope:Literal['BOUNDED_MULTI_SOURCE_V1']|None=Query(default=None),graph_preview:Literal['VERSIONED_TYPED_GRAPH_V1']|None=Query(default=None),authorization: str | None=Header(default=None)):
+    def opportunity_plan_revision(preparation_id: UUID,card_id: UUID,request: Request,dependency_scope:Literal['BOUNDED_MULTI_SOURCE_V1']|None=Query(default=None),graph_preview:Literal['VERSIONED_TYPED_GRAPH_V1','RESOURCE_QUERY_MEMBERS_V1']|None=Query(default=None),authorization: str | None=Header(default=None)):
         from . import source_change_adoption
         if graph_preview is not None and (len(request.query_params.multi_items())!=2 or
                 set(request.query_params)!={'dependency_scope','graph_preview'}):

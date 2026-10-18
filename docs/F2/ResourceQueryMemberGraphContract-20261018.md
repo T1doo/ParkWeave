@@ -6,7 +6,7 @@
 
 原 `registered_dependencies.collections` 资源集合只保存 `known/count/sha256`，原始查询行不进历史。原P2 VERIFY或明确来源修订的 `resource_rules` 与 `resource_grants` 已保存被选资源的原字段。复用 `evidence_sources` 与原history验证，按原查询字段和排序，仅从这些历史原件重建能证明存在的active授权行；重建行数、hash与历史resource_collection均精确相等且原known时，才认定旧成员全集。否则仅保留有原件的部分，collection.complete=false、明确UNKNOWN；绝不从当前行补旧规则/授权/成员。inactive=false不能证明旧行存在，不凭它重建行。
 
-当前数据沿原owner/READ/PREPARE、同Case/Run/计划/卡片事务读取；新查询只读取当前具有active READ的同园区/组织资源原始规则及原查询授权行，不读取其它主体或当前无权资源详情。字段/排序沿原有界资源查询。当前可见行数/hash也须匹配原本次collection stamp才认定全集；被遮蔽、溢出或不完整保持UNKNOWN，不把截断集变known。当前来源epoch在新读取后复核；变化准确拒绝409，不自动重发。历史仅用当前仍有权读取的原Case核验原件，不从外部恢复未授权记录。
+当前数据沿原owner/READ/PREPARE、同Case/Run/计划/卡片事务读取；新查询只读取当前具有active READ的同园区/组织资源原始规则及原查询授权行，不读取其它主体或当前无权资源详情。字段/排序沿原有界资源查询。当前可见行数/hash也须匹配原本次collection stamp才认定全集；被遮蔽或不完整保持UNKNOWN，不把截断集变known；超过读取/图界限准确409，不返回截断成员图。当前来源epoch在新读取后复核；变化准确拒绝409，不自动重发。历史仅用当前仍有权读取的原Case核验原件，不从外部恢复未授权记录。
 
 ## 图和差异
 
@@ -27,3 +27,7 @@
 3. 原完整HTML NodeVM的本片细粒度展示/无新增POST或普通观察GET、坏DTO及一次跨Case迟到/当前403保护；明示不是浏览器。独立oracle与少量自有反例，实际selectors/交集分窗结算，旧17/141矩阵不重跑。
 
 不新增真实身份/Grant/分派/目录发布/批准/凭据/费用或安全网络权限；不真实模型、不浏览器降级、不root/seal/发行、main/强推/部署或未知进程/锁操作。普通provider与真实来源仍未接通，本片有合法离线实现范围，不能把缺代码归为必须等待生产权限。
+
+P2适用边界：显式资源mode要求原plan已有P2，否则准确409 original resource consumer required。原typed按钮取得当前只读plan后，只有实际P2才请求资源mode；P1-only明确用原VERSIONED_TYPED_GRAPH_V1正常展示原图，不发资源查询，不虚构消费者，也不由资源API静默降级。
+
+共同成员指纹也区分确认变化与仅观察变化：两端全集均可复证才列changed；任一端partial时差异仅列observation_changed，不能把历史缺少inactive行的观察差异称为确定规则变化。内核确定/不确定图影响仍各自展示，集合不全沿原资源范围扩大重验。

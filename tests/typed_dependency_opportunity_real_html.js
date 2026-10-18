@@ -105,7 +105,7 @@ function page(config, storage, calls, transport) {
  }else if(config.mode==='current_403'){
   transport.revokeBeforeRead=true;await button('typed').onclick();check(calls.at(-1).status===403,'actual current READ403');check(run('servicePlanView')===null&&run('opportunityPlanView')===null&&$('opp-plan-preview').hidden,'current403 clears private views');
  }else{
-  hold();const matches=c=>c.path.includes('graph_preview=VERSIONED_TYPED_GRAPH_V1');
+  hold();const matches=c=>c.path.includes('graph_preview=');
   if(config.mode==='late_403'){transport.revokeBeforeRead=true;transport.hold=matches;}
   else if(config.mode==='late_json')transport.jsonReject=matches;
   else if(config.mode==='late_transport')transport.fetchReject=matches;
