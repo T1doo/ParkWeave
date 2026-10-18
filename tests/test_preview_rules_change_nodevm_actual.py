@@ -90,7 +90,7 @@ def test_actual_case_alternative_prefill_original_confirmation_and_key_reads(rep
     assert group['state']=='CANCELLED'
 
 
-def test_actual_synthetic_rule_read_original_purpose_facts_and_no_business_writes(simulation):
+def test_actual_synthetic_rule_read_original_purpose_facts_and_no_business_writes(simulation,tmp_path):
     f,p,engine,adapter,context=simulation;authority=authority_snapshot(f[1]);rows=all_public_rows(f[1])
     dt=datetime.fromisoformat(context.as_of).astimezone(timezone.utc)
     params=dict(mode='b_true',preparation_id=p['preparation_id'],binding_id=context.binding_id,as_of=dt.strftime('%Y-%m-%dT%H:%M'),expected_truth='TRUE')
@@ -99,3 +99,20 @@ def test_actual_synthetic_rule_read_original_purpose_facts_and_no_business_write
     assert all(t['method']=='GET' for t in evidence['traffic'])
     assert all_public_rows(f[1])==rows
     assert authority_snapshot(f[1])==authority
+    output=evidence['result']
+    assert output['statusText']=='仅开发模拟，SYNTHETIC_REVIEWED不代表正式审核。'
+    assert '开发模拟条件：TRUE；资格 UNKNOWN / NOT_EVALUATED' in output['visibleText']
+    assert '未经真实性核验' in output['visibleText']
+    actual=[t['body'] for t in evidence['traffic'] if '/synthetic-rule-readiness?' in t['path']]
+    assert len(actual)==1 and actual[0]['result']['synthetic_simulated_condition_truth']=='TRUE'
+    for value in (actual[0],actual[0]['result']):
+        assert value['formal_review'] is False and value['business_publication'] is False
+        assert value['qualification_truth']=='UNKNOWN' and value['qualification_decision']=='NOT_EVALUATED'
+        assert value['case_goal_completed'] is False
+    (tmp_path/'at21-true-original-html-output.json').write_text(json.dumps(dict(
+        source_kind='SYNTHETIC_FIXTURE',execution_mode='OWNED_LINUX_PG_ASGI_AND_NODEVM_DOM_SUBSTITUTE',
+        expected_truth='TRUE',real_model_calls=0,evidence=evidence,
+        mock_review_publication='Original isolated CandidateEngine; not actual rule-review or catalog authority',
+        fixture_setup_outside_observed_read_window=True,read_only_business_unchanged=True,
+        read_only_authority_unchanged=True,browser='NOT_RUN',native_windows='NOT_RUN',real_business='NOT_RUN'
+    ),ensure_ascii=False,indent=2)+'\n')
