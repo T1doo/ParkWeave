@@ -188,8 +188,43 @@ def build(store,c,p,parent,card_id,*,current=None,fact_provenance_scope=None,dep
     return result,change,dependency_basis,affected
 
 
+def typed_dependency_preview(parent,result,change):
+    """Read-only projection; never part of build(), an ADOPT body or history."""
+    from . import dependency_graph as graph, service_case_steps as service
+    try:
+        converted=graph.from_unified_v1(result['dependency_propagation'])
+    except graph.GraphError:
+        raise Conflict('versioned dependency preview unavailable') from None
+    plan=parent['service_case_plan'];locks=[]
+    for step in plan['steps']:
+        lock=service._manual_lock(plan,step)
+        if lock:
+            locks.append(dict(node_id=step['id'],event_id=lock['event_id'],
+                              source_sha256=lock['source_sha256']))
+    locks.sort(key=lambda item:item['node_id'])
+    impact=converted['preview']
+    binding={k:result[k] for k in ('actor_ref','preparation_id','case_id','run_id',
+        'plan_id','plan_revision','card_id','card_version','opportunity_revision',
+        'current_sources_sha256')}
+    binding.update(legacy_preview_sha256=result['preview_sha256'],
+                   source_epochs_sha256=change['source_epochs_sha256'])
+    value=dict(scope='VERSIONED_TYPED_GRAPH_V1',binding=binding,
+        legacy_graph_sha256=converted['legacy_sha256'],before=converted['before'],
+        current=converted['current'],impact=impact,current_manual_locks=locks,
+        lock_conflicts=[dict(**lock,reason='LOCK_CONFLICT') for lock in locks
+                        if lock['node_id'] in impact['affected']],
+        read_only=True,can_adopt=False,execution_authorized=False,
+        authority_verified=False,new_grants=False,automatic_execution=False,
+        history_rewritten=False,automatically_replayed=False,
+        case_goal_completed=False,qualification_decision='NOT_EVALUATED')
+    return {**value,'sha256':graph.digest(value)}
+
+
 @er.bounded
-def read(store,token,id,card_id,*,dependency_scope=None):
+def read(store,token,id,card_id,*,dependency_scope=None,graph_preview=None):
+    if graph_preview is not None and (graph_preview!='VERSIONED_TYPED_GRAPH_V1' or
+                                     dependency_scope!='BOUNDED_MULTI_SOURCE_V1'):
+        raise Conflict('explicit original dependency scope required for graph preview')
     with store.connect() as c:
         # Obtain the original plan's parent UPDATE lock up front to avoid SHARE
         # upgrades when reading the original source adapters. No UPDATE follows.
@@ -197,7 +232,11 @@ def read(store,token,id,card_id,*,dependency_scope=None):
         p,parent=_context(store,c,token,id)
         if p['role']!='enterprise_operator':raise Denied('original Case owner required')
         if parent['service_id']!=prep.SERVICE or 'opportunities' not in parent:raise Denied('existing synthetic opportunity Case required')
-        return build(store,c,p,parent,card_id,**({'dependency_scope':dependency_scope} if dependency_scope is not None else {}))[0]
+        result,change,_,_=build(store,c,p,parent,card_id,**({'dependency_scope':dependency_scope} if dependency_scope is not None else {}))
+        if graph_preview is not None:
+            result={**result,'typed_dependency_preview':typed_dependency_preview(parent,result,change)}
+            prep.grant(store,c,p,'PREPARE')
+        return result
 
 
 def validate_history(parent,plan,event,previous_dependencies,current_dependencies):
