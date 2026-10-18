@@ -8,6 +8,9 @@ from psycopg.types.json import Jsonb
 from . import preparation as prep, service_dispatches as sd, executor_receipts as er
 from . import case_lifecycle as life, request_intents as intents
 from .store import Denied,Conflict,digest
+from . import ordinary_plan_sources as ordinary
+
+connection=ordinary.connection
 
 STEPS=('P1','P2','P3','P4')
 CHECKS=('MATERIAL_REVIEW','RESOURCE_RECHECK','ACCEPTANCE_RECHECK','RECEIPT_RECHECK')
@@ -34,7 +37,7 @@ def persist_rejected_observation(store,error):
         from .service_case_steps import persist_rejected_observation as persist
         return persist(store,error)
     if error.index is None:return
-    with store.connect() as c:
+    with connection(store) as c:
         c.execute("SET LOCAL lock_timeout='3s'")
         parent=c.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(error.preparation_id,)).fetchone()
         if not parent or prep.case_write_blocked(c,parent):return
@@ -99,7 +102,9 @@ def _auth(store,c,token,id,write=False):
     # Serialize on the parent without making EXECUTE a read permission. Obtain
     # FUP directly, avoiding simultaneous SHARE->UPDATE lock upgrades on GET.
     if not c.execute('SELECT id FROM preparations WHERE id=%s AND park_id=%s AND org_id=%s FOR UPDATE',(id,p['park_id'],p['org_id'])).fetchone():raise Denied('plan unavailable')
-    parent=sd._parent(store,c,p,id)
+    if ordinary.selected(store) is not None:
+        p,parent=ordinary.parent(store,c,token,id)
+    else:parent=sd._parent(store,c,p,id)
     if parent['namespace']!='SYNTHETIC':raise Denied('synthetic preparation required')
     if write:
         if p['role']!='enterprise_operator':raise Denied('owner explicit plan check required')
@@ -108,7 +113,7 @@ def _auth(store,c,token,id,write=False):
     return p,parent
 
 def template(store,token):
-    with store.connect() as c:sd._auth(store,c,token)
+    with connection(store) as c:sd._auth(store,c,token)
     return dict(scope=SCOPE,template=TEMPLATE,template_sha256=TEMPLATE_SHA,executed=False)
 
 def binding_catalog_known(catalog):
@@ -148,10 +153,11 @@ def _sources(store,c,parent):
         prep.grant(store,c,owner,'PREPARE')
     except Denied:
         return {s:['CURRENT_OWNER_AUTHORITY_REQUIRED'] for s in STEPS},{s:{} for s in STEPS}
-    issues,snap,group,holds,rules=life._sources(store,c,owner,parent)
+    case_step=ordinary.observation(store,c,parent)
+    issues,snap,group,holds,rules=life._sources(store,c,owner,parent,case_step=case_step)
     c.execute('SELECT id FROM cases WHERE id=%s FOR SHARE',(parent['case_id'],))
     life._timed(c,issues,group,holds,rules)
-    if not store.assigned_executors(c,parent['run_id'],parent['park_id'],parent['org_id']):issues['ACCEPTANCE_RECHECK'].append('EXISTING_RUN_ASSIGNMENT_REQUIRED')
+    if case_step is None and not store.assigned_executors(c,parent['run_id'],parent['park_id'],parent['org_id']):issues['ACCEPTANCE_RECHECK'].append('EXISTING_RUN_ASSIGNMENT_REQUIRED')
     snapshots={
       'P1':{k:snap.get(k) for k in ('preparation_id','case_id','run_id','service_id','service_version','preparation_revision','preparation_sha256')},
       'P2':{k:snap.get(k) for k in ('preparation_revision','preparation_sha256','resource_link_id','resource_link_revision','combination_id','combination_state','members')},
@@ -162,6 +168,8 @@ def _sources(store,c,parent):
     if parent.get('request_intent') and intents.state(parent)!='SUPPORTED_LOCAL':issues['MATERIAL_REVIEW'].append('REQUEST_GOAL_COVERAGE_REQUIRED')
     if not binding_catalog_known(snapshots['P1']['service_catalog']):issues['MATERIAL_REVIEW'].append('CURRENT_SERVICE_CATALOG_REQUIRED')
     snapshots['P2']=binding_p2(c,parent,snap,holds,rules)
+    if case_step is not None:
+        for step in ('P3','P4'):snapshots[step]['case_step_assignment']=case_step
     return {s:sorted(set(issues[k])) for s,k in zip(STEPS,CHECKS)},_normal(snapshots)
 
 def invalidate(c,id,index):
@@ -252,7 +260,7 @@ def _old(c,p,id,key,fp):
 
 @er.bounded
 def read(store,token,id):
-    with store.connect() as c:
+    with connection(store) as c:
         p,parent=_auth(store,c,token,id);_write_flag(store,c,p);row=_row(c,id)
         if prep.case_write_blocked(c,parent):p['_plan_write']=False
         if not row:
@@ -268,7 +276,7 @@ def read(store,token,id):
 
 @er.bounded
 def preview(store,token,id,data):
-    with store.connect() as c:
+    with connection(store) as c:
         p,parent=_auth(store,c,token,id)
         if p['role']!='enterprise_operator':raise Denied('owner plan preview required')
         return _preview(store,c,p,parent,data.required_goals)
@@ -297,7 +305,7 @@ def _preview(store,c,p,parent,goals):
 @er.bounded
 def create(store,token,id,key,data):
     fp=_hash({'preparation_id':str(id),'action':'CREATE',**data.model_dump(exclude_none=True)})
-    with store.connect() as c:
+    with connection(store) as c:
         p,parent=_auth(store,c,token,id,write=True);p['_plan_write']=True;row=_row(c,id);old=_old(c,p,id,key,fp)
         if data.template_sha256!=TEMPLATE_SHA:raise Conflict('fixed template hash mismatch')
         if not old:
@@ -317,7 +325,7 @@ def create(store,token,id,key,data):
 @er.bounded
 def command(store,token,id,key,data):
     fp=_hash({'preparation_id':str(id),**data.model_dump()})
-    with store.connect() as c:
+    with connection(store) as c:
         p,parent=_auth(store,c,token,id,write=True);p['_plan_write']=True;row=_row(c,id)
         if not row:raise Conflict('fixed plan required')
         old=_old(c,p,id,key,fp);row,issues,snapshots,states=_inspect(store,c,parent,row)

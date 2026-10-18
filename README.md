@@ -130,3 +130,5 @@ F2资料准备并行切片：参见[首次使用](docs/F2/FirstUse.md)与[开发
 在既有受限数据库、合法会话和原资料目录/权限已准备的环境中，API与worker均显式设置`PARKWEAVE_CASE_STEP_MODE=CURRENT_PREPARATION`；原`PARKWEAVE_DSN`和`PARKWEAVE_MODE=LOCAL`沿用。按原命令启动`parkweave.api:configured_app --factory`和`python -m parkweave.worker`。从“我的资料准备事项”进入原事项，负责专员选择已有同域执行者分派；执行者从本人通知/分派列表接单、提交人工回执，企业从本人回执列表独立核对。
 
 启动只读取现有身份、权限与目录；缺输入拒绝，普通模式与Native/独立demo配置互斥。首次步骤邀请最多300秒，API/worker重启保持原截止；旧隔离CaseStep记录保持隔离。真实环境初始化、writer安装和Windows/正式AT35仍未验收，完整项目未完成。见[普通业务准入合同](docs/F2/OrdinaryCaseStepContract-20261018.md)。
+
+普通接单和人工回执可进入原持久计划的 P3/P4 来源核验：经办人仍须明确采用方案，完成 P1 材料和 P2 资源前置，再分别按原按钮 VERIFY。原“目标结果”与“事项办理记录核对包”展示当前结果；生成和下载均重新读取，步骤过期或授权变更后保留历史核验但不沿用为当前产物。此接入不授予执行者全计划/Run读取权，也未接通生命周期 P5 或证明实际履约。见[普通成果接入合同](docs/F2/OrdinaryCaseGoalResultsContract-20261018.md)。

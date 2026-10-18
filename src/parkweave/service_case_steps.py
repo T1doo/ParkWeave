@@ -331,7 +331,7 @@ def _manual_lock(plan,step):
 
 
 def persist_rejected_observation(store,error):
-    with store.connect() as c:
+    with cp.connection(store) as c:
         c.execute("SET LOCAL lock_timeout='3s'")
         parent=c.execute('SELECT * FROM preparations WHERE id=%s FOR UPDATE',(error.preparation_id,)).fetchone()
         if not parent or prep.case_write_blocked(c,parent):return
@@ -524,7 +524,7 @@ def _save(c,parent,plan):
 
 @er.bounded
 def read(store,token,id):
-    with store.connect() as c:
+    with cp.connection(store) as c:
         p,parent=_context(store,c,token,id)
         plan=deepcopy(parent.get('service_case_plan'))
         return _view(store,c,p,parent,plan,observe=not (plan and _selection_plan(plan)))
@@ -623,7 +623,7 @@ def _recovery_proofs(parent):
 @er.bounded
 def recover(store,token,id,key=None,*,expected_request=None):
     """Current original actor reads an immutable key proof; never replay/observe-write."""
-    with store.connect() as c:
+    with cp.connection(store) as c:
         p,parent=_context(store,c,token,id,key is not None)
         if key is not None:prep.key_lock(c,p,'service-case-plan:'+key)
         proofs=_recovery_proofs(parent)
@@ -679,11 +679,11 @@ def recover(store,token,id,key=None,*,expected_request=None):
 @contextmanager
 def _adoption_connection(store,token,id,key,data):
     if data.candidate_id is None:
-        with store.connect() as c:yield c
+        with cp.connection(store) as c:yield c
         return
     # Resolve the locator under original authority, then recheck everything in
     # the final transaction. Existing receipts never need a publication lease.
-    with store.connect() as c:
+    with cp.connection(store) as c:
         p,parent=_context(store,c,token,id,True)
         prep.key_lock(c,p,'service-case-plan:'+key)
         fp=cp._hash(dict(preparation_id=str(id),action='ADOPT',**_adopt_request(data)))
@@ -692,7 +692,7 @@ def _adoption_connection(store,token,id,key,data):
             return
         module=_candidate_module(parent,data.candidate_id)
         selected=_selected_candidates(module)
-    with (_catalog_for_profile(store,module.PROFILE).connection() if selected else store.connect()) as c:yield c
+    with (_catalog_for_profile(store,module.PROFILE).connection() if selected else cp.connection(store)) as c:yield c
 
 
 @er.bounded
@@ -806,7 +806,7 @@ def adopt(store,token,id,key,data,*,unadopted_only=False):
 
 @er.bounded
 def command(store,token,id,key,data):
-    with store.connect() as c:
+    with cp.connection(store) as c:
         p,parent=_context(store,c,token,id,True);cp._write_flag(store,c,p)
         plan=deepcopy(parent.get('service_case_plan'))
         if not plan:raise Conflict('adopted service plan required')

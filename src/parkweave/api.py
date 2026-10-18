@@ -70,6 +70,8 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         if type(bridge.writer) is not WriterClient:
             raise Denied('API cannot hold private writer credentials or signing context')
     store._native_api_boundary = True
+    from .ordinary_plan_sources import bind as bind_ordinary_plan_sources
+    bind_ordinary_plan_sources(store,case_step_assignments)
     app = FastAPI(title="ParkWeave synthetic foundation", version="0.1.0")
     from . import case_resource_delivery as delivery, resource_bundles as bundles
 

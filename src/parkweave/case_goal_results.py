@@ -137,7 +137,7 @@ def outputs(store,c,parent,plan,issues,sources):
 
 @er.bounded
 def read(store,token,id):
-    with store.connect() as c:
+    with cp.connection(store) as c:
         c.execute("SET LOCAL lock_timeout='3s'")
         p,parent=cp._auth(store,c,token,id)
         if p['role']!='enterprise_operator' or p['id']!=parent['owner_id']:raise Denied('original owner goal result scope required')

@@ -40,7 +40,7 @@ def _auth(store, c, token, id, write=False):
     return p,parent
 
 
-def _sources(store,c,p,parent):
+def _sources(store,c,p,parent,*,case_step=None):
     """Lock source records before resource mutexes and final Case/ledger locks."""
     issues={name:[] for name in RECHECKS};snapshot={'preparation_id':str(parent['id']),'case_id':str(parent['case_id']),
         'run_id':str(parent['run_id']),'service_id':parent['service_id'],'service_version':parent['service_version'],
@@ -64,8 +64,11 @@ def _sources(store,c,p,parent):
         issues['ACCEPTANCE_RECHECK'].append('LEGACY_ACCEPTANCE_MISSING' if step else 'ACCEPTED_DISPATCH_REQUIRED')
     elif offer['state']!='ACCEPTED':issues['ACCEPTANCE_RECHECK'].append('ACCEPTED_DISPATCH_REQUIRED')
     else:
-        try:er._executor(store,c,offer['executor_id'],parent['run_id'])
-        except Denied:issues['ACCEPTANCE_RECHECK'].append('CURRENT_EXECUTOR_AUTHORITY_REQUIRED')
+        if case_step is None:
+            try:er._executor(store,c,offer['executor_id'],parent['run_id'])
+            except Denied:issues['ACCEPTANCE_RECHECK'].append('CURRENT_EXECUTOR_AUTHORITY_REQUIRED')
+        elif not case_step['current']:
+            issues['ACCEPTANCE_RECHECK'].append('CURRENT_CASE_STEP_ASSIGNMENT_REQUIRED')
         if not sd._fresh(parent,offer):issues['ACCEPTANCE_RECHECK'].append('ACCEPTANCE_PREPARATION_CHANGED')
         snapshot.update(dispatch_id=str(dispatch['id']),dispatch_revision=dispatch['revision'],offer_id=str(offer['id']),executor_id=offer['executor_id'])
     if not step or not receipt or step['state']!='LOCAL_ACKNOWLEDGED':
@@ -80,6 +83,8 @@ def _sources(store,c,p,parent):
                         receipt_sha256=receipt['source_sha256'] if receipt else None)
     if receipt and (digest(receipt['text'])!=receipt['source_sha256'] or not step or receipt['actor_id']!=step['executor_id'] or receipt['source_kind']!='SYNTHETIC'):
         issues['RECEIPT_RECHECK'].append('RECEIPT_PROVENANCE_CHANGED')
+    if case_step is not None and not case_step['current']:
+        issues['RECEIPT_RECHECK'].append('CURRENT_CASE_STEP_ASSIGNMENT_REQUIRED')
     link=c.execute('SELECT * FROM case_resource_links WHERE case_id=%s ORDER BY revision DESC LIMIT 1',(parent['case_id'],)).fetchone()
     group=None;holds=[];rules={}
     if not link:issues['RESOURCE_RECHECK'].append('CURRENT_CASE_RESOURCE_LINK_REQUIRED')
