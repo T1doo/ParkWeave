@@ -26,6 +26,10 @@
 
 POST 记录仅枚举浏览器收到的 response，不能等同所有发出的请求。新链没有运输注入。前片旧 403 是另一 fixture 身份拒绝的运输注入；其 overlap 两分支均旧回复先交付，80ms 等待不是 settled 屏障；本片未触及该并发代码／场景，不扩大其结论。
 
+首冻结 a54add455c41e81bd91df481e70cbc377826354c 的14完整模块301唯一窗实际282PASS／19FAIL／0ERROR／0SKIP，四个新增DOM节点及四个原DOM节点均PASS。19个旧Node页面失败涉及六个既有Element替身，缺少原清理入口调用的classList；原JUnit保留null读取、等待未达与直接classList.remove栈，离线同字节诊断在零API调用下复现真实beginCaseWorklistEntry→clearPreparation→clearCaseCancellation的TypeError。它与此前连接／启动UNKNOWN分开。
+
+仅就地复用既有multi_goal_overview_actual.js的className同步、stateful add／remove／contains及小probe，补六个替身能力，保留原生产清理、所有业务／负例断言和预算。修后另冻结并有限复验19个实际失败节点及8个完整DOM节点，不把两冻结／分窗成绩写成301单窗全绿。旧Node回归含显式隔离template／approval测试fixture，不进入普通批准；新增四个普通DOM节点不依靠这些批准桥。
+
 ## 运行输入与未验范围
 
 本片只验证显式 SYNTHETIC、LOCAL、Linux PG／Chromium（1200／320）环境。无真实模型、身份、Grant、目录发布、分派、批准、凭据、费用、安全网络权限、main 修改、强推或部署。普通合法运行仍需已有会话／READ、PREPARE、REVIEW_ASSIGNED、精确 preparation_catalog、现有记录及执行者的当前精确 Run assignment。缺项准确拒绝，不让测试安装 fixture 或 IsolatedPlanApproval 进入普通批准。
