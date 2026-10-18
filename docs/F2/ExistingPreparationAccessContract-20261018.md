@@ -2,7 +2,7 @@
 
 基线 `a9c725babd36561a6a25733953cc374ee1b77bd5`；原 P5 的42有效节点由父级有限接收，不为本片整包重跑。普通开发分支，唯一源码/Git写入者。
 
-原文：产品设计 §3（资源工作区及角色菜单）、§10（317行初始化不得覆盖配置）、§11（339行当前授权/Case范围交集）；开发计划 F1-T03、§14（325行来源台账）、§15（366行初始化/启动）。当前 `cli.py` 仅迁移、固定三企业 seed、撤权；Windows Setup 也只调用该 seed。资料专员、PREPARE/REVIEW_ASSIGNED 与目录靠测试/演示setup补建，没有供合法既有主体使用的配置入口。
+原文：产品设计 §3（资源工作区及角色菜单）、§9.3（317行初始化不得覆盖配置）、§11（339行当前授权/Case范围交集）；开发计划 F1-T03、§11（325行来源台账）、§13（366行初始化/启动）。当前 `cli.py` 仅迁移、固定三企业 seed、撤权；Windows Setup 也只调用该 seed。资料专员、PREPARE/REVIEW_ASSIGNED 与目录靠测试/演示setup补建，没有供合法既有主体使用的配置入口。
 
 本片最小功能：本机 CLI 读取一份有界JSON配置，仅引用**已存在**的同园区企业owner、reviewer和精确服务目录。默认 `prepare-access --config FILE` 只做数据库只读 dry-run，列当前阻碍及两项准备权限变更；独立 `--apply --expected-plan-sha256 SHA` 才能执行。没有HTTP管理入口、自动启动修复或默认seed调用。
 
@@ -12,7 +12,7 @@
 
 既有主体必须active、角色/园区/企业精确匹配；owner已具有READ/EXECUTE，reviewer已具有READ。能力Grant只校验，不新建或恢复。现存inactive或错scope准备Grant阻断，不UPDATE、不覆盖、不复活；active同scope保留。仅允许原支持的服务ID及精确既有version、SYNTHETIC来源与原目录证明。缺主体、能力、目录或证明就准确阻断。不能据此补建真实身份、目录发布、执行者或资源授权。
 
-dry-run 使用只读事务，不写审计、不发凭据。它只是配置差异，不是Approval/Run访问权。计划SHA绑定配置、数据库实例/数据库、当前主体及能力/准备Grant代际、原目录内容/代际；不包含凭据或材料原文。SHA是状态复核fence，不是签名或管理员授权。
+dry-run 使用只读事务，不写审计、不发凭据。它只是配置差异，不是Approval/Run访问权。计划SHA绑定配置、实际连接endpoint、数据库OID/名称/启动时间及owner、当前主体及能力/准备Grant代际、原目录内容/代际；不包含凭据或材料原文。该连接状态绑定不读取特权cluster标识，不是密码学实例证明；SHA只是状态复核fence，不是签名或管理员授权。
 
 apply必须实际直连数据库owner/session owner，并拥有原相关public表；普通应用角色即使意外有INSERT也不能冒充管理员。现有principal锁按稳定ID顺序独占，随后锁定/复核原行与目录。取得所有等待后的当前快照须匹配明确expected SHA，已变更则拒绝；新insert与原authorization_audit同一事务，全成功或全回滚。异常不得宣称没有提交，先重新dry-run核对，不自动重放。
 

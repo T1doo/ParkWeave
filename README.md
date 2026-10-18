@@ -134,3 +134,15 @@ F2资料准备并行切片：参见[首次使用](docs/F2/FirstUse.md)与[开发
 普通接单和人工回执可进入原持久计划的 P3/P4 来源核验：经办人仍须明确采用方案，完成 P1 材料和 P2 资源前置，再分别按原按钮 VERIFY。原“目标结果”与“事项办理记录核对包”展示当前结果；生成和下载均重新读取，步骤过期或授权变更后保留历史核验但不沿用为当前产物。此接入不授予执行者全计划/Run读取权。见[普通成果接入合同](docs/F2/OrdinaryCaseGoalResultsContract-20261018.md)。
 
 普通 P5 继续复用原“本地重验”入口：核对 P1–P4 后，经办人明确重新校验、关闭本地记录，再显式 VERIFY P5；原结果与 TXT 核对包可在普通 API 冷启动后读回。重开保留旧记录并开启新核对周期，不续期或重新授予步骤权限；后续校验仍要求当前材料、接单、回执和资源全部有效。关闭仅为本地记录关闭，Case 仍等待确认，实际履约未证明。真实身份/Grant/目录初始化、Windows 和正式 AT35 未验。见[普通 P5 合同](docs/F2/OrdinaryCaseRecordRecheckContract-20261018.md)。
+
+已有主体的 preparation 配置入口见[配置合同](docs/F2/ExistingPreparationAccessContract-20261018.md)。配置仅引用已有的同园区、同企业 owner/reviewer 与既有 SYNTHETIC 目录；默认命令使用数据库只读事务，输出缺项、两项原 preparation 权限差异及计划 SHA：
+
+```json
+{"version":1,"scope":"EXISTING_PREPARATION_ACCESS_CONFIGURATION_V1","park_id":"existing-park-id","org_id":"existing-org-id","owner_id":"existing-owner-id","reviewer_id":"existing-reviewer-id","catalog":{"service_id":"synthetic-material-preparation","version":1},"reason":"Approved existing configuration reference"}
+```
+
+```sh
+python -m parkweave.cli prepare-access --config existing-preparation.json
+```
+
+只有经过独立授权的管理员才能选择直连数据库及相关表 owner 的连接，并明确执行 `python -m parkweave.cli prepare-access --config existing-preparation.json --apply --expected-plan-sha256 <刚核对的计划SHA>`。本会话只在拥有的合成数据库测试该代码，未执行真实授权。普通应用连接不能应用；主体、READ/EXECUTE、目录等缺失或已有准备权限 inactive/错 scope 均阻断，不自动修复。两项准备权限沿用原主体/园区/企业范围，不是目录专属权限；新插入与审计原子提交，当前状态改变须重新预检。命令异常可能结果未知，先核对新预检，不自动重放。配置不创建身份、凭据、能力、目录、材料、分派或 Run 权限，不能代替批准；生产安装、其余管理初始化和 Windows/正式 AT35 仍未完成。
