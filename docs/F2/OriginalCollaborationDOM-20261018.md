@@ -30,6 +30,8 @@ POST 记录仅枚举浏览器收到的 response，不能等同所有发出的请
 
 仅就地复用既有multi_goal_overview_actual.js的className同步、stateful add／remove／contains及小probe，补六个替身能力，保留原生产清理、所有业务／负例断言和预算。修后另冻结并有限复验19个实际失败节点及8个完整DOM节点，不把两冻结／分窗成绩写成301单窗全绿。旧Node回归含显式隔离template／approval测试fixture，不进入普通批准；新增四个普通DOM节点不依靠这些批准桥。
 
+第一次修补e1d9502d8f1b3d176cc33f0676e7efbc26aad3ca由根代理复制片段错误，六constructor截断为499字符，缺remove／contains及闭合；独审拦下，六项node --check均失败。该27节点窗自然结束8PASS／19FAIL／0ES，759输入零漂移，原件保留，不能视为已修。一项只读/proc cwd核验遭PermissionError，未发送SIGINT或扩大权限。随后复制现有完整634字符constructor，六个文件node --check全部通过后才冻结最终版本；完整业务实跑成绩以独立后续窗口记录，不把语法检查当业务节点。旧连接／启动UNKNOWN不由此解释。
+
 ## 运行输入与未验范围
 
 本片只验证显式 SYNTHETIC、LOCAL、Linux PG／Chromium（1200／320）环境。无真实模型、身份、Grant、目录发布、分派、批准、凭据、费用、安全网络权限、main 修改、强推或部署。普通合法运行仍需已有会话／READ、PREPARE、REVIEW_ASSIGNED、精确 preparation_catalog、现有记录及执行者的当前精确 Run assignment。缺项准确拒绝，不让测试安装 fixture 或 IsolatedPlanApproval 进入普通批准。
