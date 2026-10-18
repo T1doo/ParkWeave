@@ -1032,6 +1032,15 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         try:return executor_receipts.command(store,token(authorization),step_id,resource_key(idempotency_key),data)
         except LockNotAvailable as e:raise Conflict('receipt authorization or record busy; retry same key') from e
 
+    @app.get('/api/executor-receipts/{step_id}/submit-recovery')
+    def executor_receipt_submit_recovery(step_id: UUID,request: Request,response: Response,
+            selection: Annotated[executor_receipts.SubmitRecoverySelection,Query()],
+            authorization: str | None=Header(default=None),idempotency_key: str=Header()):
+        response.headers['Cache-Control']='no-store'
+        keys=[key for key,_ in request.query_params.multi_items()]
+        if len(keys)!=len(set(keys)):raise HTTPException(422,'unambiguous original submission selection required')
+        return executor_receipts.recover_submit(store,token(authorization),step_id,resource_key(idempotency_key),selection)
+
     from .isolated_local_execution import ExecuteLocal
     @app.post('/api/executor-receipts/{step_id}/execute-local')
     def executor_receipt_execute_local(step_id: UUID,data: ExecuteLocal,authorization: str | None=Header(default=None),idempotency_key: str=Header()):

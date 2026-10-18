@@ -3,7 +3,7 @@ from .business_frontier_types import BusinessFrontierFence,request as frontier_r
 from functools import wraps
 from typing import Literal
 from uuid import UUID,uuid4
-from pydantic import BaseModel,ConfigDict,Field,model_validator
+from pydantic import BaseModel,ConfigDict,Field,model_validator,field_validator
 from psycopg.errors import LockNotAvailable
 from psycopg.types.json import Jsonb
 from .store import Conflict,Denied,digest
@@ -56,6 +56,22 @@ class Command(BaseModel):
         elif not self.reason or self.text is not None or self.source_kind is not None or self.source_label is not None or not self.receipt_sha256:
             raise ValueError('current receipt hash and explicit decision reason required')
         return self
+
+class SubmitRecoverySelection(BaseModel):
+    """Original manual submission coordinates, never authority or a replay body."""
+    model_config=ConfigDict(extra='forbid')
+    preparation_id: UUID
+    case_id: UUID
+    run_id: UUID
+    expected_revision: int=Field(ge=1,le=63)
+    preparation_revision: int=Field(ge=1,le=64)
+
+    @field_validator('expected_revision','preparation_revision',mode='before')
+    @classmethod
+    def exact_revision(cls,value):
+        if type(value) is int:return value
+        if type(value) is str and value.isascii() and value.isdecimal() and str(int(value))==value:return int(value)
+        raise ValueError('exact integer revision required')
 
 def _auth(store,c,token):
     c.execute("SET LOCAL lock_timeout='3s'")
@@ -156,7 +172,8 @@ def _view(c,p,row,parent,event=None,store=None):
     blocked=prep.case_write_blocked(c,parent) if parent else False
     if blocked:execution={**execution,'can_execute':False}
     from .business_frontier import view as frontier_view
-    return dict(**frontier_view(c,parent),scope=SCOPE,role=p['role'],step=row,current_receipt=receipt,case_cancelled=cancelled,case_reconciling=bool(parent and prep.case_state(c,parent)=='RECONCILING'),case_write_blocked=blocked,
+    from .controlled_plans import _hash
+    return dict(**frontier_view(c,parent),scope=SCOPE,actor_ref=_hash(dict(actor_id=p['id'])),role=p['role'],step=row,current_receipt=receipt,case_cancelled=cancelled,case_reconciling=bool(parent and prep.case_state(c,parent)=='RECONCILING'),case_write_blocked=blocked,
         local_execution=execution,
         history=c.execute('SELECT revision,action,payload,created_at FROM service_receipt_events WHERE step_id=%s ORDER BY revision',(row['id'],)).fetchall(),
         receipt_history=c.execute('SELECT * FROM service_step_receipts WHERE step_id=%s ORDER BY version',(row['id'],)).fetchall(),
@@ -215,6 +232,64 @@ def read(store,token,id):
             store.lock_principal(c,row['executor_id'])
         parent=_parent(c,row);row=_locked(c,id)
         return _view(c,p,row,parent,store=store)
+
+@bounded
+def recover_submit(store,token,id,key,selection):
+    """Read a manual SUBMIT and its atomic original receipt under current access.
+
+    NOT_OBSERVED is inconclusive; the original command may still arrive. No
+    writable view, receipt text, approval or request body is returned.
+    """
+    if type(selection) is not SubmitRecoverySelection:raise Denied('typed original submission selection required')
+    from .controlled_plans import _hash
+    from .business_frontier_types import historical_fields
+    from pydantic import ValidationError
+    with store.connect() as c:
+        p=_auth(store,c,token)
+        if p['role']!='service_executor':raise Denied('assigned executor receipt only')
+        _key(c,p,key);row=_base(store,c,p,id);parent=_parent(c,row);row=_locked(c,id)
+        fields=('run_id','case_id','owner_id','park_id','org_id','service_id','service_version')
+        if (not parent or row['namespace']!='SYNTHETIC' or row['preparation_id']!=selection.preparation_id
+                or row['case_id']!=selection.case_id or row['run_id']!=selection.run_id
+                or any(row[k]!=parent[k] for k in fields)):
+            raise Denied('receipt step unavailable')
+        if row['preparation_revision']!=selection.preparation_revision or selection.expected_revision>row['revision']:
+            raise Conflict('original submission selection mismatch')
+        old=c.execute('SELECT * FROM service_receipt_events WHERE actor_id=%s AND request_key=%s',(p['id'],key)).fetchone()
+        event=None
+        if old:
+            payload=old['payload']
+            expected=dict(step_id=str(id),revision=selection.expected_revision+1,state='RECEIPT_RECORDED',
+                          action='SUBMIT',actor_id=p['id'],scope=SCOPE,reason=None)
+            if (old['step_id']!=id or old['action']!='SUBMIT' or old['revision']!=selection.expected_revision+1
+                    or old['revision']>row['revision'] or type(payload) is not dict
+                    or any(type(payload.get(k)) is not type(v) or payload.get(k)!=v for k,v in expected.items())
+                    or 'adapter_execution' in payload or 'record_mode' in payload):
+                raise Conflict('original manual submission proof mismatch')
+            try:
+                receipt_id=UUID(payload['receipt_id'])
+                receipt=c.execute('SELECT * FROM service_step_receipts WHERE id=%s AND step_id=%s',(receipt_id,id)).fetchone()
+                if (not receipt or receipt.get('adapter_execution') is not None or receipt['actor_id']!=p['id']
+                        or receipt['source_kind']!='SYNTHETIC' or digest(receipt['text'])!=receipt['source_sha256']
+                        or payload.get('receipt_sha256')!=receipt['source_sha256']
+                        or payload['receipt_id']!=str(receipt_id)
+                        or receipt['version']!=c.execute("SELECT count(*) n FROM service_receipt_events WHERE step_id=%s AND action='SUBMIT' AND revision<=%s",(id,old['revision'])).fetchone()['n']):
+                    raise ValueError('manual receipt binding')
+                original=Command(action='SUBMIT',expected_revision=selection.expected_revision,
+                    text=receipt['text'],source_kind=receipt['source_kind'],source_label=receipt['source_label'],
+                    **historical_fields(payload))
+                fp=digest(prep.canonical(dict(step_id=str(id),**frontier_request(original))))
+                if fp!=old['fingerprint']:raise ValueError('original fingerprint')
+            except (KeyError,TypeError,ValueError,ValidationError) as exc:
+                raise Conflict('original manual receipt proof mismatch') from exc
+            event=dict(id=str(old['id']),action='SUBMIT',revision=old['revision'],receipt_id=str(receipt['id']),
+                       receipt_version=receipt['version'],receipt_sha256=receipt['source_sha256'])
+        _auth(store,c,token);store.scoped_run(c,p,row['run_id'])
+        return dict(scope=SCOPE,actor_ref=_hash(dict(actor_id=p['id'])),step_id=str(id),
+            **{k:str(getattr(selection,k)) for k in ('preparation_id','case_id','run_id')},
+            expected_revision=selection.expected_revision,preparation_revision=selection.preparation_revision,
+            request_key=key,status='COMMITTED' if old else 'NOT_OBSERVED',event=event,
+            historical_only=True,read_only=True,automatically_replayed=False,case_goal_completed=False)
 
 @bounded
 def command(store,token,id,key,data):

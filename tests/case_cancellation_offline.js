@@ -19,6 +19,8 @@ const context=vm.createContext({$,console,Date,Map,Set,JSON,Number,String,Error,
 // Object.keys(storage interface) uses enumerable native localStorage entries.
 context.localStorage=new Proxy(context.localStorage,{ownKeys:()=>Object.keys(storage),getOwnPropertyDescriptor:()=>({enumerable:true,configurable:true})});
 vm.runInContext(code,context);
+// Actual new renderer dependencies, no replacement or permission bypass.
+vm.runInContext(html.slice(html.indexOf('// Manual SUBMIT recovery retains'),html.indexOf('function receiptSubmitBound(')),context);
 const x={scope:after?'SYNTHETIC_CASE_CANCEL_AFTER_ACCEPT_BEFORE_FIRST_RECEIPT':'SYNTHETIC_CASE_CANCEL_BEFORE_FIRST_ACCEPT',actor_id:'fixture-a',preparation_id:id,case_id:cid,
  preparation_revision:5,lifecycle_revision:0,source_sha256:'a'.repeat(64),blockers:[],can_cancel:true,case_state:'NEEDS_INPUT',resource_release_automatic:false,restore_supported:false};
 const h={v:1,actor:'fixture-a',id,case:cid,key,revision:0,expires:Date.now()+86400000},name='parkweave.case-cancel.v1.'+id+'.fixture-a';

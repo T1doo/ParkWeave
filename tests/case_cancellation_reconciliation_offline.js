@@ -13,7 +13,9 @@ const storage={},calls=[];const context=vm.createContext({$,console,Date,Map,Set
  prepCommandPending:null,prepRecoveryHandle:null,prepRecoveryChecking:false,caseFactPending:null,materialReusePending:null,receiptLocalPending:null,
  objectionLock:()=>false,localCaseLocked:()=>false,dispatchPending:null,servicePlanPending:null,servicePlanRecoveryHandle:null});
 context.localStorage=new Proxy(context.localStorage,{ownKeys:()=>Object.keys(storage),getOwnPropertyDescriptor:()=>({enumerable:true,configurable:true})});
-vm.runInContext(code,context);const run=s=>vm.runInContext(s,context),tick=()=>new Promise(r=>setImmediate(r));
+vm.runInContext(code,context);
+// Actual new renderer dependencies, no replacement or permission bypass.
+vm.runInContext(html.slice(html.indexOf('// Manual SUBMIT recovery retains'),html.indexOf('function receiptSubmitBound(')),context);const run=s=>vm.runInContext(s,context),tick=()=>new Promise(r=>setImmediate(r));
 const x={scope,actor_id:'fixture-a',preparation_id:id,case_id:cid,preparation_revision:5,lifecycle_revision:0,source_sha256:'a'.repeat(64),blockers:[],receipts:[{step_id:id,receipt_id:rid,version:1,receipt_sha256:'b'.repeat(64)}],history:[],can_request:true,can_reconcile:false,can_confirm:false,case_state:'NEEDS_INPUT',resource_release_automatic:false,restore_supported:false,request_event_id:rid,reconciliation_event_id:rid};
 const action=mode.startsWith('record_')?'RECONCILE':mode.startsWith('finish_')?'CONFIRM_CANCEL':'REQUEST_CANCEL';
 if(action!=='REQUEST_CANCEL')Object.assign(x,{case_state:'RECONCILING',lifecycle_revision:action==='RECONCILE'?1:2,can_request:false,can_reconcile:true,can_confirm:action==='CONFIRM_CANCEL'});
