@@ -7,7 +7,7 @@ const scenario = String.raw`
  const config=await initialized,calls=[],storage={},transport={};diagnostics={calls};
  const p=page({...config,token:config.reviewer},storage,calls,transport),$=p.$;
  async function open(q,role='park_specialist'){
-  await q.run('loadPreparation('+JSON.stringify(config.id)+',{role:'+JSON.stringify(role)+'})');
+  q.$('existing-preparation-id').value=config.id;await q.$('existing-preparation-form').onsubmit({preventDefault(){}});check(q.run('preparationView')?.preparation.id===config.id,'actual existing-record form opens exact current authorized preparation');
   const before=calls.length;await q.$('handling-deadline-read').click();
   check(!calls.slice(before).some(c=>c.path.endsWith('/synthetic-pause-clock')),'original read does not discover capability automatically');
   if(config.mode!=='no-cap')await q.$('synthetic-pause-open').click();
@@ -45,10 +45,10 @@ const scenario = String.raw`
     check(!JSON.stringify(storage).includes(config.reviewer)&&!JSON.stringify(storage).includes('explicit wait'),'no token or note in storage');
     if(config.mode==='advanced-history'){const peer=page({...config,token:config.reviewer},{},calls,{});await open(peer);peer.$('synthetic-pause-note').value='SYNTHETIC second page explicitly ends pause';peer.$('synthetic-pause-confirm').checked=true;await peer.$('synthetic-pause-end').click();check(peer.run('pauseClockView').revision===2,'later authorized event exists in original history');}
     const cold=page({...config,token:config.reviewer},storage,calls,{}),start=calls.length;
-    await open(cold);await cold.$('synthetic-pause-recover').click();
+    await open(cold);if(config.mode==='advanced-history'){const real=cold.run('fetch');cold.context.fetch=async(path,options)=>{const response=await real(path,options);if(path.endsWith('/synthetic-pause-clock')&&options?.headers?.['Idempotency-Key']){const x=await response.json();Object.assign(x,{state:'UNKNOWN',fixture_write_enabled:false,source_ref:null,calendar_ref:null,elapsed_work_seconds:null,target_work_seconds:null,timezone:null,deadline_utc:null,deadline_local:null,issues:['OWNED_UI_CURRENT_PROJECTION_UNKNOWN_FAULT']});return {ok:true,status:200,json:async()=>x};}return response;};}await cold.$('synthetic-pause-recover').click();
     check(calls.slice(start).every(c=>c.method==='GET'),'cold explicit recovery sends GET only');
     if(config.mode==='not-observed'){check(cold.run('pauseClockUnresolved()'),'NOT_OBSERVED does not release unknown');check(textOf(cold.$('synthetic-pause-status')).includes('保留未决'),'uncertainty disclosed');}
-    else check(!cold.run('pauseClockUnresolved()')&&cold.run('pauseClockView').revision===(config.mode==='advanced-history'?2:1),'committed original event recovered without repost');
+    else {if(config.mode==='advanced-history')check(cold.$('synthetic-pause-form').hidden&&cold.run('pauseClockView').state==='UNKNOWN','committed recovery releases only the handle; UNKNOWN remains nonwritable');check(!cold.run('pauseClockUnresolved()')&&cold.run('pauseClockView').revision===(config.mode==='advanced-history'?2:1),'committed original event recovered without repost');}
    }else{
     await $('synthetic-pause-start').click();check(p.run('pauseClockView')?.paused===true,'explicit pause is read back');
     check(textOf($('synthetic-pause-history')).includes('<img src=x onerror=bad>'),'note displayed as text');
