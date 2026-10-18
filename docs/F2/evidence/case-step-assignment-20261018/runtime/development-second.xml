@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="4" skipped="0" tests="22" time="93.637" timestamp="2026-10-18T16:04:21.911291+00:00" hostname="9eff6a810039"><testcase classname="tests.test_case_step_assignments" name="test_new_case_step_actual_receipt_ack_and_default_app_still_denies" time="10.643" /><testcase classname="tests.test_case_step_assignments" name="test_only_current_responsible_specialist_can_offer[fixture-a]" time="2.228" /><testcase classname="tests.test_case_step_assignments" name="test_only_current_responsible_specialist_can_offer[fixture-b]" time="2.853" /><testcase classname="tests.test_case_step_assignments" name="test_only_current_responsible_specialist_can_offer[fixture-c]" time="2.315" /><testcase classname="tests.test_case_step_assignments" name="test_only_current_responsible_specialist_can_offer[executor-a]" time="2.107" /><testcase classname="tests.test_case_step_assignments" name="test_only_current_responsible_specialist_can_offer[unassigned]" time="4.263" /><testcase classname="tests.test_case_step_assignments" name="test_only_current_responsible_specialist_can_offer[prep-specialist-fixture-b]" time="5.451" /><testcase classname="tests.test_case_step_assignments" name="test_wrong_target_case_and_privacy_scope" time="6.072" /><testcase classname="tests.test_case_step_assignments" name="test_current_change_denies_old_step_without_resurrection[executor_READ]" time="3.331" /><testcase classname="tests.test_case_step_assignments" name="test_current_change_denies_old_step_without_resurrection[owner_EXECUTE]" time="3.214" /><testcase classname="tests.test_case_step_assignments" name="test_current_change_denies_old_step_without_resurrection[reviewer_REVIEW]" time="3.632" /><testcase classname="tests.test_case_step_assignments" name="test_current_change_denies_old_step_without_resurrection[material]" time="3.455" /><testcase classname="tests.test_case_step_assignments" name="test_current_change_denies_old_step_without_resurrection[catalog]" time="4.317" /><testcase classname="tests.test_case_step_assignments" name="test_current_change_denies_old_step_without_resurrection[expired]" time="3.360" /><testcase classname="tests.test_case_step_assignments" name="test_withdraw_is_not_locked_by_the_access_it_terminates[executor_revoke]" time="3.720"><failure message="AssertionError: Internal Server Error&#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code">scoped = ((&lt;parkweave.store.Store object at 0x7f8c541b9fa0&gt;, &lt;parkweave.store.Store object at 0x7f8c4e0f5280&gt;, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'}, {'method': 'POST', 'path': '/api/preparations/75aa3446-2503-41f5-8732-8cb454dad7fc/commands'}, ...])
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8c54e52390&gt;
+change = 'executor_revoke'
+
+    @pytest.mark.parametrize('change',['executor_revoke','material','expired'])
+    def test_withdraw_is_not_locked_by_the_access_it_terminates(scoped,monkeypatch,change):
+     f,_,_,_=scoped;p=prepared(f);d,r,*_=submit(f,p)
+     if change=='expired':
+      now=cs._now;monkeypatch.setattr(cs,'_now',lambda c:now(c)+timedelta(seconds=301))
+     else:
+      with f[1].connect() as c:
+       if change=='executor_revoke':c.execute("UPDATE capability_grants SET active=false WHERE principal_id='executor-a' AND capability='READ'")
+       else:c.execute('UPDATE preparations SET revision=revision+1 WHERE id=%s',(p['preparation_id'],))
+&gt;    x=ok(decision(f,d,'WITHDRAW'));assert x['current_offer']['state']=='WITHDRAWN'
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_step_assignments.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = &lt;Response [500 Internal Server Error]&gt;, status = 200
+
+&gt;   def ok(r,status=200):assert r.status_code==status,r.text;return r.json()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Internal Server Error
+E   assert 500 == 200
+E    +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code
+
+tests/test_case_step_assignments.py:22: AssertionError</failure></testcase><testcase classname="tests.test_case_step_assignments" name="test_withdraw_is_not_locked_by_the_access_it_terminates[material]" time="6.821"><failure message="AssertionError: Internal Server Error&#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code">scoped = ((&lt;parkweave.store.Store object at 0x7f8c4dab0140&gt;, &lt;parkweave.store.Store object at 0x7f8c4d87c890&gt;, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'}, {'method': 'POST', 'path': '/api/preparations/9aaa2810-d225-426f-addc-e291ffaddb2d/commands'}, ...])
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8c543a74d0&gt;
+change = 'material'
+
+    @pytest.mark.parametrize('change',['executor_revoke','material','expired'])
+    def test_withdraw_is_not_locked_by_the_access_it_terminates(scoped,monkeypatch,change):
+     f,_,_,_=scoped;p=prepared(f);d,r,*_=submit(f,p)
+     if change=='expired':
+      now=cs._now;monkeypatch.setattr(cs,'_now',lambda c:now(c)+timedelta(seconds=301))
+     else:
+      with f[1].connect() as c:
+       if change=='executor_revoke':c.execute("UPDATE capability_grants SET active=false WHERE principal_id='executor-a' AND capability='READ'")
+       else:c.execute('UPDATE preparations SET revision=revision+1 WHERE id=%s',(p['preparation_id'],))
+&gt;    x=ok(decision(f,d,'WITHDRAW'));assert x['current_offer']['state']=='WITHDRAWN'
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_step_assignments.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = &lt;Response [500 Internal Server Error]&gt;, status = 200
+
+&gt;   def ok(r,status=200):assert r.status_code==status,r.text;return r.json()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Internal Server Error
+E   assert 500 == 200
+E    +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code
+
+tests/test_case_step_assignments.py:22: AssertionError</failure></testcase><testcase classname="tests.test_case_step_assignments" name="test_withdraw_is_not_locked_by_the_access_it_terminates[expired]" time="7.838"><failure message="AssertionError: Internal Server Error&#10;assert 500 == 200&#10; +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code">scoped = ((&lt;parkweave.store.Store object at 0x7f8c4dc9c9b0&gt;, &lt;parkweave.store.Store object at 0x7f8c4dc9d7f0&gt;, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'}, {'method': 'POST', 'path': '/api/preparations/cb6e2645-ba79-4b5b-ad41-b844e57a687e/commands'}, ...])
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f8c4e0989e0&gt;
+change = 'expired'
+
+    @pytest.mark.parametrize('change',['executor_revoke','material','expired'])
+    def test_withdraw_is_not_locked_by_the_access_it_terminates(scoped,monkeypatch,change):
+     f,_,_,_=scoped;p=prepared(f);d,r,*_=submit(f,p)
+     if change=='expired':
+      now=cs._now;monkeypatch.setattr(cs,'_now',lambda c:now(c)+timedelta(seconds=301))
+     else:
+      with f[1].connect() as c:
+       if change=='executor_revoke':c.execute("UPDATE capability_grants SET active=false WHERE principal_id='executor-a' AND capability='READ'")
+       else:c.execute('UPDATE preparations SET revision=revision+1 WHERE id=%s',(p['preparation_id'],))
+&gt;    x=ok(decision(f,d,'WITHDRAW'));assert x['current_offer']['state']=='WITHDRAWN'
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_step_assignments.py:111: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = &lt;Response [500 Internal Server Error]&gt;, status = 200
+
+&gt;   def ok(r,status=200):assert r.status_code==status,r.text;return r.json()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Internal Server Error
+E   assert 500 == 200
+E    +  where 500 = &lt;Response [500 Internal Server Error]&gt;.status_code
+
+tests/test_case_step_assignments.py:22: AssertionError</failure></testcase><testcase classname="tests.test_case_step_assignments" name="test_no_legacy_assignment_fallback_even_after_marker_expiry[True]" time="4.055" /><testcase classname="tests.test_case_step_assignments" name="test_no_legacy_assignment_fallback_even_after_marker_expiry[False]" time="3.651" /><testcase classname="tests.test_case_step_assignments" name="test_one_offer_deadline_replay_and_concurrent_accept_have_one_effect" time="2.485" /><testcase classname="tests.test_case_step_assignments" name="test_explicit_dependency_only_fresh_start_and_no_provider_mix" time="4.130" /><testcase classname="tests.test_case_step_assignments" name="test_original_accept_and_submit_recovery_bind_exact_events" time="2.769"><failure message="AssertionError: {&quot;detail&quot;:&quot;Not Found&quot;}&#10;assert 404 == 200&#10; +  where 404 = &lt;Response [404 Not Found]&gt;.status_code">scoped = ((&lt;parkweave.store.Store object at 0x7f8c55007a10&gt;, &lt;parkweave.store.Store object at 0x7f8c4e2392b0&gt;, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'}, {'method': 'POST', 'path': '/api/preparations/811365f4-85b3-491b-aece-4985a97f196f/commands'}, ...])
+
+    def test_original_accept_and_submit_recovery_bind_exact_events(scoped):
+     f,_,baseline,_=scoped;p=prepared(f);d,r,before,key=submit(f,p)
+     query=dict(preparation_id=p['preparation_id'],case_id=p['case_id'],run_id=p['run_id'],offer_id=before['current_offer']['id'],expected_revision=before['revision'],preparation_revision=p['revision'])
+&gt;    x=ok(f[3].get('/api/service-dispatches/'+d['dispatch_id']+'/accept-recovery/'+key,params=query,headers=headers(f[2],'executor-a')));assert x['status']=='COMMITTED'
+       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_case_step_assignments.py:155: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+r = &lt;Response [404 Not Found]&gt;, status = 200
+
+&gt;   def ok(r,status=200):assert r.status_code==status,r.text;return r.json()
+                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: {"detail":"Not Found"}
+E   assert 404 == 200
+E    +  where 404 = &lt;Response [404 Not Found]&gt;.status_code
+
+tests/test_case_step_assignments.py:22: AssertionError</failure></testcase></testsuite></testsuites>

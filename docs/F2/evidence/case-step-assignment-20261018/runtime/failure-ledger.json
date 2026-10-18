@@ -1,0 +1,160 @@
+{
+  "development_windows": [
+    {
+      "name": "first",
+      "total": 1,
+      "passed": 0,
+      "failures": [
+        "tests.test_case_step_assignments::test_new_case_step_actual_receipt_ack_and_default_app_still_denies"
+      ],
+      "errors": 0,
+      "seconds": "9.504"
+    },
+    {
+      "name": "second",
+      "total": 22,
+      "passed": 18,
+      "failures": [
+        "tests.test_case_step_assignments::test_withdraw_is_not_locked_by_the_access_it_terminates[executor_revoke]",
+        "tests.test_case_step_assignments::test_withdraw_is_not_locked_by_the_access_it_terminates[material]",
+        "tests.test_case_step_assignments::test_withdraw_is_not_locked_by_the_access_it_terminates[expired]",
+        "tests.test_case_step_assignments::test_original_accept_and_submit_recovery_bind_exact_events"
+      ],
+      "errors": 0,
+      "seconds": "93.637"
+    },
+    {
+      "name": "third",
+      "total": 5,
+      "passed": 5,
+      "failures": [],
+      "errors": 0,
+      "seconds": "21.714"
+    },
+    {
+      "name": "fourth",
+      "total": 1,
+      "passed": 1,
+      "failures": [],
+      "errors": 0,
+      "seconds": "9.778"
+    },
+    {
+      "name": "fifth",
+      "total": 4,
+      "passed": 4,
+      "failures": [],
+      "errors": 0,
+      "seconds": "19.568"
+    },
+    {
+      "name": "sixth",
+      "total": 6,
+      "passed": 5,
+      "failures": [
+        "tests.test_case_step_assignments::test_original_html_forms_complete_case_step_without_run_grant[DECLINE]"
+      ],
+      "errors": 0,
+      "seconds": "28.794"
+    },
+    {
+      "name": "seventh",
+      "total": 30,
+      "passed": 30,
+      "failures": [],
+      "errors": 0,
+      "seconds": "137.036"
+    }
+  ],
+  "frozen_results_separate": true,
+  "development_source_inputs_not_frozen_or_import_instrumented": true,
+  "intermediate_source_preimages_not_fully_retained": true,
+  "raw_logs_retained": true,
+  "issues": [
+    {
+      "kind": "test_expectation",
+      "window": "first",
+      "detail": "Cold executor GET compared against owner ACK POST projection; actor-specific fields differ. Corrected comparison to same-actor GET."
+    },
+    {
+      "kind": "product",
+      "window": "second",
+      "detail": "Three WITHDRAW tests hit original schema accepted/pointer CHECK; clear current pointer while preserving ACCEPT/CREATE history."
+    },
+    {
+      "kind": "test_request",
+      "window": "second",
+      "detail": "ACCEPT recovery key incorrectly put in URL suffix rather than existing header/query route."
+    },
+    {
+      "kind": "product_static_review",
+      "detail": "DECLINE response re-ran live-own guard after terminal state; explicit terminal response added, later executor GET remains denied."
+    },
+    {
+      "kind": "product_static_review",
+      "detail": "Original catalog revalidation prevented withdrawal after beneficiary revoke; existing-root catalog keeps stop action reachable."
+    },
+    {
+      "kind": "product_static_review",
+      "detail": "Owner history list lost pointer after withdrawal; strict original ACCEPT/CREATE proof retains discovery."
+    },
+    {
+      "kind": "product",
+      "window": "sixth",
+      "detail": "DECLINE UI used nonexistent context.offerId during terminal proof match; changed to original current offer id and no automatic terminal GET."
+    },
+    {
+      "kind": "product_static_review",
+      "detail": "Original OFFER payload prefix and damaged marker types not fully checked; added strict original coordinates, types, hash and generation validation."
+    },
+    {
+      "kind": "product_static_review",
+      "detail": "Unknown recovery key still required original OFFER/receipt revision validation; now incorrect coordinates reject before NOT_OBSERVED."
+    }
+  ],
+  "readonly_probe_errors": [
+    {
+      "command": "rg missing roles-run-access-writer.sql",
+      "exit": 2,
+      "action": "read only, no mutation"
+    },
+    {
+      "command": "rg missing docs/F1/ENG001-Mapping.md",
+      "exit": 2,
+      "action": "read only, no mutation"
+    },
+    {
+      "command": "rg missing src/parkweave/schema-12.sql",
+      "exit": 2,
+      "action": "read only, no mutation"
+    },
+    {
+      "command": "git rev-parse refs/heads/main",
+      "exit": 128,
+      "reason": "no local main branch exists; actual remote and origin/main were checked instead",
+      "action": "read only, no ref mutation"
+    }
+  ],
+  "unknown_processes_and_locks_untouched": true,
+  "browser_attempts": 0,
+  "root_seal_or_production_installation_attempts": 0,
+  "independent_windows": [
+    {
+      "name": "frozen-f6b76c5e-window1",
+      "collection": 8,
+      "setup_errors": 8,
+      "calls": 0,
+      "teardown_passed": 8,
+      "classification": "controller basetemp configuration; owned proof correctly refused; preserved, excluded from final pass counts"
+    },
+    {
+      "name": "frozen-f6b76c5e-window2",
+      "collection": 8,
+      "setup_passed": 8,
+      "call_passed": 8,
+      "teardown_passed": 8,
+      "junit_passed": 8,
+      "finite_retry": "only basetemp changed to owned system /tmp, no source or proof guard change"
+    }
+  ]
+}

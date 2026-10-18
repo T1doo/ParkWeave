@@ -1,0 +1,209 @@
+{
+  "baseline_sha": "a31cb8b551a8f335387e83174e94c789dbb2c165",
+  "design_blockers_before_signoff": [
+    "freeze first-offer5min action coverage and renewal policy",
+    "freeze stopping WITHDRAW authorization independent of expired beneficiary/source",
+    "freeze historical GET policy",
+    "ensure marker records cannot enter legacy interpreter, even after later Run assignment",
+    "app-local explicit DI only, no Store-global enablement/fallback",
+    "minimum views on events/receipts/notifications/recovery, never old raw _view output",
+    "retain original owner EXECUTE, current auth/source generations and final post-wait DB clock check"
+  ],
+  "expected_visible_executor_fields": [
+    "fixed_manual_task_title",
+    "exact_service_id_and_version",
+    "own_offer_state_and_ids",
+    "own_acceptance_or_decline",
+    "own_receipt_and_history",
+    "current_allowed_actions",
+    "explicit_scope_and_deadline"
+  ],
+  "forbidden_executor_fields": [
+    "original_case_goal",
+    "material_text",
+    "enterprise_facts",
+    "other_executor_ids",
+    "other_executor_reasons_or_receipts",
+    "full_Run_artifacts_or_model_context"
+  ],
+  "literal_oracles": [
+    {
+      "expect": {
+        "Run_access": "DENIED",
+        "fallback_to_new_scope": false,
+        "new_executor_step_access": "DENIED"
+      },
+      "given": "default app, configured_app, wrong/unissued/foreign-DB provider, cold Store without same issued provider",
+      "id": "CS01"
+    },
+    {
+      "expect": {
+        "production_authority_claim": false,
+        "runtime_Grant_delta": 0,
+        "runtime_roles_delta": 0,
+        "runtime_run_assignments_delta": 0,
+        "source_kind": "SYNTHETIC"
+      },
+      "given": "explicit exact issued provider on fresh owned synthetic scope, configured current original reviewer/owner and existing same-domain READ executor",
+      "id": "CS02"
+    },
+    {
+      "expect": {
+        "P1_P5_automatically_verified": false,
+        "Run_access": "DENIED",
+        "case_goal_completed": false,
+        "dispatch_actions": [
+          "OFFER",
+          "ACCEPT"
+        ],
+        "receipt_actions": [
+          "CREATE",
+          "SUBMIT",
+          "ACKNOWLEDGE"
+        ],
+        "same_Case_Run_preparation_and_offer": true
+      },
+      "given": "new Run and Case, original materials reviewed and confirmed; original reviewer explicitly OFFER, named executor ACCEPT and SUBMIT, owner explicitly ACK",
+      "id": "CS03"
+    },
+    {
+      "expect": {
+        "forbidden_fields_absent": true,
+        "original_Run_and_preparation_material_endpoints": "DENIED",
+        "other_executor_rows_absent": true,
+        "visible": "only fixed minimal task and own immutable lineage"
+      },
+      "given": "executor reads its own current offer/receipt after valid business assignment",
+      "id": "CS04"
+    },
+    {
+      "expect": {
+        "cold_default_access": "DENIED",
+        "default_app_authority_inherited": false,
+        "new_app_provider_global_mutation": false,
+        "same_original_issued_provider_explicit_rebind_GET_only": "subject to exact issuer scope; not real cross-process authority"
+      },
+      "given": "same Store used for explicit app and default app, plus another Store/app on same database",
+      "id": "CS05"
+    },
+    {
+      "expect": {
+        "native_or_legacy_failure_fallback": false,
+        "new_business_write_delta": 0,
+        "new_scope_access": "DENIED"
+      },
+      "given": "any active/inactive/unknown Run assignment or native protocol/activation history for relevant Run, including malformed or SQL/JSON null provenance ambiguity",
+      "id": "CS06"
+    },
+    {
+      "expect": {
+        "ACCEPT_SUBMIT_ACK": "DENIED",
+        "marked_record_reinterpreted_by_legacy_handler": false,
+        "new_business_write_delta": 0
+      },
+      "given": "marker OFFER expired; relevant legacy Run assignment later exists; caller uses unbound default app",
+      "id": "CS07"
+    },
+    {
+      "expect": {
+        "access": "DENIED",
+        "identity_or_marker_from_request_trusted": false,
+        "new_business_write_delta": 0
+      },
+      "given": "wrong owner/reviewer/executor/tenant, another Case/preparation/offer/receipt or self-reported marker",
+      "id": "CS08"
+    },
+    {
+      "expect": {
+        "mutation_delta_on_reject": 0,
+        "old_business_write_permission_restored": false,
+        "same_value_ABA_revives_marker": false
+      },
+      "given": "current READ/PREPARE/REVIEW_ASSIGNED/existing owner EXECUTE revoked or role/tenant/principal/source/preparation generation changed; revoked then restored",
+      "id": "CS09"
+    },
+    {
+      "expect": {
+        "new_business_write_delta": 0,
+        "physical_commit_instant_atomic_expiry_claim": false,
+        "post_wait_recheck": true
+      },
+      "given": "authorization/source/deadline or assignment/native history changes during a supported lock wait before final admission check",
+      "id": "CS10"
+    },
+    {
+      "expect": {
+        "different_body": "CONFLICT",
+        "read_recovery_automatically_replays_POST": false,
+        "same_request": "same original event IDs, no new rows, original deadline unchanged"
+      },
+      "given": "same actor/key/body replay while authorized and still in admitted write interval, versus same key different body",
+      "id": "CS11"
+    },
+    {
+      "expect": {
+        "ACCEPT_extends_deadline": false,
+        "expired_or_terminal_new_key_renews_5min": false,
+        "write_time_interval": "[t0,min(t0+300,provider_end)) if unified first-offer window selected"
+      },
+      "given": "first-offer deadline t0+300 seconds, outer issued dependency ends no later than one hour",
+      "id": "CS12",
+      "pending_root_choice": "Recommend one OFFER per Case/preparation per issue. If REOFFER is retained, retain original first-offer deadline; exact 5min action coverage must be frozen explicitly."
+    },
+    {
+      "expect": {
+        "new_executor_actions_after_withdraw": "DENIED",
+        "old_events_and_receipt_bytes_deleted": false,
+        "termination_can_depend_on_current_reviewer_authority": true,
+        "termination_requires_beneficiary_old_READ_or_old_material_freshness": false
+      },
+      "given": "current original reviewer WITHDRAW before acceptance or after acceptance/submission while outer issued provider still valid; beneficiary revoked, old source stale or offer already expired",
+      "id": "CS13"
+    },
+    {
+      "expect": {
+        "historical_read_never_restores_actions_or_deadline": true,
+        "provider_end_or_no_provider": "DENIED"
+      },
+      "given": "historical GET for expired/withdrawn own marker within live outer issue versus provider end",
+      "id": "CS14",
+      "pending_root_choice": "Recommend current authorized minimal historical GET within outer1h only; must be explicit, not inferred from history retention."
+    },
+    {
+      "expect": {
+        "event_prefix_edited": false,
+        "malformed_marker_self_consistent_hash_authorizes": false,
+        "old_default_functions_unchanged": true,
+        "old_nonmarker_interpretation": "DENIED by new service"
+      },
+      "given": "plain legacy/default business records, wrong marker/issuer or mixed legacy-marker history; new explicit service only accepts its own complete typed marker journal",
+      "id": "CS15"
+    },
+    {
+      "expect": {
+        "explicit_original_buttons_only": true,
+        "new_case_assign_scope_not_full_AT35_or_Run_grant": true,
+        "no_auto_POST_recovery": true,
+        "no_private_crosscontext_or_other_executor_data": true,
+        "real_browser_run": false
+      },
+      "given": "actual original full HTML NodeVM with new explicit HTTP app, separate owner/reviewer/executor contexts and a lost reply/current403/late reply",
+      "id": "CS16"
+    }
+  ],
+  "method": "Literal expected state/access sets from original V1 case.assign requirement and root design message. No new implementation read, project imports, tests, processes, DB or network. Specifications are not executed test counts.",
+  "scope": "INDEPENDENT_CASE_ASSIGN_LITERAL_DESIGN_BEFORE_IMPLEMENTATION",
+  "source_hashes": {
+    "docs/F2/NativeRunAccessWriterContract.md": "882297f92b6e1c78b41cc1a72ff0732ab2209dc41a07aa56e14cf714b1c3f46c",
+    "docs/sources/V1/分阶段开发计划 (2).md": "4437dac3b86c12bd1ffc57cf7c4e66c154eea5ec2a5d8562d0ddfc1f6cfb5989",
+    "docs/sources/V1/平台产品设计 (2).md": "48ff72723678546500973b6ad45ae841320cda69f08f9ca24013137ae5e7b02b",
+    "src/parkweave/api.py": "58d6d0d93be2078173f0f14a9982c7e05b4ca2ebf09ca557155479176e3f865d",
+    "src/parkweave/executor_receipts.py": "9cc3b26f11743dc11c52e0fec7bf4ae859f16711b9f1ab48041d68da1cdac713",
+    "src/parkweave/permissions.py": "eb16e8f90e800dec3c57ff77e6c37e6626bd667ad43e3b2a00cfef1e12448ea3",
+    "src/parkweave/roles.sql": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+    "src/parkweave/service_dispatches.py": "e77739dfb641c3fe3fbd706896335a8d05106761910e00c6cdf429a6ae53feec",
+    "src/parkweave/store.py": "432d6993f834390088d719eae11b7a6a68f7f160bebc3d66332841bb7a24fdf1"
+  },
+  "test_execution_status": "NOT_RUN_AWAITING_CONTRACT_AND_SOURCE_FREEZE",
+  "tracked_or_git_changes": false
+}

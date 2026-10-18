@@ -1,0 +1,69 @@
+.F....                                                                   [100%]
+=================================== FAILURES ===================================
+____ test_original_html_forms_complete_case_step_without_run_grant[DECLINE] ____
+
+scoped = ((<parkweave.store.Store object at 0x7f5180563d40>, <parkweave.store.Store object at 0x7f51805ac650>, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'}, {'method': 'POST', 'path': '/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/commands'}])
+flow = 'DECLINE'
+
+    @pytest.mark.parametrize('flow',['ACK','DECLINE','WITHDRAW_REVOKED'])
+    def test_original_html_forms_complete_case_step_without_run_grant(scoped,flow):
+     import queue,subprocess,threading
+     f,_,baseline,_=scoped;p=prepared(f,'HTML');OUT.mkdir(parents=True,exist_ok=True);name='case-step-html-'+uuid4().hex[:8]
+     errors=OUT/(name+'.stderr');lines=[];messages=queue.Queue()
+     with errors.open('w') as err:
+      proc=subprocess.Popen(['node','tests/case_step_assignment_real_html.js'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=err,text=True,bufsize=1)
+      def consume():
+       for line in proc.stdout:messages.put(line)
+       messages.put(None)
+      threading.Thread(target=consume,daemon=True).start()
+      proc.stdin.write(json.dumps(dict(base=str(f[3].base_url).rstrip('/'),preparation_id=p['preparation_id'],flow=flow,tokens=dict(owner=f[2]['fixture-a'],reviewer=f[2][REVIEWER],executor=f[2]['executor-a'])))+'\n');proc.stdin.flush()
+      try:
+       while True:
+        line=messages.get(timeout=60)
+        if line is None:break
+        lines.append(line);item=json.loads(line)
+        if item.get('control')=='revoke_executor':
+         with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='executor-a' AND capability='READ'")
+         proc.stdin.write('{}\n');proc.stdin.flush()
+        elif item.get('control')=='assert_final':
+         if flow!='WITHDRAW_REVOKED':assert authority_snapshot(f[1])==baseline
+         with f[1].connect() as c:
+          assert not c.execute('SELECT 1 FROM run_assignments').fetchone()
+          if flow=='ACK':assert c.execute('SELECT state FROM service_receipt_steps').fetchone()['state']=='LOCAL_ACKNOWLEDGED'
+          else:assert c.execute('SELECT state FROM service_dispatch_offers').fetchone()['state']==('DECLINED' if flow=='DECLINE' else 'WITHDRAWN')
+         proc.stdin.write('{}\n');proc.stdin.flush()
+       code=proc.wait(timeout=5)
+      finally:
+       if proc.poll() is None:proc.terminate();proc.wait(timeout=5)
+       (OUT/(name+'.jsonl')).write_text(''.join(lines))
+>    assert code==0,errors.read_text()
+E    AssertionError: AssertionError [ERR_ASSERTION]: terminal view cleared
+E          at check (/workspace/ParkWeave/tests/case_step_assignment_real_html.js:12:51)
+E          at /workspace/ParkWeave/tests/case_step_assignment_real_html.js:106:3
+E          at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E      {"calls":[{"method":"GET","path":"/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch","status":200,"response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"GET","path":"/api/service-dispatches/catalog?preparation_id=0850e03d-e57d-4c41-a9d6-83329ec2ccba","status":200,"response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"POST","path":"/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch","status":201,"body":{"expected_preparation_revision":5,"expected_dispatch_revision":0,"executor_id":"executor-a","reason":"SYNTHETIC explicit CaseStep duty"},"request_key":"8b089862-214b-49b6-81f2-7c5e2f1c96a0","response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"GET","path":"/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch","status":200,"response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"GET","path":"/api/service-dispatches/catalog?preparation_id=0850e03d-e57d-4c41-a9d6-83329ec2ccba","status":200,"response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"GET","path":"/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch","status":200,"response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"POST","path":"/api/service-dispatches/2e747062-89f6-49a7-89a8-7b10f7eea967/commands","status":200,"body":{"action":"DECLINE","expected_revision":1,"reason":"SYNTHETIC I decline this step"},"request_key":"c2960fc3-4f60-4e19-98a8-653cb7585f46","response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"}]}
+E      
+E    assert 1 == 0
+
+tests/test_case_step_assignments.py:208: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_case_step_assignments.py::test_original_html_forms_complete_case_step_without_run_grant[ACK]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_case_step_assignments.py::test_original_html_forms_complete_case_step_without_run_grant[ACK]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_case_step_assignments.py::test_original_html_forms_complete_case_step_without_run_grant[ACK]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_case_step_assignments.py::test_original_html_forms_complete_case_step_without_run_grant[DECLINE]
+1 failed, 5 passed, 4 warnings in 28.79s

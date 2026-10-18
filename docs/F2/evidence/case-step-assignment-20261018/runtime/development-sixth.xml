@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="6" time="28.794" timestamp="2026-10-18T16:12:10.966749+00:00" hostname="9eff6a810039"><testcase classname="tests.test_case_step_assignments" name="test_original_html_forms_complete_case_step_without_run_grant[ACK]" time="7.727" /><testcase classname="tests.test_case_step_assignments" name="test_original_html_forms_complete_case_step_without_run_grant[DECLINE]" time="3.388"><failure message="AssertionError: AssertionError [ERR_ASSERTION]: terminal view cleared&#10;      at check (/workspace/ParkWeave/tests/case_step_assignment_real_html.js:12:51)&#10;      at /workspace/ParkWeave/tests/case_step_assignment_real_html.js:106:3&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  {&quot;calls&quot;:[{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_INTERNAL_DISPATCH_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/service-dispatches/catalog?preparation_id=0850e03d-e57d-4c41-a9d6-83329ec2ccba&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_INTERNAL_DISPATCH_ONLY&quot;},{&quot;method&quot;:&quot;POST&quot;,&quot;path&quot;:&quot;/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch&quot;,&quot;status&quot;:201,&quot;body&quot;:{&quot;expected_preparation_revision&quot;:5,&quot;expected_dispatch_revision&quot;:0,&quot;executor_id&quot;:&quot;executor-a&quot;,&quot;reason&quot;:&quot;SYNTHETIC explicit CaseStep duty&quot;},&quot;request_key&quot;:&quot;8b089862-214b-49b6-81f2-7c5e2f1c96a0&quot;,&quot;response_scope&quot;:&quot;SYNTHETIC_INTERNAL_DISPATCH_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_INTERNAL_DISPATCH_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/service-dispatches/catalog?preparation_id=0850e03d-e57d-4c41-a9d6-83329ec2ccba&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_INTERNAL_DISPATCH_ONLY&quot;},{&quot;method&quot;:&quot;GET&quot;,&quot;path&quot;:&quot;/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch&quot;,&quot;status&quot;:200,&quot;response_scope&quot;:&quot;SYNTHETIC_INTERNAL_DISPATCH_ONLY&quot;},{&quot;method&quot;:&quot;POST&quot;,&quot;path&quot;:&quot;/api/service-dispatches/2e747062-89f6-49a7-89a8-7b10f7eea967/commands&quot;,&quot;status&quot;:200,&quot;body&quot;:{&quot;action&quot;:&quot;DECLINE&quot;,&quot;expected_revision&quot;:1,&quot;reason&quot;:&quot;SYNTHETIC I decline this step&quot;},&quot;request_key&quot;:&quot;c2960fc3-4f60-4e19-98a8-653cb7585f46&quot;,&quot;response_scope&quot;:&quot;SYNTHETIC_INTERNAL_DISPATCH_ONLY&quot;}]}&#10;  &#10;assert 1 == 0">scoped = ((&lt;parkweave.store.Store object at 0x7f5180563d40&gt;, &lt;parkweave.store.Store object at 0x7f51805ac650&gt;, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'}, {'method': 'POST', 'path': '/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/commands'}])
+flow = 'DECLINE'
+
+    @pytest.mark.parametrize('flow',['ACK','DECLINE','WITHDRAW_REVOKED'])
+    def test_original_html_forms_complete_case_step_without_run_grant(scoped,flow):
+     import queue,subprocess,threading
+     f,_,baseline,_=scoped;p=prepared(f,'HTML');OUT.mkdir(parents=True,exist_ok=True);name='case-step-html-'+uuid4().hex[:8]
+     errors=OUT/(name+'.stderr');lines=[];messages=queue.Queue()
+     with errors.open('w') as err:
+      proc=subprocess.Popen(['node','tests/case_step_assignment_real_html.js'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=err,text=True,bufsize=1)
+      def consume():
+       for line in proc.stdout:messages.put(line)
+       messages.put(None)
+      threading.Thread(target=consume,daemon=True).start()
+      proc.stdin.write(json.dumps(dict(base=str(f[3].base_url).rstrip('/'),preparation_id=p['preparation_id'],flow=flow,tokens=dict(owner=f[2]['fixture-a'],reviewer=f[2][REVIEWER],executor=f[2]['executor-a'])))+'\n');proc.stdin.flush()
+      try:
+       while True:
+        line=messages.get(timeout=60)
+        if line is None:break
+        lines.append(line);item=json.loads(line)
+        if item.get('control')=='revoke_executor':
+         with f[1].connect() as c:c.execute("UPDATE capability_grants SET active=false WHERE principal_id='executor-a' AND capability='READ'")
+         proc.stdin.write('{}\n');proc.stdin.flush()
+        elif item.get('control')=='assert_final':
+         if flow!='WITHDRAW_REVOKED':assert authority_snapshot(f[1])==baseline
+         with f[1].connect() as c:
+          assert not c.execute('SELECT 1 FROM run_assignments').fetchone()
+          if flow=='ACK':assert c.execute('SELECT state FROM service_receipt_steps').fetchone()['state']=='LOCAL_ACKNOWLEDGED'
+          else:assert c.execute('SELECT state FROM service_dispatch_offers').fetchone()['state']==('DECLINED' if flow=='DECLINE' else 'WITHDRAWN')
+         proc.stdin.write('{}\n');proc.stdin.flush()
+       code=proc.wait(timeout=5)
+      finally:
+       if proc.poll() is None:proc.terminate();proc.wait(timeout=5)
+       (OUT/(name+'.jsonl')).write_text(''.join(lines))
+&gt;    assert code==0,errors.read_text()
+E    AssertionError: AssertionError [ERR_ASSERTION]: terminal view cleared
+E          at check (/workspace/ParkWeave/tests/case_step_assignment_real_html.js:12:51)
+E          at /workspace/ParkWeave/tests/case_step_assignment_real_html.js:106:3
+E          at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E      {"calls":[{"method":"GET","path":"/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch","status":200,"response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"GET","path":"/api/service-dispatches/catalog?preparation_id=0850e03d-e57d-4c41-a9d6-83329ec2ccba","status":200,"response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"POST","path":"/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch","status":201,"body":{"expected_preparation_revision":5,"expected_dispatch_revision":0,"executor_id":"executor-a","reason":"SYNTHETIC explicit CaseStep duty"},"request_key":"8b089862-214b-49b6-81f2-7c5e2f1c96a0","response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"GET","path":"/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch","status":200,"response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"GET","path":"/api/service-dispatches/catalog?preparation_id=0850e03d-e57d-4c41-a9d6-83329ec2ccba","status":200,"response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"GET","path":"/api/preparations/0850e03d-e57d-4c41-a9d6-83329ec2ccba/dispatch","status":200,"response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"},{"method":"POST","path":"/api/service-dispatches/2e747062-89f6-49a7-89a8-7b10f7eea967/commands","status":200,"body":{"action":"DECLINE","expected_revision":1,"reason":"SYNTHETIC I decline this step"},"request_key":"c2960fc3-4f60-4e19-98a8-653cb7585f46","response_scope":"SYNTHETIC_INTERNAL_DISPATCH_ONLY"}]}
+E      
+E    assert 1 == 0
+
+tests/test_case_step_assignments.py:208: AssertionError</failure></testcase><testcase classname="tests.test_case_step_assignments" name="test_original_html_forms_complete_case_step_without_run_grant[WITHDRAW_REVOKED]" time="4.945" /><testcase classname="tests.test_case_step_assignments" name="test_withdraw_is_not_locked_by_the_access_it_terminates[executor_revoke]" time="4.058" /><testcase classname="tests.test_case_step_assignments" name="test_withdraw_is_not_locked_by_the_access_it_terminates[material]" time="4.237" /><testcase classname="tests.test_case_step_assignments" name="test_withdraw_is_not_locked_by_the_access_it_terminates[expired]" time="3.858" /></testsuite></testsuites>

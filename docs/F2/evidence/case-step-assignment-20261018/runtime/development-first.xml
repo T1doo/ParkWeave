@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="9.504" timestamp="2026-10-18T16:03:44.170053+00:00" hostname="9eff6a810039"><testcase classname="tests.test_case_step_assignments" name="test_new_case_step_actual_receipt_ack_and_default_app_still_denies" time="8.799"><failure message="AssertionError: assert {'scope': 'SY...b', ...}, ...} == {'scope': 'SY...b', ...}, ...}&#10;  &#10;  Omitting 20 identical items, use -vv to show&#10;  Differing items:&#10;  {'actor_ref': '4be0782ae91d8c534065c401215ffa0d9046487f59f3832d629bdfd08c3144ff'} != {'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db'}&#10;  {'role': 'service_executor'} != {'role': 'enterprise_operator'}&#10;  {'event': None} != {'event': {'step_id': 'e9756d6a-4cdf-4797-b981-0a352dcf718c', 'revision': 3, 'state': 'LOCAL_ACKNOWLEDGED', 'action': 'ACKNOWLEDGE', ...}}&#10;  {'replay_mode': None} != {'replay_mode': 'CURRENT_COMMITTED_EVENT'}&#10;  Use -v to get more diff">scoped = ((&lt;parkweave.store.Store object at 0x7f1c117c3ad0&gt;, &lt;parkweave.store.Store object at 0x7f1c117c3d10&gt;, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'}, {'method': 'POST', 'path': '/api/preparations/88262f5b-66f8-4170-9b58-c401d7c5c5c3/commands'}, ...])
+
+    def test_new_case_step_actual_receipt_ack_and_default_app_still_denies(scoped):
+     f,provider,baseline,traffic=scoped;p=prepared(f);d,r,before,key=submit(f,p)
+     assert d['current_offer']['state']=='ACCEPTED' and d['assignment_contract']==cs.CONTRACT
+     assert not d['run_access_granted'] and not r['run_access_granted']
+     assert ok(f[3].get('/api/service-dispatches',headers=headers(f[2],'executor-a')))['items'][0]['id']==d['dispatch_id']
+     assert ok(f[3].get('/api/executor-receipts',headers=headers(f[2],'executor-a')))['items'][0]['id']==r['step']['id']
+     # Minimal actual projections omit the full private request/material, not just a UI label.
+     own=ok(f[3].get('/api/service-dispatches/'+d['dispatch_id'],headers=headers(f[2],'executor-a')))
+     assert all(v not in json.dumps([own,r]) for v in ['PRIVATE_REQUEST_A','PRIVATE_MATERIAL_A','PRIVATE_OUTLINE_A'])
+     assert 'owner_id' not in r['step'] and r['step']['goal']==cs.TITLE
+     r=ok(act(f,r,'SUBMIT',text='SYNTHETIC actual task output'),200)
+     assert r['current_receipt']['source_sha256']==hashlib.sha256(b'SYNTHETIC actual task output').hexdigest()
+     r=ok(act(f,r,'ACKNOWLEDGE'));assert r['step']['state']=='LOCAL_ACKNOWLEDGED' and not r['case_goal_completed']
+     assert authority_snapshot(f[1])==baseline
+     assert ok(f[3].get('/api/runs/'+p['run_id'],headers=headers(f[2],'executor-a')),403)
+     with TestClient(create_app(f[0])) as default:
+      for path in ['/api/preparations/'+p['preparation_id']+'/dispatch','/api/executor-receipts/'+r['step']['id']]:ok(default.get(path,headers=headers(f[2],'executor-a')),403)
+      ok(default.get('/api/preparations/'+p['preparation_id']+'/dispatch',headers=headers(f[2],REVIEWER)),403)
+     with TestClient(create_app(f[0],case_step_assignments=provider)) as cold:
+&gt;     assert ok(cold.get('/api/executor-receipts/'+r['step']['id'],headers=headers(f[2],'executor-a')))==r
+E     AssertionError: assert {'scope': 'SY...b', ...}, ...} == {'scope': 'SY...b', ...}, ...}
+E       
+E       Omitting 20 identical items, use -vv to show
+E       Differing items:
+E       {'actor_ref': '4be0782ae91d8c534065c401215ffa0d9046487f59f3832d629bdfd08c3144ff'} != {'actor_ref': '27643de5e34578052a0b92257e5267e8722b35c89f54e79fac2ea08f43f177db'}
+E       {'role': 'service_executor'} != {'role': 'enterprise_operator'}
+E       {'event': None} != {'event': {'step_id': 'e9756d6a-4cdf-4797-b981-0a352dcf718c', 'revision': 3, 'state': 'LOCAL_ACKNOWLEDGED', 'action': 'ACKNOWLEDGE', ...}}
+E       {'replay_mode': None} != {'replay_mode': 'CURRENT_COMMITTED_EVENT'}
+E       Use -v to get more diff
+
+tests/test_case_step_assignments.py:60: AssertionError</failure></testcase></testsuite></testsuites>

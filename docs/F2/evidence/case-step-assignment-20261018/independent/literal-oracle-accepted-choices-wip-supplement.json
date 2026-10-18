@@ -1,0 +1,145 @@
+{
+  "accepted_choices": {
+    "CS03_owner_ACK": "original owner EXECUTE remains necessary",
+    "CS10_deadline": "last post-wait admission check, not a claim about physical COMMIT instant",
+    "CS12": {
+      "accept_extends_deadline": false,
+      "all_new_actions_interval": "[first_offer_time,min(first_offer_time+configured_offer_seconds<=300s,provider_end<=3600s))",
+      "offers_per_Case": 1,
+      "reoffer_or_new_key_renewal": false,
+      "terminal_states": [
+        "DECLINED",
+        "WITHDRAWN",
+        "EXPIRED"
+      ]
+    },
+    "CS13": {
+      "WITHDRAW_requires": "current exact responsible reviewer READ/REVIEW_ASSIGNED and same Case",
+      "WITHDRAW_requires_executor_READ_or_old_material_or_catalog_freshness": false,
+      "executor_posttermination_GET": "DENIED",
+      "preserve_accept_event_receipt_step_and_receipt_history": true
+    },
+    "CS14": {
+      "executor_expired_or_terminated_historical_GET": "DENIED",
+      "owner_reviewer_historical_GET": "current own Case scope within original live provider window, minimal only",
+      "provider_end_or_no_explicit_original_provider": "DENIED"
+    },
+    "CS15": {
+      "old_default_guard_semantics": "retained with explicit marker isolation deny additions; not byte-unchanged",
+      "old_nonmarker_journal_and_mixed_journal": "DENIED by new scoped service"
+    }
+  },
+  "baseline_sha": "a31cb8b551a8f335387e83174e94c789dbb2c165",
+  "execution": {
+    "DB": 0,
+    "browser": 0,
+    "business_writes": 0,
+    "git_mutations": 0,
+    "network": 0,
+    "node": 0,
+    "pytest": 0,
+    "tracked_writes": 0
+  },
+  "initial_literal_oracle_sha256": "5579fcbaa144775590a38e563b417611e55a7fa04e4bbe57a6c97ecc82baff66",
+  "method": "Accepted root contract choices specialize the initial literal oracles. Additional cases come from literal access/state requirements and static control flow, never from executed implementation output. The original preimplementation oracle is preserved byte for byte.",
+  "pending": "Await root frozen full SHA and explicit bounded execution scope. Specifications are not PASS counts.",
+  "scope": "INDEPENDENT_CASE_ASSIGN_ACCEPTED_CHOICES_AND_WIP_STATIC_SUPPLEMENT",
+  "static_findings": [
+    {
+      "evidence": "prior _dispatch_view re-called _own after DECLINED and caused transaction rollback; current terminal response must not restore later read",
+      "id": "WIP-P2-DECLINE-TX",
+      "state": "root_reports_fixed_not_executed_by_reviewer"
+    },
+    {
+      "evidence": "web.html loadDispatch unconditionally GETs specialist catalog; catalog unconditionally _generations(c) validates revoked target, denying page before explicit WITHDRAW",
+      "id": "WIP-P2-REVOKED-TARGET-UI-WITHDRAW",
+      "state": "reported_open_WIP"
+    },
+    {
+      "evidence": "web.html sendDispatchPending unconditionally loadDispatch after successful DECLINE POST; terminal executor GET is forbidden, surfacing false 403 error",
+      "id": "WIP-P2-DECLINE-UI-RELOAD",
+      "state": "reported_open_WIP"
+    },
+    {
+      "evidence": "clearing accepted offer receipt_step_id satisfies schema, but _list(receipts=True) skips empty pointer and original dispatch UI only opens current_receipt_step_id; preserve owner discoverability using verified ACCEPT-to-CREATE history without restoring executor access",
+      "id": "WIP-RISK-WITHDRAW-OWNER-DISCOVERY",
+      "state": "static_availability_risk_reported"
+    },
+    {
+      "evidence": "strict complete marker/journal and original recovery proof remain pre-freeze review gates; this supplement is not a final approval",
+      "id": "WIP-PENDING-STRICT-MARKER-RECOVERY",
+      "state": "root_acknowledged_in_progress"
+    }
+  ],
+  "status": "STATIC_ONLY_UNFROZEN_WIP_NO_TESTS_EXECUTED",
+  "supplemental_literal_oracles": [
+    {
+      "expect": {
+        "POST": "COMMITTED minimal terminal response",
+        "automatic_followup_forbidden_GET_after_success": false,
+        "dispatch_event_actions": [
+          "OFFER",
+          "DECLINE"
+        ],
+        "new_OFFER_after_decline": "CONFLICT",
+        "new_receipt_steps": 0,
+        "page_reports_success_as_403_error": false,
+        "subsequent_executor_GET": "DENIED"
+      },
+      "given": "valid OFFERED own step, executor explicitly DECLINE through original HTTP and page",
+      "id": "CSA17"
+    },
+    {
+      "expect": {
+        "executor_new_actions_and_GET": "DENIED",
+        "grant_assignment_roles_delta": 0,
+        "offer_current_receipt_pointer": null,
+        "original_ACCEPT_receipt_step_and_events_preserved": true,
+        "owner_original_receipt_list_and_exact_GET": "minimal retained history discoverable",
+        "reviewer_explicit_WITHDRAW": "COMMITTED",
+        "reviewer_original_page_load_and_catalog": "minimal historical scope, no beneficiary authority required"
+      },
+      "given": "valid ACCEPT then executor READ revoked or source becomes stale; current original reviewer retains READ/REVIEW_ASSIGNED, provider live",
+      "id": "CSA18"
+    },
+    {
+      "expect": {
+        "business_mutation_delta": 0,
+        "default_legacy_reinterpretation": false,
+        "new_service_read_write_recovery": "DENIED or explicit CONFLICT, never 500/success",
+        "self_consistent_partial_hash_is_authority": false
+      },
+      "given": "wrong/malformed marker or extra/mixed legacy journal rows, including Boolean/float revisions/version, invalid SHA/generation shape, incompatible event columns/payload, additional offer or foreign receipt step",
+      "id": "CSA19"
+    },
+    {
+      "expect": {
+        "new_rows": 0,
+        "only_complete_original_proof": "COMMITTED",
+        "recovery_POST_or_automatic_ACK_VERIFY": false,
+        "unobserved_valid_original_key": "NOT_OBSERVED is uncertainty only",
+        "wrong_selection_even_absent_key": "DENIED or explicit CONFLICT"
+      },
+      "given": "ACCEPT/SUBMIT original-key GET recovery with missing or mismatched dispatch/offer/step birth, actor, event key, revision, receipt version/SHA/body/fingerprint, exact original selection, or damaged journal",
+      "id": "CSA20"
+    },
+    {
+      "expect": {
+        "automatic_P1_P5_VERIFY": false,
+        "current_authorized_correction": "original distinct immutable receipt versions and events",
+        "current_owner_minimal_history": "read-only while outer provider and current own Case authority remain",
+        "old_prefix_edited": false,
+        "ordinary_Run_access": "DENIED",
+        "same_value_ABA_or_expired_wait_new_write": "DENIED with rollback"
+      },
+      "given": "legitimate fixed-deadline original HTTP/manual chain then REQUEST_CHANGES/REOPEN and correction within same unextended interval, versus source/permission ABA or lock wait crossing deadline",
+      "id": "CSA21"
+    }
+  ],
+  "wip_source_hashes": {
+    "docs/F2/CaseStepAssignmentContract-20261018.md": "4755d6a6daa18e6ba0d9787f9a229c0bba0b33c6ae2277bf0126fb2b602980cf",
+    "src/parkweave/api.py": "851eb9c6392b3be28b4bbb94be1afcad97af0d5c48d8647adc5491e94633df5f",
+    "src/parkweave/case_step_assignments.py": "d5674ecb1b42711c1137dd192efa2842adefa180b203021e66c8c9f1de4cfe9a",
+    "src/parkweave/web.html": "a0cf77762cf2ea6034ac8963163932edbf6fe4f800905d999fc12e6ddb0c8683"
+  }
+}
