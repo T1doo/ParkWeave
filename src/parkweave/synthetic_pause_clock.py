@@ -258,8 +258,11 @@ def read(store, token, id, key=None):
             events = clock.events(db, id, source)
             result = clock.projection(source, now, events)
             cap = json.loads(clock.capabilities[str(id)])['capability']
+            result.update(actor_id=actor['id'], preparation_revision=parent['revision'],
+                          fixture_capability_expires_at=cap['valid_until'])
             result['fixture_capability_current'] = hd.instant(cap['valid_from']) <= now < hd.instant(cap['valid_until'])
-            result['fixture_write_enabled'] = result['fixture_capability_current'] and actor['id'] == cap['actor_id']
+            result['fixture_write_enabled'] = (result['fixture_capability_current'] and actor['id'] == cap['actor_id']
+                and result['state'] in ('SYNTHETIC_CALCULATED', 'SYNTHETIC_PAUSED') and not prep.case_write_blocked(c, parent))
             if key is not None:
                 event = next((e for e in events if e['actor_id'] == actor['id'] and e['request_key'] == key), None)
                 result.update(recovery_status='COMMITTED' if event else 'NOT_OBSERVED',
