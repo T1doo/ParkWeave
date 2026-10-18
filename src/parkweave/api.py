@@ -945,15 +945,15 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         if len(cursors)>1 or any(key!='cursor' for key in request.query_params):
             raise Denied('notice navigation unavailable; refresh required')
         return notices.list_items(store,token(authorization),cursor=cursors[0] if cursors else None,
-                                  navigation=notice_navigation)
+                                  navigation=notice_navigation,case_step_assignments=case_step_assignments)
 
     @app.get('/api/dispatch-notices/{event_id}')
     def notice_read(event_id: UUID,authorization: str | None=Header(default=None)):
-        return notices.read(store,token(authorization),event_id)
+        return notices.read(store,token(authorization),event_id,case_step_assignments=case_step_assignments)
 
     @app.post('/api/dispatch-notices/{event_id}/commands')
     def notice_command(event_id: UUID,data: notices.Command,authorization: str | None=Header(default=None)):
-        return notices.command(store,token(authorization),event_id,data)
+        return notices.command(store,token(authorization),event_id,data,case_step_assignments=case_step_assignments)
 
     from . import case_lifecycle
     from . import readiness

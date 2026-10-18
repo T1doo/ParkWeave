@@ -133,8 +133,16 @@ class IsolatedCaseStepAssignments:
             result[id] = g
         return result
 
-    def _parent(self, c, token, id, *, write=False, stopping=False, final=False):
-        p = sd._auth(self.store,c,token)
+    def _parent(self, c, token, id, *, write=False, stopping=False, final=False, recipient_id=None):
+        if recipient_id is None:
+            p = sd._auth(self.store,c,token)
+        else:
+            # Trusted outbox consumer uses the original current DB recipient,
+            # never a session/identity issued from an event or marker.
+            self.store.lock_principal(c,recipient_id)
+            p=c.execute('SELECT * FROM principals WHERE id=%s AND active',(recipient_id,)).fetchone()
+            if not p:raise Denied('current CaseStep recipient required')
+            self.store.check_capability(c,p,'READ')
         if p['id'] not in (self.owner_id,self.reviewer_id,*self.executor_ids): raise Denied('CaseStep participant required')
         parent = c.execute('SELECT * FROM preparations WHERE id=%s '+('FOR UPDATE' if write else 'FOR SHARE'),(id,)).fetchone()
         if (not parent or parent['namespace'] != 'SYNTHETIC'
@@ -158,8 +166,74 @@ class IsolatedCaseStepAssignments:
         if p['role'] != 'service_executor': prep.scoped(self.store,c,p,id)
         if write and not stopping: prep.case_write_guard(c,parent)
         if not final:
-            self._checks[c].append(lambda: self._parent(c,token,id,write=write,stopping=stopping,final=True))
+            self._checks[c].append(lambda: self._parent(c,token,id,write=write,stopping=stopping,final=True,recipient_id=recipient_id))
         return p,parent
+
+    def owns_notice(self,c,source):
+        row=c.execute("SELECT e.payload FROM service_dispatch_events e WHERE e.dispatch_id=%s AND e.action='OFFER' ORDER BY e.revision LIMIT 1",(source['dispatch_id'],)).fetchone()
+        try:
+            binding=row['payload'][MARKER]['binding']
+            return binding['contract']==CONTRACT and binding['contract_id']==self.contract_id
+        except (KeyError,TypeError):return False
+
+    def notice_source(self,c,source):
+        # Structural proof before a consumer may terminally suppress intent.
+        # Lock the parent first; no receipt lock precedes its parent.
+        parent=c.execute('SELECT * FROM preparations WHERE id=%s FOR SHARE',(source['preparation_id'],)).fetchone()
+        if (not parent or parent['namespace']!='SYNTHETIC' or
+                (parent['owner_id'],parent['reviewer_id'],parent['park_id'],parent['org_id'])!=
+                (self.owner_id,self.reviewer_id,self.park_id,self.org_id)):
+            raise Denied('original CaseStep notification parent required')
+        root=self._root(c,parent)
+        offer=c.execute('SELECT * FROM service_dispatch_offers WHERE id=%s',(root['current_offer_id'],)).fetchone() if root else None
+        if not offer or root['id']!=source['dispatch_id'] or offer['id']!=source['offer_id']:
+            raise Denied('exact original CaseStep notification required')
+        event=c.execute('SELECT * FROM service_dispatch_events WHERE id=%s',(source['event_id'],)).fetchone()
+        try:
+            action=event['action'];payload=event['payload']
+            if action=='OFFER':
+                first=c.execute('SELECT id FROM service_dispatch_events WHERE offer_id=%s ORDER BY revision LIMIT 1',(offer['id'],)).fetchone()
+                if event['revision']!=1 or not first or event['id']!=first['id']:raise ValueError('original first OFFER event required')
+                self._marker(c,parent,offer)
+            elif action in ('ACCEPT','DECLINE','WITHDRAW'):
+                if action=='DECLINE' and (event['revision']!=2 or offer['state']!='DECLINED'):raise ValueError('original terminal decline required')
+                if action=='WITHDRAW':
+                    if offer['state']!='WITHDRAWN' or event['revision'] not in (2,3):raise ValueError('original withdrawal required')
+                    if event['revision']==3:self._accepted_step(c,parent,offer)
+                step=self._accepted_step(c,parent,offer) if action=='ACCEPT' else None
+                expected=dict(dispatch_id=str(root['id']),offer_id=str(offer['id']),revision=event['revision'],
+                    action=action,state={'ACCEPT':'ACCEPTED','DECLINE':'DECLINED','WITHDRAW':'WITHDRAWN'}[action],
+                    actor_id=event['actor_id'],executor_id=offer['executor_id'],receipt_step_id=str(step['id']) if step else None)
+                original=sd.Command(action=action,expected_revision=event['revision']-1,reason=payload['reason'],**historical_fields(payload))
+                if (event['actor_id']!=(self.reviewer_id if action=='WITHDRAW' else offer['executor_id'])
+                        or not sd._typed_fields_equal(payload,expected)
+                        or event['fingerprint']!=_fp('DISPATCH_COMMAND',root['id'],original)):
+                    raise ValueError('original notification command proof mismatch')
+            else:raise ValueError('unknown CaseStep notification action')
+            if (event['dispatch_id']!=root['id'] or event['offer_id']!=offer['id']
+                    or event['revision']>root['revision'] or event['revision']!=source['revision']
+                    or any(event[k]!=source[k] for k in ('action','actor_id','created_at'))
+                    or source['executor_id']!=offer['executor_id']):
+                raise ValueError('notification source mismatch')
+        except (KeyError,TypeError,ValueError,AttributeError):
+            raise Denied('original CaseStep notification proof required') from None
+        return parent,root
+
+    def notice_authority(self,c,p,source,*,final=False):
+        p,parent=self._parent(c,None,source['preparation_id'],recipient_id=p['id'],final=final)
+        _,root=self.notice_source(c,source)
+        if p['role']=='service_executor':self._own(c,p,parent,root,final=final)
+        if not final:self._checks[c].append(lambda:self.notice_authority(c,p,source,final=True))
+        return parent,root
+
+    def notice_item(self,c,p,parent,root,source,item):
+        offer=sd._own_offer(c,p,root)
+        try:self._live(c,parent,offer,final=True);live=offer['state']=='OFFERED'
+        except Denied:live=False
+        item.update(assignment_contract=CONTRACT,run_access_granted=False,
+            assignment_valid_until=self._marker(c,parent,offer)['valid_until'],
+            actionable=item['actionable'] and live and p['role']=='service_executor',historical=item['historical'] or not live)
+        return item
 
     def _catalog(self,c,parent):
         row = c.execute('SELECT *,xmin::text generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=%s',
@@ -240,12 +314,12 @@ class IsolatedCaseStepAssignments:
             raise Denied('legacy receipt cannot become CaseStep assignment')
         return root
 
-    def _own(self,c,p,parent,root):
+    def _own(self,c,p,parent,root,*,final=False):
         if not root: raise Denied('explicit CaseStep offer required')
         offer = sd._own_offer(c,p,root)
         if not offer or offer['id'] != root['current_offer_id'] or offer['state'] not in ('OFFERED','ACCEPTED'):
             raise Denied('current own CaseStep offer required')
-        self._live(c,parent,offer)
+        self._live(c,parent,offer,final=final)
         return offer
 
     def _dispatch_view(self,c,p,parent,root,event=None,*,terminal=False):
@@ -506,8 +580,12 @@ class IsolatedCaseStepAssignments:
             return dict(scope=er.SCOPE,actor_ref=digest(prep.canonical(dict(actor_id=p['id']))),step_id=str(id),**{k:str(getattr(selection,k)) for k in ('preparation_id','case_id','run_id')},expected_revision=selection.expected_revision,preparation_revision=selection.preparation_revision,request_key=key,status='COMMITTED' if old else 'NOT_OBSERVED',event=event,historical_only=True,read_only=True,automatically_replayed=False,case_goal_completed=False)
 
 
+def has_marker(c,preparation_id):
+    return bool(c.execute("SELECT 1 FROM service_dispatch_events e JOIN service_dispatches d ON d.id=e.dispatch_id WHERE d.preparation_id=%s AND e.payload ? %s LIMIT 1",(preparation_id,MARKER)).fetchone())
+
+
 def refuse_legacy(c,preparation_id):
-    if c.execute("SELECT 1 FROM service_dispatch_events e JOIN service_dispatches d ON d.id=e.dispatch_id WHERE d.preparation_id=%s AND e.payload ? %s LIMIT 1",(preparation_id,MARKER)).fetchone():
+    if has_marker(c,preparation_id):
         raise Denied('CaseStep marker requires its original explicit isolated service; no legacy interpretation')
 
 def legacy_rows(c,rows,key,*,receipt=False):
