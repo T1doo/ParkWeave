@@ -1,5 +1,7 @@
 # 普通用户本地合成体验包
 
+**当前 LOCAL_SYNTHETIC_DEMO 固定版本交付请先看 [LocalSyntheticExperience.md](LocalSyntheticExperience.md) 与 [LocalSyntheticWalk.html](LocalSyntheticWalk.html)。** 它使用已有 schema32 与私有输入；下文是历史体验记录，末尾 schema25／`--fresh-fixture` 启动方案不能作为当前包的启动步骤。当前包不创建数据库、身份、Grant、assignment 或批准。
+
 普通用户用浏览器打开 [AcceptanceWalk.html](AcceptanceWalk.html)，根据安装者提供的本机地址和现有合成会话操作。无需写代码、编辑JSON或提供模型密钥。操作卡离线使用，无外部资源、无网络请求、无输入凭据字段；勾选不持久保存，刷新清空，打印可留空白核对表。
 
 基线：`9ab3c06567ec4d3ff2bcd8152008ba46c39089a5`。依据原V1 §5.2、§5.5、§7.2–7.5、F2计划及ENG098/099/100。仓库及本环境 `.agents` 未发现 AGENTS.md 或相关 SKILL.md。原独立支线本包仅新增 `scripts/demo_preflight.py`、`tests/test_demo_preflight.py`、本目录及独立证据，不修改核心、Windows脚本/workflow、迁移或身份权限。
