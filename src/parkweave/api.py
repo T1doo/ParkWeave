@@ -1117,12 +1117,20 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
 
 
 def configured_app(*, resource_plan_approval_provider=None, formal_source_reader=None, formal_provenance_verifier=None):
+    read_config = os.environ.get('PARKWEAVE_RUNTIME_READ_CONFIG')
+    write_config = os.environ.get('PARKWEAVE_RUNTIME_WRITE_CONFIG')
+    if read_config is not None and write_config is not None:
+        raise Denied('ordinary runtime read and write configurations cannot be combined')
     dsn = os.environ.get("PARKWEAVE_DSN")
     if not dsn:
         raise RuntimeError("PARKWEAVE_DSN required; no credential discovery")
     store=Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL"),file_root=os.environ.get("PARKWEAVE_FILE_ROOT"))
     from .ordinary_runtime_read import configure
-    configure(store,os.environ.get('PARKWEAVE_RUNTIME_READ_CONFIG'))
+    if write_config is None:
+        configure(store,read_config)
+    else:
+        from .ordinary_runtime_write import configure as configure_write
+        configure_write(store,write_config)
     from .resource_approval_host_read import configure as configure_approval
     resource_plan_approval_provider=configure_approval(os.environ.get('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'),resource_plan_approval_provider)
     from .local_synthetic_demo import configure as configure_demo

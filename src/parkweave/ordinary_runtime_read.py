@@ -72,6 +72,12 @@ def check_binding(bridge, c, run_id):
         cfg = ReadConfig.model_validate_json(bridge.runtime_read_binding)
     except (AttributeError, ValueError, TypeError):
         raise Denied('ordinary read provider configuration unavailable') from None
+    return check_scope(bridge, c, run_id, cfg)
+
+
+def check_scope(bridge, c, run_id, cfg):
+    """Compare existing objects only; callers separately establish their authority."""
+    from .native_run_access_writer import WriterClient, _writer
     client = _writer(bridge)
     if type(client) is not WriterClient:
         raise Denied('public writer client required; private context forbidden')

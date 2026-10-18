@@ -439,6 +439,9 @@ def invoke(bridge, operation, token, run_id, key, data):
     value = _writer(bridge)
     if type(value) is not WriterClient:
         raise Denied('API requires client channel, not private writer context')
+    if getattr(bridge,'runtime_write_binding',None) is not None:
+        from .ordinary_runtime_write import before_invoke
+        before_invoke(bridge, operation, run_id)
     return WriterClient.invoke(value, operation, token, run_id, key, data)
 
 

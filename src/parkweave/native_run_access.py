@@ -129,6 +129,10 @@ class NativeRunAccess:
             _writer(self)
 
     def assignment_allowed(self,c,p,run_id,assignment):
+        if getattr(self,'runtime_write_binding',None) is not None:
+            from .ordinary_runtime_write import check_binding
+            try:check_binding(self,c,run_id)
+            except (Denied,Conflict,ValueError,TypeError):return False
         if getattr(self,'runtime_read_binding',None) is not None:
             from .ordinary_runtime_read import check_binding
             try:check_binding(self,c,run_id)
