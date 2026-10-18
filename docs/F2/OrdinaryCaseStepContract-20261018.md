@@ -6,7 +6,7 @@
 
 显式 `PARKWEAVE_CASE_STEP_MODE=CURRENT_PREPARATION` 选择原资料事项的步骤办理路径；缺省保留原默认路径，未知值拒绝。选择仅决定业务路由，不发行权限、permit或批准。API与原worker调用同一个配置函数；与任何Native read/write配置、isolated provider、正式来源及独立demo/provider互斥，启动或当前操作发现混合即拒绝，不捕获Native拒绝fallback。
 
-仅消费原LOCAL Store、已安装原业务schema、当前合法会话和同园区/企业的既有preparation/Case/成功case.create Run/VERIFIED operation。企业为记录owner，当前READ/PREPARE/EXECUTE；专员为记录reviewer，当前READ/REVIEW_ASSIGNED；执行者为既有同域service_executor且当前READ，接单后只访问原步骤。分派是专员对原本人资料事项的一次显式业务OFFER，不写任何身份、Grant或Run访问授权。目录、资料确认、业务fence与原P1/P2门复用；缺合法输入准确拒绝。普通SYNTHETIC无需正式外部五证明，原协议仍只接受明确SYNTHETIC资料服务。
+仅消费原LOCAL Store、已安装原业务schema、当前合法会话和同园区/企业的既有preparation/Case/成功case.create Run/VERIFIED operation。企业为记录owner，历史READ须当前READ/PREPARE，新业务写须原EXECUTE；专员为记录reviewer，当前READ/REVIEW_ASSIGNED；执行者为既有同域service_executor且当前READ，接单后只访问原步骤。分派是专员对原本人资料事项的一次显式业务OFFER，不写任何身份、Grant或Run访问授权。目录、资料确认、业务fence与原P1/P2门复用；缺合法输入准确拒绝。普通SYNTHETIC无需正式外部五证明，原协议仍只接受明确SYNTHETIC资料服务。
 
 普通服务从当前数据库原preparation确定参与方，不依赖全新空库、进程内fixture nonce、预配置参与者白名单或发行对象寿命。现有IsolatedCaseStepAssignments的发行门、原marker及其有效窗全部保留，普通路径不得读取、转换或接管其历史。任意active/inactive run_assignment、Native列历史、legacy dispatch/receipt、混合/未知/损坏marker继续拒绝；不删除历史消除拒绝。原Native与legacy guard保留。
 
@@ -14,7 +14,7 @@
 
 复用原CaseStep业务事务、CAS/原键幂等/ACCEPT→receipt CREATE证明、最小投影、最终锁等待后的权限/来源/期限检查，不复制另一套办理算法。原表/event/outbox/inbox不迁移、不新增权限表。普通原OFFER记录独立可辨的业务合同、精确preparation/Case/Run/owner/reviewer/executor、资料修订/hash、目录hash/xmin及身份/Grant代际；合同标签和编号只标识原业务记录，不授予权限。完整原首事件/fingerprint/后续前缀证明仍必需。
 
-首次OFFER截止取数据库时间起最多300秒，写入原事件，后续API/worker进程均只能读取该原截止；重启、同键重试、撤销恢复、材料恢复、重新配置不续期。每Case仍仅一次OFFER，无续授/重派；无自动ACCEPT/回执/ACK。执行者在撤权、材料/目录/身份代际变化、截止或终止后不可读写。owner/reviewer按当前本Case权限读取最小历史；过期历史不变为可办。WITHDRAW继续受原负责专员权限和原事务约束。
+首次OFFER截止取数据库时间起最多300秒，写入原事件，后续API/worker进程均只能读取该原截止；重启、同键重试、撤销恢复、材料恢复、重新配置不续期。每Case仍仅一次OFFER，无续授/重派；无自动ACCEPT/回执/ACK。执行者在撤权、材料/目录/身份代际变化、截止或终止后不可读写。owner/reviewer按当前本Case权限读取最小历史、OPEN/MARK_READ，不继承隔离provider的1小时寿命；过期历史不变为可办。WITHDRAW按当前负责专员READ/REVIEW_ASSIGNED和原事务终止，不依赖被终止执行者权限或原offer仍有效；ACCEPT/SUBMIT/ACK等新业务继续受原首次截止与完整当前代际约束。每事务上下文局部不可变，不把不同Case参与方写入共享服务对象。
 
 原通知队列在LIMIT前隔离普通/旧隔离/legacy lane；普通consumer仅处理本业务合同，不能消费或SUPPRESS旧隔离及未知原件。完整证明后才能按当前recipient权限送达或SUPPRESS；重复消费/OPEN/MARK_READ不重写首次时间戳。API和worker独立重建可处理同一原普通事件，不需要共享Python对象。过期执行者拒绝/抑制，owner/reviewer保留当前有权的最小历史。False只表示一次有界扫描无进展，不保证排空。
 

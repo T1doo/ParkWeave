@@ -45,7 +45,7 @@ python3 -m venv .venv
 
 测试依赖pgserver只提供临时Linux PostgreSQL，不能当作Windows安装器。测试创建临时数据库并删除；harness使用独立`.runtime/smoke-pg`保留合成状态，Ctrl+C停止API/worker/测试数据库。不连接用户电脑或Sim2Act。
 
-访问http://127.0.0.1:8765，在页面输入`.runtime/synthetic-sessions.json`里的一个合成会话。该文件由显式setup生成，随机token不打印、不提交；三个身份属于两个园区、三个企业。刷新页面需重新输入会话。新会话不是园区真实登录；默认seed为企业经办合成角色；测试另有服务专员、资源管理员、服务执行者。其他角色需显式同企业/园区单Run授权，且只见最小状态，不见回执/全企业材料。已有region/employees/service_need的READ/WRITE字段Grant（SERVICE_PREPARATION用途）；CaseStep办理授权仍属F2未启用。
+访问http://127.0.0.1:8765，在页面输入`.runtime/synthetic-sessions.json`里的一个合成会话。该文件由显式setup生成，随机token不打印、不提交；三个身份属于两个园区、三个企业。刷新页面需重新输入会话。新会话不是园区真实登录；默认seed为企业经办合成角色；测试另有服务专员、资源管理员、服务执行者。其他角色需显式同企业/园区单Run授权，且只见最小状态，不见回执/全企业材料。已有region/employees/service_need的READ/WRITE字段Grant（SERVICE_PREPARATION用途）；普通CaseStep可显式选择CURRENT_PREPARATION模式，仅消费既有合法资料事项与当前权限，见下方普通办理说明。
 
 浏览器测试需agent-browser 0.38.2及Linux `/usr/bin/chromium`；运行`python scripts/browser_smoke.py`前需harness存活。截图仅留在忽略的.runtime目录，非交付要求。
 
@@ -124,3 +124,9 @@ intern_adapter.py只用明确MockTransport测试官方非流式HTTP形状，真�
 审查修复：文件根/既有files目录和文件须当前POSIX属主且group/other无权限，0777/0755拒绝，不自动chmod/chown；新files0700、fixture0600。Windows既有ACL只读检查，不借POSIX位推定安全，原生backend仍关闭。所有受控测试/启动子进程用OS项白名单+显式项目配置，不复制全os.environ或转发无关密钥。安全说明见SecurityConfiguration。
 
 F2资料准备并行切片：参见[首次使用](docs/F2/FirstUse.md)与[开发边界](docs/F2/Plan.md)。企业带来源补件→获派专员人工核对→企业确认/重开，全部SYNTHETIC本地业务；F1未签收、Windows未验证、资格未判定、生产R4关闭。当前GitHub Actions访问阻塞不妨碍本地使用。
+
+### 已有合法资料事项的普通步骤办理
+
+在既有受限数据库、合法会话和原资料目录/权限已准备的环境中，API与worker均显式设置`PARKWEAVE_CASE_STEP_MODE=CURRENT_PREPARATION`；原`PARKWEAVE_DSN`和`PARKWEAVE_MODE=LOCAL`沿用。按原命令启动`parkweave.api:configured_app --factory`和`python -m parkweave.worker`。从“我的资料准备事项”进入原事项，负责专员选择已有同域执行者分派；执行者从本人通知/分派列表接单、提交人工回执，企业从本人回执列表独立核对。
+
+启动只读取现有身份、权限与目录；缺输入拒绝，普通模式与Native/独立demo配置互斥。首次步骤邀请最多300秒，API/worker重启保持原截止；旧隔离CaseStep记录保持隔离。真实环境初始化、writer安装和Windows/正式AT35仍未验收，完整项目未完成。见[普通业务准入合同](docs/F2/OrdinaryCaseStepContract-20261018.md)。

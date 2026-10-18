@@ -122,8 +122,8 @@ def _connection(store,scope,token=None):
     if scope is None:
         with store.connect() as c:yield c
     else:
-        from .case_step_assignments import IsolatedCaseStepAssignments
-        if type(scope) is not IsolatedCaseStepAssignments:raise Denied('exact explicit CaseStep dependency required')
+        from .case_step_assignments import IsolatedCaseStepAssignments,OrdinaryCaseStepAssignments
+        if type(scope) not in (IsolatedCaseStepAssignments,OrdinaryCaseStepAssignments):raise Denied('exact explicit CaseStep dependency required')
         with scope._connection(store) as c:
             if token is not None:scope._checks[c].append(lambda:_recipient(store,c,token))
             yield c
@@ -138,14 +138,18 @@ def _queue_matches(c,source,scope):
 
 
 def _pending(c,scope,cursor):
-    from .case_step_assignments import MARKER,CONTRACT
+    from .case_step_assignments import MARKER
     source='SELECT 1 FROM service_dispatch_events e JOIN service_dispatch_events m ON m.dispatch_id=e.dispatch_id WHERE e.id=q.event_id AND m.payload ? %s'
     parameters=[MARKER]
     if scope is None:
         lane='NOT EXISTS ('+source+')'
     else:
-        lane='EXISTS ('+source+" AND m.action='OFFER' AND m.payload->%s->'binding'->>'contract'=%s AND m.payload->%s->'binding'->>'contract_id'=%s)"
-        parameters.extend([MARKER,CONTRACT,MARKER,scope.contract_id])
+        lane='EXISTS ('+source+" AND m.action='OFFER' AND m.payload->%s->'binding'->>'contract'=%s"
+        parameters.extend([MARKER,scope.contract])
+        if scope.contract_id is not None:
+            lane+=" AND m.payload->%s->'binding'->>'contract_id'=%s"
+            parameters.extend([MARKER,scope.contract_id])
+        lane+=')'
     # Route before LIMIT so another lane cannot hide this worker's pending
     # work on every cold --once invocation. This SQL grants no access.
     return c.execute("SELECT q.event_id,q.recipient_id FROM dispatch_notice_outbox q WHERE q.state='PENDING' AND "+lane+
@@ -247,7 +251,7 @@ def list_items(store,token,*,cursor=None,navigation=None,case_step_assignments=N
     with _connection(store,case_step_assignments,token) as c:
         p=_recipient(store,c,token)
         binding=(SCOPE,p['id'],p['park_id'],p['org_id'],p['role'],p['token_hash'])
-        if case_step_assignments is not None:binding+=(case_step_assignments.contract_id,)
+        if case_step_assignments is not None:binding+=(case_step_assignments.contract,case_step_assignments.contract_id)
         if cursor is None:
             expires=navigation._clock()+navigation._ttl
             rows=c.execute('SELECT * FROM dispatch_notices WHERE recipient_id=%s ORDER BY delivered_at DESC,event_id DESC LIMIT %s',

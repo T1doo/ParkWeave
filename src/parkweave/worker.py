@@ -21,6 +21,8 @@ def main():
     if not dsn:
         parser.error("PARKWEAVE_DSN required")
     store = Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL"))
+    from .case_step_assignments import from_environment as configure_case_steps
+    case_steps=configure_case_steps(store,os.environ)
     if args.fault_stage and store.mode != "FAULT_INJECTION":
         parser.error("fault-stage requires explicit FAULT_INJECTION mode")
     gateway = ExecutionGateway(store)
@@ -58,7 +60,7 @@ def main():
         from .dispatch_notices import consume as consume_notices
         try:
             for _ in range(100):
-                if not consume_notices(store):break
+                if not consume_notices(store,case_step_assignments=case_steps):break
         except Conflict:
             pass  # A busy source/auth lock leaves the notice pending for retry.
         if args.once:

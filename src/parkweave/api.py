@@ -14,12 +14,10 @@ from .native_run_access import RunCommand as NativeRunCommand
 
 def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None, local_synthetic_demo=None, case_step_assignments=None) -> FastAPI:
     if case_step_assignments is not None:
-        from .case_step_assignments import IsolatedCaseStepAssignments
-        if type(case_step_assignments) is not IsolatedCaseStepAssignments:
-            raise Denied('exact isolated CaseStep dependency required')
+        from .case_step_assignments import validate_dependency
+        validate_dependency(case_step_assignments,store)
         if any(x is not None for x in (local_synthetic_demo,resource_plan_approval_provider,formal_read_config,formal_source_reader,formal_provenance_verifier,capability_catalog,selection_planner,instance_consumer,synthetic_rule_readiness,service_release_preflight,proposal_planner)):
-            raise Denied('isolated CaseStep application cannot mix providers')
-        case_step_assignments.validate(store)
+            raise Denied('CaseStep application cannot mix providers')
     from . import formal_preparation_entry as formal_entry
     formal_dependencies=formal_entry.dependencies(formal_read_config,formal_source_reader,formal_provenance_verifier)
     from . import resource_plan_approval_read as resource_approval
@@ -1137,6 +1135,8 @@ def configured_app(*, resource_plan_approval_provider=None, formal_source_reader
     if not dsn:
         raise RuntimeError("PARKWEAVE_DSN required; no credential discovery")
     store=Store(dsn, mode=os.environ.get("PARKWEAVE_MODE", "LOCAL"),file_root=os.environ.get("PARKWEAVE_FILE_ROOT"))
+    from .case_step_assignments import from_environment as configure_case_steps
+    case_steps=configure_case_steps(store,os.environ)
     from .ordinary_runtime_read import configure
     if write_config is None:
         configure(store,read_config)
@@ -1150,4 +1150,4 @@ def configured_app(*, resource_plan_approval_provider=None, formal_source_reader
     return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider,
         formal_read_config=os.environ.get('PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG'),
         formal_source_reader=formal_source_reader,formal_provenance_verifier=formal_provenance_verifier,
-        local_synthetic_demo=demo)
+        local_synthetic_demo=demo,case_step_assignments=case_steps)
