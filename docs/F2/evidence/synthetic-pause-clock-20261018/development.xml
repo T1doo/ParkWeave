@@ -1,0 +1,781 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="14" skipped="0" tests="21" time="36.134" timestamp="2026-10-18T23:13:34.699593+00:00" hostname="9eff6a810039"><testcase classname="tests.test_synthetic_pause_clock" name="test_manual_original_half_open_working_windows_minus_only_pause_overlap[pauses0-2026-10-12T09:50:00+08:00-1500]" time="0.007" /><testcase classname="tests.test_synthetic_pause_clock" name="test_manual_original_half_open_working_windows_minus_only_pause_overlap[pauses1-2026-10-12T09:30:00+08:00-2700]" time="0.004" /><testcase classname="tests.test_synthetic_pause_clock" name="test_manual_original_half_open_working_windows_minus_only_pause_overlap[pauses2-2026-10-12T09:55:00+08:00-1200]" time="0.003" /><testcase classname="tests.test_synthetic_pause_clock" name="test_private_interval_guard_cannot_backdate_overlap_reverse_or_use_future[pauses0]" time="0.001" /><testcase classname="tests.test_synthetic_pause_clock" name="test_private_interval_guard_cannot_backdate_overlap_reverse_or_use_future[pauses1]" time="0.003" /><testcase classname="tests.test_synthetic_pause_clock" name="test_private_interval_guard_cannot_backdate_overlap_reverse_or_use_future[pauses2]" time="0.001" /><testcase classname="tests.test_synthetic_pause_clock" name="test_private_interval_guard_cannot_backdate_overlap_reverse_or_use_future[pauses3]" time="0.001" /><testcase classname="tests.test_synthetic_pause_clock" name="test_actual_http_pause_read_resume_recovery_no_business_or_authority_writes" time="5.306"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f0633de6ea0&gt;, &lt;parkweave.store.Store object at 0x7f0634201010&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...376ede375df/commands'}, {'method': 'POST', 'path': '/api/preparations/aa7448cd-3af9-4c33-93fe-7376ede375df/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_actual_http_pause_read_re0')
+
+    def test_actual_http_pause_read_resume_recovery_no_business_or_authority_writes(deadline_http, tmp_path):
+        f, requests = deadline_http
+&gt;       p, service, caps = setup(f, tmp_path)
+                           ^^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:78: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f06323a4f50&gt;
+o = UUID('9862e044-cc01-4c4f-a4a7-faf664cea3da')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_current_authority_binding_and_separate_capability_refuse_without_journal_effect[owner]" time="3.166"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f0633822ff0&gt;, &lt;parkweave.store.Store object at 0x7f0633823050&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...5c32ea25b4a/commands'}, {'method': 'POST', 'path': '/api/preparations/4cc7481e-930a-4140-ad9d-a5c32ea25b4a/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_current_authority_binding0')
+damage = 'owner'
+
+    @pytest.mark.parametrize('damage', ['owner','cross-scope','read','review','inactive','role','assignment','material','source-registry'])
+    def test_current_authority_binding_and_separate_capability_refuse_without_journal_effect(deadline_http,tmp_path,damage):
+&gt;       f,_ = deadline_http;p,service,_ = setup(f,tmp_path);v = view(f,p).json()
+                                          ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f063185d9d0&gt;
+o = UUID('81e60db6-757d-4adc-9944-2960e914941c')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_current_authority_binding_and_separate_capability_refuse_without_journal_effect[cross-scope]" time="1.762"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f06317042c0&gt;, &lt;parkweave.store.Store object at 0x7f0634166c00&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...7ecdc7d70ed/commands'}, {'method': 'POST', 'path': '/api/preparations/f6032498-2b70-4e9d-bf02-17ecdc7d70ed/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_current_authority_binding1')
+damage = 'cross-scope'
+
+    @pytest.mark.parametrize('damage', ['owner','cross-scope','read','review','inactive','role','assignment','material','source-registry'])
+    def test_current_authority_binding_and_separate_capability_refuse_without_journal_effect(deadline_http,tmp_path,damage):
+&gt;       f,_ = deadline_http;p,service,_ = setup(f,tmp_path);v = view(f,p).json()
+                                          ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f0631194050&gt;
+o = UUID('f279a7cd-559c-4050-8e85-219484d7fdee')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_current_authority_binding_and_separate_capability_refuse_without_journal_effect[read]" time="1.744"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f06315238f0&gt;, &lt;parkweave.store.Store object at 0x7f0631523c80&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...9f34115b951/commands'}, {'method': 'POST', 'path': '/api/preparations/b7948335-5cdf-47b8-8b37-49f34115b951/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_current_authority_binding2')
+damage = 'read'
+
+    @pytest.mark.parametrize('damage', ['owner','cross-scope','read','review','inactive','role','assignment','material','source-registry'])
+    def test_current_authority_binding_and_separate_capability_refuse_without_journal_effect(deadline_http,tmp_path,damage):
+&gt;       f,_ = deadline_http;p,service,_ = setup(f,tmp_path);v = view(f,p).json()
+                                          ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f0632e5c950&gt;
+o = UUID('62255b31-bfba-4058-ada1-e1072898b3ce')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_current_authority_binding_and_separate_capability_refuse_without_journal_effect[review]" time="1.925"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f06337a1460&gt;, &lt;parkweave.store.Store object at 0x7f0633f87200&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...0a0328be7a0/commands'}, {'method': 'POST', 'path': '/api/preparations/e17387b7-db04-46bd-878a-b0a0328be7a0/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_current_authority_binding3')
+damage = 'review'
+
+    @pytest.mark.parametrize('damage', ['owner','cross-scope','read','review','inactive','role','assignment','material','source-registry'])
+    def test_current_authority_binding_and_separate_capability_refuse_without_journal_effect(deadline_http,tmp_path,damage):
+&gt;       f,_ = deadline_http;p,service,_ = setup(f,tmp_path);v = view(f,p).json()
+                                          ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f063395c950&gt;
+o = UUID('cbfa9484-2ee2-4295-ab5b-5931df16ba6d')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_current_authority_binding_and_separate_capability_refuse_without_journal_effect[inactive]" time="1.567"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f0630cc8320&gt;, &lt;parkweave.store.Store object at 0x7f0630c67ec0&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...d7bb9019c37/commands'}, {'method': 'POST', 'path': '/api/preparations/274cdd2d-5034-47f2-adba-fd7bb9019c37/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_current_authority_binding4')
+damage = 'inactive'
+
+    @pytest.mark.parametrize('damage', ['owner','cross-scope','read','review','inactive','role','assignment','material','source-registry'])
+    def test_current_authority_binding_and_separate_capability_refuse_without_journal_effect(deadline_http,tmp_path,damage):
+&gt;       f,_ = deadline_http;p,service,_ = setup(f,tmp_path);v = view(f,p).json()
+                                          ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f06317530b0&gt;
+o = UUID('791e2043-61fc-45ff-83ba-7b90c2b61bcf')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_current_authority_binding_and_separate_capability_refuse_without_journal_effect[role]" time="2.596"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f0631330350&gt;, &lt;parkweave.store.Store object at 0x7f06319b8c20&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...c4d5421dcd3/commands'}, {'method': 'POST', 'path': '/api/preparations/58057365-2c17-4218-880b-5c4d5421dcd3/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_current_authority_binding5')
+damage = 'role'
+
+    @pytest.mark.parametrize('damage', ['owner','cross-scope','read','review','inactive','role','assignment','material','source-registry'])
+    def test_current_authority_binding_and_separate_capability_refuse_without_journal_effect(deadline_http,tmp_path,damage):
+&gt;       f,_ = deadline_http;p,service,_ = setup(f,tmp_path);v = view(f,p).json()
+                                          ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f0631883f50&gt;
+o = UUID('4f40ef86-4d0d-441e-aad0-f98c5134f590')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_current_authority_binding_and_separate_capability_refuse_without_journal_effect[assignment]" time="2.898"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f0631472d20&gt;, &lt;parkweave.store.Store object at 0x7f0631291640&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...1dcb067909d/commands'}, {'method': 'POST', 'path': '/api/preparations/ad1b7e63-5259-49b5-89b6-71dcb067909d/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_current_authority_binding6')
+damage = 'assignment'
+
+    @pytest.mark.parametrize('damage', ['owner','cross-scope','read','review','inactive','role','assignment','material','source-registry'])
+    def test_current_authority_binding_and_separate_capability_refuse_without_journal_effect(deadline_http,tmp_path,damage):
+&gt;       f,_ = deadline_http;p,service,_ = setup(f,tmp_path);v = view(f,p).json()
+                                          ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f0630e69f10&gt;
+o = UUID('f157b68d-ba05-41e4-b1d5-c322e4babaa8')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_current_authority_binding_and_separate_capability_refuse_without_journal_effect[material]" time="2.045"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f0632cb5250&gt;, &lt;parkweave.store.Store object at 0x7f0630d08350&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...04a33068add/commands'}, {'method': 'POST', 'path': '/api/preparations/54aaa6d6-1de9-4e30-ad13-704a33068add/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_current_authority_binding7')
+damage = 'material'
+
+    @pytest.mark.parametrize('damage', ['owner','cross-scope','read','review','inactive','role','assignment','material','source-registry'])
+    def test_current_authority_binding_and_separate_capability_refuse_without_journal_effect(deadline_http,tmp_path,damage):
+&gt;       f,_ = deadline_http;p,service,_ = setup(f,tmp_path);v = view(f,p).json()
+                                          ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f063117c950&gt;
+o = UUID('8d1e042f-2631-4a21-a5b6-2fd69fdb6333')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_current_authority_binding_and_separate_capability_refuse_without_journal_effect[source-registry]" time="1.670"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f063108cb60&gt;, &lt;parkweave.store.Store object at 0x7f063108dac0&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...e6d85f72a82/commands'}, {'method': 'POST', 'path': '/api/preparations/81bac3d2-3c8f-4061-98c1-3e6d85f72a82/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_current_authority_binding8')
+damage = 'source-registry'
+
+    @pytest.mark.parametrize('damage', ['owner','cross-scope','read','review','inactive','role','assignment','material','source-registry'])
+    def test_current_authority_binding_and_separate_capability_refuse_without_journal_effect(deadline_http,tmp_path,damage):
+&gt;       f,_ = deadline_http;p,service,_ = setup(f,tmp_path);v = view(f,p).json()
+                                          ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:114: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f0630a4dd90&gt;
+o = UUID('5410c3f9-ff2f-4b91-94c1-4b64408c92f8')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_default_disabled_cold_store_and_unissued_constructor_never_create_journal" time="2.692"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f06312fe900&gt;, &lt;parkweave.store.Store object at 0x7f06310f6ed0&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...ock'}, {'method': 'GET', 'path': '/api/preparations/8661b475-17cd-492a-99cd-68fb79042b07/synthetic-pause-clock'}, ...])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_default_disabled_cold_sto0')
+
+    def test_default_disabled_cold_store_and_unissued_constructor_never_create_journal(deadline_http,tmp_path):
+        f,_=deadline_http;p=filled(f);v=dict(revision=0,definition_sha256='0'*64)
+        before=snapshot(f);assert post(f,p,v).status_code==403 and view(f,p).status_code==403
+        path=tmp_path/'refused.synthetic-pause.sqlite3'
+        with pytest.raises(Denied):clock.IsolatedPauseClock(f[0],hd.IsolatedDeadlineSources(),path,capabilities={},enabled_for_isolated_tests=True)
+        assert not path.exists() and snapshot(f)==before
+&gt;       p,service,caps=setup(f,tmp_path)
+                       ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:138: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f06309f9250&gt;
+o = UUID('6f02a1fa-b91d-4591-83da-06563e0f1589')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_unknown_fields_time_claims_stale_revision_and_concurrent_pause_do_not_duplicate" time="1.635"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f0633852d50&gt;, &lt;parkweave.store.Store object at 0x7f0631b06e10&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...82b6bd76bfa/commands'}, {'method': 'POST', 'path': '/api/preparations/082ed95f-7fba-44b0-8a04-982b6bd76bfa/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_unknown_fields_time_claim0')
+
+    def test_unknown_fields_time_claims_stale_revision_and_concurrent_pause_do_not_duplicate(deadline_http,tmp_path):
+&gt;       f,_=deadline_http;p,service,_=setup(f,tmp_path);v=view(f,p).json();before=snapshot(f)
+                                      ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:148: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f0630c358b0&gt;
+o = UUID('4e4a5f72-5aa1-4bb6-b069-c912a4bd990e')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_expired_capability_refuses_writes_but_keeps_history_read_only" time="2.902"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f0630b12660&gt;, &lt;parkweave.store.Store object at 0x7f0631aa4380&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...3dba8be93cb/commands'}, {'method': 'POST', 'path': '/api/preparations/96fb78ac-b8d7-4b2b-a8d7-53dba8be93cb/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_expired_capability_refuse0')
+
+    def test_expired_capability_refuses_writes_but_keeps_history_read_only(deadline_http,tmp_path):
+&gt;       f,_=deadline_http;p,service,_=setup(f,tmp_path,duration=.25);v=view(f,p).json()
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:158: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f0630de5310&gt;
+o = UUID('465e6961-f754-4121-a42d-30d59750f5b4')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase><testcase classname="tests.test_synthetic_pause_clock" name="test_retained_tampered_journal_fails_closed_without_repair" time="2.220"><failure message="TypeError: Object of type UUID is not JSON serializable">deadline_http = ((&lt;parkweave.store.Store object at 0x7f0630bd0890&gt;, &lt;parkweave.store.Store object at 0x7f0633b05010&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...23e1db2c5ea/commands'}, {'method': 'POST', 'path': '/api/preparations/ba2d4941-189f-412a-b8c7-e23e1db2c5ea/commands'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-16/test_retained_tampered_journal0')
+
+    def test_retained_tampered_journal_fails_closed_without_repair(deadline_http,tmp_path):
+&gt;       f,_=deadline_http;p,service,_=setup(f,tmp_path);v=view(f,p).json();assert post(f,p,v).status_code==201
+                                      ^^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:169: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_synthetic_pause_clock.py:28: in setup
+    service = clock.IsolatedPauseClock(f[0], registry, journal, capabilities=caps, enabled_for_isolated_tests=True)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/synthetic_pause_clock.py:80: in __init__
+    self.metadata = prep.canonical(dict(scope=SCOPE, pid=os.getpid(),
+src/parkweave/preparation.py:39: in canonical
+    def canonical(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':'))
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:238: in dumps
+    **kw).encode(obj)
+          ^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:200: in encode
+    chunks = self.iterencode(o, _one_shot=True)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:258: in iterencode
+    return _iterencode(o, 0)
+           ^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.encoder.JSONEncoder object at 0x7f06311dc950&gt;
+o = UUID('073d88fa-85d9-4f4a-9954-05cc4a26a3c6')
+
+    def default(self, o):
+        """Implement this method in a subclass such that it returns
+        a serializable object for ``o``, or calls the base implementation
+        (to raise a ``TypeError``).
+    
+        For example, to support arbitrary iterators, you could
+        implement default like this::
+    
+            def default(self, o):
+                try:
+                    iterable = iter(o)
+                except TypeError:
+                    pass
+                else:
+                    return list(iterable)
+                # Let the base class default method raise the TypeError
+                return super().default(o)
+    
+        """
+&gt;       raise TypeError(f'Object of type {o.__class__.__name__} '
+                        f'is not JSON serializable')
+E       TypeError: Object of type UUID is not JSON serializable
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/encoder.py:180: TypeError</failure></testcase></testsuite></testsuites>

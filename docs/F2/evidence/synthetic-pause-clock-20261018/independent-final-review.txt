@@ -1,0 +1,17 @@
+最终明确SHA efd9103ff4a4f4c12b52790052893b533579384b（tree5d5021b9dedf71b53945488409dd8500be2cb0f7）静态独审有限通过，10oracle满足，无开放P1/P2。3b96初窗83PASS与3项静态P2保留；三项仅在efd按源码闭合，不把静读写成动态PASS。
+
+3P2闭合证据：①synthetic_pause_clock.projection:201–208从原start逐事件要求previous<=when<=now，command:302最后一次projection也执行此规则，回退/未来/逆序在append前拒绝；②hd._calculate:165–245新private elapsed_only在全部source/calendar/区间校验与原work循环后、未来deadline可求性检查前返回已知过去work秒；projection:225–235对open使用该分支，RESUME前是SYNTHETIC_PAUSED/有效elapsed，落事件后closed projection若未来日历不足返回UNKNOWN，未造日历；③projection:211–221逐历史PAUSE仅用原definition+前序已闭合区间求past elapsed，未完成才接受，完成后即使hash/fp自洽也Conflict。
+
+10项对应：SP01原exact issued deadline registry/同Store service/同进程PGproof/默认禁用满足；SP02原reviewer+当前READ/REVIEW_ASSIGNED+额外fixture能力及原<=24h期满足，合同明确当前权限恢复仍不续原期；SP03封闭Command、服务器时刻、alternation/revision/32事件/拒绝新写满足，时序P2已关；SP04半开工作窗交集扣除与09:00/10:00/10:30字面例路径满足，raw.pauses仍拒绝；SP05open freeze/UNKNOWN截止、long resume未知future、完成后禁pause满足；SP06完整schema/inode/meta/immutable triggers/Event严格型/fp/binding/hash链及历史业务合法性满足；SP07原PG auth/parent锁贯穿SQLite提交，BEGIN IMMEDIATE后context重核+preappend再核目录xmin/当前权/时间满足，未加SQL权限，不夸跨库原子性；SP08当前准入后同actor/key/fp读原事件不被新revision挡掉、异fp409、只读GET/NOT_OBSERVED不排除迟到写、无自动重发满足；SP09启用事项旧readonly UNKNOWN、相同registry换Store仍suppressed、无普通UI按钮/环境启动/重启续权满足；SP10仅LOCAL_SYNTHETIC fixture能力/日志，原业务/真实权限不变、正式AT29/33等不升级满足。
+
+机械保护实核：原calculate公开参数与原source/calendar/work traversal在剥离明确private excluded/elapsed_only后AST完全相同；原其他deadline定义与IsolatedDeadlineSources不变。相对3b96，pause模块除projection外的constructor/journal/context/events/service/read/command AST全等；configured_app AST等基线。preparation/permissions/schema/roles/migrations32/33/worker/固定spec/ATBindings共9文件byte等基线。
+
+以下为本次efd committed文件SHA256，供你保存消息作为无文件写入静审原件：
+- src/parkweave/synthetic_pause_clock.py f22520bfc10c0d8f76af7eeb8b6adb3beeac6d61145e4208507e614c9ced34ec（17971bytes）
+- src/parkweave/handling_deadline.py 973d6fdabf56b4cf21416fe1e2f6a84e8037b77dc8f9246fe38656826c4f2743（18383）
+- src/parkweave/api.py d308e31c57e84c79ac08469b07f45fd06a81de8b5b88bd35cb8ba2e959776950（84987）
+- tests/test_synthetic_pause_clock.py f679778ea30623be558d08cc6a379733f0f0a65e764be8ad4414eab05f837d49（18057）
+- docs/F2/SyntheticPauseClockContract-20261018.md 120f185ace728d1d61d911aee6b4cb61acc930b5e5d6ca4885dc3a12801ecefa（4470）
+- efd时FixedAcceptanceCloseout.json a4b84367a7ce34335078e967ef277b98780a8ed5879bdd31ff23ce756e049ba0；md417495e82399eb27055e0f77e66e33d3bc67df793fd40e5416ee01c220db045a。后续工作区8项input格式归一化属你另列文档元数据，不迁签新源码测试。
+
+限制：独立产品import/动态执行/DBHTTP/锁/browser/模型/文件写入全部0；只做Git显式SHA读取、AST/hash/XML既有文件静态解析。根92PASS（35新+57原只读）完全另列，不加成独立执行数。无跨库原子commit、无对绕锁owner并发改目录的串行化保证；日志结构/hash链不充当外部签名/真实批准。有限能力仅原fixture同进程/PG，不构成普通持久合法停表/真实SLA/新Grant；Windows/实际浏览器/真实模型与业务/正式AT29/33/全项目仍未验。历史5e339 B/C已有有限回执、本轮B/C动态0；旧风险/HTTP UNKNOWN没有重试或关闭。无进一步必修项。

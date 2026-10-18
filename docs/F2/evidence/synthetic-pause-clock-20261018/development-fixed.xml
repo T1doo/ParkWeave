@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="8" time="4.894" timestamp="2026-10-18T23:14:54.083902+00:00" hostname="9eff6a810039"><testcase classname="tests.test_synthetic_pause_clock" name="test_manual_original_half_open_working_windows_minus_only_pause_overlap[pauses0-2026-10-12T09:50:00+08:00-1500]" time="0.008" /><testcase classname="tests.test_synthetic_pause_clock" name="test_manual_original_half_open_working_windows_minus_only_pause_overlap[pauses1-2026-10-12T09:30:00+08:00-2700]" time="0.002" /><testcase classname="tests.test_synthetic_pause_clock" name="test_manual_original_half_open_working_windows_minus_only_pause_overlap[pauses2-2026-10-12T09:55:00+08:00-1200]" time="0.008" /><testcase classname="tests.test_synthetic_pause_clock" name="test_private_interval_guard_cannot_backdate_overlap_reverse_or_use_future[pauses0]" time="0.003" /><testcase classname="tests.test_synthetic_pause_clock" name="test_private_interval_guard_cannot_backdate_overlap_reverse_or_use_future[pauses1]" time="0.004" /><testcase classname="tests.test_synthetic_pause_clock" name="test_private_interval_guard_cannot_backdate_overlap_reverse_or_use_future[pauses2]" time="0.003" /><testcase classname="tests.test_synthetic_pause_clock" name="test_private_interval_guard_cannot_backdate_overlap_reverse_or_use_future[pauses3]" time="0.003" /><testcase classname="tests.test_synthetic_pause_clock" name="test_actual_http_pause_read_resume_recovery_no_business_or_authority_writes" time="4.227"><failure message="json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)">deadline_http = ((&lt;parkweave.store.Store object at 0x7f37cac49fd0&gt;, &lt;parkweave.store.Store object at 0x7f37cac4a0c0&gt;, {'fixture-a': '[REDACTED_FIXTURE_SESSION_DISPLAY]...commands'}, {'method': 'GET', 'path': '/api/preparations/a48006b6-c54d-4ca2-b147-95219b18f6cf/synthetic-pause-clock'}])
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-17/test_actual_http_pause_read_re0')
+
+    def test_actual_http_pause_read_resume_recovery_no_business_or_authority_writes(deadline_http, tmp_path):
+        f, requests = deadline_http
+        p, service, caps = setup(f, tmp_path)
+        before = snapshot(f)
+&gt;       initial = view(f,p).json(); assert initial['revision'] == 0
+                  ^^^^^^^^^^^^^^^^
+
+tests/test_synthetic_pause_clock.py:80: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/httpx/_models.py:832: in json
+    return jsonlib.loads(self.content, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/__init__.py:346: in loads
+    return _default_decoder.decode(s)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py:338: in decode
+    obj, end = self.raw_decode(s, idx=_w(s, 0).end())
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;json.decoder.JSONDecoder object at 0x7f37cefb98b0&gt;
+s = 'Internal Server Error', idx = 0
+
+    def raw_decode(self, s, idx=0):
+        """Decode a JSON document from ``s`` (a ``str`` beginning with
+        a JSON document) and return a 2-tuple of the Python
+        representation and the index in ``s`` where the document ended.
+    
+        This can be used to decode a JSON document from a string that may
+        have extraneous data at the end.
+    
+        """
+        try:
+            obj, end = self.scan_once(s, idx)
+        except StopIteration as err:
+&gt;           raise JSONDecodeError("Expecting value", s, err.value) from None
+E           json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)
+
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/json/decoder.py:356: JSONDecodeError</failure></testcase></testsuite></testsuites>

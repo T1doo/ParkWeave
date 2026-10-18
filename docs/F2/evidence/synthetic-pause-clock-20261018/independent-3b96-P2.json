@@ -1,0 +1,9 @@
+{
+  "source_sha": "3b96be01f6a4cbee214d91f2b28869ef7d543d2e",
+  "kind": "independent static P2",
+  "dynamic_executions": 0,
+  "finding": "Future PAUSE after DB clock rollback could be omitted by projection, allowing inverse RESUME append; subsequent read rejects own chain.",
+  "required_fix": "Guard all event timestamps from start through observed, also in last pre-append projection. No clock adjustment, log repair or retry of old risk windows.",
+  "root_accepts": true,
+  "first_frozen_window_preserved": "83 PASS is finite test coverage, not an absence-of-defects claim"
+}

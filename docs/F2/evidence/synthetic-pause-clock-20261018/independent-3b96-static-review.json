@@ -1,0 +1,37 @@
+{
+  "source_sha": "3b96be01f6a4cbee214d91f2b28869ef7d543d2e",
+  "mode": "STATIC_ONLY",
+  "product_imports": 0,
+  "dynamic_executions": 0,
+  "file_writes_by_reviewer": 0,
+  "open_P2_at_review": 3,
+  "findings": [
+    {
+      "id": "SP-TIME-ORDER",
+      "counterexample": "PAUSE10:00, observed09:59, previous projection dropped reversed interval then RESUME09:59 could append; next read rejected own chain.",
+      "fix": "Projection rejects any event before start, inverse event, or event after observed; last preappend projection shares guard."
+    },
+    {
+      "id": "SP-OPEN-COVERAGE",
+      "counterexample": "Working09–12, start09 target7200 deadline11; PAUSE10, observe11:30; excluding interval leaves only5400 total seconds, old calculate returned UNKNOWN with elapsed None and blocked RESUME.",
+      "fix": "Controlled elapsed-only branch reuses original source/calendar/window traversal; open freeze and RESUME do not need future deadline. After RESUME missing future coverage remains UNKNOWN."
+    },
+    {
+      "id": "SP-HISTORICAL-TARGET",
+      "counterexample": "Working09–17, start09 target7200 deadline11; rehashed event PAUSE12 with observed13 passed structural/fp chain despite completed target.",
+      "fix": "Each historical PAUSE recomputes controlled elapsed with prior closed intervals and rejects completed/unknown target."
+    }
+  ],
+  "other_oracle_static_checks": [
+    "SP01 fixture exact proof/defaultoff",
+    "SP02 bound reviewer/current authority/finite capability",
+    "SP03 strict closed DTO/alternation/32 events",
+    "SP04 original raw.pauses rejection and half-open traversal preserved",
+    "SP06 schema/inode/metadata/strict Event/fp/hash structural verification",
+    "SP07 original PG auth+parent locks; SQLite postwait and preappend recheck; catalog SELECT-only",
+    "SP08 original same-key/fp/scope replay; GET only; NOT_OBSERVED not absence proof",
+    "SP09 suppression across same-registry different Store; dedicated API",
+    "SP10 no real Grant/DDL/model/CaseRun writes; historical BC mapping corrected"
+  ],
+  "root_83_PASS_does_not_close_static_findings": true
+}

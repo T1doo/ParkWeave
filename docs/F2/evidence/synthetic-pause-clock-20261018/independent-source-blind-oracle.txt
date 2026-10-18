@@ -1,0 +1,23 @@
+源盲oracle原文如下，供你原样保存；我无文件写入、未读新增实现/测试。基线a8fef37edee329b3ef51cb5f8026498fc668785b；合同SHA256=ecebc7e88b6f020e6a0be939ea29a0a243521d46cf45af8d2e3381c9da8d00dd（3256bytes）。10条均仅由合同与原AT29边界形成，不是动态PASS。
+
+SP-01【准入】只有显式宿主构造的有限fixture停表能力可用；复用原exact IsolatedDeadlineSources签发证明，并精确绑定同Store、同进程、同PG实例/OID/启动和既有事项/原source-calendar-material-request版本。默认/普通configured启动、环境开关、新进程/重启/换Store/错库、IsolatedPlanApproval或角色字符串不能产生能力；不迁移/重签/写真实Grant或Case/Run。
+
+SP-02【当前授权与能力期限】仅包定的原获派park_specialist可PAUSE/RESUME，当前READ+REVIEW_ASSIGNED、原parent owner/reviewer/park/org、宿主显式额外能力及原来源有效性均须通过；owner只读，其他actor/跨事项拒绝。能力显式绝对期限<=24h且不超原source有效期，不从READ/PREPARE/REVIEW本身推停表权；到期不能续授或用重启恢复。
+
+SP-03【封闭请求与状态机】只允许PAUSE/RESUME和固定AWAITING_SYNTHETIC_INPUT、非空说明、原definitionSHA、精确fixture revision与<=100字符原key；额外时间/claimed_legal/未知动作不参与授权。PAUSE仅非暂停且未完成目标，RESUME仅已有开放暂停；不嵌套、无追溯，按服务器锁后UTC事件顺序，最多16对/32事件。取消/调解、撤权、绑定变动或能力失效拒绝新写且日志不追加。
+
+SP-04【工作秒与截止字面oracle】沿原UTC半开工作窗扣除受控半开暂停区间，保留原日历/时区/DST/适用性/缺源UNKNOWN规则，不修改raw.pauses拒绝语义。字面例：工作窗09:00–12:00/13:00–17:00 UTC、09:00起、目标7200s，原截止11:00；10:00 PAUSE后10:30观察elapsed=3600且截止UNKNOWN；10:30显式RESUME后截止11:30，11:00观察elapsed=5400。暂停区间只扣工作窗交集；午休[12:00,13:00)不凭空扣工作秒。不能用此合成计算声称现实SLA。
+
+SP-05【开放暂停与完成】开放暂停只冻结截至合法PAUSE的已用工作秒，deadline_utc/local均UNKNOWN，不把观察时刻当恢复时刻；恢复后按真实原RESUME时间重算。完成目标依据扣暂停后的累计工作秒，不能在已完成后PAUSE追溯挪走完成，也不能仅因超过原未暂停截止而误拒已被合法暂停延后的RESUME。无源/范围不足/时刻倒退等仍UNKNOWN或拒绝，不能由暂停编出日历。
+
+SP-06【不可变有界日志】SQLite仅由有原拥有证明的构造器新建私有新日志，已存在/符号链接/错schema不可收编或修复。每项事件严格保存原绑定、key/fp/actor/action/UTC/reason/revision/prevhash/hash，连续严格类型、完整链每读重验，UPDATE/DELETE不可用；<=16事项/每项32事件。不存token/源正文/材料，不把hash链本身说成外部签名或新授权。
+
+SP-07【真正等待后的最后准入】原PG身份与parent锁贯穿SQLite提交，统一PG→SQLite锁序；SQLite写锁取得之后必须重新核当前actor/授权、原绑定、能力/source时效、时钟及状态，再插入/提交。不得只复用等待前预检、客户端时间、旧对象快照或旧计算；锁忙/等待后失效必须有界拒绝，不能部分追加、放宽原权限或改动PG业务。
+
+SP-08【幂等与不确定结果】同actor/事项/key及同完整请求fp返回原事件，异fp/错scope/revision409；重放仍核当前允许的准入，但不能仅因当前revision已推进就丢失合法旧key证明。GET按原key只读恢复；NOT_OBSERVED仅本次观察，不证明迟到写不存在。SQLite可能已commit后丢响应/PG清理异常时，不得伪称零效果/REFUSED或自动重发；不声称PG/SQLite分布式原子提交。
+
+SP-09【双接口与冷边界】显式启用停表的同事项，原handling-deadline只读接口必须准确UNKNOWN，避免显示未扣暂停的旧截止；新时钟仅synthetic-pause-clock子路径。GET不补写/续期/重发，原UI无真实停表按钮。能力失效或进程/PG重启不能回退成忽略已有暂停的假当前截止；旧日志保留证据，新普通进程无能力。
+
+SP-10【回归/声明范围】原readonly未启用事项、raw.pauses非法拒绝、原规划/ADOPT/资源/Case与Run状态/真实权限语义保持；新功能仅受控SYNTHETIC fixture时钟与日志。独审产品import/动态执行/DBHTTP/browser/锁测试=0，先冻此oracle后只审明确SHA；历史5e339 B/C只读复用不加数，不重跑旧风险窗。不得宣称正式AT29/33、Windows、真实停表权或完整项目完成。
+
+最小设计结论：合同可实施，当前无确定合同P1/P2；重点潜在P2是等待前验权复用、open pause虚构deadline、commit后误报未提交、原readonly忽略暂停回退。建议冻结解释：‘完成目标’按扣暂停后的work秒；同key重放与当前revision分离；权限撤回再恢复是否须重新宿主授予/绑定generation应明确，不由实现默默选择。独立批准人/签名head不作为新硬前提。
