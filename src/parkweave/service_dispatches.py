@@ -123,11 +123,15 @@ def _auth(store, c, token):
 
 def _parent(store, c, p, id, write=False):
     # Reviewers use their existing preparation assignment, not Run assignment.
+    from .case_step_assignments import refuse_legacy
     if p['role'] != 'service_executor':
-        return prep.scoped(store, c, p, id, write=write)
+        row=prep.scoped(store, c, p, id, write=write)
+        refuse_legacy(c,id)
+        return row
     row = c.execute('SELECT * FROM preparations WHERE id=%s AND park_id=%s AND org_id=%s ' +
                     ('FOR UPDATE' if write else 'FOR SHARE'), (id, p['park_id'], p['org_id'])).fetchone()
     if not row: raise Denied('dispatch unavailable')
+    refuse_legacy(c,id)
     store.scoped_run(c, p, row['run_id'])
     if not c.execute('SELECT 1 FROM service_dispatch_offers o JOIN service_dispatches d ON d.id=o.dispatch_id WHERE d.preparation_id=%s AND o.executor_id=%s', (id, p['id'])).fetchone():
         raise Denied('own offered dispatch required')
@@ -540,6 +544,8 @@ def list_items(store, token):
         scanned=len(rows)
         if p['role']=='service_executor':
             rows=[r for r in rows if store.assignment_allowed(c,p,r['run_id'])]
+        from .case_step_assignments import legacy_rows
+        rows=legacy_rows(c,rows,'preparation_id')
         for row in rows:
             row.pop('run_id',None)
         return dict(scope=SCOPE, role=p['role'], items=rows[:100], has_older_records=raw_more, access_filtered=scanned-len(rows))

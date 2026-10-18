@@ -12,7 +12,14 @@ from .run_access_candidate import RunCommand
 from .native_run_access import RunCommand as NativeRunCommand
 
 
-def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None, local_synthetic_demo=None) -> FastAPI:
+def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None, local_synthetic_demo=None, case_step_assignments=None) -> FastAPI:
+    if case_step_assignments is not None:
+        from .case_step_assignments import IsolatedCaseStepAssignments
+        if type(case_step_assignments) is not IsolatedCaseStepAssignments:
+            raise Denied('exact isolated CaseStep dependency required')
+        if any(x is not None for x in (local_synthetic_demo,resource_plan_approval_provider,formal_read_config,formal_source_reader,formal_provenance_verifier,capability_catalog,selection_planner,instance_consumer,synthetic_rule_readiness,service_release_preflight,proposal_planner)):
+            raise Denied('isolated CaseStep application cannot mix providers')
+        case_step_assignments.validate(store)
     from . import formal_preparation_entry as formal_entry
     formal_dependencies=formal_entry.dependencies(formal_read_config,formal_source_reader,formal_provenance_verifier)
     from . import resource_plan_approval_read as resource_approval
@@ -971,6 +978,7 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         return case_lifecycle.command(store,token(authorization),preparation_id,resource_key(idempotency_key),data)
 
     from . import service_dispatches as dispatches
+    if case_step_assignments is not None: dispatches=case_step_assignments.dispatches
     @app.get('/api/service-dispatches/catalog')
     def dispatch_catalog(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return dispatches.catalog(store,token(authorization),preparation_id)
@@ -1014,6 +1022,7 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
         return dispatches.recover_accept(store,token(authorization),dispatch_id,resource_key(idempotency_key),selection)
 
     from . import executor_receipts as executor_receipts
+    if case_step_assignments is not None: executor_receipts=case_step_assignments.receipts
     @app.get('/api/executor-receipts/catalog')
     def executor_receipt_catalog(preparation_id: UUID,authorization: str | None=Header(default=None)):
         return executor_receipts.catalog(store,token(authorization),preparation_id)

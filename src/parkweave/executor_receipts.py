@@ -92,6 +92,8 @@ def _executor(store,c,id,run):
 def _base(store,c,p,id):
     row=c.execute('SELECT * FROM service_receipt_steps WHERE id=%s AND park_id=%s AND org_id=%s',(id,p['park_id'],p['org_id'])).fetchone()
     if not row or p['id']!=row['owner_id' if p['role']=='enterprise_operator' else 'executor_id']:raise Denied('receipt step unavailable')
+    from .case_step_assignments import refuse_legacy
+    refuse_legacy(c,row['preparation_id'])
     store.scoped_run(c,p,row['run_id'])
     return row
 
@@ -206,6 +208,8 @@ def create(store,token,key,data):
         if p['role']!='enterprise_operator':raise Denied('enterprise owner required')
         store.check_capability(c,p,'EXECUTE');_key(c,p,key)
         parent=prep.scoped(store,c,p,data.preparation_id,write=True,business_write=True)
+        from .case_step_assignments import refuse_legacy
+        refuse_legacy(c,parent['id'])
         _executor(store,c,data.executor_id,parent['run_id'])
         old=_replay(c,p,key,fp)
         if old:
@@ -381,6 +385,8 @@ def list_steps(store,token):
         scanned=len(rows)
         if not owner:
             rows=[r for r in rows if store.assignment_allowed(c,p,r['run_id'])]
+        from .case_step_assignments import legacy_rows
+        rows=legacy_rows(c,rows,'id',receipt=True)
         for row in rows:
             row.pop('run_id',None)
         return dict(items=rows[:100],has_older_records=raw_more, access_filtered=scanned-len(rows),role=p['role'],scope=SCOPE)
