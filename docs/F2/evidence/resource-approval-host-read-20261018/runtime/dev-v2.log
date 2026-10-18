@@ -1,0 +1,580 @@
+FFFFFFFFFF....................FFFFF                                      [100%]
+=================================== FAILURES ===================================
+_________ test_actual_unix_protocol_read_verify_and_fixed_original_id __________
+
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_actual_unix_protocol_read0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2da2f60>
+
+    def test_actual_unix_protocol_read_verify_and_fixed_original_id(tmp_path,monkeypatch):
+        with running_host(tmp_path/'host') as (cfg,binding,_):
+            monkeypatch.setattr(host,'_load_binding',fixture_binding)
+>           provider=host.configure(cfg.model_dump_json());selection=lookup()
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...protocol_read0/host/binding.json","binding_sha256":"446ddf283f902938aefcbebd479fb9b8f5618d652b8f0ea10dfd35b9fdffafce"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+________ test_actual_bad_response_is_not_a_source_proof_or_retry[nonce] ________
+
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_actual_bad_response_is_no0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2ddaf00>
+damage = 'nonce'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+        with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+>           monkeypatch.setattr(host,'_load_binding',fixture_binding);provider=host.configure(cfg.model_dump_json())
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...esponse_is_no0/host/binding.json","binding_sha256":"7d60363225db5ea311fc39e6b5450e3ee1dbaae8fe54d21a997d252c9bc0a34b"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+_______ test_actual_bad_response_is_not_a_source_proof_or_retry[request] _______
+
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_actual_bad_response_is_no1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2dd9bb0>
+damage = 'request'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+        with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+>           monkeypatch.setattr(host,'_load_binding',fixture_binding);provider=host.configure(cfg.model_dump_json())
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...esponse_is_no1/host/binding.json","binding_sha256":"306e8c5301dc9927d2fcb700c2ce8d513b4f0cdabd46a5fb69f1e4fc122ea875"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+_________ test_actual_bad_response_is_not_a_source_proof_or_retry[pin] _________
+
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_actual_bad_response_is_no2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2dd8fe0>
+damage = 'pin'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+        with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+>           monkeypatch.setattr(host,'_load_binding',fixture_binding);provider=host.configure(cfg.model_dump_json())
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...esponse_is_no2/host/binding.json","binding_sha256":"c8466faf9089c21fb8ac73b2da543da63ff7fb5875402d75f53b3b0b450d6100"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+_______ test_actual_bad_response_is_not_a_source_proof_or_retry[source] ________
+
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_actual_bad_response_is_no3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2dd9af0>
+damage = 'source'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+        with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+>           monkeypatch.setattr(host,'_load_binding',fixture_binding);provider=host.configure(cfg.model_dump_json())
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...esponse_is_no3/host/binding.json","binding_sha256":"9645616a7db735a00020f25b4ec5216677cd0611cc82b6f6db7f39db3725089f"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+_______ test_actual_bad_response_is_not_a_source_proof_or_retry[integer] _______
+
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_actual_bad_response_is_no4')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2dda780>
+damage = 'integer'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+        with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+>           monkeypatch.setattr(host,'_load_binding',fixture_binding);provider=host.configure(cfg.model_dump_json())
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...esponse_is_no4/host/binding.json","binding_sha256":"3c238901eaaaf46a7b60a88bcb0d400ff861ff8a68928b2ced31881801dd4c85"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+______ test_actual_bad_response_is_not_a_source_proof_or_retry[duplicate] ______
+
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_actual_bad_response_is_no5')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2da2d20>
+damage = 'duplicate'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+        with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+>           monkeypatch.setattr(host,'_load_binding',fixture_binding);provider=host.configure(cfg.model_dump_json())
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...esponse_is_no5/host/binding.json","binding_sha256":"6315ba84b1c14da9e4675cfc4f013635eb97a5b64664ccebca8010e7b9e143d2"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+______ test_actual_bad_response_is_not_a_source_proof_or_retry[truncated] ______
+
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_actual_bad_response_is_no6')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2dd9f40>
+damage = 'truncated'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+        with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+>           monkeypatch.setattr(host,'_load_binding',fixture_binding);provider=host.configure(cfg.model_dump_json())
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...esponse_is_no6/host/binding.json","binding_sha256":"01d7d0cef40c824bd389be633c97883b5f88eca4f3d072c33803b45f701afd12"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+______ test_actual_bad_response_is_not_a_source_proof_or_retry[oversize] _______
+
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_actual_bad_response_is_no7')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2ddb0e0>
+damage = 'oversize'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+        with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+>           monkeypatch.setattr(host,'_load_binding',fixture_binding);provider=host.configure(cfg.model_dump_json())
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:50: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...esponse_is_no7/host/binding.json","binding_sha256":"40d6263ad4c10b073a9c16c576aeae48817a3d7708765f63b05aad65f6288296"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+_______ test_slowloris_uses_absolute_total_deadline_not_timeout_per_byte _______
+
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_slowloris_uses_absolute_t0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2ddb2f0>
+
+    def test_slowloris_uses_absolute_total_deadline_not_timeout_per_byte(tmp_path,monkeypatch):
+        with running_host(tmp_path/'host',mode='slowloris') as (cfg,_,_):
+>           monkeypatch.setattr(host,'_load_binding',fixture_binding);provider=host.configure(cfg.model_dump_json())
+                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:57: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...es_absolute_t0/host/binding.json","binding_sha256":"8479eceab755991141992f7401a2138ebb81e7cb4103ea22341ba17057b00e6f"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+_ test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED] _
+
+receipt_fixture = (<parkweave.store.Store object at 0x7efce2ac7440>, <parkweave.store.Store object at 0x7efce2ac76e0>, {'fixture-a': 'Ni...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7efce286b890>)
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_factory_config_real_ipc_r0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce2ac5d30>
+mode = 'normal', expected = 'VERIFIED'
+
+    @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])
+    def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):
+        f=receipt_fixture;p,source,_,query=seeded(f,tmp_path,monkeypatch)
+        with running_host(tmp_path/'host',source,mode) as (cfg,_,_):
+            monkeypatch.setattr(host,'_load_binding',fixture_binding)
+            monkeypatch.setenv('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG',cfg.model_dump_json())
+>           app=configured_app();before=snapshot(f[1]);started=time.monotonic()
+                ^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1118: in configured_app
+    resource_plan_approval_provider=configure_approval(os.environ.get('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'),resource_plan_approval_provider)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...ig_real_ipc_r0/host/binding.json","binding_sha256":"32df5dab2b9450608886a0845899a80d1e67d7d22034a1949a0082e48e8f9881"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+_ test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[replace-INVALID] _
+
+receipt_fixture = (<parkweave.store.Store object at 0x7efce24ab350>, <parkweave.store.Store object at 0x7efce24ab260>, {'fixture-a': 'n0...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7efce1021610>)
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_factory_config_real_ipc_r1')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce24aad50>
+mode = 'replace', expected = 'INVALID'
+
+    @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])
+    def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):
+        f=receipt_fixture;p,source,_,query=seeded(f,tmp_path,monkeypatch)
+        with running_host(tmp_path/'host',source,mode) as (cfg,_,_):
+            monkeypatch.setattr(host,'_load_binding',fixture_binding)
+            monkeypatch.setenv('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG',cfg.model_dump_json())
+>           app=configured_app();before=snapshot(f[1]);started=time.monotonic()
+                ^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1118: in configured_app
+    resource_plan_approval_provider=configure_approval(os.environ.get('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'),resource_plan_approval_provider)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...ig_real_ipc_r1/host/binding.json","binding_sha256":"e77c8a3fded1dd6d749c2c579c5c2e000ee4d7cc4427af717694e27a6e1de4a2"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+_ test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[final_false-INVALID] _
+
+receipt_fixture = (<parkweave.store.Store object at 0x7efce03564b0>, <parkweave.store.Store object at 0x7efce2ac4ef0>, {'fixture-a': 'jv...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7efce03577d0>)
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_factory_config_real_ipc_r2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce0578800>
+mode = 'final_false', expected = 'INVALID'
+
+    @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])
+    def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):
+        f=receipt_fixture;p,source,_,query=seeded(f,tmp_path,monkeypatch)
+        with running_host(tmp_path/'host',source,mode) as (cfg,_,_):
+            monkeypatch.setattr(host,'_load_binding',fixture_binding)
+            monkeypatch.setenv('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG',cfg.model_dump_json())
+>           app=configured_app();before=snapshot(f[1]);started=time.monotonic()
+                ^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1118: in configured_app
+    resource_plan_approval_provider=configure_approval(os.environ.get('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'),resource_plan_approval_provider)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...ig_real_ipc_r2/host/binding.json","binding_sha256":"4e71857c4e66349a2e4e5b4516c2677e824ca6766b7d41ae56fcd7659094c6ae"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+_ test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[slow-MISSING_SOURCE] _
+
+receipt_fixture = (<parkweave.store.Store object at 0x7efce0303050>, <parkweave.store.Store object at 0x7efce05bc6e0>, {'fixture-a': 'Tq...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7efce00eccb0>)
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_factory_config_real_ipc_r3')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce0233290>
+mode = 'slow', expected = 'MISSING_SOURCE'
+
+    @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])
+    def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):
+        f=receipt_fixture;p,source,_,query=seeded(f,tmp_path,monkeypatch)
+        with running_host(tmp_path/'host',source,mode) as (cfg,_,_):
+            monkeypatch.setattr(host,'_load_binding',fixture_binding)
+            monkeypatch.setenv('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG',cfg.model_dump_json())
+>           app=configured_app();before=snapshot(f[1]);started=time.monotonic()
+                ^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:117: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1118: in configured_app
+    resource_plan_approval_provider=configure_approval(os.environ.get('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'),resource_plan_approval_provider)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...ig_real_ipc_r3/host/binding.json","binding_sha256":"5f0a8c3a57a5e724f5f82d3ce283628d5e273a16d21a3e3c772af8422b60cf31"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+_ test_current_revocation_precedes_any_host_call_and_isolated_never_substitutes _
+
+receipt_fixture = (<parkweave.store.Store object at 0x7efce018c8c0>, <parkweave.store.Store object at 0x7efce018cad0>, {'fixture-a': 'sk...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7efcd372b890>)
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v2-mxpvunxs/pytest/test_current_revocation_preced0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7efce01eaf90>
+
+    def test_current_revocation_precedes_any_host_call_and_isolated_never_substitutes(receipt_fixture,tmp_path,monkeypatch):
+        f=receipt_fixture;p,source,_,query=seeded(f,tmp_path,monkeypatch)
+        with running_host(tmp_path/'host',source) as (cfg,_,_):
+>           monkeypatch.setattr(host,'_load_binding',fixture_binding);monkeypatch.setenv('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG',cfg.model_dump_json());app=configured_app()
+                                                                                                                                                              ^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:137: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+src/parkweave/api.py:1118: in configured_app
+    resource_plan_approval_provider=configure_approval(os.environ.get('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'),resource_plan_approval_provider)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+raw = '{"schema_version":"parkweave-resource-approval-host-read/1","binding_path":"/tmp/pw-approval-host-dev-v2-mxpvunxs/pyt...cation_preced0/host/binding.json","binding_sha256":"6309c8cb5d1f233e3c4c152057bd2e08d2b18f211f6174f4408fca3bcf01f112"}'
+provider = None
+
+    def configure(raw, provider=None):
+        if raw is None:
+            return provider
+        if provider is not None:
+            raise Denied('one explicit approval provider composition required')
+        try:
+            if type(raw) is not str or not 1 <= len(raw.encode()) <= 16384:
+                raise ValueError()
+            cfg = Config.model_validate(strict_json(raw))
+            binding = _load_binding(cfg)
+            return ApprovalHostClient(cfg, binding).provider()
+        except (OSError, ValueError, TypeError, Denied):
+>           raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+E           parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
+
+src/parkweave/resource_approval_host_read.py:260: Denied
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_resource_approval_host_read.py::test_actual_unix_protocol_read_verify_and_fixed_original_id
+FAILED tests/test_resource_approval_host_read.py::test_actual_bad_response_is_not_a_source_proof_or_retry[nonce]
+FAILED tests/test_resource_approval_host_read.py::test_actual_bad_response_is_not_a_source_proof_or_retry[request]
+FAILED tests/test_resource_approval_host_read.py::test_actual_bad_response_is_not_a_source_proof_or_retry[pin]
+FAILED tests/test_resource_approval_host_read.py::test_actual_bad_response_is_not_a_source_proof_or_retry[source]
+FAILED tests/test_resource_approval_host_read.py::test_actual_bad_response_is_not_a_source_proof_or_retry[integer]
+FAILED tests/test_resource_approval_host_read.py::test_actual_bad_response_is_not_a_source_proof_or_retry[duplicate]
+FAILED tests/test_resource_approval_host_read.py::test_actual_bad_response_is_not_a_source_proof_or_retry[truncated]
+FAILED tests/test_resource_approval_host_read.py::test_actual_bad_response_is_not_a_source_proof_or_retry[oversize]
+FAILED tests/test_resource_approval_host_read.py::test_slowloris_uses_absolute_total_deadline_not_timeout_per_byte
+FAILED tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED]
+FAILED tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[replace-INVALID]
+FAILED tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[final_false-INVALID]
+FAILED tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[slow-MISSING_SOURCE]
+FAILED tests/test_resource_approval_host_read.py::test_current_revocation_precedes_any_host_call_and_isolated_never_substitutes
+15 failed, 20 passed, 4 warnings in 26.29s

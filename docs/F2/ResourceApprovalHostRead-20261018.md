@@ -51,6 +51,27 @@ host 的 `ReadOnlyDispatcher` 只转发既有 reader/verifier，不生成、签�
 
 ## 验证范围
 
-本片正在开发验证。最终源码冻结、完整模块实跑、独审、raw/public哈希归档和实际远端结果在收尾补记；开发失败不改写为通过。
+最终源码冻结 `b963783419624ae5450e7fa3ba0160ca0ce41444`，src树 `c67b027d0f7b6bb5cf83dd0a32fe3da5bc6ed696`。八个完整直接相关模块 **190唯一项PASS，0FAIL/ERROR/SKIP**，实际外层365.771秒，无自动重试；749个源码/测试/脚本/原配置合同输入PRE/POST零漂移，新55项已经包含，不与旧成绩相加。新接口合同在源码冻结中的独立SHA256为 `8c9bd559c6bdcba427e545b0f5a80ae260f813070ea85a09a61372467f2cd8fd`；正文验证结果在测试后补记，不冒称最终文档字节是运行输入。
+
+| 完整模块 | 唯一PASS |
+| --- | ---: |
+| `tests/test_resource_approval_host_read.py` | 53 |
+| `tests/test_resource_approval_host_browser.py` | 2 |
+| `tests/test_resource_plan_approval_read.py` | 50 |
+| `tests/test_resource_plan_approval_read_browser.py` | 6 |
+| `tests/test_ordinary_runtime_read.py` | 31 |
+| `tests/test_ordinary_runtime_read_browser.py` | 5 |
+| `tests/test_formal_preparation_entry.py` | 40 |
+| `tests/test_formal_preparation_entry_browser.py` | 3 |
+
+独立精确镜像同一SHA：55唯一PASS/0FAIL/ERROR/SKIP，全部重叠主190，不相加；静审0开放P1/P2，共享/镜像各749输入零漂移，实际pytest模块来源核验见机器独审。独测不升级SAME-UID lab为真实host安装验收。[主调用](evidence/resource-approval-host-read-20261018/runtime/final-invocation.json)、[完整主JUnit](evidence/resource-approval-host-read-20261018/runtime/final.xml)、[逐ID/输入结算](evidence/resource-approval-host-read-20261018/runtime/final-summary.json)、[独审/独测](evidence/resource-approval-host-read-20261018/runtime/independent-final-review.json)。
+
+新增53协议用例中5项为实际ASGI→Unix host→自有PG；其余为实际Unix通道/进程/pin/预算及纯配置/dispatcher或明确保护边界DI测试，不统称53项HTTP或生产安装。另2项实际子进程/浏览器测试：可信安装边界DI的configured_app→独立host→原签名合成文件→PG/Chromium，在不同API进程中读取同一原记录，再核当前撤销；两个API进程的临时HTTP端口不同，不宣称同origin重启。另一个未改普通CLI两次真实启动均因该lab不满足生产保护条件而拒绝，0后端读取。页面request观察均GET，不是全网络trace；fixture自身明确预置/撤销原合成来源，与产品业务写入分开。
+
+全部开发窗都记录当时HEAD2e3加dirty源码/输入hash，不能迁入冻结b963成绩：dev-v1为7PASS/23FAIL/5ERROR（fixture合同键误用斜线、少原fixture导入）；dev-v2为20PASS/15FAIL（sandbox根owner65534使正向lab安装DI不完整）；dev-v3为33PASS/2FAIL（测试误写首次VERIFY原ID已知）；dev-v4为55PASS。修正fixture/断言不放宽生产门或改原算法。独审曾发现P2：最后post-pin核验之后缺deadline检查，已补前述检查和真实延迟反例。失败日志/XML/原输入、修补和预算边界见[失败台账](evidence/resource-approval-host-read-20261018/runtime/failure-ledger.json)。
+
+本片归档772对raw/public文件，逐对SHA/长度、严格JSON/JSONL、XML及PNG CRC/解压通过，所有JUnit测试标识原样。一个精确原测试故意重复state键的来源INPUT保留原字节并按路径/测试ID/SHA单列；不冒称它是合法结构输出。私有合成key bootstrap和PG data不导出。继承30651个证据Git blob的实际字节均与2e3基线一致，0更改；这不是重做上一批774私有配对的独审。[配对清单](evidence/resource-approval-host-read-20261018/manifest.json)、[结构与哈希校验](evidence/resource-approval-host-read-20261018/archive-validation.json)、[继承证据校验](evidence/resource-approval-host-read-20261018/runtime/inherited-evidence-verification.json)。
+
+尚未验证：真实不同UID/root保护/既有信任根/真实来源正向安装、来源专用证明和正式namespace入口、批准消费/现实履约、Windows/Win11与正式AT/AT35、真实模型或生产部署。新host client不等同于真实backend已接通；完整项目未完成。最终实际HEAD、正常push与远端heads差异在收尾实际查询，私有post-export回执不伪填进上述冻结manifest。
 
 正向测试明确使用SAME-UID `SYNTHETIC_CONTRACT_FIXTURE` lab，仅替换 `_load_binding` 的生产安装边界；真实socket/peer/进程、固定协议、普通工厂、PG/API和原页面仍实跑。未修改的生产loader实际拒绝该lab。当前沙箱 `/` 与 `/tmp` 的owner为65534，不能证明root保护的真实不同UID安装；另用仅protected-file DI测试身份拒绝分支。这些都不创建真实批准或宣称真实来源成功。Windows/Win11、正式AT/AT35、真实业务/来源/批准、正式host部署、模型和现实资源履约均未验，完整项目尚未完成。

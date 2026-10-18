@@ -1,3 +1,11 @@
+## 2026-10-18：已有资源方案批准的可信宿主只读接线
+
+源码冻结 `b963783419624ae5450e7fa3ba0160ca0ce41444`，在原普通provider读取协议上补受保护public pin、独立Unix host固定READ/VERIFY、749输入下2READ/3VERIFY共享预算与普通configured_app显式配置；复用原Scope、原ID双读和当前权限/来源head复核，不重做批准算法。host只消费既有listener和可信adapter，不创建身份/服务/endpoint/信任根或批准。正式未知来源仍UNAVAILABLE，SYNTHETIC入口、permit/writer默认拒绝和批准不可消费保持。
+
+八完整相关模块190唯一项PASS，新55已含内；同SHA独测55全部重叠PASS、静审0开放P1/P2，749输入零漂移。生产保护边界正向仅显式SAME-UID SYNTHETIC DI；实际IPC/API/PG/Chromium和不同API进程复读/当前撤销实跑，未改CLI拒绝lab。四开发窗失败与预算P2修补完整保全，30651继承证据blob原字节不变。详见[本片合同、测试与来源输入](ResourceApprovalHostRead-20261018.md)。
+
+可继续编码的生产client/dispatcher/工厂接线已完成；真实source backend、四对象/主体/采纳证明及正式批准映射仍需据来源规范开发，不泛化为只缺凭据。运行还须原合法记录/Grant/目录、现有不同UID host与受保护pin、原批准源及当前head/撤销/验真机制。Windows、正式AT/AT35、真实来源/批准/业务/模型、生产host安装与部署未验，完整项目未完成。无main/强推/部署、新费用、真实身份/Grant/分派/目录/批准/凭据或安全权限扩大，未知锁保留。下方历史原字节保留。
+
 ## 2026-10-18：F2-T05 普通 ACCEPT 原键只读冷恢复
 
 产品冻结 `35031ba7334006089889f6488dfbe1feb5bc10b4`，最终源码/测试冻结 `0ec816ff566ad4b9966229f5eb82123f5b984693`，二者产品src树均为 `e0f8443127b49b5feb9e1b880e8998ca67b5c404`。复用原身份/READ/精确Run分派及ACCEPT与回执CREATE原事务证明，增加原actor/key/offer/revision限定GET；页面只存有界不含会话或正文的句柄，未知结果经明确GET历史核对和当前GET再释放，无重发ACCEPT或自动P3。NOT_OBSERVED保持未决，损坏/过期不解锁；普通其他动作/回执未获得通用恢复。

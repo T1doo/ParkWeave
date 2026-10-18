@@ -1,0 +1,1160 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="5" failures="23" skipped="0" tests="35" time="12.054" timestamp="2026-10-18T04:24:16.923998+00:00" hostname="9eff6a810039"><testcase classname="tests.test_resource_approval_host_read" name="test_actual_unix_protocol_read_verify_and_fixed_original_id" time="1.039"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_unix_protocol_read0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3e804c7b30&gt;
+
+    def test_actual_unix_protocol_read_verify_and_fixed_original_id(tmp_path,monkeypatch):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:33: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_unix_protocol_read0/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_actual_bad_response_is_not_a_source_proof_or_retry[nonce]" time="0.523"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3e80538290&gt;
+damage = 'nonce'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+&gt;       with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no0/host')
+source = None, mode = 'nonce'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_actual_bad_response_is_not_a_source_proof_or_retry[request]" time="0.692"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no1')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3e8053b7a0&gt;
+damage = 'request'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+&gt;       with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no1/host')
+source = None, mode = 'request'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_actual_bad_response_is_not_a_source_proof_or_retry[pin]" time="0.401"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no2')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3e8053b8c0&gt;
+damage = 'pin'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+&gt;       with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no2/host')
+source = None, mode = 'pin'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_actual_bad_response_is_not_a_source_proof_or_retry[source]" time="0.401"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no3')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3e804c6bd0&gt;
+damage = 'source'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+&gt;       with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no3/host')
+source = None, mode = 'source'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_actual_bad_response_is_not_a_source_proof_or_retry[integer]" time="0.401"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no4')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3e8053b7d0&gt;
+damage = 'integer'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+&gt;       with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no4/host')
+source = None, mode = 'integer'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_actual_bad_response_is_not_a_source_proof_or_retry[duplicate]" time="0.390"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no5')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3e80538dd0&gt;
+damage = 'duplicate'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+&gt;       with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no5/host')
+source = None, mode = 'duplicate'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_actual_bad_response_is_not_a_source_proof_or_retry[truncated]" time="0.395"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no6')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3e8053a3f0&gt;
+damage = 'truncated'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+&gt;       with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no6/host')
+source = None, mode = 'truncated'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_actual_bad_response_is_not_a_source_proof_or_retry[oversize]" time="0.412"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no7')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3e8053af00&gt;
+damage = 'oversize'
+
+    @pytest.mark.parametrize('damage',['nonce','request','pin','source','integer','duplicate','truncated','oversize'])
+    def test_actual_bad_response_is_not_a_source_proof_or_retry(tmp_path,monkeypatch,damage):
+&gt;       with running_host(tmp_path/'host',mode=damage) as (cfg,_,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:49: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_actual_bad_response_is_no7/host')
+source = None, mode = 'oversize'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_slowloris_uses_absolute_total_deadline_not_timeout_per_byte" time="0.777"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_slowloris_uses_absolute_t0')
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7f3e805387a0&gt;
+
+    def test_slowloris_uses_absolute_total_deadline_not_timeout_per_byte(tmp_path,monkeypatch):
+&gt;       with running_host(tmp_path/'host',mode='slowloris') as (cfg,_,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:56: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_slowloris_uses_absolute_t0/host')
+source = None, mode = 'slowloris'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation[missing]" time="0.421"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin0')
+damage = 'missing'
+
+    @pytest.mark.parametrize('damage',['missing','same-uid','fixture-kind','sha','symlink','mode','path-parent'])
+    def test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation(tmp_path,damage):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin0/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation[same-uid]" time="0.400"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin1')
+damage = 'same-uid'
+
+    @pytest.mark.parametrize('damage',['missing','same-uid','fixture-kind','sha','symlink','mode','path-parent'])
+    def test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation(tmp_path,damage):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin1/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation[fixture-kind]" time="0.777"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin2')
+damage = 'fixture-kind'
+
+    @pytest.mark.parametrize('damage',['missing','same-uid','fixture-kind','sha','symlink','mode','path-parent'])
+    def test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation(tmp_path,damage):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin2/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation[sha]" time="0.431"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin3')
+damage = 'sha'
+
+    @pytest.mark.parametrize('damage',['missing','same-uid','fixture-kind','sha','symlink','mode','path-parent'])
+    def test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation(tmp_path,damage):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin3/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation[symlink]" time="0.431"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin4')
+damage = 'symlink'
+
+    @pytest.mark.parametrize('damage',['missing','same-uid','fixture-kind','sha','symlink','mode','path-parent'])
+    def test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation(tmp_path,damage):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin4/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation[mode]" time="0.410"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin5')
+damage = 'mode'
+
+    @pytest.mark.parametrize('damage',['missing','same-uid','fixture-kind','sha','symlink','mode','path-parent'])
+    def test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation(tmp_path,damage):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin5/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation[path-parent]" time="0.434"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin6')
+damage = 'path-parent'
+
+    @pytest.mark.parametrize('damage',['missing','same-uid','fixture-kind','sha','symlink','mode','path-parent'])
+    def test_unmodified_production_binding_loader_refuses_fixture_or_unsafe_installation(tmp_path,damage):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:65: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_unmodified_production_bin6/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_bad_config_or_ambiguous_provider_never_loads_host[extra]" time="0.001" /><testcase classname="tests.test_resource_approval_host_read" name="test_bad_config_or_ambiguous_provider_never_loads_host[duplicate]" time="0.000" /><testcase classname="tests.test_resource_approval_host_read" name="test_bad_config_or_ambiguous_provider_never_loads_host[relative]" time="0.000" /><testcase classname="tests.test_resource_approval_host_read" name="test_bad_config_or_ambiguous_provider_never_loads_host[empty]" time="0.001" /><testcase classname="tests.test_resource_approval_host_read" name="test_bad_config_or_ambiguous_provider_never_loads_host[json]" time="0.000" /><testcase classname="tests.test_resource_approval_host_read" name="test_bad_config_or_ambiguous_provider_never_loads_host[boolean-sha]" time="0.000" /><testcase classname="tests.test_resource_approval_host_read" name="test_bad_config_or_ambiguous_provider_never_loads_host[module-loader]" time="0.000" /><testcase classname="tests.test_resource_approval_host_read" name="test_host_refuses_non_read_protocol_before_backend[COMMAND]" time="0.411"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro0')
+operation = 'COMMAND'
+
+    @pytest.mark.parametrize('operation',['COMMAND','ACTIVATE','APPROVE','CONSUME','READ_URL','VERIFY'])
+    def test_host_refuses_non_read_protocol_before_backend(tmp_path,operation):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro0/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_host_refuses_non_read_protocol_before_backend[ACTIVATE]" time="0.389"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro1')
+operation = 'ACTIVATE'
+
+    @pytest.mark.parametrize('operation',['COMMAND','ACTIVATE','APPROVE','CONSUME','READ_URL','VERIFY'])
+    def test_host_refuses_non_read_protocol_before_backend(tmp_path,operation):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro1/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_host_refuses_non_read_protocol_before_backend[APPROVE]" time="0.421"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro2')
+operation = 'APPROVE'
+
+    @pytest.mark.parametrize('operation',['COMMAND','ACTIVATE','APPROVE','CONSUME','READ_URL','VERIFY'])
+    def test_host_refuses_non_read_protocol_before_backend(tmp_path,operation):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro2/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_host_refuses_non_read_protocol_before_backend[CONSUME]" time="0.431"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro3')
+operation = 'CONSUME'
+
+    @pytest.mark.parametrize('operation',['COMMAND','ACTIVATE','APPROVE','CONSUME','READ_URL','VERIFY'])
+    def test_host_refuses_non_read_protocol_before_backend(tmp_path,operation):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro3/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_host_refuses_non_read_protocol_before_backend[READ_URL]" time="0.458"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro4')
+operation = 'READ_URL'
+
+    @pytest.mark.parametrize('operation',['COMMAND','ACTIVATE','APPROVE','CONSUME','READ_URL','VERIFY'])
+    def test_host_refuses_non_read_protocol_before_backend(tmp_path,operation):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro4/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_host_refuses_non_read_protocol_before_backend[VERIFY]" time="0.421"><failure message="AssertionError: Traceback (most recent call last):&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 126, in &lt;module&gt;&#10;    if __name__=='__main__':serve(sys.argv[1])&#10;                            ^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/tests/resource_approval_host_support.py&quot;, line 71, in serve&#10;    binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',&#10;            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;  File &quot;/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py&quot;, line 263, in __init__&#10;    validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)&#10;                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^&#10;pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding&#10;backend_contract_id&#10;  String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]&#10;    For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch">tmp_path = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro5')
+operation = 'VERIFY'
+
+    @pytest.mark.parametrize('operation',['COMMAND','ACTIVATE','APPROVE','CONSUME','READ_URL','VERIFY'])
+    def test_host_refuses_non_read_protocol_before_backend(tmp_path,operation):
+&gt;       with running_host(tmp_path/'host') as (cfg,binding,_):
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_resource_approval_host_read.py:101: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+directory = PosixPath('/tmp/pw-approval-host-dev-v1-2znvxpzb/pytest/test_host_refuses_non_read_pro5/host')
+source = None, mode = 'normal'
+
+    @contextmanager
+    def running_host(directory,source=None,mode='normal'):
+        directory.mkdir();bootstrap=directory/'host.fixture-private'
+        data=dict(directory=str(directory),mode=mode)
+        if source is not None:data.update(source_directory=str(source.path.parent),synthetic_key=source.key.hex())
+        bootstrap.write_text(json.dumps(data));bootstrap.chmod(0o600)
+        root=Path(__file__).resolve().parents[1]
+        env=minimal_environment(os.environ,PYTHONPATH=os.pathsep.join([str(root/'tests'),str(root/'src')]),PYTHONDONTWRITEBYTECODE='1')
+        log=(directory/'host.log').open('w')
+        process=subprocess.Popen([sys.executable,'-B',str(Path(__file__).resolve()),str(bootstrap)],env=env,stdout=log,stderr=subprocess.STDOUT)
+        try:
+            until=time.monotonic()+5
+            while not (directory/'binding.json').exists():
+&gt;               if process.poll() is not None or time.monotonic()&gt;=until:raise AssertionError((directory/'host.log').read_text())
+                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               AssertionError: Traceback (most recent call last):
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 126, in &lt;module&gt;
+E                   if __name__=='__main__':serve(sys.argv[1])
+E                                           ^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/tests/resource_approval_host_support.py", line 71, in serve
+E                   binding=host.Binding(schema_version='parkweave-resource-approval-host-binding/1',
+E                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                 File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/pydantic/main.py", line 263, in __init__
+E                   validated_self = self.__pydantic_validator__.validate_python(data, self_instance=self)
+E                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E               pydantic_core._pydantic_core.ValidationError: 1 validation error for Binding
+E               backend_contract_id
+E                 String should match pattern '^[a-zA-Z0-9_.:-]{1,100}$' [type=string_pattern_mismatch, input_value='SYNTHETIC-file-head/1', input_type=str]
+E                   For further information visit https://errors.pydantic.dev/2.13/v/string_pattern_mismatch
+
+tests/resource_approval_host_support.py:53: AssertionError</failure></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED]" time="0.000"><error message="failed on setup with &quot;file /workspace/ParkWeave/tests/test_resource_approval_host_read.py, line 111&#10;  @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])&#10;  def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):&#10;file /workspace/ParkWeave/tests/test_executor_receipts.py, line 12&#10;  @pytest.fixture&#10;  def receipt_fixture(preparation_fixture):&#10;E       fixture 'preparation_fixture' not found&#10;&gt;       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, fixture, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pg, platformdirs_isolated, pytestconfig, receipt_fixture, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory&#10;&gt;       use 'pytest --fixtures [testpath]' for help on them.&#10;&#10;/workspace/ParkWeave/tests/test_executor_receipts.py:12&quot;">file /workspace/ParkWeave/tests/test_resource_approval_host_read.py, line 111
+  @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])
+  def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):
+file /workspace/ParkWeave/tests/test_executor_receipts.py, line 12
+  @pytest.fixture
+  def receipt_fixture(preparation_fixture):
+E       fixture 'preparation_fixture' not found
+&gt;       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, fixture, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pg, platformdirs_isolated, pytestconfig, receipt_fixture, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+&gt;       use 'pytest --fixtures [testpath]' for help on them.
+
+/workspace/ParkWeave/tests/test_executor_receipts.py:12</error></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[replace-INVALID]" time="0.000"><error message="failed on setup with &quot;file /workspace/ParkWeave/tests/test_resource_approval_host_read.py, line 111&#10;  @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])&#10;  def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):&#10;file /workspace/ParkWeave/tests/test_executor_receipts.py, line 12&#10;  @pytest.fixture&#10;  def receipt_fixture(preparation_fixture):&#10;E       fixture 'preparation_fixture' not found&#10;&gt;       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, fixture, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pg, platformdirs_isolated, pytestconfig, receipt_fixture, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory&#10;&gt;       use 'pytest --fixtures [testpath]' for help on them.&#10;&#10;/workspace/ParkWeave/tests/test_executor_receipts.py:12&quot;">file /workspace/ParkWeave/tests/test_resource_approval_host_read.py, line 111
+  @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])
+  def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):
+file /workspace/ParkWeave/tests/test_executor_receipts.py, line 12
+  @pytest.fixture
+  def receipt_fixture(preparation_fixture):
+E       fixture 'preparation_fixture' not found
+&gt;       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, fixture, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pg, platformdirs_isolated, pytestconfig, receipt_fixture, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+&gt;       use 'pytest --fixtures [testpath]' for help on them.
+
+/workspace/ParkWeave/tests/test_executor_receipts.py:12</error></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[final_false-INVALID]" time="0.000"><error message="failed on setup with &quot;file /workspace/ParkWeave/tests/test_resource_approval_host_read.py, line 111&#10;  @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])&#10;  def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):&#10;file /workspace/ParkWeave/tests/test_executor_receipts.py, line 12&#10;  @pytest.fixture&#10;  def receipt_fixture(preparation_fixture):&#10;E       fixture 'preparation_fixture' not found&#10;&gt;       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, fixture, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pg, platformdirs_isolated, pytestconfig, receipt_fixture, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory&#10;&gt;       use 'pytest --fixtures [testpath]' for help on them.&#10;&#10;/workspace/ParkWeave/tests/test_executor_receipts.py:12&quot;">file /workspace/ParkWeave/tests/test_resource_approval_host_read.py, line 111
+  @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])
+  def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):
+file /workspace/ParkWeave/tests/test_executor_receipts.py, line 12
+  @pytest.fixture
+  def receipt_fixture(preparation_fixture):
+E       fixture 'preparation_fixture' not found
+&gt;       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, fixture, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pg, platformdirs_isolated, pytestconfig, receipt_fixture, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+&gt;       use 'pytest --fixtures [testpath]' for help on them.
+
+/workspace/ParkWeave/tests/test_executor_receipts.py:12</error></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[slow-MISSING_SOURCE]" time="0.000"><error message="failed on setup with &quot;file /workspace/ParkWeave/tests/test_resource_approval_host_read.py, line 111&#10;  @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])&#10;  def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):&#10;file /workspace/ParkWeave/tests/test_executor_receipts.py, line 12&#10;  @pytest.fixture&#10;  def receipt_fixture(preparation_fixture):&#10;E       fixture 'preparation_fixture' not found&#10;&gt;       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, fixture, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pg, platformdirs_isolated, pytestconfig, receipt_fixture, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory&#10;&gt;       use 'pytest --fixtures [testpath]' for help on them.&#10;&#10;/workspace/ParkWeave/tests/test_executor_receipts.py:12&quot;">file /workspace/ParkWeave/tests/test_resource_approval_host_read.py, line 111
+  @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])
+  def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):
+file /workspace/ParkWeave/tests/test_executor_receipts.py, line 12
+  @pytest.fixture
+  def receipt_fixture(preparation_fixture):
+E       fixture 'preparation_fixture' not found
+&gt;       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, fixture, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pg, platformdirs_isolated, pytestconfig, receipt_fixture, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+&gt;       use 'pytest --fixtures [testpath]' for help on them.
+
+/workspace/ParkWeave/tests/test_executor_receipts.py:12</error></testcase><testcase classname="tests.test_resource_approval_host_read" name="test_current_revocation_precedes_any_host_call_and_isolated_never_substitutes" time="0.000"><error message="failed on setup with &quot;file /workspace/ParkWeave/tests/test_resource_approval_host_read.py, line 134&#10;  def test_current_revocation_precedes_any_host_call_and_isolated_never_substitutes(receipt_fixture,tmp_path,monkeypatch):&#10;file /workspace/ParkWeave/tests/test_executor_receipts.py, line 12&#10;  @pytest.fixture&#10;  def receipt_fixture(preparation_fixture):&#10;E       fixture 'preparation_fixture' not found&#10;&gt;       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, fixture, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pg, platformdirs_isolated, pytestconfig, receipt_fixture, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory&#10;&gt;       use 'pytest --fixtures [testpath]' for help on them.&#10;&#10;/workspace/ParkWeave/tests/test_executor_receipts.py:12&quot;">file /workspace/ParkWeave/tests/test_resource_approval_host_read.py, line 134
+  def test_current_revocation_precedes_any_host_call_and_isolated_never_substitutes(receipt_fixture,tmp_path,monkeypatch):
+file /workspace/ParkWeave/tests/test_executor_receipts.py, line 12
+  @pytest.fixture
+  def receipt_fixture(preparation_fixture):
+E       fixture 'preparation_fixture' not found
+&gt;       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, capfd, capfdbinary, caplog, capsys, capsysbinary, capteesys, doctest_namespace, fixture, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pg, platformdirs_isolated, pytestconfig, receipt_fixture, record_property, record_testsuite_property, record_xml_attribute, recwarn, subtests, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+&gt;       use 'pytest --fixtures [testpath]' for help on them.
+
+/workspace/ParkWeave/tests/test_executor_receipts.py:12</error></testcase></testsuite></testsuites>

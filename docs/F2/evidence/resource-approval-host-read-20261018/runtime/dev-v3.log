@@ -1,0 +1,88 @@
+..............................F.F..                                      [100%]
+=================================== FAILURES ===================================
+_ test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED] _
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f89225e3a10>, <parkweave.store.Store object at 0x7f89225e3c80>, {'fixture-a': 'Mf...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f89223996a0>)
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v3-35evj383/pytest/test_factory_config_real_ipc_r0')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f89225e2480>
+mode = 'normal', expected = 'VERIFIED'
+
+    @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])
+    def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):
+        f=receipt_fixture;p,source,_,query=seeded(f,tmp_path,monkeypatch)
+        with running_host(tmp_path/'host',source,mode) as (cfg,_,_):
+            monkeypatch.setattr(host,'_load_binding',fixture_binding)
+            monkeypatch.setenv('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG',cfg.model_dump_json())
+            app=configured_app();before=snapshot(f[1]);started=time.monotonic()
+            with TestClient(app) as api:
+                result=read(api,f,p,query);assert result.status_code==200,result.text;x=result.json()
+                assert x['state']==expected
+                for key in ('execution_authorized','approval_consumable','decision_writes_enabled','run_read_access_granted'):assert x[key] is False
+                if mode=='normal':
+                    assert x['approval_source_kind']=='SYNTHETIC_CONTRACT_FIXTURE' and not x['production_installation_verified']
+                    assert x['record']['approval_id']==source.record()['approval_id']
+                if mode=='slow':assert time.monotonic()-started<3
+            assert snapshot(f[1])==before
+            calls=[json.loads(x) for x in (tmp_path/'host/calls.jsonl').read_text().splitlines()]
+            if mode in ('normal','final_false'):
+                assert [x['operation'] for x in calls]==['READ_EXISTING','VERIFY_EXISTING','READ_EXISTING','VERIFY_EXISTING','VERIFY_EXISTING']
+                assert calls[0]['approval_id'] is None
+>               assert all(x['approval_id']==source.record()['approval_id'] for x in calls[1:])
+E               assert False
+E                +  where False = all(<generator object test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check.<locals>.<genexpr> at 0x7f89137050e0>)
+
+tests/test_resource_approval_host_read.py:131: AssertionError
+_ test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[final_false-INVALID] _
+
+receipt_fixture = (<parkweave.store.Store object at 0x7f8922064ec0>, <parkweave.store.Store object at 0x7f89201a5e20>, {'fixture-a': 'cZ...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7f8913258d10>)
+tmp_path = PosixPath('/tmp/pw-approval-host-dev-v3-35evj383/pytest/test_factory_config_real_ipc_r2')
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x7f8913016390>
+mode = 'final_false', expected = 'INVALID'
+
+    @pytest.mark.parametrize('mode,expected',[('normal','VERIFIED'),('replace','INVALID'),('final_false','INVALID'),('slow','MISSING_SOURCE')])
+    def test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check(receipt_fixture,tmp_path,monkeypatch,mode,expected):
+        f=receipt_fixture;p,source,_,query=seeded(f,tmp_path,monkeypatch)
+        with running_host(tmp_path/'host',source,mode) as (cfg,_,_):
+            monkeypatch.setattr(host,'_load_binding',fixture_binding)
+            monkeypatch.setenv('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG',cfg.model_dump_json())
+            app=configured_app();before=snapshot(f[1]);started=time.monotonic()
+            with TestClient(app) as api:
+                result=read(api,f,p,query);assert result.status_code==200,result.text;x=result.json()
+                assert x['state']==expected
+                for key in ('execution_authorized','approval_consumable','decision_writes_enabled','run_read_access_granted'):assert x[key] is False
+                if mode=='normal':
+                    assert x['approval_source_kind']=='SYNTHETIC_CONTRACT_FIXTURE' and not x['production_installation_verified']
+                    assert x['record']['approval_id']==source.record()['approval_id']
+                if mode=='slow':assert time.monotonic()-started<3
+            assert snapshot(f[1])==before
+            calls=[json.loads(x) for x in (tmp_path/'host/calls.jsonl').read_text().splitlines()]
+            if mode in ('normal','final_false'):
+                assert [x['operation'] for x in calls]==['READ_EXISTING','VERIFY_EXISTING','READ_EXISTING','VERIFY_EXISTING','VERIFY_EXISTING']
+                assert calls[0]['approval_id'] is None
+>               assert all(x['approval_id']==source.record()['approval_id'] for x in calls[1:])
+E               assert False
+E                +  where False = all(<generator object test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check.<locals>.<genexpr> at 0x7f8922436260>)
+
+tests/test_resource_approval_host_read.py:131: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED]
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[normal-VERIFIED]
+FAILED tests/test_resource_approval_host_read.py::test_factory_config_real_ipc_reuses_existing_double_read_and_final_source_check[final_false-INVALID]
+2 failed, 33 passed, 4 warnings in 29.14s

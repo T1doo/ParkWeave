@@ -1,0 +1,46 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/__main__.py", line 4, in <module>
+    uvicorn.main()
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/click/core.py", line 1631, in __call__
+    return self.main(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/click/core.py", line 1552, in main
+    rv = self.invoke(ctx)
+         ^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/click/core.py", line 1415, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/click/core.py", line 910, in invoke
+    return callback(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/main.py", line 448, in main
+    run(
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/main.py", line 632, in run
+    server.run()
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/server.py", line 86, in run
+    return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 195, in run
+    return runner.run(main)
+           ^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/server.py", line 90, in serve
+    await self._serve(sockets)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/server.py", line 97, in _serve
+    config.load()
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/config.py", line 514, in load
+    self.loaded_app = self.loaded_app()
+                      ^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/api.py", line 1118, in configured_app
+    resource_plan_approval_provider=configure_approval(os.environ.get('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'),resource_plan_approval_provider)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/resource_approval_host_read.py", line 265, in configure
+    raise Denied('existing protected approval host binding invalid or unavailable; values not echoed') from None
+parkweave.store.Denied: existing protected approval host binding invalid or unavailable; values not echoed
