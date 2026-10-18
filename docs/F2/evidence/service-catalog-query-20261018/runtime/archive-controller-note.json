@@ -1,0 +1,26 @@
+{
+  "initial_archive_exit_code": 0,
+  "initial_archive_pairs": 151,
+  "initial_manifest_sha256": "db1f194969a53a266424a60ac80216184aac231b44faf7b5661b0c9d3a01a789",
+  "initial_replacement_count": 12,
+  "actual_credential_redactions": 8,
+  "reason": "Four extra substitutions only normalized existing public redaction marker text. They were unnecessary, not additional credential occurrences.",
+  "correction": "Exclude the two exact reserved public marker strings from repeated regex redaction; copy independent prepared public files byte-for-byte and bind each to its original private raw SHA.",
+  "initial_archive_fully_preserved": "archive-attempt-1-preserved",
+  "raw_test_logs_unchanged": true,
+  "product_tests_affected": false,
+  "second_attempt": {
+    "outcome": "FAILED_BEFORE_MANIFEST",
+    "reason": "Canonical independently redacted shadow was transformed again; exact public SHA assertion rejected it.",
+    "preserved_directory": ".runtime/service-catalog-query-20261018/archive-attempt-2-preserved",
+    "stderr": "archive-attempt-2.stderr",
+    "stdout": "archive-attempt-2.stdout",
+    "correction": "Copy prevalidated independent shadow bytes unchanged, then scan all output for known full values and prefixes. Preserve actual raw/public pairing."
+  },
+  "third_attempt": {
+    "outcome": "CANONICAL_BYTES_AND_SCAN_PASSED_COUNTER_CORRECTED",
+    "reason": "The copied canonical bytes were correct, but unused repeat-redaction transformations inflated the reported substitution counter from 8 to 12.",
+    "preserved_directory": ".runtime/service-catalog-query-20261018/archive-attempt-3-preserved",
+    "correction": "Skip transformations completely for exact-SHA prevalidated independent shadows; use their original actual substitution count."
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "initial_frozen_sha": "351735efcd9daf6e6d83c1b21c4b1a152afd66c3",
+  "refined_frozen_sha": "9fd652a29dfbf642fa0f4a49547bf3553417bd74",
+  "changed_inputs": ["src/parkweave/service_catalog_dependencies.py", "docs/F2/ServiceCatalogQueryDependencyContract-20261018.md"],
+  "reason": "Root noticed SELECT * returned unnecessary candidate/capability metadata from same scoped rows. Independent review classified narrowing as a useful routine refinement, with no demonstrated leak, authority expansion or product P1/P2.",
+  "change": "Return original six catalog fields plus park_id and optional original publication journal/head, rather than all row columns.",
+  "limitation": "to_jsonb(r) still constructs a row inside PostgreSQL. No claim that database internals avoid other columns or that row byte size is strictly bounded.",
+  "scope_unchanged": true,
+  "no_new_permissions_or_authority": true,
+  "prior_window_shared_POST_completed_before_edit": true,
+  "prior_window_passes_not_transferred_to_refined_sha": true,
+  "original_failed_independent_tests_preserved": true
+}
