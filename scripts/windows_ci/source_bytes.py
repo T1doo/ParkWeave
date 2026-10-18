@@ -66,32 +66,44 @@ def verify_head_test_sources(root, expected_head, hashes):
         if not match:
             raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
         sizes.append(int(match[2]))
-    if sum(sizes) > 4 * 1024 * 1024:
+    limit = 4 * 1024 * 1024
+    if any(size > limit for size in sizes):
         raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
-    raw = _git(root, ['cat-file', '--batch'], queries)
-    cursor = 0
     root = Path(root).resolve()
-    for path, header, size in zip(paths, checks, sizes):
-        end = raw.find(b'\n', cursor, cursor + 256)
-        if end < 0 or raw[cursor:end] != header:
-            raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
-        cursor = end + 1
-        blob = raw[cursor:cursor + size]
-        cursor += size
-        if raw[cursor:cursor + 1] != b'\n' or len(blob) != size:
-            raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
-        cursor += 1
-        work_file = root / path
-        try:
-            if work_file.is_symlink() or work_file.resolve().parent != root / 'tests':
+    batch_start = 0
+    while batch_start < len(paths):
+        batch_end, batch_bytes = batch_start, 0
+        while batch_end < len(paths) and batch_bytes + sizes[batch_end] <= limit:
+            batch_bytes += sizes[batch_end]
+            batch_end += 1
+        # Keep the complete source set. Only each cat-file body read is bounded;
+        # cumulative bytes/call count can exceed the former aggregate 4 MiB.
+        batch_queries = ''.join(expected_head + ':' + path + '\n'
+                                for path in paths[batch_start:batch_end]).encode('ascii')
+        raw = _git(root, ['cat-file', '--batch'], batch_queries)
+        cursor = 0
+        for path, header, size in zip(paths[batch_start:batch_end], checks[batch_start:batch_end], sizes[batch_start:batch_end]):
+            end = raw.find(b'\n', cursor, cursor + 256)
+            if end < 0 or raw[cursor:end] != header:
+                raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+            cursor = end + 1
+            blob = raw[cursor:cursor + size]
+            cursor += size
+            if raw[cursor:cursor + 1] != b'\n' or len(blob) != size:
+                raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+            cursor += 1
+            work_file = root / path
+            try:
+                if work_file.is_symlink() or work_file.resolve().parent != root / 'tests':
+                    raise SourceBytesRefused('GIT_BLOB_MISMATCH')
+                if work_file.stat().st_size != size:
+                    raise SourceBytesRefused('GIT_BLOB_MISMATCH')
+                with work_file.open('rb') as stream:
+                    work = stream.read(size + 1)
+            except OSError:
+                raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE') from None
+            if hashlib.sha256(blob).hexdigest() != hashes[path] or work != blob:
                 raise SourceBytesRefused('GIT_BLOB_MISMATCH')
-            if work_file.stat().st_size != size:
-                raise SourceBytesRefused('GIT_BLOB_MISMATCH')
-            with work_file.open('rb') as stream:
-                work = stream.read(size + 1)
-        except OSError:
-            raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE') from None
-        if hashlib.sha256(blob).hexdigest() != hashes[path] or work != blob:
-            raise SourceBytesRefused('GIT_BLOB_MISMATCH')
-    if cursor != len(raw):
-        raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+        if cursor != len(raw):
+            raise SourceBytesRefused('GIT_BLOB_UNAVAILABLE')
+        batch_start = batch_end
