@@ -1,0 +1,51 @@
+{
+  "conclusion": "NOT_READY_FOR_UNQUALIFIED_STATIC_SIGNOFF; specific UNKNOWN semantic P2 remains",
+  "fixed_previous_finding": {
+    "classification": "SAVED_JOURNAL_WAIT_PIN_P2",
+    "static_assessment": "New pinned-only checks are after original BEGIN IMMEDIATE/body preparation, before send. They re-authenticate, validate current immutable same-scope instance, current release/catalog pin and reviewer. This addresses the saved fresh-stage wait window by inspection, without independent dynamic retest on ef99."
+  },
+  "interruption_note": {
+    "direct_auto_review_denial_tool_result_observed_in_this_static_task": false,
+    "reported": "Prior window final report was interrupted by a platform risk flag. The prior raw evidence remains. Reviewer does not repeat the interrupted dynamic operations/report and instead performs this separately authorized static review.",
+    "source": "parent task notification"
+  },
+  "kind": "STATIC_ONLY_FIX_REVIEW",
+  "next": "Root completes current frozen window before changing source; reviewer waits for a new frozen commit and static-only followup.",
+  "open_P1": [],
+  "open_P2": [
+    {
+      "id": "UNKNOWN_ERASURE_BY_LATE_PREFLIGHT",
+      "lines": [
+        341,
+        343,
+        350,
+        351,
+        352,
+        353,
+        357,
+        361,
+        362
+      ],
+      "minimal_fix_boundary": "Preserve UNKNOWN only for a new late-preflight refusal on an already persisted nonfresh STARTED/UNKNOWN stage. Fresh or original ADMITTED first-send refusal can stay REFUSED; keep no-pin legacy and original actual-send exception semantics unchanged.",
+      "path": "src/parkweave/template_consumer.py",
+      "precondition": "Pinned existing nonplanning original stage CREATE_RUN/CREATE_PREPARATION/SAVE_REQUEST/ADD_* was durably STARTED or UNKNOWN; fresh_attempt=False. The original send might already have committed.",
+      "static_trace": [
+        "Entry _available succeeds before journal wait.",
+        "Persisted stage is loaded without proving an earlier outcome; fresh_attempt=False.",
+        "Original write journal/body preparation can wait, then the new current pin recheck raises Denied or Conflict.",
+        "Existing catch only preserves unknown nonfresh EDIT_REQUEST_/CONFIRM_PLAN_ stages.",
+        "Nonplanning stage falls through to REFUSED plus consumer_instances BLOCKED, overwriting the prior unresolved status."
+      ],
+      "why_P2": "A current source/authorization refusal does not establish earlier noncommit. It contradicts the frozen current-refusal/UNKNOWN rule."
+    }
+  ],
+  "original_boundaries_preserved_by_this_diff": [
+    "No change to isolated fixture DB allowlists, TemplateEngine, ParkInstanceConsumer, CURRENT/provider gates, schema/roles/conftest or configured_app.",
+    "No change to canonical CONSUME fingerprint, omitted pin compatibility, recovery GET, template approval or journal identity scheme."
+  ],
+  "preceding_source_sha": "b697718673e3902b2febc0efc3407b438a861831",
+  "product_import_or_DB_HTTP_lock_test_count": 0,
+  "review_at_utc": "2026-10-18T21:42:36.236851+00:00",
+  "reviewed_source_diff_sha256": "4565285109b1eda097da7f921009b6bdd441cd29715a3113073b4fb5e2a5d985",
+  "source_sha": "ef99c40d862aeb086360ac77dc0f1e3de09179f0"
+}

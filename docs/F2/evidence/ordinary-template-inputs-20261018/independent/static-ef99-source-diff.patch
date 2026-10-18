@@ -1,0 +1,18 @@
+diff --git a/src/parkweave/template_consumer.py b/src/parkweave/template_consumer.py
+index 6a24e246..a7f61f84 100644
+--- a/src/parkweave/template_consumer.py
++++ b/src/parkweave/template_consumer.py
+@@ -340,6 +340,13 @@ class TemplateConsumer:
+         if stage['state'] == 'CONFIRMED':
+             return json.loads(stage['result'])
+         try:
++            if instance['input'].get('expected_catalog_sha256') is not None or 'catalog_binding' in instance['binding']:
++                # BEGIN IMMEDIATE and body construction may wait. A pinned new
++                # input must still be current when this original send starts.
++                current, current_database = self._auth(token)
++                self._instance(current, current_database, instance['id'])
++                self._available(current, instance, token)
++                self._reviewer(current, instance['input']['reviewer_id'])
+             result = normal(send(stage['request_key'], json.loads(stage['body'])))
+         except (Denied, Conflict) as error:
+             if name.startswith(('EDIT_REQUEST_', 'CONFIRM_PLAN_')) and not stage['fresh_attempt']:

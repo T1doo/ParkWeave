@@ -1,0 +1,324 @@
+{
+  "tested_sha": "b697718673e3902b2febc0efc3407b438a861831",
+  "nodes": [
+    "tests/test_ordinary_template_inputs.py::test_pinned_new_input_actual_worker_prepares_only_new_materials",
+    "tests/test_ordinary_template_inputs.py::test_catalog_pin_rejects_stale_and_null_without_business_write",
+    "tests/test_ordinary_template_inputs.py::test_directory_drift_after_admission_preserves_history_and_blocks_materials",
+    "tests/test_ordinary_template_inputs.py::test_exact_creation_recovery_only_observes_original_consume",
+    "tests/test_ordinary_template_inputs.py::test_unknown_original_create_stage_is_not_replayed_by_recovery",
+    "tests/test_ordinary_template_inputs.py::test_creation_recovery_rechecks_current_permission",
+    "tests/test_ordinary_template_inputs.py::test_original_page_template_input_http_guards[success]",
+    "tests/test_ordinary_template_inputs.py::test_original_page_template_input_http_guards[lost]",
+    "tests/test_ordinary_template_inputs.py::test_original_page_template_input_http_guards[edit]",
+    "tests/test_ordinary_template_inputs.py::test_original_page_template_input_http_guards[token]",
+    "tests/test_ordinary_template_inputs.py::test_original_page_template_input_http_guards[aba]",
+    "tests/test_ordinary_template_inputs.py::test_original_page_template_input_http_guards[pin]",
+    "tests/test_ordinary_template_inputs.py::test_original_page_template_input_http_guards[denied]",
+    "tests/test_ordinary_template_inputs.py::test_default_current_process_has_no_template_source_or_fixture_fallback",
+    "tests/test_template_consumer.py::test_same_key_changed_input_is_conflict_no_additional_product_write",
+    "tests/test_template_consumer.py::test_gets_have_no_product_or_authority_effect_and_disabled_consumer_denied",
+    "tests/test_template_consumer.py::test_unavailable_or_changed_release_blocks_new_and_resumed_product_work[source_head]",
+    "tests/test_template_consumer_planning.py::test_legacy_confirmed_adopt_stage_and_omitted_create_fingerprint_remain_compatible",
+    "tests/test_ordinary_case_steps.py::test_ordinary_mode_refuses_native_and_other_provider_configuration[PARKWEAVE_RUNTIME_READ_CONFIG]",
+    "tests/test_ordinary_case_steps.py::test_ordinary_mode_refuses_native_and_other_provider_configuration[PARKWEAVE_SERVICE_PROFILE]"
+  ],
+  "unique_pass": 20,
+  "new_slice_nodes": 14,
+  "old_boundary_compatibility_nodes": 6,
+  "pytest_seconds": 59.954,
+  "outer_seconds": 63.54877718599164,
+  "input_maps_equal": true,
+  "input_count": 823,
+  "module_origins": 115,
+  "all_source_modules_from_mirror": true,
+  "scenarios": {
+    "default": {
+      "checks": 3,
+      "requests": 1,
+      "posts": [],
+      "all_calls": [
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 404
+        }
+      ]
+    },
+    "success": {
+      "checks": 11,
+      "requests": 7,
+      "posts": [
+        {
+          "path": "/api/template-consumer/instances",
+          "key": "ebf9ec02-7b05-41b5-b9b2-9dd1fa0c7d50",
+          "status": 201
+        },
+        {
+          "path": "/api/template-consumer/instances/37fb6201-7daa-41e4-872a-9ddd97e3f771/resume",
+          "key": "32db6e7f-5c78-4c9a-99c4-74260c8e451a",
+          "status": 200
+        }
+      ],
+      "all_calls": [
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/template-consumer/instances",
+          "status": 201,
+          "body": {
+            "release_id": "fad7d44a-5fdf-46c7-8620-b11d245e31cb",
+            "expected_release_sha256": "849ac310975796117870a676eb01cb86c74f619d553334d41b9801b0dfd7a9fb",
+            "expected_catalog_sha256": "2ecb9ca5ac1a1266f3b69956663556a86b5018b050bed51dbfb2d38b3a45177f",
+            "goal": "本次全新模板诉求",
+            "reviewer_id": "template-new-reviewer-a",
+            "materials": [
+              {
+                "slot": "need_summary",
+                "text": "本次全新诉求证据",
+                "source_kind": "USER_STATEMENT",
+                "source_label": "本次企业声明"
+              },
+              {
+                "slot": "material_outline",
+                "text": "本次全新资料清单",
+                "source_kind": "DOCUMENT_EXCERPT",
+                "source_label": "本次文档摘录"
+              }
+            ],
+            "reason": "本次明确按已审版本准备新输入",
+            "required_goals": [
+              "LOCAL_MATERIAL_PREPARATION"
+            ]
+          },
+          "request_key": "ebf9ec02-7b05-41b5-b9b2-9dd1fa0c7d50"
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/creation-recovery?request_key=ebf9ec02-7b05-41b5-b9b2-9dd1fa0c7d50&expected_fingerprint_sha256=b102350350f1014a4a5f0e088060e085aa839d861069b4fd6c8bd9feef5bd53e",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/instances/37fb6201-7daa-41e4-872a-9ddd97e3f771",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/template-consumer/instances/37fb6201-7daa-41e4-872a-9ddd97e3f771/resume",
+          "status": 200,
+          "body": {},
+          "request_key": "32db6e7f-5c78-4c9a-99c4-74260c8e451a"
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/instances/37fb6201-7daa-41e4-872a-9ddd97e3f771",
+          "status": 200
+        }
+      ]
+    },
+    "lost": {
+      "checks": 9,
+      "requests": 4,
+      "posts": [
+        {
+          "path": "/api/template-consumer/instances",
+          "key": "211ef722-fe3a-4469-b33e-64bbcee5d7ba",
+          "status": 201
+        }
+      ],
+      "all_calls": [
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/template-consumer/instances",
+          "status": 201,
+          "body": {
+            "release_id": "8f3ea1ed-bce2-46d0-a396-70b785f5b377",
+            "expected_release_sha256": "4c0c5ed3fbc958a2caa850c24cef5037b3a2db676ee7f13ccaed496d817c1819",
+            "expected_catalog_sha256": "2ecb9ca5ac1a1266f3b69956663556a86b5018b050bed51dbfb2d38b3a45177f",
+            "goal": "本次全新模板诉求",
+            "reviewer_id": "template-new-reviewer-a",
+            "materials": [
+              {
+                "slot": "need_summary",
+                "text": "本次全新诉求证据",
+                "source_kind": "USER_STATEMENT",
+                "source_label": "本次企业声明"
+              },
+              {
+                "slot": "material_outline",
+                "text": "本次全新资料清单",
+                "source_kind": "DOCUMENT_EXCERPT",
+                "source_label": "本次文档摘录"
+              }
+            ],
+            "reason": "本次明确按已审版本准备新输入",
+            "required_goals": [
+              "LOCAL_MATERIAL_PREPARATION"
+            ]
+          },
+          "request_key": "211ef722-fe3a-4469-b33e-64bbcee5d7ba"
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/creation-recovery?request_key=211ef722-fe3a-4469-b33e-64bbcee5d7ba&expected_fingerprint_sha256=c1a25b233db7f1be2121b1afd2f37c048d9212ac7ad7abad0725d1b8bfd157d7",
+          "status": 200
+        }
+      ]
+    },
+    "edit": {
+      "checks": 5,
+      "requests": 2,
+      "posts": [],
+      "all_calls": [
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        }
+      ]
+    },
+    "token": {
+      "checks": 6,
+      "requests": 2,
+      "posts": [],
+      "all_calls": [
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        }
+      ]
+    },
+    "aba": {
+      "checks": 6,
+      "requests": 2,
+      "posts": [],
+      "all_calls": [
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        }
+      ]
+    },
+    "pin": {
+      "checks": 5,
+      "requests": 2,
+      "posts": [],
+      "all_calls": [
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        }
+      ]
+    },
+    "denied": {
+      "checks": 9,
+      "requests": 4,
+      "posts": [
+        {
+          "path": "/api/template-consumer/instances",
+          "key": "889780a8-3bd0-4812-a504-17e3ac229776",
+          "status": 201
+        }
+      ],
+      "all_calls": [
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/catalog",
+          "status": 200
+        },
+        {
+          "method": "POST",
+          "path": "/api/template-consumer/instances",
+          "status": 201,
+          "body": {
+            "release_id": "38e88a85-e458-4b79-87a2-c075c052bf9f",
+            "expected_release_sha256": "843e5c6c6ced9f7a0f04b5719f5e4fa80eb9cd7ac6d2a22e59937f536fa59e2f",
+            "expected_catalog_sha256": "2ecb9ca5ac1a1266f3b69956663556a86b5018b050bed51dbfb2d38b3a45177f",
+            "goal": "本次全新模板诉求",
+            "reviewer_id": "template-new-reviewer-a",
+            "materials": [
+              {
+                "slot": "need_summary",
+                "text": "本次全新诉求证据",
+                "source_kind": "USER_STATEMENT",
+                "source_label": "本次企业声明"
+              },
+              {
+                "slot": "material_outline",
+                "text": "本次全新资料清单",
+                "source_kind": "DOCUMENT_EXCERPT",
+                "source_label": "本次文档摘录"
+              }
+            ],
+            "reason": "本次明确按已审版本准备新输入",
+            "required_goals": [
+              "LOCAL_MATERIAL_PREPARATION"
+            ]
+          },
+          "request_key": "889780a8-3bd0-4812-a504-17e3ac229776"
+        },
+        {
+          "method": "GET",
+          "path": "/api/template-consumer/creation-recovery?request_key=889780a8-3bd0-4812-a504-17e3ac229776&expected_fingerprint_sha256=77052cb39f8e567335b08747ef3a699a7974e5522a9e406537ee43663f6d80aa",
+          "status": 403
+        }
+      ]
+    }
+  },
+  "metadata_correction": {
+    "original_result_field": "fixture_local_finish_selected=False",
+    "correct_scope": "False applies to new actual-worker slice only; one selected old fingerprint/journal compatibility node uses original fixture finish and ADOPT. It supplies compatibility evidence, never ordinary formal success or full P1-P5.",
+    "original_raw_retained": true
+  },
+  "ordinary_formal_success": false,
+  "real_browser": false,
+  "windows": false,
+  "historical_http_timeout": "UNKNOWN_OPEN"
+}

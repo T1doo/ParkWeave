@@ -1,0 +1,233 @@
+{
+  "baseline": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+  "baseline_inputs_sha256": "590cad2e75a311c74b4c1a9c1560bec86aaf1fe95380dba6db58551edca40eaa",
+  "contract_commit": "c482afe0ff8ab582072fcdfec3dbdfe380c1173d",
+  "contract_path": "docs/F2/OrdinaryTemplateInputContract-20261018.md",
+  "contract_sha256": "908c8e62fe0b4c0eaf57756cc3a2b7527fb7cff4b6401f700dbce4884faa8604",
+  "fixed_AT_cases": {
+    "AT-04": {
+      "id": "AT-04",
+      "initial_state": "待实现fixture",
+      "oracle": "后端隔离；不能泄露别家资料、身份和预约用途；汇总另授权",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "scenario": "跨企业/园区隔离",
+      "stage": "F1",
+      "status": "NOT_RUN",
+      "steps": "猜测另一企业ID访问资料、Case、结果和匿名占用记录",
+      "type": "待执行时指定"
+    },
+    "AT-08": {
+      "id": "AT-08",
+      "initial_state": "待实现fixture",
+      "oracle": "产生新Case和结果；不复制旧材料/授权；错误明确处理",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "scenario": "模板新输入与冷会话",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "steps": "应用参数化模板并运行有效新输入及错误输入",
+      "type": "待执行时指定"
+    },
+    "AT-35": {
+      "id": "AT-35",
+      "initial_state": "待实现fixture",
+      "oracle": "关键状态持久化并能被对应角色操作；不靠手改源码/数据库；不同输入输出不混淆",
+      "reset": "待每个执行器绑定隔离合成fixture；禁止生产重置",
+      "scenario": "首个完整办理和重新使用",
+      "stage": "F2",
+      "status": "NOT_RUN",
+      "steps": "规划→确认→本地办理→补件/接单→回执→确认；再次运行",
+      "type": "待执行时指定"
+    }
+  },
+  "frozen_at_utc": "2026-10-18T21:21:24.945718+00:00",
+  "kind": "SOURCE_BLIND_LITERAL_ORACLE",
+  "literal_originals": [
+    {
+      "line": 129,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "输入为企业经办人明确提交的目标、资料与约束。模型提取服务意图、锁定约束、候选事实与未知信息；后端确定身份和可读数据范围。"
+    },
+    {
+      "line": 133,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "对不影响行动的小缺失可给标明的默认建议；涉及企业身份、地区、期限、预算、资格和资源承诺的缺失必须澄清或保留 UNKNOWN。既有材料在同企业、同用途授权下复用，跨企业与跨服务方不自动共享。"
+    },
+    {
+      "line": 135,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "输出为 `ServiceRequest`、`FactBundle` 和最小澄清项；不要求用户编辑 JSON。重复提交通过请求键识别，不能把两件不同诉求强行合并。"
+    },
+    {
+      "line": 139,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "模型基于用户目标和受信服务目录选择服务，形成 `ServicePlan`；每个步骤必须有服务引用、输入、前置条件、责任方、可执行动作、交付物和验收要求。"
+    },
+    {
+      "line": 141,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "计划分开记录必需目标与可选建议；无法满足的必需目标不被静默删除。部分步骤可以独立完成时继续，依赖外部结果的步骤等待。出现不支持的诉求时明确转人工/需新服务，不自动注册工具或假造服务商。"
+    },
+    {
+      "line": 145,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "重复业务可保存审核后的 `ServiceBundleTemplate`，参数化企业、材料、时段和相关规则。新企业使用时重新授权与核验，不复制上一企业资料，不重放旧结果。它是园区业务模板，不是通用软件生成。"
+    },
+    {
+      "line": 197,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "| Park / Organization / Principal | 园区、企业、角色、授权范围；由服务端分配稳定ID |"
+    },
+    {
+      "line": 208,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "| ServiceRelease / ParkInstance | 不可变服务模板/动作规格与独立业务数据、配置及版本 |"
+    },
+    {
+      "line": 210,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "新建对象只分配一次稳定ID，内容变化形成修订和规范化指纹。业务日期、源文件日期与导入日期分开；非当前来源不假装实时。"
+    },
+    {
+      "line": 216,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "`eligibility`是审核后的条件树；`material_requirements`指明需要的事实、证明及访问目的；`action_bindings`只引用受信注册表。审核人、源版本和发布状态必须存在，模型草稿不能直接作为“正式政策”。"
+    },
+    {
+      "line": 339,
+      "path": "docs/sources/V1/平台产品设计 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "首版至少测试两个企业、两个园区配置和多种角色。有效权限为当前用户授权、Case范围、服务发布所需能力、运行身份与当前Grant的交集。企业ID由后端会话/授权确定，不能相信请求体自行指定。"
+    },
+    {
+      "line": 89,
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "| F2-T06 | 办理模板与新输入 | 审核后参数化服务包模板；新企业冷会话与新材料运行，不复制旧数据/身份 | AT-08、AT-35 |"
+    },
+    {
+      "line": 280,
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "| AT-08 | 模板新输入与冷会话 | 应用参数化模板并运行有效新输入及错误输入 | 产生新Case和结果；不复制旧材料/授权；错误明确处理 | F2 |"
+    },
+    {
+      "line": 307,
+      "path": "docs/sources/V1/分阶段开发计划 (2).md",
+      "revision": "0b7ee3544fa669e621c8b8ffd58714fa357264b3",
+      "text": "| AT-35 | 首个完整办理和重新使用 | 规划→确认→本地办理→补件/接单→回执→确认；再次运行 | 关键状态持久化并能被对应角色操作；不靠手改源码/数据库；不同输入输出不混淆 | F2 |"
+    }
+  ],
+  "read_boundary": "Only baseline Git objects and committed contract; no new implementation or WIP read, no product imports/DB/service/business tests.",
+  "rows": [
+    {
+      "id": "TINPUT-01",
+      "must": "A new original-page parameter form and current catalog pin/recovery can complete this bounded UI+isolated-consumer slice. Ordinary configured startup without legal sources must remain unavailable/refused.",
+      "must_not": "Never label isolated candidate publication/permit as formal template approval or declare whole F2-T06/AT08/35 complete.",
+      "source": "product§5.2:145;F2-T06:89;contract:3,11",
+      "topic": "Scope/classification"
+    },
+    {
+      "id": "TINPUT-02",
+      "must": "Keep exact local fixture_UUID DB/org allowlists, exact isolated engine/catalog/repository binding and original current grants. CURRENT_PREPARATION/provider/Native mutual exclusion stays unchanged; no new provider discovery.",
+      "must_not": "No failed old guard fallback, manufactured source/permission/identity, or private fixture injected into ordinary approval.",
+      "source": "consumer:196-220;engine:217-235;ParkConsumer:48-57;api:15-20,1131-1155",
+      "topic": "Admission isolation"
+    },
+    {
+      "id": "TINPUT-03",
+      "must": "Original form takes newly supplied goal and exactly need_summary/material_outline texts, allowed source_kind/source_label, reviewer and reason under the published fixed parameter schema; preserve all mandatory template goals/constraints.",
+      "must_not": "Reject empty/duplicate/missing slots, unknown fields/actions/oldCase or old evidence IDs, unsupported shape and executable data. No user JSON editing, old result copying or arbitrary schema execution.",
+      "source": "product:129,135,145;engine:27-30,89-106;Consume:69-101",
+      "topic": "Explicit new parameter input"
+    },
+    {
+      "id": "TINPUT-04",
+      "must": "Discover only current actor scope: exact template release UUID/SHA, definition/hash/required goals/fixed schema plus matching current preparation_catalog service/version and canonical current source pin. Reader source and catalog source remain separate evidence domains.",
+      "must_not": "No title-only/index-only selection; no automatic newest-version substitution; catalog source hash proves current directory only, not REVIEW/publication authority.",
+      "source": "engine:254-278,300-318;consumer:243-255;contract:5",
+      "topic": "Current catalog and release binding"
+    },
+    {
+      "id": "TINPUT-05",
+      "must": "Omitting expected_catalog_sha256 preserves old canonical CONSUME bodies/fingerprints and immutable old instances. Explicit null/invalid hash is rejected. New nonnull pin is stored in the original immutable input/binding.",
+      "must_not": "No retroactive pin insertion or refingerprinting of old rows; no new journal/schema/permission kind to introduce the field.",
+      "source": "contract:5;consumer:365-377",
+      "topic": "New optional pin with historical compatibility"
+    },
+    {
+      "id": "TINPUT-06",
+      "must": "Before first Run and every existing consumer stage/current availability read, recheck original live identity/grants/reviewer/release and exact service version/current directory source pin. Stale/missing/changed source or release cannot issue a new stage.",
+      "must_not": "Client GET alone is never authorization. Do not repair directory/withdrawal, substitute source, refresh expiry or reseed authority to make an instance available.",
+      "source": "contract:5;consumer:288-294,354-381,473-506",
+      "topic": "Server revalidation"
+    },
+    {
+      "id": "TINPUT-07",
+      "must": "A supported new isolated input produces distinct consumer instance, Run, Case, preparation/material evidence and original journal binding while preserving prior input/material/instance history. Reauthorize the current subject.",
+      "must_not": "No previous enterprise data, identity, artifact, step marker, approval or saved successful result reused as the new input result.",
+      "source": "product:145,208,210;contract:3",
+      "topic": "Independent instance/result"
+    },
+    {
+      "id": "TINPUT-08",
+      "must": "Initial consume records original admission/CREATE_RUN; after observed CREATE_RUN and actual SUCCEEDED Run, explicitly resume only existing stages. Stop at PLAN_CONFIRMATION_REQUIRED after materials.",
+      "must_not": "No automatic REVIEW/CONFIRM/ADOPT, verification, resource/dispatch/receipt/P1-P5 or complete-business claim from RECORDED/CONFIRMED technical journal state.",
+      "source": "consumer:354-381,473-511;contract:3,9",
+      "topic": "Separate decisions"
+    },
+    {
+      "id": "TINPUT-09",
+      "must": "GET recovery scopes by authenticated actor+park/org+actual database+original key. Reconstruct canonical flat action=CONSUME fingerprint from immutable saved normalized input; compare saved request fp, supplied expected fp and complete binding/release/catalog coherence.",
+      "must_not": "Reject mismatched hash or another-action RESUME/EDIT/CONFIRM key; hash equality is not authority. Do not return another actor instance or infer a foreign key exists.",
+      "source": "consumer:365-378;contract:9",
+      "topic": "Original-key GET proof"
+    },
+    {
+      "id": "TINPUT-10",
+      "must": "New GET executes no consume/resume/product send/journal update, no key renewal. RECORDED means original admission exists; stage results remain separate. NOT_OBSERVED is a bounded current absence, never permanent noncommit proof.",
+      "must_not": "A current403/revocation never clears or disproves previous unknown commit. Keep original key/body frozen, do not automatically POST/replay or create a second key.",
+      "source": "contract:9;consumer repository:167-182",
+      "topic": "Read-only recovery and unknown"
+    },
+    {
+      "id": "TINPUT-11",
+      "must": "Edit/session change/navigation/ABA invalidate old current-catalog response and submission state; immediately before explicit first POST, reread and compare selected release and directory pin. Unknown create freezes body/key and permits only GET recovery.",
+      "must_not": "Late successful/403 GET or POST response cannot restore old actor/form; no body/token browser storage, URL interpolation, untrusted HTML execution or hidden automatic new request.",
+      "source": "contract:7,9;product:133,339",
+      "topic": "Original full HTML UI lifecycle"
+    },
+    {
+      "id": "TINPUT-12",
+      "must": "Current READ/PREPARE/EXECUTE/case.create and reviewer same-scope REVIEW_ASSIGNED stay original. Directory/release withdrawal or changed source marks current use unavailable or rejects new action. Historical recovery may separately report only what current auth permits.",
+      "must_not": "No cached catalog/grant/previous review used to resurrect current availability or cross-owner/park/org access.",
+      "source": "contract:5,9;consumer:211-229,263-279",
+      "topic": "Fresh authorization and availability"
+    },
+    {
+      "id": "TINPUT-13",
+      "must": "List exact immutable reviewed release/source/head/revocation proofs and current subject/role/service/field/journal mappings needed for future formal work, separate from existing legal PG preparation rights.",
+      "must_not": "Do not create generic DTO/loader or treat field presence, a REVIEW string or SYNTHETIC_CONTRACT_FIXTURE as formal authority. Supplying fields does not remove the existing hard isolated gate.",
+      "source": "product:216;contract:11;engine:44-80;ParkConsumer:111-126",
+      "topic": "Formal missing inputs"
+    },
+    {
+      "id": "TINPUT-14",
+      "must": "Freeze actual SHA, limited pure/API/ownedPG/worker/originalHTML NodeVM nodes, PREPOST inputs, module origins and all failure/token-safe raw-public pairs; effective node counts by actual identity.",
+      "must_not": "No old10/14/P1-P5 or full template matrix rerun for count; no browser/Windows/model/thirdscope/real production. Previous HTTP timeout cause remains UNKNOWN, not closed by laterPASS.",
+      "source": "contract:13,15;AT08/35",
+      "topic": "Evidence boundary"
+    }
+  ],
+  "status": "FROZEN_WAITING_FOR_FINAL_SOURCE_SHA",
+  "write_boundary": "Only reviewer-owned private runtime"
+}

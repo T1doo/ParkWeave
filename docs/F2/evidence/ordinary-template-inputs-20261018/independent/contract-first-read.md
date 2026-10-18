@@ -1,0 +1,17 @@
+# 原普通页应用已有模板的新输入：范围合同
+
+基线`0b7ee3544fa669e621c8b8ffd58714fa357264b3`。接原F2-T06、产品§5模板复用与AT08/35，不增加第三企业/园区、不重复完整P1–P5。原TemplateConsumer只接受显式isolated UUID PostgreSQL、同scope已审已发布SYNTHETIC候选和独立journal；ParkInstanceConsumer还依赖IsolatedServiceCapabilityCatalog及原source_review/映射。普通configured_app并未挂载这些源，CURRENT_PREPARATION与各provider互斥保持。不能把隔离permit、REVIEW字符串、hash或业务目录source字段当正式模板发布权。
+
+本片独立可实现的用户切片：在原web.html服务区输入全新诉求和两槽新材料，明确读取当前身份下已有模板和专员；模板ID/版本release SHA、定义、必需目标、原参数shape和当前同scope preparation_catalog版本/来源摘要共同绑定。只使用现有TemplateConsumer原consume/read/resume，不复制消费者/规划算法、不创建发布源/角色/permit/Grant或新的journal种类。新建后另行明确继续原材料准备，停在原PLAN_CONFIRMATION_REQUIRED；审核/确认/采纳和P1–P5不自动执行。新输入实例、Run/Case/资料/evidence与历史独立。
+
+当前目录pin由原READ/PREPARE/EXECUTE/action和专员授权下读取的精确服务/version/来源生成，只证明当前有权目录，不能升级为模板审批。catalog过滤没有匹配当前服务版本的候选，新增可选expected_catalog_sha256；显式null拒绝，省略保持旧请求指纹/旧实例兼容。新pin写入原不可变binding，并在首次Run及每一原消费阶段、当前可用性复读时重验；目录撤销/版本或source推进准确拒绝，不修复、不悄换新版本。原模板engine仍核release/source/head/review/permit，版本变化需重新读取/确认。
+
+普通页不把GET当授权：读当前catalog、提交前再GET核release和目录pin、再明确提交原consume。客户端编辑、换会话或导航后旧响应不得显示/提交旧版本，正文/会话不写浏览器存储；新实例不得带旧Case/材料/证明。正向后端安全由原消费者和新增目录pin重验提供，客户端守卫不是鉴权证明。
+
+丢创建响应不自动重发：新GET以原actor/key/已保存规范化CONSUME指纹只读查询原journal，核原input/release/目录绑定和当前有权主体。RECORDED只表示原实例准入已记录，业务阶段状态另看；NOT_OBSERVED不是永久未提交证明。错hash/其他action键/跨scope拒绝；当前403不能否定旧提交，保留原键。新表单UNKNOWN时冻结正文/key，只允许GET恢复；确认CreateRun阶段且原Run成功后才另行resume。原consumer内部的未知阶段仍沿原协议处理，本片不扩称所有未知恢复。
+
+正向只可使用明确isolated合成TemplateEngine已审核/候选发布fixture，必须与普通CURRENT启动缺源拒绝分列。普通启动可展示新参数入口、处理参数/版本/恢复UI，但无合法模板reader、发布/当前head验真及主体映射合同即不可创建模板实例；不能通过新增DI绕互斥或把fixture接入普通批准。缺失正式输入要逐对象/字段/权威映射列明，不以外部协议或Windows阻塞上述独立UI/参数绑定实现。
+
+冻结独立原文oracle后读实现；定向测试核有效新输入、当前目录source漂移、模板版本与新材料/原journal绑定、旧请求兼容、丢响应只GET和跨scope/撤权/普通缺源。实际新材料链不必再跑资源/接单/P1–P5。只运行必要相关模块/节点，逐ID去重，不叠加上一片10或历史全仓。真实浏览器不运行，只可NodeVM+实际HTTP/PG/worker分列；Windows/正式AT35/真实业务/正式来源未验。首开发历史HTTP超时UNKNOWN保留，后续通过不关闭它。
+
+本线程唯一受控文件/Git写入者。正常开发分支提交、独审后推送已授权；main、强推、部署、费用、安全网络权限、真实身份/Grant/分派/目录发布/批准/凭据/模型及未知锁进程均不改变。失败现场原样保全，有限安全重试。

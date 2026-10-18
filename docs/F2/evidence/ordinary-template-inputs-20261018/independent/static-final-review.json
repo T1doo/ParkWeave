@@ -1,0 +1,84 @@
+{
+  "conclusion": "LIMITED_STATIC_FIX_ACCEPTANCE; NO_FINAL_SHA_INDEPENDENT_DYNAMIC_PASS",
+  "dynamic_product_imports_DB_HTTP_lock_or_test_count": 0,
+  "findings": [
+    {
+      "closure": "STATIC_ONLY",
+      "id": "JOURNAL_WAIT_CATALOG_PIN",
+      "lines": [
+        342,
+        344,
+        347,
+        348,
+        349,
+        350,
+        352
+      ],
+      "prior": "Dynamically saved historical red window only; not repeated here",
+      "static_fix": "After original journal/body waits, the pinned-only late block reauthenticates, checks immutable instance/scope/database, current release+catalog pin and reviewer, before original send."
+    },
+    {
+      "closure": "STATIC_ONLY",
+      "id": "LATE_REFUSAL_UNKNOWN_ERASURE",
+      "lines": [
+        342,
+        351,
+        353,
+        354,
+        356,
+        357
+      ],
+      "prior": "ef99 static P2 retained in static-ef99-review.json",
+      "static_fix": "late_pin_check stays true only during the new preflight and is cleared before send. A late Denied/Conflict on nonfresh persisted STARTED/UNKNOWN runs original _unknown and raises before REFUSED/BLOCKED. Fresh/ADMITTED first-send refusal retains original path."
+    }
+  ],
+  "interruption_record": {
+    "direct_auto_review_tool_denial_observed_in_this_static_task": false,
+    "interrupted_dynamic_operation_or_report_retried": false,
+    "new_authorization": "Only static Git-object review and existing-evidence canonical organization",
+    "prior_final_report_interrupted_by_platform_risk_flag": true,
+    "source": "parent task notification"
+  },
+  "kind": "STATIC_ONLY_FINAL_FIX_REVIEW",
+  "limitations": [
+    "A check immediately before send is not a claim of cross-database commit atomicity.",
+    "Final9f8 has no independent dynamic rerun by explicit parent instruction. Parent final tests belong to parent evidence, not this reviewer count.",
+    "Ordinary configured startup still has no formal template source/approval/subject mapping and cannot create a formal template instance; isolated fixture positive is separate.",
+    "Historical original HTTP timeout remains UNKNOWN."
+  ],
+  "open_P1": [],
+  "open_P2": [],
+  "preserved": {
+    "no_new_source_Grant_role_permit_or_backend": true,
+    "no_pin_legacy_control_flow_AST_equal": true,
+    "old_fingerprint_GET_and_journal_semantics": true,
+    "original_isolated_and_CURRENT_provider_guards": {
+      "src/parkweave/api.py": true,
+      "src/parkweave/case_step_assignments.py": true,
+      "src/parkweave/roles.sql": true,
+      "src/parkweave/schema.sql": true,
+      "src/parkweave/service_capability_catalog.py": true,
+      "src/parkweave/service_instance_consumer.py": true,
+      "src/parkweave/template_candidate.py": true,
+      "src/parkweave/template_candidate_api.py": true,
+      "src/parkweave/template_isolated_app.py": true,
+      "tests/conftest.py": true
+    },
+    "unchanged_consumer_methods_AST": {
+      "_auth": true,
+      "_available": true,
+      "_published": true,
+      "_reviewer": true,
+      "_stage_key": true,
+      "_unknown": true,
+      "catalog": true,
+      "consume": true,
+      "read": true,
+      "recover_creation": true,
+      "resume": true,
+      "validate_fixture": true
+    }
+  },
+  "reviewed_git_objects_only": true,
+  "source_sha": "9f8c51fe58f6693be9ca185d90c0dee3524fa000"
+}

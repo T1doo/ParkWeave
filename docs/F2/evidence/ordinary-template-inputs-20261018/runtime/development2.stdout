@@ -1,0 +1,310 @@
+F...F.....                                                               [100%]
+=================================== FAILURES ===================================
+_______ test_pinned_new_input_actual_worker_prepares_only_new_materials ________
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7f18269a1460>, 'owner': <parkweave.store.Store object at 0x7f18269a3dd0>,...SYNTHETIC_SESSION_REDACTED'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7f18263bb980>, ...}
+tmp_path = PosixPath('/tmp/pw-template-input-dev2/test_pinned_new_input_actual_w0')
+
+    def test_pinned_new_input_actual_worker_prepares_only_new_materials(template_consumption,tmp_path):
+        f=template_consumption;before=grant_snapshot(f['owner']);catalog,t,data=pinned(f)
+        row=consume(f,key='pinned-fresh-input',data=data).json()
+        assert row['binding']['catalog_binding']==t['catalog_binding'] and row['state']=='PENDING_RUN'
+        worker_once((f['store'],),tmp_path/'worker')
+>       reply=resume(f,row,key='explicit-new-materials');assert reply.status_code==200,reply.text
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_ordinary_template_inputs.py:47: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_template_consumer.py:68: in resume
+    return f['client'].post(f"/api/template-consumer/instances/{row['instance_id']}/resume",
+.venv/lib/python3.12/site-packages/httpx/_client.py:1144: in post
+    return self.request(
+.venv/lib/python3.12/site-packages/starlette/testclient.py:463: in request
+    return super().request(
+.venv/lib/python3.12/site-packages/httpx/_client.py:825: in request
+    return self.send(request, auth=auth, follow_redirects=follow_redirects)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:914: in send
+    response = self._send_handling_auth(
+.venv/lib/python3.12/site-packages/httpx/_client.py:942: in _send_handling_auth
+    response = self._send_handling_redirects(
+.venv/lib/python3.12/site-packages/httpx/_client.py:979: in _send_handling_redirects
+    response = self._send_single_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/httpx/_client.py:1014: in _send_single_request
+    response = transport.handle_request(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/testclient.py:360: in handle_request
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/testclient.py:357: in handle_request
+    portal.call(self.app, scope, receive, send)
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:340: in call
+    return cast(T_Retval, self.start_task_soon(func, *args).result())
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:456: in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/concurrent/futures/_base.py:401: in __get_result
+    raise self._exception
+.venv/lib/python3.12/site-packages/anyio/from_thread.py:265: in _call_func
+    retval = await retval_or_awaitable
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/applications.py:1215: in __call__
+    await super().__call__(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/applications.py:96: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:186: in __call__
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/middleware/errors.py:164: in __call__
+    await self.app(scope, receive, _send)
+.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py:151: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:197: in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/api.py:218: in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:173: in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+.venv/lib/python3.12/site-packages/starlette/middleware/base.py:149: in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py:63: in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py:18: in __call__
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:676: in __call__
+    await self.middleware_stack(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:2786: in app
+    await route.handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:1310: in handle
+    await super().handle(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/routing.py:282: in handle
+    await self.app(scope, receive, send)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:165: in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:53: in wrapped_app
+    raise exc
+.venv/lib/python3.12/site-packages/starlette/_exception_handler.py:42: in wrapped_app
+    await app(scope, receive, sender)
+.venv/lib/python3.12/site-packages/fastapi/routing.py:151: in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/routing.py:727: in app
+    raw_response = await run_endpoint_function(
+.venv/lib/python3.12/site-packages/fastapi/routing.py:362: in run_endpoint_function
+    return await run_in_threadpool(
+.venv/lib/python3.12/site-packages/starlette/concurrency.py:34: in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/anyio/to_thread.py:65: in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:2706: in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py:1100: in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py:240: in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/template_consumer.py:852: in resume
+    return consumer.resume(bearer(authorization), instance_id, idempotency_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/template_consumer.py:555: in resume
+    self.reconcile_adoption(token, id, persist=True)
+src/parkweave/template_consumer.py:564: in reconcile_adoption
+    self._available(p,instance)
+src/parkweave/template_consumer.py:301: in _available
+    current=self._catalog_binding(token=token,p=p,definition=release['snapshot']['definition'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/template_consumer.py:252: in _catalog_binding
+    current, original = self._current_catalog(token)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/template_consumer.py:246: in _current_catalog
+    p, _ = self._auth(token, connection=c)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/template_consumer.py:215: in _auth
+    p = self.store.auth(c, token, lock=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+src/parkweave/store.py:364: in auth
+    p = c.execute(sql, (digest(token),)).fetchone()
+                        ^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+value = None
+
+    def digest(value: str) -> str:
+>       return hashlib.sha256(value.encode()).hexdigest()
+                              ^^^^^^^^^^^^
+E       AttributeError: 'NoneType' object has no attribute 'encode'
+
+src/parkweave/store.py:73: AttributeError
+____________ test_original_page_template_input_http_guards[success] ____________
+
+template_consumption = {'store': <parkweave.store.Store object at 0x7f1817de4410>, 'owner': <parkweave.store.Store object at 0x7f1817ea6000>,...SYNTHETIC_SESSION_REDACTED'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7f181775c320>, ...}
+tmp_path = PosixPath('/tmp/pw-template-input-dev2/test_original_page_template_in0')
+mode = 'success'
+
+    @pytest.mark.parametrize('mode',['success','lost','edit','token','pin'])
+    def test_original_page_template_input_http_guards(template_consumption,tmp_path,mode):
+        f=template_consumption;authority=grant_snapshot(f['owner'])
+>       with serving(f['client'].app) as base:result=html(f,tmp_path,base,mode)
+                                                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_ordinary_template_inputs.py:136: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = {'store': <parkweave.store.Store object at 0x7f1817de4410>, 'owner': <parkweave.store.Store object at 0x7f1817ea6000>,...SYNTHETIC_SESSION_REDACTED'}, 'engine': <parkweave.template_candidate.TemplateEngine object at 0x7f181775c320>, ...}
+tmp_path = PosixPath('/tmp/pw-template-input-dev2/test_original_page_template_in0')
+base = 'http://127.0.0.1:43821', mode = 'success'
+
+    def html(f,tmp_path,base,mode):
+        out=tmp_path/'html.stdout';err=tmp_path/'html.stderr'
+        config=dict(base=base,token=f['tokens'][ENTERPRISES[0]],other_token=f['tokens'][ENTERPRISES[1]],mode=mode)
+        with out.open('w') as stdout,err.open('w') as stderr:
+            child=subprocess.Popen(['node','tests/ordinary_template_inputs_html.js'],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=stderr,text=True)
+            timer=threading.Timer(60,child.terminate);timer.start()
+            try:
+                child.stdin.write(json.dumps(config)+'\n');child.stdin.flush()
+                for line in child.stdout:
+                    stdout.write(line);stdout.flush();row=json.loads(line)
+                    if row.get('control')=='worker':worker_once((f['store'],),tmp_path/'worker');child.stdin.write('{}\n');child.stdin.flush()
+                    elif row.get('control')=='drift':drift(f);child.stdin.write('{}\n');child.stdin.flush()
+                code=child.wait(timeout=10)
+            finally:
+                timer.cancel()
+                if child.poll() is None:child.terminate();child.wait(timeout=10)
+>       assert code==0,err.read_text()
+E       AssertionError: {"error":"AssertionError [ERR_ASSERTION]: new materials stop before manual plan\n    at check (/workspace/ParkWeave/tests/ordinary_template_inputs_html.js:12:51)\n    at /workspace/ParkWeave/tests/ordinary_template_inputs_html.js:110:364\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)","diagnostics":{"calls":[{"method":"GET","path":"/api/template-consumer/catalog","status":200},{"method":"GET","path":"/api/template-consumer/catalog","status":200},{"method":"POST","path":"/api/template-consumer/instances","status":201,"body":{"release_id":"67291f7e-0b9a-49a5-a6dd-78c2143b7146","expected_release_sha256":"43f93d42e109359ab46fc387ce620758a11ed1ac66195dbb96cf03beb588c728","expected_catalog_sha256":"2ecb9ca5ac1a1266f3b69956663556a86b5018b050bed51dbfb2d38b3a45177f","goal":"本次全新模板诉求","reviewer_id":"template-new-reviewer-a","materials":[{"slot":"need_summary","text":"本次全新诉求证据","source_kind":"USER_STATEMENT","source_label":"本次企业声明"},{"slot":"material_outline","text":"本次全新资料清单","source_kind":"DOCUMENT_EXCERPT","source_label":"本次文档摘录"}],"reason":"本次明确按已审版本准备新输入","required_goals":["LOCAL_MATERIAL_PREPARATION"]},"request_key":"1a1b809a-0635-464b-89c5-3dc5cb2a5c0b"},{"method":"GET","path":"/api/template-consumer/creation-recovery?request_key=1a1b809a-0635-464b-89c5-3dc5cb2a5c0b&expected_fingerprint_sha256=3f9dbec63381c439ade0f33e27693877eee72b1212f67917895693ed6663141a","status":200},{"method":"GET","path":"/api/template-consumer/instances/98194791-30ed-448d-ae05-e1f991a2b866","status":200}]}}
+E         
+E       assert 1 == 0
+
+tests/test_ordinary_template_inputs.py:129: AssertionError
+----------------------------- Captured stderr call -----------------------------
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/protocols/http/h11_impl.py", line 411, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/uvicorn/middleware/proxy_headers.py", line 63, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/applications.py", line 1215, in __call__
+    await super().__call__(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/applications.py", line 96, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 186, in __call__
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_asgi.py", line 151, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 197, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/api.py", line 218, in boundary
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 173, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/base.py", line 149, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py", line 676, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 2786, in app
+    await route.handle(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 1310, in handle
+    await super().handle(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/routing.py", line 282, in handle
+    await self.app(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 165, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 151, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 727, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/routing.py", line 362, in run_endpoint_function
+    return await run_in_threadpool(
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/starlette/concurrency.py", line 34, in run_in_threadpool
+    return await anyio.to_thread.run_sync(func)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/to_thread.py", line 65, in run_sync
+    return await get_async_backend().run_sync_in_worker_thread(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 2706, in run_sync_in_worker_thread
+    return await future
+           ^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", line 1100, in run
+    result = context.run(func, *args)
+             ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/telemetry/_api.py", line 240, in _run_sync_endpoint
+    return function(**arguments)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/template_consumer.py", line 852, in resume
+    return consumer.resume(bearer(authorization), instance_id, idempotency_key)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/template_consumer.py", line 555, in resume
+    self.reconcile_adoption(token, id, persist=True)
+  File "/workspace/ParkWeave/src/parkweave/template_consumer.py", line 564, in reconcile_adoption
+    self._available(p,instance)
+  File "/workspace/ParkWeave/src/parkweave/template_consumer.py", line 301, in _available
+    current=self._catalog_binding(token=token,p=p,definition=release['snapshot']['definition'])
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/template_consumer.py", line 252, in _catalog_binding
+    current, original = self._current_catalog(token)
+                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/template_consumer.py", line 246, in _current_catalog
+    p, _ = self._auth(token, connection=c)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/template_consumer.py", line 215, in _auth
+    p = self.store.auth(c, token, lock=True)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/store.py", line 364, in auth
+    p = c.execute(sql, (digest(token),)).fetchone()
+                        ^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/src/parkweave/store.py", line 73, in digest
+    return hashlib.sha256(value.encode()).hexdigest()
+                          ^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'encode'
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_ordinary_template_inputs.py::test_pinned_new_input_actual_worker_prepares_only_new_materials
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_ordinary_template_inputs.py::test_pinned_new_input_actual_worker_prepares_only_new_materials
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_ordinary_template_inputs.py::test_pinned_new_input_actual_worker_prepares_only_new_materials
+FAILED tests/test_ordinary_template_inputs.py::test_original_page_template_input_http_guards[success]
+2 failed, 8 passed, 4 warnings in 33.88s
