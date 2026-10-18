@@ -1,5 +1,10 @@
 ## 2026-10-18：已有资源方案批准的可信宿主只读接线
 
+## 2026-10-18 普通人工回执 SUBMIT 原键只读恢复
+
+冻结 `f7d47e704b07c1c0a9168535fbfdf41d7f77d5df`：16完整相关模块368唯一PASS，755输入零漂移；独测89全部逐ID重叠，0P1/P2，不相加。复用原事务事件/指纹/历史frontier核GET，普通页有界opaque冷恢复；UNKNOWN不重发，精确确定拒绝才清本次句柄。开发失败/漂移/覆盖缺口保留。正式来源专用backend/主体/采纳映射继续等既有来源合同并需专用代码；当前只读及原资源批准都不提供消费许可，项目继续IN_PROGRESS。详见[产品与最小来源字段](ReceiptSubmitRecovery-20261018.md)、[实际验证](ReceiptSubmitRecoveryValidation-20261018.md)。Windows/正式AT/真实场景未验。
+
+
 源码冻结 `b963783419624ae5450e7fa3ba0160ca0ce41444`，在原普通provider读取协议上补受保护public pin、独立Unix host固定READ/VERIFY、749输入下2READ/3VERIFY共享预算与普通configured_app显式配置；复用原Scope、原ID双读和当前权限/来源head复核，不重做批准算法。host只消费既有listener和可信adapter，不创建身份/服务/endpoint/信任根或批准。正式未知来源仍UNAVAILABLE，SYNTHETIC入口、permit/writer默认拒绝和批准不可消费保持。
 
 八完整相关模块190唯一项PASS，新55已含内；同SHA独测55全部重叠PASS、静审0开放P1/P2，749输入零漂移。生产保护边界正向仅显式SAME-UID SYNTHETIC DI；实际IPC/API/PG/Chromium和不同API进程复读/当前撤销实跑，未改CLI拒绝lab。四开发窗失败与预算P2修补完整保全，30651继承证据blob原字节不变。详见[本片合同、测试与来源输入](ResourceApprovalHostRead-20261018.md)。

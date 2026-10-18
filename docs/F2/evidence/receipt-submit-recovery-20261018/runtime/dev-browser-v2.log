@@ -1,0 +1,334 @@
+........FFF                                                              [100%]
+=================================== FAILURES ===================================
+_ test_only_complete_original_definitive_rejection_releases_handle[unknown_409] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7f6e8c285700>, <parkweave.store.Store object at 0x7f6e8ae60290>, {'fixture-a': 'l...atabase': {'name': 'fixture_5fa9f86be7944720bacffe82ce116d17', 'oid': 24153, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-receipt-submit-dev-browser-v2-k8mpta59/pytest/test_only_complete_original_de2')
+mode = 'unknown_409'
+
+    @pytest.mark.parametrize('mode',['stale_revision_409','body_validation_422','unknown_409','unknown_422','bad_json_422'])
+    def test_only_complete_original_definitive_rejection_releases_handle(demo_inputs,tmp_path,mode):
+        from test_executor_receipts import act
+        f,_,pack,_=demo_inputs;parent=prepared(f)
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        row=create(f,parent)[0].json();auth=authority_snapshot(f[1]);traffic=[];responses=[]
+        with ordinary_demo(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            context=browser.new_context();page=context.new_page();errors=[]
+            page.on('pageerror',lambda e:errors.append(str(e)))
+            page.on('request',lambda r:traffic.append(dict(method=r.method,path=urlsplit(r.url).path)))
+            login(page,api,f,'executor-a');open_receipt(page)
+            if mode=='stale_revision_409':
+                # Another original authorized synthetic client wins after this page's GET.
+                r=act(f,row,'SUBMIT');assert r.status_code==200,r.text
+            def fault(route):
+                if mode=='body_validation_422':
+                    body=route.request.post_data_json;body['unknown_field']='SYNTHETIC invalid body'
+                    reply=route.fetch(post_data=json.dumps(body));assert reply.status==422
+                    responses.append(dict(status=reply.status,payload=reply.json(),actual_server=True))
+                    route.fulfill(response=reply)
+                elif mode=='bad_json_422':
+                    responses.append(dict(status=422,actual_server=False));route.fulfill(status=422,body='{',content_type='application/json')
+                else:
+                    status=409 if mode=='unknown_409' else 422
+                    responses.append(dict(status=status,actual_server=False));route.fulfill(status=status,json={'detail':'SYNTHETIC uncertain transport response'})
+            if mode!='stale_revision_409':page.route('**/api/executor-receipts/*/commands',fault)
+            before=case_history(f[1],parent['preparation_id'])
+            page.locator('#receipt-text').fill('SYNTHETIC retain this draft')
+            page.locator('#receipt-source').fill('SYNTHETIC current manual label')
+            page.locator('#receipt-submit-button').click()
+            page.wait_for_function('()=>!receiptSubmitBusy&&!activeEntryWriteFlow')
+            if mode in ('stale_revision_409','body_validation_422'):
+                expect(page.locator('#receipt-submit-status')).to_contain_text('服务器已明确拒绝',timeout=15000)
+                assert not page.evaluate('receiptSubmitStoredPending()')
+                assert page.locator('#receipt-text').input_value()=='SYNTHETIC retain this draft'
+                assert page.evaluate('receiptView===null&&receiptContext===null')
+                page.locator('#receipt-refresh').click();expect(page.locator('#receipt-detail')).to_be_visible()
+                assert page.evaluate('receiptView!==null')
+            else:
+                expect(page.locator('#receipt-submit-recover')).to_be_visible(timeout=15000)
+                assert page.evaluate('receiptSubmitStoredPending()')
+>               page.locator('#receipt-submit-recover').click();page.wait_for_function('()=>!receiptSubmitBusy')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_receipt_submit_recovery_browser.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:17876: in click
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:165: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:593: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f6e89b25370>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f6e89fe2c00>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for locator("#receipt-submit-recover")
+E               - locator resolved to <button disabled type="button" class="secondary" id="receipt-submit-recover">只读核对原人工提交</button>
+E             - attempting click action
+E               2 × waiting for element to be visible, enabled and stable
+E                 - element is not enabled
+E               - retrying click action
+E               - waiting 20ms
+E               2 × waiting for element to be visible, enabled and stable
+E                 - element is not enabled
+E               - retrying click action
+E                 - waiting 100ms
+E               58 × waiting for element to be visible, enabled and stable
+E                  - element is not enabled
+E                - retrying click action
+E                  - waiting 500ms
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_ test_only_complete_original_definitive_rejection_releases_handle[unknown_422] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7f6e89fd1c70>, <parkweave.store.Store object at 0x7f6e89fd1880>, {'fixture-a': 's...atabase': {'name': 'fixture_eb37a03a23f94696b603574b406ad8ef', 'oid': 25126, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-receipt-submit-dev-browser-v2-k8mpta59/pytest/test_only_complete_original_de3')
+mode = 'unknown_422'
+
+    @pytest.mark.parametrize('mode',['stale_revision_409','body_validation_422','unknown_409','unknown_422','bad_json_422'])
+    def test_only_complete_original_definitive_rejection_releases_handle(demo_inputs,tmp_path,mode):
+        from test_executor_receipts import act
+        f,_,pack,_=demo_inputs;parent=prepared(f)
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        row=create(f,parent)[0].json();auth=authority_snapshot(f[1]);traffic=[];responses=[]
+        with ordinary_demo(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            context=browser.new_context();page=context.new_page();errors=[]
+            page.on('pageerror',lambda e:errors.append(str(e)))
+            page.on('request',lambda r:traffic.append(dict(method=r.method,path=urlsplit(r.url).path)))
+            login(page,api,f,'executor-a');open_receipt(page)
+            if mode=='stale_revision_409':
+                # Another original authorized synthetic client wins after this page's GET.
+                r=act(f,row,'SUBMIT');assert r.status_code==200,r.text
+            def fault(route):
+                if mode=='body_validation_422':
+                    body=route.request.post_data_json;body['unknown_field']='SYNTHETIC invalid body'
+                    reply=route.fetch(post_data=json.dumps(body));assert reply.status==422
+                    responses.append(dict(status=reply.status,payload=reply.json(),actual_server=True))
+                    route.fulfill(response=reply)
+                elif mode=='bad_json_422':
+                    responses.append(dict(status=422,actual_server=False));route.fulfill(status=422,body='{',content_type='application/json')
+                else:
+                    status=409 if mode=='unknown_409' else 422
+                    responses.append(dict(status=status,actual_server=False));route.fulfill(status=status,json={'detail':'SYNTHETIC uncertain transport response'})
+            if mode!='stale_revision_409':page.route('**/api/executor-receipts/*/commands',fault)
+            before=case_history(f[1],parent['preparation_id'])
+            page.locator('#receipt-text').fill('SYNTHETIC retain this draft')
+            page.locator('#receipt-source').fill('SYNTHETIC current manual label')
+            page.locator('#receipt-submit-button').click()
+            page.wait_for_function('()=>!receiptSubmitBusy&&!activeEntryWriteFlow')
+            if mode in ('stale_revision_409','body_validation_422'):
+                expect(page.locator('#receipt-submit-status')).to_contain_text('服务器已明确拒绝',timeout=15000)
+                assert not page.evaluate('receiptSubmitStoredPending()')
+                assert page.locator('#receipt-text').input_value()=='SYNTHETIC retain this draft'
+                assert page.evaluate('receiptView===null&&receiptContext===null')
+                page.locator('#receipt-refresh').click();expect(page.locator('#receipt-detail')).to_be_visible()
+                assert page.evaluate('receiptView!==null')
+            else:
+                expect(page.locator('#receipt-submit-recover')).to_be_visible(timeout=15000)
+                assert page.evaluate('receiptSubmitStoredPending()')
+>               page.locator('#receipt-submit-recover').click();page.wait_for_function('()=>!receiptSubmitBusy')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_receipt_submit_recovery_browser.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:17876: in click
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:165: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:593: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f6e897f5370>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f6e897ef9c0>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for locator("#receipt-submit-recover")
+E               - locator resolved to <button disabled type="button" class="secondary" id="receipt-submit-recover">只读核对原人工提交</button>
+E             - attempting click action
+E               2 × waiting for element to be visible, enabled and stable
+E                 - element is not enabled
+E               - retrying click action
+E               - waiting 20ms
+E               2 × waiting for element to be visible, enabled and stable
+E                 - element is not enabled
+E               - retrying click action
+E                 - waiting 100ms
+E               58 × waiting for element to be visible, enabled and stable
+E                  - element is not enabled
+E                - retrying click action
+E                  - waiting 500ms
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+_ test_only_complete_original_definitive_rejection_releases_handle[bad_json_422] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7f6e897f49b0>, <parkweave.store.Store object at 0x7f6e897dde20>, {'fixture-a': 'S...atabase': {'name': 'fixture_b75a96e8016b4977b55fa3c890aa91a8', 'oid': 26103, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-receipt-submit-dev-browser-v2-k8mpta59/pytest/test_only_complete_original_de4')
+mode = 'bad_json_422'
+
+    @pytest.mark.parametrize('mode',['stale_revision_409','body_validation_422','unknown_409','unknown_422','bad_json_422'])
+    def test_only_complete_original_definitive_rejection_releases_handle(demo_inputs,tmp_path,mode):
+        from test_executor_receipts import act
+        f,_,pack,_=demo_inputs;parent=prepared(f)
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        row=create(f,parent)[0].json();auth=authority_snapshot(f[1]);traffic=[];responses=[]
+        with ordinary_demo(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            context=browser.new_context();page=context.new_page();errors=[]
+            page.on('pageerror',lambda e:errors.append(str(e)))
+            page.on('request',lambda r:traffic.append(dict(method=r.method,path=urlsplit(r.url).path)))
+            login(page,api,f,'executor-a');open_receipt(page)
+            if mode=='stale_revision_409':
+                # Another original authorized synthetic client wins after this page's GET.
+                r=act(f,row,'SUBMIT');assert r.status_code==200,r.text
+            def fault(route):
+                if mode=='body_validation_422':
+                    body=route.request.post_data_json;body['unknown_field']='SYNTHETIC invalid body'
+                    reply=route.fetch(post_data=json.dumps(body));assert reply.status==422
+                    responses.append(dict(status=reply.status,payload=reply.json(),actual_server=True))
+                    route.fulfill(response=reply)
+                elif mode=='bad_json_422':
+                    responses.append(dict(status=422,actual_server=False));route.fulfill(status=422,body='{',content_type='application/json')
+                else:
+                    status=409 if mode=='unknown_409' else 422
+                    responses.append(dict(status=status,actual_server=False));route.fulfill(status=status,json={'detail':'SYNTHETIC uncertain transport response'})
+            if mode!='stale_revision_409':page.route('**/api/executor-receipts/*/commands',fault)
+            before=case_history(f[1],parent['preparation_id'])
+            page.locator('#receipt-text').fill('SYNTHETIC retain this draft')
+            page.locator('#receipt-source').fill('SYNTHETIC current manual label')
+            page.locator('#receipt-submit-button').click()
+            page.wait_for_function('()=>!receiptSubmitBusy&&!activeEntryWriteFlow')
+            if mode in ('stale_revision_409','body_validation_422'):
+                expect(page.locator('#receipt-submit-status')).to_contain_text('服务器已明确拒绝',timeout=15000)
+                assert not page.evaluate('receiptSubmitStoredPending()')
+                assert page.locator('#receipt-text').input_value()=='SYNTHETIC retain this draft'
+                assert page.evaluate('receiptView===null&&receiptContext===null')
+                page.locator('#receipt-refresh').click();expect(page.locator('#receipt-detail')).to_be_visible()
+                assert page.evaluate('receiptView!==null')
+            else:
+                expect(page.locator('#receipt-submit-recover')).to_be_visible(timeout=15000)
+                assert page.evaluate('receiptSubmitStoredPending()')
+>               page.locator('#receipt-submit-recover').click();page.wait_for_function('()=>!receiptSubmitBusy')
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_receipt_submit_recovery_browser.py:160: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:17876: in click
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:165: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:593: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f6e8a32e1b0>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f6e8a348d60>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for locator("#receipt-submit-recover")
+E               - locator resolved to <button disabled type="button" class="secondary" id="receipt-submit-recover">只读核对原人工提交</button>
+E             - attempting click action
+E               2 × waiting for element to be visible, enabled and stable
+E                 - element is not enabled
+E               - retrying click action
+E               - waiting 20ms
+E               2 × waiting for element to be visible, enabled and stable
+E                 - element is not enabled
+E               - retrying click action
+E                 - waiting 100ms
+E               58 × waiting for element to be visible, enabled and stable
+E                  - element is not enabled
+E                - retrying click action
+E                  - waiting 500ms
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_receipt_submit_recovery_browser.py::test_ordinary_manual_submit_cold_recovery_never_reposts[committed_reply_lost]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_receipt_submit_recovery_browser.py::test_ordinary_manual_submit_cold_recovery_never_reposts[committed_reply_lost]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_receipt_submit_recovery_browser.py::test_only_complete_original_definitive_rejection_releases_handle[unknown_409]
+FAILED tests/test_receipt_submit_recovery_browser.py::test_only_complete_original_definitive_rejection_releases_handle[unknown_422]
+FAILED tests/test_receipt_submit_recovery_browser.py::test_only_complete_original_definitive_rejection_releases_handle[bad_json_422]
+3 failed, 8 passed, 4 warnings in 163.31s (0:02:43)

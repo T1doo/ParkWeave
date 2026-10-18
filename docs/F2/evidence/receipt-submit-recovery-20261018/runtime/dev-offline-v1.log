@@ -1,0 +1,204 @@
+........................F..........FF....................F.............. [ 74%]
+..............F..........                                                [100%]
+=================================== FAILURES ===================================
+_ test_manual_submit_original_key_storage_and_async_boundaries[outer_replacement] _
+
+mode = 'outer_replacement'
+
+    @pytest.mark.parametrize('mode',['past','now','one_ms','max','over','zero','far','null','string','boolean',
+        'extra','oversize','malformed','storage_error','limit','other_actor','committed','not_observed',
+        'wrong_proof','replacement','late_200','late_403','outer_case_ABA','outer_identity_ABA','outer_replacement',
+        'current_bad_history','current_bad_receipt','current_bad_role','current_bad_revision','current_bad_executor',
+        'current_replacement','current_ABA','render_failure','release_success','send_storage_failure','send_draft_changed','send_late_context'])
+    def test_manual_submit_original_key_storage_and_async_boundaries(mode):
+        root=Path(__file__).resolve().parents[1]
+        p=subprocess.run(['node',str(Path(__file__).with_name('receipt_submit_recovery_offline.js')),mode],
+                         cwd=root,capture_output=True,text=True,timeout=15)
+>       assert p.returncode==0,p.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: '原人工回执结果待核对；只GET原编号，不自动重发提交。' == 'NEW STATUS'
+E             at /workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:51:134 {
+E           generatedMessage: true,
+E           code: 'ERR_ASSERTION',
+E           actual: '原人工回执结果待核对；只GET原编号，不自动重发提交。',
+E           expected: 'NEW STATUS',
+E           operator: '==',
+E           diff: 'simple'
+E         }
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/receipt_submit_recovery_offline.js', 'outer_replacement'], ...TION',\n  actual: '原人工回执结果待核对；只GET原编号，不自动重发提交。',\n  expected: 'NEW STATUS',\n  operator: '==',\n  diff: 'simple'\n}\n").returncode
+
+tests/test_receipt_submit_recovery_offline.py:15: AssertionError
+_ test_manual_submit_original_key_storage_and_async_boundaries[send_draft_changed] _
+
+mode = 'send_draft_changed'
+
+    @pytest.mark.parametrize('mode',['past','now','one_ms','max','over','zero','far','null','string','boolean',
+        'extra','oversize','malformed','storage_error','limit','other_actor','committed','not_observed',
+        'wrong_proof','replacement','late_200','late_403','outer_case_ABA','outer_identity_ABA','outer_replacement',
+        'current_bad_history','current_bad_receipt','current_bad_role','current_bad_revision','current_bad_executor',
+        'current_replacement','current_ABA','render_failure','release_success','send_storage_failure','send_draft_changed','send_late_context'])
+    def test_manual_submit_original_key_storage_and_async_boundaries(mode):
+        root=Path(__file__).resolve().parents[1]
+        p=subprocess.run(['node',str(Path(__file__).with_name('receipt_submit_recovery_offline.js')),mode],
+                         cwd=root,capture_output=True,text=True,timeout=15)
+>       assert p.returncode==0,p.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: 0 == 1
+E             at /workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:40:11
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47 {
+E           generatedMessage: true,
+E           code: 'ERR_ASSERTION',
+E           actual: 0,
+E           expected: 1,
+E           operator: '==',
+E           diff: 'simple'
+E         }
+E         evalmachine.<anonymous>:38
+E           if(!h||h.invalid||receiptSubmitHandle!==h||receiptView?.actor_ref!==h.actor||s?.id!==h.step||s.preparation_id!==h.preparation||s.case_id!==h.case||s.run_id!==h.run||s.preparation_revision!==h.preparation_revision||c.id!==h.step||receiptSubmitHandles(h.actor)===null||localStorage.getItem(h.name)!==h.raw)throw Error('原人工回执上下文或保存句柄已变化；保留记录重新核对');
+E                                                                                                                                                                                                                                                                                                                                 ^
+E         
+E         Error: 原人工回执上下文或保存句柄已变化；保留记录重新核对
+E             at receiptSubmitBound (evalmachine.<anonymous>:38:313)
+E             at sendReceiptSubmit (evalmachine.<anonymous>:73:44)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:19:47)
+E             at /workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:37:17
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/receipt_submit_recovery_offline.js', 'send_draft_changed'],...ernal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_receipt_submit_recovery_offline.py:15: AssertionError
+_ test_manual_submit_original_key_storage_and_async_boundaries[send_late_context] _
+
+mode = 'send_late_context'
+
+    @pytest.mark.parametrize('mode',['past','now','one_ms','max','over','zero','far','null','string','boolean',
+        'extra','oversize','malformed','storage_error','limit','other_actor','committed','not_observed',
+        'wrong_proof','replacement','late_200','late_403','outer_case_ABA','outer_identity_ABA','outer_replacement',
+        'current_bad_history','current_bad_receipt','current_bad_role','current_bad_revision','current_bad_executor',
+        'current_replacement','current_ABA','render_failure','release_success','send_storage_failure','send_draft_changed','send_late_context'])
+    def test_manual_submit_original_key_storage_and_async_boundaries(mode):
+        root=Path(__file__).resolve().parents[1]
+        p=subprocess.run(['node',str(Path(__file__).with_name('receipt_submit_recovery_offline.js')),mode],
+                         cwd=root,capture_output=True,text=True,timeout=15)
+>       assert p.returncode==0,p.stderr
+E       AssertionError: AssertionError [ERR_ASSERTION]: 0 == 1
+E             at /workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:40:11
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47 {
+E           generatedMessage: true,
+E           code: 'ERR_ASSERTION',
+E           actual: 0,
+E           expected: 1,
+E           operator: '==',
+E           diff: 'simple'
+E         }
+E         evalmachine.<anonymous>:38
+E           if(!h||h.invalid||receiptSubmitHandle!==h||receiptView?.actor_ref!==h.actor||s?.id!==h.step||s.preparation_id!==h.preparation||s.case_id!==h.case||s.run_id!==h.run||s.preparation_revision!==h.preparation_revision||c.id!==h.step||receiptSubmitHandles(h.actor)===null||localStorage.getItem(h.name)!==h.raw)throw Error('原人工回执上下文或保存句柄已变化；保留记录重新核对');
+E                                                                                                                                                                                                                                                                                                                                 ^
+E         
+E         Error: 原人工回执上下文或保存句柄已变化；保留记录重新核对
+E             at receiptSubmitBound (evalmachine.<anonymous>:38:313)
+E             at sendReceiptSubmit (evalmachine.<anonymous>:73:44)
+E             at evalmachine.<anonymous>:1:1
+E             at Script.runInContext (node:vm:149:12)
+E             at Object.runInContext (node:vm:301:6)
+E             at run (/workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:19:47)
+E             at /workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:37:17
+E             at Object.<anonymous> (/workspace/ParkWeave/tests/receipt_submit_recovery_offline.js:78:3)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/receipt_submit_recovery_offline.js', 'send_late_context'], ...ernal/modules/cjs/loader:1872:14)\n    at Object..js (node:internal/modules/cjs/loader:2003:10)\n\nNode.js v24.19.0\n").returncode
+
+tests/test_receipt_submit_recovery_offline.py:15: AssertionError
+__________________ test_accepted_case_cancel_ui[late_receipt] __________________
+
+mode = 'late_receipt'
+
+    @pytest.mark.parametrize('mode',['lost_response','cold_recovery','unknown_not_observed','corrupt_proof','revoked','late_read','late_post','pending_other_operation','cancelled_dispatch','late_recovery','wrong_scope','late_receipt','late_dispatch'])
+    def test_accepted_case_cancel_ui(mode):
+     node=shutil.which('node');assert node,'Node is required for this offline acceptance'
+     result=subprocess.run([node,'tests/case_cancellation_offline.js','after_'+mode],capture_output=True,text=True,timeout=15)
+>    assert result.returncode==0,result.stderr
+E    AssertionError: evalmachine.<anonymous>:1
+E      function renderReceipt(x){const s=x.step,reconciling=x.case_reconciling===true||(typeof caseReconPhase==='function'&&caseReconPhase(s.case_id)==='RECONCILING'),cancelled=x.case_cancelled===true||(typeof caseReconPhase==='function'&&caseReconPhase(s.case_id)==='CANCELLED')||(preparationView?.case_cancelled&&preparationView.preparation.case_id===s.case_id);const blocked=cancelled||reconciling||x.case_write_blocked===true||(typeof caseReconBlocked==='function'&&caseReconBlocked(s.case_id));if(typeof caseReconRemember==='function')caseReconRemember(s.case_id,cancelled?'CANCELLED':reconciling?'RECONCILING':null);if(blocked)x={...x,case_cancelled:cancelled,case_reconciling:reconciling,case_write_blocked:true,can_submit:false,local_execution:{...(x.local_execution||{}),can_execute:false}};receiptView=x;$('receipt-run-access').hidden=runAccessStatusView?.enabled!==true||!s.run_id;receiptContext={...receiptCtx(),revision:s.revision,sha:x.current_receipt?.source_sha256||null,...(x.business_frontier!==undefined?{businessFrontier:captureBusinessFrontier(x.business_frontier,s.preparation_id)}:{})};$('receipt-detail').hidden=false;$('receipt-summary').textContent=s.goal+' · '+receiptLabels[s.state]+' · 版本 '+s.revision+(cancelled?' · Case已取消，仅供历史核对':reconciling?' · 取消请求核对中，仅供历史核对':'')+(x.is_current_step===false?' · 历史接单回执，仅供核对':x.dependency==='CURRENT'?'':' · 原资料已改变，本步骤暂停新操作');const owner=x.role==='enterprise_operator',active=!blocked&&x.dependency==='CURRENT'&&x.is_current_step!==false,requiresAdapter=x.local_execution?.requires_adapter===true,localAdapterEnabled=x.local_execution?.enabled===true;$('receipt-submit').hidden=owner||blocked;$('receipt-decisions').hidden=!owner||blocked;$('receipt-submit-button').disabled=!active||!!receiptLocalPending||requiresAdapter||!['AWAITING_RECEIPT','CHANGES_REQUESTED'].includes(s.state);$('receipt-manual-status').textContent=requiresAdapter?(localAdapterEnabled?'此回执步骤的历史要求使用本地适配器；请用上方专用入口生成新版本，不能改为人工提交。':'此回执步骤要求本地适配器，但当前未启用。'): '执行者可选择人工填写合成回执，或在服务端适配器已启用且允许时单独生成本地合成报告；两条路径不会冒称线下履约。';renderLocalExecution(x.local_execution||{},s,x.role,active,x);for(const [id,allowed] of [['receipt-ack',['RECEIPT_RECORDED']],['receipt-correct',['RECEIPT_RECORDED']],['receipt-reopen',['RECEIPT_RECORDED','LOCAL_ACKNOWLEDGED']]])$(id).disabled=!active||!!receiptLocalPending||!allowed.includes(s.state);$('receipt-current').replaceChildren();if(x.current_receipt){const r=x.current_receipt,card=textElement('article',''),adapterGenerated=!!r.adapter_execution;card.append(textElement('strong',(adapterGenerated?'服务器本地适配器生成的合成回执 v':'当前人工合成回执 v')+r.version));card.append(textElement('p',adapterGenerated?'报告正文由服务器生成；界面仅展示限定的执行编号、适配器、来源摘要和当前状态。':'人工提交内容：'+r.text));card.append(textElement('small',r.source_kind+' · '+r.source_label+' · '+r.actor_id+' · '+r.created_at),textElement('p','内容 SHA256：'+r.source_sha256));$('receipt-current').append(card);}$('receipt-history').replaceChildren();for(const r of x.receipt_history)$('receipt-history').append(textElement('p',r.adapter_execution?'服务器适配器合成回执 v'+r.version+' · '+r.source_label+' · SHA256 '+r.source_sha256+'（不展开内部绑定内容）':'人工合成回执 v'+r.version+' · '+r.actor_id+' · '+r.source_label+'：'+r.text));for(const e of x.history)$('receipt-history').append(textElement('p','步骤版本 '+e.revision+' · '+(e.action==='UPDATE_REQUEST'?'修改诉求与必需目标':e.action)+' · '+e.payload.actor_id+(e.payload.reason?'：'+e.payload.reason:'')));$('receipt-error').textContent='';$('page-feedback').textContent='';receiptSubmitHandle=receiptSubmitRead(x);receiptSubmitControls();}
+E                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+E      
+E      ReferenceError: receiptSubmitRead is not defined
+E          at renderReceipt (evalmachine.<anonymous>:1:3474)
+E          at evalmachine.<anonymous>:1:1
+E          at Script.runInContext (node:vm:149:12)
+E          at Object.runInContext (node:vm:301:6)
+E          at run (/workspace/ParkWeave/tests/case_cancellation_offline.js:28:17)
+E          at /workspace/ParkWeave/tests/case_cancellation_offline.js:65:37
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/case_cancellatio...ave/tests/case_cancellation_offline.js:28:17)\n    at /workspace/ParkWeave/tests/case_cancellation_offline.js:65:37\n").returncode
+
+tests/test_case_cancellation_offline.py:18: AssertionError
+_______ test_manual_receipt_cancellation_reconciliation_ui[late_receipt] _______
+
+mode = 'late_receipt'
+
+    @pytest.mark.parametrize('mode',['lost_response','record_lost_response','finish_lost_response','cold_recovery','unknown_not_observed','corrupt_proof','wrong_scope','wrong_action','missing_causal_event','revoked','expired_handle','cold_hydrate','storage_bounds','future_handle','unknown_handle_all_forms','unknown_handle_other_case','resource_release_and_history','cross_case_plan_delivery_approval','receipt_create_uses_preparation','dynamic_writes','late_read','late_post','late_recovery','explicit_outcomes','unresolved_does_not_finalize','pending_other_operation','late_phase_read','late_receipt','late_dispatch'])
+    def test_manual_receipt_cancellation_reconciliation_ui(mode):
+     node=shutil.which('node');assert node,'Node is required for this offline acceptance'
+     result=subprocess.run([node,'tests/case_cancellation_reconciliation_offline.js',mode],capture_output=True,text=True,timeout=15)
+>    assert result.returncode==0,result.stderr
+E    AssertionError: evalmachine.<anonymous>:1
+E      function renderReceipt(x){const s=x.step,reconciling=x.case_reconciling===true||(typeof caseReconPhase==='function'&&caseReconPhase(s.case_id)==='RECONCILING'),cancelled=x.case_cancelled===true||(typeof caseReconPhase==='function'&&caseReconPhase(s.case_id)==='CANCELLED')||(preparationView?.case_cancelled&&preparationView.preparation.case_id===s.case_id);const blocked=cancelled||reconciling||x.case_write_blocked===true||(typeof caseReconBlocked==='function'&&caseReconBlocked(s.case_id));if(typeof caseReconRemember==='function')caseReconRemember(s.case_id,cancelled?'CANCELLED':reconciling?'RECONCILING':null);if(blocked)x={...x,case_cancelled:cancelled,case_reconciling:reconciling,case_write_blocked:true,can_submit:false,local_execution:{...(x.local_execution||{}),can_execute:false}};receiptView=x;$('receipt-run-access').hidden=runAccessStatusView?.enabled!==true||!s.run_id;receiptContext={...receiptCtx(),revision:s.revision,sha:x.current_receipt?.source_sha256||null,...(x.business_frontier!==undefined?{businessFrontier:captureBusinessFrontier(x.business_frontier,s.preparation_id)}:{})};$('receipt-detail').hidden=false;$('receipt-summary').textContent=s.goal+' · '+receiptLabels[s.state]+' · 版本 '+s.revision+(cancelled?' · Case已取消，仅供历史核对':reconciling?' · 取消请求核对中，仅供历史核对':'')+(x.is_current_step===false?' · 历史接单回执，仅供核对':x.dependency==='CURRENT'?'':' · 原资料已改变，本步骤暂停新操作');const owner=x.role==='enterprise_operator',active=!blocked&&x.dependency==='CURRENT'&&x.is_current_step!==false,requiresAdapter=x.local_execution?.requires_adapter===true,localAdapterEnabled=x.local_execution?.enabled===true;$('receipt-submit').hidden=owner||blocked;$('receipt-decisions').hidden=!owner||blocked;$('receipt-submit-button').disabled=!active||!!receiptLocalPending||requiresAdapter||!['AWAITING_RECEIPT','CHANGES_REQUESTED'].includes(s.state);$('receipt-manual-status').textContent=requiresAdapter?(localAdapterEnabled?'此回执步骤的历史要求使用本地适配器；请用上方专用入口生成新版本，不能改为人工提交。':'此回执步骤要求本地适配器，但当前未启用。'): '执行者可选择人工填写合成回执，或在服务端适配器已启用且允许时单独生成本地合成报告；两条路径不会冒称线下履约。';renderLocalExecution(x.local_execution||{},s,x.role,active,x);for(const [id,allowed] of [['receipt-ack',['RECEIPT_RECORDED']],['receipt-correct',['RECEIPT_RECORDED']],['receipt-reopen',['RECEIPT_RECORDED','LOCAL_ACKNOWLEDGED']]])$(id).disabled=!active||!!receiptLocalPending||!allowed.includes(s.state);$('receipt-current').replaceChildren();if(x.current_receipt){const r=x.current_receipt,card=textElement('article',''),adapterGenerated=!!r.adapter_execution;card.append(textElement('strong',(adapterGenerated?'服务器本地适配器生成的合成回执 v':'当前人工合成回执 v')+r.version));card.append(textElement('p',adapterGenerated?'报告正文由服务器生成；界面仅展示限定的执行编号、适配器、来源摘要和当前状态。':'人工提交内容：'+r.text));card.append(textElement('small',r.source_kind+' · '+r.source_label+' · '+r.actor_id+' · '+r.created_at),textElement('p','内容 SHA256：'+r.source_sha256));$('receipt-current').append(card);}$('receipt-history').replaceChildren();for(const r of x.receipt_history)$('receipt-history').append(textElement('p',r.adapter_execution?'服务器适配器合成回执 v'+r.version+' · '+r.source_label+' · SHA256 '+r.source_sha256+'（不展开内部绑定内容）':'人工合成回执 v'+r.version+' · '+r.actor_id+' · '+r.source_label+'：'+r.text));for(const e of x.history)$('receipt-history').append(textElement('p','步骤版本 '+e.revision+' · '+(e.action==='UPDATE_REQUEST'?'修改诉求与必需目标':e.action)+' · '+e.payload.actor_id+(e.payload.reason?'：'+e.payload.reason:'')));$('receipt-error').textContent='';$('page-feedback').textContent='';receiptSubmitHandle=receiptSubmitRead(x);receiptSubmitControls();}
+E                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  
+E      
+E      ReferenceError: receiptSubmitRead is not defined
+E          at renderReceipt (evalmachine.<anonymous>:1:3474)
+E          at evalmachine.<anonymous>:1:1
+E          at Script.runInContext (node:vm:149:12)
+E          at Object.runInContext (node:vm:301:6)
+E          at run (/workspace/ParkWeave/tests/case_cancellation_reconciliation_offline.js:16:47)
+E          at /workspace/ParkWeave/tests/case_cancellation_reconciliation_offline.js:89:4
+E          at Object.<anonymous> (/workspace/ParkWeave/tests/case_cancellation_reconciliation_offline.js:99:3)
+E          at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E          at Object..js (node:internal/modules/cjs/loader:2003:10)
+E          at Module.load (node:internal/modules/cjs/loader:1594:32)
+E      
+E    assert 1 == 0
+E     +  where 1 = CompletedProcess(args=['/opt/codex/runtimes/codex-primary-runtime/dependencies/node/bin/node', 'tests/case_cancellatio...bject..js (node:internal/modules/cjs/loader:2003:10)\n    at Module.load (node:internal/modules/cjs/loader:1594:32)\n").returncode
+
+tests/test_case_cancellation_offline.py:26: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_receipt_submit_recovery_offline.py::test_manual_submit_original_key_storage_and_async_boundaries[outer_replacement]
+FAILED tests/test_receipt_submit_recovery_offline.py::test_manual_submit_original_key_storage_and_async_boundaries[send_draft_changed]
+FAILED tests/test_receipt_submit_recovery_offline.py::test_manual_submit_original_key_storage_and_async_boundaries[send_late_context]
+FAILED tests/test_case_cancellation_offline.py::test_accepted_case_cancel_ui[late_receipt]
+FAILED tests/test_case_cancellation_offline.py::test_manual_receipt_cancellation_reconciliation_ui[late_receipt]
+5 failed, 92 passed, 1 warning in 7.29s

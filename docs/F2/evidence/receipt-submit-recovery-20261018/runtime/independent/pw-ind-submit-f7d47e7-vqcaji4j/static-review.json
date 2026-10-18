@@ -1,0 +1,69 @@
+{
+  "source_sha": "f7d47e704b07c1c0a9168535fbfdf41d7f77d5df",
+  "source_tree": "6208c2d171acff6831ac7186b2d06f3993b91061",
+  "tests_tree": "023bb6380ceccd8c8ec75743862531ae326322e4",
+  "kind": "FROZEN_STATIC_REVIEW",
+  "blockers": 0,
+  "p1_open": 0,
+  "p2_open": 0,
+  "reviewed_product_files": [
+    "src/parkweave/api.py",
+    "src/parkweave/executor_receipts.py",
+    "src/parkweave/web.html"
+  ],
+  "p2_closed": [
+    {
+      "topic": "late raw replacement must not redraw old status",
+      "mechanism": "post-await receiptSubmitBound and matching raw before finally controls"
+    },
+    {
+      "topic": "definitive pre-commit rejection must not strand a persistent UNKNOWN handle",
+      "mechanism": "only complete parsed original receiptCommandExplicitlyRejected true; same context/handle/raw before removal; retain draft and require refresh"
+    },
+    {
+      "topic": "UNKNOWN send finally must re-enable original GET recovery button",
+      "mechanism": "send uses its lexical name/raw; recovery uses full handle name/raw"
+    }
+  ],
+  "test_coverage_repair": {
+    "issue": "two newly named Node modes originally repeated late-context branch",
+    "frozen_resolution": "send_reply_unknown rejects request and asserts recovery button enabled; send_replacement replaces stored raw and asserts new status remains",
+    "file": "tests/receipt_submit_recovery_offline.js:41"
+  },
+  "verified": [
+    "actor/key SUBMIT event plus original receipt ID/version/text SHA and original Command fingerprint",
+    "historical frontier reconstructed using existing historical_fields, not current head",
+    "manual versus local-generated event/receipt exclusion",
+    "current READ/own exact Run assignment and final recheck",
+    "strict selection/duplicate query rejection and no-store metadata-only GET",
+    "NOT_OBSERVED leaves unknown handle and global write fence",
+    "cold navigation and identity switch retain persistent handle without granting access",
+    "renderer completes and current histories match before raw equality/remove",
+    "all awaited returns check original identity/Case generation and handle/raw/TTL",
+    "ACK/REQUEST_CHANGES/REOPEN and execute-local original command branches remain"
+  ],
+  "new_test_modules": [
+    "tests/test_receipt_submit_recovery.py",
+    "tests/test_receipt_submit_recovery_offline.py",
+    "tests/test_receipt_submit_recovery_browser.py",
+    "tests/test_receipt_submit_recovery_frontier.py"
+  ],
+  "limits": [
+    "Static review alone is not runtime verification; ongoing authorized 89 tests recorded separately",
+    "LocalStorage compare/remove is not cross-tab database-atomic CAS; contract explicitly limits claim",
+    "Node transports/renderers are stubs, distinct from actual browser/ASGI/PG",
+    "Current role and Run assignment are supplied only inside owned SYNTHETIC fixtures",
+    "No real source, approval, identity, deployment, model or Windows validation"
+  ],
+  "file_sha256": {
+    "tests/test_receipt_submit_recovery.py": "dc6f6fe1ad6bc32716751405fea16b6f6d89268524108e0560863dbc4c4dc9e3",
+    "tests/test_receipt_submit_recovery_offline.py": "1376b31128e97298babee8858a1bf39ad618e7b1a778fc5e0b07dc5b47415ee8",
+    "tests/test_receipt_submit_recovery_browser.py": "6b70974b985ada716d89c45576618dc2823f2ce1b03cf644e3a812f30e516312",
+    "tests/test_receipt_submit_recovery_frontier.py": "07484e5acafeb5af466ff2f7e2b8b330419e022feded83349c1387e62a300684",
+    "src/parkweave/api.py": "6e5bc025a429c3769da650521197af0e87d584205511ed39fd3d454da2c046ef",
+    "src/parkweave/executor_receipts.py": "9cc3b26f11743dc11c52e0fec7bf4ae859f16711b9f1ab48041d68da1cdac713",
+    "src/parkweave/web.html": "05f7986d16b90cba90ed39ee3a1d33072ed42dc7ca5d21cc9c0c026cd297a017",
+    "tests/receipt_submit_recovery_offline.js": "f7566da90fe79fc58a9ebc73ea28086b094f97690e5209fbd83383a76e1ac421",
+    "docs/F2/ReceiptSubmitRecovery-20261018.md": "2a1515676bf11a251b59ea36f835b49cf69b67ae5fba5483a48017062e6b629f"
+  }
+}

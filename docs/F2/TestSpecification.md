@@ -1,5 +1,10 @@
 # ENG014独立工程规格
 
+## 2026-10-18 普通人工回执 SUBMIT 原键只读恢复
+
+冻结 `f7d47e704b07c1c0a9168535fbfdf41d7f77d5df`：16完整相关模块368唯一PASS，755输入零漂移；独测89全部逐ID重叠，0P1/P2，不相加。复用原事务事件/指纹/历史frontier核GET，普通页有界opaque冷恢复；UNKNOWN不重发，精确确定拒绝才清本次句柄。开发失败/漂移/覆盖缺口保留。正式来源专用backend/主体/采纳映射继续等既有来源合同并需专用代码；当前只读及原资源批准都不提供消费许可，项目继续IN_PROGRESS。详见[产品与最小来源字段](ReceiptSubmitRecovery-20261018.md)、[实际验证](ReceiptSubmitRecoveryValidation-20261018.md)。Windows/正式AT/真实场景未验。
+
+
 ENG016独立只读个人待办的实施前规格见 [ENG016-PersonalTasks.md](ENG016-PersonalTasks.md) T01—T06；初态/权限沿用下方ENG014规格，后端写链不扩大。
 
 依据V1全文中的F2协同语义新建；并非原附件包，整项AT-12/13/15/35与F2门仍NOT_RUN。测试仅SYNTHETIC。
