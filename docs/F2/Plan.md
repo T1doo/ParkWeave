@@ -1,3 +1,11 @@
+## 2026-10-18：SUBMIT冷恢复两种确定完成顺序
+
+冻结 `9d08a09b6560cbb278e166c4e68f11eb34914fe8`，产品src与c66完全相同，未发现需改产品的缺陷。保留原四节点ID／旧先完成，原80ms改为原按钮handler Promise（含catch/finally）完成屏障；新增200／403两节点，新COMMITTED完整settled后才交旧回复并等旧settled。受检state、proof／handle／view／context引用与raw句柄、正文／来源草稿保持，显式release后才清句柄；仅一次原POST，无额外ACK／P4。旧403仍wrong-fixture运输注入，非当前撤权，fixture无已采用P4计划。
+
+主冻结6PASS／0FES，独2PASS全重叠不加总；762输入与6合同零漂移，静审P1/P2为0。原11个非竞态节点代码不改不重跑，历史失败／UNKNOWN保留；本地顺序证明缺口关闭，不扩称所有可见文案／hidden或正式AT。原完成的其他普通DOM链直接复用。
+
+[本片合同](ReceiptSubmitSettledOrder-20261018.md)、[实际窗口与限制](ReceiptSubmitSettledOrderValidation-20261018.md)、[原方案剩余实质交付门](RemainingDeliveryGates-20261018.md)列正式来源合同与专用适配、既有合法运行输入、真实Windows／获准LIVE对照、固定AT与C0官方材料。无真实试点时按原方案披露，F4–F6不新增为PR0/C0前置；不继续制造外围证明。项目IN_PROGRESS，下方历史原字节保留。
+
 ## 2026-10-18：两件普通页面新事项的同用途材料复用
 
 冻结 `c77db2cd12418e4fd32c267a98204cb8cb25147d`。普通页面从零业务创建两件独立Run／Case／preparation，来源审核确认后明确预览、勾选用途并复制材料目录；目标独立诉求、两槽审核／确认及实际资料包下载，来源v2后目标v1／整历史不变，新普通API双角色GET冷读，1200／320均通过。修实际UI缺口：企业确认只在当前owner／REVIEWED且原pending／恢复门允许时启用，后端校验未改。
