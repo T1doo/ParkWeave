@@ -16,9 +16,9 @@ from test_handling_deadline import (definition, compute, attach, deadline_http,
 from test_preparation import preparation_fixture, filled, headers, add
 
 
-def setup(f, tmp_path, *, duration=3600):
+def setup(f, tmp_path, *, duration=3600, definition_factory=None):
     p = filled(f)
-    registry = attach(f, p)
+    registry = attach(f, p, definition_factory(f,p) if definition_factory else None)
     with f[1].connect() as c:
         now = c.execute('SELECT clock_timestamp() now').fetchone()['now']
     caps = {p['preparation_id']: dict(actor_id='prep-specialist-fixture-a',
@@ -86,9 +86,43 @@ def test_source_blind_literal_projection_open_resume_and_lunch_not_authority():
     assert v['state']=='SYNTHETIC_PAUSED'
     v=project(source,hd.instant('2026-10-09T11:00:00Z'),pause+[dict(occurred_at='2026-10-09T10:30:00+00:00')])
     assert v['elapsed_work_seconds']==5400 and v['deadline_utc']=='2026-10-09T11:30:00+00:00'
+    source['definition']['policy']['target_seconds']=18000
     v=project(source,hd.instant('2026-10-09T14:00:00Z'),
               [dict(occurred_at='2026-10-09T12:00:00+00:00'),dict(occurred_at='2026-10-09T13:00:00+00:00')])
-    assert v['elapsed_work_seconds']==14400 and v['deadline_utc']=='2026-10-09T11:00:00+00:00'
+    assert v['elapsed_work_seconds']==14400 and v['deadline_utc']=='2026-10-09T15:00:00+00:00'
+
+
+def test_open_pause_keeps_known_elapsed_and_allows_resume_with_unknown_future_deadline():
+    raw=definition('2026-10-09','2026-10-09','UTC',7200,daily={'2026-10-09':[('09:00:00','12:00:00')]})
+    source=dict(definition=raw,binding=dict(started_at='2026-10-09T09:00:00Z',
+        preparation_id='pure-no-capability',case_id='pure-case',run_id='pure-run',
+        service_id='synthetic-material-preparation',service_version=1,org_id='org-a'))
+    pause=[dict(occurred_at='2026-10-09T10:00:00Z')]
+    v=clock.IsolatedPauseClock.projection(source,hd.instant('2026-10-09T11:30:00Z'),pause)
+    assert v['state']=='SYNTHETIC_PAUSED' and v['elapsed_work_seconds']==3600
+    assert v['deadline_utc'] is None and v['target_work_seconds']==7200
+    v=clock.IsolatedPauseClock.projection(source,hd.instant('2026-10-09T11:45:00Z'),pause+[dict(occurred_at='2026-10-09T11:30:00Z')])
+    assert v['state']=='UNKNOWN' and v['issues']==['CALENDAR_TARGET_OUT_OF_COVERAGE']
+
+
+def test_rehashed_history_cannot_claim_pause_after_immutable_target_completed():
+    from parkweave.store import Conflict
+    source=dict(definition=definition('2026-10-09','2026-10-09','UTC',7200,
+        daily={'2026-10-09':[('09:00:00','17:00:00')]}),
+        binding=dict(started_at='2026-10-09T09:00:00Z',service_id='synthetic-material-preparation',service_version=1,org_id='org-a'))
+    with pytest.raises(Conflict):clock.IsolatedPauseClock.projection(source,hd.instant('2026-10-09T13:00:00Z'),[dict(occurred_at='2026-10-09T12:00:00Z')])
+
+
+@pytest.mark.parametrize('times,observed',[
+    ([], '2026-10-09T08:59:00Z'),
+    (['2026-10-09T10:00:00Z'], '2026-10-09T09:59:00Z'),
+    (['2026-10-09T10:00:00Z','2026-10-09T10:30:00Z'], '2026-10-09T10:29:00Z'),
+    (['2026-10-09T10:00:00Z','2026-10-09T09:59:00Z'], '2026-10-09T11:00:00Z'),
+])
+def test_clock_rollback_or_future_event_never_returns_false_current_deadline(times,observed):
+    from parkweave.store import Conflict
+    source=dict(binding=dict(started_at='2026-10-09T09:00:00Z'))
+    with pytest.raises(Conflict):clock.IsolatedPauseClock.projection(source,hd.instant(observed),[dict(occurred_at=t) for t in times])
 
 
 def test_actual_http_pause_read_resume_recovery_no_business_or_authority_writes(deadline_http, tmp_path):
@@ -209,3 +243,52 @@ def test_same_schema_rehashed_malformed_event_is_not_adopted(deadline_http,tmp_p
         db.execute(clock.SCHEMA['fixture_no_update'])
     before=service.path.read_bytes();assert view(f,p).status_code==409
     assert service.path.read_bytes()==before
+
+
+@pytest.mark.parametrize('fault',['read','last-append'])
+def test_owned_fault_clock_rollback_after_pause_or_last_preflight_never_appends(deadline_http,tmp_path,monkeypatch,fault):
+    f,_=deadline_http;p,service,_=setup(f,tmp_path);v=view(f,p).json();event=post(f,p,v).json()
+    paused=view(f,p).json();original=service.context;calls=[]
+    def observed(c,token,id,*,write=False):
+        actor,parent,source,now=original(c,token,id,write=write)
+        if write:calls.append('write-context')
+        if (fault=='read' and not write) or (fault=='last-append' and write and len(calls)==3):
+            now=hd.instant(event['occurred_at'])-timedelta(microseconds=1)
+        return actor,parent,source,now
+    monkeypatch.setattr(service,'context',observed)
+    before=service.path.read_bytes();rows=snapshot(f)
+    if fault=='read':assert view(f,p).status_code==409
+    else:
+        assert post(f,p,paused,'RESUME').status_code==409
+        assert len(calls)==3
+    assert service.path.read_bytes()==before and snapshot(f)==rows
+    monkeypatch.setattr(service,'context',original)
+    assert view(f,p).json()['revision']==1
+
+
+def test_owned_fault_late_resume_commits_without_inventing_future_calendar(deadline_http,tmp_path,monkeypatch):
+    f,_=deadline_http
+    starts=[]
+    def finite_calendar(f,p):
+        with f[1].connect() as c:
+            start=c.execute("SELECT created_at FROM preparation_events WHERE preparation_id=%s AND action='CREATE'",(p['preparation_id'],)).fetchone()['created_at']
+        starts.append(start);end=start+timedelta(minutes=15)
+        day=start.date();next_day=day+timedelta(days=1)
+        daily={day.isoformat():[('00:00:00',end.strftime('%H:%M:%S') if end.date()==day else '24:00:00')]}
+        if end.date()!=day:daily[next_day.isoformat()]=[('00:00:00',end.strftime('%H:%M:%S'))]
+        return definition(day.isoformat(),next_day.isoformat(),'UTC',600,daily=daily)
+    p,service,_=setup(f,tmp_path,definition_factory=finite_calendar)
+    v=view(f,p).json();assert post(f,p,v).status_code==201
+    original=service.context;observed=starts[0]+timedelta(minutes=14)
+    def future_observation(c,token,id,*,write=False):
+        actor,parent,source,_=original(c,token,id,write=write)
+        return actor,parent,source,observed
+    monkeypatch.setattr(service,'context',future_observation)
+    before=snapshot(f);paused=view(f,p).json()
+    assert paused['state']=='SYNTHETIC_PAUSED' and paused['elapsed_work_seconds']<600
+    key=uuid4().hex;resume=post(f,p,paused,'RESUME',key=key)
+    assert resume.status_code==201,resume.text
+    final=view(f,p,'prep-specialist-fixture-a',key).json()
+    assert final['recovery_status']=='COMMITTED' and final['revision']==2 and not final['paused']
+    assert final['state']=='UNKNOWN' and final['issues']==['CALENDAR_TARGET_OUT_OF_COVERAGE']
+    assert final['deadline_utc'] is None and snapshot(f)==before

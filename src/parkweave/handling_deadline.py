@@ -162,7 +162,7 @@ def calculate(raw, started, observed, *, service_id, service_version, org_id):
                       service_version=service_version, org_id=org_id)
 
 
-def _calculate(raw, started, observed, *, service_id, service_version, org_id, excluded=()):
+def _calculate(raw, started, observed, *, service_id, service_version, org_id, excluded=(), elapsed_only=False):
     """Original traversal; exclusions come only from the separate fixture ledger."""
     base = dict(state='UNKNOWN', issues=[], deadline_utc=None, deadline_local=None,
                 elapsed_work_seconds=None, target_work_seconds=None, timezone=None,
@@ -223,6 +223,13 @@ def _calculate(raw, started, observed, *, service_id, service_version, org_id, e
                     deadline = start+timedelta(seconds=remaining)
                 else:
                     remaining -= seconds
+        if elapsed_only:
+            # A controlled open pause needs only proven past working seconds.
+            # Its unknown future resume must not require inventing a deadline.
+            base.update(state='SYNTHETIC_ELAPSED', elapsed_work_seconds=round(elapsed, 6),
+                        target_work_seconds=policy.target_seconds, timezone=cal.timezone,
+                        source_ref=source_ref, calendar_ref=calendar_ref)
+            return base
         if deadline is None:
             raise Unknown('CALENDAR_TARGET_OUT_OF_COVERAGE')
         if deadline >= valid_until:

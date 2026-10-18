@@ -199,18 +199,38 @@ class IsolatedPauseClock:
     def projection(source, now, events):
         """Pure projection, not an authority or a journal import interface."""
         start = hd.instant(source['binding']['started_at'])
+        previous = start
+        if now < start:
+            raise Conflict('clock observation precedes original start')
+        for event in events:
+            when = hd.instant(event['occurred_at'])
+            if not previous <= when <= now:
+                raise Conflict('clock observation or fixture event order uncertain')
+            previous = when
         intervals = []
-        for i in range(0, len(events), 2):
-            left = hd.instant(events[i]['occurred_at'])
-            right = hd.instant(events[i+1]['occurred_at']) if i+1 < len(events) else now
-            if right > left:
-                intervals.append((left, right))
         bound = source['binding']
+        for i, event in enumerate(events):
+            when = hd.instant(event['occurred_at'])
+            if i % 2 == 0:
+                past = hd._calculate(source['definition'], start, when,
+                    service_id=bound['service_id'], service_version=bound['service_version'], org_id=bound['org_id'],
+                    excluded=intervals, elapsed_only=True)
+                if (past['state'] != 'SYNTHETIC_ELAPSED' or
+                        past['elapsed_work_seconds'] >= past['target_work_seconds']):
+                    raise Conflict('historical pause after completed or unknown working-time target')
+            else:
+                left = hd.instant(events[i-1]['occurred_at'])
+                if when > left:
+                    intervals.append((left, when))
+        paused = bool(len(events) % 2)
+        if paused:
+            left = hd.instant(events[-1]['occurred_at'])
+            if now > left:
+                intervals.append((left, now))
         result = hd._calculate(source['definition'], start, now,
             service_id=bound['service_id'], service_version=bound['service_version'], org_id=bound['org_id'],
-            excluded=intervals)
-        paused = bool(len(events) % 2)
-        if paused and result['state'] == 'SYNTHETIC_CALCULATED':
+            excluded=intervals, elapsed_only=paused)
+        if paused and result['state'] == 'SYNTHETIC_ELAPSED':
             result.update(state='SYNTHETIC_PAUSED', deadline_utc=None, deadline_local=None,
                           issues=['RESUME_TIME_NOT_KNOWN'])
         return dict(result, scope=SCOPE, formal_sla=False, case_goal_completed=False,
