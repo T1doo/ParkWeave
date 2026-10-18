@@ -1,0 +1,73 @@
+{"head": "0d45e3c60ed62f40df242b462475a51d58c57cd7", "nodes": ["tests/test_ordinary_case_record_recheck.py", "tests/test_ordinary_case_record_recheck_waits.py", "tests/test_ordinary_case_record_recheck_process.py", "tests/test_case_lifecycle.py::test_local_close_reopen_explicit_new_cycle_recheck_without_fulfillment", "tests/test_case_lifecycle.py::test_missing_evidence_and_legacy_receipt_cannot_close", "tests/test_case_lifecycle.py::test_owner_execute_revoked_prevents_replay_and_disables_actions", "tests/test_case_lifecycle_recovery.py::test_three_original_events_cold_read_only_receipt_and_current_view", "tests/test_service_case_steps.py::test_dependencies_gate_real_business_apis_and_five_verifications", "tests/test_ordinary_case_goal_results.py::test_p5_stays_unverified_until_original_explicit_local_revalidation"], "command": ["/workspace/ParkWeave/.venv/bin/python", "/workspace/ParkWeave/.runtime/ordinary-case-record-recheck-20261018/frozen-0d45e3c/child.py", "/workspace/ParkWeave/.runtime/ordinary-case-record-recheck-20261018/frozen-0d45e3c", "-q", "-c", "/tmp/pw-ordinary-case-record-quffbwrp/mirror/pyproject.toml", "--rootdir=/tmp/pw-ordinary-case-record-quffbwrp/mirror", "-p", "no:cacheprovider", "tests/test_ordinary_case_record_recheck.py", "tests/test_ordinary_case_record_recheck_waits.py", "tests/test_ordinary_case_record_recheck_process.py", "tests/test_case_lifecycle.py::test_local_close_reopen_explicit_new_cycle_recheck_without_fulfillment", "tests/test_case_lifecycle.py::test_missing_evidence_and_legacy_receipt_cannot_close", "tests/test_case_lifecycle.py::test_owner_execute_revoked_prevents_replay_and_disables_actions", "tests/test_case_lifecycle_recovery.py::test_three_original_events_cold_read_only_receipt_and_current_view", "tests/test_service_case_steps.py::test_dependencies_gate_real_business_apis_and_five_verifications", "tests/test_ordinary_case_goal_results.py::test_p5_stays_unverified_until_original_explicit_local_revalidation", "--basetemp=/tmp/pw-ordinary-case-record-quffbwrp/pytest-temp", "--junitxml=/workspace/ParkWeave/.runtime/ordinary-case-record-recheck-20261018/frozen-0d45e3c/results.xml"], "started_utc": "2026-10-18T19:03:51.855844+00:00", "finished_utc": "2026-10-18T19:13:22.375230+00:00", "outer_seconds": 570.5193880869992, "exit_code": 1, "mirror": "/tmp/pw-ordinary-case-record-quffbwrp/mirror", "inputs": 807, "shared_drift": [], "mirror_drift": [], "archive_sha256": "add5984e946405535e04f4a1b011a0db279ec20eb0c6a076a8f523d8a3bd3b46", "pg_requested": true, "actual_http_asgi": true, "nodevm_full_html": true, "browser_requested": false}
+lock after adoption.
+            import test_resource_combinations as pairs
+            original_body=pairs.body
+            def short_window(*args,**kw):
+                data=original_body(*args,**kw)
+                with f[1].connect() as c:now=c.execute('SELECT clock_timestamp() t').fetchone()['t']
+                return dict(data,starts_at=(now+timedelta(seconds=4)).isoformat(),ends_at=(now+timedelta(seconds=28)).isoformat())
+            monkeypatch.setattr(pairs,'body',short_window)
+        p,d,r=prepared(f)
+        if operation=='VERIFY_P5':closed(f,p)
+        before=ok(read(f,p));plan_before=ok(plan_read(f,p));before_counts=counts(f)
+        with f[1].connect() as c:
+            deadline=(datetime.fromisoformat(d['assignment_valid_until']) if deadline_kind=='first_offer' else
+                      c.execute('SELECT min(ends_at) t FROM synthetic_resource_holds').fetchone()['t'])
+        module=life if operation=='REVALIDATE' else plans
+        original=module._view;ready=Event();proof=dict(operation=operation,deadline_kind=deadline_kind,
+            original_deadline=deadline.isoformat(),clock_offset_used=False,actual_pg_lock_observed=False)
+        query="SELECT id FROM operations WHERE run_id=%s AND action='case.create' FOR SHARE /* ordinary_p5_final_wait */"
+        def last_wait(*args,**kw):
+            value=original(*args,**kw)
+            c=args[0] if module is life else args[1]
+            # Request starts early. Only the final already-calculated view waits until
+            # near the deadline, avoiding an unobserved prelaunch timing assumption.
+            remaining=c.execute('SELECT %s-clock_timestamp() t',(deadline,)).fetchone()['t'].total_seconds()
+            proof['remaining_after_view']=remaining
+            assert remaining>1,'original source must still be current after the full view'
+            time.sleep(max(0,remaining-1));ready.set()
+            c.execute(query,(p['run_id'],)).fetchone()
+            return value
+        monkeypatch.setattr(module,'_view',last_wait)
+        response=None
+        try:
+            with f[1].connect() as lock:
+                lock.execute("SELECT id FROM operations WHERE run_id=%s AND action='case.create' FOR UPDATE",(p['run_id'],)).fetchone()
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    def request():
+                        proof['request_start_utc']=datetime.now(timezone.utc).isoformat()
+                        result=act(f,p,before,'REVALIDATE') if operation=='REVALIDATE' else command(f,p,'P5',row=plan_before)
+                        proof.update(status=result.status_code,detail=result.json().get('detail'),request_end_utc=datetime.now(timezone.utc).isoformat())
+                        return result
+                    future=pool.submit(request)
+                    try:
+>                       assert ready.wait(40),'final calculated view was not reached'
+E                       AssertionError: final calculated view was not reached
+E                       assert False
+E                        +  where False = wait(40)
+E                        +    where wait = <threading.Event at 0x7fddde7f9610: unset>.wait
+
+tests/test_ordinary_case_record_recheck_waits.py:68: AssertionError
+=============================== warnings summary ===============================
+../../../workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+../../../workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_ordinary_case_record_recheck.py::test_original_ordinary_revalidate_close_p5_verify_cold_recovery_and_no_run_authority
+  /tmp/pw-ordinary-case-record-quffbwrp/mirror/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_ordinary_case_record_recheck.py::test_original_ordinary_revalidate_close_p5_verify_cold_recovery_and_no_run_authority
+  /tmp/pw-ordinary-case-record-quffbwrp/mirror/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_ordinary_case_record_recheck_waits.py::test_actual_final_pg_wait_rechecks_step_and_resource_and_rolls_back[resource_end-VERIFY_P5]
+1 failed, 35 passed, 4 warnings in 566.01s (0:09:26)
+
+

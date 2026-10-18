@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="36" time="566.006" timestamp="2026-10-18T19:03:54.389757+00:00" hostname="9eff6a810039"><testcase classname="tests.test_ordinary_case_record_recheck" name="test_original_ordinary_revalidate_close_p5_verify_cold_recovery_and_no_run_authority" time="21.328" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_reopen_preserves_history_and_requires_new_cycle_without_reauthorizing_step" time="15.935" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_current_cycle_may_be_revalidated_after_new_original_manual_receipt" time="16.049" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_changed_sources_preserve_history_and_reopen_never_renews_the_original_step[expiry]" time="17.770" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_changed_sources_preserve_history_and_reopen_never_renews_the_original_step[executor_read]" time="12.984" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_changed_sources_preserve_history_and_reopen_never_renews_the_original_step[generation]" time="12.939" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_changed_sources_preserve_history_and_reopen_never_renews_the_original_step[owner_execute]" time="13.053" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_changed_sources_preserve_history_and_reopen_never_renews_the_original_step[resource_hold]" time="11.022" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_retains_original_owner_write_and_minimal_counterpart_scope[prep-specialist-fixture-a]" time="13.896" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_retains_original_owner_write_and_minimal_counterpart_scope[executor-a]" time="11.611" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_retains_original_owner_write_and_minimal_counterpart_scope[unassigned]" time="10.020" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_retains_original_owner_write_and_minimal_counterpart_scope[fixture-b]" time="8.820" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_retains_original_owner_write_and_minimal_counterpart_scope[fixture-c]" time="8.073" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_requires_original_local_event_and_ledger_proofs[revalidation_fingerprint]" time="10.712" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_requires_original_local_event_and_ledger_proofs[close_fingerprint]" time="9.924" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_requires_original_local_event_and_ledger_proofs[ledger_sha]" time="10.288" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_requires_original_local_event_and_ledger_proofs[event_actor]" time="11.022" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_requires_original_local_event_and_ledger_proofs[event_scope]" time="10.223" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_history_requires_its_original_read_scope_and_never_falls_back[owner_read]" time="11.524" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_history_requires_its_original_read_scope_and_never_falls_back[owner_prepare]" time="17.287" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_history_requires_its_original_read_scope_and_never_falls_back[resource_read]" time="19.905" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_ordinary_p5_history_requires_its_original_read_scope_and_never_falls_back[run_inactive]" time="12.239" /><testcase classname="tests.test_ordinary_case_record_recheck" name="test_original_ready_p5_and_reopen_optional_sha_remain_compatible" time="11.971" /><testcase classname="tests.test_ordinary_case_record_recheck_waits" name="test_actual_final_pg_wait_rechecks_step_and_resource_and_rolls_back[first_offer-REVALIDATE]" time="28.651" /><testcase classname="tests.test_ordinary_case_record_recheck_waits" name="test_actual_final_pg_wait_rechecks_step_and_resource_and_rolls_back[first_offer-VERIFY_P5]" time="28.678" /><testcase classname="tests.test_ordinary_case_record_recheck_waits" name="test_actual_final_pg_wait_rechecks_step_and_resource_and_rolls_back[resource_end-REVALIDATE]" time="33.000" /><testcase classname="tests.test_ordinary_case_record_recheck_waits" name="test_actual_final_pg_wait_rechecks_step_and_resource_and_rolls_back[resource_end-VERIFY_P5]" time="82.816"><failure message="AssertionError: final calculated view was not reached&#10;assert False&#10; +  where False = wait(40)&#10; +    where wait = &lt;threading.Event at 0x7fddde7f9610: unset&gt;.wait">ordinary_plan = ((&lt;parkweave.store.Store object at 0x7fddded70f20&gt;, &lt;parkweave.store.Store object at 0x7fddded72750&gt;, {'fixture-a': 'SYNTHETIC_SESSION_REDACTED'principal_id': 'fixture-a', 'park_id': 'park-a', 'org_id': 'org-a', 'field_name': 'service_need', ...}, ...], ...})
+monkeypatch = &lt;_pytest.monkeypatch.MonkeyPatch object at 0x7fddde7f8ce0&gt;
+tmp_path = PosixPath('/tmp/pw-ordinary-case-record-quffbwrp/pytest-temp/test_actual_final_pg_wait_rech3')
+operation = 'VERIFY_P5', deadline_kind = 'resource_end'
+
+    @pytest.mark.parametrize('operation',['REVALIDATE','VERIFY_P5'])
+    @pytest.mark.parametrize('deadline_kind',['first_offer','resource_end'])
+    def test_actual_final_pg_wait_rechecks_step_and_resource_and_rolls_back(ordinary_plan,monkeypatch,tmp_path,operation,deadline_kind):
+        f,_=ordinary_plan
+        if deadline_kind=='first_offer':
+            monkeypatch.setattr(cs._OrdinaryCaseStep,'_offer_deadline',lambda self,c:cs._now(c)+timedelta(seconds=24))
+        else:
+            # Set the actual requested resource window before its hold/confirmation/link.
+            # Do not edit a bound source or change the resource clock after adoption.
+            import test_resource_combinations as pairs
+            original_body=pairs.body
+            def short_window(*args,**kw):
+                data=original_body(*args,**kw)
+                with f[1].connect() as c:now=c.execute('SELECT clock_timestamp() t').fetchone()['t']
+                return dict(data,starts_at=(now+timedelta(seconds=4)).isoformat(),ends_at=(now+timedelta(seconds=28)).isoformat())
+            monkeypatch.setattr(pairs,'body',short_window)
+        p,d,r=prepared(f)
+        if operation=='VERIFY_P5':closed(f,p)
+        before=ok(read(f,p));plan_before=ok(plan_read(f,p));before_counts=counts(f)
+        with f[1].connect() as c:
+            deadline=(datetime.fromisoformat(d['assignment_valid_until']) if deadline_kind=='first_offer' else
+                      c.execute('SELECT min(ends_at) t FROM synthetic_resource_holds').fetchone()['t'])
+        module=life if operation=='REVALIDATE' else plans
+        original=module._view;ready=Event();proof=dict(operation=operation,deadline_kind=deadline_kind,
+            original_deadline=deadline.isoformat(),clock_offset_used=False,actual_pg_lock_observed=False)
+        query="SELECT id FROM operations WHERE run_id=%s AND action='case.create' FOR SHARE /* ordinary_p5_final_wait */"
+        def last_wait(*args,**kw):
+            value=original(*args,**kw)
+            c=args[0] if module is life else args[1]
+            # Request starts early. Only the final already-calculated view waits until
+            # near the deadline, avoiding an unobserved prelaunch timing assumption.
+            remaining=c.execute('SELECT %s-clock_timestamp() t',(deadline,)).fetchone()['t'].total_seconds()
+            proof['remaining_after_view']=remaining
+            assert remaining&gt;1,'original source must still be current after the full view'
+            time.sleep(max(0,remaining-1));ready.set()
+            c.execute(query,(p['run_id'],)).fetchone()
+            return value
+        monkeypatch.setattr(module,'_view',last_wait)
+        response=None
+        try:
+            with f[1].connect() as lock:
+                lock.execute("SELECT id FROM operations WHERE run_id=%s AND action='case.create' FOR UPDATE",(p['run_id'],)).fetchone()
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    def request():
+                        proof['request_start_utc']=datetime.now(timezone.utc).isoformat()
+                        result=act(f,p,before,'REVALIDATE') if operation=='REVALIDATE' else command(f,p,'P5',row=plan_before)
+                        proof.update(status=result.status_code,detail=result.json().get('detail'),request_end_utc=datetime.now(timezone.utc).isoformat())
+                        return result
+                    future=pool.submit(request)
+                    try:
+&gt;                       assert ready.wait(40),'final calculated view was not reached'
+E                       AssertionError: final calculated view was not reached
+E                       assert False
+E                        +  where False = wait(40)
+E                        +    where wait = &lt;threading.Event at 0x7fddde7f9610: unset&gt;.wait
+
+tests/test_ordinary_case_record_recheck_waits.py:68: AssertionError</failure></testcase><testcase classname="tests.test_ordinary_case_record_recheck_process" name="test_original_html_p5_close_verify_download_cold_start_and_reopen" time="52.120" /><testcase classname="tests.test_case_lifecycle" name="test_local_close_reopen_explicit_new_cycle_recheck_without_fulfillment" time="3.337" /><testcase classname="tests.test_case_lifecycle" name="test_missing_evidence_and_legacy_receipt_cannot_close" time="1.856" /><testcase classname="tests.test_case_lifecycle" name="test_owner_execute_revoked_prevents_replay_and_disables_actions" time="2.817" /><testcase classname="tests.test_case_lifecycle_recovery" name="test_three_original_events_cold_read_only_receipt_and_current_view[REVALIDATE]" time="2.902" /><testcase classname="tests.test_case_lifecycle_recovery" name="test_three_original_events_cold_read_only_receipt_and_current_view[CLOSE_LOCAL_RECORD]" time="3.530" /><testcase classname="tests.test_case_lifecycle_recovery" name="test_three_original_events_cold_read_only_receipt_and_current_view[REOPEN]" time="2.967" /><testcase classname="tests.test_service_case_steps" name="test_dependencies_gate_real_business_apis_and_five_verifications" time="7.453" /><testcase classname="tests.test_ordinary_case_goal_results" name="test_p5_stays_unverified_until_original_explicit_local_revalidation" time="11.990" /></testsuite></testsuites>

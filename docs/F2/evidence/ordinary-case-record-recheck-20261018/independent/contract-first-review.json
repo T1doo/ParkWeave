@@ -1,0 +1,79 @@
+{
+  "status": "CONTRACT_ORACLE_FROZEN_WAITING_IMPLEMENTATION_SHA",
+  "baseline_sha": "1f7e4d4a11606a511062fecb1863803209f3831d",
+  "contract_commit": "1ae1566076b269e9a79797f7ddc4f8b3643c5b47",
+  "oracle": {
+    "path": "literal-oracle-plan.json",
+    "sha256": "497e0f7ce351eca80da0961c4c10764ab05535e6c4f62c2a2031d9937bb9bedd",
+    "count": 16
+  },
+  "baseline_input_manifest": {
+    "path": "baseline-input-manifest.json",
+    "sha256": "3af464732930a0bebf7b10d04368debb01051187a6f396dd5627a70fbfc933fd",
+    "count": 21
+  },
+  "review_scope": "Original frozen contract and baseline code only; no WIP implementation review or execution sign-off.",
+  "implementation_open_P1_P2": "NOT_ASSESSED_NOT_FROZEN",
+  "contract_watchpoints": [
+    {
+      "id": "C01",
+      "reference": "baseline service_case_steps.py:264-273; case_lifecycle.py:128-129",
+      "finding": "Original P5 calls _timed before the FOR SHARE ledger wait. Ordinary and resource currentness must both be checked after final waits.",
+      "severity": "REQUIRED_IMPLEMENTATION_BOUNDARY"
+    },
+    {
+      "id": "C02",
+      "reference": "baseline case_lifecycle.py:193-220; case_goal_results.py:122-134",
+      "finding": "Current lifecycle/P5 needs original event/request proof, not only ledger and snapshot SHA. Extract/reuse original proof while retaining original REOPEN structural compatibility.",
+      "severity": "REQUIRED_IMPLEMENTATION_BOUNDARY"
+    },
+    {
+      "id": "C03",
+      "reference": "baseline case_lifecycle.py:210-213",
+      "finding": "Legacy REOPEN permits an ignored optional expected_snapshot_sha256, so complete original request body/fingerprint cannot be reconstructed. Do not claim stronger historic proof or silently reject valid old records.",
+      "severity": "COMPATIBILITY_CLARIFICATION"
+    },
+    {
+      "id": "C04",
+      "reference": "baseline service_case_steps.py:271",
+      "finding": "Original P5 accepts READY or LOCAL_RECORD_CLOSED. Demonstration should explicitly close first without silently introducing a new CLOSED-only condition.",
+      "severity": "COMPATIBILITY_CLARIFICATION"
+    },
+    {
+      "id": "C05",
+      "reference": "CaseLifecycleRecoveryContract.md:7; baseline case_lifecycle.py:170-178",
+      "finding": "History after executor dependency expiry/revocation or owner EXECUTE loss still requires current owner READ/PREPARE and original historical/current resource READ. No source READ fallback.",
+      "severity": "AUTHORIZATION_CLARIFICATION"
+    },
+    {
+      "id": "C06",
+      "reference": "baseline case_lifecycle.py:240-262; OrdinaryCaseRecordRecheckContract-20261018.md:11-13",
+      "finding": "Authorized REOPEN and original-key historical GET must not inherit obsolete current-source live guards. Reopen increments cycle without renewing offer/authority or releasing resources; next revalidation remains blocked by old expired acceptance.",
+      "severity": "REQUIRED_IMPLEMENTATION_BOUNDARY"
+    }
+  ],
+  "execution": {
+    "tests_run": 0,
+    "project_imports": 0,
+    "database_instances_started": 0,
+    "test_processes_started": 0,
+    "network_requests": 0,
+    "tracked_changes_by_reviewer": 0,
+    "git_mutations": 0
+  },
+  "controller_issue": {
+    "path": "oracle-controller-path-failure.json",
+    "classification": "private read-only manifest path typo; git exit128; corrected actual web.html path; no business test failed"
+  },
+  "not_run": [
+    "Frozen implementation static sign-off",
+    "Owned PG/HTTP and original HTML probes",
+    "Real browser",
+    "Windows",
+    "Formal AT35",
+    "Real subjects/sources/business/management initialization",
+    "Models",
+    "Installer/root/seal"
+  ],
+  "next_action": "Wait for root frozen implementation SHA. Then private Git archive and bounded independent probes with actual collection/phases/JUnit, shared/mirror PREPOST and module origin/hash. No prior39 or old slice matrices rerun."
+}
