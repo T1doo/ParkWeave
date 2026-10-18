@@ -12,8 +12,13 @@ import tarfile
 import zipfile
 
 PATHS = ('src/parkweave', 'pyproject.toml', 'scripts/demo_preflight.py',
-         'scripts/package_local_synthetic_demo.py', 'docs/demo/LocalSyntheticExperience.md',
-         'docs/demo/LocalSyntheticWalk.html', 'docs/F2/LocalSyntheticDemoContract-20261017.md')
+         'scripts/package_local_synthetic_demo.py', 'scripts/material_only_demo.py',
+         'scripts/linux_fixture_server.py', 'docs/demo/LocalSyntheticExperience.md',
+         'docs/demo/MaterialOnlyDemo.md', 'docs/demo/LocalSyntheticWalk.html',
+         'docs/F2/LocalSyntheticDemoContract-20261017.md',
+         'docs/F2/OriginalCollaborationDOMValidation-20261018.md',
+         'docs/F2/MaterialReuseDOMValidation-20261018.md',
+         'docs/F2/MaterialOnlyDemoValidation-20261018.md')
 
 
 def build(root, commit, output):
@@ -37,19 +42,32 @@ def build(root, commit, output):
         raise ValueError('source package missing')
     manifest = {name: dict(bytes=len(data), sha256=sha256(data).hexdigest())
                 for name, data in sorted(payload.items())}
-    bundle = dict(schema='parkweave-local-synthetic-experience-bundle/1', source_commit=full,
-                  profile='LOCAL_SYNTHETIC_DEMO', format='SOURCE_ONLY_NO_THIRD_PARTY_DEPENDENCIES',
+    src_tree = subprocess.check_output(['git', 'rev-parse', full + ':src'], cwd=root, text=True).strip()
+    bundle = dict(schema='parkweave-local-synthetic-experience-bundle/2', source_commit=full,
+                  src_tree=src_tree, delivery_baseline='5842312391dce574a25087ed974308ada1798623',
+                  entry_scopes=['MATERIAL_ONLY_SYNTHETIC', 'LOCAL_SYNTHETIC_DEMO'],
+                  format='COMPLETE_APPLICATION_SOURCE_NO_THIRD_PARTY_DEPENDENCIES',
                   runtime_inputs_included=False, business_operations_performed=False,
+                  material_launcher_requires_git_checkout=True,
+                  historical_browser_reports_included=True, current_sandbox_browser='REFUSED_NO_RETRY',
+                  fresh_install_fixture_free_at35='NOT_RUN',
                   windows_formal_at='NOT_RUN', real_business='NOT_RUN', tracked_source_files=manifest)
     payload['BUNDLE.json'] = (json.dumps(bundle, ensure_ascii=False, indent=2) + '\n').encode()
     payload['START_HERE.txt'] = (
-        'ParkWeave LOCAL_SYNTHETIC_DEMO\nSource commit: ' + full + '\n\n'
-        '先打开 docs/demo/LocalSyntheticWalk.html，再看 LocalSyntheticExperience.md。\n'
-        '固定源码包，不含第三方依赖、数据库、私有输入、会话或业务授权。\n'
-        '从包根目录以既有批准的 Python 3.12 运行：\n'
+        'ParkWeave 合成演示代码交付\nSource commit: ' + full + '\n\n'
+        '先读 docs/demo/LocalSyntheticExperience.md；材料操作卡为 LocalSyntheticWalk.html。\n'
+        '包含完整产品运行源码、现有启动辅助源码与历史验证范围说明。\n'
+        '不含第三方依赖、Git历史、数据库、私有输入、会话或业务授权。\n'
+        '已有材料演示：在原 Git checkout 复用原私有目录，只运行 serve；不得重复 setup。\n'
+        'material_only_demo 依赖 Git src树绑定，不能从无 .git 的解压目录重启原库。\n'
+        '普通解压源码：已有合法 DSN/权限时按说明启动原 configured_app 和 worker。\n'
+        '严格 LOCAL_SYNTHETIC_DEMO profile 另需 pack/journal，与材料演示分开。\n'
+        '该 profile 可先以既有批准的 Python 3.12 从包根盘点：\n'
         '  python scripts/demo_preflight.py --local-synthetic --json\n'
         '缺项返回 2，停止；不 seed/migrate，不补身份/Grant/assignment/批准。\n'
-        '当前交付环境四项运行配置均缺失，实际业务未启动。\n'
+        '本次材料 HTTP/重启已验；历史 Chromium P1–P5/材料复用已验，各有合成前置。\n'
+        '当前沙箱浏览器拒绝，不重试或降级。新安装零准备、同Case完整P1–P5再运行的\n'
+        '无夹具正式AT35仍缺；完整F2/比赛交付、Windows正式AT和真实业务未完成。\n'
         'SHA256SUMS 覆盖除自身外所有载荷；ZIP 本身的 SHA256 随交付单提供。\n'
     ).encode()
     payload['Comparison.txt'] = (

@@ -1,90 +1,63 @@
-# 两次不同输入的本地合成体验
+# ParkWeave 合成演示：取用与运行
 
-先打开同目录的 **LocalSyntheticWalk.html**。这是离线操作卡；产品仍使用原页面。包内 `BUNDLE.json` 的 `source_commit` 是完整源码版本，`SHA256SUMS` 核对全部载荷。两次新事项的空白核对表见 `Comparison.txt`。本包不含数据库、会话、私有 pack/journal 或第三方依赖，不是零准备安装器。
+本包包含完整 `src/parkweave` 产品运行源码、`pyproject.toml`、现有启动辅助源码和操作说明。版本见根目录 `BUNDLE.json`，文件哈希见 `SHA256SUMS`；不含第三方依赖、Git历史、测试全集、完整证据库、数据库、会话、凭据或私有 pack/journal。它不是零准备安装器。旧 `33bf2efa125e` 包的产品源码与材料演示交付 `5842312391dce574a25087ed974308ada1798623` 完全相同，但遗漏了后来加入的材料启动器，本包同步这些辅助文件与说明，未改产品算法。
 
-能体验：使用已有合法环境，分别输入两件合成诉求，经各自材料、专员核对、企业确认，下载各自当前材料文本快照，比较编号和内容，刷新后重读。原页面具备条件时可继续读取 NO_MODEL 候选并显式采纳；缺本次 Run 访问即停止。包本身没有实际完成这两次业务操作。
+## 已有材料演示：只重启，不再初始化
 
-不能据此申领：正式来源、真实业务、资格、线下履约、正式模板发布、Windows 正式 AT，或 AT35 全部通过。已有精确 assignment 的 Chromium P1–P5、多人 DOM 验证不在此包重复执行。
+本次唯一获准建立的 Linux 合成演示库及私有会话仍由原环境持有人保留，服务已停止。材料路径使用普通 `configured_app`，不启用 `LOCAL_SYNTHETIC_DEMO` profile；没有执行者、资源、Run assignment 或批准。**不要再执行 setup、seed、migrate 或扩建权限。**
 
-## 安装者先检查
+在原环境的原 Git checkout `/workspace/ParkWeave` 中，使用其既有 `.venv`：
 
-在既有批准的 Python 3.12 环境解压。以包根目录为当前目录；下面的 `python` 必须是该解释器。安装好的运行依赖必须与 `pyproject.toml` 一致，另含 `psycopg-binary==3.3.6`。缺项即停，由环境提供方按已有授权准备；没有自动安装或联网下载。源码模式直接运行，**不需要安装本项目**。
+```bash
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -m scripts.material_only_demo serve --state-dir /tmp/parkweave-material-demo-fsnwe42i --port 8765
+```
+
+这是仅供原环境持有人使用的重启命令，本轮没有再次启动。启动器核对原私有目录、数据库身份/schema32、authority、Git `src` 树及启动器字节；本包只改打包与说明，保留受测产品与启动器字节。**它依赖 Git checkout，不能从没有 `.git` 的解压目录重启原库，也不能把该目录搬到另一机器当作已有环境。** 缺目录、源码绑定不符、端口冲突、未知进程/锁或未确认停止标记均停，不自动修复。细节见 [材料演示边界](MaterialOnlyDemo.md)。
+
+HTTP 仅 `127.0.0.1`，PG仅私有 Unix socket。持有人私下读取原 `sessions.json`，在原页面输入相应企业/专员会话；不要把会话放入聊天、URL、截图或仓库。会话无自动过期，停服务不撤销。前台 Ctrl+C 只停本次持有的子进程，保留数据和会话。平台清理 `/tmp` 仍可能丢失，不能称永久保存。
+
+当前环境启用沙箱的 Chromium 曾因 SUID helper 所有者要求拒绝启动。该拒绝边界保持：不重试、不改权限或所有者、不禁用沙箱、不换路径绕过。本说明不是当前云环境可打开网页的承诺，也没有将回环服务向公网暴露。
+
+## 解压源码：已有合法运行环境才启动
+
+另一安装环境需已有 Python 3.12、`pyproject.toml` 锁定的运行依赖、普通 schema32 应用连接及相应既有会话、Grant、合法目录。材料辅助启动器还依赖 Linux、Git 和已安装的 `pgserver==0.1.4`（自带PG二进制）；本包不自动安装、联网或新建权限。没有合法前置时停在源码阅读与缺项盘点。
+
+普通 API/worker 可直接从解压包根运行，无需安装本项目。先由原环境提供方在私有环境设置已有 `PARKWEAVE_DSN` 和 `PARKWEAVE_MODE=LOCAL`，核对其服务 profile/provider；材料路径不设置严格 demo profile，不混入正式来源或批准配置。两个终端使用同一已有环境：
+
+```bash
+PYTHONPATH=src python -m uvicorn parkweave.api:configured_app --factory --host 127.0.0.1 --port 8765
+```
+
+```bash
+PYTHONPATH=src python -m parkweave.worker
+```
+
+这些是 Linux shell 命令，未作为新安装或 Windows 正式 AT 执行。启动不会自动迁移/seed；原 worker 会处理该库可领取的任务，须由持有人确认库的范围。`/health` 的PID应属于本次自有API；健康不证明业务授权。仅在可合法运行沙箱浏览器的环境打开持有人核实的回环地址，不修改本环境的拒绝边界。
+
+严格 `LOCAL_SYNTHETIC_DEMO` 是另一条已有合同路径，需 `PARKWEAVE_DSN`、`PARKWEAVE_MODE=LOCAL`、`PARKWEAVE_SERVICE_PROFILE=LOCAL_SYNTHETIC_DEMO`、`PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG`，及原 pack/journal、身份/资源映射与数据库/目录绑定；材料库没有这些输入。见 [原合同](../F2/LocalSyntheticDemoContract-20261017.md)。只做盘点：
 
 ```bash
 python scripts/demo_preflight.py --local-synthetic --json
 ```
 
-这是资产、精确依赖元数据与配置缺项盘点，不读取配置正文、不导入应用、不连数据库。返回 2 表示缺项或拒绝，返回 0 只表示盘点齐备。当前交付环境四项配置均缺失，实际结果是 `BLOCKED_MISSING_EXISTING_INPUTS`。
+缺项返回2即停；0只表示盘点齐备。已有完整输入才可另加 `--check-existing-inputs`，复用原只读绑定校验，仍不检查会话/Grant/Run assignment，`business_ready=false`。不把 profile 缺项说成整个材料演示未启动或整个产品不可运行。
 
-由既有环境提供方在私有运行环境设置以下**原有输入**；不要把会话、DSN 或私有 JSON 发到聊天、截图或公共日志：
+## 原页面材料路线
 
-- `PARKWEAVE_DSN`：已有普通 schema 32 的应用身份连接，不能使用迁移 owner、超级用户或其有效所有者成员身份。
-- `PARKWEAVE_MODE=LOCAL`。
-- `PARKWEAVE_SERVICE_PROFILE=LOCAL_SYNTHETIC_DEMO`。
-- `PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG`：原严格配置，指向既有 SYNTHETIC pack 和私有 journal，绑定原始 SHA256、实际数据库、园区/组织、目录哈希与 xmin。字段见 [原接入合同](../F2/LocalSyntheticDemoContract-20261017.md)。不提供伪样本配置。
+见 [离线短卡](LocalSyntheticWalk.html)。A设备维护、B员工培训分别建新事项：服务→查看可选服务与专员→开始资料准备；各自追加“诉求摘要”和“材料目录”，标明 SYNTHETIC 来源；专员本人“核对本地资料包”，企业本人“确认本地资料准备”；“生成当前材料文本包”→“重新核对并下载文本”。分别记录 Run/Case/preparation、版本、实际文件SHA，刷新重读。下载是当时快照，后续更新或撤权不追回副本。
 
-还须已有当前企业/专员会话、READ/PREPARE/REVIEW_ASSIGNED 等相应 Grant、合法 preparation_catalog、原身份/资源/字段映射及有效期；实际继续办理所需 EXECUTE、资源 READ/HOLD、精确 Run assignment 和批准仍按原业务条件检查。本预检不读取会话，不检查或补造这些业务权利。
+仅有材料权限时到此为止。P1–P5另需当前事项合法计划、原执行者、精确 Run assignment、资源/字段权限及相应批准接线；缺项准确拒绝，不复制历史 fixture 或借旧Case授权。IsolatedPlanApproval不能作为普通批准。当前库没有这些输入，本轮不扩建。
 
-当前固定 profile 不接入 `PARKWEAVE_RUNTIME_READ_CONFIG`、`PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG`、`PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG`。检测到它们则停止，交由环境提供方确认运行配置；不要自行删除其他环境的配置继续。
+## 已验范围与尚缺验收
 
-只有已经提供上述原有输入时，才显式运行：
-
-```bash
-python scripts/demo_preflight.py --local-synthetic --check-existing-inputs --json
-```
-
-它只调用原 `local_synthetic_demo.configure`：每次新连接先设只读事务、3 秒语句超时、1 秒锁超时，再拒绝管理/数据库或 public 关系所有者身份，随后复用原文件、目录、schema32、数据库绑定校验。连接超时沿用原 Store 的 2 秒。它不启动应用、不迁移、不写业务/目录、不装依赖，不修改数据库默认配置。失败输出固定拒绝码，不回显私有错误正文。每条语句有上限，不承诺整次校验总耗时。
-
-成功的 `CURRENT_DEMO_INPUT_BINDINGS_VALIDATED_READ_ONLY` 仅证明**当前输入绑定**；sessions、grants、run_assignment 仍为 `NOT_CHECKED`，`business_ready=false`。文件或目录后续变化仍可能使原启动/操作拒绝。
-
-## 复用原启动入口
-
-仅在已有合法前置环境中操作。端口被占用、无法确认归属或权限不满足即停，不终止未知服务、不改安全策略。两个前台终端均在包根目录，使用同一份既有应用环境：
-
-```bash
-# 终端一：原 API 工厂，仅本机回环
-PYTHONPATH=src python -m uvicorn parkweave.api:configured_app --factory --host 127.0.0.1 --port 8765
-```
-
-```bash
-# 终端二：原普通 LOCAL worker，不加 model-fixture
-PYTHONPATH=src python -m parkweave.worker
-```
-
-这两条是 Linux shell 命令，不是 Windows 已验安装方案。不要执行旧指南中的 `--fresh-fixture`、seed、migrate 或候选审批工厂来补齐本包前置。普通启动不会改数据库结构；启动后的原 worker 与用户明确操作会处理并持久化已有合法业务。worker 会处理该已有环境可领取的任务，须由环境提供方确认其范围。
-
-浏览器打开安装者核实属于本次 API 的 `http://127.0.0.1:8765`，用提供方私下交付的当前合成会话登录。若检查 `/health`，PID 必须对应本次自己启动的 API，SYNTHETIC 标识须一致；健康响应不证明业务授权。关闭网页不会停服务，结束仅在自己启动的两个前台按 Ctrl+C，不停既有 PostgreSQL，不删数据或锁。
-
-## 两次原页面路线
-
-按离线卡依次完成 A、B；它们都是**新事项**，不沿用上次 Case、材料或审核。服务目录若不支持样本目标则记录停点，不修改算法或目录。
-
-| 输入 | 本次资料整理目标 / 诉求摘要（合成） | 材料目录（合成） |
+| 范围 | 已有证据 | 前置与限制 |
 |---|---|---|
-| A | SYNTHETIC A：整理厂房设备维护材料，核对三台设备的维护记录。 | SYNTHETIC A：设备清单 3 项；维护记录 2 份。 |
-| B | SYNTHETIC B：整理员工培训材料，核对十二人的安全培训记录。 | SYNTHETIC B：培训名单 12 人；签到记录 1 份；课程提纲 4 项。 |
+| 当前独立材料库 | 两件新事项真实HTTP建单、两槽材料、独立REVIEW/CONFIRM；原库/API/worker重启后只读回读一致；原JS纯函数生成文本前后字节一致 | 本次9行合成主体/权限/目录；浏览器在业务前拒绝，未验本次DOM/按钮下载；首HTTP窗末尾重启失败保留，后续只读重启成功，不能拼成全绿窗 |
+| 历史普通Chromium P1–P5、六产物、关闭/重开 | 同Case/step、回执v2/v3、P4/P5绑定、cycle1/2、重验及新普通进程GET冷读，1200/320宽度 | 准备及精确Run assignment在普通进程启动前由SYNTHETIC fixture预置；不是新安装零准备闭环 |
+| 历史普通Chromium材料复用 | 两新事项从页面建单，来源预览、独立复制、审核确认、原来源变更、实际下载及新进程GET冷读，1200/320宽度 | 已有合成身份/Grant/目录/pack/journal；与当前材料HTTP演示分别留证，不能拼成一次AT35 |
 
-1. 企业在“服务”点“查看可选服务与专员”，选择当前获派专员，输入 A，点“开始资料准备”。等待原 worker；在“协同”→“我的资料准备事项”打开**本次**记录。记录实际 Run、Case、preparation 编号；界面未显示的编号由安装者用已有只读途径核对，不手改数据库。
-2. 分别给“诉求摘要”“材料目录”追加本次材料版本，来源明确标为 SYNTHETIC，按原表单选择本人陈述或资料摘录及版本。不要把合成文本标作真实证明。专员本人查看当前材料，点“核对本地资料包”；企业本人再点“确认本地资料准备”。两者独立，权限拒绝即停。
-3. 在当前资料页点“生成当前材料文本包”，检查 Case、材料版本、来源与未知项，再点“重新核对并下载文本”。记录文件名、实际 SHA256；保留下载文件。不能下载时记录实际拒绝，不用另一个 Case 文件代替。
-4. 可选：在当前事项“查看此事项四步计划”中显式保存本次诉求与支持的必需目标，再从原持久步骤计划入口读取服务能力、生成合成候选。只接受明示 `LOCAL_SYNTHETIC_DEMO`、`NO_MODEL`、唯一合法解的结果；采纳需要用户另行明确确认。未知、多解、当前身份/映射或批准不满足即停。不得把 IsolatedPlanApproval 当普通批准。
-5. 核对本 Case 协作入口和本 Run 已有访问。无该 Run 既有合法 assignment 时，记录“资料及下载已完成，后续接单/回执阻塞”，本包到此。已有条件的 P1–P5 操作按原说明进行，不以本包申领重复验收。
-6. 结束 A 后从服务目录另建 B，重复 1–5，用 B 的独立材料、专员核对、企业确认和下载。A/B 的 Run、Case、preparation 应各自不同，A 的下载只含 A 内容，B 只含 B 内容。刷新页面、重新输入当前会话，重读各自已有事项和版本。
+历史报告随包保留：[P1–P5及关闭重开](../F2/OriginalCollaborationDOMValidation-20261018.md)、[材料复用](../F2/MaterialReuseDOMValidation-20261018.md)、[当前HTTP及重启](../F2/MaterialOnlyDemoValidation-20261018.md)。报告中的完整证据链接需在原仓库查看，最小包不复制全部证据。当前沙箱拒绝不抹去历史真实DOM证据；历史通过也不替代本次未执行的浏览器动作。
 
-若当前已采纳计划及逐目标结果视图满足原条件，可点“只读核对逐目标结果”→“生成本次核对包”→“重新核对并下载 TXT”，它再次鉴权/核版本且不写业务记录。按钮不可用或缺前置时记录“本次核对包未生成及原因”；材料文本下载与 Case 核对包分别记录。包不保证每个新事项都能产生后者。
+**尚缺“新安装零准备→同一Case完整P1–P5→再次运行”的无夹具补接线正式AT35**：需要一条经审查、可复现的安装/初始化与身份权限取得路线，能在正常流程中获得本次精确执行访问及所需资源/批准，而非测试中预置；在不降低安全的浏览器环境中从同一干净安装逐步完成并重启/再次运行，保留对象、产物、版本和拒绝证据。当前仅交付已实现源码及上述有限可用范围，完整F2和比赛交付仍未完成。
 
-Linux 下载核对示例（路径替换为刚下载的单个合成文件，不用会话文件）：
-
-```bash
-sha256sum -- '<实际下载文件路径>'
-```
-
-文件中的 SYNTHETIC、真实性未核验、资格 UNKNOWN/PENDING、外部 NOT_SUBMITTED、实际履约 PENDING 等边界应保留。下载文件是当时快照，后续撤权/更新不会追回或更新已下载副本；核对表记录下载时间和版本。
-
-## 停止与交接
-
-403、缺 PREPARE/REVIEW_ASSIGNED、目录或源版本变化、混用 Case、无本 Run assignment、批准未接线、未知来源均准确记录停点，请原环境提供方核对**已有**输入。网络失败或 5xx 先保留原操作、原参数，用页面原结果核对入口；没有该入口或结果仍未知就停，不另发新意图。不得新建身份/Grant/分派/批准、改数据库绕过，或借旧 Case 授权。
-
-最小下一步是由原环境提供方提供已存在且合法的上述运行输入与私下会话，先通过只读绑定校验，再按 A/B 卡操作。若这些前置不存在，本包可运行到离线卡、哈希核对和缺项拒绝，不存在合法业务启动成功的证据。
-
-维护者历史参考：`docs/F2/MaterialReuseDOMValidation-20261018.md`、`OriginalCollaborationDOMValidation-20261018.md`、`DemoOriginalPageIntake-20261017.md`（仓库可查，不随最小包复制全部证据）。原 F2-T07/AT35 的完整闭环、正式来源专用 backend 与真实映射合同、C0 官方模板仍有独立缺口；本包没有补造它们。
+Windows正式安装/停启/关机AT、真实模型与费用验证、真实园区效果、正式来源专用backend/主体/原ADOPT映射、正式资源批准消费、C0官方模板及正式申报材料各自仍缺。真实外部连接在原设计F4–F6增强范围；其输入/代码缺口只阻对应真实业务主张，不阻合成软件交付。不得把合成确认称资格通过、外部受理或真实履约。
