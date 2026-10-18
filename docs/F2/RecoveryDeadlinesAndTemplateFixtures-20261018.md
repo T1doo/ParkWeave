@@ -51,7 +51,7 @@ R3先保持同SHA、同原断言，串行重测这10项：10PASS/0FAIL/ERROR/SKI
 
 ## 证据与运行缺口
 
-[manifest](evidence/recovery-deadlines-20261018/manifest.json)共370对raw/public哈希，临时合成会话候选脱敏972处；原件保持在私有.runtime。[结构/哈希校验](evidence/recovery-deadlines-20261018/archive-validation.json)覆盖全部配对和JSON/XML/PNG等实际产物。只导出可取得的原件，不含PG data目录；旧29301个继承F2证据blob另作逐个Git核对。旧R1/R2失败不改写为通过，已有历史报告保持原字节。
+[manifest](evidence/recovery-deadlines-20261018/manifest.json)共370对raw/public哈希，69处其他候选仍脱敏；原件保持在私有.runtime。903处冻结测试函数标识误遮蔽已按源码AST证明恢复，涉及18件公开产物；18件旧公开副本、旧manifest/校验均保留。此次仅更正导出标识，未重跑测试，也不改变296项成绩。详见[更正映射](evidence/recovery-deadlines-20261018/identifier-correction/correction-map.json)、[296精确ID校验](evidence/recovery-deadlines-20261018/identifier-correction/296-node-id-validation.json)及[旧映射](evidence/recovery-deadlines-20261018/legacy-identifier-redaction/manifest.json)。[结构/哈希校验](evidence/recovery-deadlines-20261018/archive-validation.json)覆盖全部配对和JSON/XML/PNG等实际产物。只导出可取得的原件，不含PG data目录；旧29301个继承F2证据blob另作逐个Git核对。旧R1/R2失败不改写为通过，已有历史报告保持原字节。
 
 源码、测试及本报告的diff-check为0；完整新增证据有164处原始空白告警，均保留原日志/XML等字节，不作修剪。manifest、archive-validation、delivery-checks为配对表之外的衍生metadata。
 
