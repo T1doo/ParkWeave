@@ -1,0 +1,28 @@
+{
+  "classification": "P2_EXACT_OBJECT_ROUTING_CONTRACT_GAP",
+  "final_sha": "3f5fd029f335d132d9baecb79165b86e2159761a",
+  "finding": "local_demo_pair proved serviceA/demoA/catalogA but did not prove self is catalogA; another exact same-Store catalogB could enter using serviceA managed connection.",
+  "kind": "HISTORICAL_INITIAL_SHA_STATIC_FINDING",
+  "literal_counterexample": [
+    "Existing exact serviceA has demoA/catalogA bound to StoreS and local_demo_pair(serviceA,S,demoA)==true.",
+    "Another exact same-Store LocalDemoCatalog B exists, with B is not catalogA. B.connection obtains serviceA from ordinary.selected(StoreS).",
+    "The initial check tests only local_demo_pair(serviceA,S,demoA), which is true, so it enters serviceA._connection and B.validate/yield. No comparison relates B to catalogA."
+  ],
+  "oracle_ids": [
+    "LC-CS-02",
+    "LC-CS-04"
+  ],
+  "other_static_findings": "No other definite P1/P2 identified. Original business algorithms/proofs unchanged by AST/bytes.",
+  "parent_initial_dynamic_reported": {
+    "PASS": 13,
+    "nodes": 13,
+    "not_independent": true,
+    "not_transferred_to_final": true,
+    "pytest_seconds": 84.75
+  },
+  "prior_platform_window_not_retried": true,
+  "reviewed_sha": "3b559f9340f2b6b958ded600f2a161269d67cf5c",
+  "runtime_counterexample_executed": false,
+  "status": "RESOLVED_BY_FINAL_STATIC_SELF_IDENTITY_CHECK",
+  "unauthorized_write_claimed": false
+}

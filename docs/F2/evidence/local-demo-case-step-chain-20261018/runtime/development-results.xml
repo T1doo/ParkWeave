@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="2" failures="1" skipped="0" tests="3" time="12.164" timestamp="2026-10-18T22:24:21.876685+00:00" hostname="9eff6a810039"><testcase classname="tests.test_local_demo_case_step_chain" name="test_existing_catalog_selection_original_ordinary_chain_and_physical_cold_restart" time="8.122"><failure message="AssertionError: ReferenceError: URLSearchParams is not defined&#10;      at page (evalmachine.&lt;anonymous&gt;:49:133)&#10;      at evalmachine.&lt;anonymous&gt;:94:14&#10;      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)&#10;  {&quot;calls&quot;:[]}&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', 'tests/local_demo_case_step_chain_html.js'], returncode=1, stdout='', stderr='Reference...&lt;anonymous&gt;:94:14\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n{&quot;calls&quot;:[]}\n').returncode">demo_state = (PosixPath('/tmp/parkweave-ordinary-demo-i7ulh_76'), {'schema': 'parkweave-ordinary-synthetic-demo/2', 'source': {'sha...78b621c', ...}}, 'system_identifier': '7698137304117939680', 'database_oid': 16384, ...}, &lt;private synthetic sessions&gt;)
+tmp_path = PosixPath('/workspace/ParkWeave/.runtime/local-demo-case-step-chain-20261018/development-artifacts/test_existing_catalog_selectio0')
+
+    def test_existing_catalog_selection_original_ordinary_chain_and_physical_cold_restart(demo_state,tmp_path):
+        p,marker,tokens=demo_state;config=existing_inputs(p,tmp_path/'existing-inputs')
+        files=[p/'state.json',p/'sessions.json',config,config.parent/'pack.json',config.parent/'journal.json']
+        before={str(path):sha256(path.read_bytes()).hexdigest() for path in files}
+        with server(p,tmp_path/'first-start',local_demo_config=config) as (api,first):
+            with Store(demo.lifecycle.dsn(p)).connect() as c:
+                c.execute('SET TRANSACTION READ ONLY');assert demo.authority(c)==marker['authority']
+                assert all(c.execute('SELECT count(*) n FROM '+table).fetchone()['n']==0 for table in ('runs','cases','preparations','run_assignments'))
+            case,_=prepare_case(api,tokens,'目录选择后直接办理')
+&gt;           selection=selected_html(api,tokens,case,tmp_path/'selection-html')
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_local_demo_case_step_chain.py:61: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+api = &lt;httpx.Client object at 0x7f4149f6c800&gt;
+tokens = &lt;private synthetic sessions&gt;
+p = {'preparation_id': '00aa25b1-e83c-4147-99ad-245c92edffd0', 'case_id': '90873e18-2a7d-4e70-b11c-2bf952d0270f', 'run_id': '53e5f0fb-a22d-472f-b97f-6a0aa1bfc1d8', 'revision': 6, ...}
+directory = PosixPath('/workspace/ParkWeave/.runtime/local-demo-case-step-chain-20261018/development-artifacts/test_existing_catalog_selectio0/selection-html')
+
+    def selected_html(api,tokens,p,directory):
+        directory.mkdir();config=dict(base=str(api.base_url).rstrip('/'),preparation_id=p['preparation_id'],tokens=dict(owner=tokens['enterprise']))
+        result=subprocess.run(['node','tests/local_demo_case_step_chain_html.js'],cwd=ROOT,input=json.dumps(config)+'\n',text=True,capture_output=True,timeout=60)
+        (directory/'html.stdout').write_text(result.stdout);(directory/'html.stderr').write_text(result.stderr)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: ReferenceError: URLSearchParams is not defined
+E             at page (evalmachine.&lt;anonymous&gt;:49:133)
+E             at evalmachine.&lt;anonymous&gt;:94:14
+E             at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+E         {"calls":[]}
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', 'tests/local_demo_case_step_chain_html.js'], returncode=1, stdout='', stderr='Reference...&lt;anonymous&gt;:94:14\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n{"calls":[]}\n').returncode
+
+tests/test_local_demo_case_step_chain.py:48: AssertionError</failure></testcase><testcase classname="tests.test_local_demo_case_step_chain" name="test_exact_pair_preserves_old_mode_and_all_other_provider_guards" time="3.307"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('/workspace/ParkWeave/.runtime/local-demo-case-step-chain-20261018/developme...eave/.runtime/local-demo-case-step-chain-20261018/development-artifacts'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from owned_connection_diagnostics import current
+        diagnostic=current()
+        if diagnostic:diagnostic.bind_owned_server(server,data)
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = 'postgresql://postgres:@/postgres?host=/tmp/runtime-1000/python_PostgresServer/30bbcdf953'
+owned_data_directory = PosixPath('/workspace/ParkWeave/.runtime/local-demo-case-step-chain-20261018/development-artifacts/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase><testcase classname="tests.test_local_demo_case_step_chain" name="test_pinned_inputs_rechecked_after_transaction_and_never_repaired" time="0.001"><error message="failed on setup with &quot;parkweave.store.Denied: owned ephemeral test cluster directory evidence required&quot;">tmp_path_factory = TempPathFactory(_given_basetemp=PosixPath('/workspace/ParkWeave/.runtime/local-demo-case-step-chain-20261018/developme...eave/.runtime/local-demo-case-step-chain-20261018/development-artifacts'), _retention_count=3, _retention_policy='all')
+
+    @pytest.fixture(scope="session")
+    def pg(tmp_path_factory):
+        if os.name=='nt':
+            dsn=os.environ.get('PARKWEAVE_TEST_OWNER_DSN')
+            if not dsn:pytest.skip('NOT_RUN: explicit native Windows test-owner DSN required')
+            pytest.fail('NOT_RUN: installed native PostgreSQL has no reviewed migration-025 creation receipt adapter; blocked before database creation')
+        import pgserver  # Linux evidence only; native Windows uses an installed service.
+        data=tmp_path_factory.mktemp("parkweave-pg") / 'data'
+        server = pgserver.get_server(data, cleanup_mode='delete')
+        from owned_connection_diagnostics import current
+        diagnostic=current()
+        if diagnostic:diagnostic.bind_owned_server(server,data)
+        from parkweave.case_fact_clarifications import capture_fixture_cluster
+&gt;       server._case_fact_fixture_cluster=capture_fixture_cluster(server.get_uri(),data.resolve())
+                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/conftest.py:27: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+maintenance_dsn = 'postgresql://postgres:@/postgres?host=/tmp/runtime-1000/python_PostgresServer/30bbcdf953'
+owned_data_directory = PosixPath('/workspace/ParkWeave/.runtime/local-demo-case-step-chain-20261018/development-artifacts/parkweave-pg0/data')
+
+    def capture_fixture_cluster(maintenance_dsn, owned_data_directory):
+        """Capture this test's newly initialized, empty, local ephemeral PG cluster.
+    
+        Existing fixture owns initdb/start/stop. Call BEFORE CREATE DATABASE, passing
+        its actual owned data directory; this function performs reads only. Fixed
+        parkweave and UUID targets require the SAME proof, never a name whitelist.
+        Native installed clusters do not satisfy this ephemeral-cluster contract;
+        a separate reviewed native creation receipt adapter is needed, no GRANT fix.
+        """
+        parsed = conninfo_to_dict(maintenance_dsn)
+        host = parsed.get('host', '')
+        if (parsed.get('dbname') != 'postgres' or parsed.get('service') or
+            parsed.get('hostaddr') not in (None, '127.0.0.1', '::1') or
+            not (host in ('127.0.0.1', 'localhost') or (host.startswith('/') and ',' not in host))):
+            raise Denied('explicit local test maintenance connection required')
+        path = Path(owned_data_directory)
+        root = Path(tempfile.gettempdir()).resolve()
+        # Evidence is the matched live cluster and before/after creation receipt,
+        # not merely a filename, OS environment flag, or user-supplied SQL GUC.
+        if (not path.is_absolute() or path.resolve() != path or path == root or
+            not path.is_relative_to(root) or not path.is_dir() or
+            not hasattr(os, 'geteuid') or path.stat().st_uid != os.geteuid() or
+            not (path / 'PG_VERSION').is_file() or not (path / 'postmaster.pid').is_file()):
+&gt;           raise Denied('owned ephemeral test cluster directory evidence required')
+E           parkweave.store.Denied: owned ephemeral test cluster directory evidence required
+
+src/parkweave/case_fact_clarifications.py:514: Denied</error></testcase></testsuite></testsuites>

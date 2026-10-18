@@ -1,0 +1,644 @@
+diff --git a/docs/F2/LocalDemoCaseStepChainContract-20261018.md b/docs/F2/LocalDemoCaseStepChainContract-20261018.md
+new file mode 100644
+index 00000000..36643862
+--- /dev/null
++++ b/docs/F2/LocalDemoCaseStepChainContract-20261018.md
+@@ -0,0 +1,21 @@
++# 既有本地合成服务选择接普通 CaseStep 与冷恢复
++
++基线 `f16d9cf7895e31ad7aab7594494c90bb1e8fa7fb`。原分阶段计划 F2-T02 要求有限注册服务图与明确输入/产物，F2-T07 要求三个工作区和持久化办理；本片把既有两个入口精确组合，不重写规划、选择、ADOPT、P1–P5 或恢复算法。
++
++新增默认关闭的显式 `PARKWEAVE_CASE_STEP_MODE=LOCAL_DEMO_CURRENT_PREPARATION`。必须同时提供原 `LOCAL_SYNTHETIC_DEMO` profile 与严格 config/1；加载已有 hash-pinned pack/1、私有 journal/1、实际 DB 绑定与原目录 hash/xmin，只允许原 schema32。输入文件仍只读，不初始化、重绑、修复、签发或发布。原 `CURRENT_PREPARATION` 继续拒绝所有 demo/V4/provider 配置；通用互斥不删除。
++
++只允许精确 `OrdinaryCaseStepAssignments` 与精确独立 `LocalSyntheticDemo/LocalDemoCatalog/LocalDemoSelector`，同一个 Store、同一个 catalog 对象显式配对。Isolated、Native、formal source、Approval、V4 模型及其他 provider 仍互斥；管理配置入口与 Isolated CaseStep 不取得该例外。API 与 worker 从同一显式配置各自只读构造，不传入 fixture permit，不创建 Run assignment。
++
++普通事务进入和全部原检查之后均核对 pack/journal/DB/目录/有效期，实际 parent 必须与包内已有 owner/reviewer/park/org 相同，执行者只能是包中已有 service_executor。原当前 READ/PREPARE/REVIEW_ASSIGNED/EXECUTE、主体 generation、资源 READ/HOLD、Run/Case/create 证明、原绝对300秒期限和3秒锁超时仍须通过。配对仅选择路由，不增加任何权限。配置与资料身份不足精确拒绝，不能由 pack 导出批准或创建发布权。
++
++用户从原目录选择产生原唯一有限解，producer 保持 `NO_MODEL`、provider=false、model=null、real_model_calls=0；显式原 ADOPT 后直接进入既有办理工作区，依次明确核验 P1、原资源组合/关联与 P2、专员 OFFER/执行者本人 ACCEPT 与 P3、人工 SUBMIT/owner ACK 与 P4、本地 REVALIDATE/CLOSE_LOCAL_RECORD 与 P5。LOCAL_OUTPUTS_VERIFIED 和本地关闭不表示 Case/线下履约完成。
++
++Linux 演示启动器可显式读取一个既有 config 文件传给普通 API/worker；默认启动不变，setup 不生成 demo pack/journal。验证只能在新拥有的离线 SYNTHETIC 空业务初态写入测试包和 journal；与产品启动只读输入、真实业务缺口分别记账。原三主体/目录/资源及34条合成初态不扩展，不采用旧 Run assignment 链。
++
++已有合法输入时，保留原现场的启动命令是 `python -m scripts.ordinary_synthetic_demo serve --state-dir /tmp/parkweave-ordinary-demo-<existing> --local-demo-config /absolute/existing-config.json`。不传该选项仍为原 CURRENT_PREPARATION。直接使用 configured_app 与 worker 时，二者均须显式同一 DSN、LOCAL、新 CaseStep mode、原 profile 与 config JSON；不从环境寻找其他凭据或自动推断模式。
++
++在原页面读取此 Case 的服务方案与服务能力，明确生成合成候选，勾选确认并填写采用理由后点击原采用入口；采用后五个原步骤的“进入此Case…”按钮就是后续办理入口。原专员/执行者工作区与现有会话不变。选择候选不自动接单、核验或关闭；重启后只读取原记录与原 key。
++
++验收为实际普通 API/worker 新建 Run/Case→新诉求/双材料/REVIEW/CONFIRM→目录选择→明确 ADOPT→原完整 P1–P5→停止 API/worker/PostgreSQL→同库冷启动，读回原候选/key、计划/结果、原 TXT 和原期限，不能重发命令、重算模型、续期或改变权限/目录文件。原 HTML 必须显示候选来源并在 ADOPT 后可继续办理；不是新预览按钮或矩阵。
++
++有限固定 oracle 覆盖完整链与冷恢复、精确配对/旧互斥、包或目录变化/缺权限拒绝、无 Run assignment 和无 authority 变化。独审本轮仅静态，旧平台标记动态窗口不重试；历史 HTTP 超时 UNKNOWN 保持未关闭。真实模型/业务、浏览器正式场景、Windows 正式 AT 与项目完整性不在本次结论内。
+diff --git a/docs/F2/LocalSyntheticDemo-20261017.md b/docs/F2/LocalSyntheticDemo-20261017.md
+index 6f284dd3..c5fb0120 100644
+--- a/docs/F2/LocalSyntheticDemo-20261017.md
++++ b/docs/F2/LocalSyntheticDemo-20261017.md
+@@ -1,10 +1,12 @@
+ # LOCAL_SYNTHETIC_DEMO 普通启动最小切片
+ 
++2026-10-18 后续：已有目录选择可通过新增显式 `LOCAL_DEMO_CURRENT_PREPARATION` 接普通 CaseStep 与冷恢复，见[组合合同](LocalDemoCaseStepChainContract-20261018.md)。该模式不需要也不接受 Run assignment；下文保留原切片验证历史，其中原全链的单行测试分派不用于新组合模式。原单独 demo 与 CURRENT_PREPARATION 入口语义均保留。
++
+ 已接入默认关闭的 `LOCAL_SYNTHETIC_DEMO`，在普通 `configured_app` 上读取已存在的、精确绑定的合成输入和当前授权，复用原 V4 选择算法、原显式 ADOPT 与 P1–P5。没有真实模型、权限补建或正式批准。
+ 
+ 代码冻结：`8ae2892fe56465fbf53e23ae2010258ce7881b47`。基础：`e7cf6cabea6174a672667d7ae8af6a5238589791`，其原始祖先含 `db1084100a2477bbff3da8b49287c755dbc83c1b`。本轮 source 4 个提交（实现、EOF 规范化、两处旧 DOM 测试夹具补 `classList`）。后续交付只增加说明和证据。
+ 
+ 原方案允许明示合成测试目录与自建样例：[原开发计划](<../sources/V1/分阶段开发计划 (2).md>)、[原产品设计](<../sources/V1/平台产品设计 (2).md>)。本片没有把历史 review_demo 证据索引当作可运行来源。
+ 
+ ## 实现边界
+ 
+diff --git a/scripts/ordinary_synthetic_demo.py b/scripts/ordinary_synthetic_demo.py
+index d03fc446..bb121891 100644
+--- a/scripts/ordinary_synthetic_demo.py
++++ b/scripts/ordinary_synthetic_demo.py
+@@ -9,16 +9,17 @@ from dataclasses import asdict
+ import fcntl
+ from hashlib import sha256
+ import json
+ import os
+ from pathlib import Path
+ import secrets
+ import signal
+ import socket
++import stat
+ import subprocess
+ import sys
+ import tempfile
+ import time
+ import urllib.request
+ 
+ import psycopg
+ from psycopg.rows import dict_row
+@@ -194,17 +195,31 @@ def setup():
+     return p
+ 
+ 
+ def check_port(port):
+     if not 1024<=port<=65535:raise Denied('unprivileged loopback port required')
+     with socket.socket() as probe:probe.bind(('127.0.0.1',port))
+ 
+ 
+-def serve(value,port):
++def existing_local_demo_config(value):
++    """Read an existing bounded config; never create or repair its inputs."""
++    path=Path(value)
++    if not path.is_absolute():raise Denied('existing absolute local demo config required')
++    fd=os.open(path,os.O_RDONLY|getattr(os,'O_NOFOLLOW',0)|getattr(os,'O_NONBLOCK',0))
++    with os.fdopen(fd,'rb') as stream:
++        info=os.fstat(stream.fileno())
++        if not stat.S_ISREG(info.st_mode) or not 1<=info.st_size<=16384:
++            raise Denied('bounded regular local demo config required')
++        raw=stream.read(16385)
++    if not 1<=len(raw)<=16384:raise Denied('bounded local demo config required')
++    return raw.decode('utf-8')
++
++
++def serve(value,port,local_demo_config=None):
+     global _last_owned_state
+     check_port(port)
+     with locked(value) as p:
+         _last_owned_state=p
+         if (p/'stop-unconfirmed').exists():raise Denied('previous owned stop unconfirmed; state retained')
+         marker=json.loads((p/'state.json').read_text())
+         if (marker.get('schema')!=SCHEMA or marker.get('source')!=source_binding() or marker.get('ids')!=IDS or
+                 marker.get('scopes')!=SCOPES or
+@@ -217,53 +232,61 @@ def serve(value,port):
+                 oid=c.execute('SELECT oid::bigint FROM pg_database WHERE datname=current_database()').fetchone()['oid']
+                 version=c.execute('SELECT max(version) v FROM schema_version').fetchone()['v']
+                 if (identity['system_identifier']!=marker['system_identifier'] or oid!=marker['database_oid'] or
+                         version!=32 or authority(c)!=marker['authority']):
+                     raise Denied('retained ordinary demo database/authority changed; no repair')
+             env=minimal_environment(os.environ,PYTHONPATH=str(ROOT/'src'),PYTHONDONTWRITEBYTECODE='1',
+                 PARKWEAVE_DSN=lifecycle.dsn(p,application=True),PARKWEAVE_MODE='LOCAL',
+                 PARKWEAVE_CASE_STEP_MODE='CURRENT_PREPARATION')
++            if local_demo_config is not None:
++                from parkweave.case_step_assignments import LOCAL_DEMO_MODE,from_environment
++                from parkweave.local_synthetic_demo import PROFILE
++                env.update(PARKWEAVE_CASE_STEP_MODE=LOCAL_DEMO_MODE,PARKWEAVE_SERVICE_PROFILE=PROFILE,
++                    PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG=existing_local_demo_config(local_demo_config))
++                from_environment(Store(env['PARKWEAVE_DSN']),env)  # Read-only preflight before either child starts.
+             children=[]
+             with (p/'logs/application.log').open('a') as log:
+                 try:
+                     for command in (['uvicorn','parkweave.api:configured_app','--factory','--host','127.0.0.1','--port',str(port),'--no-access-log'],['parkweave.worker']):
+                         children.append(subprocess.Popen([sys.executable,'-B','-m',*command],cwd=ROOT,env=env,stdout=log,stderr=log))
+                     deadline=time.monotonic()+20
+                     while time.monotonic()<deadline:
+                         if any(child.poll() is not None for child in children):raise RuntimeError('owned API/worker exited; inspect private logs')
+                         try:
+                             with urllib.request.urlopen(f'http://127.0.0.1:{port}/health',timeout=.3) as response:health=json.load(response)
+                             if health.get('process_id')==children[0].pid and health.get('schema')==32 and health.get('data')=='SYNTHETIC' and health.get('execution_mode')=='LOCAL':break
+                         except (OSError,ValueError):pass
+                         time.sleep(.1)
+                     else:raise RuntimeError('owned ordinary API readiness timeout')
+                     print(json.dumps(dict(url=f'http://127.0.0.1:{port}',api_pid=children[0].pid,worker_pid=children[1].pid,
+                         postgres_pid=pg.pid,state_dir=str(p),sessions_file=str(p/'sessions.json'),scope='ORDINARY_SYNTHETIC',
+-                        mode='CURRENT_PREPARATION',models='DISABLED',run_assignment_created=False,
++                        mode=env['PARKWEAVE_CASE_STEP_MODE'],models='DISABLED',run_assignment_created=False,
+                         available_scopes=[dict(id=id,label=scope['label'],session_keys=scope['sessions']) for id,scope in SCOPES.items()])),flush=True)
+                     while all(child.poll() is None for child in children):time.sleep(.25)
+                     raise RuntimeError('owned API/worker exited')
+                 finally:
+                     try:stop_children(children)
+                     except BaseException:
+                         (p/'stop-unconfirmed').touch(exist_ok=True)
+                         raise
+ 
+ 
+ def main():
+     os.umask(0o077)
+     parser=argparse.ArgumentParser(description=__doc__)
+     parser.add_argument('command',choices=('setup','serve'));parser.add_argument('--state-dir');parser.add_argument('--port',type=int,default=8765)
++    parser.add_argument('--local-demo-config',help='serve only: existing absolute hash-pinned SYNTHETIC input config')
+     args=parser.parse_args()
+     if (args.command=='serve')!=bool(args.state_dir):parser.error('serve requires existing --state-dir; setup creates only a fresh private directory')
++    if args.command!='serve' and args.local_demo_config is not None:parser.error('local demo inputs are read only by serve')
+     signal.signal(signal.SIGTERM,lambda *_:(_ for _ in ()).throw(KeyboardInterrupt()))
+     try:
+         if args.command=='setup':print(json.dumps(dict(state_dir=str(setup()),session_expiry='NONE_MANUAL_REVOCATION_REQUIRED')),flush=True)
+-        else:serve(args.state_dir,args.port)
++        else:serve(args.state_dir,args.port,args.local_demo_config)
+     except KeyboardInterrupt:return 130 if args.command=='setup' else 0
+     except Exception as error:
+         if _last_owned_state is not None:
+             import traceback
+             with (_last_owned_state/'failure.log').open('a') as stream:stream.write(traceback.format_exc())
+         print('ORDINARY_SYNTHETIC_DEMO_BLOCKED: '+type(error).__name__+'; private state retained; no automatic retry',file=sys.stderr)
+         return 1
+     return 0
+diff --git a/src/parkweave/api.py b/src/parkweave/api.py
+index 5690a0f2..37128121 100644
+--- a/src/parkweave/api.py
++++ b/src/parkweave/api.py
+@@ -9,19 +9,22 @@ from psycopg.errors import LockNotAvailable
+ from .domain import Intake, FactInput, ClarificationInput, V1ServiceSpec, V1ServicePlan, FieldName
+ from .store import Store, Denied, Conflict
+ from .run_access_candidate import RunCommand
+ from .native_run_access import RunCommand as NativeRunCommand
+ 
+ 
+ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capability_catalog=None, selection_planner=None, instance_consumer=None, synthetic_rule_readiness=None, service_release_preflight=None, resource_plan_approval_provider=None, formal_read_config=None, formal_source_reader=None, formal_provenance_verifier=None, local_synthetic_demo=None, case_step_assignments=None) -> FastAPI:
+     if case_step_assignments is not None:
+-        from .case_step_assignments import validate_dependency
++        from .case_step_assignments import validate_dependency,local_demo_pair
+         validate_dependency(case_step_assignments,store)
+-        if any(x is not None for x in (local_synthetic_demo,resource_plan_approval_provider,formal_read_config,formal_source_reader,formal_provenance_verifier,capability_catalog,selection_planner,instance_consumer,synthetic_rule_readiness,service_release_preflight,proposal_planner)):
++        if ((local_synthetic_demo is not None or getattr(case_step_assignments,'local_synthetic_demo',None) is not None)
++                and not local_demo_pair(case_step_assignments,store,local_synthetic_demo)):
++            raise Denied('CaseStep application requires its exact explicit local demo pair')
++        if any(x is not None for x in (resource_plan_approval_provider,formal_read_config,formal_source_reader,formal_provenance_verifier,capability_catalog,selection_planner,instance_consumer,synthetic_rule_readiness,service_release_preflight,proposal_planner)):
+             raise Denied('CaseStep application cannot mix providers')
+     from . import formal_preparation_entry as formal_entry
+     formal_dependencies=formal_entry.dependencies(formal_read_config,formal_source_reader,formal_provenance_verifier)
+     from . import resource_plan_approval_read as resource_approval
+     resource_approval.validate_provider(resource_plan_approval_provider)
+     if local_synthetic_demo is not None:
+         from .local_synthetic_demo import LocalSyntheticDemo, LocalDemoCatalog, LocalDemoSelector
+         if (type(local_synthetic_demo) is not LocalSyntheticDemo
+@@ -1143,13 +1146,15 @@ def configured_app(*, resource_plan_approval_provider=None, formal_source_reader
+     if write_config is None:
+         configure(store,read_config)
+     else:
+         from .ordinary_runtime_write import configure as configure_write
+         configure_write(store,write_config)
+     from .resource_approval_host_read import configure as configure_approval
+     resource_plan_approval_provider=configure_approval(os.environ.get('PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'),resource_plan_approval_provider)
+     from .local_synthetic_demo import configure as configure_demo
+-    demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
++    demo=getattr(case_steps,'local_synthetic_demo',None)
++    if demo is None:
++        demo=configure_demo(store,os.environ.get('PARKWEAVE_SERVICE_PROFILE'),os.environ.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'))
+     return create_app(store,resource_plan_approval_provider=resource_plan_approval_provider,
+         formal_read_config=os.environ.get('PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG'),
+         formal_source_reader=formal_source_reader,formal_provenance_verifier=formal_provenance_verifier,
+         local_synthetic_demo=demo,case_step_assignments=case_steps)
+diff --git a/src/parkweave/case_step_assignments.py b/src/parkweave/case_step_assignments.py
+index 1e4b9cf4..71f6c7eb 100644
+--- a/src/parkweave/case_step_assignments.py
++++ b/src/parkweave/case_step_assignments.py
+@@ -13,16 +13,17 @@ from psycopg.types.json import Jsonb
+ 
+ from . import preparation as prep, service_dispatches as sd, executor_receipts as er
+ from .business_frontier_types import request as frontier_request, historical_fields
+ from .store import Store, Denied, Conflict, digest
+ 
+ CONTRACT = 'ISOLATED_CASE_STEP_ASSIGNMENT_V1'
+ ORDINARY_CONTRACT = 'CASE_STEP_ASSIGNMENT_V1'
+ ORDINARY_MODE = 'CURRENT_PREPARATION'
++LOCAL_DEMO_MODE = 'LOCAL_DEMO_CURRENT_PREPARATION'
+ TITLE = '合成人工办理回执'
+ MARKER = 'case_step_assignment'
+ 
+ 
+ def _now(c):
+     return c.execute('SELECT clock_timestamp() t').fetchone()['t']
+ 
+ 
+@@ -82,18 +83,22 @@ class _CaseStepTransactions:
+         raise Denied('operation outside isolated CaseStep contract')
+ 
+     def _unmixed(self):
+         if any(getattr(self.store, n, None) is not None for n in (
+                 '_native_run_access','_isolated_run_access','_isolated_plan_approval',
+                 '_isolated_local_execution','_isolated_execution_preview',
+                 '_isolated_resource_execution_preview','_isolated_dispatch_execution_preview',
+                 '_isolated_receipt_execution_preview','_isolated_lifecycle_execution_preview',
+-                '_isolated_service_capability_catalog','_local_synthetic_demo_catalog')):
++                '_isolated_service_capability_catalog')):
+             raise Denied('CaseStep dependency cannot mix with other access or execution providers')
++        if (getattr(self.store,'_local_synthetic_demo_catalog',None) is not None
++                or getattr(self,'local_synthetic_demo',None) is not None):
++            if not local_demo_pair(self,self.store,getattr(self,'local_synthetic_demo',None)):
++                raise Denied('CaseStep dependency requires its exact explicit local demo pair')
+ 
+     def _database(self, c):
+         from . import case_fact_clarifications as facts
+         p = self.proof
+         if (type(p) is not facts.FixtureDatabaseEvidence or facts._fixture_databases.get(p.nonce) is not p
+                 or facts._fixture_clusters.get(p.cluster.nonce) is not p.cluster or c.autocommit):
+             raise Denied('current original owned fixture proof required')
+         row = c.execute('SELECT oid,datname,pg_postmaster_start_time() started FROM pg_database WHERE datname=current_database()').fetchone()
+@@ -622,19 +627,29 @@ class OrdinaryCaseStepAssignments:
+     """Ordinary business routing; every operation rechecks existing rights.
+ 
+     The durable first OFFER supplies the immutable deadline and source proof.
+     No fixture issuer, participant configuration, startup expiry or new Grant.
+     """
+     contract=ORDINARY_CONTRACT
+     contract_id=None
+ 
+-    def __init__(self,store):
++    def __init__(self,store,*,local_synthetic_demo=None):
+         if type(store) is not Store or store.mode!='LOCAL':raise Denied('ordinary LOCAL CaseStep store required')
+         self.store=store
++        self.local_synthetic_demo=local_synthetic_demo
++        if local_synthetic_demo is not None:
++            from .local_synthetic_demo import LocalSyntheticDemo,LocalDemoCatalog,LocalDemoSelector
++            if (type(local_synthetic_demo) is not LocalSyntheticDemo
++                    or type(local_synthetic_demo.catalog) is not LocalDemoCatalog
++                    or type(local_synthetic_demo.selector) is not LocalDemoSelector
++                    or local_synthetic_demo.catalog.store is not store
++                    or getattr(store,'_local_synthetic_demo_catalog',None) not in (None,local_synthetic_demo.catalog)):
++                raise Denied('exact same-Store local demo CaseStep pair required')
++            store._local_synthetic_demo_catalog=local_synthetic_demo.catalog
+         self._checks={}
+         _CaseStepTransactions._surfaces(self)
+         self.validate(store)
+ 
+     def validate(self,store):
+         if type(self) is not OrdinaryCaseStepAssignments or store is not self.store:
+             raise Denied('exact ordinary CaseStep service required')
+         with self._connection(store):pass
+@@ -642,31 +657,43 @@ class OrdinaryCaseStepAssignments:
+     @contextmanager
+     def _connection(self,store):
+         if store is not self.store:raise Denied('ordinary CaseStep store binding required')
+         _CaseStepTransactions._unmixed(self)
+         with store.connect() as c:
+             c.execute("SET LOCAL lock_timeout='3s'")
+             if c.execute('SELECT max(version) v FROM schema_version').fetchone()['v'] not in (32,33):
+                 raise Denied('preinstalled ordinary CaseStep business schema required')
++            if self.local_synthetic_demo is not None:self.local_synthetic_demo.catalog.validate(c)
+             self._checks[c]=[]
+             try:
+                 yield c
+                 for check in self._checks[c]:check()
++                if self.local_synthetic_demo is not None:self.local_synthetic_demo.catalog.validate(c)
+                 _CaseStepTransactions._unmixed(self)
+             finally:self._checks.pop(c,None)
+ 
+     def _context(self,c,id,executor=None,*,catalog=False):
+         parent=c.execute('SELECT * FROM preparations WHERE id=%s',(id,)).fetchone()
+         if not parent:raise Denied('CaseStep unavailable')
++        demo_executor=None
++        if self.local_synthetic_demo is not None:
++            value=self.local_synthetic_demo.catalog.validate(c,parent)
++            demo_executor=value['roles']['service_executor']
++            if c in self._checks:
++                self._checks[c].append(lambda:self.local_synthetic_demo.catalog.validate(c,parent))
+         if catalog:
+             executors=[r['id'] for r in c.execute("SELECT p.id FROM principals p JOIN capability_grants g ON g.principal_id=p.id AND g.park_id=p.park_id AND g.org_id=p.org_id AND g.capability='READ' AND g.active WHERE p.park_id=%s AND p.org_id=%s AND p.role='service_executor' AND p.active ORDER BY p.id LIMIT 100",(parent['park_id'],parent['org_id']))]
+         elif executor is not None:executors=[executor]
+         else:
+             executors=[r['executor_id'] for r in c.execute('SELECT o.executor_id FROM service_dispatch_offers o JOIN service_dispatches d ON d.id=o.dispatch_id WHERE d.preparation_id=%s',(id,))]
++        if demo_executor is not None:
++            if catalog:executors=[id for id in executors if id==demo_executor]
++            elif any(id!=demo_executor for id in executors):
++                raise Denied('existing exact local demo executor mapping required')
+         return _OrdinaryCaseStep(self,parent,executors)
+ 
+     def _call(self,method,store,token,id,*args):
+         # This lookup only chooses a context. The original transaction authenticates
+         # and locks current parent/participants again; no lookup grants access.
+         with self._connection(store) as c:
+             parent_id=id
+             if method in ('read_dispatch','dispatch_command','recover_accept'):
+@@ -733,19 +760,39 @@ class OrdinaryCaseStepAssignments:
+ 
+ 
+ def validate_dependency(service,store):
+     if type(service) not in (IsolatedCaseStepAssignments,OrdinaryCaseStepAssignments):
+         raise Denied('exact CaseStep service required')
+     service.validate(store)
+ 
+ 
++def local_demo_pair(service,store,demo):
++    """An exact routing composition, never an admission or authority proof."""
++    from .local_synthetic_demo import LocalSyntheticDemo,LocalDemoCatalog,LocalDemoSelector
++    return (type(service) is OrdinaryCaseStepAssignments and service.store is store
++        and demo is not None and getattr(service,'local_synthetic_demo',None) is demo
++        and type(demo) is LocalSyntheticDemo and type(demo.catalog) is LocalDemoCatalog
++        and type(demo.selector) is LocalDemoSelector and demo.catalog.store is store
++        and getattr(store,'_local_synthetic_demo_catalog',None) is demo.catalog)
++
++
+ def from_environment(store,environment):
+     mode=environment.get('PARKWEAVE_CASE_STEP_MODE')
+     if mode is None:return None
++    if mode==LOCAL_DEMO_MODE:
++        if any(environment.get(k) is not None for k in (
++                'PARKWEAVE_RUNTIME_READ_CONFIG','PARKWEAVE_RUNTIME_WRITE_CONFIG',
++                'PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG','PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG')):
++            raise Denied('independent local demo ordinary CaseStep mode required; no fallback')
++        from .local_synthetic_demo import configure,PROFILE
++        if environment.get('PARKWEAVE_SERVICE_PROFILE')!=PROFILE or environment.get('PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG') is None:
++            raise Denied('explicit existing local demo inputs required')
++        demo=configure(store,PROFILE,environment['PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG'])
++        return OrdinaryCaseStepAssignments(store,local_synthetic_demo=demo)
+     if mode!=ORDINARY_MODE or any(environment.get(k) is not None for k in (
+             'PARKWEAVE_RUNTIME_READ_CONFIG','PARKWEAVE_RUNTIME_WRITE_CONFIG',
+             'PARKWEAVE_SERVICE_PROFILE','PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG',
+             'PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG','PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG')):
+         raise Denied('independent ordinary CaseStep mode required; no fallback')
+     return OrdinaryCaseStepAssignments(store)
+ 
+ def has_marker(c,preparation_id):
+diff --git a/src/parkweave/local_synthetic_demo.py b/src/parkweave/local_synthetic_demo.py
+index 511220b5..4bdd6323 100644
+--- a/src/parkweave/local_synthetic_demo.py
++++ b/src/parkweave/local_synthetic_demo.py
+@@ -180,17 +180,24 @@ class LocalDemoCatalog:
+         if parent and (parent['park_id'],parent['org_id'],parent['owner_id'],parent['reviewer_id']) != (
+                 value['park_id'],value['org_id'],value['roles']['enterprise_operator'],value['roles']['park_specialist']):
+             raise Denied('current demo Case owner/park/reviewer mapping required')
+         contracts(value,cfg.pack_sha256,now=c.execute('SELECT clock_timestamp() t').fetchone()['t'])
+         return value
+ 
+     @contextmanager
+     def connection(self):
+-        with self.store.connect() as c:
++        from .ordinary_plan_sources import selected
++        from .case_step_assignments import local_demo_pair
++        service=selected(self.store)
++        if service is not None and (not local_demo_pair(service,self.store,service.local_synthetic_demo)
++                or service.local_synthetic_demo.catalog is not self):
++            raise Denied('local demo reads require their exact ordinary transaction pair')
++        transaction=service._connection(self.store) if service is not None else self.store.connect()
++        with transaction as c:
+             self.validate(c)
+             yield c
+             self.validate(c)
+ 
+     read_connection = connection
+ 
+     def snapshot(self, c, parent):
+         value = self.validate(c,parent)
+diff --git a/tests/local_demo_case_step_chain_html.js b/tests/local_demo_case_step_chain_html.js
+new file mode 100644
+index 00000000..d34f46bf
+--- /dev/null
++++ b/tests/local_demo_case_step_chain_html.js
+@@ -0,0 +1,31 @@
++// Reuse the original page transport/DOM mechanics; all decisions run shipped HTML.
++const supportText = require('fs').readFileSync('tests/ordinary_case_goal_record_pack_html.js','utf8').split('const until=')[0];
++const scenario = String.raw`
++(async()=>{
++ const config=await initialized,calls=[];diagnostics={calls};
++ const owner=page({...config,token:config.tokens.owner},{},calls,{});
++ await owner.$('prep-list').click();const item=owner.$('prep-items').children.find(e=>e.tagName==='button');check(!!item,'new preparation visible');await item.click();
++ check(owner.run('preparationId')===config.preparation_id,'exact new preparation');
++ await owner.$('service-plan-prepare').click();check(owner.run('servicePlanView.plan_id')===null,'no pre-adopted plan');
++ await owner.$('service-selection-read').click();
++ check(textOf(owner.$('service-selection-catalog')).includes('LOCAL_SYNTHETIC_DEMO'),'original directory source visible');
++ check(owner.$('service-selection-generate').textContent==='生成合成候选（无模型）','explicit no-model choice');
++ await owner.$('service-selection-generate').click();
++ const candidate=owner.run('serviceSelectionView');check(!!candidate&&candidate.can_adopt,'original persisted candidate');
++ check(candidate.producer.mode==='NO_MODEL'&&candidate.producer.model===null&&candidate.producer.real_model_calls===0,'original producer proof');
++ const posts=()=>calls.filter(c=>c.method==='POST');check(posts().length===1,'one explicit generation');
++ owner.$('service-plan-reason').value='SYNTHETIC explicit selected service ADOPT';await owner.$('service-plan-adopt').click();check(posts().length===1,'unchecked ADOPT sends nothing');
++ owner.$('service-selection-confirm').checked=true;await owner.$('service-plan-adopt').click();
++ const plan=owner.run('servicePlanView');check(!!plan.plan_id&&plan.steps.length===5,'selected plan adopted');
++ check(posts().length===2&&posts()[1].path.endsWith('/service-case-plan'),'original explicit ADOPT only');
++ check(posts()[1].body.candidate_id===candidate.candidate_id,'exact selected candidate consumed');
++ check(plan.current_case_step_scope.contract==='CASE_STEP_ASSIGNMENT_V1','ordinary CaseStep source');
++ for(const adapter of ['P1','P2','P3','P4','P5']){
++  const card=owner.$('service-plan-steps').children.find(e=>e.dataset.serviceAdapter===adapter);
++  check(!!card?.children.find(e=>e.dataset.serviceOpen&&!e.disabled),'direct original handling entry '+adapter);
++ }
++ const key=posts()[0].request_key;check(typeof key==='string'&&key.length>0,'original selection key');
++ console.log(JSON.stringify({scope:'LOCAL_DEMO_TO_ORDINARY_CASE_STEP_REAL_HTML',checks,calls,candidate,plan_id:plan.plan_id,selection_key:key,completeOriginalHTML:true,real_browser:false}));process.exit(0);
++})().catch(e=>{console.error(e.stack);console.error(JSON.stringify(diagnostics));process.exit(1);});
++`;
++require('vm').runInNewContext(supportText+scenario,{require,console,process,fetch,URL,URLSearchParams,Blob,TextEncoder,setTimeout});
+diff --git a/tests/test_local_demo_case_step_chain.py b/tests/test_local_demo_case_step_chain.py
+new file mode 100644
+index 00000000..a867cbdc
+--- /dev/null
++++ b/tests/test_local_demo_case_step_chain.py
+@@ -0,0 +1,163 @@
++"""Existing pinned demo inputs -> ordinary worker -> original P1–P5 -> cold read.
++
++Fresh owned SYNTHETIC setup and input file construction are test preparation,
++outside the product's read-only loader. No Run assignment or model fixture.
++"""
++from datetime import timedelta
++from hashlib import sha256
++from pathlib import Path
++import json,subprocess
++import pytest
++from fastapi.testclient import TestClient
++from parkweave import local_synthetic_demo as catalog,case_step_assignments as cs
++from parkweave.api import create_app
++from parkweave.store import Store,Denied
++from parkweave.ordinary_runtime_read import catalog_hash
++from test_ordinary_synthetic_demo import demo_state,server,prepare_case,complete,call,html,demo,ROOT
++from test_local_synthetic_demo import demo_inputs,write,receipt_fixture,preparation_fixture,prepared,headers
++
++
++def existing_inputs(p,directory):
++    directory.mkdir()
++    with demo.lifecycle.postgres(p):
++        with Store(demo.lifecycle.dsn(p,application=True)).connect() as c:
++            c.execute('SET TRANSACTION READ ONLY')
++            now=c.execute('SELECT clock_timestamp() t').fetchone()['t'];database=catalog.database_binding(c)
++            row=c.execute('SELECT service_id,version,name,source,namespace,qualification,xmin::text row_generation FROM preparation_catalog WHERE park_id=%s AND service_id=%s AND version=1',(demo.PARK,'synthetic-material-preparation')).fetchone()
++    generation=row.pop('row_generation')
++    value=dict(schema_version='parkweave-local-synthetic-demo-pack/1',kind='SYNTHETIC',id='local-demo-ordinary-chain',revision=1,
++        validity=dict(valid_from=(now-timedelta(days=1)).isoformat(),valid_until=(now+timedelta(days=1)).isoformat(),timezone='UTC'),
++        park_id=demo.PARK,org_id=demo.ORG,
++        roles=dict(enterprise_operator=demo.IDS['enterprise'],park_specialist=demo.IDS['specialist'],service_executor=demo.IDS['executor']),
++        resources={key:row['id'] for key,row in zip(('primary','secondary'),demo.SCOPES['primary']['resources'])},
++        fields={slot:dict(slot=slot,input_field='demo_'+slot) for slot in ('need_summary','material_outline')},services=list(catalog.contract.SERVICE_GOALS))
++    pack=directory/'pack.json';journal=directory/'journal.json'
++    pack_sha=write(pack,value)
++    cfg=dict(schema_version='parkweave-local-synthetic-demo-config/1',pack_path=str(pack),pack_sha256=pack_sha,
++        journal_path=str(journal),database=database,catalog_sha256=catalog_hash(row),catalog_generation=generation)
++    cfg['journal_sha256']=write(journal,dict(schema_version='parkweave-local-synthetic-demo-journal/1',kind='SYNTHETIC',pack_sha256=pack_sha,
++        database=database,park_id=demo.PARK,org_id=demo.ORG,catalog_sha256=cfg['catalog_sha256'],catalog_generation=generation))
++    journal.chmod(0o600);config=directory/'config.json';write(config,cfg)
++    return config
++
++
++def selected_html(api,tokens,p,directory):
++    directory.mkdir();config=dict(base=str(api.base_url).rstrip('/'),preparation_id=p['preparation_id'],tokens=dict(owner=tokens['enterprise']))
++    result=subprocess.run(['node','tests/local_demo_case_step_chain_html.js'],cwd=ROOT,input=json.dumps(config)+'\n',text=True,capture_output=True,timeout=60)
++    (directory/'html.stdout').write_text(result.stdout);(directory/'html.stderr').write_text(result.stderr)
++    assert result.returncode==0,result.stderr
++    return json.loads(result.stdout.splitlines()[-1])
++
++
++def test_existing_catalog_selection_original_ordinary_chain_and_physical_cold_restart(demo_state,tmp_path):
++    p,marker,tokens=demo_state;config=existing_inputs(p,tmp_path/'existing-inputs')
++    files=[p/'state.json',p/'sessions.json',config,config.parent/'pack.json',config.parent/'journal.json']
++    before={str(path):sha256(path.read_bytes()).hexdigest() for path in files}
++    with server(p,tmp_path/'first-start',local_demo_config=config) as (api,first):
++        with Store(demo.lifecycle.dsn(p)).connect() as c:
++            c.execute('SET TRANSACTION READ ONLY');assert demo.authority(c)==marker['authority']
++            assert all(c.execute('SELECT count(*) n FROM '+table).fetchone()['n']==0 for table in ('runs','cases','preparations','run_assignments'))
++        case,_=prepare_case(api,tokens,'目录选择后直接办理')
++        selection=selected_html(api,tokens,case,tmp_path/'selection-html')
++        dispatch,results=complete(api,tokens,case,'selected catalog')
++        base='/api/preparations/'+case['preparation_id'];candidate=selection['candidate']
++        assert results['source_trace']['candidate']['producer']['mode']=='NO_MODEL'
++        assert results['source_trace']['service_selection']['profile']==catalog.PROFILE
++        # Reads after ACCEPT must retain the ordinary managed transaction guard.
++        capabilities=call(api,tokens,base+'/service-capabilities');assert capabilities['profile']==catalog.PROFILE
++        pack=html((None,None,{'fixture-a':tokens['enterprise'],'executor-a':tokens['executor']},api),tmp_path/'first-pack',case,results['plan_id'],'LOCAL_OUTPUTS_VERIFIED',goal_count=5)
++        original_plan=call(api,tokens,base+'/service-case-plan')
++    with server(p,tmp_path/'cold-start',local_demo_config=config) as (api,cold):
++        assert all(cold[key]!=first[key] for key in ('postgres_pid','api_pid','worker_pid'))
++        assert call(api,tokens,base+'/goal-results')==results
++        assert call(api,tokens,base+'/service-case-plan')==original_plan
++        response=api.get(base+'/service-selections/recovery',headers={'Authorization':'Bearer '+tokens['enterprise'],'Idempotency-Key':selection['selection_key']})
++        assert response.status_code==200,response.text
++        recovered=response.json();assert recovered['status']=='COMMITTED' and recovered['items'][0]['candidate_id']==candidate['candidate_id']
++        assert recovered['items'][0]['producer']==candidate['producer']
++        assert call(api,tokens,'/api/service-dispatches/'+dispatch['dispatch_id'])['assignment_valid_until']==dispatch['assignment_valid_until']
++        html((None,None,{'fixture-a':tokens['enterprise'],'executor-a':tokens['executor']},api),tmp_path/'cold-pack',case,results['plan_id'],'LOCAL_OUTPUTS_VERIFIED',goal_count=5)
++        assert (tmp_path/'first-pack/download.txt').read_bytes()==(tmp_path/'cold-pack/download.txt').read_bytes()
++        assert call(api,tokens,base+'/service-capabilities')['profile']==catalog.PROFILE
++        with Store(demo.lifecycle.dsn(p)).connect() as c:
++            c.execute('SET TRANSACTION READ ONLY');assert demo.authority(c)==marker['authority']
++            assert not c.execute('SELECT 1 FROM run_assignments').fetchone()
++            assert c.execute('SELECT count(*) n FROM cases').fetchone()['n']==1
++            assert c.execute('SELECT count(*) n FROM case_local_events').fetchone()['n']==2
++    assert {str(path):sha256(path.read_bytes()).hexdigest() for path in files}==before
++    (tmp_path/'actual-chain.json').write_text(json.dumps(dict(mode=cs.LOCAL_DEMO_MODE,profile=catalog.PROFILE,
++        ordinary_worker=True,case_count=1,run_assignments=0,authority_unchanged=True,input_hashes_unchanged=True,
++        original_html_selection_adoption=True,adapters=['P1','P2','P3','P4','P5'],result_state=results['state'],result_count=5,
++        real_model_calls=0,physical_pg_api_worker_restart=True,cold_plan_results_equal=True,cold_txt_equal=True,
++        deadline_unchanged=True,pack_sha256=pack['pack_sha256'],browser=False,Windows=False,formal_AT=False,real_business=False),indent=2)+'\n')
++
++
++def test_exact_pair_preserves_old_mode_and_all_other_provider_guards(demo_inputs):
++    f,cfg,_,_=demo_inputs;store=Store(f[0].dsn)
++    env=dict(PARKWEAVE_CASE_STEP_MODE=cs.LOCAL_DEMO_MODE,PARKWEAVE_SERVICE_PROFILE=catalog.PROFILE,PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG=json.dumps(cfg))
++    for change in ({'PARKWEAVE_CASE_STEP_MODE':cs.ORDINARY_MODE},{'PARKWEAVE_SERVICE_PROFILE':None},{'PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG':None},
++            *({key:'{}'} for key in ('PARKWEAVE_RUNTIME_READ_CONFIG','PARKWEAVE_RUNTIME_WRITE_CONFIG','PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG','PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'))):
++        with pytest.raises(Denied):cs.from_environment(store,env|change)
++    ordinary=cs.OrdinaryCaseStepAssignments(store);provider=catalog.configure(store,catalog.PROFILE,json.dumps(cfg))
++    with pytest.raises(Denied):create_app(store,case_step_assignments=ordinary,local_synthetic_demo=provider)
++    paired=cs.from_environment(store,env)
++    create_app(store,case_step_assignments=paired,local_synthetic_demo=paired.local_synthetic_demo)
++    with pytest.raises(Denied):
++        with provider.catalog.connection():pass
++    with pytest.raises(Denied):create_app(store,case_step_assignments=paired)
++    with pytest.raises(Denied):create_app(store,case_step_assignments=paired,local_synthetic_demo=provider)
++    for key in ('_native_run_access','_isolated_run_access','_isolated_plan_approval','_isolated_service_capability_catalog'):
++        setattr(store,key,object())
++        try:
++            with pytest.raises(Denied):paired.validate(store)
++        finally:delattr(store,key)
++    store._local_synthetic_demo_catalog=provider.catalog
++    with pytest.raises(Denied):paired.validate(store)
++
++
++def test_pinned_inputs_rechecked_after_transaction_and_never_repaired(demo_inputs):
++    f,cfg,_,_=demo_inputs;store=Store(f[0].dsn)
++    paired=cs.from_environment(store,dict(PARKWEAVE_CASE_STEP_MODE=cs.LOCAL_DEMO_MODE,PARKWEAVE_SERVICE_PROFILE=catalog.PROFILE,PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG=json.dumps(cfg)))
++    path=Path(cfg['pack_path']);raw=path.read_bytes()
++    with pytest.raises(Denied):
++        with paired._connection(store) as c:
++            c.execute("INSERT INTO authorization_audit(id,principal_id,category,outcome) VALUES('bab18908-8bdc-483b-a2f4-83530547ac61','fixture-a','LOCAL_DEMO_ROLLBACK_TEST','DENIED')")
++            path.write_bytes(raw+b' ')
++    with f[1].connect() as c:
++        c.execute('SET TRANSACTION READ ONLY')
++        assert not c.execute("SELECT 1 FROM authorization_audit WHERE category='LOCAL_DEMO_ROLLBACK_TEST'").fetchone()
++    assert path.read_bytes()==raw+b' '
++    with pytest.raises(Denied):paired.validate(store)
++
++
++@pytest.mark.parametrize('permission',['PREPARE','REVIEW_ASSIGNED'])
++def test_combined_selection_rechecks_existing_current_permissions(demo_inputs,permission):
++    f,cfg,_,_=demo_inputs;p=prepared(f);store=Store(f[0].dsn)
++    service=cs.from_environment(store,dict(PARKWEAVE_CASE_STEP_MODE=cs.LOCAL_DEMO_MODE,PARKWEAVE_SERVICE_PROFILE=catalog.PROFILE,PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG=json.dumps(cfg)))
++    base='/api/preparations/'+p['preparation_id']
++    with TestClient(create_app(store,case_step_assignments=service,local_synthetic_demo=service.local_synthetic_demo)) as api:
++        response=api.get(base+'/service-capabilities',headers=headers(f[2]));assert response.status_code==200,response.text
++        current=response.json()
++        with f[1].connect() as c:
++            c.execute('UPDATE preparation_grants SET active=false WHERE principal_id=%s AND capability=%s',
++                ('fixture-a' if permission=='PREPARE' else 'prep-specialist-fixture-a',permission))
++        response=api.post(base+'/service-selections',headers=headers(f[2],key='missing-current-'+permission),json=dict(
++            expected_preparation_revision=p['revision'],expected_source_sha256=current['source_sha256'],expected_capability_catalog_sha256=current['capability_catalog_sha256']))
++        assert response.status_code==403,response.text
++    with store.connect() as c:
++        c.execute('SET TRANSACTION READ ONLY')
++        assert c.execute('SELECT planning_previews FROM preparations WHERE id=%s',(p['preparation_id'],)).fetchone()['planning_previews'] in (None,[])
++        assert not c.execute('SELECT 1 FROM service_dispatches').fetchone()
++
++
++def test_combined_parent_and_executor_mapping_are_not_authority(demo_inputs):
++    f,cfg,_,_=demo_inputs;p=prepared(f);store=Store(f[0].dsn)
++    service=cs.from_environment(store,dict(PARKWEAVE_CASE_STEP_MODE=cs.LOCAL_DEMO_MODE,PARKWEAVE_SERVICE_PROFILE=catalog.PROFILE,PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG=json.dumps(cfg)))
++    with service._connection(store) as c:
++        with pytest.raises(Denied):service._context(c,p['preparation_id'],executor='unassigned')
++    with f[1].connect() as c:
++        c.execute('UPDATE preparations SET reviewer_id=%s WHERE id=%s',('prep-specialist-fixture-b',p['preparation_id']))
++    with pytest.raises(Denied):
++        with service._connection(store) as c:service._context(c,p['preparation_id'])
++    with store.connect() as c:
++        c.execute('SET TRANSACTION READ ONLY');assert not c.execute('SELECT 1 FROM service_dispatches').fetchone()
+diff --git a/tests/test_ordinary_synthetic_demo.py b/tests/test_ordinary_synthetic_demo.py
+index 4bb9fc3c..5b0785d4 100644
+--- a/tests/test_ordinary_synthetic_demo.py
++++ b/tests/test_ordinary_synthetic_demo.py
+@@ -42,28 +42,30 @@ def demo_state(tmp_path):
+     rows=[json.loads(line) for line in result.stdout.splitlines() if line.startswith('{')]
+     assert len(rows)==2 and rows[0]['setup_state_dir']==rows[1]['state_dir']
+     p=Path(rows[-1]['state_dir']);marker=json.loads((p/'state.json').read_text());tokens=PrivateTokens(json.loads((p/'sessions.json').read_text()))
+     assert not (p/'data/postmaster.pid').exists()
+     return p,marker,tokens
+ 
+ 
+ @contextmanager
+-def server(p,directory,selected_port=None):
++def server(p,directory,selected_port=None,*,local_demo_config=None):
+     directory.mkdir();selected_port=selected_port or port()
+     with (directory/'serve.stdout').open('w') as out,(directory/'serve.stderr').open('w') as err:
+-        child=subprocess.Popen(command('serve','--state-dir',str(p),'--port',str(selected_port)),cwd=ROOT,env=environment(),stdout=out,stderr=err)
++        extra=['--local-demo-config',str(local_demo_config)] if local_demo_config is not None else []
++        child=subprocess.Popen(command('serve','--state-dir',str(p),'--port',str(selected_port),*extra),cwd=ROOT,env=environment(),stdout=out,stderr=err)
+         try:
+             deadline=time.monotonic()+30;ready=None
+             while time.monotonic()<deadline:
+                 assert child.poll() is None,(directory/'serve.stderr').read_text()
+                 rows=[json.loads(line) for line in (directory/'serve.stdout').read_text().splitlines() if line.startswith('{')]
+                 if rows:ready=rows[-1];break
+                 time.sleep(.05)
+-            assert ready and ready['mode']=='CURRENT_PREPARATION' and ready['models']=='DISABLED'
++            expected_mode='LOCAL_DEMO_CURRENT_PREPARATION' if local_demo_config is not None else 'CURRENT_PREPARATION'
++            assert ready and ready['mode']==expected_mode and ready['models']=='DISABLED'
+             # Bounded test evidence only: no Authorization header or body text.
+             def trace(kind,request,status=None):
+                 payload=json.loads(request.content) if request.content else {}
+                 with (directory/'http-metadata.jsonl').open('a') as stream:
+                     stream.write(json.dumps(dict(kind=kind,monotonic=time.monotonic(),method=request.method,
+                         path=request.url.path,request_key=request.headers.get('Idempotency-Key'),
+                         action=payload.get('action'),status=status))+'\n')
+             hooks=dict(request=[lambda request:trace('REQUEST',request)],

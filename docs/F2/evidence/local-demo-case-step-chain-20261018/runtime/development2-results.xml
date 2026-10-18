@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="3" time="49.391" timestamp="2026-10-18T22:25:14.612126+00:00" hostname="9eff6a810039"><testcase classname="tests.test_local_demo_case_step_chain" name="test_existing_catalog_selection_original_ordinary_chain_and_physical_cold_restart" time="44.373" /><testcase classname="tests.test_local_demo_case_step_chain" name="test_exact_pair_preserves_old_mode_and_all_other_provider_guards" time="3.165" /><testcase classname="tests.test_local_demo_case_step_chain" name="test_pinned_inputs_rechecked_after_transaction_and_never_repaired" time="1.123"><failure message="psycopg.errors.InsufficientPrivilege: permission denied for table authorization_audit">demo_inputs = ((&lt;parkweave.store.Store object at 0x7fe0913cf530&gt;, &lt;parkweave.store.Store object at 0x7fe0914573b0&gt;, {'fixture-a': 'd...atabase': {'name': 'fixture_a2bb29d1c4ca4095aecb72906ebd772f', 'oid': 17356, 'address': None, 'port': None, ...}, ...})
+
+    def test_pinned_inputs_rechecked_after_transaction_and_never_repaired(demo_inputs):
+        f,cfg,_,_=demo_inputs;store=Store(f[0].dsn)
+        paired=cs.from_environment(store,dict(PARKWEAVE_CASE_STEP_MODE=cs.LOCAL_DEMO_MODE,PARKWEAVE_SERVICE_PROFILE=catalog.PROFILE,PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG=json.dumps(cfg)))
+        path=Path(cfg['pack_path']);raw=path.read_bytes()
+        with pytest.raises(Denied):
+            with paired._connection(store) as c:
+                c.execute("INSERT INTO authorization_audit(id,principal_id,category,outcome) VALUES('bab18908-8bdc-483b-a2f4-83530547ac61','fixture-a','LOCAL_DEMO_ROLLBACK_TEST','DENIED')")
+                path.write_bytes(raw+b' ')
+&gt;       with store.connect() as c:assert not c.execute("SELECT 1 FROM authorization_audit WHERE category='LOCAL_DEMO_ROLLBACK_TEST'").fetchone()
+                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_local_demo_case_step_chain.py:124: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = &lt;psycopg.Connection [BAD] at 0x7fe0912fe570&gt;
+query = "SELECT 1 FROM authorization_audit WHERE category='LOCAL_DEMO_ROLLBACK_TEST'"
+params = None, prepare = None, binary = False
+
+    def execute(
+        self,
+        query: Query,
+        params: Params | None = None,
+        *,
+        prepare: bool | None = None,
+        binary: bool = False,
+    ) -&gt; Cursor[Row]:
+        """Execute a query and return a cursor to read its results."""
+        try:
+            cur = self.cursor()
+            if binary:
+                cur.format = BINARY
+    
+            if isinstance(query, Template):
+                if params is not None:
+                    raise TypeError(
+                        "'execute()' with string template query doesn't support parameters"
+                    )
+                return cur.execute(query, prepare=prepare)
+            else:
+                return cur.execute(query, params, prepare=prepare)
+        except e._NO_TRACEBACK as ex:
+&gt;           raise ex.with_traceback(None)
+E           psycopg.errors.InsufficientPrivilege: permission denied for table authorization_audit
+
+.venv/lib/python3.12/site-packages/psycopg/connection.py:304: InsufficientPrivilege</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,185 @@
+{
+  "catalog_self_identity_fix": {
+    "authority_claim": "No dynamic exploit or unauthorized write was performed or inferred.",
+    "condition_adds_exact_self_identity": true,
+    "final_rejection": "service.local_synthetic_demo.catalog is not self rejects catalogB before transaction selection.",
+    "final_sha": "3f5fd029f335d132d9baecb79165b86e2159761a",
+    "initial_problem": "local_demo_pair proved serviceA/demoA/catalogA but did not prove self is catalogA; another exact same-Store catalogB could enter using serviceA managed connection.",
+    "initial_sha": "3b559f9340f2b6b958ded600f2a161269d67cf5c",
+    "remaining_connection_AST_unchanged_from_initial": true
+  },
+  "scope": {
+    "README_byte_unchanged": true,
+    "baseline_code_readme": 804,
+    "changed_original_code": [
+      "scripts/ordinary_synthetic_demo.py",
+      "src/parkweave/api.py",
+      "src/parkweave/case_step_assignments.py",
+      "src/parkweave/local_synthetic_demo.py",
+      "tests/test_ordinary_synthetic_demo.py"
+    ],
+    "fixed_AT_spec_and_bindings_byte_unchanged": true,
+    "old_three_contracts_byte_unchanged": true,
+    "original_code_readme_unchanged": 799,
+    "protected_specific": {
+      "docs/F1/ATBindings.json": "00552103ecfdcbde0b482ed24e28e82bab3970b244cec91c2b135f60a88ad6aa",
+      "docs/验收规格.json": "747fafdf948012b3569ef5d43fcf5c279b3e6acad25231b4a68c493e6f32a17b",
+      "src/parkweave/bounded_planning.py": "c6e2160feff69d81851ad96b5ac5631abed0938eaa4d3bb5f65c4251b4059228",
+      "src/parkweave/case_goal_results.py": "520d91ac45a70dfa6e31b27154afee76bc3ef9a26b646c7b55b2d833fd5c6e89",
+      "src/parkweave/case_lifecycle.py": "0e91d8fa5c1e953cb221b21f3c75d28157c3cbac7854839d5b4d825ef5b278a4",
+      "src/parkweave/controlled_plans.py": "11a9bc618bc07ec7b6f12b83ba7b381306b3e66326799f7afedb529b31c4b9fd",
+      "src/parkweave/dispatch_notices.py": "dc24cb1e9fcfef7cb348cab90928c5eae8299938a4fc36f81674a9eb2eaee21f",
+      "src/parkweave/local_demo_selections.py": "ee9bb373130e34d9a3db0ac8c559238bc7f4851098ce7f8eb2b5aaadf307fead",
+      "src/parkweave/migration-032.sql": "c24bd55751a7922341557d48270f83e6f911513d4588c6f3571c7beca10a284b",
+      "src/parkweave/migration-033.sql": "a3dd64f31acef4aaa04bc7b31d8b6085dcc5c4dbac047e2906c41135c6a10b41",
+      "src/parkweave/ordinary_plan_sources.py": "3c662a8ea13da8c41221ca9703c2fdfa6035216e899950af4e7ecd5c49a3d6c3",
+      "src/parkweave/roles.sql": "604d084e12d84e9cad808ddd4a7e61289390faca49fd657d2ffe711b5a43afc3",
+      "src/parkweave/schema.sql": "474a2502c27cc969744919a5dc16cb7f746df2e49ce8196eb2d1c3b3f9829652",
+      "src/parkweave/service_capability_catalog.py": "f6e678b054595e7096c05b0d60fa059f252e54f8f07034771ddaf2e06d3f073b",
+      "src/parkweave/service_case_steps.py": "287fcaeea0e2f858df9cbd45e71a42a7a5037fcdcbf2ba0f29599d1e740d2f63",
+      "src/parkweave/service_selection.py": "665467df0bb6b16ac9d9624eedcbf2330423bea51c874ae1671838efdf05afa7",
+      "src/parkweave/service_selection_candidates.py": "602f0ee8cb8aa3c156aa3c78867270912348cdf5e6674b76d25ea1551c02abbd",
+      "src/parkweave/web.html": "93a04d2bb254df3c477b967132aae3ad43ab55464e354450a852ccddfffae490",
+      "src/parkweave/worker.py": "2bbcc26a87886a94c21f66a56292f72daa7b83d682c331512bdc71338746711d",
+      "tests/conftest.py": "37d385ce8c325353d9664c41048c137fd52b4c113b60c3a80335f9f97076802e"
+    },
+    "src_count": 186,
+    "unchanged_src": 183
+  },
+  "scripts/ordinary_synthetic_demo.py": {
+    "all_other_module_AST_identical": true,
+    "allowed_changed_definitions": [
+      "serve",
+      "main"
+    ],
+    "new_definitions": [
+      "existing_local_demo_config"
+    ],
+    "unchanged_existing_definitions": [
+      "source_binding",
+      "private_state",
+      "locked",
+      "authority",
+      "initialize",
+      "setup",
+      "check_port"
+    ]
+  },
+  "src/parkweave/api.py": {
+    "all_original_inner_functions_unchanged": true,
+    "all_other_module_AST_identical": true,
+    "allowed_changed_definitions": [
+      "create_app first admission block",
+      "configured_app dependency reuse"
+    ],
+    "original_inner_function_count": 212
+  },
+  "src/parkweave/case_step_assignments.py": {
+    "all_other_module_AST_identical": true,
+    "allowed_changed_definitions": [
+      "_CaseStepTransactions._unmixed",
+      "OrdinaryCaseStepAssignments.__init__",
+      "OrdinaryCaseStepAssignments._connection",
+      "OrdinaryCaseStepAssignments._context",
+      "from_environment"
+    ],
+    "new_definitions": [
+      "local_demo_pair"
+    ],
+    "unchanged_existing_definitions": [
+      "_now",
+      "_fp",
+      "_CaseStepTransactions.__init__",
+      "_CaseStepTransactions._surfaces",
+      "_CaseStepTransactions._fp",
+      "_CaseStepTransactions.unsupported",
+      "_CaseStepTransactions._database",
+      "_CaseStepTransactions.validate",
+      "_CaseStepTransactions._connection",
+      "_CaseStepTransactions._generations",
+      "_CaseStepTransactions._parent",
+      "_CaseStepTransactions.owns_notice",
+      "_CaseStepTransactions.notice_source",
+      "_CaseStepTransactions.notice_authority",
+      "_CaseStepTransactions.notice_item",
+      "_CaseStepTransactions._catalog",
+      "_CaseStepTransactions._binding",
+      "_CaseStepTransactions._marker",
+      "_CaseStepTransactions._live",
+      "_CaseStepTransactions._root",
+      "_CaseStepTransactions._own",
+      "_CaseStepTransactions._dispatch_view",
+      "_CaseStepTransactions.read_preparation",
+      "_CaseStepTransactions.read_dispatch",
+      "_CaseStepTransactions.catalog",
+      "_CaseStepTransactions._offer_deadline",
+      "_CaseStepTransactions.offer",
+      "_CaseStepTransactions.dispatch_command",
+      "_CaseStepTransactions._accepted_step",
+      "_CaseStepTransactions._receipt_context",
+      "_CaseStepTransactions._receipt_view",
+      "_CaseStepTransactions.read_receipt",
+      "_CaseStepTransactions.receipt_command",
+      "_CaseStepTransactions.receipt_catalog",
+      "_CaseStepTransactions._list",
+      "_CaseStepTransactions.list_dispatches",
+      "_CaseStepTransactions.list_receipts",
+      "_CaseStepTransactions.recover_accept",
+      "_CaseStepTransactions.recover_submit",
+      "IsolatedCaseStepAssignments",
+      "_OrdinaryCaseStep",
+      "_OrdinaryCaseStep.__init__",
+      "_OrdinaryCaseStep._connection",
+      "OrdinaryCaseStepAssignments.validate",
+      "OrdinaryCaseStepAssignments._call",
+      "OrdinaryCaseStepAssignments.read_preparation",
+      "OrdinaryCaseStepAssignments.read_dispatch",
+      "OrdinaryCaseStepAssignments.catalog",
+      "OrdinaryCaseStepAssignments.offer",
+      "OrdinaryCaseStepAssignments.dispatch_command",
+      "OrdinaryCaseStepAssignments.read_receipt",
+      "OrdinaryCaseStepAssignments.receipt_command",
+      "OrdinaryCaseStepAssignments.receipt_catalog",
+      "OrdinaryCaseStepAssignments.recover_accept",
+      "OrdinaryCaseStepAssignments.recover_submit",
+      "OrdinaryCaseStepAssignments.unsupported",
+      "OrdinaryCaseStepAssignments._list",
+      "OrdinaryCaseStepAssignments.list_dispatches",
+      "OrdinaryCaseStepAssignments.list_receipts",
+      "OrdinaryCaseStepAssignments.owns_notice",
+      "OrdinaryCaseStepAssignments.notice_source",
+      "OrdinaryCaseStepAssignments.notice_authority",
+      "OrdinaryCaseStepAssignments.notice_item",
+      "validate_dependency",
+      "has_marker",
+      "refuse_legacy",
+      "legacy_rows"
+    ]
+  },
+  "src/parkweave/local_synthetic_demo.py": {
+    "all_other_module_AST_identical": true,
+    "allowed_changed_definitions": [
+      "LocalDemoCatalog.connection"
+    ],
+    "new_definitions": [],
+    "unchanged_existing_definitions": [
+      "Exact",
+      "DatabaseBinding",
+      "DemoConfig",
+      "DemoPack",
+      "database_binding",
+      "_file",
+      "pack",
+      "contracts",
+      "validated_pairs",
+      "LocalDemoCatalog.__init__",
+      "LocalDemoCatalog.validate",
+      "LocalDemoCatalog.snapshot",
+      "LocalDemoSelector",
+      "LocalDemoSelector.select",
+      "LocalSyntheticDemo",
+      "LocalSyntheticDemo.__init__",
+      "configure"
+    ]
+  }
+}

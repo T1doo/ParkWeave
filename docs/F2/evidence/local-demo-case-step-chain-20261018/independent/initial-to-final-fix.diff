@@ -1,0 +1,63 @@
+diff --git a/src/parkweave/local_synthetic_demo.py b/src/parkweave/local_synthetic_demo.py
+index 98306b91..4bdd6323 100644
+--- a/src/parkweave/local_synthetic_demo.py
++++ b/src/parkweave/local_synthetic_demo.py
+@@ -179,25 +179,26 @@ class LocalDemoCatalog:
+             raise Denied('existing exact SYNTHETIC preparation catalog required')
+         if parent and (parent['park_id'],parent['org_id'],parent['owner_id'],parent['reviewer_id']) != (
+                 value['park_id'],value['org_id'],value['roles']['enterprise_operator'],value['roles']['park_specialist']):
+             raise Denied('current demo Case owner/park/reviewer mapping required')
+         contracts(value,cfg.pack_sha256,now=c.execute('SELECT clock_timestamp() t').fetchone()['t'])
+         return value
+ 
+     @contextmanager
+     def connection(self):
+         from .ordinary_plan_sources import selected
+         from .case_step_assignments import local_demo_pair
+         service=selected(self.store)
+-        if service is not None and not local_demo_pair(service,self.store,service.local_synthetic_demo):
++        if service is not None and (not local_demo_pair(service,self.store,service.local_synthetic_demo)
++                or service.local_synthetic_demo.catalog is not self):
+             raise Denied('local demo reads require their exact ordinary transaction pair')
+         transaction=service._connection(self.store) if service is not None else self.store.connect()
+         with transaction as c:
+             self.validate(c)
+             yield c
+             self.validate(c)
+ 
+     read_connection = connection
+ 
+     def snapshot(self, c, parent):
+         value = self.validate(c,parent)
+         releases, instances = contracts(value,self.config.pack_sha256,
+diff --git a/tests/test_local_demo_case_step_chain.py b/tests/test_local_demo_case_step_chain.py
+index c0bff55f..a867cbdc 100644
+--- a/tests/test_local_demo_case_step_chain.py
++++ b/tests/test_local_demo_case_step_chain.py
+@@ -93,24 +93,26 @@ def test_existing_catalog_selection_original_ordinary_chain_and_physical_cold_re
+ 
+ 
+ def test_exact_pair_preserves_old_mode_and_all_other_provider_guards(demo_inputs):
+     f,cfg,_,_=demo_inputs;store=Store(f[0].dsn)
+     env=dict(PARKWEAVE_CASE_STEP_MODE=cs.LOCAL_DEMO_MODE,PARKWEAVE_SERVICE_PROFILE=catalog.PROFILE,PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG=json.dumps(cfg))
+     for change in ({'PARKWEAVE_CASE_STEP_MODE':cs.ORDINARY_MODE},{'PARKWEAVE_SERVICE_PROFILE':None},{'PARKWEAVE_LOCAL_SYNTHETIC_DEMO_CONFIG':None},
+             *({key:'{}'} for key in ('PARKWEAVE_RUNTIME_READ_CONFIG','PARKWEAVE_RUNTIME_WRITE_CONFIG','PARKWEAVE_FORMAL_PREPARATION_READ_CONFIG','PARKWEAVE_RESOURCE_APPROVAL_READ_CONFIG'))):
+         with pytest.raises(Denied):cs.from_environment(store,env|change)
+     ordinary=cs.OrdinaryCaseStepAssignments(store);provider=catalog.configure(store,catalog.PROFILE,json.dumps(cfg))
+     with pytest.raises(Denied):create_app(store,case_step_assignments=ordinary,local_synthetic_demo=provider)
+     paired=cs.from_environment(store,env)
+     create_app(store,case_step_assignments=paired,local_synthetic_demo=paired.local_synthetic_demo)
++    with pytest.raises(Denied):
++        with provider.catalog.connection():pass
+     with pytest.raises(Denied):create_app(store,case_step_assignments=paired)
+     with pytest.raises(Denied):create_app(store,case_step_assignments=paired,local_synthetic_demo=provider)
+     for key in ('_native_run_access','_isolated_run_access','_isolated_plan_approval','_isolated_service_capability_catalog'):
+         setattr(store,key,object())
+         try:
+             with pytest.raises(Denied):paired.validate(store)
+         finally:delattr(store,key)
+     store._local_synthetic_demo_catalog=provider.catalog
+     with pytest.raises(Denied):paired.validate(store)
+ 
+ 
+ def test_pinned_inputs_rechecked_after_transaction_and_never_repaired(demo_inputs):

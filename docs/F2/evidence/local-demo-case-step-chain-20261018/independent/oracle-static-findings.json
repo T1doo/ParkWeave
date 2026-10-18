@@ -1,0 +1,69 @@
+{
+  "dynamic_execution": 0,
+  "final_sha": "3f5fd029f335d132d9baecb79165b86e2159761a",
+  "open_P1": [],
+  "open_P2": [],
+  "oracle_sha256": "79848d6e938bf8e20861e0f5f1fde37b77dec2fdb3685995c0a6fb68c4a00732",
+  "rows": [
+    {
+      "evidence": "case_step_assignments.from_environment;api.configured_app",
+      "id": "LC-CS-01",
+      "reason": "New mode is explicit and requires existing profile/config. Original CURRENT_PREPARATION branch remains literal/AST preserved, no old denial fallback.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "case_step_assignments.local_demo_pair/_unmixed;api.create_app;LocalDemoCatalog.connection",
+      "id": "LC-CS-02",
+      "reason": "Exact classes and same Store/catalog identity are checked, including final catalog self identity. Initial exact-object P2 is retained separately as history.",
+      "status": "STATIC_SATISFIED_AFTER_FIX"
+    },
+    {
+      "evidence": "LocalDemoCatalog.validate;OrdinaryCaseStepAssignments._connection;launcher existing_local_demo_config",
+      "id": "LC-CS-03",
+      "reason": "Original file/pack/journal/db/catalog/schema32/validity validation unchanged and runs before/after ordinary managed transaction. New config file reader is bounded, regular, read-only and no setup data generation is added.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "LocalDemoCatalog.connection;OrdinaryCaseStepAssignments._connection/_context;ordinary_plan_sources.guard_current",
+      "id": "LC-CS-04",
+      "reason": "Catalog connection enters exactly paired ordinary managed transaction, which only calls catalog.validate rather than connection: no recursion. _checks are shared by source/current consumers. Parent callback uses validate(c,parent), original _parent final callback reloads/locks current parent and matches captured context owner/reviewer/park/org.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "OrdinaryCaseStepAssignments._context;original _parent/_binding/_live;service_capability_catalog;service_case_steps.current_sources",
+      "id": "LC-CS-05",
+      "reason": "New context pins parent to demo mapping, filters/offers only original pack executor; original successful synthetic Case/current rights/Native/any Run assignment guards preserved. Original selection mapping and actual accepted executor/resource output comparisons unchanged.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "original _CaseStepTransactions methods;_OrdinaryCaseStep;ordinary_plan_sources;service_case_steps",
+      "id": "LC-CS-06",
+      "reason": "All original business commands, marker/provenance/generation, one-offer, first deadline<=300s, 3s locks, receipt/recovery and source verifier algorithms are unchanged by AST/bytes.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "OrdinaryCaseStepAssignments._context/_connection;unchanged _parent/dispatch_command/receipt_command/P5 code",
+      "id": "LC-CS-07",
+      "reason": "New global/context checks use catalog.validate only, not full snapshot or EXECUTE/current action checks. Parent final auth, owner history READ/PREPARE/resource READ, stopping WITHDRAW and original target/action checks stay in original algorithms.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "unchanged local_demo_selections.py/service_selection.py/LocalDemoSelector/contracts",
+      "id": "LC-CS-08",
+      "reason": "Original UNIQUE NO_MODEL selection, provenance, request hashes/key, explicit ADOPT, publication=false/new_grants=false and registry reconstruction unchanged.",
+      "status": "STATIC_SATISFIED"
+    },
+    {
+      "evidence": "unchanged service_case_steps/case_lifecycle/case_goal_results/controlled_plans/ordinary_plan_sources/web",
+      "id": "LC-CS-09",
+      "reason": "No P1-P5 workflow/proof/output/VIEW code changed. Manual VERIFY and source checks, original closing/reopening/TXT conservative semantics and executor whole-plan denial remain.",
+      "status": "STATIC_SATISFIED_NOT_EXECUTED"
+    },
+    {
+      "evidence": "launcher serve/main;case_step_assignments.from_environment;unchanged worker.py;api.configured_app",
+      "id": "LC-CS-10",
+      "reason": "Launcher passes same explicit JSON/mode/profile to both children and performs read-only preflight; API reuses same service demo instance, worker recreates its own same-Store graph via shared factory. No nonce/expiry reissue/seed path or runtime algorithm change; actual cold behavior is not independently executed.",
+      "status": "STATIC_SATISFIED_NOT_EXECUTED"
+    }
+  ]
+}
