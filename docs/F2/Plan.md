@@ -1,3 +1,11 @@
+## 2026-10-18：两件普通页面新事项的同用途材料复用
+
+冻结 `c77db2cd12418e4fd32c267a98204cb8cb25147d`。普通页面从零业务创建两件独立Run／Case／preparation，来源审核确认后明确预览、勾选用途并复制材料目录；目标独立诉求、两槽审核／确认及实际资料包下载，来源v2后目标v1／整历史不变，新普通API双角色GET冷读，1200／320均通过。修实际UI缺口：企业确认只在当前owner／REVIEWED且原pending／恢复门允许时启用，后端校验未改。
+
+主冻结定向43PASS／0FES，独4PASS全重叠、不加总；761输入及五合同PRE／POST零漂移，独审无开放P1/P2。dev1导航错误、dev2真实按钮红及dev3修改中绿分窗保留；32924继承证据原字节核验未改，先前连接／清理／启动UNKNOWN保持。非全项目套件、正式AT35或跨企业模板AT08验收。
+
+本地合成再次使用入口缺口关闭；正式来源backend／主体／采纳合同与代码、合法会话／权限／目录、Windows11与正式AT／真实场景仍待，NativeRunAccess默认拒绝与真实批准边界不变。原SUBMIT新回复先完成／旧200或403最后到的settled顺序证明仍缺，记录候选，本片不扩大回执范围。项目IN_PROGRESS。详见[合同](MaterialReuseDOM-20261018.md)、[实际分窗、下载与剩余输入](MaterialReuseDOMValidation-20261018.md)。下方历史原字节保留。
+
 ## 2026-10-18：人工补证与同事项关闭／重开原普通DOM贯通
 
 最终冻结 `a9c78345d6c25aa46d808fe975a6360f43a1b51c`，生产src与e3be相同。新partial事项七步人工补证／答复／明确知悉和双角色冷读；原assigned同Case六产物后纠错回执v3、关闭／重开cycle2、P4/P5重验及新普通API持久回读，均1200／320实跑。初始SYNTHETIC权限／目录与assigned精确Run assignment fixture明确，不作真实零设置办理、Case完成或正式AT。

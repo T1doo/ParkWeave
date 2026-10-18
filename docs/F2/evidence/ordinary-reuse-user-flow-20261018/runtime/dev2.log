@@ -1,0 +1,108 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_two_new_ordinary_cases_reuse_outline_independently_review_download_and_cold_read[1200] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7fd78e67b9b0>, <parkweave.store.Store object at 0x7fd78e67ba70>, {'fixture-a': '0...atabase': {'name': 'fixture_182d16c50fad40a8ad726d81f470dda3', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-material-reuse-dom-dev2-dqr97y5z/pytest/test_two_new_ordinary_cases_re0')
+width = 1200
+
+    @pytest.mark.parametrize('width', [1200, 320])
+    def test_two_new_ordinary_cases_reuse_outline_independently_review_download_and_cold_read(demo_inputs, tmp_path, width):
+        f, cfg, pack, journal = demo_inputs
+        authority = authority_snapshot(f[1])
+        with f[1].connect() as connection:
+            assert all(connection.execute('SELECT count(*) n FROM ' + table).fetchone()['n'] == 0
+                       for table in ('runs', 'cases', 'preparations', 'preparation_evidence', 'preparation_events', 'run_assignments'))
+        source_goal = 'SYNTHETIC original archive request ' + str(width)
+        target_goal = 'SYNTHETIC independent second request ' + str(width)
+        source_need = 'SYNTHETIC source-only request summary ' + str(width)
+        target_need = 'SYNTHETIC new target-only request summary ' + str(width)
+        outline_v1 = 'SYNTHETIC reusable outline v1 中文 ' + str(width) + ' <script>window.reuseInjected=true</script>'
+        outline_v2 = 'SYNTHETIC later source-only outline v2 ' + str(width)
+        traffic, requests, errors, contexts = [], [], [], []
+        with ordinary_demo(f, tmp_path / 'first') as api, ordinary_worker(f, tmp_path / 'worker') as worker, sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path='/usr/bin/chromium', args=['--no-sandbox'])
+            def role(actor):
+                context = browser.new_context(viewport=dict(width=width, height=1000), accept_downloads=True)
+                contexts.append(context)
+                page = context.new_page()
+                page.on('pageerror', lambda error: errors.append(str(error)))
+                page.on('request', lambda request: requests.append(dict(actor=actor, method=request.method, path=urlsplit(request.url).path)))
+                def response_received(response):
+                    request = response.request
+                    if request.method == 'POST':
+                        traffic.append(dict(actor=actor, path=urlsplit(request.url).path, status=response.status, body=request.post_data_json))
+                page.on('response', response_received)
+                login(page, api, f, actor)
+                return page
+            try:
+                owner = role('fixture-a')
+                source_id = create_from_page(owner, pack, source_goal)
+                own_request(owner, source_goal)
+                add_material(owner, 'need_summary', source_need)
+                add_material(owner, 'material_outline', outline_v1)
+                reviewer = role(pack['roles']['park_specialist'])
+                review_and_confirm(owner, reviewer, source_goal)
+                source_before = case_history(f[1], source_id)
+                original = next(row for row in materials(f[1], source_id) if row['slot'] == 'material_outline')
+    
+                target_id = create_from_page(owner, pack, target_goal)
+                assert source_id != target_id and not materials(f[1], target_id)
+                owner.locator('#material-reuse-read').click()
+                expect(owner.locator('#material-reuse-form')).to_be_visible(timeout=15000)
+                expect(owner.locator('#material-reuse-source option')).to_have_count(1)
+                owner.locator('#material-reuse-source').select_option(str(original['id']))
+                expect(owner.locator('#material-reuse-confirm')).to_be_disabled()
+                owner.locator('#material-reuse-preview').click()
+                expect(owner.locator('#material-reuse-selected')).to_contain_text(outline_v1, timeout=15000)
+                preview = owner.evaluate('materialReuseView.source_preview')
+                assert preview['source_preparation_id'] == source_id and preview['source_evidence_version'] == 1
+                assert preview['source_evidence_sha256'] == hashlib.sha256(outline_v1.encode()).hexdigest()
+                expect(owner.locator('#material-reuse-confirm')).to_be_disabled()
+                owner.locator('#material-reuse-purpose').check()
+                owner.locator('#material-reuse-reason').fill('SYNTHETIC same-service second Case, reuse only this outline snapshot')
+                owner.locator('#material-reuse-confirm').click()
+                expect(owner.locator('#prep-materials')).to_contain_text(outline_v1, timeout=15000)
+                owner.wait_for_function('()=>materialReusePending===null&&!materialReuseLoading')
+                settled(owner, preparation=True)
+                copied = materials(f[1], target_id)
+                assert len(copied) == 1 and copied[0]['slot'] == 'material_outline'
+                assert copied[0]['id'] != original['id'] and copied[0]['version'] == 1
+                assert copied[0]['text'] == original['text'] and copied[0]['authenticity'] == 'UNVERIFIED'
+                assert case_history(f[1], source_id) == source_before
+                open_from_list(reviewer, target_goal)
+                expect(reviewer.locator('#prep-review')).to_be_disabled()  # Own new summary is required.
+>               expect(owner.locator('#prep-confirm')).to_be_disabled()
+E               AssertionError: Locator expected to be disabled
+E               Actual value: enabled 
+E               Call log:
+E                 - Expect "to_be_disabled" with timeout 5000ms
+E                 - waiting for locator("#prep-confirm")
+E                   14 × locator resolved to <button type="button" id="prep-confirm">确认本地资料准备</button>
+E                      - unexpected value "enabled"
+E               
+E               Aria snapshot:
+E               - button "确认本地资料准备"
+
+tests/test_material_reuse_intake_browser.py:155: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_reuse_intake_browser.py::test_two_new_ordinary_cases_reuse_outline_independently_review_download_and_cold_read[1200]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_reuse_intake_browser.py::test_two_new_ordinary_cases_reuse_outline_independently_review_download_and_cold_read[1200]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_reuse_intake_browser.py::test_two_new_ordinary_cases_reuse_outline_independently_review_download_and_cold_read[1200]
+1 failed, 4 warnings in 26.13s

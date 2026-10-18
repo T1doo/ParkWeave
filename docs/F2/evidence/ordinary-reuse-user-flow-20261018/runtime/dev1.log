@@ -1,0 +1,117 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_two_new_ordinary_cases_reuse_outline_independently_review_download_and_cold_read[1200] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7f17fcf87b30>, <parkweave.store.Store object at 0x7f17fcf87bc0>, {'fixture-a': '4...atabase': {'name': 'fixture_6e4a13889a4347f3ac288728e1c9c565', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-material-reuse-dom-dev1-74qdifno/pytest/test_two_new_ordinary_cases_re0')
+width = 1200
+
+    @pytest.mark.parametrize('width', [1200, 320])
+    def test_two_new_ordinary_cases_reuse_outline_independently_review_download_and_cold_read(demo_inputs, tmp_path, width):
+        f, cfg, pack, journal = demo_inputs
+        authority = authority_snapshot(f[1])
+        with f[1].connect() as connection:
+            assert all(connection.execute('SELECT count(*) n FROM ' + table).fetchone()['n'] == 0
+                       for table in ('runs', 'cases', 'preparations', 'preparation_evidence', 'preparation_events', 'run_assignments'))
+        source_goal = 'SYNTHETIC original archive request ' + str(width)
+        target_goal = 'SYNTHETIC independent second request ' + str(width)
+        source_need = 'SYNTHETIC source-only request summary ' + str(width)
+        target_need = 'SYNTHETIC new target-only request summary ' + str(width)
+        outline_v1 = 'SYNTHETIC reusable outline v1 中文 ' + str(width) + ' <script>window.reuseInjected=true</script>'
+        outline_v2 = 'SYNTHETIC later source-only outline v2 ' + str(width)
+        traffic, requests, errors, contexts = [], [], [], []
+        with ordinary_demo(f, tmp_path / 'first') as api, ordinary_worker(f, tmp_path / 'worker') as worker, sync_playwright() as pw:
+            browser = pw.chromium.launch(executable_path='/usr/bin/chromium', args=['--no-sandbox'])
+            def role(actor):
+                context = browser.new_context(viewport=dict(width=width, height=1000), accept_downloads=True)
+                contexts.append(context)
+                page = context.new_page()
+                page.on('pageerror', lambda error: errors.append(str(error)))
+                page.on('request', lambda request: requests.append(dict(actor=actor, method=request.method, path=urlsplit(request.url).path)))
+                def response_received(response):
+                    request = response.request
+                    if request.method == 'POST':
+                        traffic.append(dict(actor=actor, path=urlsplit(request.url).path, status=response.status, body=request.post_data_json))
+                page.on('response', response_received)
+                login(page, api, f, actor)
+                return page
+            try:
+                owner = role('fixture-a')
+>               source_id = create_from_page(owner, pack, source_goal)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_reuse_intake_browser.py:120: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+tests/test_material_reuse_intake_browser.py:22: in create_from_page
+    page.locator('#prep-catalog').click()
+.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:17876: in click
+    self._sync(
+.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:165: in click
+    return await self._frame._click(self._selector, strict=True, **params)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+.venv/lib/python3.12/site-packages/playwright/_impl/_frame.py:593: in _click
+    await self._channel.send("click", self._timeout, locals_to_params(locals()))
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:76: in send
+    return await self._connection.wrap_api_call(
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = <playwright._impl._connection.Connection object at 0x7f17fc93f950>
+cb = <function Channel.send.<locals>.<lambda> at 0x7f17fbc55580>
+is_internal = False, title = None
+
+    async def wrap_api_call(
+        self, cb: Callable[[], Any], is_internal: bool = False, title: str = None
+    ) -> Any:
+        if self._api_zone.get():
+            return await cb()
+        task = asyncio.current_task(self._loop)
+        parsed_st = _attach_api_call_information(
+            getattr(task, "__pw_stack__", None) or _capture_stack_trace(),
+            is_internal,
+            title,
+        )
+        self._api_zone.set(parsed_st)
+        try:
+            return await cb()
+        except Exception as error:
+>           raise rewrite_error(error, f"{parsed_st['apiName']}: {error}") from None
+E           playwright._impl._errors.TimeoutError: Locator.click: Timeout 30000ms exceeded.
+E           Call log:
+E             - waiting for locator("#prep-catalog")
+E               - locator resolved to <button id="prep-catalog">查看可选服务与专员</button>
+E             - attempting click action
+E               2 × waiting for element to be visible, enabled and stable
+E                 - element is not visible
+E               - retrying click action
+E               - waiting 20ms
+E               2 × waiting for element to be visible, enabled and stable
+E                 - element is not visible
+E               - retrying click action
+E                 - waiting 100ms
+E               57 × waiting for element to be visible, enabled and stable
+E                  - element is not visible
+E                - retrying click action
+E                  - waiting 500ms
+
+.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:632: TimeoutError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_material_reuse_intake_browser.py::test_two_new_ordinary_cases_reuse_outline_independently_review_download_and_cold_read[1200]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_material_reuse_intake_browser.py::test_two_new_ordinary_cases_reuse_outline_independently_review_download_and_cold_read[1200]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_material_reuse_intake_browser.py::test_two_new_ordinary_cases_reuse_outline_independently_review_download_and_cold_read[1200]
+1 failed, 4 warnings in 42.19s

@@ -1,0 +1,650 @@
+{
+  "states": [
+    {
+      "url_path": "/",
+      "summary": "SYNTHETIC independent second request 1200 · 待准备 / 重新核对 · 版本 2 · 合成资料",
+      "feedback": "",
+      "reuse": "仅空白新事项可发起复用；已有材料继续按原流程办理，来源历史保留。",
+      "error": ""
+    },
+    {
+      "url_path": "/",
+      "summary": "SYNTHETIC independent second request 1200 · 待准备 / 重新核对 · 版本 2 · 合成资料",
+      "feedback": "",
+      "reuse": "",
+      "error": ""
+    }
+  ],
+  "received_POSTs": [
+    {
+      "actor": "fixture-a",
+      "path": "/api/runs",
+      "status": 202,
+      "body": {
+        "goal": "SYNTHETIC original archive request 1200"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations",
+      "status": 201,
+      "body": {
+        "run_id": "395b0dff-68e8-4fd0-ad09-a6233dfea0d2",
+        "service_id": "synthetic-material-preparation",
+        "service_version": 1,
+        "reviewer_id": "prep-specialist-fixture-a"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/request-intent",
+      "status": 200,
+      "body": {
+        "expected_preparation_revision": 1,
+        "request_text": "SYNTHETIC original archive request 1200",
+        "required_goals": [
+          "LOCAL_MATERIAL_PREPARATION"
+        ]
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/commands",
+      "status": 200,
+      "body": {
+        "action": "ADD_EVIDENCE",
+        "expected_revision": 2,
+        "slot": "need_summary",
+        "text": "SYNTHETIC source-only request summary 1200",
+        "source_kind": "DOCUMENT_EXCERPT",
+        "source_label": "SYNTHETIC own source need_summary"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/commands",
+      "status": 200,
+      "body": {
+        "action": "ADD_EVIDENCE",
+        "expected_revision": 3,
+        "slot": "material_outline",
+        "text": "SYNTHETIC reusable outline v1 中文 1200 <script>window.reuseInjected=true</script>",
+        "source_kind": "DOCUMENT_EXCERPT",
+        "source_label": "SYNTHETIC own source material_outline"
+      }
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/commands",
+      "status": 200,
+      "body": {
+        "action": "REVIEW",
+        "expected_revision": 4,
+        "reason": "SYNTHETIC independent specialist review: SYNTHETIC original archive request 1200"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/commands",
+      "status": 200,
+      "body": {
+        "action": "CONFIRM",
+        "expected_revision": 5,
+        "reason": "SYNTHETIC independent owner confirmation: SYNTHETIC original archive request 1200"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/runs",
+      "status": 202,
+      "body": {
+        "goal": "SYNTHETIC independent second request 1200"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations",
+      "status": 201,
+      "body": {
+        "run_id": "1062be9d-9834-4e25-a28e-3e906f70bae9",
+        "service_id": "synthetic-material-preparation",
+        "service_version": 1,
+        "reviewer_id": "prep-specialist-fixture-a"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-reuse",
+      "status": 201,
+      "body": {
+        "expected_target_revision": 1,
+        "source_preparation_id": "3ec872ec-83f6-4ff3-82fe-120a5e23a913",
+        "expected_source_preparation_revision": 6,
+        "source_evidence_id": "b2d039d1-d152-4494-b474-c10adcab765f",
+        "expected_source_evidence_version": 1,
+        "expected_source_evidence_sha256": "7e2324e63bbecde497523719afd2f59886965a6418caed62e4576e14e7415e60",
+        "expected_source_snapshot_sha256": "e256f3fddd7147762cf8063329d5ade4ccbcc82e60d007ae2f494ee1db59ccd6",
+        "purpose": "SAME_SERVICE_MATERIAL_OUTLINE",
+        "reason": "SYNTHETIC same-service second Case, reuse only this outline snapshot"
+      }
+    }
+  ],
+  "sent_requests": [
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/run-access/status"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparation-catalog"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/runs"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/runs/395b0dff-68e8-4fd0-ad09-a6233dfea0d2"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/runs/395b0dff-68e8-4fd0-ad09-a6233dfea0d2"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/runs/395b0dff-68e8-4fd0-ad09-a6233dfea0d2"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/readiness"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-corrections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-objections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/fact-clarifications"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation-reconciliation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/controlled-plan"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/request-intent"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/controlled-plan"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/readiness"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-corrections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-objections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/fact-clarifications"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation-reconciliation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/commands"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/readiness"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-corrections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-objections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/fact-clarifications"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation-reconciliation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/commands"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/readiness"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-corrections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-objections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/fact-clarifications"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation-reconciliation"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/run-access/status"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/readiness"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-corrections"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-objections"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/commands"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/readiness"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-corrections"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-objections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/readiness"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-corrections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-objections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/fact-clarifications"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation-reconciliation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/commands"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/readiness"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-corrections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-objections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/fact-clarifications"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/3ec872ec-83f6-4ff3-82fe-120a5e23a913/case-cancellation-reconciliation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparation-catalog"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/runs"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/runs/1062be9d-9834-4e25-a28e-3e906f70bae9"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/runs/1062be9d-9834-4e25-a28e-3e906f70bae9"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/readiness"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-corrections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-objections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/fact-clarifications"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/case-cancellation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/case-cancellation-reconciliation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "POST",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/readiness"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-corrections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-objections"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-reuse"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/fact-clarifications"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/case-cancellation"
+    },
+    {
+      "actor": "fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/case-cancellation-reconciliation"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/readiness"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-corrections"
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "method": "GET",
+      "path": "/api/preparations/8d1dcbbf-71f3-41e4-b15d-2067eb2f8214/material-objections"
+    }
+  ],
+  "page_errors": []
+}
