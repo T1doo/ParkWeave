@@ -1,7 +1,7 @@
 """Explicit approved Linux host adapter; no installer, credential or UID creator.
 
 Pure predicates and injected observation tests cannot issue a live launch token.
-The real host uses protected signed approval, creation proof and sealed memfd.
+The real host consumes protected approval, target receipts and sealed memfd.
 """
 from datetime import datetime, timezone
 import fcntl
@@ -19,6 +19,7 @@ import subprocess
 import sys
 import time
 from uuid import UUID
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
@@ -31,6 +32,12 @@ MAX_PRIVATE = 524288
 SHA = r'^[a-f0-9]{64}$'
 _ISSUER = object()
 _FD_ISSUER = object()
+
+
+def _supported_linux_runtime():
+    return (os.name=='posix' and hasattr(os,'memfd_create') and hasattr(socket,'SO_PEERCRED') and
+            all(hasattr(fcntl,name) for name in
+                ('F_ADD_SEALS','F_GET_SEALS','F_SEAL_SEAL','F_SEAL_WRITE','F_SEAL_GROW','F_SEAL_SHRINK')))
 
 
 def canonical_path(value):
@@ -91,6 +98,8 @@ class RuntimeLayout(BaseModel):
 
 
 def launch_request(spec, layout):
+    if isinstance(layout,RuntimeLayout) and type(layout) is not RuntimeLayout:
+        raise Denied('exact legacy trial layout required')
     spec = preflight.InstallationSpec.model_validate(spec);layout = RuntimeLayout.model_validate(layout)
     p = spec.policy
     if (p is None or p.environment != 'PRODUCTION' or spec.permission_strategy != 'DIRECT_DML' or
@@ -104,6 +113,73 @@ def launch_request(spec, layout):
         socket_mode='0660',public_binding_mode='0640',writer_umask='0117',
         supplemental_groups=[],start_claim_mode='0600',
         cleanup='OWNED_CHILD_ONLY; no automatic database/path removal')
+
+
+class InstalledRuntimeLayout(RuntimeLayout):
+    """A separate public contract; aliases reuse protected path primitives only.
+
+    The legacy trial model and launch_request do not accept this JSON schema.
+    Parsing this record issues no host or runtime capability.
+    """
+    schema_version: Literal['parkweave-installed-writer-layout/1']
+    trial_root: str = Field(alias='runtime_root',pattern=r'^/var/lib/parkweave/runtimes/[a-f0-9]{32}$')
+    creation_receipt_sha256: str = Field(alias='installation_receipt_sha256',pattern=SHA)
+
+    @property
+    def installation_path(self):return self.trial_root+'/host/installation-receipt.json'
+
+
+def _runtime_layout(value):
+    if type(value) in (RuntimeLayout,InstalledRuntimeLayout):
+        value=value.model_dump(by_alias=True)
+    if type(value) is not dict:
+        raise Denied('exact supported runtime layout required')
+    model=InstalledRuntimeLayout if 'schema_version' in value else RuntimeLayout
+    return model.model_validate(value)
+
+
+def installed_launch_request(spec,layout):
+    spec=preflight.InstallationSpec.model_validate(spec);layout=_runtime_layout(layout)
+    p=spec.policy
+    if (type(layout) is not InstalledRuntimeLayout or p is None or p.environment!='PRODUCTION' or
+            spec.permission_strategy!='DIRECT_DML' or spec.transport!='LINUX_UNIX' or
+            (spec.api_uid,spec.writer_uid)!=(layout.api_uid,layout.writer_uid) or
+            not re.fullmatch(preflight.ROLE_NAME,p.database_name) or
+            p.database_name in ('postgres','template0','template1') or p.database_name.startswith('fixture_') or
+            not (p.database_host in ('127.0.0.1','localhost') or canonical_path(p.database_host)) or
+            spec.protected_location!=layout.trial_root or spec.installer_role is None or
+            set(spec.object_owners)!=set(preflight.TABLES) or
+            any(not re.fullmatch(preflight.ROLE_NAME,owner) or owner in (p.application_role,p.writer_role)
+                for owner in spec.object_owners.values()) or
+            any(not isinstance(value,str) or not value.strip() for value in
+                (spec.parent_lock_column,spec.policy_source_ref,spec.key_source_ref,spec.host_pin_source_ref))):
+        raise Denied('explicit existing installed single-Run contract required')
+    return dict(action='START_BIND_INSTALLED_SINGLE_RUN',spec_sha256=writer._sha(spec.model_dump()),
+        layout_sha256=writer._sha(layout.model_dump(by_alias=True)),
+        installation_receipt_sha256=layout.creation_receipt_sha256,
+        runtime_root=layout.trial_root,boot_id=layout.boot_id,
+        valid_from=p.valid_from,valid_until=p.valid_until,
+        socket_mode='0660',public_binding_mode='0640',writer_umask='0117',
+        supplemental_groups=[],start_claim_mode='0600',
+        cleanup='OWNED_CHILD_ONLY; retain existing database, credentials, policy and history')
+
+
+def installed_receipt_payload(spec,layout):
+    """Expected signed data only; never signs, publishes or observes installation."""
+    spec=preflight.InstallationSpec.model_validate(spec);layout=_runtime_layout(layout)
+    installed_launch_request(spec,layout);p=spec.policy
+    return dict(schema='parkweave-installed-writer-receipt/1',action='EXISTING_APPROVED_SINGLE_RUN_INSTALLATION',
+        database_name=p.database_name,database_oid=p.database_oid,system_identifier=p.system_identifier,
+        database_host=p.database_host,database_port=p.database_port,installer_role=spec.installer_role,
+        spec_sha256=writer._sha(spec.model_dump()),policy_sha256=writer._sha(p.model_dump()),
+        source_sha=layout.source_sha,source_files_sha256=writer._sha(layout.source_files),
+        private_bootstrap_sha256=layout.private_bootstrap_sha256,
+        api_uid=layout.api_uid,api_gid=layout.api_gid,writer_uid=layout.writer_uid,ipc_gid=layout.ipc_gid)
+
+
+def _host_request(spec,layout):
+    layout=_runtime_layout(layout)
+    return installed_launch_request(spec,layout) if type(layout) is InstalledRuntimeLayout else launch_request(spec,layout)
 
 
 def verified_record(record, key, expected):
@@ -260,7 +336,7 @@ def _endpoint(path, layout):
 
 def observed_pin(policy,layout,process,command,verify):
     """Pure observation predicate; observations themselves are not trusted proof."""
-    layout = RuntimeLayout.model_validate(layout);policy = writer.WriterPolicy.model_validate(policy)
+    layout = _runtime_layout(layout);policy = writer.WriterPolicy.model_validate(policy)
     if (process['pid']<=0 or process['uid']!=layout.writer_uid or process['gid']!=layout.ipc_gid or
             process['uids']!=[layout.writer_uid]*4 or process['gids']!=[layout.ipc_gid]*4 or process['groups'] or
             any((v['uid'],v['gid'],v['mode'])!=(layout.writer_uid,layout.ipc_gid,0o660) for v in (command,verify)) or
@@ -273,7 +349,7 @@ def observed_pin(policy,layout,process,command,verify):
 
 
 def launch_arguments(layout,fd):
-    layout = RuntimeLayout.model_validate(layout)
+    layout = _runtime_layout(layout)
     entry = 'import sys;sys.path[:]='+repr([layout.source_root,*layout.import_paths])+';from parkweave.native_run_access_restricted_runtime import main;raise SystemExit(main())'
     return dict(args=[layout.interpreter,'-I','-S','-c',entry,'--host-fd',str(fd)],
         shell=False,cwd='/',env={'LANG':'C.UTF-8'},user=layout.writer_uid,group=layout.ipc_gid,
@@ -291,14 +367,14 @@ class LinuxHost:
     """Production primitives are reachable only after protected live issuance."""
     def __init__(self,spec,layout):
         self._spec_json = writer._canonical(preflight.InstallationSpec.model_validate(spec).model_dump())
-        self._layout_json = writer._canonical(RuntimeLayout.model_validate(layout).model_dump())
-        launch_request(self.spec,self.layout)
+        self._layout_json = writer._canonical(_runtime_layout(layout).model_dump(by_alias=True))
+        _host_request(self.spec,self.layout)
         self._owned = {};self._consumed = False;self._live_approval = None
 
     @property
     def spec(self):return preflight.InstallationSpec.model_validate_json(self._spec_json)
     @property
-    def layout(self):return RuntimeLayout.model_validate_json(self._layout_json)
+    def layout(self):return _runtime_layout(json.loads(self._layout_json))
 
     def inspect_prerequisites(self):
         """Real metadata observations only; never reads keys or grants launch authority.
@@ -307,8 +383,7 @@ class LinuxHost:
         source hashes, private inputs and database/ACL checks in start/runtime.
         """
         layout=self.layout
-        checks=dict(linux_runtime='PASS' if os.name=='posix' and
-                    hasattr(os,'memfd_create') and hasattr(socket,'SO_PEERCRED') else 'BLOCKED',
+        checks=dict(linux_runtime='PASS' if _supported_linux_runtime() else 'BLOCKED',
                     privileged_launcher='PASS' if os.geteuid()==0 else 'BLOCKED')
         for name,check in (('existing_identities',lambda:_identities_check(layout)),
                            ('protected_source_metadata',lambda:_source_metadata_check(layout)),
@@ -327,21 +402,25 @@ class LinuxHost:
     def _approve(self,authorization):
         if type(self) is not LinuxHost or authorization is None or type(authorization) is not str or authorization!=self.layout.approval_path:
             raise Denied('explicit protected host approval reference required before private reads/start')
-        if os.name!='posix' or not hasattr(os,'memfd_create') or os.geteuid()!=0:
+        if not _supported_linux_runtime() or os.geteuid()!=0:
             raise Denied('approved privileged Linux host unavailable; no UID fallback')
-        request = launch_request(self.spec,self.layout)
+        request = _host_request(self.spec,self.layout)
         now = datetime.now(timezone.utc)
         if not datetime.fromisoformat(request['valid_from'])<=now<datetime.fromisoformat(request['valid_until']):
             raise Denied('original host policy interval required; no renewal')
         key = _protected_bytes(self.layout.approval_key_path,0,private=True)
         verified_record(json.loads(_protected_bytes(authorization,0,private=True)),key,request)
-        proof_raw = _protected_bytes(self.layout.creation_path,0,private=True,expected=self.layout.creation_receipt_sha256)
-        p = self.spec.policy
-        creation = dict(action='ORIGINAL_NEW_OWNED_DATABASE',database_name=p.database_name,
-            database_oid=p.database_oid,system_identifier=p.system_identifier,
-            owner=self.spec.installer_role,trial_root=self.layout.trial_root,
-            absent_from_initial_databases=True,initial_databases=['postgres','template0','template1'])
-        verified_record(json.loads(proof_raw),key,creation)
+        if type(self.layout) is InstalledRuntimeLayout:
+            receipt_raw=_protected_bytes(self.layout.installation_path,0,private=True,expected=self.layout.creation_receipt_sha256)
+            verified_record(json.loads(receipt_raw),key,installed_receipt_payload(self.spec,self.layout))
+        else:
+            proof_raw = _protected_bytes(self.layout.creation_path,0,private=True,expected=self.layout.creation_receipt_sha256)
+            p = self.spec.policy
+            creation = dict(action='ORIGINAL_NEW_OWNED_DATABASE',database_name=p.database_name,
+                database_oid=p.database_oid,system_identifier=p.system_identifier,
+                owner=self.spec.installer_role,trial_root=self.layout.trial_root,
+                absent_from_initial_databases=True,initial_databases=['postgres','template0','template1'])
+            verified_record(json.loads(proof_raw),key,creation)
         _identities_check(self.layout)
         _code_check(self.layout)
         _dependencies_check(self.layout)
@@ -351,7 +430,7 @@ class LinuxHost:
     def _authorized_action(self,approval):
         if (type(self) is not LinuxHost or type(approval) is not _LiveApproval or
                 approval is not self._live_approval or approval.issuer is not self or
-                approval.request!=writer._canonical(launch_request(self.spec,self.layout)) or os.geteuid()!=0):
+                approval.request!=writer._canonical(_host_request(self.spec,self.layout)) or os.geteuid()!=0):
             raise Denied('only protected live host issuance may enter real OS actions')
         request=json.loads(approval.request);now=datetime.now(timezone.utc)
         if not datetime.fromisoformat(request['valid_from'])<=now<datetime.fromisoformat(request['valid_until']):
@@ -379,13 +458,13 @@ class LinuxHost:
         raw = _protected_bytes(self.layout.bootstrap_path,self.layout.writer_uid,private=True,
                                expected=self.layout.private_bootstrap_sha256)
         private = json.loads(raw)
-        from .native_run_access_restricted_runtime import RestrictedEngine
-        RestrictedEngine(self.spec.model_dump(),private,self.layout.boot_id,lambda:None) # pure typed input check
+        from .native_run_access_restricted_runtime import validated_private_input
+        validated_private_input(self.spec.model_dump(),private,self.layout.boot_id) # No engine or authority.
         for path in (self.layout.command_path,self.layout.verify_path,self.layout.binding_path):
             if Path(path).exists() or Path(path).is_symlink():raise Denied('new host output required; no adoption/overwrite')
             _path_chain(path,{0,self.layout.writer_uid})
         host = _process(os.getpid())
-        payload = dict(spec=self.spec.model_dump(),layout=self.layout.model_dump(),private=private,
+        payload = dict(spec=self.spec.model_dump(),layout=self.layout.model_dump(by_alias=True),private=private,
                        host_pid=host['pid'],host_started=host['started'])
         fd = os.memfd_create('parkweave-approved-private-runtime',os.MFD_ALLOW_SEALING|os.MFD_CLOEXEC)
         process = None
@@ -400,7 +479,7 @@ class LinuxHost:
                 time.sleep(.02)
             else:raise Denied('owned restricted endpoints not ready; no retry startup')
             _code_check(self.layout)
-            pin = observed_pin(self.spec.policy.model_dump(),self.layout.model_dump(),_process(process.pid),
+            pin = observed_pin(self.spec.policy.model_dump(),self.layout.model_dump(by_alias=True),_process(process.pid),
                                _endpoint(self.layout.command_path,self.layout),_endpoint(self.layout.verify_path,self.layout))
             public = dict(schema='parkweave-restricted-api-binding/1',policy=self.spec.policy.model_dump(),
                 pin=pin.model_dump(),api_uid=self.layout.api_uid,api_gid=self.layout.api_gid,
@@ -440,7 +519,12 @@ class _RuntimeAuthorization:
     @property
     def payload(self):return json.loads(self._json)
     @property
-    def layout(self):return RuntimeLayout.model_validate(self.payload['layout'])
+    def layout(self):return _runtime_layout(self.payload['layout'])
+    def permits_installed_engine(self,spec,private_dsn,key,boot_id):
+        return (self._fd_issued is _FD_ISSUER and type(self.layout) is InstalledRuntimeLayout and
+                writer._canonical(spec.model_dump())==writer._canonical(self.payload['spec']) and
+                boot_id==self.layout.boot_id and private_dsn==self.payload['private']['writer_dsn'] and
+                hmac.compare_digest(key,bytes.fromhex(self.payload['private']['key'])))
     def matches(self,engine):
         from .native_run_access_restricted_runtime import RestrictedEngine
         return (self._fd_issued is _FD_ISSUER and type(engine) is RestrictedEngine and not engine._injected_store and
@@ -477,6 +561,8 @@ class _RuntimeAuthorization:
 
 
 def load_host_ticket(fd):
+    if not _supported_linux_runtime():
+        raise Denied('supported sealed Linux descriptor runtime unavailable')
     seals = fcntl.F_SEAL_SEAL|fcntl.F_SEAL_WRITE|fcntl.F_SEAL_GROW|fcntl.F_SEAL_SHRINK
     s = os.fstat(fd)
     if (s.st_uid!=0 or not stat.S_ISREG(s.st_mode) or s.st_size>MAX_PRIVATE or
@@ -490,7 +576,7 @@ def load_host_ticket(fd):
     authorization = _RuntimeAuthorization(_ISSUER,payload);authorization.check()
     _dependencies_check(authorization.layout)
     authorization._fd_issued = _FD_ISSUER # Only after actual root-owned sealed FD and host/source checks.
-    launch_request(payload['spec'],payload['layout'])
+    _host_request(payload['spec'],payload['layout'])
     from .native_run_access_restricted_runtime import RestrictedEngine
     engine = RestrictedEngine(payload['spec'],payload['private'],authorization.layout.boot_id,authorization.check)
     return engine,authorization

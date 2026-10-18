@@ -236,24 +236,35 @@ class RestrictedStore(Store):
         return self._guarded_connect()
 
 
+def validated_private_input(spec,private_input,boot_id):
+    """Pure typed inputs only; no engine, store, connection or host capability."""
+    config=preflight.InstallationSpec.model_validate(spec);p=config.policy
+    if (p is None or p.environment!='PRODUCTION' or config.transport!='LINUX_UNIX' or
+            config.permission_strategy!='DIRECT_DML' or config.api_uid in (None,0) or
+            config.writer_uid in (None,0) or config.api_uid==config.writer_uid or
+            type(private_input) is not dict or set(private_input)!={'writer_dsn','key'}):
+        raise Denied('explicit restricted private input contract required')
+    try:
+        key=bytes.fromhex(private_input['key'])
+        if len(key)!=32:raise ValueError()
+        dsn=private_connection_dsn(private_input['writer_dsn'],p);boot=str(UUID(boot_id))
+    except (ValueError,TypeError):
+        raise Denied('private runtime input invalid; values not echoed') from None
+    return config,key,dsn,boot
+
+
 class RestrictedEngine:
     """Independent dispatch implementation; original canonical business types."""
     def __init__(self, spec, private_input, boot_id, host_check, *, store_factory=None):
-        config = preflight.InstallationSpec.model_validate(spec)
-        p = config.policy
-        if (p is None or p.environment != 'PRODUCTION' or config.transport != 'LINUX_UNIX' or
-                config.permission_strategy != 'DIRECT_DML' or config.api_uid in (None,0) or
-                config.writer_uid in (None,0) or config.api_uid == config.writer_uid or
-                not re.fullmatch(r'fixture_[a-f0-9]{32}', p.database_name) or
-                not isinstance(private_input, dict) or set(private_input) != {'writer_dsn','key'}):
-            raise Denied('explicit restricted isolated trial contract required')
-        try:
-            key = bytes.fromhex(private_input['key'])
-            if len(key) != 32:raise ValueError()
-            dsn = private_connection_dsn(private_input['writer_dsn'], p)
-            self.boot_id = str(UUID(boot_id))
-        except (ValueError, TypeError):
-            raise Denied('private runtime input invalid; values not echoed') from None
+        config,key,dsn,self.boot_id=validated_private_input(spec,private_input,boot_id)
+        p=config.policy
+        if not re.fullmatch(r'fixture_[a-f0-9]{32}',p.database_name):
+            from .native_run_access_restricted_host import _RuntimeAuthorization
+            authority=getattr(host_check,'__self__',None)
+            if (type(authority) is not _RuntimeAuthorization or
+                    getattr(host_check,'__func__',None) is not _RuntimeAuthorization.check or
+                    not _RuntimeAuthorization.permits_installed_engine(authority,config,dsn,key,self.boot_id)):
+                raise Denied('issued sealed installed-runtime authority required before ordinary engine')
         self._policy_json = writer._canonical(p.model_dump())
         self._key, self._dsn = key, dsn
         self._guard = RuntimeGuard(config.model_dump(), host_check)
