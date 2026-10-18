@@ -158,6 +158,12 @@ def calendar_windows(calendar):
 
 def calculate(raw, started, observed, *, service_id, service_version, org_id):
     """Pure reference computation. Unknowns never receive invented deadlines."""
+    return _calculate(raw, started, observed, service_id=service_id,
+                      service_version=service_version, org_id=org_id)
+
+
+def _calculate(raw, started, observed, *, service_id, service_version, org_id, excluded=()):
+    """Original traversal; exclusions come only from the separate fixture ledger."""
     base = dict(state='UNKNOWN', issues=[], deadline_utc=None, deadline_local=None,
                 elapsed_work_seconds=None, target_work_seconds=None, timezone=None,
                 source_ref=None, calendar_ref=None, legal_pause_decision='NOT_EVALUATED')
@@ -192,6 +198,17 @@ def calculate(raw, started, observed, *, service_id, service_version, org_id):
         zone, (first, end), windows = calendar_windows(cal)
         if not first <= started <= observed < end:
             raise Unknown('CALENDAR_COVERAGE_INCOMPLETE')
+        previous = started
+        for left, right in excluded:
+            if not started <= left < right <= observed or left < previous:
+                raise Unknown('SYNTHETIC_PAUSE_INTERVAL_INVALID')
+            previous = right
+        # Keep the original working-time traversal below. Only its explicit
+        # half-open windows are split; closed hours never become pause credit.
+        for left, right in excluded:
+            windows = [(a, b) for start, finish in windows
+                       for a, b in ((start, min(finish, left)), (max(start, right), finish))
+                       if a < b]
         remaining = policy.target_seconds
         deadline = None
         elapsed = 0.0
@@ -333,6 +350,9 @@ def read(store, token, id):
             return base
         registry._connection(c)
         base['enabled'] = True
+        if str(id) in getattr(registry, '_synthetic_pause_clock_ids', ()):
+            base['issues'] = ['USE_SYNTHETIC_PAUSE_CLOCK_READ']
+            return base
         entry = registry.entries.get(str(id))
         if entry is None:
             base['issues'] = ['DEADLINE_SOURCE_MISSING']

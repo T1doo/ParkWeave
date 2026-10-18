@@ -504,6 +504,22 @@ def create_app(store: Store, *, summary_reader=None, proposal_planner=None, capa
             raise HTTPException(422, 'deadline observation uses server time only')
         return read(store,token(authorization),preparation_id)
 
+    from . import synthetic_pause_clock
+
+    @app.get('/api/preparations/{preparation_id}/synthetic-pause-clock')
+    def synthetic_pause_clock_read(preparation_id: UUID, request: Request,
+            authorization: str | None=Header(default=None), idempotency_key: str | None=Header(default=None)):
+        if request.query_params or (idempotency_key is not None and not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', idempotency_key)):
+            raise HTTPException(422, 'server observation and original bounded key required')
+        return synthetic_pause_clock.read(store, token(authorization), preparation_id, idempotency_key)
+
+    @app.post('/api/preparations/{preparation_id}/synthetic-pause-clock', status_code=201)
+    def synthetic_pause_clock_command(preparation_id: UUID, data: synthetic_pause_clock.Command, request: Request,
+            authorization: str | None=Header(default=None), idempotency_key: str=Header()):
+        if request.query_params or not re.fullmatch(r'[A-Za-z0-9_-]{1,100}', idempotency_key):
+            raise HTTPException(422, 'server observation and original bounded key required')
+        return synthetic_pause_clock.command(store, token(authorization), preparation_id, idempotency_key, data)
+
     @app.get('/api/preparations/{preparation_id}/command-recovery')
     def preparation_command_recovery(preparation_id: UUID,authorization: str | None=Header(default=None),idempotency_key: str=Header()):
         if not re.fullmatch(r'[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}',idempotency_key):raise HTTPException(422,'invalid recovery handle')
