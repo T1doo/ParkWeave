@@ -225,7 +225,7 @@ class InstalledLaunchTests(Offline):
         h=Harness();h.receipt+=b' '
         with h.observations(),self.assertRaises(Denied):h.controller._approve(h.controller.layout.approval_path)
         h=Harness();now=datetime.now(timezone.utc);h.spec['policy'].update(valid_from=(now-timedelta(hours=1)).isoformat(),valid_until=(now-timedelta(minutes=30)).isoformat());h.controller=host.LinuxHost(h.spec,h.layout)
-        with patch.object(host,'_protected_bytes',side_effect=AssertionError('expired policy private read')),self.assertRaises(Denied):h.controller.start(h.controller.layout.approval_path)
+        with h.observations(),patch.object(host,'_protected_bytes',side_effect=AssertionError('expired policy private read')),self.assertRaisesRegex(Denied,'original host policy interval required'):h.controller.start(h.controller.layout.approval_path)
     def test_metadata_refusal_precedes_engine_and_spawn(self):
         for name in ('_identities_check','_code_check','_dependencies_check'):
             h=Harness()
