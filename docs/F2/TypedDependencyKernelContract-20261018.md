@@ -12,4 +12,6 @@ definite 和 uncertain 可重叠，affected 为并集（含删除节点）；pre
 
 共享来源按各消费边的 observation 比较。仅来源节点自身 revision 变化而该消费 observation 完全未变且 known 时，不把其他消费者历史误作变化；observation 自身变化仍直接触发对应消费者。真正由别的依赖传播到节点后继续沿其下游传播，不用未变 observation 截断多跳。原 schema2 图可只读转为 before/current 新快照，必须核原 hash、逐 observation 绑定及原 affected/preserved；保留原图 hash 引用，不重签或重写旧历史。
 
+observation ID 不能跨源或消费边重绑；source_kind 变化参与影响判断，同一边在两版中的确定性不同时保留两版路径见证。旧schema2解析固定原作用域，不调用当前编译器重新生成历史。本片不执行适用日期或来源事实验证，不以声明的 COMPILED/HUMAN_CONFIRMED 推导真实权威。
+
 独立字面 oracle 覆盖链、分叉、汇合、多跳各类型边、候选和未知范围、锁、集合增删、scope、环/悬空/重复/界限、输入不变及旧图兼容。仅定向核验新内核和必要旧图纯计算，不运行数据库、浏览器、真实模型或普通发行分支；所有分窗和失败分别保留。只称 F3-T03 工程子集，整体 AT25/26 不签收。

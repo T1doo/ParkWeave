@@ -110,6 +110,25 @@ def test_source_category_change_is_not_hidden_by_unchanged_observation(source):
     assert result['uncertain']==['consumer','source'] and not result['preserved']
 
 
+@pytest.mark.parametrize('before_kind,current_kind',[
+    ('MODEL_CANDIDATE','COMPILED'),('COMPILED','MODEL_CANDIDATE')])
+def test_source_category_transition_retains_both_versioned_path_witnesses(before_kind,current_kind):
+    raw=graph([node('x'),node('s',source=before_kind),node('a')],[
+        edge('xs','x','s'),edge('sa','s','a')])
+    current=deepcopy(raw);current['revision']=2
+    current['nodes'][0]['revision_sha256']='b'*64
+    current['nodes'][1]['source_kind']=current_kind
+    before,after=dg.snapshot(raw),dg.snapshot(current)
+    result=dg.preview(before,after)
+    assert 'a' in result['definite'] and 'a' in result['uncertain']
+    paths={w['certainty']:w['path'] for w in result['propagation_reasons'] if w['node_id']=='a'}
+    sure=after if current_kind=='COMPILED' else before
+    candidate=before if before_kind=='MODEL_CANDIDATE' else after
+    assert paths['DEFINITE'][-1]['graph_sha256']==sure['sha256']
+    assert paths['UNCERTAIN'][-1]['graph_sha256']==candidate['sha256']
+    assert paths['DEFINITE'][-1]['edge_sha256']==paths['UNCERTAIN'][-1]['edge_sha256']
+
+
 @pytest.mark.parametrize('kind,targets,expected',[
     ('NODES',{'node_ids':['a']},['a','b']),
     ('CASES',{'case_ids':['case-a']},['a','b']),
@@ -219,6 +238,9 @@ def invalid(kind):
         raw['edges']=[]
     if kind=='unknown-bound':raw['unknown']=[dict(id='u'+str(i),kind='PACKAGE',reason='UNKNOWN') for i in range(33)]
     if kind=='id-bound':raw['nodes'][0]['id']='n'*81
+    if kind=='edge-bound':
+        raw['nodes']=[node('n'+str(i)) for i in range(24)]
+        raw['edges']=[edge(f'e{i}-{j}',f'n{i}',f'n{j}') for i in range(24) for j in range(i+1,24)][:257]
     return raw
 
 
@@ -227,7 +249,7 @@ def invalid(kind):
     'duplicate-observation','duplicate-member','bad-hash','bool-revision','float-revision',
     'unknown-kind','extra','scope-extra','step-no-case','semantic-confirmed','model-confirmed',
     'unknown-outside','case-outside','unknown-mixed','node-bound','member-bound',
-    'total-member-bound','unknown-bound','id-bound'])
+    'total-member-bound','unknown-bound','id-bound','edge-bound'])
 def test_invalid_or_unbounded_graph_is_refused_without_input_changes(kind):
     raw=invalid(kind);saved=deepcopy(raw)
     with pytest.raises(dg.GraphError):dg.snapshot(raw)
@@ -281,3 +303,15 @@ def test_legacy_hash_partition_and_consumer_forgery_never_become_current_proof()
             value['observations'][0]['step_id']=value['step_endpoints'][-1]['id']
             value['sha256']=cp._hash({k:v for k,v in value.items() if k!='sha256'})
         with pytest.raises(dg.GraphError):dg.from_unified_v1(value)
+
+
+def test_frozen_legacy_graph_does_not_consult_todays_scope_or_compiler(monkeypatch):
+    from test_unified_dependency_propagation import changed
+    from parkweave import unified_dependency_propagation as old
+    frozen=old.build_v1(*changed(13));saved=deepcopy(frozen)
+    monkeypatch.setattr(old,'SCOPE','FUTURE_SCOPE')
+    def forbidden(*args,**kwargs):
+        raise AssertionError('historical graph must not be recompiled')
+    monkeypatch.setattr(old,'build_v1',forbidden)
+    converted=dg.from_unified_v1(frozen)
+    assert converted['legacy_sha256']==saved['sha256'] and frozen==saved

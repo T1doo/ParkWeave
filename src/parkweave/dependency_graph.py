@@ -8,6 +8,7 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 CONTRACT = 'parkweave.dependency-graph/1'
+LEGACY_SCOPE = 'BOUNDED_MULTI_SOURCE_V1'
 MAX_NODES, MAX_EDGES, MAX_MEMBERS, MAX_UNKNOWN = 128, 256, 512, 32
 Id = Annotated[str, Field(pattern=r'^[A-Za-z0-9_.:-]{1,80}$')]
 Hash = Annotated[str, Field(pattern=r'^[a-f0-9]{64}$')]
@@ -229,7 +230,9 @@ def preview(before, current):
             variant = dict(edge=edge, graph_sha256=graph['sha256'],
                            edge_sha256=digest(edge), uncertain=_uncertain(edge, nodes))
             if any(v['edge_sha256'] == variant['edge_sha256'] and
-                   v['edge']['id'] == edge['id'] for v in adjacency[edge['upstream']]):
+                   v['edge']['id'] == edge['id'] and
+                   v['uncertain'] == variant['uncertain']
+                   for v in adjacency[edge['upstream']]):
                 continue
             adjacency[edge['upstream']].append(variant)
             variants.append(variant)
@@ -327,11 +330,11 @@ def from_unified_v1(value):
     This checks self-consistency of the existing snapshot, not its authority or
     current business proofs. It never writes back into the historical format.
     """
-    from . import controlled_plans as cp, unified_dependency_propagation as legacy
+    from . import controlled_plans as cp
     try:
         graph = deepcopy(value)
         if (type(graph['schema']) is not int or graph['schema'] != 2 or
-                graph['scope'] != legacy.SCOPE or
+                graph['scope'] != LEGACY_SCOPE or
                 graph['sha256'] != cp._hash({k: v for k, v in graph.items() if k != 'sha256'})):
             raise GraphError('invalid legacy graph hash or version')
         nodes, observations, edges, steps = (graph[k] for k in
@@ -363,7 +366,7 @@ def from_unified_v1(value):
                 raise GraphError('legacy observation invalid')
         observed = []
         for edge in edges:
-            if edge['id'] != cp._hash(dict(scope=legacy.SCOPE, edge={k: v for k, v in edge.items() if k != 'id'})):
+            if edge['id'] != cp._hash(dict(scope=LEGACY_SCOPE, edge={k: v for k, v in edge.items() if k != 'id'})):
                 raise GraphError('legacy edge hash changed')
             if 'observation_id' in edge:
                 observation = by_observation[edge['observation_id']]
