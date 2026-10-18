@@ -155,7 +155,7 @@ def inspect_demo(root: Path, version=None, distribution_version=None):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description='离线演示资产盘点；不读取会话、不连接数据库、不启动或安装服务。')
+    parser = argparse.ArgumentParser(description='默认离线盘点；仅显式 --local-synthetic --check-existing-inputs 可只读校验既有数据库绑定。不读取会话、不启动或安装服务。')
     parser.add_argument('--json', action='store_true', help='输出无凭据JSON清单')
     parser.add_argument('--local-synthetic', action='store_true', help='当前合成体验包：盘点精确依赖与既有配置缺项')
     parser.add_argument('--check-existing-inputs', action='store_true', help='显式只读校验既有合成资料绑定；不校验会话或授权')
