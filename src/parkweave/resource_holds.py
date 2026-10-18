@@ -156,7 +156,9 @@ def preview(store,token,id,data):
         return _boundary(resource_id=id,resource_revision=r['revision'],server_time=now,
             starts_at=data.starts_at,ends_at=data.ends_at,quantity=data.quantity,capacity=r['capacity'],
             buffer_seconds=r['buffer_seconds'],occupied_peak=peak,available_quantity=max(0,r['capacity']-peak),
-            available=peak+data.quantity<=r['capacity'],preview_only=True)
+            available=peak+data.quantity<=r['capacity'],preview_only=True,
+            resource_name=r['name'],source=r['source'],authority=r['authority'],timezone=r['timezone'],
+            external_availability='UNKNOWN',confirmation_required=True)
 
 
 def alternative_times(store,token,id,data):
