@@ -10,6 +10,7 @@ from psycopg.types.json import Jsonb
 from . import preparation as prep, service_dispatches as sd, executor_receipts as er
 from . import resource_combinations as rc, resource_holds as rh
 from .store import Conflict, Denied, digest
+from . import ordinary_plan_sources as ordinary
 
 SCOPE = 'SYNTHETIC_LOCAL_CASE_RECORD_ONLY'
 RECHECKS = ('MATERIAL_REVIEW','ACCEPTANCE_RECHECK','RECEIPT_RECHECK','RESOURCE_RECHECK')
@@ -29,7 +30,9 @@ def _auth(store, c, token, id, write=False):
     c.execute("SET LOCAL lock_timeout='3s'")
     p = store.auth(c, token, lock=True)
     if write and p['role'] != 'enterprise_operator': raise Denied('enterprise owner local lifecycle required')
-    parent = sd._parent(store,c,p,id,write=write)
+    if ordinary.selected(store) is not None:
+        p,parent=ordinary.parent(store,c,token,id,write=write)
+    else:parent = sd._parent(store,c,p,id,write=write)
     if write:
         store.check_capability(c,p,'EXECUTE')
         prep.case_write_guard(c,parent)
@@ -125,6 +128,26 @@ def _timed(c,issues,group,holds,rules):
     return now
 
 
+def _record_sources(store,c,p,parent):
+    """Original source checks with the explicitly selected ordinary step proof."""
+    step=ordinary.observation(store,c,parent)
+    result=_sources(store,c,p,parent,case_step=step)
+    if step is not None:
+        issues,snapshot,group,holds,rules=result
+        snapshot['case_step_assignment']=step
+        _timed(c,issues,group,holds,rules)
+        ordinary.guard_current(store,c,parent,step)
+        if not any(issues.values()):
+            service=ordinary.selected(store)
+            if c not in service._checks:raise Denied('bounded ordinary lifecycle transaction required')
+            def final_resources():
+                current={name:[] for name in RECHECKS}
+                _timed(c,current,group,holds,rules)
+                if any(current.values()):raise Denied('ordinary lifecycle resource validity changed after wait')
+            service._checks[c].append(final_resources)
+    return result
+
+
 def _ledger(c,parent,write=False):
     return c.execute('SELECT * FROM case_local_lifecycles WHERE preparation_id=%s '+('FOR UPDATE' if write else 'FOR SHARE'),(parent['id'],)).fetchone()
 
@@ -152,17 +175,36 @@ def _view(c,p,parent,case,row,issues=None,snapshot=None,event=None):
         history=history,event=event,qualification='NOT_EVALUATED',external_acceptance='NOT_SUBMITTED',offline_fulfillment='NO_EVIDENCE',case_goal_completed=False)
 
 
+def _ordinary_record_proof(store,c,parent,row):
+    if ordinary.selected(store) is None or row is None:return
+    events=c.execute('SELECT * FROM case_local_events WHERE preparation_id=%s ORDER BY revision',(parent['id'],)).fetchall()
+    if not events or [e['revision'] for e in events]!=list(range(1,row['revision']+1)):
+        raise Conflict('original ordinary lifecycle history required')
+    last=events[-1];_event_proof(parent,last,parent['id'])
+    if (last['cycle']!=row['cycle'] or last['payload']['local_record_state']!=row['state']
+            or last['snapshot']!=row['verified_snapshot']
+            or last['payload'].get('verified_snapshot_sha256')!=row['verified_sha256']):
+        raise Conflict('original ordinary lifecycle ledger proof required')
+    if row['state'] in ('READY','LOCAL_RECORD_CLOSED'):
+        checks=[e for e in events if e['cycle']==row['cycle'] and e['action']=='REVALIDATE']
+        if not checks:raise Conflict('original cycle revalidation required')
+        checked=checks[-1];_event_proof(parent,checked,parent['id'])
+        if checked['snapshot']!=row['verified_snapshot'] or checked['payload']['verified_snapshot_sha256']!=row['verified_sha256']:
+            raise Conflict('original ordinary cycle source proof required')
+
+
 @er.bounded
 def read(store,token,id):
-    with store.connect() as c:
+    with ordinary.connection(store) as c:
         p,parent=_auth(store,c,token,id)
         return _read_locked(store,c,p,parent)
 
 
 def _read_locked(store,c,p,parent):
     # The original result checks, shared by ordinary read and cold recovery.
-    sources=_sources(store,c,p,parent) if p['role']=='enterprise_operator' else None
+    sources=_record_sources(store,c,p,parent) if p['role']=='enterprise_operator' else None
     case=c.execute('SELECT * FROM cases WHERE id=%s FOR SHARE',(parent['case_id'],)).fetchone();row=_ledger(c,parent)
+    _ordinary_record_proof(store,c,parent,row)
     if sources:_timed(c,sources[0],*sources[2:])
     return _view(c,p,parent,case,row,*(sources[:2] if sources else (None,None)))
 
@@ -178,9 +220,42 @@ def _recovery_read_scope(c,p,parent,snapshot):
     for resource_id in sorted(ids,key=str):rh._scope(c,p,resource_id)
 
 
+def _event_proof(parent,old,id):
+    if old['preparation_id']!=id or old['actor_id']!=parent['owner_id']:
+        raise Conflict('original local Case actor and parent required')
+    payload=old['payload'];snapshot=old['snapshot'];action=old['action']
+    if not isinstance(old['fingerprint'],str) or not re.fullmatch('[a-f0-9]{64}',old['fingerprint']):
+        raise Conflict('original local Case fingerprint proof required')
+    states={'REVALIDATE':('READY','WAITING_CONFIRMATION'),'CLOSE_LOCAL_RECORD':('LOCAL_RECORD_CLOSED','WAITING_CONFIRMATION'),'REOPEN':('REOPENED','REOPENED')}
+    if (not isinstance(payload,dict) or action not in states or
+        any(payload.get(k)!=old[k] for k in ('action','revision','cycle','actor_id')) or payload.get('scope')!=SCOPE or
+        (payload.get('local_record_state'),payload.get('case_state'))!=states[action]):
+        raise Conflict('original local Case event proof mismatch')
+    try:historical_fields(payload)
+    except (TypeError,ValueError):raise Conflict('original local Case request proof mismatch') from None
+    if action=='REOPEN':
+        if snapshot is not None or payload.get('verified_snapshot_sha256') is not None:
+            raise Conflict('original reopened Case proof mismatch')
+    elif (not isinstance(snapshot,dict) or any(snapshot.get(k)!=str(parent[v]) for k,v in
+        (('preparation_id','id'),('case_id','case_id'),('run_id','run_id'))) or
+        _sha(snapshot,old['cycle'])!=payload.get('verified_snapshot_sha256')):
+        raise Conflict('original local Case source proof mismatch')
+    if action!='REOPEN':
+        # Successful original validation/close inputs have the exact saved
+        # source SHA. REOPEN historically permits an ignored optional SHA,
+        # so its complete original body cannot be reconstructed here.
+        try:
+            original=Command(action=action,expected_revision=old['revision']-1,expected_cycle=old['cycle'],
+                reason=payload['reason'],expected_snapshot_sha256=payload['verified_snapshot_sha256'],
+                **historical_fields(payload))
+            fp=digest(prep.canonical({'preparation_id':str(id),**frontier_request(original)}))
+            if fp!=old['fingerprint']:raise ValueError()
+        except (KeyError,TypeError,ValueError):raise Conflict('original local Case request proof mismatch')
+
+
 @er.bounded
 def recover(store,token,id,key):
-    with store.connect() as c:
+    with ordinary.connection(store) as c:
         p,parent=_auth(store,c,token,id)
         if p['role']!='enterprise_operator' or parent['owner_id']!=p['id']:
             raise Denied('original enterprise actor recovery required')
@@ -190,34 +265,8 @@ def recover(store,token,id,key):
             historical_only=True,automatically_replayed=False,case_goal_completed=False)
         if not old:return dict(**boundary,status='NOT_OBSERVED')
         if old['preparation_id']!=id:raise Conflict('original local Case request scope mismatch')
+        _event_proof(parent,old,id)
         payload=old['payload'];snapshot=old['snapshot'];action=old['action']
-        if not isinstance(old['fingerprint'],str) or not re.fullmatch('[a-f0-9]{64}',old['fingerprint']):
-            raise Conflict('original local Case fingerprint proof required')
-        states={'REVALIDATE':('READY','WAITING_CONFIRMATION'),'CLOSE_LOCAL_RECORD':('LOCAL_RECORD_CLOSED','WAITING_CONFIRMATION'),'REOPEN':('REOPENED','REOPENED')}
-        if (not isinstance(payload,dict) or action not in states or
-            any(payload.get(k)!=old[k] for k in ('action','revision','cycle','actor_id')) or payload.get('scope')!=SCOPE or
-            (payload.get('local_record_state'),payload.get('case_state'))!=states[action]):
-            raise Conflict('original local Case event proof mismatch')
-        try:historical_fields(payload)
-        except (TypeError,ValueError):raise Conflict('original local Case request proof mismatch') from None
-        if action=='REOPEN':
-            if snapshot is not None or payload.get('verified_snapshot_sha256') is not None:
-                raise Conflict('original reopened Case proof mismatch')
-        elif (not isinstance(snapshot,dict) or any(snapshot.get(k)!=str(parent[v]) for k,v in
-            (('preparation_id','id'),('case_id','case_id'),('run_id','run_id'))) or
-            _sha(snapshot,old['cycle'])!=payload.get('verified_snapshot_sha256')):
-            raise Conflict('original local Case source proof mismatch')
-        if action!='REOPEN':
-            # Successful original validation/close inputs have the exact saved
-            # source SHA. REOPEN historically permits an ignored optional SHA,
-            # so its complete original body cannot be reconstructed here.
-            try:
-                original=Command(action=action,expected_revision=old['revision']-1,expected_cycle=old['cycle'],
-                    reason=payload['reason'],expected_snapshot_sha256=payload['verified_snapshot_sha256'],
-                    **historical_fields(payload))
-                fp=digest(prep.canonical({'preparation_id':str(id),**frontier_request(original)}))
-                if fp!=old['fingerprint']:raise ValueError()
-            except (KeyError,TypeError,ValueError):raise Conflict('original local Case request proof mismatch')
         try:_recovery_read_scope(c,p,parent,snapshot)
         except (TypeError,KeyError,ValueError,AttributeError):raise Conflict('original local Case resource proof mismatch')
         current=_read_locked(store,c,p,parent)
@@ -234,7 +283,7 @@ def recover(store,token,id,key):
 @er.bounded
 def command(store,token,id,key,data):
     fp=digest(prep.canonical({'preparation_id':str(id),**frontier_request(data)}))
-    with store.connect() as c:
+    with ordinary.connection(store) as c:
         p,parent=_auth(store,c,token,id,write=True)
         c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('case-local-key:'+p['id']+':'+key,))
         # Reopen and historical replay must not depend on obsolete resource grants.
@@ -249,8 +298,9 @@ def command(store,token,id,key,data):
         if data.action!='REOPEN' and not old and parent.get('service_case_plan'):
             from .service_case_steps import gate as case_step_gate
             case_step_gate(store,c,parent,4)
-        sources=_sources(store,c,p,parent) if data.action!='REOPEN' and not old else None
+        sources=_record_sources(store,c,p,parent) if data.action!='REOPEN' and not old else None
         case=c.execute('SELECT * FROM cases WHERE id=%s FOR UPDATE',(parent['case_id'],)).fetchone();row=_ledger(c,parent,write=True)
+        _ordinary_record_proof(store,c,parent,row)
         if old:return _view(c,p,parent,case,row,event=old['payload'])
         if (row['revision'] if row else 0)!=data.expected_revision or (row['cycle'] if row else 1)!=data.expected_cycle:
             raise Conflict('stale local Case revision or cycle; refresh required')

@@ -36,15 +36,15 @@ def display_scope(store):
     return {} if service is None else dict(current_case_step_scope=dict(contract=service.contract,run_access_granted=False))
 
 
-def parent(store,c,token,id):
+def parent(store,c,token,id,*,write=False):
     service=selected(store)
     context=service._context(c,id)
-    p,row=context._parent(c,token,id,final=True)
+    p,row=context._parent(c,token,id,write=write,final=True)
     # A CaseStep grants no access to the whole plan or owner result collection.
     if p['role']=='service_executor':raise Denied('CaseStep grants no whole plan access')
     context._root(c,row)
     if c in service._checks:
-        service._checks[c].append(lambda: context._parent(c,token,id,final=True))
+        service._checks[c].append(lambda: context._parent(c,token,id,write=write,final=True))
     return p,row
 
 

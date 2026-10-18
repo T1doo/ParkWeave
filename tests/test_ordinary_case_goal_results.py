@@ -141,14 +141,15 @@ def test_foreign_authority_or_broken_original_proof_is_denied_without_legacy_fal
     assert business(f)==before
 
 
-def test_p5_lifecycle_and_unknown_targets_remain_unverified(ordinary_plan):
+def test_p5_stays_unverified_until_original_explicit_local_revalidation(ordinary_plan):
     f,_=ordinary_plan;p=start(f,GOALS)
     finish(f,p)
     current=ok(results(f,p));assert current['state']=='UNVERIFIED'
     assert [x['state'] for x in current['results'][:4]]==['LOCAL_OUTPUT_VERIFIED']*4
     assert current['results'][4]['state']!='LOCAL_OUTPUT_VERIFIED'
     ok(command(f,p,'P5'),409)
-    ok(f[3].get('/api/preparations/'+p['preparation_id']+'/local-case',headers=headers(f[2])),403)
+    local=ok(f[3].get('/api/preparations/'+p['preparation_id']+'/local-case',headers=headers(f[2])))
+    assert local['can_revalidate'] and local['local_record_state']=='NOT_STARTED'
 
 
 def test_only_explicit_exact_same_store_service_can_select_sources(ordinary_plan):

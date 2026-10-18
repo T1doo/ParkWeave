@@ -263,9 +263,10 @@ def current_sources(store,c,parent,plan):
             'P3':offer['state'] if offer else 'NOT_OFFERED','P4':step['state'] if step else 'NOT_ACCEPTED','P5':'NOT_STARTED'}
     if any(s['adapter_id']=='P5' for s in plan['steps']):
         owner=c.execute('SELECT * FROM principals WHERE id=%s',(parent['owner_id'],)).fetchone()
-        checks,snapshot,group,holds,rules=life._sources(store,c,owner,parent)
-        life._timed(c,checks,group,holds,rules)
+        checks,snapshot,group,holds,rules=life._record_sources(store,c,owner,parent)
         local=life._ledger(c,parent)
+        life._ordinary_record_proof(store,c,parent,local)
+        life._timed(c,checks,group,holds,rules)
         actual['P5']=local['state'] if local else 'NOT_STARTED'
         issues['P5']=sorted({reason for reasons in checks.values() for reason in reasons})
         if not local or local['state'] not in ('READY','LOCAL_RECORD_CLOSED') or local['verified_sha256']!=life._sha(snapshot,local['cycle']):

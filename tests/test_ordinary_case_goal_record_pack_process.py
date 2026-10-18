@@ -9,10 +9,10 @@ from ordinary_case_step_support import ordinary_api
 from service_release_acceptance_support import authority_snapshot
 
 
-def html(f,directory,p,plan_id,state,verify=False):
+def html(f,directory,p,plan_id,state,verify=False,**extra):
     directory.mkdir(parents=True,exist_ok=True)
     config=dict(base=str(f[3].base_url).rstrip('/'),preparation_id=p['preparation_id'],plan_id=plan_id,
-        state=state,verify=verify,tokens=dict(owner=f[2]['fixture-a'],executor=f[2]['executor-a']))
+        state=state,verify=verify,tokens=dict(owner=f[2]['fixture-a'],executor=f[2]['executor-a']),**extra)
     with (directory/'html.stdout').open('w') as out,(directory/'html.stderr').open('w') as err:
         result=subprocess.run(['node','tests/ordinary_case_goal_record_pack_html.js'],input=json.dumps(config)+'\n',
             text=True,stdout=out,stderr=err,timeout=60)

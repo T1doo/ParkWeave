@@ -108,8 +108,35 @@ const snapshot=p=>p.run(`JSON.stringify({id:noticeId,view:noticeView,context:not
    check(owner.run(`servicePlanView.steps.find(s=>s.adapter_id==='${adapter}').state`)==='VERIFIED','durable explicit VERIFY '+adapter);
   }
  }
+ if(config.local_action){
+  const card=owner.$('service-plan-steps').children.find(e=>e.dataset.serviceAdapter==='P5');
+  const open=card?.children.find(e=>e.dataset.serviceOpen==='localcase');
+  check(!!open,'original P5 navigation');await open.click();
+  check(owner.run('localCaseId')===config.preparation_id,'exact original local record');
+  const actions=config.local_action==='CLOSE'?[['local-case-validate','READY'],['local-case-close','LOCAL_RECORD_CLOSED']]:[['local-case-reopen','REOPENED']];
+  for(const [button,state] of actions){
+   check(!owner.$(button).disabled,'current owner permission '+button);
+   owner.$('local-case-reason').value='SYNTHETIC explicit original '+button;
+   const before=calls.length;await owner.$(button).click();
+   check(owner.run('localCaseView.local_record_state')===state,'durable local record '+state);
+   check(calls.slice(before).filter(c=>c.method==='POST'&&c.path.endsWith('/local-case/commands')).length===1,'one explicit original local command');
+   check(calls.slice(before).some(c=>c.method==='GET'&&c.path.includes('/local-case/recovery/')),'original GET recovery without resubmit');
+  }
+  check(owner.run('localCaseView.case_goal_completed')===false,'local closure is not physical fulfillment');
+  await owner.$('service-plan-read').click();
+  if(config.local_action==='CLOSE'){
+   check(owner.run("servicePlanView.steps.find(s=>s.adapter_id==='P5').state")!=='VERIFIED','local close does not automatically VERIFY P5');
+   const refreshed=owner.$('service-plan-steps').children.find(e=>e.dataset.serviceAdapter==='P5');
+   const verify=refreshed?.children.find(e=>e.dataset.serviceAction==='VERIFY');
+   check(!!verify,'original explicit P5 VERIFY');owner.$('service-plan-reason').value='SYNTHETIC explicit independent P5 decision';
+   await verify.click();check(owner.run("servicePlanView.steps.find(s=>s.adapter_id==='P5').state")==='VERIFIED','durable P5 owner decision');
+  }else{
+   check(owner.run('localCaseView.cycle')===2,'reopen starts original next cycle');
+  }
+ }
  await owner.$('goal-results-read').click();const view=owner.run('goalResultView');check(!!view,'actual goal result button');
- check(view.state===config.state,'expected current truth');check(view.current_required_goals.length===4,'all required goals retained');
+ const expectedGoals=config.goal_count||4;
+ check(view.state===config.state,'expected current truth');check(view.current_required_goals.length===expectedGoals,'all required goals retained');
  const postCount=calls.filter(c=>c.method==='POST').length;
  const before=calls.filter(c=>c.path.endsWith('/goal-results')).length;
  await owner.$('case-record-pack-generate').click();check(!!owner.run('caseRecordPackView'),'original generate handler');
@@ -117,7 +144,7 @@ const snapshot=p=>p.run(`JSON.stringify({id:noticeId,view:noticeView,context:not
  const text=await blobs[0].text(),marker='核对数据（UTF-8 JSON，原文按JSON转义；不包含读取凭据）：\n';
  const pack=JSON.parse(text.split(marker)[1]);
  check(pack.scope==='SYNTHETIC_CASE_RECORD_PACK_V1','original pack format');check(pack.state===config.state,'pack retains current truth');
- check(pack.results.length===4&&pack.case_goal_completed===false,'complete targets and no fulfillment claim');
+ check(pack.results.length===expectedGoals&&pack.case_goal_completed===false,'complete targets and no fulfillment claim');
  check(calls.filter(c=>c.path.endsWith('/goal-results')).length===before+4,'two fresh GETs per generate and download');
  check(calls.filter(c=>c.method==='POST').length===postCount,'export performs no write');
  check(!text.includes(config.tokens.owner)&&!text.includes(config.tokens.executor),'no sessions in export');
