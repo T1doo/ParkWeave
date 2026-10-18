@@ -1,0 +1,181 @@
+{
+  "traffic": [
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/84c60fe0-5192-4351-a031-ac2496f19508/service-selections",
+      "status": 201,
+      "body": {
+        "expected_preparation_revision": 6,
+        "expected_source_sha256": "523869591615d58f816b70d8f52f79273a4f31fecf864f3698b7b39921578a65",
+        "expected_capability_catalog_sha256": "e732aa2ad0343142e386446df0dae1c24421d2b197816716cccddc11723742af"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/84c60fe0-5192-4351-a031-ac2496f19508/service-case-plan",
+      "status": 201,
+      "body": {
+        "expected_preparation_revision": 6,
+        "expected_request_revision": 2,
+        "expected_plan_revision": 0,
+        "expected_source_sha256": "523869591615d58f816b70d8f52f79273a4f31fecf864f3698b7b39921578a65",
+        "required_goals": [
+          "LOCAL_MATERIAL_PREPARATION",
+          "LOCAL_CASE_RESOURCE_ASSOCIATION",
+          "LOCAL_INTERNAL_ACCEPTANCE",
+          "LOCAL_SYNTHETIC_RECEIPT_ACKNOWLEDGEMENT",
+          "LOCAL_SYNTHETIC_COORDINATION_RECORDS",
+          "LOCAL_CASE_RECORD_RECHECK"
+        ],
+        "reason": "SYNTHETIC explicit existing Run DOM adoption",
+        "candidate_id": "5e699a8e-6508-4bfe-9b0c-19f1118df85c",
+        "expected_candidate_sha256": "7db0b2529cbdee86565fdb44afbaa1babeca87e8eb4e53b98a7f1d7bf675edba",
+        "expected_verification_sha256": "d852b0b7e6ee649e89514574d72ea98d55de59636d4b604719ee33fbffe25448"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/84c60fe0-5192-4351-a031-ac2496f19508/service-case-plan/commands",
+      "status": 200,
+      "body": {
+        "action": "VERIFY",
+        "step_id": "2b6a161b-4a30-45e1-9081-d108717588c1",
+        "expected_revision": 1,
+        "reason": "SYNTHETIC explicit DOM checks P1",
+        "expected_source_sha256": "5d81964628d34022ea3df266a19c1b05dfbc526ac3a1f910a604789661a8f6f0"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/preview",
+      "status": 200,
+      "body": {
+        "starts_at": "2026-10-18T03:55:00Z",
+        "ends_at": "2026-10-18T04:55:00Z",
+        "quantity": 1
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/synthetic-resources/fa161ea0-b665-4ec5-b345-a070bfec764d/holds",
+      "status": 201,
+      "body": {
+        "starts_at": "2026-10-18T03:55:00Z",
+        "ends_at": "2026-10-18T04:55:00Z",
+        "quantity": 1,
+        "expected_revision": 1,
+        "ttl_seconds": 300,
+        "purpose": "SYNTHETIC existing assigned Run resources"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/synthetic-resources/fb161ea0-b665-4ec5-b345-a070bfec764d/preview",
+      "status": 200,
+      "body": {
+        "starts_at": "2026-10-18T03:55:00Z",
+        "ends_at": "2026-10-18T04:55:00Z",
+        "quantity": 1
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/synthetic-resources/fb161ea0-b665-4ec5-b345-a070bfec764d/holds",
+      "status": 201,
+      "body": {
+        "starts_at": "2026-10-18T03:55:00Z",
+        "ends_at": "2026-10-18T04:55:00Z",
+        "quantity": 1,
+        "expected_revision": 1,
+        "ttl_seconds": 300,
+        "purpose": "SYNTHETIC existing assigned Run resources"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/resource-combinations",
+      "status": 201,
+      "body": {
+        "members": [
+          {
+            "hold_id": "c69f16f2-a411-488e-bc69-5a87b2eb17d7",
+            "expected_revision": 1
+          },
+          {
+            "hold_id": "dcc6a00d-ca75-4b03-98b7-5563b1c861a2",
+            "expected_revision": 1
+          }
+        ]
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/84c60fe0-5192-4351-a031-ac2496f19508/resource-link",
+      "status": 201,
+      "body": {
+        "combination_id": "f74c3e2e-6667-4824-b978-3679e9895f8c",
+        "expected_preparation_revision": 6,
+        "expected_link_revision": 0,
+        "reason": "SYNTHETIC explicit existing Run resource association"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/84c60fe0-5192-4351-a031-ac2496f19508/service-case-plan/commands",
+      "status": 200,
+      "body": {
+        "action": "VERIFY",
+        "step_id": "aa7d272b-2033-460f-a501-7f041e7d25fc",
+        "expected_revision": 2,
+        "reason": "SYNTHETIC explicit DOM checks P2",
+        "expected_source_sha256": "1f5426541530068454ee07cd1679affc9b72d2ed934832d53e01d2930ce1641c"
+      }
+    },
+    {
+      "actor": "prep-specialist-fixture-a",
+      "path": "/api/preparations/84c60fe0-5192-4351-a031-ac2496f19508/dispatch",
+      "status": 201,
+      "body": {
+        "expected_preparation_revision": 6,
+        "expected_dispatch_revision": 0,
+        "executor_id": "executor-a",
+        "reason": "SYNTHETIC offer to preexisting authorized executor"
+      }
+    },
+    {
+      "actor": "executor-a",
+      "path": "/api/service-dispatches/adfd3030-397b-4f68-b355-21597f1e8ff5/commands",
+      "status": 200,
+      "body": {
+        "action": "ACCEPT",
+        "expected_revision": 1,
+        "reason": "SYNTHETIC executor independently accepts"
+      }
+    },
+    {
+      "actor": "fixture-a",
+      "path": "/api/preparations/84c60fe0-5192-4351-a031-ac2496f19508/service-case-plan/commands",
+      "status": 200,
+      "body": {
+        "action": "VERIFY",
+        "step_id": "d6a87daa-630f-4e60-8cfb-677cea1d1715",
+        "expected_revision": 3,
+        "reason": "SYNTHETIC explicit DOM checks P3",
+        "expected_source_sha256": "23366064fcb03e44706f50c022834b443ff232813df3cd07b9fba2bde379d908"
+      }
+    },
+    {
+      "actor": "executor-a",
+      "path": "/api/executor-receipts/a529a320-3a6c-4098-a4b3-9a95148aad02/commands",
+      "status": 200,
+      "body": {
+        "action": "SUBMIT",
+        "expected_revision": 1,
+        "text": "SYNTHETIC original assigned executor DOM receipt",
+        "source_kind": "SYNTHETIC",
+        "source_label": "SYNTHETIC local manual work record"
+      }
+    }
+  ],
+  "page_errors": []
+}

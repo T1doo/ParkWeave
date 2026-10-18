@@ -1,0 +1,458 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+_ test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart[1200] _
+
+demo_inputs = ((<parkweave.store.Store object at 0x7f03b2c8da00>, <parkweave.store.Store object at 0x7f03b2c8da30>, {'fixture-a': 'Z...atabase': {'name': 'fixture_c1be0fa188d549e7a9e6c15bf40fee10', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-ttl-template-development-v2-fatuwb0w/pytest/test_existing_assigned_run_ori0')
+width = 1200
+
+    @pytest.mark.parametrize('width',[1200,320])
+    def test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart(demo_inputs,tmp_path,width):
+        f,_,pack,_=demo_inputs
+        parent=prepared(f)
+        # Only owned synthetic fixture initialization; never runtime authority.
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        baseline=authority_snapshot(f[1]);goal='SYNTHETIC资料准备'
+        traffic=[];errors=[];contexts=[]
+        with ordinary_demo(f,tmp_path/'first') as api,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            def role(actor):
+                context=browser.new_context(viewport=dict(width=width,height=1000));contexts.append(context);page=context.new_page()
+                page.on('pageerror',lambda e:errors.append(str(e)))
+                def response(reply):
+                    req=reply.request
+                    if req.method=='POST':traffic.append(dict(actor=actor,path=urlsplit(req.url).path,status=reply.status,body=req.post_data_json))
+                page.on('response',response);login(page,api,f,actor);return page
+            try:
+                owner=role(pack['roles']['enterprise_operator'])
+                reviewer=role(pack['roles']['park_specialist'])
+                executor=role(pack['roles']['service_executor'])
+                open_from_list(owner,goal);open_service_plan(owner)
+                owner.locator('#service-selection-read').click()
+                expect(owner.locator('#service-selection-catalog')).to_contain_text('LOCAL_SYNTHETIC_DEMO',timeout=15000)
+                owner.locator('#service-selection-generate').click()
+                expect(owner.locator('#service-selection-confirm')).to_be_enabled(timeout=15000)
+                owner.locator('#service-selection-confirm').check()
+                owner.locator('#service-plan-reason').fill('SYNTHETIC explicit existing Run DOM adoption')
+                owner.locator('#service-plan-adopt').click();settled(owner)
+                verify(owner,'P1')
+                owner.locator('[data-tab="resource"]').click();owner.locator('#resource-catalog').click()
+                expect(owner.locator('#resource-form')).to_be_visible()
+                starts=datetime.now(timezone.utc)+timedelta(hours=1);ends=starts+timedelta(hours=1)
+                for resource in pack['resources'].values():
+                    owner.locator('#resource-select').select_option(resource)
+                    owner.locator('#resource-start').fill(starts.strftime('%Y-%m-%dT%H:%M'))
+                    owner.locator('#resource-end').fill(ends.strftime('%Y-%m-%dT%H:%M'))
+                    owner.locator('#resource-quantity').fill('1');owner.locator('#resource-ttl').fill('300')
+                    owner.locator('#resource-purpose').fill('SYNTHETIC existing assigned Run resources')
+                    owner.locator('#resource-preview').click();expect(owner.locator('#resource-hold')).to_be_enabled()
+                    owner.locator('#resource-hold').click()
+                    expect(owner.locator('#resource-preview-result')).to_contain_text('占位已核对',timeout=15000);settled(owner)
+                owner.locator('#resource-mine').click();holds=owner.locator('[data-combination-hold]');expect(holds).to_have_count(2)
+                for hold in holds.all():hold.check()
+                owner.locator('#combination-confirm').click()
+                expect(owner.locator('#combination-feedback')).to_contain_text('确认',timeout=15000);settled(owner)
+                open_from_list(owner,goal);owner.locator('#case-resource-load').click()
+                expect(owner.locator('#case-resource-form')).to_be_visible()
+                owner.locator('#case-resource-reason').fill('SYNTHETIC explicit existing Run resource association')
+                owner.locator('#case-resource-form button').click()
+                expect(owner.locator('#case-resource-summary')).to_contain_text('当前资料版本与资源关联有效',timeout=15000);settled(owner)
+                verify(owner,'P2')
+                open_from_list(reviewer,goal);reviewer.locator('#dispatch-prepare').click()
+                expect(reviewer.locator('#dispatch-offer')).to_be_visible(timeout=15000)
+                reviewer.locator('#dispatch-executor').select_option(pack['roles']['service_executor'])
+                reviewer.locator('#dispatch-offer-reason').fill('SYNTHETIC offer to preexisting authorized executor')
+                reviewer.locator('#dispatch-offer-button').click()
+                expect(reviewer.locator('#dispatch-summary')).to_contain_text('等待执行者决定',timeout=15000);settled(reviewer)
+                executor.locator('[data-tab="collaboration"]').click();executor.locator('#dispatch-list').click()
+                item=executor.locator('#dispatch-items button').filter(has_text=goal);expect(item).to_have_count(1);item.click()
+                expect(executor.locator('#dispatch-summary')).to_contain_text('等待执行者决定')
+                executor.locator('#dispatch-decision-reason').fill('SYNTHETIC executor independently accepts')
+                executor.locator('#dispatch-accept').click()
+                expect(executor.locator('#dispatch-summary')).to_contain_text('执行者已接单',timeout=15000);settled(executor)
+                open_from_list(owner,goal);verify(owner,'P3')
+                executor.locator('#dispatch-receipt').click()
+                expect(executor.locator('#receipt-submit')).to_be_visible(timeout=15000)
+                executor.locator('#receipt-text').fill('SYNTHETIC original assigned executor DOM receipt')
+                executor.locator('#receipt-source').fill('SYNTHETIC local manual work record')
+                executor.locator('#receipt-submit-button').click()
+                expect(executor.locator('#receipt-summary')).to_contain_text('回执已记录，待企业核对',timeout=15000);settled(executor)
+                open_from_list(owner,goal);owner.locator('#receipt-prepare').click()
+>               expect(owner.locator('#receipt-decisions')).to_be_visible(timeout=15000)
+E               AssertionError: Locator expected to be visible
+E               Actual value: hidden 
+E               Call log:
+E                 - Expect "to_be_visible" with timeout 15000ms
+E                 - waiting for locator("#receipt-decisions")
+E                   32 × locator resolved to <form id="receipt-decisions">…</form>
+E                      - unexpected value "hidden"
+E               
+E               Aria snapshot:
+E               - banner:
+E                 - heading "园合 ParkWeave" [level=1]
+E                 - paragraph: 企业说目标，园区交付服务。
+E                 - text: 合成工程验证 未接入真实园区或模型
+E               - navigation "工作区":
+E                 - button "服务"
+E                 - button "协同"
+E                 - button "资源"
+E               - text: 合成身份会话
+E               - textbox "合成身份会话":
+E                 - /placeholder: 输入本机测试会话
+E                 - text: REDACTED_TEMPORARY_SESSION_CANDIDATE
+E               - text: 仅用于本机合成测试。会话只保存在当前页面内存；切换身份会清空当前界面。
+E               - heading "读取已有资料准备记录" [level=2]
+E               - paragraph: 输入当前会话及原资料准备编号。只读核对本人或获派范围、当前专员和目录，再进入原材料与来源修订入口。此入口只接受本地合成资料；读取不会创建记录、分派或批准。
+E               - text: 原资料准备编号
+E               - textbox "原资料准备编号"
+E               - button "只读打开已有记录"
+E               - status
+E               - heading "正式资料来源 · 入口条件" [level=2]
+E               - paragraph: 核对当前已有会话的只读权限和正式来源接线条件。正式来源须独立证明资料、Case、Run、已采纳方案及当前主体授权；合成资料编号、批准或签名不能代替这些证明。
+E               - button "只读核对正式入口条件"
+E               - status
+E               - paragraph: COLLABORATION · 协同
+E               - heading "需要你推进的事项" [level=2]
+E               - paragraph: 补交材料、人工核对与本地确认，在同一事项中保留记录。
+E               - button "刷新我的资料准备待办"
+E               - paragraph: 待办来自本地资料记录，办理后请刷新；材料齐全不代表真实性或资格满足。
+E               - status
+E               - button "我的资料准备事项"
+E               - button "SYNTHETIC资料准备 · 本地资料准备已确认"
+E               - separator
+E               - heading "内部分派与接单" [level=3]
+E               - paragraph: 专员从已有合法执行者中分派，执行者本人接受或拒绝；未接单事项可说明原因撤回。这里只记录本地协作。
+E               - button "刷新我的分派事项"
+E               - separator
+E               - heading "获派执行者合成回执" [level=3]
+E               - paragraph: 执行者记录本事项的合成回执，企业核对、要求纠错或重开。这里只保留本地记录，外部未受理，无线下履约证据。
+E               - button "刷新我的回执事项"
+E               - separator
+E               - button "单 Run 访问状态与审批"
+E               - heading "平台内分派通知" [level=3]
+E               - paragraph: 平台通知可供本人收取，打开请求与本人明确已读分别记录；均不代表履约。当前只覆盖新分派事件。
+E               - button "刷新我的站内通知"
+E               - paragraph
+E               - alert
+E               - heading "我的事项办理进度" [level=3]
+E               - paragraph: 查看本人当前有权读取的合成事项、录得的等待环节及原办理入口。这里只整理已保存状态，未验证材料、资格或真实履约；撤销事项不自动释放资源。
+E               - button "读取我的事项进度"
+E               - status
+E               - heading "本地运行核对" [level=3]
+E               - paragraph: 重新打开后，输入原合成会话，只读找回本人已有的本地建单记录。选择记录不会继续办理或重复建单。
+E               - button "找回我的本地办理记录"
+E               - status
+E               - text: 运行编号
+E               - textbox "运行编号"
+E               - button "查看持久状态"
+E               - button "暂停"
+E               - button "继续"
+E               - button "取消"
+E               - button "核对结果"
+E               - heading "资料交付异议与企业复核" [level=3]
+E               - paragraph: 只处理本事项合成资料交付；专员回应后由企业明确复核，Case目标仍未完成。
+E               - status: 当前没有未决资料异议；Case目标仍未完成。
+E               - text: 异议、回应或复核说明
+E               - textbox "异议、回应或复核说明"
+E               - button "提出资料交付异议"
+E               - alert
+E               - paragraph: PREPARATION · 资料准备
+E               - heading "资料准备事项" [level=2]
+E               - paragraph: SYNTHETIC资料准备 · 本地资料准备已确认 · 版本 6 · 合成资料
+E               - status: 已就绪 · 当前读取资料版本 6；提交仍核对原权限和版本。
+E               - heading "此事项的原运行与办理入口" [level=3]
+E               - paragraph: 按当前资料记录的 Case、Run 和精确服务版本读取；各入口仍会核对当前权限。已有访问批准只用于原 Run READ，资源方案批准仍须原独立契约。
+E               - button "只读查看此事项原 Run"
+E               - button "进入此事项原分派与接单"
+E               - button "只读查看原 Run 访问批准"
+E               - button "读取精确目录与方案批准状态"
+E               - status
+E               - heading "资源方案批准 · 只读核对已有记录" [level=3]
+E               - paragraph: 与 Run READ 访问批准分开核对。这里不创建或激活批准，也不提供资源执行权限。
+E               - button "读取已有资源方案批准"
+E               - status
+E               - button "刷新当前事项"
+E               - heading "未提交回执前取消" [level=3]
+E               - paragraph: 仅支持普通合成Case：首次接单前，或已接单且全部人工步骤从未提交回执。已有提交、核对、关闭或隔离效果均不能在此取消。取消停止新增资料、方案、分派、接单和回执；成功建单、原资料与实际接单历史保留。本片不支持取消后恢复。取消不释放预约，已有预约仍占容量，请按原资源权限独立释放。
+E               - button "核对取消条件与原请求"
+E               - paragraph: 当前不能取消：ALL_MANUAL_GENERATIONS_MUST_HAVE_ACCEPTANCE_PROOF、EXACT_MANUAL_ACCEPTANCE_AND_CREATE_PROOF_REQUIRED、REDACTED_TEMPORARY_SESSION_CANDIDATE
+E               - heading "已有人工回执：取消请求与核对" [level=3]
+E               - paragraph: 仅用于无外部效果的本地人工合成回执。请求后停止新的办理，原回执事实与预约保留；未明确结果继续核对中。全部原结果核实后仍须单独确认终结。取消不会释放预约，资源须按原权限独立办理。
+E               - button "读取当前取消与全部原回执"
+E               - paragraph: 此Case已有本地人工合成回执。明确请求取消会停止新办理，保留已经提交的事实；不会自动核对或释放预约。
+E               - article:
+E                 - strong: 原人工回执 v1
+E                 - paragraph: SYNTHETIC original assigned executor DOM receipt
+E                 - text: 正文 SHA256 b1e30aaaf50270bdcee2c71fc09aac379407a0c24a7fdeda351c11b2795973bd
+E               - text: 本次明确操作原因
+E               - textbox "本次明确操作原因"
+E               - checkbox "本人已核对当前Case及全部原资料；明确选择本次操作，保留原事实，资源另行释放"
+E               - text: 本人已核对当前Case及全部原资料；明确选择本次操作，保留原事实，资源另行释放
+E               - button "明确请求取消，停止新办理" [disabled]
+E               - button "保存逐项核对结果" [disabled]
+E               - button "全部结果核实后确认终结" [disabled]
+E               - heading "办理期限与来源" [level=3]
+E               - paragraph: 核对当前事项的明确来源与逐日工作日历。缺少来源时保持待确认；当前没有业务停表权限。
+E               - button "只读核对办理期限"
+E               - status: 办理期限待确认。
+E               - alert
+E               - article:
+E                 - strong: 材料目录 / v1
+E                 - paragraph: SYNTHETIC current outline
+E                 - text: DOCUMENT_EXCERPT · SYNTHETIC sample document v1 · 真实性尚未核实
+E               - article:
+E                 - strong: 诉求摘要 / v1
+E                 - paragraph: SYNTHETIC current need
+E                 - text: DOCUMENT_EXCERPT · SYNTHETIC sample document v1 · 真实性尚未核实
+E               - heading "从已选事实整理诉求摘要" [level=3]
+E               - paragraph: 将你为本事项明确选用的地区、员工人数和服务诉求整理成新的未核验材料，交给原获派专员检查。不会生成政策要求、证明或资格结论，也不会自动补齐材料目录。
+E               - button "查看当前来源的摘要草稿与待补材料"
+E               - alert
+E               - heading "从文件整理材料候选" [level=3]
+E               - paragraph: 选择本人有权使用的本地合成样例 TXT、MD、CSV 或 JSON。最多8KiB，整理后的正文最多4000字符；只读取你选择的文件，不提取事实或核实真实性，不调用模型。文件内容会发送到当前本机API解析，先看全文再决定是否填入原表单。
+E               - text: 合成样例文件
+E               - button "合成样例文件"
+E               - checkbox "这是我有权用于此事项的合成样例，内容不代表真实企业资料或业务证明"
+E               - text: 这是我有权用于此事项的合成样例，内容不代表真实企业资料或业务证明
+E               - button "读取文件并查看候选全文"
+E               - status
+E               - heading "追加前核对本次材料差异" [level=3]
+E               - paragraph: 先在下方原表单选择材料类型、填写或导入正文及来源，再核对同事项当前同槽材料。编辑后须重新核对；不会自动采纳事实、保存材料或解决补正。
+E               - button "核对本表单与当前材料差异"
+E               - status
+E               - text: 材料类型
+E               - combobox "材料类型":
+E                 - option "诉求摘要" [selected]
+E                 - option "材料目录"
+E               - text: 候选材料内容
+E               - textbox "候选材料内容"
+E               - text: 来源类型
+E               - combobox "来源类型":
+E                 - option "企业自述" [selected]
+E                 - option "文档摘录（尚未核实真实性）"
+E               - text: 来源与文档版本
+E               - textbox "来源与文档版本":
+E                 - /placeholder: 例如：合成材料清单 v1 / 用户自述
+E               - group:
+E                 - button "追加材料版本"
+E               - text: 人工说明
+E               - textbox "人工说明"
+E               - group:
+E                 - button "确认本地资料准备"
+E                 - button "申请重开资料准备"
+E               - paragraph: 核对仅表示获派专员检查当前资料包，不证明资料真实性或资格满足。确认只推进本地资料准备；Case目标、外部受理和线下履约不自动完成。
+E               - button "查看此Case持久步骤计划"
+E               - button "查看此事项四步计划"
+E               - button "查看此Case的本地关闭与重开记录"
+E               - button "查看此事项的内部分派"
+E               - button "查看此运行已有获派执行者"
+E               - text: 当前合法获派执行者
+E               - combobox "当前合法获派执行者":
+E                 - option "executor-a" [selected]
+E               - button "建立合成回执步骤"
+E               - heading "此服务Case的资源关联" [level=3]
+E               - paragraph: 选择本人已确认的组合，持久记录资料版本、资源归属和核对说明。关联不新增占用，不代表真实预约或履约；资料重开或资源变化须重新核对。
+E               - button "查看此Case资源并选择关联"
+E               - alert
+E               - article:
+E                 - heading "合成规则准备度（开发模拟）" [level=3]
+E                 - paragraph: 仅定位服务端已配置的开发绑定。SYNTHETIC_REVIEWED只表示合成模拟事件链，不能代替正式审核或真实事实核验。资格始终未判定。
+E                 - text: 已有开发绑定编号
+E                 - textbox "已有开发绑定编号"
+E                 - text: 明确评估时点（UTC）
+E                 - textbox "明确评估时点（UTC）"
+E                 - button "只读核对合成规则准备度"
+E                 - status
+E               - article:
+E                 - heading "本人同资源替代时段" [level=3]
+E                 - paragraph: 先读取本事项当前办理计划和原资源关联，再查同一组资源的时段。提议不释放旧占用；分别预检、占位、组合确认、Case比较与重核仍须原入口明确操作。
+E                 - text: 搜索起点（UTC）
+E                 - textbox "搜索起点（UTC）"
+E                 - text: 搜索终点（UTC，窗口不超过24小时）
+E                 - textbox "搜索终点（UTC，窗口不超过24小时）"
+E                 - button "只读查找本人同资源替代时段"
+E                 - status
+E                 - heading "仅GET核对原资源请求" [level=4]
+E                 - text: 原请求类型
+E                 - combobox "原请求类型":
+E                   - option "单资源占位/确认/释放" [selected]
+E                   - option "两资源组合确认/取消"
+E                   - option "本事项资源关联"
+E                 - text: 原请求键
+E                 - textbox "原请求键"
+E                 - text: 原正文指纹（可选，精确64位SHA256）
+E                 - textbox "原正文指纹（可选，精确64位SHA256）"
+E                 - button "只读核对这个原请求键"
+E               - heading "此事项材料准备度" [level=3]
+E               - paragraph: 尚未保存评估 · 当前材料条件：未知 · 资料版本 6
+E               - paragraph: 只核对本地合成资料条件。材料真实性未核实；规则处于工程草稿、未业务发布，资格仍未知，Case目标未完成。
+E               - group:
+E                 - button "保存当前材料准备度评估"
+E               - heading "当前材料准备与补正文本包" [level=4]
+E               - paragraph: 整理已分享的当前材料、缺口和原补正说明，供你复制或保存。每次输出重新核对权限与版本；正式政策和真实履约仍待核实。
+E               - button "生成当前材料文本包"
+E               - heading "逐项材料依据与缺口（合成示例，供人工核对）" [level=4]
+E               - paragraph: 真实政策条件与材料要求尚未提供：未知。以下仅为现有资料整理合同，不能据此判断资格。
+E               - article:
+E                 - strong: 诉求摘要 · 当前资料包已人工核对，真实性仍未核实
+E                 - paragraph: 依据：SYNTHETIC sample document v1 · v1 · DOCUMENT_EXCERPT
+E                 - paragraph: SYNTHETIC current need
+E                 - group: 查看此材料的版本指纹
+E                 - paragraph: 下一步：核查当前人工记录，再按原流程确认资料准备
+E               - article:
+E                 - strong: 材料目录 · 当前资料包已人工核对，真实性仍未核实
+E                 - paragraph: 依据：SYNTHETIC sample document v1 · v1 · DOCUMENT_EXCERPT
+E                 - paragraph: SYNTHETIC current outline
+E                 - group: 查看此材料的版本指纹
+E                 - paragraph: 下一步：核查当前人工记录，再按原流程确认资料准备
+E               - article:
+E                 - strong: 诉求摘要记录：满足
+E                 - paragraph: 原因：已存在当前来源记录，仅证明记录存在
+E                 - paragraph: 依据：现有合成资料整理合同；工程草稿，未发布
+E                 - paragraph: 诉求摘要 v1 · SYNTHETIC sample document v1
+E               - article:
+E                 - strong: 当前完整资料人工核对：满足
+E                 - paragraph: 原因：获派专员已核对当前完整资料包
+E                 - paragraph: 依据：现有合成资料整理合同；工程草稿，未发布
+E                 - paragraph: 诉求摘要 v1 · SYNTHETIC sample document v1
+E                 - paragraph: 材料目录 v1 · SYNTHETIC sample document v1
+E                 - paragraph: 人工记录（需按当前原因判断适用性）：SYNTHETIC original specialist review · 资料版本 5
+E               - paragraph: 诉求摘要记录：满足 · 已存在当前来源记录，仅证明记录存在
+E               - paragraph: 当前完整资料人工核对：满足 · 获派专员已核对当前完整资料包
+E               - group: 可复核来源与规则
+E               - group: 历史评估（过期结论不能用于当前资料）
+E               - alert
+E               - heading "为本事项明确选择事实来源" [level=3]
+E               - paragraph: 仅将本人合成断言用于这次服务资料准备。所有竞争来源保留，明确选择不证明真实性，也不作资格判断。
+E               - button "查看本事项事实来源与用途"
+E               - paragraph: 尚未声明本次用途 · 用途版本 0
+E               - paragraph: 地区：缺少来源，请从原事实入口补充
+E               - paragraph: 员工人数：缺少来源，请从原事实入口补充
+E               - paragraph: 服务诉求：缺少来源，请从原事实入口补充
+E               - checkbox "为本事项开启地区、员工人数、服务诉求的资料准备用途核对；来源变化后重新明确确认"
+E               - text: 为本事项开启地区、员工人数、服务诉求的资料准备用途核对；来源变化后重新明确确认 本次用途声明说明
+E               - textbox "本次用途声明说明"
+E               - button "明确声明本次事实用途"
+E               - group: 从本人原事实入口追加合成来源
+E               - heading "本事项事实用途历史" [level=4]
+E               - paragraph: 本事项尚无事实用途确认记录。
+E               - alert
+E               - heading "本事项事实来源与人工锁" [level=3]
+E               - paragraph: 企业自述、当前资料摘录、待核假设分开保存。仅本人按本次资料准备用途读取，来源仍未经核实；假设不能直接作为事实选择。来源换版保留历史，不会自动改动你锁定的选择。
+E               - button "读取本次来源包"
+E               - button "只读核对原来源操作"
+E               - status
+E               - text: 本次登记、撤回、锁定或解锁说明
+E               - textbox "本次登记、撤回、锁定或解锁说明"
+E               - group: 来源包历史
+E               - alert
+E               - heading "同用途复用本人材料目录" [level=3]
+E               - paragraph: 为此新事项明确选择本人同一服务的已核对材料目录。复制后作为新的未核验版本，仍须提交本次诉求摘要并由本事项专员重新核对。
+E               - button "查看本人可复用材料及历史"
+E               - paragraph: 仅空白新事项可发起复用；已有材料继续按原流程办理，来源历史保留。
+E               - heading "本事项复用来源记录" [level=4]
+E               - paragraph: 本事项尚无复用记录。
+E               - alert
+E               - heading "逐项补正与当前材料版本" [level=3]
+E               - paragraph: 尚无逐项补正请求 · 资料版本 6
+E               - paragraph: 没有尚待提交或核对的逐项要求；资料仍需按原流程核对与确认。
+E               - group: 补正请求与核对历史
+E               - alert
+E               - paragraph
+E               - heading "本事项合成机会" [level=3]
+E               - paragraph: 手动导入本人事项的资料变化或既有合成服务版本提示，仍须人工审阅；不判断政策资格，不自动外发，不代表后台持续在线。
+E               - button "读取当前机会与来源"
+E               - button "只读核对原机会操作" [disabled]
+E               - status
+E               - text: 本次导入、刷新、忽略或撤回说明
+E               - textbox "本次导入、刷新、忽略或撤回说明"
+E               - button "明确手动刷新来源绑定" [disabled]
+E               - group: 明确导入合成机会
+E               - heading "本计划的人工协调说明与资料来源差异" [level=4]
+E               - paragraph: 人工协调说明独立于资料事实和服务合同。来源候选仅取此事项实际材料目录正文；机会提示不能作为事实或授权。来源改变后须明确处理，原业务核验仍从原入口完成。保留并继续须逐行承载新来源条件；这不表示业务义务已满足。缺条件先明确编辑补入，追加合并须完整保留当前人工原文；锁定时先由原入口解锁。
+E               - button "读取人工说明与当前资料"
+E               - button "只读核对原说明操作"
+E               - text: 用于处理的当前机会
+E               - combobox "用于处理的当前机会":
+E                 - option "只读取与编辑人工说明" [selected]
+E               - status
+E               - text: 人工协调说明
+E               - textbox "人工协调说明"
+E               - text: 本次编辑或处理说明
+E               - textbox "本次编辑或处理说明"
+E               - checkbox "我已核对原文、来源版本及人工锁，明确保存本次选择"
+E               - text: 我已核对原文、来源版本及人工锁，明确保存本次选择
+E               - button "明确保存人工协调说明" [disabled]
+E               - button "保留人工修改" [disabled]
+E               - button "保留当前人工正文并明确继续" [disabled]
+E               - button "明确保存追加合并稿并继续" [disabled]
+E               - button "接受当前来源修改" [disabled]
+E               - button "暂不处理，保留待办" [disabled]
+E               - paragraph: 保留或暂不处理不会恢复旧核验。接受来源也不会自动解锁、采纳计划或核验；请先按原规则明确解锁，再分别采纳与核验。
+E               - group: 人工说明及处置历史
+E               - heading "明确确认双槽材料包并保留人工正文" [level=4]
+E               - paragraph: 读取仅显示原捕获材料、当前实际材料和本人正文。明确提交后，本计划启用双槽检查；任一材料槽或人工正文变化后须重新确认。诉求摘要仅确认上下文；目录发生变化时仍按原文条件承载。不判断语义义务、事实或资格。
+E               - paragraph: 从上方选择本次当前机会；P1有锁先沿原入口解锁。如实际来源已改变，确认后仍须分别执行原局部采纳与受影响核验。
+E               - button "读取双槽材料包与人工正文"
+E               - button "只读核对原双槽确认"
+E               - status
+E               - text: 保留原文的追加合并稿
+E               - textbox "保留原文的追加合并稿"
+E               - text: 本次确认说明
+E               - textbox "本次确认说明"
+E               - checkbox "我已核对两槽实际版本和当前人工正文，明确启用或更新本计划的双槽确认"
+E               - text: 我已核对两槽实际版本和当前人工正文，明确启用或更新本计划的双槽确认
+E               - button "保留当前正文并明确确认双槽材料包" [disabled]
+E               - button "保存追加合并稿并明确确认双槽材料包" [disabled]
+E               - group: 机会操作历史
+E               - alert
+E               - heading "材料版本与人工记录" [level=3]
+E               - paragraph: material_outline v1 · DOCUMENT_EXCERPT · SYNTHETIC sample document v1：SYNTHETIC current outline
+E               - paragraph: need_summary v1 · DOCUMENT_EXCERPT · SYNTHETIC sample document v1：SYNTHETIC current need
+E               - paragraph: 版本 1 · CREATE · fixture-a
+E               - paragraph: 版本 2 · 修改诉求与必需目标 · fixture-a
+E               - paragraph: 版本 3 · ADD_EVIDENCE · fixture-a
+E               - paragraph: 版本 4 · ADD_EVIDENCE · fixture-a
+E               - paragraph: 版本 5 · REVIEW · prep-specialist-fixture-a：SYNTHETIC original specialist review
+E               - paragraph: 版本 6 · CONFIRM · fixture-a：SYNTHETIC original owner confirmation
+E               - group: 本地运行记录 · 工程验证
+E               - heading "读取已保存的本地报告历史" [level=3]
+E               - paragraph: 使用原事项和请求编号，只读核对已保存的报告与企业决定。当前权限仍须有效；不会重新生成报告、提交回执或自动核对。服务未启用或原授权不可用时保持拒绝。
+E               - text: 原资料事项编号
+E               - textbox "原资料事项编号"
+E               - text: 原请求编号
+E               - textbox "原请求编号"
+E               - button "只读核对原历史"
+E               - alert
+E               - heading "未支持目标的人工请求与补证" [level=2]
+E               - paragraph: 仅向原资料专员请求人工核对。请求发出、接责或补交材料都不代表服务已提供、外部受理或批准；全部目标保留，整体仍为 PARTIAL。
+E               - text: 原资料事项编号
+E               - textbox "原资料事项编号"
+E               - button "读取人工请求"
+E               - button "查看当前资料事项的人工请求"
+E               - button "只读核对原请求结果"
+E               - status
+E               - alert
+
+tests/test_assigned_demo_chain_browser.py:92: AssertionError
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_assigned_demo_chain_browser.py::test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart[1200]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_assigned_demo_chain_browser.py::test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart[1200]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_assigned_demo_chain_browser.py::test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart[1200]
+1 failed, 4 warnings in 32.89s

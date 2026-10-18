@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="26.403" timestamp="2026-10-18T02:54:41.686750+00:00" hostname="9eff6a810039"><testcase classname="tests.test_assigned_demo_chain_browser" name="test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart[1200]" time="25.299"><failure message="AssertionError: Locator expected to have count '1'&#10;Actual value: 0 &#10;Call log:&#10;  - Expect &quot;to_have_count&quot; with timeout 15000ms&#10;  - waiting for locator(&quot;#prep-items button&quot;).filter(has_text=&quot;SYNTHETIC independent demo request&quot;)&#10;    33 × locator resolved to 0 elements&#10;       - unexpected value &quot;0&quot;">demo_inputs = ((&lt;parkweave.store.Store object at 0x7fa2435399d0&gt;, &lt;parkweave.store.Store object at 0x7fa243539940&gt;, {'fixture-a': '4...atabase': {'name': 'fixture_f07c353fe7734022b14abfa9f3804b18', 'oid': 16385, 'address': None, 'port': None, ...}, ...})
+tmp_path = PosixPath('/tmp/pw-ttl-template-development-v1-h9kbdir3/pytest/test_existing_assigned_run_ori0')
+width = 1200
+
+    @pytest.mark.parametrize('width',[1200,320])
+    def test_existing_assigned_run_original_ordinary_DOM_full_chain_and_restart(demo_inputs,tmp_path,width):
+        f,_,pack,_=demo_inputs
+        parent=prepared(f)
+        # Only owned synthetic fixture initialization; never runtime authority.
+        f[1].assign_status(pack['roles']['service_executor'],UUID(parent['run_id']),active=True)
+        baseline=authority_snapshot(f[1]);goal='SYNTHETIC independent demo request'
+        traffic=[];errors=[];contexts=[]
+        with ordinary_demo(f,tmp_path/'first') as api,sync_playwright() as pw:
+            browser=pw.chromium.launch(executable_path='/usr/bin/chromium',args=['--no-sandbox'])
+            def role(actor):
+                context=browser.new_context(viewport=dict(width=width,height=1000));contexts.append(context);page=context.new_page()
+                page.on('pageerror',lambda e:errors.append(str(e)))
+                def response(reply):
+                    req=reply.request
+                    if req.method=='POST':traffic.append(dict(actor=actor,path=urlsplit(req.url).path,status=reply.status,body=req.post_data_json))
+                page.on('response',response);login(page,api,f,actor);return page
+            try:
+                owner=role(pack['roles']['enterprise_operator'])
+                reviewer=role(pack['roles']['park_specialist'])
+                executor=role(pack['roles']['service_executor'])
+&gt;               open_from_list(owner,goal);open_service_plan(owner)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_assigned_demo_chain_browser.py:41: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+page = &lt;Page url='http://127.0.0.1:48435/'&gt;
+goal = 'SYNTHETIC independent demo request'
+
+    def open_from_list(page,goal):
+        page.locator('[data-tab="collaboration"]').click()
+        page.locator('#prep-list').click()
+        item=page.locator('#prep-items button').filter(has_text=goal)
+&gt;       expect(item).to_have_count(1,timeout=15000);item.click()
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       AssertionError: Locator expected to have count '1'
+E       Actual value: 0 
+E       Call log:
+E         - Expect "to_have_count" with timeout 15000ms
+E         - waiting for locator("#prep-items button").filter(has_text="SYNTHETIC independent demo request")
+E           33 × locator resolved to 0 elements
+E              - unexpected value "0"
+
+tests/test_demo_original_page_intake_browser.py:54: AssertionError</failure></testcase></testsuite></testsuites>
