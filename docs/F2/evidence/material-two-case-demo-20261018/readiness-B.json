@@ -1,0 +1,262 @@
+{
+  "preparation_id": "562f010b-2200-4ee6-9c7a-0e717ed48b08",
+  "case_id": "e3071650-58dc-42e6-b371-b63cb9aea4df",
+  "preparation_revision": 5,
+  "source_sha256": "151dffcc8ddd27a31ef9ba69135680c9ad79e2d630083c8021b43421baeaff74",
+  "state": "NOT_ASSESSED",
+  "current_truth": "UNKNOWN",
+  "sources": {
+    "preparation_id": "562f010b-2200-4ee6-9c7a-0e717ed48b08",
+    "case_id": "e3071650-58dc-42e6-b371-b63cb9aea4df",
+    "revision": 5,
+    "service": {
+      "service_id": "synthetic-material-preparation",
+      "version": 1,
+      "source": {
+        "id": "MATERIAL_ONLY_LOCAL_DEMO",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "仅合成资料整理定义；无资格条件，不是模板发布或正式批准。"
+      },
+      "namespace": "SYNTHETIC",
+      "qualification": "NOT_EVALUATED"
+    },
+    "rule": {
+      "expression": {
+        "kind": "AND",
+        "field": null,
+        "expected": null,
+        "children": [
+          {
+            "kind": "EXISTS",
+            "field": "service_need",
+            "expected": null,
+            "children": []
+          },
+          {
+            "kind": "MANUAL",
+            "field": null,
+            "expected": null,
+            "children": []
+          }
+        ]
+      },
+      "revision": 1,
+      "source": "LOCAL_MATERIAL_CONTRACT",
+      "review_status": "ENGINEERING_ONLY",
+      "publication_status": "DRAFT",
+      "business_publication": false,
+      "sha256": "228457cea55556db69c19bab5c144a2359fe80b94822d07277a0e3eb3bd953b0"
+    },
+    "materials": [
+      {
+        "id": "80a24788-10b9-4125-993b-2a2f5489eb56",
+        "slot": "material_outline",
+        "version": 1,
+        "text": "SYNTHETIC B：培训名单 12 人；签到记录 1 份；课程提纲 4 项。",
+        "source_kind": "DOCUMENT_EXCERPT",
+        "source_label": "SYNTHETIC B v1",
+        "source_sha256": "3eed070360ae445789cc0521b9963de0b7dc338267a9c0530b24deea7e39cb9d",
+        "authenticity": "UNVERIFIED"
+      },
+      {
+        "id": "03e7f7a2-1b2f-4139-b8b8-a057a62791c4",
+        "slot": "need_summary",
+        "version": 1,
+        "text": "SYNTHETIC B：整理员工培训材料，核对十二人的安全培训记录。",
+        "source_kind": "USER_STATEMENT",
+        "source_label": "SYNTHETIC B v1",
+        "source_sha256": "2908c91253c0a6da26763090ee5ba12192f79adbd2b7602779d485b10a779ba8",
+        "authenticity": "UNVERIFIED"
+      }
+    ],
+    "manual_review": {
+      "reviewer_id": "material-demo-specialist",
+      "current_authority": true,
+      "state": "LOCAL_CONFIRMED",
+      "review_sha256": "69716168ad319ac6ecab4cbe9ccf03c8a80742339ca977a6a258e5014af99463",
+      "decision": {
+        "revision": 4,
+        "action": "REVIEW",
+        "actor_id": "material-demo-specialist",
+        "reason": "SYNTHETIC B 专员独立核对双槽材料",
+        "created_at": "2026-10-18T09:51:47.102234+00:00"
+      }
+    }
+  },
+  "current_inputs": {
+    "local_preparation_truth": "TRUE",
+    "conditions": [
+      {
+        "id": "service_need_exists",
+        "truth": "TRUE",
+        "reason": "CURRENT_RECORD_EXISTS",
+        "material_ids": [
+          "03e7f7a2-1b2f-4139-b8b8-a057a62791c4"
+        ]
+      },
+      {
+        "id": "current_manual_material_review",
+        "truth": "TRUE",
+        "reason": "CURRENT_LOCAL_MANUAL_REVIEW",
+        "material_ids": [
+          "80a24788-10b9-4125-993b-2a2f5489eb56",
+          "03e7f7a2-1b2f-4139-b8b8-a057a62791c4"
+        ]
+      }
+    ],
+    "missing_slots": [],
+    "next_actions": [],
+    "qualification_truth": "UNKNOWN",
+    "qualification_decision": "NOT_EVALUATED",
+    "business_publication": false,
+    "external_acceptance": "NOT_SUBMITTED",
+    "offline_fulfillment": "NO_EVIDENCE",
+    "case_goal_completed": false
+  },
+  "latest": null,
+  "history": [],
+  "scope": "SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY",
+  "business_publication": false,
+  "qualification_decision": "NOT_EVALUATED",
+  "material_checklist": {
+    "scope": "SYNTHETIC_HUMAN_REVIEW_CANDIDATE",
+    "preparation_revision": 5,
+    "source_sha256": "151dffcc8ddd27a31ef9ba69135680c9ad79e2d630083c8021b43421baeaff74",
+    "source_available": true,
+    "requirements": [
+      {
+        "slot": "need_summary",
+        "status": "CURRENT_PACK_REVIEWED",
+        "evidence": {
+          "id": "03e7f7a2-1b2f-4139-b8b8-a057a62791c4",
+          "version": 1,
+          "source_kind": "USER_STATEMENT",
+          "source_label": "SYNTHETIC B v1",
+          "source_sha256": "2908c91253c0a6da26763090ee5ba12192f79adbd2b7602779d485b10a779ba8",
+          "authenticity": "UNVERIFIED",
+          "text": "SYNTHETIC B：整理员工培训材料，核对十二人的安全培训记录。"
+        },
+        "correction_requests": [],
+        "missing": false,
+        "truth": "TRUE",
+        "next_action": "CHECK_CURRENT_REVIEW"
+      },
+      {
+        "slot": "material_outline",
+        "status": "CURRENT_PACK_REVIEWED",
+        "evidence": {
+          "id": "80a24788-10b9-4125-993b-2a2f5489eb56",
+          "version": 1,
+          "source_kind": "DOCUMENT_EXCERPT",
+          "source_label": "SYNTHETIC B v1",
+          "source_sha256": "3eed070360ae445789cc0521b9963de0b7dc338267a9c0530b24deea7e39cb9d",
+          "authenticity": "UNVERIFIED",
+          "text": "SYNTHETIC B：培训名单 12 人；签到记录 1 份；课程提纲 4 项。"
+        },
+        "correction_requests": [],
+        "missing": false,
+        "truth": "TRUE",
+        "next_action": "CHECK_CURRENT_REVIEW"
+      }
+    ],
+    "conditions": [
+      {
+        "id": "service_need_exists",
+        "truth": "TRUE",
+        "reason": "CURRENT_RECORD_EXISTS",
+        "material_ids": [
+          "03e7f7a2-1b2f-4139-b8b8-a057a62791c4"
+        ],
+        "evidence": [
+          {
+            "slot": "need_summary",
+            "status": "CURRENT_PACK_REVIEWED",
+            "evidence": {
+              "id": "03e7f7a2-1b2f-4139-b8b8-a057a62791c4",
+              "version": 1,
+              "source_kind": "USER_STATEMENT",
+              "source_label": "SYNTHETIC B v1",
+              "source_sha256": "2908c91253c0a6da26763090ee5ba12192f79adbd2b7602779d485b10a779ba8",
+              "authenticity": "UNVERIFIED",
+              "text": "SYNTHETIC B：整理员工培训材料，核对十二人的安全培训记录。"
+            },
+            "correction_requests": [],
+            "missing": false,
+            "truth": "TRUE",
+            "next_action": "CHECK_CURRENT_REVIEW"
+          }
+        ],
+        "basis": "EXISTING_LOCAL_MATERIAL_CONTRACT",
+        "manual_decision": null,
+        "fact_basis": null
+      },
+      {
+        "id": "current_manual_material_review",
+        "truth": "TRUE",
+        "reason": "CURRENT_LOCAL_MANUAL_REVIEW",
+        "material_ids": [
+          "80a24788-10b9-4125-993b-2a2f5489eb56",
+          "03e7f7a2-1b2f-4139-b8b8-a057a62791c4"
+        ],
+        "evidence": [
+          {
+            "slot": "need_summary",
+            "status": "CURRENT_PACK_REVIEWED",
+            "evidence": {
+              "id": "03e7f7a2-1b2f-4139-b8b8-a057a62791c4",
+              "version": 1,
+              "source_kind": "USER_STATEMENT",
+              "source_label": "SYNTHETIC B v1",
+              "source_sha256": "2908c91253c0a6da26763090ee5ba12192f79adbd2b7602779d485b10a779ba8",
+              "authenticity": "UNVERIFIED",
+              "text": "SYNTHETIC B：整理员工培训材料，核对十二人的安全培训记录。"
+            },
+            "correction_requests": [],
+            "missing": false,
+            "truth": "TRUE",
+            "next_action": "CHECK_CURRENT_REVIEW"
+          },
+          {
+            "slot": "material_outline",
+            "status": "CURRENT_PACK_REVIEWED",
+            "evidence": {
+              "id": "80a24788-10b9-4125-993b-2a2f5489eb56",
+              "version": 1,
+              "source_kind": "DOCUMENT_EXCERPT",
+              "source_label": "SYNTHETIC B v1",
+              "source_sha256": "3eed070360ae445789cc0521b9963de0b7dc338267a9c0530b24deea7e39cb9d",
+              "authenticity": "UNVERIFIED",
+              "text": "SYNTHETIC B：培训名单 12 人；签到记录 1 份；课程提纲 4 项。"
+            },
+            "correction_requests": [],
+            "missing": false,
+            "truth": "TRUE",
+            "next_action": "CHECK_CURRENT_REVIEW"
+          }
+        ],
+        "basis": "EXISTING_LOCAL_MATERIAL_CONTRACT",
+        "manual_decision": {
+          "revision": 4,
+          "action": "REVIEW",
+          "actor_id": "material-demo-specialist",
+          "reason": "SYNTHETIC B 专员独立核对双槽材料",
+          "created_at": "2026-10-18T09:51:47.102234+00:00"
+        },
+        "fact_basis": null
+      }
+    ],
+    "policy_requirements": {
+      "status": "NOT_PROVIDED",
+      "truth": "UNKNOWN",
+      "reason": "REVIEWED_REAL_POLICY_SOURCE_REQUIRED",
+      "requirements_generated": false
+    },
+    "rule_revision": 1,
+    "rule_sha256": "228457cea55556db69c19bab5c144a2359fe80b94822d07277a0e3eb3bd953b0",
+    "business_publication": false,
+    "qualification_decision": "NOT_EVALUATED",
+    "external_acceptance": "NOT_SUBMITTED",
+    "case_goal_completed": false
+  }
+}

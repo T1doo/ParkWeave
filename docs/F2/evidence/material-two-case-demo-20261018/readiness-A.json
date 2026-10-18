@@ -1,0 +1,262 @@
+{
+  "preparation_id": "c754b7f5-df93-4d6a-8aab-9ae20c6d6eb3",
+  "case_id": "e8938e0f-eb4c-4eb8-9e4e-e973057a9c95",
+  "preparation_revision": 5,
+  "source_sha256": "9491bc88cf1031b4cbf117f1d3016d1a925df83f79f590bb816d9eb5b26fc7c1",
+  "state": "NOT_ASSESSED",
+  "current_truth": "UNKNOWN",
+  "sources": {
+    "preparation_id": "c754b7f5-df93-4d6a-8aab-9ae20c6d6eb3",
+    "case_id": "e8938e0f-eb4c-4eb8-9e4e-e973057a9c95",
+    "revision": 5,
+    "service": {
+      "service_id": "synthetic-material-preparation",
+      "version": 1,
+      "source": {
+        "id": "MATERIAL_ONLY_LOCAL_DEMO",
+        "kind": "SYNTHETIC",
+        "revision": "1",
+        "statement": "仅合成资料整理定义；无资格条件，不是模板发布或正式批准。"
+      },
+      "namespace": "SYNTHETIC",
+      "qualification": "NOT_EVALUATED"
+    },
+    "rule": {
+      "expression": {
+        "kind": "AND",
+        "field": null,
+        "expected": null,
+        "children": [
+          {
+            "kind": "EXISTS",
+            "field": "service_need",
+            "expected": null,
+            "children": []
+          },
+          {
+            "kind": "MANUAL",
+            "field": null,
+            "expected": null,
+            "children": []
+          }
+        ]
+      },
+      "revision": 1,
+      "source": "LOCAL_MATERIAL_CONTRACT",
+      "review_status": "ENGINEERING_ONLY",
+      "publication_status": "DRAFT",
+      "business_publication": false,
+      "sha256": "228457cea55556db69c19bab5c144a2359fe80b94822d07277a0e3eb3bd953b0"
+    },
+    "materials": [
+      {
+        "id": "e6830500-b78d-401a-b6b0-53e253a262e9",
+        "slot": "material_outline",
+        "version": 1,
+        "text": "SYNTHETIC A：设备清单 3 项；维护记录 2 份。",
+        "source_kind": "DOCUMENT_EXCERPT",
+        "source_label": "SYNTHETIC A v1",
+        "source_sha256": "94045f821641cda1e29561c5cd736c6fa122065824eec805225980d436305455",
+        "authenticity": "UNVERIFIED"
+      },
+      {
+        "id": "7f724bc4-3c98-4cd0-b10b-e6764c2ddda5",
+        "slot": "need_summary",
+        "version": 1,
+        "text": "SYNTHETIC A：整理厂房设备维护材料，核对三台设备的维护记录。",
+        "source_kind": "USER_STATEMENT",
+        "source_label": "SYNTHETIC A v1",
+        "source_sha256": "19ba13c3a35464d8d7e976290dd308faa208f1feda5212c51548be596eb7d619",
+        "authenticity": "UNVERIFIED"
+      }
+    ],
+    "manual_review": {
+      "reviewer_id": "material-demo-specialist",
+      "current_authority": true,
+      "state": "LOCAL_CONFIRMED",
+      "review_sha256": "b553766d3ba2960066217723e3ee6dfb552515635bb2bdcec5211ff38d56f901",
+      "decision": {
+        "revision": 4,
+        "action": "REVIEW",
+        "actor_id": "material-demo-specialist",
+        "reason": "SYNTHETIC A 专员独立核对双槽材料",
+        "created_at": "2026-10-18T09:51:46.564651+00:00"
+      }
+    }
+  },
+  "current_inputs": {
+    "local_preparation_truth": "TRUE",
+    "conditions": [
+      {
+        "id": "service_need_exists",
+        "truth": "TRUE",
+        "reason": "CURRENT_RECORD_EXISTS",
+        "material_ids": [
+          "7f724bc4-3c98-4cd0-b10b-e6764c2ddda5"
+        ]
+      },
+      {
+        "id": "current_manual_material_review",
+        "truth": "TRUE",
+        "reason": "CURRENT_LOCAL_MANUAL_REVIEW",
+        "material_ids": [
+          "e6830500-b78d-401a-b6b0-53e253a262e9",
+          "7f724bc4-3c98-4cd0-b10b-e6764c2ddda5"
+        ]
+      }
+    ],
+    "missing_slots": [],
+    "next_actions": [],
+    "qualification_truth": "UNKNOWN",
+    "qualification_decision": "NOT_EVALUATED",
+    "business_publication": false,
+    "external_acceptance": "NOT_SUBMITTED",
+    "offline_fulfillment": "NO_EVIDENCE",
+    "case_goal_completed": false
+  },
+  "latest": null,
+  "history": [],
+  "scope": "SYNTHETIC_LOCAL_MATERIAL_CONDITIONS_ONLY",
+  "business_publication": false,
+  "qualification_decision": "NOT_EVALUATED",
+  "material_checklist": {
+    "scope": "SYNTHETIC_HUMAN_REVIEW_CANDIDATE",
+    "preparation_revision": 5,
+    "source_sha256": "9491bc88cf1031b4cbf117f1d3016d1a925df83f79f590bb816d9eb5b26fc7c1",
+    "source_available": true,
+    "requirements": [
+      {
+        "slot": "need_summary",
+        "status": "CURRENT_PACK_REVIEWED",
+        "evidence": {
+          "id": "7f724bc4-3c98-4cd0-b10b-e6764c2ddda5",
+          "version": 1,
+          "source_kind": "USER_STATEMENT",
+          "source_label": "SYNTHETIC A v1",
+          "source_sha256": "19ba13c3a35464d8d7e976290dd308faa208f1feda5212c51548be596eb7d619",
+          "authenticity": "UNVERIFIED",
+          "text": "SYNTHETIC A：整理厂房设备维护材料，核对三台设备的维护记录。"
+        },
+        "correction_requests": [],
+        "missing": false,
+        "truth": "TRUE",
+        "next_action": "CHECK_CURRENT_REVIEW"
+      },
+      {
+        "slot": "material_outline",
+        "status": "CURRENT_PACK_REVIEWED",
+        "evidence": {
+          "id": "e6830500-b78d-401a-b6b0-53e253a262e9",
+          "version": 1,
+          "source_kind": "DOCUMENT_EXCERPT",
+          "source_label": "SYNTHETIC A v1",
+          "source_sha256": "94045f821641cda1e29561c5cd736c6fa122065824eec805225980d436305455",
+          "authenticity": "UNVERIFIED",
+          "text": "SYNTHETIC A：设备清单 3 项；维护记录 2 份。"
+        },
+        "correction_requests": [],
+        "missing": false,
+        "truth": "TRUE",
+        "next_action": "CHECK_CURRENT_REVIEW"
+      }
+    ],
+    "conditions": [
+      {
+        "id": "service_need_exists",
+        "truth": "TRUE",
+        "reason": "CURRENT_RECORD_EXISTS",
+        "material_ids": [
+          "7f724bc4-3c98-4cd0-b10b-e6764c2ddda5"
+        ],
+        "evidence": [
+          {
+            "slot": "need_summary",
+            "status": "CURRENT_PACK_REVIEWED",
+            "evidence": {
+              "id": "7f724bc4-3c98-4cd0-b10b-e6764c2ddda5",
+              "version": 1,
+              "source_kind": "USER_STATEMENT",
+              "source_label": "SYNTHETIC A v1",
+              "source_sha256": "19ba13c3a35464d8d7e976290dd308faa208f1feda5212c51548be596eb7d619",
+              "authenticity": "UNVERIFIED",
+              "text": "SYNTHETIC A：整理厂房设备维护材料，核对三台设备的维护记录。"
+            },
+            "correction_requests": [],
+            "missing": false,
+            "truth": "TRUE",
+            "next_action": "CHECK_CURRENT_REVIEW"
+          }
+        ],
+        "basis": "EXISTING_LOCAL_MATERIAL_CONTRACT",
+        "manual_decision": null,
+        "fact_basis": null
+      },
+      {
+        "id": "current_manual_material_review",
+        "truth": "TRUE",
+        "reason": "CURRENT_LOCAL_MANUAL_REVIEW",
+        "material_ids": [
+          "e6830500-b78d-401a-b6b0-53e253a262e9",
+          "7f724bc4-3c98-4cd0-b10b-e6764c2ddda5"
+        ],
+        "evidence": [
+          {
+            "slot": "need_summary",
+            "status": "CURRENT_PACK_REVIEWED",
+            "evidence": {
+              "id": "7f724bc4-3c98-4cd0-b10b-e6764c2ddda5",
+              "version": 1,
+              "source_kind": "USER_STATEMENT",
+              "source_label": "SYNTHETIC A v1",
+              "source_sha256": "19ba13c3a35464d8d7e976290dd308faa208f1feda5212c51548be596eb7d619",
+              "authenticity": "UNVERIFIED",
+              "text": "SYNTHETIC A：整理厂房设备维护材料，核对三台设备的维护记录。"
+            },
+            "correction_requests": [],
+            "missing": false,
+            "truth": "TRUE",
+            "next_action": "CHECK_CURRENT_REVIEW"
+          },
+          {
+            "slot": "material_outline",
+            "status": "CURRENT_PACK_REVIEWED",
+            "evidence": {
+              "id": "e6830500-b78d-401a-b6b0-53e253a262e9",
+              "version": 1,
+              "source_kind": "DOCUMENT_EXCERPT",
+              "source_label": "SYNTHETIC A v1",
+              "source_sha256": "94045f821641cda1e29561c5cd736c6fa122065824eec805225980d436305455",
+              "authenticity": "UNVERIFIED",
+              "text": "SYNTHETIC A：设备清单 3 项；维护记录 2 份。"
+            },
+            "correction_requests": [],
+            "missing": false,
+            "truth": "TRUE",
+            "next_action": "CHECK_CURRENT_REVIEW"
+          }
+        ],
+        "basis": "EXISTING_LOCAL_MATERIAL_CONTRACT",
+        "manual_decision": {
+          "revision": 4,
+          "action": "REVIEW",
+          "actor_id": "material-demo-specialist",
+          "reason": "SYNTHETIC A 专员独立核对双槽材料",
+          "created_at": "2026-10-18T09:51:46.564651+00:00"
+        },
+        "fact_basis": null
+      }
+    ],
+    "policy_requirements": {
+      "status": "NOT_PROVIDED",
+      "truth": "UNKNOWN",
+      "reason": "REVIEWED_REAL_POLICY_SOURCE_REQUIRED",
+      "requirements_generated": false
+    },
+    "rule_revision": 1,
+    "rule_sha256": "228457cea55556db69c19bab5c144a2359fe80b94822d07277a0e3eb3bd953b0",
+    "business_publication": false,
+    "qualification_decision": "NOT_EVALUATED",
+    "external_acceptance": "NOT_SUBMITTED",
+    "case_goal_completed": false
+  }
+}
