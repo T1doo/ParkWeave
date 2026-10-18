@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="7" time="414.877" timestamp="2026-10-17T14:58:17.603615+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_late_superseded_read_cannot_unlock_or_clear_current_read[403-READY]" time="38.612" /><testcase classname="tests.test_material_file_import_browser" name="test_file_to_original_review_confirmation_actual_download_and_process_restart[txt-csv]" time="122.405" /><testcase classname="tests.test_material_file_import_browser" name="test_late_old_file_response_cannot_replace_new_file_candidate_or_clear_it[200]" time="51.220" /><testcase classname="tests.test_material_file_import_browser" name="test_use_candidate_rechecks_current_read_authority_before_filling_original_form" time="49.478" /><testcase classname="tests.test_material_review_comparison_browser" name="test_ordinary_owner_corrects_specialist_reads_exact_old_review_then_original_review_confirm_restart" time="35.076"><failure message="Failed: owned ordinary API readiness deadline exceeded">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f8d253c29c0&gt;, &lt;parkweave.store.Store object at 0x7f8d27d75df0&gt;, {'fixture-a': 'cI...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f8d27e53b60&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-2-_y_mqpdj/pytest/test_ordinary_owner_corrects_s0')
+
+    def test_ordinary_owner_corrects_specialist_reads_exact_old_review_then_original_review_confirm_restart(preparation_fixture,tmp_path):
+        f=preparation_fixture;p,old=correction_pending(f);auth=authority(f)
+&gt;       with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_review_comparison_browser.py:35: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7f8d253c29c0&gt;, &lt;parkweave.store.Store object at 0x7f8d27d75df0&gt;, {'fixture-a': 'cI...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f8d27e53b60&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-2-_y_mqpdj/pytest/test_ordinary_owner_corrects_s0/first')
+
+    @contextmanager
+    def ordinary_process(f, tmp_path):
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        repo = Path(__file__).resolve().parents[1]
+        env = minimal_environment(os.environ, PYTHONPATH=str(repo/'src'),
+                                  PARKWEAVE_DSN=f[0].dsn, PARKWEAVE_MODE='LOCAL')
+        with (tmp_path/'ordinary-api.log').open('w') as log:
+            child = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'parkweave.api:configured_app',
+                                      '--factory', '--host', '127.0.0.1', '--port', str(port),
+                                      '--log-level', 'warning', '--no-access-log'], cwd=repo,
+                                     env=env, stdout=log, stderr=subprocess.STDOUT)
+            try:
+                with httpx.Client(base_url=f'http://127.0.0.1:{port}', timeout=10) as api:
+                    deadline = time.monotonic()+15
+                    while time.monotonic() &lt; deadline:
+                        assert child.poll() is None, 'owned API exited; see ordinary-api.log'
+                        try:
+                            health = api.get('/health')
+                            if health.status_code == 200 and health.json()['process_id'] == child.pid:
+                                break
+                        except httpx.TransportError:
+                            pass
+                        time.sleep(.05)
+&gt;                   else: pytest.fail('owned ordinary API readiness deadline exceeded')
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   Failed: owned ordinary API readiness deadline exceeded
+
+tests/test_native_preparation_entry_browser.py:57: Failed</failure></testcase><testcase classname="tests.test_material_review_comparison_browser" name="test_same_body_new_record_and_source_changes_are_shown_separately[False]" time="54.980" /><testcase classname="tests.test_material_review_comparison_browser" name="test_late_old_comparison_does_not_replace_or_clear_new_context[identity_case_ABA-200]" time="27.353"><failure message="Failed: owned ordinary API readiness deadline exceeded">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f8d2519e240&gt;, &lt;parkweave.store.Store object at 0x7f8d27e163f0&gt;, {'fixture-a': 'V9...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f8d260897c0&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-2-_y_mqpdj/pytest/test_late_old_comparison_does_0')
+late_status = 200, change = 'identity_case_ABA'
+
+    @pytest.mark.parametrize('late_status',[200,403])
+    @pytest.mark.parametrize('change',['refresh','identity_case_ABA'])
+    def test_late_old_comparison_does_not_replace_or_clear_new_context(preparation_fixture,tmp_path,late_status,change):
+        f=preparation_fixture;p,old=submitted(f);other=fresh(f,label='OTHER_REVIEW_CASE');before=snapshot(f[1])
+&gt;       with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_review_comparison_browser.py:67: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7f8d2519e240&gt;, &lt;parkweave.store.Store object at 0x7f8d27e163f0&gt;, {'fixture-a': 'V9...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f8d260897c0&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-2-_y_mqpdj/pytest/test_late_old_comparison_does_0/ordinary')
+
+    @contextmanager
+    def ordinary_process(f, tmp_path):
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        repo = Path(__file__).resolve().parents[1]
+        env = minimal_environment(os.environ, PYTHONPATH=str(repo/'src'),
+                                  PARKWEAVE_DSN=f[0].dsn, PARKWEAVE_MODE='LOCAL')
+        with (tmp_path/'ordinary-api.log').open('w') as log:
+            child = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'parkweave.api:configured_app',
+                                      '--factory', '--host', '127.0.0.1', '--port', str(port),
+                                      '--log-level', 'warning', '--no-access-log'], cwd=repo,
+                                     env=env, stdout=log, stderr=subprocess.STDOUT)
+            try:
+                with httpx.Client(base_url=f'http://127.0.0.1:{port}', timeout=10) as api:
+                    deadline = time.monotonic()+15
+                    while time.monotonic() &lt; deadline:
+                        assert child.poll() is None, 'owned API exited; see ordinary-api.log'
+                        try:
+                            health = api.get('/health')
+                            if health.status_code == 200 and health.json()['process_id'] == child.pid:
+                                break
+                        except httpx.TransportError:
+                            pass
+                        time.sleep(.05)
+&gt;                   else: pytest.fail('owned ordinary API readiness deadline exceeded')
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   Failed: owned ordinary API readiness deadline exceeded
+
+tests/test_native_preparation_entry_browser.py:57: Failed</failure></testcase><testcase time="12.397" /></testsuite></testsuites>

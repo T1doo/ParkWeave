@@ -1,0 +1,171 @@
+..F..F
+=================================== FAILURES ===================================
+_ test_late_read_after_identity_or_navigation_cannot_clear_new_visible_ready_page[navigation-200] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7ff3e848c260>, <parkweave.store.Store object at 0x7ff3e848dee0>, {'fixture-a': 'kH...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7ff3e3e83140>)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-3-jirowjd9/pytest/test_late_read_after_identity_1')
+change = 'navigation', late_status = 200
+
+    @pytest.mark.parametrize('change,late_status',[('identity_aba',403),('navigation',200)])
+    def test_late_read_after_identity_or_navigation_cannot_clear_new_visible_ready_page(preparation_fixture,tmp_path,change,late_status):
+        f=preparation_fixture;p,_,_=create(f);pending=[];seen=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw);open_record(page,api,f,p)
+            def intercept(route):
+                seen.append(route.request.url)
+                if len(seen)==1:pending.append((route,route.fetch()))
+                else:route.continue_()
+            page.route('**/material-corrections',intercept);page.locator('#prep-refresh').click();received(page,pending)
+            expect(page.locator('#prep-read-status')).to_contain_text('正在核对')
+            if change=='identity_aba':
+                page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').fill(f[2]['fixture-a'])
+            else:
+                page.locator('[data-tab="resource"]').click();page.locator('[data-tab="service"]').click()
+            page.locator('#existing-preparation-id').fill(p['preparation_id']);page.locator('#existing-preparation-read').click()
+>           expect(page.locator('#prep-read-status')).to_contain_text('已就绪')
+E           AssertionError: Locator expected to contain text '已就绪'
+E           Actual value: 正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。 
+E           Call log:
+E             - Expect "to_contain_text" with timeout 5000ms
+E             - waiting for locator("#prep-read-status")
+E               8 × locator resolved to <p role="status" class="status" aria-live="polite" data-state="LOADING" id="prep-read-status">正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。</p>
+E                 - unexpected value "正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。"
+E           
+E           Aria snapshot:
+E           - status: 正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。
+
+tests/test_preparation_read_write_timing_browser.py:137: AssertionError
+------------------------------ Captured log call -------------------------------
+ERROR    asyncio:base_events.py:1833 Exception in callback Connection.dispatch.<locals>._done_callback(<Task cancell..._page.py:294>>) at /workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:539
+handle: <Handle Connection.dispatch.<locals>._done_callback(<Task cancell..._page.py:294>>) at /workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py:539>
+Traceback (most recent call last):
+  File "/workspace/ParkWeave/tests/test_preparation_read_write_timing_browser.py", line 137, in test_late_read_after_identity_or_navigation_cannot_clear_new_visible_ready_page
+    expect(page.locator('#prep-read-status')).to_contain_text('已就绪')
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py", line 22016, in to_contain_text
+    self._sync(
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py", line 115, in _sync
+    return task.result()
+           ^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py", line 303, in to_contain_text
+    await self._expect_impl(
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py", line 128, in _expect_impl
+    _record_soft_or_raise(
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_assertions.py", line 60, in _record_soft_or_raise
+    raise error
+AssertionError: Locator expected to contain text '已就绪'
+Actual value: 正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。 
+Call log:
+  - Expect "to_contain_text" with timeout 5000ms
+  - waiting for locator("#prep-read-status")
+    8 × locator resolved to <p role="status" class="status" aria-live="polite" data-state="LOADING" id="prep-read-status">正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。</p>
+      - unexpected value "正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。"
+
+Aria snapshot:
+- status: 正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/asyncio/events.py", line 88, in _run
+    self._context.run(self._callback, *self._args)
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_connection.py", line 540, in _done_callback
+    exc = future.exception()
+          ^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_page.py", line 308, in _on_route
+    handled = await route_handler.handle(route)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_helper.py", line 442, in handle
+    return await self._handle_internal(route)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_helper.py", line 484, in _handle_internal
+    return await handled_future
+           ^^^^^^^^^^^^^^^^^^^^
+asyncio.exceptions.CancelledError
+_ test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery[wrong_exact_event] _
+
+preparation_fixture = (<parkweave.store.Store object at 0x7ff3e8065040>, <parkweave.store.Store object at 0x7ff3e3a04500>, {'fixture-a': 'FT...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7ff3e386b740>)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-3-jirowjd9/pytest/test_own_unknown_write_keeps_o1')
+fault = 'wrong_exact_event'
+
+    @pytest.mark.parametrize('fault',['lost_reply','wrong_exact_event'])
+    def test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery(preparation_fixture,tmp_path,fault):
+        f=preparation_fixture;p,_,_=create(f);writes=[];faults=[];recovery=[]
+>       with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_preparation_read_write_timing_browser.py:180: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (<parkweave.store.Store object at 0x7ff3e8065040>, <parkweave.store.Store object at 0x7ff3e3a04500>, {'fixture-a': 'FT...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, <starlette.testclient.TestClient object at 0x7ff3e386b740>)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-3-jirowjd9/pytest/test_own_unknown_write_keeps_o1/ordinary')
+
+    @contextmanager
+    def ordinary_process(f, tmp_path):
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        repo = Path(__file__).resolve().parents[1]
+        env = minimal_environment(os.environ, PYTHONPATH=str(repo/'src'),
+                                  PARKWEAVE_DSN=f[0].dsn, PARKWEAVE_MODE='LOCAL')
+        with (tmp_path/'ordinary-api.log').open('w') as log:
+            child = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'parkweave.api:configured_app',
+                                      '--factory', '--host', '127.0.0.1', '--port', str(port),
+                                      '--log-level', 'warning', '--no-access-log'], cwd=repo,
+                                     env=env, stdout=log, stderr=subprocess.STDOUT)
+            try:
+                with httpx.Client(base_url=f'http://127.0.0.1:{port}', timeout=10) as api:
+                    deadline = time.monotonic()+15
+                    while time.monotonic() < deadline:
+                        assert child.poll() is None, 'owned API exited; see ordinary-api.log'
+                        try:
+                            health = api.get('/health')
+                            if health.status_code == 200 and health.json()['process_id'] == child.pid:
+                                break
+                        except httpx.TransportError:
+                            pass
+                        time.sleep(.05)
+>                   else: pytest.fail('owned ordinary API readiness deadline exceeded')
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   Failed: owned ordinary API readiness deadline exceeded
+
+tests/test_native_preparation_entry_browser.py:57: Failed
+=============================== warnings summary ===============================
+.venv/lib/python3.12/site-packages/fastapi/testclient.py:1
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/fastapi/testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.
+    from starlette.testclient import TestClient as TestClient  # noqa
+
+.venv/lib/python3.12/site-packages/platformdirs/api.py:459
+  /workspace/ParkWeave/.venv/lib/python3.12/site-packages/platformdirs/api.py:459: RuntimeDirWarning: XDG_RUNTIME_DIR is not set, falling back to /tmp/runtime-1000
+    return Path(self.user_runtime_dir)
+
+tests/test_preparation_read_write_timing_browser.py::test_current_required_read_failure_keeps_draft_and_requires_visible_refresh[malformed_json]
+  /workspace/ParkWeave/src/parkweave/plan_source_conflicts.py:42: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+tests/test_preparation_read_write_timing_browser.py::test_current_required_read_failure_keeps_draft_and_requires_visible_refresh[malformed_json]
+  /workspace/ParkWeave/src/parkweave/material_package_continuation.py:29: UserWarning: Field name "schema" in "Command" shadows an attribute in parent "BaseModel"
+    class Command(BaseModel):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+FAILED tests/test_preparation_read_write_timing_browser.py::test_late_read_after_identity_or_navigation_cannot_clear_new_visible_ready_page[navigation-200]
+FAILED tests/test_preparation_read_write_timing_browser.py::test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery[wrong_exact_event]
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! KeyboardInterrupt !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+/workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/sync_api/_generated.py:15386: KeyboardInterrupt
+(to show a full traceback on KeyboardInterrupt use --full-trace)
+2 failed, 4 passed, 4 warnings in 468.84s (0:07:48)
+Future exception was never retrieved
+future: <Future finished exception=TargetClosedError('Target page, context or browser has been closed')>
+playwright._impl._errors.TargetClosedError: Target page, context or browser has been closed
+Task was destroyed but it is pending!
+task: <Task cancelling name='Task-352' coro=<BrowserContext.close() done, defined at /workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_browser_context.py:575> wait_for=<Future finished result=None> cb=[SyncBase._sync.<locals>.<lambda>() at /workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:111]>
+Future exception was never retrieved
+future: <Future finished exception=TargetClosedError('Target page, context or browser has been closed')>
+playwright._impl._errors.TargetClosedError: Target page, context or browser has been closed
+Task was destroyed but it is pending!
+task: <Task cancelling name='Task-351' coro=<Locator.click() done, defined at /workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_locator.py:150> wait_for=<Future finished result=None> cb=[SyncBase._sync.<locals>.<lambda>() at /workspace/ParkWeave/.venv/lib/python3.12/site-packages/playwright/_impl/_sync_base.py:111]>

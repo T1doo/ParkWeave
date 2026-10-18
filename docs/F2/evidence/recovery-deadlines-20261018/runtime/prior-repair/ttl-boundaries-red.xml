@@ -1,0 +1,505 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="8" skipped="0" tests="12" time="3.866" timestamp="2026-10-17T14:54:46.409931+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[past]" time="0.270"><failure message="AssertionError: node:assert:152&#10;    throw new AssertionError(obj);&#10;    ^&#10;  &#10;  AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle&#10;  + actual - expected&#10;  &#10;  + {&#10;  +   action: 'VERIFY',&#10;  +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;  +   case: '00000000-0000-4000-8000-000000000003',&#10;  +   expires: 1792238399999,&#10;  +   id: '00000000-0000-4000-8000-000000000001',&#10;  +   key: '00000000-0000-4000-8000-000000000002',&#10;  +   plan: '00000000-0000-4000-8000-000000000005',&#10;  +   revision: 1,&#10;  +   run: '00000000-0000-4000-8000-000000000004',&#10;  +   step: '00000000-0000-4000-8000-000000000006',&#10;  +   v: 1&#10;  + }&#10;  - null&#10;  &#10;      at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47 {&#10;    generatedMessage: false,&#10;    code: 'ERR_ASSERTION',&#10;    actual: {&#10;      v: 1,&#10;      id: '00000000-0000-4000-8000-000000000001',&#10;      key: '00000000-0000-4000-8000-000000000002',&#10;      actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;      case: '00000000-0000-4000-8000-000000000003',&#10;      run: '00000000-0000-4000-8000-000000000004',&#10;      action: 'VERIFY',&#10;      plan: '00000000-0000-4000-8000-000000000005',&#10;      step: '00000000-0000-4000-8000-000000000006',&#10;      revision: 1,&#10;      expires: 1792238399999&#10;    },&#10;    expected: null,&#10;    operator: 'strictEqual',&#10;    diff: 'simple'&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'past'], returncode...xpires: 1792238399999\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'past'
+
+    @pytest.mark.parametrize('mode',['past','at_now','one_ms_valid','max_valid','over_max','zero','far_future','null','string','boolean','missing','extra_field'])
+    def test_actual_reader_deadline_boundaries_keep_other_original_handle(mode):
+        root=Path(__file__).resolve().parents[1]
+        result=subprocess.run(['node',str(Path(__file__).with_name('service_plan_handle_ttl_boundaries.js')),mode],
+                              cwd=root,capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: node:assert:152
+E           throw new AssertionError(obj);
+E           ^
+E         
+E         AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle
+E         + actual - expected
+E         
+E         + {
+E         +   action: 'VERIFY',
+E         +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E         +   case: '00000000-0000-4000-8000-000000000003',
+E         +   expires: 1792238399999,
+E         +   id: '00000000-0000-4000-8000-000000000001',
+E         +   key: '00000000-0000-4000-8000-000000000002',
+E         +   plan: '00000000-0000-4000-8000-000000000005',
+E         +   revision: 1,
+E         +   run: '00000000-0000-4000-8000-000000000004',
+E         +   step: '00000000-0000-4000-8000-000000000006',
+E         +   v: 1
+E         + }
+E         - null
+E         
+E             at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47 {
+E           generatedMessage: false,
+E           code: 'ERR_ASSERTION',
+E           actual: {
+E             v: 1,
+E             id: '00000000-0000-4000-8000-000000000001',
+E             key: '00000000-0000-4000-8000-000000000002',
+E             actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E             case: '00000000-0000-4000-8000-000000000003',
+E             run: '00000000-0000-4000-8000-000000000004',
+E             action: 'VERIFY',
+E             plan: '00000000-0000-4000-8000-000000000005',
+E             step: '00000000-0000-4000-8000-000000000006',
+E             revision: 1,
+E             expires: 1792238399999
+E           },
+E           expected: null,
+E           operator: 'strictEqual',
+E           diff: 'simple'
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'past'], returncode...xpires: 1792238399999\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_service_plan_ttl_boundaries.py:11: AssertionError</failure></testcase><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[at_now]" time="0.348"><failure message="AssertionError: node:assert:152&#10;    throw new AssertionError(obj);&#10;    ^&#10;  &#10;  AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle&#10;  + actual - expected&#10;  &#10;  + {&#10;  +   action: 'VERIFY',&#10;  +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;  +   case: '00000000-0000-4000-8000-000000000003',&#10;  +   expires: 1792238400000,&#10;  +   id: '00000000-0000-4000-8000-000000000001',&#10;  +   key: '00000000-0000-4000-8000-000000000002',&#10;  +   plan: '00000000-0000-4000-8000-000000000005',&#10;  +   revision: 1,&#10;  +   run: '00000000-0000-4000-8000-000000000004',&#10;  +   step: '00000000-0000-4000-8000-000000000006',&#10;  +   v: 1&#10;  + }&#10;  - null&#10;  &#10;      at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47 {&#10;    generatedMessage: false,&#10;    code: 'ERR_ASSERTION',&#10;    actual: {&#10;      v: 1,&#10;      id: '00000000-0000-4000-8000-000000000001',&#10;      key: '00000000-0000-4000-8000-000000000002',&#10;      actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;      case: '00000000-0000-4000-8000-000000000003',&#10;      run: '00000000-0000-4000-8000-000000000004',&#10;      action: 'VERIFY',&#10;      plan: '00000000-0000-4000-8000-000000000005',&#10;      step: '00000000-0000-4000-8000-000000000006',&#10;      revision: 1,&#10;      expires: 1792238400000&#10;    },&#10;    expected: null,&#10;    operator: 'strictEqual',&#10;    diff: 'simple'&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'at_now'], returnco...xpires: 1792238400000\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'at_now'
+
+    @pytest.mark.parametrize('mode',['past','at_now','one_ms_valid','max_valid','over_max','zero','far_future','null','string','boolean','missing','extra_field'])
+    def test_actual_reader_deadline_boundaries_keep_other_original_handle(mode):
+        root=Path(__file__).resolve().parents[1]
+        result=subprocess.run(['node',str(Path(__file__).with_name('service_plan_handle_ttl_boundaries.js')),mode],
+                              cwd=root,capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: node:assert:152
+E           throw new AssertionError(obj);
+E           ^
+E         
+E         AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle
+E         + actual - expected
+E         
+E         + {
+E         +   action: 'VERIFY',
+E         +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E         +   case: '00000000-0000-4000-8000-000000000003',
+E         +   expires: 1792238400000,
+E         +   id: '00000000-0000-4000-8000-000000000001',
+E         +   key: '00000000-0000-4000-8000-000000000002',
+E         +   plan: '00000000-0000-4000-8000-000000000005',
+E         +   revision: 1,
+E         +   run: '00000000-0000-4000-8000-000000000004',
+E         +   step: '00000000-0000-4000-8000-000000000006',
+E         +   v: 1
+E         + }
+E         - null
+E         
+E             at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47 {
+E           generatedMessage: false,
+E           code: 'ERR_ASSERTION',
+E           actual: {
+E             v: 1,
+E             id: '00000000-0000-4000-8000-000000000001',
+E             key: '00000000-0000-4000-8000-000000000002',
+E             actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E             case: '00000000-0000-4000-8000-000000000003',
+E             run: '00000000-0000-4000-8000-000000000004',
+E             action: 'VERIFY',
+E             plan: '00000000-0000-4000-8000-000000000005',
+E             step: '00000000-0000-4000-8000-000000000006',
+E             revision: 1,
+E             expires: 1792238400000
+E           },
+E           expected: null,
+E           operator: 'strictEqual',
+E           diff: 'simple'
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'at_now'], returnco...xpires: 1792238400000\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_service_plan_ttl_boundaries.py:11: AssertionError</failure></testcase><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[one_ms_valid]" time="0.222" /><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[max_valid]" time="0.199" /><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[over_max]" time="0.207"><failure message="AssertionError: node:assert:152&#10;    throw new AssertionError(obj);&#10;    ^&#10;  &#10;  AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle&#10;  + actual - expected&#10;  &#10;  + {&#10;  +   action: 'VERIFY',&#10;  +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;  +   case: '00000000-0000-4000-8000-000000000003',&#10;  +   expires: 1792324800001,&#10;  +   id: '00000000-0000-4000-8000-000000000001',&#10;  +   key: '00000000-0000-4000-8000-000000000002',&#10;  +   plan: '00000000-0000-4000-8000-000000000005',&#10;  +   revision: 1,&#10;  +   run: '00000000-0000-4000-8000-000000000004',&#10;  +   step: '00000000-0000-4000-8000-000000000006',&#10;  +   v: 1&#10;  + }&#10;  - null&#10;  &#10;      at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47 {&#10;    generatedMessage: false,&#10;    code: 'ERR_ASSERTION',&#10;    actual: {&#10;      v: 1,&#10;      id: '00000000-0000-4000-8000-000000000001',&#10;      key: '00000000-0000-4000-8000-000000000002',&#10;      actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;      case: '00000000-0000-4000-8000-000000000003',&#10;      run: '00000000-0000-4000-8000-000000000004',&#10;      action: 'VERIFY',&#10;      plan: '00000000-0000-4000-8000-000000000005',&#10;      step: '00000000-0000-4000-8000-000000000006',&#10;      revision: 1,&#10;      expires: 1792324800001&#10;    },&#10;    expected: null,&#10;    operator: 'strictEqual',&#10;    diff: 'simple'&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'over_max'], return...xpires: 1792324800001\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'over_max'
+
+    @pytest.mark.parametrize('mode',['past','at_now','one_ms_valid','max_valid','over_max','zero','far_future','null','string','boolean','missing','extra_field'])
+    def test_actual_reader_deadline_boundaries_keep_other_original_handle(mode):
+        root=Path(__file__).resolve().parents[1]
+        result=subprocess.run(['node',str(Path(__file__).with_name('service_plan_handle_ttl_boundaries.js')),mode],
+                              cwd=root,capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: node:assert:152
+E           throw new AssertionError(obj);
+E           ^
+E         
+E         AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle
+E         + actual - expected
+E         
+E         + {
+E         +   action: 'VERIFY',
+E         +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E         +   case: '00000000-0000-4000-8000-000000000003',
+E         +   expires: 1792324800001,
+E         +   id: '00000000-0000-4000-8000-000000000001',
+E         +   key: '00000000-0000-4000-8000-000000000002',
+E         +   plan: '00000000-0000-4000-8000-000000000005',
+E         +   revision: 1,
+E         +   run: '00000000-0000-4000-8000-000000000004',
+E         +   step: '00000000-0000-4000-8000-000000000006',
+E         +   v: 1
+E         + }
+E         - null
+E         
+E             at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47 {
+E           generatedMessage: false,
+E           code: 'ERR_ASSERTION',
+E           actual: {
+E             v: 1,
+E             id: '00000000-0000-4000-8000-000000000001',
+E             key: '00000000-0000-4000-8000-000000000002',
+E             actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E             case: '00000000-0000-4000-8000-000000000003',
+E             run: '00000000-0000-4000-8000-000000000004',
+E             action: 'VERIFY',
+E             plan: '00000000-0000-4000-8000-000000000005',
+E             step: '00000000-0000-4000-8000-000000000006',
+E             revision: 1,
+E             expires: 1792324800001
+E           },
+E           expected: null,
+E           operator: 'strictEqual',
+E           diff: 'simple'
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'over_max'], return...xpires: 1792324800001\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_service_plan_ttl_boundaries.py:11: AssertionError</failure></testcase><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[zero]" time="0.269"><failure message="AssertionError: node:assert:152&#10;    throw new AssertionError(obj);&#10;    ^&#10;  &#10;  AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle&#10;  + actual - expected&#10;  &#10;  + {&#10;  +   action: 'VERIFY',&#10;  +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;  +   case: '00000000-0000-4000-8000-000000000003',&#10;  +   expires: 0,&#10;  +   id: '00000000-0000-4000-8000-000000000001',&#10;  +   key: '00000000-0000-4000-8000-000000000002',&#10;  +   plan: '00000000-0000-4000-8000-000000000005',&#10;  +   revision: 1,&#10;  +   run: '00000000-0000-4000-8000-000000000004',&#10;  +   step: '00000000-0000-4000-8000-000000000006',&#10;  +   v: 1&#10;  + }&#10;  - null&#10;  &#10;      at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47 {&#10;    generatedMessage: false,&#10;    code: 'ERR_ASSERTION',&#10;    actual: {&#10;      v: 1,&#10;      id: '00000000-0000-4000-8000-000000000001',&#10;      key: '00000000-0000-4000-8000-000000000002',&#10;      actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;      case: '00000000-0000-4000-8000-000000000003',&#10;      run: '00000000-0000-4000-8000-000000000004',&#10;      action: 'VERIFY',&#10;      plan: '00000000-0000-4000-8000-000000000005',&#10;      step: '00000000-0000-4000-8000-000000000006',&#10;      revision: 1,&#10;      expires: 0&#10;    },&#10;    expected: null,&#10;    operator: 'strictEqual',&#10;    diff: 'simple'&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'zero'], returncode...n: 1,\n    expires: 0\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'zero'
+
+    @pytest.mark.parametrize('mode',['past','at_now','one_ms_valid','max_valid','over_max','zero','far_future','null','string','boolean','missing','extra_field'])
+    def test_actual_reader_deadline_boundaries_keep_other_original_handle(mode):
+        root=Path(__file__).resolve().parents[1]
+        result=subprocess.run(['node',str(Path(__file__).with_name('service_plan_handle_ttl_boundaries.js')),mode],
+                              cwd=root,capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: node:assert:152
+E           throw new AssertionError(obj);
+E           ^
+E         
+E         AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle
+E         + actual - expected
+E         
+E         + {
+E         +   action: 'VERIFY',
+E         +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E         +   case: '00000000-0000-4000-8000-000000000003',
+E         +   expires: 0,
+E         +   id: '00000000-0000-4000-8000-000000000001',
+E         +   key: '00000000-0000-4000-8000-000000000002',
+E         +   plan: '00000000-0000-4000-8000-000000000005',
+E         +   revision: 1,
+E         +   run: '00000000-0000-4000-8000-000000000004',
+E         +   step: '00000000-0000-4000-8000-000000000006',
+E         +   v: 1
+E         + }
+E         - null
+E         
+E             at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47 {
+E           generatedMessage: false,
+E           code: 'ERR_ASSERTION',
+E           actual: {
+E             v: 1,
+E             id: '00000000-0000-4000-8000-000000000001',
+E             key: '00000000-0000-4000-8000-000000000002',
+E             actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E             case: '00000000-0000-4000-8000-000000000003',
+E             run: '00000000-0000-4000-8000-000000000004',
+E             action: 'VERIFY',
+E             plan: '00000000-0000-4000-8000-000000000005',
+E             step: '00000000-0000-4000-8000-000000000006',
+E             revision: 1,
+E             expires: 0
+E           },
+E           expected: null,
+E           operator: 'strictEqual',
+E           diff: 'simple'
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'zero'], returncode...n: 1,\n    expires: 0\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_service_plan_ttl_boundaries.py:11: AssertionError</failure></testcase><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[far_future]" time="0.106"><failure message="AssertionError: node:assert:152&#10;    throw new AssertionError(obj);&#10;    ^&#10;  &#10;  AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle&#10;  + actual - expected&#10;  &#10;  + {&#10;  +   action: 'VERIFY',&#10;  +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;  +   case: '00000000-0000-4000-8000-000000000003',&#10;  +   expires: 999999999999999,&#10;  +   id: '00000000-0000-4000-8000-000000000001',&#10;  +   key: '00000000-0000-4000-8000-000000000002',&#10;  +   plan: '00000000-0000-4000-8000-000000000005',&#10;  +   revision: 1,&#10;  +   run: '00000000-0000-4000-8000-000000000004',&#10;  +   step: '00000000-0000-4000-8000-000000000006',&#10;  +   v: 1&#10;  + }&#10;  - null&#10;  &#10;      at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47 {&#10;    generatedMessage: false,&#10;    code: 'ERR_ASSERTION',&#10;    actual: {&#10;      v: 1,&#10;      id: '00000000-0000-4000-8000-000000000001',&#10;      key: '00000000-0000-4000-8000-000000000002',&#10;      actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;      case: '00000000-0000-4000-8000-000000000003',&#10;      run: '00000000-0000-4000-8000-000000000004',&#10;      action: 'VERIFY',&#10;      plan: '00000000-0000-4000-8000-000000000005',&#10;      step: '00000000-0000-4000-8000-000000000006',&#10;      revision: 1,&#10;      expires: 999999999999999&#10;    },&#10;    expected: null,&#10;    operator: 'strictEqual',&#10;    diff: 'simple'&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'far_future'], retu...ires: 999999999999999\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'far_future'
+
+    @pytest.mark.parametrize('mode',['past','at_now','one_ms_valid','max_valid','over_max','zero','far_future','null','string','boolean','missing','extra_field'])
+    def test_actual_reader_deadline_boundaries_keep_other_original_handle(mode):
+        root=Path(__file__).resolve().parents[1]
+        result=subprocess.run(['node',str(Path(__file__).with_name('service_plan_handle_ttl_boundaries.js')),mode],
+                              cwd=root,capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: node:assert:152
+E           throw new AssertionError(obj);
+E           ^
+E         
+E         AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle
+E         + actual - expected
+E         
+E         + {
+E         +   action: 'VERIFY',
+E         +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E         +   case: '00000000-0000-4000-8000-000000000003',
+E         +   expires: 999999999999999,
+E         +   id: '00000000-0000-4000-8000-000000000001',
+E         +   key: '00000000-0000-4000-8000-000000000002',
+E         +   plan: '00000000-0000-4000-8000-000000000005',
+E         +   revision: 1,
+E         +   run: '00000000-0000-4000-8000-000000000004',
+E         +   step: '00000000-0000-4000-8000-000000000006',
+E         +   v: 1
+E         + }
+E         - null
+E         
+E             at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47 {
+E           generatedMessage: false,
+E           code: 'ERR_ASSERTION',
+E           actual: {
+E             v: 1,
+E             id: '00000000-0000-4000-8000-000000000001',
+E             key: '00000000-0000-4000-8000-000000000002',
+E             actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E             case: '00000000-0000-4000-8000-000000000003',
+E             run: '00000000-0000-4000-8000-000000000004',
+E             action: 'VERIFY',
+E             plan: '00000000-0000-4000-8000-000000000005',
+E             step: '00000000-0000-4000-8000-000000000006',
+E             revision: 1,
+E             expires: 999999999999999
+E           },
+E           expected: null,
+E           operator: 'strictEqual',
+E           diff: 'simple'
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'far_future'], retu...ires: 999999999999999\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_service_plan_ttl_boundaries.py:11: AssertionError</failure></testcase><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[null]" time="0.281"><failure message="AssertionError: node:assert:152&#10;    throw new AssertionError(obj);&#10;    ^&#10;  &#10;  AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle&#10;  + actual - expected&#10;  &#10;  + {&#10;  +   action: 'VERIFY',&#10;  +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;  +   case: '00000000-0000-4000-8000-000000000003',&#10;  +   expires: null,&#10;  +   id: '00000000-0000-4000-8000-000000000001',&#10;  +   key: '00000000-0000-4000-8000-000000000002',&#10;  +   plan: '00000000-0000-4000-8000-000000000005',&#10;  +   revision: 1,&#10;  +   run: '00000000-0000-4000-8000-000000000004',&#10;  +   step: '00000000-0000-4000-8000-000000000006',&#10;  +   v: 1&#10;  + }&#10;  - null&#10;  &#10;      at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47 {&#10;    generatedMessage: false,&#10;    code: 'ERR_ASSERTION',&#10;    actual: {&#10;      v: 1,&#10;      id: '00000000-0000-4000-8000-000000000001',&#10;      key: '00000000-0000-4000-8000-000000000002',&#10;      actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;      case: '00000000-0000-4000-8000-000000000003',&#10;      run: '00000000-0000-4000-8000-000000000004',&#10;      action: 'VERIFY',&#10;      plan: '00000000-0000-4000-8000-000000000005',&#10;      step: '00000000-0000-4000-8000-000000000006',&#10;      revision: 1,&#10;      expires: null&#10;    },&#10;    expected: null,&#10;    operator: 'strictEqual',&#10;    diff: 'simple'&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'null'], returncode...1,\n    expires: null\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'null'
+
+    @pytest.mark.parametrize('mode',['past','at_now','one_ms_valid','max_valid','over_max','zero','far_future','null','string','boolean','missing','extra_field'])
+    def test_actual_reader_deadline_boundaries_keep_other_original_handle(mode):
+        root=Path(__file__).resolve().parents[1]
+        result=subprocess.run(['node',str(Path(__file__).with_name('service_plan_handle_ttl_boundaries.js')),mode],
+                              cwd=root,capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: node:assert:152
+E           throw new AssertionError(obj);
+E           ^
+E         
+E         AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle
+E         + actual - expected
+E         
+E         + {
+E         +   action: 'VERIFY',
+E         +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E         +   case: '00000000-0000-4000-8000-000000000003',
+E         +   expires: null,
+E         +   id: '00000000-0000-4000-8000-000000000001',
+E         +   key: '00000000-0000-4000-8000-000000000002',
+E         +   plan: '00000000-0000-4000-8000-000000000005',
+E         +   revision: 1,
+E         +   run: '00000000-0000-4000-8000-000000000004',
+E         +   step: '00000000-0000-4000-8000-000000000006',
+E         +   v: 1
+E         + }
+E         - null
+E         
+E             at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47 {
+E           generatedMessage: false,
+E           code: 'ERR_ASSERTION',
+E           actual: {
+E             v: 1,
+E             id: '00000000-0000-4000-8000-000000000001',
+E             key: '00000000-0000-4000-8000-000000000002',
+E             actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E             case: '00000000-0000-4000-8000-000000000003',
+E             run: '00000000-0000-4000-8000-000000000004',
+E             action: 'VERIFY',
+E             plan: '00000000-0000-4000-8000-000000000005',
+E             step: '00000000-0000-4000-8000-000000000006',
+E             revision: 1,
+E             expires: null
+E           },
+E           expected: null,
+E           operator: 'strictEqual',
+E           diff: 'simple'
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'null'], returncode...1,\n    expires: null\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_service_plan_ttl_boundaries.py:11: AssertionError</failure></testcase><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[string]" time="0.241"><failure message="AssertionError: node:assert:152&#10;    throw new AssertionError(obj);&#10;    ^&#10;  &#10;  AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle&#10;  + actual - expected&#10;  &#10;  + {&#10;  +   action: 'VERIFY',&#10;  +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;  +   case: '00000000-0000-4000-8000-000000000003',&#10;  +   expires: '1792238401000',&#10;  +   id: '00000000-0000-4000-8000-000000000001',&#10;  +   key: '00000000-0000-4000-8000-000000000002',&#10;  +   plan: '00000000-0000-4000-8000-000000000005',&#10;  +   revision: 1,&#10;  +   run: '00000000-0000-4000-8000-000000000004',&#10;  +   step: '00000000-0000-4000-8000-000000000006',&#10;  +   v: 1&#10;  + }&#10;  - null&#10;  &#10;      at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47 {&#10;    generatedMessage: false,&#10;    code: 'ERR_ASSERTION',&#10;    actual: {&#10;      v: 1,&#10;      id: '00000000-0000-4000-8000-000000000001',&#10;      key: '00000000-0000-4000-8000-000000000002',&#10;      actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;      case: '00000000-0000-4000-8000-000000000003',&#10;      run: '00000000-0000-4000-8000-000000000004',&#10;      action: 'VERIFY',&#10;      plan: '00000000-0000-4000-8000-000000000005',&#10;      step: '00000000-0000-4000-8000-000000000006',&#10;      revision: 1,&#10;      expires: '1792238401000'&#10;    },&#10;    expected: null,&#10;    operator: 'strictEqual',&#10;    diff: 'simple'&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'string'], returnco...ires: '1792238401000'\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'string'
+
+    @pytest.mark.parametrize('mode',['past','at_now','one_ms_valid','max_valid','over_max','zero','far_future','null','string','boolean','missing','extra_field'])
+    def test_actual_reader_deadline_boundaries_keep_other_original_handle(mode):
+        root=Path(__file__).resolve().parents[1]
+        result=subprocess.run(['node',str(Path(__file__).with_name('service_plan_handle_ttl_boundaries.js')),mode],
+                              cwd=root,capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: node:assert:152
+E           throw new AssertionError(obj);
+E           ^
+E         
+E         AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle
+E         + actual - expected
+E         
+E         + {
+E         +   action: 'VERIFY',
+E         +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E         +   case: '00000000-0000-4000-8000-000000000003',
+E         +   expires: '1792238401000',
+E         +   id: '00000000-0000-4000-8000-000000000001',
+E         +   key: '00000000-0000-4000-8000-000000000002',
+E         +   plan: '00000000-0000-4000-8000-000000000005',
+E         +   revision: 1,
+E         +   run: '00000000-0000-4000-8000-000000000004',
+E         +   step: '00000000-0000-4000-8000-000000000006',
+E         +   v: 1
+E         + }
+E         - null
+E         
+E             at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47 {
+E           generatedMessage: false,
+E           code: 'ERR_ASSERTION',
+E           actual: {
+E             v: 1,
+E             id: '00000000-0000-4000-8000-000000000001',
+E             key: '00000000-0000-4000-8000-000000000002',
+E             actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E             case: '00000000-0000-4000-8000-000000000003',
+E             run: '00000000-0000-4000-8000-000000000004',
+E             action: 'VERIFY',
+E             plan: '00000000-0000-4000-8000-000000000005',
+E             step: '00000000-0000-4000-8000-000000000006',
+E             revision: 1,
+E             expires: '1792238401000'
+E           },
+E           expected: null,
+E           operator: 'strictEqual',
+E           diff: 'simple'
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'string'], returnco...ires: '1792238401000'\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_service_plan_ttl_boundaries.py:11: AssertionError</failure></testcase><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[boolean]" time="0.698"><failure message="AssertionError: node:assert:152&#10;    throw new AssertionError(obj);&#10;    ^&#10;  &#10;  AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle&#10;  + actual - expected&#10;  &#10;  + {&#10;  +   action: 'VERIFY',&#10;  +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;  +   case: '00000000-0000-4000-8000-000000000003',&#10;  +   expires: true,&#10;  +   id: '00000000-0000-4000-8000-000000000001',&#10;  +   key: '00000000-0000-4000-8000-000000000002',&#10;  +   plan: '00000000-0000-4000-8000-000000000005',&#10;  +   revision: 1,&#10;  +   run: '00000000-0000-4000-8000-000000000004',&#10;  +   step: '00000000-0000-4000-8000-000000000006',&#10;  +   v: 1&#10;  + }&#10;  - null&#10;  &#10;      at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)&#10;      at Module._compile (node:internal/modules/cjs/loader:1872:14)&#10;      at Object..js (node:internal/modules/cjs/loader:2003:10)&#10;      at Module.load (node:internal/modules/cjs/loader:1594:32)&#10;      at Module._load (node:internal/modules/cjs/loader:1396:12)&#10;      at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)&#10;      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)&#10;      at node:internal/main/run_main_module:33:47 {&#10;    generatedMessage: false,&#10;    code: 'ERR_ASSERTION',&#10;    actual: {&#10;      v: 1,&#10;      id: '00000000-0000-4000-8000-000000000001',&#10;      key: '00000000-0000-4000-8000-000000000002',&#10;      actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',&#10;      case: '00000000-0000-4000-8000-000000000003',&#10;      run: '00000000-0000-4000-8000-000000000004',&#10;      action: 'VERIFY',&#10;      plan: '00000000-0000-4000-8000-000000000005',&#10;      step: '00000000-0000-4000-8000-000000000006',&#10;      revision: 1,&#10;      expires: true&#10;    },&#10;    expected: null,&#10;    operator: 'strictEqual',&#10;    diff: 'simple'&#10;  }&#10;  &#10;  Node.js v24.19.0&#10;  &#10;assert 1 == 0&#10; +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'boolean'], returnc...1,\n    expires: true\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n&quot;).returncode">mode = 'boolean'
+
+    @pytest.mark.parametrize('mode',['past','at_now','one_ms_valid','max_valid','over_max','zero','far_future','null','string','boolean','missing','extra_field'])
+    def test_actual_reader_deadline_boundaries_keep_other_original_handle(mode):
+        root=Path(__file__).resolve().parents[1]
+        result=subprocess.run(['node',str(Path(__file__).with_name('service_plan_handle_ttl_boundaries.js')),mode],
+                              cwd=root,capture_output=True,text=True,timeout=15)
+&gt;       assert result.returncode==0,result.stderr
+E       AssertionError: node:assert:152
+E           throw new AssertionError(obj);
+E           ^
+E         
+E         AssertionError [ERR_ASSERTION]: invalid deadline/schema must not return a recovery handle
+E         + actual - expected
+E         
+E         + {
+E         +   action: 'VERIFY',
+E         +   actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E         +   case: '00000000-0000-4000-8000-000000000003',
+E         +   expires: true,
+E         +   id: '00000000-0000-4000-8000-000000000001',
+E         +   key: '00000000-0000-4000-8000-000000000002',
+E         +   plan: '00000000-0000-4000-8000-000000000005',
+E         +   revision: 1,
+E         +   run: '00000000-0000-4000-8000-000000000004',
+E         +   step: '00000000-0000-4000-8000-000000000006',
+E         +   v: 1
+E         + }
+E         - null
+E         
+E             at Object.&lt;anonymous&gt; (/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js:21:14)
+E             at Module._compile (node:internal/modules/cjs/loader:1872:14)
+E             at Object..js (node:internal/modules/cjs/loader:2003:10)
+E             at Module.load (node:internal/modules/cjs/loader:1594:32)
+E             at Module._load (node:internal/modules/cjs/loader:1396:12)
+E             at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+E             at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+E             at node:internal/main/run_main_module:33:47 {
+E           generatedMessage: false,
+E           code: 'ERR_ASSERTION',
+E           actual: {
+E             v: 1,
+E             id: '00000000-0000-4000-8000-000000000001',
+E             key: '00000000-0000-4000-8000-000000000002',
+E             actor: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+E             case: '00000000-0000-4000-8000-000000000003',
+E             run: '00000000-0000-4000-8000-000000000004',
+E             action: 'VERIFY',
+E             plan: '00000000-0000-4000-8000-000000000005',
+E             step: '00000000-0000-4000-8000-000000000006',
+E             revision: 1,
+E             expires: true
+E           },
+E           expected: null,
+E           operator: 'strictEqual',
+E           diff: 'simple'
+E         }
+E         
+E         Node.js v24.19.0
+E         
+E       assert 1 == 0
+E        +  where 1 = CompletedProcess(args=['node', '/workspace/ParkWeave/tests/service_plan_handle_ttl_boundaries.js', 'boolean'], returnc...1,\n    expires: true\n  },\n  expected: null,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.19.0\n").returncode
+
+tests/test_service_plan_ttl_boundaries.py:11: AssertionError</failure></testcase><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[missing]" time="0.265" /><testcase classname="tests.test_service_plan_ttl_boundaries" name="test_actual_reader_deadline_boundaries_keep_other_original_handle[extra_field]" time="0.187" /></testsuite></testsuites>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="6" time="414.349" timestamp="2026-10-17T14:58:17.059604+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_unrelated_old_plan_read_failure_does_not_poison_material_write" time="35.256" /><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_current_required_read_failure_keeps_draft_and_requires_visible_refresh[conflict]" time="38.575" /><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_late_superseded_read_cannot_unlock_or_clear_current_read[200-READY]" time="51.130" /><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_optional_auxiliary_failure_preserves_authorized_manual_material_flow[fact-clarifications-403]" time="22.142"><failure message="Failed: owned ordinary API readiness deadline exceeded">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f3ad30b7b90&gt;, &lt;parkweave.store.Store object at 0x7f3ad30556a0&gt;, {'fixture-a': 'rX...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f3ad3079220&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-1-9aq29l1p/pytest/test_optional_auxiliary_failur0')
+path = 'fact-clarifications', status = 403
+
+    @pytest.mark.parametrize('path,status',[('material-reuse',500),('fact-clarifications',403)])
+    def test_optional_auxiliary_failure_preserves_authorized_manual_material_flow(preparation_fixture,tmp_path,path,status):
+        f=preparation_fixture;p,_,_=create(f);faults=[]
+&gt;       with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_preparation_read_write_timing_browser.py:212: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7f3ad30b7b90&gt;, &lt;parkweave.store.Store object at 0x7f3ad30556a0&gt;, {'fixture-a': 'rX...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f3ad3079220&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-1-9aq29l1p/pytest/test_optional_auxiliary_failur0/ordinary')
+
+    @contextmanager
+    def ordinary_process(f, tmp_path):
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        repo = Path(__file__).resolve().parents[1]
+        env = minimal_environment(os.environ, PYTHONPATH=str(repo/'src'),
+                                  PARKWEAVE_DSN=f[0].dsn, PARKWEAVE_MODE='LOCAL')
+        with (tmp_path/'ordinary-api.log').open('w') as log:
+            child = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'parkweave.api:configured_app',
+                                      '--factory', '--host', '127.0.0.1', '--port', str(port),
+                                      '--log-level', 'warning', '--no-access-log'], cwd=repo,
+                                     env=env, stdout=log, stderr=subprocess.STDOUT)
+            try:
+                with httpx.Client(base_url=f'http://127.0.0.1:{port}', timeout=10) as api:
+                    deadline = time.monotonic()+15
+                    while time.monotonic() &lt; deadline:
+                        assert child.poll() is None, 'owned API exited; see ordinary-api.log'
+                        try:
+                            health = api.get('/health')
+                            if health.status_code == 200 and health.json()['process_id'] == child.pid:
+                                break
+                        except httpx.TransportError:
+                            pass
+                        time.sleep(.05)
+&gt;                   else: pytest.fail('owned ordinary API readiness deadline exceeded')
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   Failed: owned ordinary API readiness deadline exceeded
+
+tests/test_native_preparation_entry_browser.py:57: Failed</failure></testcase><testcase classname="tests.test_demo_original_page_intake_browser" name="test_existing_ordinary_page_new_request_materials_to_selection_without_api_initial_data[320]" time="214.779" /><testcase classname="tests.test_material_file_import_browser" name="test_file_to_original_review_confirmation_actual_download_and_process_restart[md-json]" time="35.652"><failure message="Failed: owned ordinary API readiness deadline exceeded">preparation_fixture = (&lt;parkweave.store.Store object at 0x7f3ad512fad0&gt;, &lt;parkweave.store.Store object at 0x7f3ad512fe00&gt;, {'fixture-a': 'lJ...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f3ad2f3d940&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-1-9aq29l1p/pytest/test_file_to_original_review_c0')
+formats = 'md-json'
+
+    @pytest.mark.parametrize('formats',['txt-csv','md-json'])
+    def test_file_to_original_review_confirmation_actual_download_and_process_restart(preparation_fixture,tmp_path,formats):
+        f=preparation_fixture;p,_,_=create(f)
+        first=(('SYNTHETIC-request.txt','SYNTHETIC imported request 中文\r\n第二行'.encode()) if formats=='txt-csv' else ('SYNTHETIC-request.md',b'# SYNTHETIC imported request\n&lt;script&gt;window.fileImportInjection=true&lt;/script&gt;'))
+        second=(('SYNTHETIC-outline.csv',b'material,source\r\nSYNTHETIC-outline,user-statement\r\n') if formats=='txt-csv' else ('SYNTHETIC-outline.json',b'{"material":"SYNTHETIC-outline","source":"user-statement"}'))
+        with f[1].connect() as c:grants_before=c.execute('SELECT to_jsonb(t) r FROM preparation_grants t ORDER BY principal_id,capability').fetchall()
+&gt;       with ordinary_process(f,tmp_path/'first') as api,sync_playwright() as pw:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_material_file_import_browser.py:53: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7f3ad512fad0&gt;, &lt;parkweave.store.Store object at 0x7f3ad512fe00&gt;, {'fixture-a': 'lJ...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7f3ad2f3d940&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-1-9aq29l1p/pytest/test_file_to_original_review_c0/first')
+
+    @contextmanager
+    def ordinary_process(f, tmp_path):
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        repo = Path(__file__).resolve().parents[1]
+        env = minimal_environment(os.environ, PYTHONPATH=str(repo/'src'),
+                                  PARKWEAVE_DSN=f[0].dsn, PARKWEAVE_MODE='LOCAL')
+        with (tmp_path/'ordinary-api.log').open('w') as log:
+            child = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'parkweave.api:configured_app',
+                                      '--factory', '--host', '127.0.0.1', '--port', str(port),
+                                      '--log-level', 'warning', '--no-access-log'], cwd=repo,
+                                     env=env, stdout=log, stderr=subprocess.STDOUT)
+            try:
+                with httpx.Client(base_url=f'http://127.0.0.1:{port}', timeout=10) as api:
+                    deadline = time.monotonic()+15
+                    while time.monotonic() &lt; deadline:
+                        assert child.poll() is None, 'owned API exited; see ordinary-api.log'
+                        try:
+                            health = api.get('/health')
+                            if health.status_code == 200 and health.json()['process_id'] == child.pid:
+                                break
+                        except httpx.TransportError:
+                            pass
+                        time.sleep(.05)
+&gt;                   else: pytest.fail('owned ordinary API readiness deadline exceeded')
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   Failed: owned ordinary API readiness deadline exceeded
+
+tests/test_native_preparation_entry_browser.py:57: Failed</failure></testcase></testsuite></testsuites>

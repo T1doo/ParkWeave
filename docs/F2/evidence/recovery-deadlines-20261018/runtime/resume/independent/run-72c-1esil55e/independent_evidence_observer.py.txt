@@ -1,0 +1,63 @@
+import hashlib,json,shutil,sys
+from pathlib import Path
+import pytest
+
+def pytest_addoption(parser):
+    parser.addoption('--independent-evidence-dir',action='store')
+
+def pytest_configure(config):
+    config._independent_destination=Path(config.getoption('--independent-evidence-dir'))
+    config._independent_observations=[]
+
+def save_json(path,value):
+    path.parent.mkdir(parents=True,exist_ok=True)
+    path.write_text(json.dumps(value,ensure_ascii=False,indent=2)+'\n')
+
+def copy_existing(config):
+    destination=config._independent_destination
+    base=Path(config.option.basetemp)
+    for path in base.rglob('*'):
+        if path.is_file() and (path.name in {'ordinary-api.log','owned-api.log','ordinary-timing-proof.json','cross-read-diagnostic.json','browser-proof.json'} or path.suffix=='.png'):
+            target=destination/'case-artifacts'/path.relative_to(base)
+            target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(path,target)
+    bridge=Path.cwd()/'.runtime/template-plan-continuity-20261013/actual-continuity.json'
+    if bridge.is_file():
+        target=destination/'case-artifacts/actual-continuity.json'
+        target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(bridge,target)
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item,call):
+    outcome=yield
+    report=outcome.get_result()
+    if report.when!='call':return
+    row={'nodeid':report.nodeid,'outcome':report.outcome,'duration':report.duration,'scope':'Original test result; observer adds no assertions or business requests'}
+    fixture=item.funcargs.get('goal_page')
+    if isinstance(fixture,tuple) and len(fixture)>1:
+        page=fixture[1]
+        try:
+            if not page.is_closed():
+                name=hashlib.sha256(report.nodeid.encode()).hexdigest()[:20]+'.png'
+                target=item.config._independent_destination/'proof-png'/name
+                target.parent.mkdir(parents=True,exist_ok=True)
+                page.screenshot(path=str(target),full_page=True,timeout=3000)
+                row['proof_png']=str(target)
+        except Exception as error:
+            row['proof_png_error']={'type':type(error).__name__,'message':str(error)}
+    item.config._independent_observations.append(row)
+    save_json(item.config._independent_destination/'call-observations.json',item.config._independent_observations)
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_teardown(item,nextitem):
+    yield
+    try:copy_existing(item.config)
+    except Exception as error:
+        save_json(item.config._independent_destination/'artifact-copy-warning.json',{'type':type(error).__name__,'message':str(error)})
+
+def pytest_sessionfinish(session,exitstatus):
+    config=session.config
+    try:copy_existing(config)
+    except Exception as error:
+        save_json(config._independent_destination/'artifact-copy-warning.json',{'type':type(error).__name__,'message':str(error)})
+    origins={name:str(Path(module.__file__).resolve()) for name,module in sys.modules.items() if name=='parkweave' or name.startswith('parkweave.') if getattr(module,'__file__',None)}
+    save_json(config._independent_destination/'module-origins.json',origins)
+    save_json(config._independent_destination/'observer-settlement.json',{'pytest_exitstatus':int(exitstatus),'call_reports':len(config._independent_observations),'extra_tests':0,'observer_scope':'Post-call readonly screenshots for existing goal_page fixtures; archive existing logs/proofs; no product functions patched, no original budgets/assertions altered'})

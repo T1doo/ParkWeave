@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="6" time="468.772" timestamp="2026-10-17T14:58:21.437423+00:00" hostname="b3bdad081a02"><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_current_required_read_failure_keeps_draft_and_requires_visible_refresh[malformed_json]" time="36.400" /><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_late_read_after_identity_or_navigation_cannot_clear_new_visible_ready_page[identity_aba-403]" time="34.527" /><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_late_read_after_identity_or_navigation_cannot_clear_new_visible_ready_page[navigation-200]" time="56.887"><failure message="AssertionError: Locator expected to contain text '已就绪'&#10;Actual value: 正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。 &#10;Call log:&#10;  - Expect &quot;to_contain_text&quot; with timeout 5000ms&#10;  - waiting for locator(&quot;#prep-read-status&quot;)&#10;    8 × locator resolved to &lt;p role=&quot;status&quot; class=&quot;status&quot; aria-live=&quot;polite&quot; data-state=&quot;LOADING&quot; id=&quot;prep-read-status&quot;&gt;正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。&lt;/p&gt;&#10;      - unexpected value &quot;正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。&quot;&#10;&#10;Aria snapshot:&#10;- status: 正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。">preparation_fixture = (&lt;parkweave.store.Store object at 0x7ff3e848c260&gt;, &lt;parkweave.store.Store object at 0x7ff3e848dee0&gt;, {'fixture-a': 'kH...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7ff3e3e83140&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-3-jirowjd9/pytest/test_late_read_after_identity_1')
+change = 'navigation', late_status = 200
+
+    @pytest.mark.parametrize('change,late_status',[('identity_aba',403),('navigation',200)])
+    def test_late_read_after_identity_or_navigation_cannot_clear_new_visible_ready_page(preparation_fixture,tmp_path,change,late_status):
+        f=preparation_fixture;p,_,_=create(f);pending=[];seen=[]
+        with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+            browser,context,page=browser_page(pw);open_record(page,api,f,p)
+            def intercept(route):
+                seen.append(route.request.url)
+                if len(seen)==1:pending.append((route,route.fetch()))
+                else:route.continue_()
+            page.route('**/material-corrections',intercept);page.locator('#prep-refresh').click();received(page,pending)
+            expect(page.locator('#prep-read-status')).to_contain_text('正在核对')
+            if change=='identity_aba':
+                page.locator('#token').fill(f[2]['fixture-b']);page.locator('#token').fill(f[2]['fixture-a'])
+            else:
+                page.locator('[data-tab="resource"]').click();page.locator('[data-tab="service"]').click()
+            page.locator('#existing-preparation-id').fill(p['preparation_id']);page.locator('#existing-preparation-read').click()
+&gt;           expect(page.locator('#prep-read-status')).to_contain_text('已就绪')
+E           AssertionError: Locator expected to contain text '已就绪'
+E           Actual value: 正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。 
+E           Call log:
+E             - Expect "to_contain_text" with timeout 5000ms
+E             - waiting for locator("#prep-read-status")
+E               8 × locator resolved to &lt;p role="status" class="status" aria-live="polite" data-state="LOADING" id="prep-read-status"&gt;正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。&lt;/p&gt;
+E                 - unexpected value "正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。"
+E           
+E           Aria snapshot:
+E           - status: 正在核对当前资料、权限与办理条件；当前草稿保留，新提交暂不可用。
+
+tests/test_preparation_read_write_timing_browser.py:137: AssertionError</failure></testcase><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_late_superseded_read_cannot_unlock_or_clear_current_read[200-INVALID]" time="48.901" /><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery[lost_reply]" time="71.131" /><testcase classname="tests.test_preparation_read_write_timing_browser" name="test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery[wrong_exact_event]" time="28.188"><failure message="Failed: owned ordinary API readiness deadline exceeded">preparation_fixture = (&lt;parkweave.store.Store object at 0x7ff3e8065040&gt;, &lt;parkweave.store.Store object at 0x7ff3e3a04500&gt;, {'fixture-a': 'FT...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7ff3e386b740&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-3-jirowjd9/pytest/test_own_unknown_write_keeps_o1')
+fault = 'wrong_exact_event'
+
+    @pytest.mark.parametrize('fault',['lost_reply','wrong_exact_event'])
+    def test_own_unknown_write_keeps_original_key_and_requires_explicit_GET_recovery(preparation_fixture,tmp_path,fault):
+        f=preparation_fixture;p,_,_=create(f);writes=[];faults=[];recovery=[]
+&gt;       with ordinary_process(f,tmp_path/'ordinary') as api,sync_playwright() as pw:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests/test_preparation_read_write_timing_browser.py:180: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+/opt/codex/runtimes/codex-primary-runtime/dependencies/python/lib/python3.12/contextlib.py:137: in __enter__
+    return next(self.gen)
+           ^^^^^^^^^^^^^^
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+f = (&lt;parkweave.store.Store object at 0x7ff3e8065040&gt;, &lt;parkweave.store.Store object at 0x7ff3e3a04500&gt;, {'fixture-a': 'FT...re-a': 'REDACTED_TEMPORARY_SESSION_CANDIDATE', ...}, &lt;starlette.testclient.TestClient object at 0x7ff3e386b740&gt;)
+tmp_path = PosixPath('/tmp/pw-ttl-template-final-3-jirowjd9/pytest/test_own_unknown_write_keeps_o1/ordinary')
+
+    @contextmanager
+    def ordinary_process(f, tmp_path):
+        tmp_path.mkdir(parents=True, exist_ok=True)
+        with socket.socket() as sock:
+            sock.bind(('127.0.0.1', 0))
+            port = sock.getsockname()[1]
+        repo = Path(__file__).resolve().parents[1]
+        env = minimal_environment(os.environ, PYTHONPATH=str(repo/'src'),
+                                  PARKWEAVE_DSN=f[0].dsn, PARKWEAVE_MODE='LOCAL')
+        with (tmp_path/'ordinary-api.log').open('w') as log:
+            child = subprocess.Popen([sys.executable, '-m', 'uvicorn', 'parkweave.api:configured_app',
+                                      '--factory', '--host', '127.0.0.1', '--port', str(port),
+                                      '--log-level', 'warning', '--no-access-log'], cwd=repo,
+                                     env=env, stdout=log, stderr=subprocess.STDOUT)
+            try:
+                with httpx.Client(base_url=f'http://127.0.0.1:{port}', timeout=10) as api:
+                    deadline = time.monotonic()+15
+                    while time.monotonic() &lt; deadline:
+                        assert child.poll() is None, 'owned API exited; see ordinary-api.log'
+                        try:
+                            health = api.get('/health')
+                            if health.status_code == 200 and health.json()['process_id'] == child.pid:
+                                break
+                        except httpx.TransportError:
+                            pass
+                        time.sleep(.05)
+&gt;                   else: pytest.fail('owned ordinary API readiness deadline exceeded')
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E                   Failed: owned ordinary API readiness deadline exceeded
+
+tests/test_native_preparation_entry_browser.py:57: Failed</failure></testcase><testcase time="4.337" /></testsuite></testsuites>
