@@ -80,10 +80,16 @@ def scoped(store,c,p,id,write=False,business_write=False,read_only=False):
 
 def catalog(store,token):
     with store.connect() as c:
-        p=store.auth(c,token,lock=True);grant(store,c,p,'PREPARE')
-        services=c.execute('SELECT service_id,version,name,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s ORDER BY service_id,version',(p['park_id'],)).fetchall()
-        reviewers=c.execute("SELECT p.id FROM principals p JOIN preparation_grants g ON g.principal_id=p.id AND g.park_id=p.park_id AND g.org_id=p.org_id JOIN capability_grants cg ON cg.principal_id=p.id AND cg.park_id=p.park_id AND cg.org_id=p.org_id AND cg.capability='READ' AND cg.active WHERE p.park_id=%s AND p.org_id=%s AND p.role='park_specialist' AND p.active AND g.capability='REVIEW_ASSIGNED' AND g.active ORDER BY p.id",(p['park_id'],p['org_id'])).fetchall()
-        return {'services':services,'reviewers':reviewers,'required_slots':list(SLOTS),'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY'}
+        p=store.auth(c,token,lock=True)
+        return _catalog_scope(store,c,p)
+
+
+def _catalog_scope(store,c,p):
+    """Original catalog projection for a caller-authenticated current transaction."""
+    grant(store,c,p,'PREPARE')
+    services=c.execute('SELECT service_id,version,name,source,namespace,qualification FROM preparation_catalog WHERE park_id=%s ORDER BY service_id,version',(p['park_id'],)).fetchall()
+    reviewers=c.execute("SELECT p.id FROM principals p JOIN preparation_grants g ON g.principal_id=p.id AND g.park_id=p.park_id AND g.org_id=p.org_id JOIN capability_grants cg ON cg.principal_id=p.id AND cg.park_id=p.park_id AND cg.org_id=p.org_id AND cg.capability='READ' AND cg.active WHERE p.park_id=%s AND p.org_id=%s AND p.role='park_specialist' AND p.active AND g.capability='REVIEW_ASSIGNED' AND g.active ORDER BY p.id",(p['park_id'],p['org_id'])).fetchall()
+    return {'services':services,'reviewers':reviewers,'required_slots':list(SLOTS),'scope':'SYNTHETIC_LOCAL_PREPARATION_ONLY'}
 
 def key_lock(c,p,key):c.execute('SELECT pg_advisory_xact_lock(hashtextextended(%s,0))',('preparation-key:'+p['id']+':'+key,))
 

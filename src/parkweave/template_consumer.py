@@ -78,6 +78,7 @@ class Consume(BaseModel):
     model_config = ConfigDict(extra='forbid', strict=True, str_strip_whitespace=True)
     release_id: UUID = Field(strict=False)
     expected_release_sha256: str = Field(pattern=r'^[0-9a-f]{64}$')
+    expected_catalog_sha256: str | None = Field(default=None,pattern=r'^[0-9a-f]{64}$')
     goal: str = Field(min_length=1, max_length=2000)
     reviewer_id: str = Field(min_length=1, max_length=100)
     materials: list[Material] = Field(min_length=2, max_length=2)
@@ -86,7 +87,7 @@ class Consume(BaseModel):
     required_goals: list[Annotated[str, Field(min_length=1, max_length=160)]] | None = Field(default=None, min_length=1, max_length=8)
     planning_constraints: Constraints | None = None
 
-    @field_validator('required_goals', 'planning_constraints', mode='before')
+    @field_validator('required_goals', 'planning_constraints', 'expected_catalog_sha256', mode='before')
     @classmethod
     def explicit_null(cls, value):
         if value is None: raise ValueError('omit optional planning declarations rather than null')
@@ -240,17 +241,36 @@ class TemplateConsumer:
             raise Denied('template park scope required')
         return self.template_engine.published(Scope.model_validate(scope), str(release_id), sha)
 
+    def _current_catalog(self, token):
+        with self.store.connect() as c:
+            p, _ = self._auth(token, connection=c)
+            return p, prep._catalog_scope(self.store,c,p)
+
+    def _catalog_binding(self, token, p, definition, original=None):
+        # A current directory fingerprint is not a template publication proof.
+        if original is None:
+            current, original = self._current_catalog(token)
+            if tuple(current[k] for k in ('id','park_id','org_id')) != tuple(p[k] for k in ('id','park_id','org_id')):
+                raise Denied('current template input owner scope changed')
+        service=next((r for r in original['services'] if
+            (r['service_id'],r['version'])==(definition['service_id'],definition['service_version'])),None)
+        if not service or service['namespace']!='SYNTHETIC' or not isinstance(service['source'],dict) or service['source'].get('kind')!='SYNTHETIC':
+            raise Denied('current authorized template service catalog version unavailable')
+        binding=normal(dict(actor_ref=case_steps.cp._hash(dict(actor_id=p['id'])),park_id=p['park_id'],org_id=p['org_id'],service=service))
+        return dict(binding,sha256=digest(canonical(binding)))
+
     def catalog(self, token):
-        p, _ = self._auth(token)
+        p, original = self._current_catalog(token)
         current = self.template_engine.public_catalog(p['park_id'])
-        original = prep.catalog(self.store, token)
         templates = []
         for item in current['items']:
             snapshot = item['snapshot']
             definition = snapshot['definition']
+            try:catalog_binding=self._catalog_binding(token,p,definition,original)
+            except Denied:continue
             templates.append(dict(scope=snapshot['scope'], release_id=item['release_id'], release_sha256=item['release_sha256'],
                                   name=definition.get('name', definition.get('title', snapshot['scope']['template_id'])),
-                                  definition=definition, required_goals=definition['required_goals'], state=item['state']))
+                                  definition=definition, required_goals=definition['required_goals'], state=item['state'],catalog_binding=catalog_binding))
         return dict(enabled=True, actor_ref=case_steps.cp._hash(dict(actor_id=p['id'])), park_id=p['park_id'], org_id=p['org_id'], reviewers=original['reviewers'], templates=templates,
                     business_publication=False, new_grants=False, case_goal_completed=False)
 
@@ -271,11 +291,16 @@ class TemplateConsumer:
         instance['input'] = json.loads(instance['input'])
         return instance
 
-    def _available(self, p, instance):
+    def _available(self, p, instance, token):
         binding = instance['binding']
         release = self._published(p, binding['release_id'], binding['release_sha256'], binding['release_snapshot']['scope'])
         if normal(release['snapshot']) != binding['release_snapshot'] or release['snapshot']['definition_sha256'] != binding['definition_sha256']:
             raise Conflict('immutable published release binding changed')
+        expected=instance['input'].get('expected_catalog_sha256')
+        if expected is not None or 'catalog_binding' in binding:
+            current=self._catalog_binding(token=token,p=p,definition=release['snapshot']['definition'])
+            if current!=binding.get('catalog_binding') or expected!=current['sha256']:
+                raise Conflict('bound current service catalog changed; reread before new input')
         return release
 
     @staticmethod
@@ -290,7 +315,7 @@ class TemplateConsumer:
         # including a retry after an unknown response.
         p, database = self._auth(token)
         self._instance(p, database, instance['id'])
-        self._available(p, instance)
+        self._available(p, instance, token)
         self._reviewer(p, instance['input']['reviewer_id'])
         with self.repository.connect(write=True) as c:
             stage = c.execute('SELECT * FROM consumer_stages WHERE instance_id=? AND name=?', (instance['id'], name)).fetchone()
@@ -357,6 +382,11 @@ class TemplateConsumer:
         self._reviewer(p, data.reviewer_id)
         release = self._published(p, data.release_id, data.expected_release_sha256)
         snapshot = release['snapshot']
+        catalog_binding=None
+        if data.expected_catalog_sha256 is not None:
+            catalog_binding=self._catalog_binding(token,p,snapshot['definition'])
+            if catalog_binding['sha256']!=data.expected_catalog_sha256:
+                raise Conflict('current service catalog fingerprint changed')
         if data.required_goals is not None and not set(snapshot['definition']['required_goals']) <= set(data.required_goals):
             raise Conflict('template mandatory goals cannot be removed')
         declared = data.required_goals if data.required_goals is not None else snapshot['definition']['required_goals']
@@ -374,12 +404,30 @@ class TemplateConsumer:
                 binding = dict(actor_id=p['id'], park_id=p['park_id'], org_id=p['org_id'], database_name=database,
                                release_id=str(data.release_id), release_sha256=data.expected_release_sha256,
                                definition_sha256=snapshot['definition_sha256'], release_snapshot=snapshot)
+                if catalog_binding is not None:binding['catalog_binding']=catalog_binding
                 c.execute('INSERT INTO consumer_instances VALUES(?,?,?,?,?,?,?,?)', (id, p['id'], p['park_id'], p['org_id'], database, canonical(binding), canonical(data.model_dump(mode='json', exclude_none=True)), 'PENDING_RUN'))
                 c.execute('INSERT INTO consumer_requests VALUES(?,?,?,?)', (p['id'], key, fp, id))
         instance = self._instance(p, database, id)
         self._perform(token, instance, 'CREATE_RUN', lambda: Intake(goal=data.goal).snapshot(),
                       lambda stage_key, body: dict(run_id=self.store.submit(token, stage_key, Intake.model_validate(body))))
         return self.read(token, id)
+
+    def recover_creation(self, token, key, expected_fingerprint_sha256):
+        """Only observe the current owner's exact original CONSUME admission."""
+        p,database=self._auth(token);self._key(key)
+        if not isinstance(expected_fingerprint_sha256,str) or not re.fullmatch('[a-f0-9]{64}',expected_fingerprint_sha256):
+            raise Conflict('exact original CONSUME fingerprint required')
+        with self.repository.connect() as journal:
+            row=journal.execute('SELECT instance_id,fp FROM consumer_requests WHERE actor=? AND key=?',(p['id'],key)).fetchone()
+        result=dict(request_key=key,expected_fingerprint_sha256=expected_fingerprint_sha256,
+            read_only=True,automatically_replayed=False,not_committed_final=False,new_grants=False)
+        if row is None:return dict(result,status='NOT_OBSERVED',instance=None)
+        instance=self._instance(p,database,row['instance_id'])
+        saved=Consume.model_validate(instance['input']).model_dump(mode='json',exclude_none=True)
+        actual=digest(canonical(dict(action='CONSUME',**saved)))
+        if row['fp']!=actual or actual!=expected_fingerprint_sha256:
+            raise Conflict('original CONSUME key, immutable input and fingerprint must agree')
+        return dict(result,status='RECORDED_INSTANCE',instance=self.read(token,row['instance_id']))
 
     def _stages(self, id):
         with self.repository.connect() as c:
@@ -430,7 +478,7 @@ class TemplateConsumer:
         p, database = self._auth(token)
         instance = self._instance(p, database, id)
         try:
-            self._available(p, instance)
+            self._available(p, instance, token)
             available = True
         except (Denied, Conflict):
             available = False
@@ -474,7 +522,7 @@ class TemplateConsumer:
         p, database = self._auth(token)
         self._key(key)
         instance = self._instance(p, database, id)
-        self._available(p, instance)
+        self._available(p, instance, token)
         self._reviewer(p, instance['input']['reviewer_id'])
         fp = digest(canonical(dict(action='RESUME', instance_id=instance['id'])))
         with self.repository.connect(write=True) as c:
@@ -513,7 +561,7 @@ class TemplateConsumer:
     def reconcile_adoption(self, token, id, *, persist=False):
         p,database=self._auth(token)
         instance=self._instance(p,database,id)
-        self._available(p,instance)
+        self._available(p,instance,token)
         self._reviewer(p,instance['input']['reviewer_id'])
         with self.repository.connect() as c:
             raw=c.execute("SELECT * FROM consumer_stages WHERE instance_id=? AND name='ADOPT_PLAN'",(instance['id'],)).fetchone()
@@ -538,7 +586,7 @@ class TemplateConsumer:
         if persist and state and stage['state'] in ('STARTED','UNKNOWN'):
             # Recheck current authorities before changing only this journal.
             current,current_database=self._auth(token)
-            self._instance(current,current_database,id);self._available(current,instance)
+            self._instance(current,current_database,id);self._available(current,instance,token)
             self._reviewer(current,instance['input']['reviewer_id'])
             with self.repository.connect(write=True) as c:
                 self._closed_write_guard(token,instance,c)
@@ -550,7 +598,7 @@ class TemplateConsumer:
     def planning(self, token, id):
         p, database = self._auth(token)
         instance = self._instance(p, database, id)
-        self._available(p, instance)
+        self._available(p, instance, token)
         self._reviewer(p, instance['input']['reviewer_id'])
         quarantine=self._closed_quarantine(token,instance)
         results = {s['name']: s['result'] for s in self._stages(instance['id']) if s['state']=='CONFIRMED'}
@@ -573,7 +621,7 @@ class TemplateConsumer:
         p, database = self._auth(token)
         self._key(key)
         instance = self._instance(p, database, id)
-        self._available(p, instance)
+        self._available(p, instance, token)
         self._reviewer(p, instance['input']['reviewer_id'])
         row = self.read(token, id)
         if not row['preparation_id']: raise Conflict('original preparation required')
@@ -627,7 +675,7 @@ class TemplateConsumer:
         """Read an exact consumer-to-original receipt proof; never send or repair."""
         p,database=self._auth(token);self._key(key)
         instance=self._instance(p,database,id)
-        self._available(p,instance);self._reviewer(p,instance['input']['reviewer_id'])
+        self._available(p,instance,token);self._reviewer(p,instance['input']['reviewer_id'])
         name='CONFIRM_PLAN_'+digest(key)
         with self.repository.connect() as c:
             request=c.execute('SELECT * FROM consumer_requests WHERE actor=? AND key=?',(p['id'],key)).fetchone()
@@ -651,7 +699,7 @@ class TemplateConsumer:
             not proof.get('saved_request_verified')):raise Conflict('original consumer preparation Run receipt binding changed')
         # Recheck the live candidate and actor after any original source wait.
         current,current_database=self._auth(token);self._instance(current,current_database,id)
-        self._available(current,instance);self._reviewer(current,instance['input']['reviewer_id'])
+        self._available(current,instance,token);self._reviewer(current,instance['input']['reviewer_id'])
         status='COMMITTED' if proof['status']=='COMMITTED' else 'NOT_COMMITTED_STALE' if proof.get('not_committed_final') else 'REFUSED_FIRST_SEND' if stage['state']=='REJECTED_FIRST_SEND' and stage['error'] in ('FIRST_CURRENT_OPERATION_REFUSED','FIRST_PRODUCT_AUTHORIZATION_REFUSED','FIRST_PRODUCT_CONFLICT') else 'REFUSED' if stage['state']=='REFUSED' else 'NOT_OBSERVED'
         finalization=(json.loads(stage['result']) if stage['result'] else {}).get('consumer_finalization')
         terminal=False
@@ -701,11 +749,11 @@ class TemplateConsumer:
             # between authorization and the durable journal CAS.
             with self.store.connect() as authority:
                 p,database=self._auth(token,connection=authority);instance=self._instance(p,database,id)
-                self._available(p,instance);self._reviewer(p,instance['input']['reviewer_id'],connection=authority)
+                self._available(p,instance,token);self._reviewer(p,instance['input']['reviewer_id'],connection=authority)
                 with self.repository.connect(write=True) as c:
                     # BEGIN IMMEDIATE can wait; recheck on the held PG transaction.
                     p,database=self._auth(token,connection=authority);self._instance(p,database,id)
-                    self._available(p,instance);self._reviewer(p,instance['input']['reviewer_id'],connection=authority)
+                    self._available(p,instance,token);self._reviewer(p,instance['input']['reviewer_id'],connection=authority)
                     stage=c.execute('SELECT * FROM consumer_stages WHERE instance_id=? AND name=?',(instance['id'],name)).fetchone()
                     if not stage or stage['state']!=data.expected_journal_state or stage['request_key']!=data.expected_original_request_key or stage['body_sha256']!=data.expected_body_sha256:
                         raise Conflict('original adoption journal CAS changed')
@@ -759,7 +807,7 @@ ConsumerEngine = TemplateConsumer
 
 
 def install_routes(app, consumer):
-    from fastapi import Header
+    from fastapi import Header, Query, Request
     from fastapi.responses import JSONResponse
 
     @app.exception_handler(ConsumerUnknown)
@@ -778,6 +826,14 @@ def install_routes(app, consumer):
     @app.post('/api/template-consumer/catalog')
     def catalog_post(data: Resume, authorization: str | None = Header(default=None)):
         return consumer.catalog(bearer(authorization))
+
+    @app.get('/api/template-consumer/creation-recovery')
+    def creation_recovery(request: Request, request_key: str = Query(min_length=1,max_length=128),
+                          expected_fingerprint_sha256: str = Query(pattern='^[a-f0-9]{64}$'),
+                          authorization: str | None = Header(default=None)):
+        keys=[key for key,_ in request.query_params.multi_items()]
+        if len(keys)!=len(set(keys)) or set(keys)!={'request_key','expected_fingerprint_sha256'}:raise Conflict('unambiguous original creation recovery selection required')
+        return consumer.recover_creation(bearer(authorization),request_key,expected_fingerprint_sha256)
 
     @app.get('/api/template-consumer/instances')
     def instances(authorization: str | None = Header(default=None)):
